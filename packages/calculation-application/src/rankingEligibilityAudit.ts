@@ -18,6 +18,8 @@ import type { CalculationExecution } from './scenario';
 
 type EligibilityStatus = 'calculated' | 'unreachable' | 'inputRequired' | 'invalid' | 'unsupported';
 
+export const RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT = 8;
+
 interface CountMap {
   [key: string]: number;
 }
@@ -92,6 +94,36 @@ function digestRecords(records: readonly unknown[]): string {
   const hash = createHash('sha256');
   for (const record of records) hash.update(stableJson(record)).update('\n');
   return hash.digest('hex');
+}
+
+export function combineRankingEligibilityPartitionDigests(
+  partitions: readonly { partition: number; digest: string }[],
+): string {
+  const ordered = [...partitions].sort((left, right) => left.partition - right.partition);
+  if (ordered.length === 1) {
+    const only = ordered[0]!;
+    if (
+      !Number.isSafeInteger(only.partition) ||
+      only.partition < 0 ||
+      only.partition >= RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT ||
+      !/^[a-f0-9]{64}$/.test(only.digest)
+    )
+      throw new TypeError('ranking_eligibility_partition_digest_invalid');
+    return only.digest;
+  }
+  if (ordered.length !== RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT)
+    throw new TypeError('ranking_eligibility_partition_digest_count_mismatch');
+  for (const [index, item] of ordered.entries()) {
+    if (
+      item.partition !== index ||
+      !Number.isSafeInteger(item.partition) ||
+      !/^[a-f0-9]{64}$/.test(item.digest)
+    )
+      throw new TypeError('ranking_eligibility_partition_digest_invalid');
+  }
+  return createHash('sha256')
+    .update(JSON.stringify(ordered.map(({ digest }) => digest)))
+    .digest('hex');
 }
 
 function increment(counts: CountMap, key: string, amount = 1): void {
@@ -265,7 +297,7 @@ export class RankingEligibilityAuditAccumulator {
     } as Record<EligibilityStatus, number>,
     byPolicy: {} as CountMap,
     candidateSpaceStatus: {} as CountMap,
-    hash: createHash('sha256'),
+    hashes: new Map<number, ReturnType<typeof createHash>>(),
   };
   private readonly conditionKeys = new Set<string>();
 
@@ -278,7 +310,14 @@ export class RankingEligibilityAuditAccumulator {
     servant: ServantMaster,
     conditions: RankingPolicyConditions,
     candidateSet: RankingCandidateCalculation,
+    digestPartition: number,
   ): void {
+    if (
+      !Number.isSafeInteger(digestPartition) ||
+      digestPartition < 0 ||
+      digestPartition >= RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT
+    )
+      throw new TypeError(`ranking_eligibility_partition_invalid:${String(digestPartition)}`);
     const programs = this.staticData.programsByServant.get(servant.id);
     if (!programs) throw new TypeError(`ranking_eligibility_servant_missing:${servant.id}`);
     const npLevel = candidateSet.plan.basis.npLevel;
@@ -336,7 +375,12 @@ export class RankingEligibilityAuditAccumulator {
       const status = statusOf(execution);
       this.candidate.byStatus[status] += 1;
       increment(this.candidate.byPolicy, `${policy}:${status}`);
-      this.candidate.hash
+      let hash = this.candidate.hashes.get(digestPartition);
+      if (!hash) {
+        hash = createHash('sha256');
+        this.candidate.hashes.set(digestPartition, hash);
+      }
+      hash
         .update(policy)
         .update('\0')
         .update(servant.id)
@@ -378,7 +422,12 @@ export class RankingEligibilityAuditAccumulator {
       byStatus: this.candidate.byStatus,
       byPolicy: this.candidate.byPolicy,
       candidateSpaceStatus: this.candidate.candidateSpaceStatus,
-      digest: this.candidate.hash.digest('hex'),
+      digest: combineRankingEligibilityPartitionDigests(
+        [...this.candidate.hashes].map(([partition, hash]) => ({
+          partition,
+          digest: hash.digest('hex'),
+        })),
+      ),
     };
     return {
       conditionCount: this.conditionKeys.size,

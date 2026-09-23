@@ -377,7 +377,47 @@ export interface ProductionAuditClosureInput {
   parityCount: number;
   parityFailures: readonly unknown[];
   digest: string;
-  eligibility: { digest: string };
+  eligibility: { candidates: { digest: string } };
+}
+
+export function productionAuditMatrixRecords(
+  source: Tsk065ProductionAuditSource,
+  audit: ProductionAuditClosureInput,
+): { expected: readonly CanonicalAuditRecord[]; actual: readonly CanonicalAuditRecord[] } {
+  const candidates = (audit.eligibility as { candidates?: { digest?: string } }).candidates;
+  const eligibilityDigest = candidates?.digest;
+  return {
+    expected: [
+      {
+        identity: 'tsk-06.5:production-matrix',
+        value: {
+          conditionCount: source.matrix.conditionCount,
+          attackProfileCount: source.matrix.attackProfileCount,
+          outcomeCount: source.matrix.outcomeCount,
+          outcomes: source.matrix.outcomes,
+          parityCount: source.matrix.parityCount,
+          parityFailures: source.matrix.parityFailures,
+          digest: source.matrix.mergedDigest,
+          eligibilityDigest: source.matrix.eligibilityDigest,
+        },
+      },
+    ],
+    actual: [
+      {
+        identity: 'tsk-06.5:production-matrix',
+        value: {
+          conditionCount: audit.conditionCount,
+          attackProfileCount: audit.attackProfileCount,
+          outcomeCount: audit.outcomeCount,
+          outcomes: audit.outcomes,
+          parityCount: audit.parityCount,
+          parityFailures: audit.parityFailures.length,
+          digest: audit.digest,
+          ...(eligibilityDigest === undefined ? {} : { eligibilityDigest }),
+        },
+      },
+    ],
+  };
 }
 
 /**
@@ -391,37 +431,8 @@ export function connectProductionAuditMatrix(
 ): SharedProductionAuditModel<ProductionAuditMatrixModel> {
   if (producer.length === 0) throw new TypeError('shared_production_audit_producer_missing');
   assertBoundaryDigest(audit.digest, 'matrix.digest');
-  assertBoundaryDigest(audit.eligibility.digest, 'matrix.eligibility.digest');
-  const expected: CanonicalAuditRecord[] = [
-    {
-      identity: 'tsk-06.5:production-matrix',
-      value: {
-        conditionCount: source.matrix.conditionCount,
-        attackProfileCount: source.matrix.attackProfileCount,
-        outcomeCount: source.matrix.outcomeCount,
-        outcomes: source.matrix.outcomes,
-        parityCount: source.matrix.parityCount,
-        parityFailures: source.matrix.parityFailures,
-        digest: source.matrix.mergedDigest,
-        eligibilityDigest: source.matrix.eligibilityDigest,
-      },
-    },
-  ];
-  const actual: CanonicalAuditRecord[] = [
-    {
-      identity: 'tsk-06.5:production-matrix',
-      value: {
-        conditionCount: audit.conditionCount,
-        attackProfileCount: audit.attackProfileCount,
-        outcomeCount: audit.outcomeCount,
-        outcomes: audit.outcomes,
-        parityCount: audit.parityCount,
-        parityFailures: audit.parityFailures.length,
-        digest: audit.digest,
-        eligibilityDigest: audit.eligibility.digest,
-      },
-    },
-  ];
+  assertBoundaryDigest(audit.eligibility.candidates.digest, 'matrix.eligibility.candidates.digest');
+  const { expected, actual } = productionAuditMatrixRecords(source, audit);
   const difference = firstCanonicalAuditDifference(expected, actual);
   if (difference)
     throw new TypeError(
@@ -439,7 +450,7 @@ export function connectProductionAuditMatrix(
       parityCount: audit.parityCount,
       parityFailures: audit.parityFailures.length,
       digest: audit.digest,
-      eligibilityDigest: audit.eligibility.digest,
+      eligibilityDigest: audit.eligibility.candidates.digest,
     },
   };
 }

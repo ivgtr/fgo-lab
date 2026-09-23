@@ -1,9 +1,11 @@
 import {
   firstCanonicalAuditDifference,
+  productionAuditMatrixRecords,
   type CanonicalAuditDifference,
   type CanonicalAuditRecord,
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
+import type { Tsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 
 export type ProductionParityPath = 'calculator' | 'portable';
 
@@ -30,6 +32,40 @@ export interface ProductionParityFailure {
   actual: CanonicalAuditValue;
 }
 
+export type ProductionParityGateFailureReason = 'matrixMismatch' | 'parityFailure';
+
+export type ProductionParityGateInput = {
+  conditionCount: number;
+  attackProfileCount: number;
+  outcomeCount: number;
+  outcomes: Tsk065ProductionAuditSource['matrix']['outcomes'];
+  parityCount: number;
+  parityFailures: readonly ProductionParityFailure[];
+  digest: string;
+  eligibility: { candidates: { digest: string } };
+};
+
+export interface ProductionParityGatePassed {
+  status: 'passed';
+  canonicalIdentity: string;
+  expected: CanonicalAuditValue;
+  actual: CanonicalAuditValue;
+  firstDifference: null;
+  failures: readonly [];
+}
+
+export interface ProductionParityGateFailed {
+  status: 'failed';
+  reason: ProductionParityGateFailureReason;
+  canonicalIdentity: string;
+  expected: CanonicalAuditValue;
+  actual: CanonicalAuditValue;
+  firstDifference: CanonicalAuditDifference;
+  failures: readonly ProductionParityFailure[];
+}
+
+export type ProductionParityGate = ProductionParityGatePassed | ProductionParityGateFailed;
+
 function canonicalValue(value: unknown): CanonicalAuditValue {
   const serialized = JSON.stringify(value === undefined ? null : value);
   return JSON.parse(serialized) as CanonicalAuditValue;
@@ -37,6 +73,55 @@ function canonicalValue(value: unknown): CanonicalAuditValue {
 
 function identityOf(comparison: ProductionParityComparison): string {
   return `production:${comparison.conditionKey}:profile:${comparison.profileKey}:parity:${comparison.path}`;
+}
+
+function canonicalParityMatrixValue(
+  source: Tsk065ProductionAuditSource,
+  audit: ProductionParityGateInput,
+): { expected: CanonicalAuditValue; actual: CanonicalAuditValue } {
+  const records = productionAuditMatrixRecords(source, audit);
+  return {
+    expected: records.expected[0]!.value,
+    actual: records.actual[0]!.value,
+  };
+}
+
+/**
+ * Compares one complete production matrix with the TSK-06.5 source.
+ * The full typed failures remain attached to the result; callers decide how
+ * to persist the result before returning a non-zero process outcome.
+ */
+export function evaluateProductionParityGate(
+  source: Tsk065ProductionAuditSource,
+  audit: ProductionParityGateInput,
+): ProductionParityGate {
+  const canonicalIdentity = 'tsk-06.5:production-matrix';
+  const { expected, actual } = canonicalParityMatrixValue(source, audit);
+  const firstDifference = firstCanonicalAuditDifference(
+    [{ identity: canonicalIdentity, value: expected }],
+    [{ identity: canonicalIdentity, value: actual }],
+  );
+  if (!firstDifference)
+    return {
+      status: 'passed',
+      canonicalIdentity,
+      expected,
+      actual,
+      firstDifference: null,
+      failures: [],
+    };
+  return {
+    status: 'failed',
+    reason:
+      audit.parityFailures.length > 0 || firstDifference.path === 'parityFailures'
+        ? 'parityFailure'
+        : 'matrixMismatch',
+    canonicalIdentity,
+    expected,
+    actual,
+    firstDifference,
+    failures: audit.parityFailures,
+  };
 }
 
 export function compareProductionParity(

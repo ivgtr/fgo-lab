@@ -14,6 +14,7 @@ import {
   executePortableCalculation,
 } from './portableCalculation';
 import {
+  RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT,
   RankingEligibilityAuditAccumulator,
   type RankingEligibilityAudit,
 } from './rankingEligibilityAudit';
@@ -170,16 +171,26 @@ export async function auditProductionClosure(
   let parityCount = 0;
   let attackProfileCount: number | null = null;
   const eligibility = new RankingEligibilityAuditAccumulator(master);
+  const digestPartitionByCondition = new Map(
+    productionClosureConditions().map((condition, index) => [
+      productionClosureConditionKey(condition),
+      index % RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT,
+    ]),
+  );
 
   for (const conditions of selectedConditions) {
     const key = productionClosureConditionKey(conditions);
+    const digestPartition = digestPartitionByCondition.get(key);
+    if (digestPartition === undefined)
+      throw new TypeError(`production_closure_condition_not_canonical:${key}`);
     const startedAt = performance.now();
     const result = calculateRankingPolicy(
       master,
       profile,
       conditions,
       versions,
-      ({ servant, candidateSet }) => eligibility.observe(master, servant, conditions, candidateSet),
+      ({ servant, candidateSet }) =>
+        eligibility.observe(master, servant, conditions, candidateSet, digestPartition),
     );
     const elapsedMs = performance.now() - startedAt;
     const entries = Object.entries(result.profileResults);

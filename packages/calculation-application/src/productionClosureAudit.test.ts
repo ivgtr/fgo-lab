@@ -1,15 +1,22 @@
 import { writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { createTsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import fixture from '../../test-fixtures/master/fixture.json';
+import tsk065Evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
 import {
   auditProductionClosure,
   productionClosureConditionKey,
   productionClosureConditions,
 } from './productionClosureAudit';
-import { compareProductionParity } from './productionParityDiagnostics';
+import {
+  compareProductionParity,
+  evaluateProductionParityGate,
+} from './productionParityDiagnostics';
+import { combineRankingEligibilityPartitionDigests } from './rankingEligibilityAudit';
 
 async function writeParityDiagnosticArtifact(value: unknown): Promise<void> {
   const artifactDirectory = process.env['FGO_TEST_ARTIFACT_DIR'];
@@ -33,6 +40,31 @@ async function writeParityDiagnosticArtifact(value: unknown): Promise<void> {
     )}\n`,
   );
 }
+
+it('combines eligibility partition digests in canonical order and rejects incomplete merges', () => {
+  const partitions = Array.from({ length: 8 }, (_, partition) => ({
+    partition,
+    digest: createHash('sha256')
+      .update(`eligibility-partition-${String(partition)}`)
+      .digest('hex'),
+  }));
+  const expected = createHash('sha256')
+    .update(JSON.stringify(partitions.map(({ digest }) => digest)))
+    .digest('hex');
+
+  expect(combineRankingEligibilityPartitionDigests([...partitions].reverse())).toBe(expected);
+  expect(combineRankingEligibilityPartitionDigests([partitions[3]!])).toBe(partitions[3]!.digest);
+  expect(() => combineRankingEligibilityPartitionDigests(partitions.slice(0, 7))).toThrow(
+    'ranking_eligibility_partition_digest_count_mismatch',
+  );
+  expect(() =>
+    combineRankingEligibilityPartitionDigests(
+      partitions.map((partition, index) =>
+        index === 7 ? { ...partition, partition: 6 } : partition,
+      ),
+    ),
+  ).toThrow('ranking_eligibility_partition_digest_invalid');
+});
 
 it('constructs exactly the 80 legal production conditions and reuses one supplied inventory', async () => {
   const conditions = productionClosureConditions();
@@ -85,6 +117,7 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
     expected: { scenario: { phase: 'expected', value: 1 } },
     actual: { scenario: { phase: 'actual', value: 1 } },
   });
+  if (!canonicalFailure) throw new Error('canonical parity fixture must fail');
   const statusFailure = compareProductionParity({
     conditionKey: 'fixture-condition',
     profileKey: 'fixture-profile',
@@ -117,11 +150,97 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
       actual: { scenario: { phase: 'same' } },
     }),
   ).toBeNull();
+  const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+    masterDataVersion: 'fixture-master',
+    artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+  });
+  const matrixInput = {
+    conditionCount: source.matrix.conditionCount,
+    attackProfileCount: source.matrix.attackProfileCount,
+    outcomeCount: source.matrix.outcomeCount,
+    outcomes: source.matrix.outcomes,
+    parityCount: source.matrix.parityCount,
+    digest: source.matrix.mergedDigest,
+    eligibility: { candidates: { digest: source.matrix.eligibilityDigest } },
+  };
+  expect(
+    evaluateProductionParityGate(source, { ...matrixInput, parityFailures: [] }),
+  ).toMatchObject({
+    status: 'passed',
+    canonicalIdentity: 'tsk-06.5:production-matrix',
+    firstDifference: null,
+  });
+  const parityGate = evaluateProductionParityGate(source, {
+    ...matrixInput,
+    parityFailures: [canonicalFailure],
+  });
+  expect(parityGate).toMatchObject({
+    status: 'failed',
+    reason: 'parityFailure',
+    canonicalIdentity: 'tsk-06.5:production-matrix',
+    firstDifference: {
+      identity: 'tsk-06.5:production-matrix',
+      path: 'parityFailures',
+      expected: 0,
+      actual: 1,
+    },
+    failures: [canonicalFailure],
+  });
+  expect(
+    evaluateProductionParityGate(source, {
+      ...matrixInput,
+      digest: '0'.repeat(64),
+      parityFailures: [],
+    }),
+  ).toMatchObject({
+    status: 'failed',
+    reason: 'matrixMismatch',
+    firstDifference: {
+      identity: 'tsk-06.5:production-matrix',
+      path: 'digest',
+      expected: source.matrix.mergedDigest,
+      actual: '0'.repeat(64),
+    },
+    failures: [],
+  });
+  const eligibilityMismatch = evaluateProductionParityGate(source, {
+    ...matrixInput,
+    eligibility: { candidates: { digest: '0'.repeat(64) } },
+    parityFailures: [],
+  });
+  expect(eligibilityMismatch).toMatchObject({
+    status: 'failed',
+    reason: 'matrixMismatch',
+    firstDifference: {
+      identity: 'tsk-06.5:production-matrix',
+      path: 'eligibilityDigest',
+      expected: source.matrix.eligibilityDigest,
+      actual: '0'.repeat(64),
+    },
+  });
+  expect(
+    evaluateProductionParityGate(source, {
+      ...matrixInput,
+      eligibility: {} as typeof matrixInput.eligibility,
+      parityFailures: [],
+    }),
+  ).toMatchObject({
+    status: 'failed',
+    reason: 'matrixMismatch',
+    firstDifference: {
+      identity: 'tsk-06.5:production-matrix',
+      path: 'eligibilityDigest',
+      expected: source.matrix.eligibilityDigest,
+      actual: undefined,
+    },
+  });
   await writeParityDiagnosticArtifact({
     schemaVersion: 1,
     boundary: 'calculation-application-production-parity',
     source: 'productionClosureAudit.test.ts',
     audit,
+    parityGate,
+    eligibilityMismatch,
     intentionalFailures: [canonicalFailure, statusFailure],
   });
 });

@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.48"
+document_version: "1.4.50"
 status: "Active"
-updated_at: "2026-09-21"
+updated_at: "2026-09-23"
 ---
 
 # Evidence report index
@@ -57,6 +57,7 @@ updated_at: "2026-09-21"
 | [tsk-07-outcome-closure](tsk-07-outcome-closure.json) | Complete | machine-readable: five typed outcome presentation、numeric-row boundary、exact AttackProfile normal-calculator recovery、typed invalid reset/reload、unsupported／policy-unavailable non-recovery、focused consumer checks | TSK-07 | `3ec65cd` baseline／no new commit |
 | [tsk-07-responsive-accessibility-closure](tsk-07-responsive-accessibility-closure.json) | Complete | machine-readable: desktop／390px／320px responsive containment、accessible names／roles／keyboard／focus、five-outcome recovery presentation、stale/cache identity preservation、integrated quality evidence | TSK-07 | `b9c323a` baseline／no new commit |
 | [tsk-08-parity-diagnostics](tsk-08-parity-diagnostics.json) | Active | machine-readable: typed calculator／ranking／portable parity failure reason、canonical identity／first diff、bounded summary、declared artifact checksum reachability | TSK-08 | `34828ea` baseline／no new commit |
+| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: records-preserving single／shard canonical eligibility digest、full-production parity pass、first-diff and checksum-failure artifacts | TSK-08 | `be27827e` baseline／no new commit |
 | [tsk-08-shared-audit-model](tsk-08-shared-audit-model.json) | Active | machine-readable: TSK-06.5 source reference、data-pipeline／calculation-application boundary model、full matrix first-difference gate、artifact reachability | TSK-08 | `5d82e38` baseline／no new commit |
 | [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／historical closure had no commit; current baseline `197ff30` |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Complete | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 final closure | `49efe62`／TSK-06.48 complete |

@@ -134,7 +134,7 @@ describe('canonical production audit records', () => {
         parityCount: 34_600,
         parityFailures: [],
         digest: source.matrix.mergedDigest,
-        eligibility: { digest: source.matrix.eligibilityDigest },
+        eligibility: { candidates: { digest: source.matrix.eligibilityDigest } },
       }),
     ).toThrow('shared_production_audit_matrix_mismatch:tsk-06.5:production-matrix:conditionCount');
     expect(
@@ -146,7 +146,7 @@ describe('canonical production audit records', () => {
         parityCount: 34_600,
         parityFailures: [],
         digest: source.matrix.mergedDigest,
-        eligibility: { digest: source.matrix.eligibilityDigest },
+        eligibility: { candidates: { digest: source.matrix.eligibilityDigest } },
       }).payload,
     ).toMatchObject({
       producer: 'auditProductionClosure',

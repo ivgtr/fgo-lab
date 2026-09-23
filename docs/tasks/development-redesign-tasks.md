@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.25"
+document_version: "1.7.27"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-21"
+updated_at: "2026-09-23"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -2388,6 +2388,30 @@ public API、canonical input、fingerprint、candidate inventory、production ou
 focused 6、direct consumer 3、runner 53、production 144、typecheck、targeted lint／Prettier、`pnpm test:docs`、最終`pnpm quality`は成功している。qualityはunit 897／production 144／Playwright 29、warnings／unexpected console／retry 0、artifact `.test-results/2026-09-21T14-48-58-184Z-15-00d5e2`、manifest SHA-256 `764c0ff9b0068cd0a6da45ebfb743f03843ffe646d3f3095c4c0401134d7d2d`である。production matrixは既存TSK-06.5 artifactを再計算せず、接続関数とfuture single／merge producer pathへ接続したため、性能計測、candidate ratchet、timeout緩和は追加していない。
 
 未達は全production parity／unsupported／invalid／partial commit／inert control／stale mutationのratchet化と、Deferredのlegacy aggregate auditor（`quantityConditions`前提）・old loader／scan／candidate list／duplicate fixtureの整理・削除である。次の作業者は`packages/master-data/src/productionAudit.ts`のsource／boundary／matrix connector、両packageのproduction audit test、`audit-oc-matrix.ts`／`merge-oc-matrix.ts`、および本evidenceを最初に確認する。source digest、inventory、support status、production output、parity、first difference、artifact checksumに差分が出た場合は停止し、影響範囲とTSK-06.41／TSK-06.5 reopen要否を記録する。TSK-06.5／06.47／06.48／TSK-07は`done`、TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+Current bounded-unit handoff（2026-09-22、typed full-production parity gate）:
+
+開始HEADは`be27827e7b3e9c488d425a2c8aa4e2b9dfe7592e`、利用者差分は`apps/web/next-env.d.ts`だけである。`productionParityDiagnostics.ts::evaluateProductionParityGate`を追加し、TSK-06.5の`tsk-06.5:production-matrix`とfull audit summaryをcanonical順序で比較する。結果は`passed | failed`のtyped unionで、`matrixMismatch`／`parityFailure`、canonical identity、first difference、全parity failureを保持する。single／merge consumerはmanifestを書いてから非0終了するため、failureのbounded summaryと完全artifactを失わない。candidate生成、damage semantics、canonical input、fingerprint、production成功値、calculator／ranking／portable parityの意味は変更していない。
+
+既存TSK-06.5 shard artifactを再計算なしでmerge consumerへ接続したところ、master bytesのSHA-256はshard identityと一致し、matrix digest `c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120`、outcome 34,640、parity 34,600／failure 0も一致した。一方、merge境界はshardごとのadmissions／candidates digestを保持するだけでtop-level `eligibility.digest`を生成せず、first canonical differenceは`tsk-06.5:production-matrix:eligibilityDigest`（expected `27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18`、actual missing）となった。source digestを代入する、候補／damage semanticsを再計算する、別producerを追加することはせず、明示したstop conditionでbounded unitを停止した。詳細は[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)、停止artifactは`.test-results/tsk-08-parity-gate-stopped/manifest.json`（SHA-256 `c8f0c6147a947591d9d072890528c5868b931e3347d488b63fa57e82b64ff7bd`）を参照する。
+
+focused 1、typecheck、targeted source lint／Prettier、`pnpm test:docs`、`pnpm test:runner` 53件、`pnpm test:production` 27 files／144 testsは成功した。productionは初回並列実行で既存data-pipeline ratchet 10件が一時失敗したが、同一file単独14/14と再実行27/27で再現せず、今回差分の直接経路ではないことを確認した。full parity ratchetは未完了であり、`pnpm quality`はこのblocking merge boundaryを解消する次bounded unit後に実行する。
+
+停止時点のcanonical ownerは`rankingEligibilityAudit.ts::RankingEligibilityAuditAccumulator`、影響範囲はmerge artifactのeligibility digest接続だけである。TSK-06.41／TSK-06.5のreopenは不要。次の作業者は`merge-oc-matrix.ts`のeligibility materialization、各shardのtop-level audit、`tsk-08-parity-gate-stopped/manifest.json`を最初に確認し、records-preserving digestを同一sourceへ接続できない場合は再度停止する。残りのunsupported／invalid／partial commit／inert control／stale mutation、legacy cleanup、TSK-09系、性能／timeout緩和は未着手である。
+
+Current bounded-unit handoff（2026-09-23、records-preserving eligibility digest／full-production parity）:
+
+開始HEADは`be27827e7b3e9c488d425a2c8aa4e2b9dfe7592e`。既存TSK-08差分、evidence／Tasksの未コミット更新、および利用者変更`apps/web/next-env.d.ts`を保持した。`RankingEligibilityAuditAccumulator`がcandidate eligibilityの既存ordered record streamを8つのcanonical condition partition別hasherへ流し、full single runは8 partition digestを結合し、既存8-shard runは各partition digestをそのままmergeする構造にした。shard 0を現在のproducerで実行し、candidate eligibility digest `446bb1a34bdf95d579216ec0533027969881c9aeb2349813ce087a0b6fcfe266`が保存済みTSK-06.5 shard 0と一致した。10条件すべてでcondition record digest、candidate inventory、outcome、parity countの差分は0件である。fresh shardのaggregate audit digestは新たな`elapsedMs`測定を含むため過去shardと異なるが、matrix source digestは変更していない。
+
+`merge-oc-matrix.ts`はcanonical partition 0..7のmanifest一式とmaster checksumを検証し、既存candidate digestを`combineRankingEligibilityPartitionDigests`で結合する。master-dataの`productionAuditMatrixRecords`がsingle／merge双方のactual `eligibility.candidates.digest`をTSK-06.5 `eligibilityDigest`へ投影し、connectorとtyped gateで共有する。既存TSK-06.5の8 shardを読み直してcandidate／damage計算を行わずにfull gateがpassedとなり、matrix digest `c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120`、eligibility digest `27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18`、outcome 34,640、calculated／parity 34,600、unavailable 40、parity failure 0がsourceと一致した。通過manifestは`.test-results/tsk-08-parity-ratchet/merge/manifest.json`、SHA-256 `30101b9690355603def36d404cd1b0297d8b9a5a6ad089f0a1377be85d8d4aa4`である。
+
+single／merge scriptは計算済みgate failureと、master checksumなどの早期failureをmanifestへ保存してから非0終了する。checksum fixtureではexpected `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`／actual `c8f0c6147a947591d9d072890528c5868b931e3347d488b63fa57e82b64ff7bd`を含むfailure manifestを保存した（`.test-results/tsk-08-parity-ratchet/failure-checksum/manifest.json`、SHA-256 `3e3878c1f0ac1b2030bfcc07234fc27a59e5c06a8c5bcd4e8178e1f78114384f`）。focused fixturesはeligibility digestの欠落／不一致、matrix digest不一致、partition欠落／重複、全parity failureを保持する。runnerは引き続きgeneric artifact reachability／checksumだけを検証する。
+
+source eligibility／matrix digest、static/candidate inventory、support status、production damage record、calculator／ranking／portable parityに意図した差分はない。focused 8 tests、`pnpm test:production` 27 files／144 tests、`pnpm test:runner` 53 tests、`pnpm typecheck`、target source lint／format、`pnpm test:docs` 6 testsが成功した。最終`pnpm quality`もunit 898／production 144／Playwright 29、retry／warnings／unexpected console 0で成功し、artifact `.test-results/2026-09-23T09-10-02-161Z-15-3e8208`、manifest SHA-256 `fc5b7162a26150d14130aea4d6ebfb818bb0e5c6a79257d3769bdc247e52843b`である。qualityのNext typegen後に開始時の`apps/web/next-env.d.ts`利用者差分を復元し、`pnpm exec tsc -b --pretty false`も通過した。machine evidenceは[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)である。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+single unsharded 80-condition auditも試行したが、12条件後にfull gate前で意図的に中断した。個別の`satisfied`条件が135,616ms／152,410msを要し、全80条件を逐次再実行するより、同じ全conditionを含む8-shard merge gate成功と実producer shard／focused testを採用した。このpartial runはsuccess evidenceではなくmanifestもない。生成済みcondition recordは`.test-results/tsk-08-parity-ratchet/single/`に残り、machine evidenceにも未完了として明記した。
+
+次のbounded unitはunsupported／invalid／partial commit／inert control／stale mutationの全件ratchetである。legacy aggregate auditor／old loader／scan／candidate list／duplicate fixtureの整理、性能比較、TSK-09系は今回開始していない。TSK-06.41／TSK-06.5 reopen、TSK-06.5 source digest更新は不要。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

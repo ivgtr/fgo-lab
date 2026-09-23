@@ -1,0 +1,243 @@
+{
+  "task": "TSK-08",
+  "status": "bounded-unit-complete",
+  "unit": "records-preserving canonical eligibility digest connection and full-production parity rerun",
+  "baseline": {
+    "headAtStart": "be27827e7b3e9c488d425a2c8aa4e2b9dfe7592e",
+    "worktreeAtStart": [
+      "apps/web/next-env.d.ts",
+      "docs/README.md",
+      "docs/evidence/README.md",
+      "docs/tasks/development-redesign-tasks.md",
+      "packages/calculation-application/scripts/audit-oc-matrix.ts",
+      "packages/calculation-application/scripts/merge-oc-matrix.ts",
+      "packages/calculation-application/src/productionClosureAudit.test.ts",
+      "packages/calculation-application/src/productionParityDiagnostics.ts",
+      "docs/evidence/tsk-08-parity-ratchet.json"
+    ],
+    "canonicalSource": "docs/evidence/tsk-06-5-production-closure.json",
+    "sharedAuditEvidence": "docs/evidence/tsk-08-shared-audit-model.json",
+    "previousParityEvidence": "docs/evidence/tsk-08-parity-diagnostics.json",
+    "previousStoppedManifest": ".test-results/tsk-08-parity-gate-stopped/manifest.json",
+    "taskSource": "docs/tasks/development-redesign-tasks.md"
+  },
+  "changedFiles": [
+    "packages/calculation-application/src/rankingEligibilityAudit.ts",
+    "packages/calculation-application/src/productionClosureAudit.ts",
+    "packages/calculation-application/src/productionParityDiagnostics.ts",
+    "packages/calculation-application/src/productionClosureAudit.test.ts",
+    "packages/calculation-application/scripts/audit-oc-matrix.ts",
+    "packages/calculation-application/scripts/merge-oc-matrix.ts",
+    "packages/master-data/src/productionAudit.ts",
+    "packages/master-data/src/productionAudit.test.ts",
+    "docs/evidence/tsk-08-parity-ratchet.json",
+    "docs/evidence/README.md",
+    "docs/tasks/development-redesign-tasks.md",
+    "docs/README.md"
+  ],
+  "semanticOwners": {
+    "eligibilityRecordsAndDigest": "packages/calculation-application/src/rankingEligibilityAudit.ts::RankingEligibilityAuditAccumulator",
+    "matrixConditionPartition": "packages/calculation-application/src/productionClosureAudit.ts::auditProductionClosure",
+    "partitionDigestCombination": "packages/calculation-application/src/rankingEligibilityAudit.ts::combineRankingEligibilityPartitionDigests",
+    "canonicalMatrixRecords": "packages/master-data/src/productionAudit.ts::productionAuditMatrixRecords",
+    "canonicalDiff": "packages/master-data/src/productionAudit.ts::firstCanonicalAuditDifference",
+    "tsk065Source": "packages/master-data/src/productionAudit.ts::createTsk065ProductionAuditSource",
+    "sharedMatrix": "packages/master-data/src/productionAudit.ts::connectProductionAuditMatrix",
+    "parityGate": "packages/calculation-application/src/productionParityDiagnostics.ts::evaluateProductionParityGate",
+    "singleConsumer": "packages/calculation-application/scripts/audit-oc-matrix.ts",
+    "mergeConsumer": "packages/calculation-application/scripts/merge-oc-matrix.ts",
+    "artifactVerification": "scripts/test-observation-lib.mjs::verifyArtifactFiles"
+  },
+  "canonicalSource": {
+    "task": "TSK-06.5",
+    "evidence": "docs/evidence/tsk-06-5-production-closure.json",
+    "masterSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+    "staticSemanticsDigest": "a1dc814fb04c5ed67ea86606590bf317fb37639ccbe77efa028b6401f3a24f2d",
+    "eligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+    "matrix": {
+      "conditionCount": 80,
+      "attackProfileCount": 433,
+      "outcomeCount": 34640,
+      "calculated": 34600,
+      "unavailableUnderPolicy": 40,
+      "inputRequired": 0,
+      "invalid": 0,
+      "unsupported": 0,
+      "parityCount": 34600,
+      "parityFailures": 0,
+      "mergedDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120"
+    }
+  },
+  "connection": {
+    "producer": "The existing RankingEligibilityAuditAccumulator hashes the candidate eligibility record stream. It now keeps the same record order in eight canonical condition partitions so a full single run and the established eight-shard run produce the same digest.",
+    "singleRun": "The full audit streams each existing eligibility record into its canonical condition partition and combines the eight resulting digests in index order.",
+    "shards": "Each established shard retains its existing candidate eligibility digest. The merge validates shard identities 0..7 and combines those digests using the same owner; it does not rerun candidate generation or damage calculation.",
+    "canonicalMatrix": "Master-data owns the expected and actual tsk-06.5:production-matrix records. Both the connector and typed parity gate use that projection and read the actual eligibility digest from eligibility.candidates.digest.",
+    "failureArtifact": "Both scripts persist the complete available identity, audit, parity gate, first canonical difference, and failure reason to the run manifest before setting a non-zero exit status. Master checksum failures retain expected and actual SHA-256 values.",
+    "sourceDigestProducerCount": 1,
+    "newGenerator": false,
+    "numericFallback": false,
+    "runnerDomainInterpretation": false
+  },
+  "invariants": {
+    "publicApiChanged": false,
+    "canonicalInputChanged": false,
+    "fingerprintChanged": false,
+    "candidateInventoryChanged": false,
+    "productionOutputChanged": false,
+    "calculatorRankingPortableParityChanged": false,
+    "tsk06_5SourceDigestChanged": false,
+    "tsk06_5Reopened": false,
+    "tsk0641Reopened": false,
+    "newDigestProducer": false,
+    "newGenerator": false,
+    "legacyReaderAdded": false,
+    "compatibilityFlagAdded": false,
+    "parallelCompilerAdded": false
+  },
+  "failureFixtures": [
+    "matrix digest mismatch retains canonical identity, path, expected, and actual",
+    "eligibility digest mismatch and missing actual digest resolve to first path eligibilityDigest",
+    "parity failure retains the complete typed parity failure list",
+    "seven of eight eligibility partition digests and duplicate partition identities fail closed",
+    "master checksum mismatch exits non-zero and writes expected/actual checksum and failure reason to manifest",
+    "generic runner artifact tests reject missing, outside, byte-mismatched, and SHA-mismatched artifacts"
+  ],
+  "verification": {
+    "focused": {
+      "command": "pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts packages/master-data/src/productionAudit.test.ts",
+      "status": "passed",
+      "tests": 8,
+      "artifact": ".test-results/2026-09-23T09-07-57-039Z-15-669c37",
+      "diagnosticArtifact": ".test-results/2026-09-23T09-07-57-039Z-15-669c37/production-closure-parity-diagnostics.json",
+      "diagnosticArtifactSha256": "76541dae74ed53bfdd22e118223fa3fecdfc3d56f86233b6ee17f70c8ab9c58d",
+      "diagnosticArtifactReachableAndChecksumVerified": true
+    },
+    "mergeParityGate": {
+      "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/merge-oc-matrix.ts /tmp/fgo-lab-tsk08-parity-merge",
+      "input": ".test-results/tsk-06-5-production-closure-final/manifest-shard-{0..7}.json",
+      "status": "passed",
+      "canonicalIdentity": "tsk-06.5:production-matrix",
+      "firstDifference": null,
+      "matrixDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
+      "eligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+      "outcomeCount": 34640,
+      "parityCount": 34600,
+      "parityFailures": 0,
+      "manifest": ".test-results/tsk-08-parity-ratchet/merge/manifest.json",
+      "manifestSha256": "30101b9690355603def36d404cd1b0297d8b9a5a6ad089f0a1377be85d8d4aa4"
+    },
+    "singleProducerShard": {
+      "command": "FGO_AUDIT_SHARDS=8 FGO_AUDIT_SHARD=0 pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts /tmp/fgo-lab-tsk08-producer-shard0",
+      "status": "passed",
+      "conditions": 10,
+      "conditionRecordOrInventoryDifferences": 0,
+      "candidateEligibilityDigest": "446bb1a34bdf95d579216ec0533027969881c9aeb2349813ce087a0b6fcfe266",
+      "previousShardCandidateEligibilityDigest": "446bb1a34bdf95d579216ec0533027969881c9aeb2349813ce087a0b6fcfe266",
+      "outcomes": {
+        "calculated": 4326,
+        "unavailableUnderPolicy": 4,
+        "inputRequired": 0,
+        "invalid": 0,
+        "unsupported": 0
+      },
+      "parityCount": 4326,
+      "manifest": ".test-results/tsk-08-parity-ratchet/producer-shard-0/manifest-shard-0.json",
+      "manifestSha256": "b49047ed8164250b042c5dfa104d0ec91aae0d49f68ceb1c758f1305fa912f3e",
+      "note": "The fresh shard's aggregate audit digest includes newly measured elapsedMs and differs from the historical run; all ten condition record digests, candidate inventories, outcomes, and parity counts match the historical shard."
+    },
+    "singleUnshardedAttempt": {
+      "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts .test-results/tsk-08-parity-ratchet/single",
+      "status": "interrupted-before-parity-gate",
+      "completedConditions": 12,
+      "totalConditions": 80,
+      "partialConditionArtifacts": ".test-results/tsk-08-parity-ratchet/single/<condition>.json",
+      "manifestProduced": false,
+      "reason": "Two satisfied conditions took 135615.98ms and 152409.62ms individually. The serial run was canceled because the complete eight-shard merge already exercised all 80 production conditions and passed; this partial run is not parity success evidence. Single-path digest connection is covered by the shared existing accumulator, focused tests, and a real producer shard."
+    },
+    "masterChecksumFailure": {
+      "command": "FGO_AUDIT_MASTER=.test-results/tsk-08-parity-gate-stopped/manifest.json pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/merge-oc-matrix.ts /tmp/fgo-lab-tsk08-checksum-failure",
+      "status": "failed-as-required",
+      "expectedSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+      "actualSha256": "c8f0c6147a947591d9d072890528c5868b931e3347d488b63fa57e82b64ff7bd",
+      "reason": "production_closure_master_identity_mismatch",
+      "manifest": ".test-results/tsk-08-parity-ratchet/failure-checksum/manifest.json",
+      "manifestSha256": "3e3878c1f0ac1b2030bfcc07234fc27a59e5c06a8c5bcd4e8178e1f78114384f"
+    },
+    "production": {
+      "command": "pnpm test:production",
+      "status": "passed",
+      "files": 27,
+      "tests": 144,
+      "warnings": 0,
+      "retries": 0,
+      "artifact": ".test-results/2026-09-23T09-02-36-634Z-15-240e04"
+    },
+    "runner": {
+      "command": "pnpm test:runner",
+      "status": "passed",
+      "tests": 53
+    },
+    "typecheck": {
+      "command": "pnpm typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "pnpm exec eslint <changed calculation-application and master-data source and test files> --max-warnings=0",
+      "status": "passed",
+      "scripts": "calculation-application/scripts is excluded from the repository TypeScript project service; both scripts were executed directly and passed Prettier."
+    },
+    "format": {
+      "command": "pnpm exec prettier --check <changed TypeScript files>",
+      "status": "passed"
+    },
+    "docs": {
+      "command": "pnpm test:docs",
+      "status": "passed",
+      "tests": 6
+    },
+    "quality": {
+      "command": "pnpm quality",
+      "status": "passed",
+      "unit": 898,
+      "production": 144,
+      "playwright": 29,
+      "warnings": 0,
+      "unexpectedConsole": 0,
+      "retries": 0,
+      "durationSeconds": 374.89,
+      "artifact": ".test-results/2026-09-23T09-10-02-161Z-15-3e8208",
+      "manifestSha256": "fc5b7162a26150d14130aea4d6ebfb818bb0e5c6a79257d3769bdc247e52843b",
+      "diagnosticArtifact": ".test-results/2026-09-23T09-10-02-161Z-15-3e8208/unit/production-closure-parity-diagnostics.json",
+      "diagnosticArtifactSha256": "4388ffd16e0d4d56ab657d734909287508da2eb447412a8d14404e5e50eb7deb"
+    }
+  },
+  "reusedEvidence": {
+    "tsk06_5": "canonical static semantics and candidate source inventory, original eight shard records, support status, 80-condition matrix, production output, and calculator/ranking/portable parity",
+    "tsk06_3": "bounded summary, generic artifact declaration, and checksum verification ownership remain in the runner",
+    "tsk07": "worker/cache, fingerprint, stale mutation, responsive/accessibility, and presentation evidence remain unchanged"
+  },
+  "stopConditions": [
+    "TSK-06.5 source digest, candidate inventory, support status, production output, or parity differs",
+    "a canonical eligibility digest cannot be derived from the existing producer's ordered records",
+    "first canonical difference is unavailable or the merge accepts an incomplete/duplicate partition set",
+    "master identity or artifact checksum fails without a complete available failure manifest",
+    "eligibility digest is assigned from the source or another numeric fallback",
+    "candidate or damage semantics are recalculated to manufacture the missing digest",
+    "a new producer, generator, compatibility path, or semantic owner is required"
+  ],
+  "unresolved": [
+    "ratchet unsupported, invalid, partial commit, inert control, and stale mutation across the full production audit",
+    "remove the deferred legacy aggregate auditor and old loader/scan/candidate-list/duplicate fixtures"
+  ],
+  "statusInvariants": {
+    "TSK-06.5": "done",
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-07": "done",
+    "TSK-08": "in_progress",
+    "TSK-09.1": "blocked",
+    "TSK-09": "blocked"
+  },
+  "nextBoundedUnit": "ratchet unsupported, invalid, partial commit, inert control, and stale mutation against this shared full-production audit model"
+}
