@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.35"
+document_version: "1.7.37"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-24"
@@ -2535,6 +2535,18 @@ canonical identity、typed finding reason、first difference、コード根拠�
 承認後の各製品sliceでは、対応するfocused tests、target lint／format、typecheckを行い、必要なfailure artifact／checksum、machine evidence、Task handoffが一致してからそのsliceだけcommitする。`pnpm test:production`はB1〜B3が解消しfocused verificationを通るまで実行しない。全slice確定後、必要な`pnpm test:runner`、`pnpm test:docs`と一度の`pnpm quality`をREADME／execution-efficiency規約に従い配置する。長時間full auditが必要なら最大4並列・2 waveのcanonical 8 shardsを用い、逐次unsharded rerunはしない。文書のみのsliceはREADMEのdocs gateを使い、Prettier ignoreによるno-opを成功扱いしない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま維持し、TSK-08全体もinert-control実装も完了扱いにしない。
 
 今回の記録専用sliceは、対象4文書のPrettier check、JSON parse、`node --test scripts/docs-integrity.test.mjs`（6/6）、`node scripts/docs-integrity.mjs`、`git diff --check`が成功した。`pnpm test:docs`は依存status確認中、docs script開始前に`ERR_SQLITE_ERROR: unable to open database file`で失敗した。完全log `.test-results/tsk-08-handoff-20260924/pnpm-test-docs.log` SHA-256 `0db23aa6bfe0cf4b1e606e3aea841b192c1d81c2c3f31c65f4578cfb05ef4a60`へ保存し、直接のdocs test／integrity実行を代替検証とした。製品test／production auditは実行していない。
+
+Current bounded-unit handoff（2026-09-24、通常production inventory／opt-in audit分割）:
+
+ユーザー承認に基づき、全件の特殊control走査を通常qualityから外すテスト配置sliceを実装した。通常productionには既存の全master target-state inventory testを残し、candidate値／fail-closed全servant scan、全support projection on操作、全equipment／mystic-code projection on操作を`productionMasterControlAudit.test.ts`へ移した。loopの母集団は維持し、sampling／production population変更はない。`test:audit`／`--suite=audit`だけが1 workerのaudit projectを実行し、`test`／`test:agent`／`check`／`quality`には含まれない。三suiteの排他・全test file網羅とquality外をrunner contractで検証する。既存の2つのE2E inventory markerは移動先を指すようmanifestとcanonical digestを更新した。
+
+2026-09-23 artifact `.test-results/2026-09-23T09-10-02-161Z-15-3e8208/production/vitest.json`では、移した3 loopは17.791秒、6.540秒、18.716秒、通常に残したinventory testは3.153秒だった。移動した検査の全件値は削っていない。今回のfocused ordinary inventoryは1 test／1 pass、test 1.844秒、process 2.42秒である。JSON `.test-results/tsk-08-suite-partition-20260924/production-master-inventory.json` SHA-256 `8f4cba539449c6f2a6ba1105ed3b298d0bdc3d7575f91addbcde927ff322f569`、log SHA-256 `07f34ab07e36095dfea2ae6d1a518ba2d235d790cf37ba20c180e51b5995e414`。43.048秒は旧run内の3 loop合計に基づく通常suiteからの見込み削減であり、post-change production/quality全体の実測とは扱わない。
+
+runner／suite／E2E contractsは54/54 pass（`.test-results`にJSON artifactを保存する必要のないNode test contract）。E2E marker migration digestは`5c040ecb460b73f5a5bed5a86dc0036ff875357c3c4742973bb989a822b61487`。docs integrity testsは6/6 pass、`node scripts/docs-integrity.mjs` pass、対象ESLint／Prettier pass、`./node_modules/.bin/tsc -b --pretty false` pass。`pnpm exec prettier`はscript起動前にexternal pnpm SQLite storeを開けず`ERR_SQLITE_ERROR`となり、既存node_modulesの直接binaryで検証した。`.test-results/tsk-08-suite-partition-20260924`の個別result/log checksumと検証値は[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)の最新boundedUnitを参照する。`pnpm test:audit`、`pnpm test:production`、`pnpm quality`は未実行。B1〜B3が残り、移動先のS4 consumerも未検証である。
+
+suite-placementの実装・検証・handoffは同一のlocal commitに含めた。commit後、S4 test内容を`/tmp/tsk08-s4-productionMasterInventory-before-split.ts`（SHA-256 `f230265bbaa2f38accc6a3bec6ca297cf1ee8034fb5c9e054a44fe8979308931`）から`productionMasterControlAudit.test.ts`へ再配置した。現在の未検証S4 worktree差分は3 pathで、combined SHA-256 `d1866b3b5bd0594a8457b8681b3d26b70bdcc8199971f608b4b9daabdf144011`。完全なpatchは`.test-results/tsk-08-s4-reapplied-20260924/worktree.diff`（同じSHA-256）へ保存した。各file content SHA-256は`productionParityDiagnostics.ts`: `6ea1ec053b88a9bf2e1a79da60c4b30f8472fc1281fd37b69c30a2b769116e95`、`productionClosureAudit.test.ts`: `70d08ce5054c6eb1d250cf19a423702cb115775e92f590779fbfdbfb1654f604`、`productionMasterControlAudit.test.ts`: `431f6d72c9d222d60acb66516501c74fcad118bf2775be57f98ad05c5781bafb`である。これは新しい差分identityであり、元のcombined diff hashとは別物。S4は未検証で、suite-placement commitへ含めていない。`apps/web/next-env.d.ts`はignore済みでchecksum `1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b`を保持し、stageしていない。
+
+今後は既存S4 review findingに従って限定scopeのconsumer接続planへ戻る。B1〜B3はBlockingのままとし、`test:audit`／`test:production`／`quality`を実行せず、TSK-08全体を完了扱いにしない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

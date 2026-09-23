@@ -185,7 +185,7 @@
     "outcome": "semantic",
     "oldAssertion": "Dante production effects remain in the canonical effect inventory",
     "disposition": "transferred",
-    "replacementFile": "packages/calculation-application/src/productionMasterInventory.test.ts",
+    "replacementFile": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
     "replacementTest": "keeps known candidate values and bounds fail-closed servants"
   },
   {
@@ -194,7 +194,7 @@
     "outcome": "semantic",
     "oldAssertion": "Summer Wu hidden trait grant and dependent effects remain in the canonical inventory",
     "disposition": "transferred",
-    "replacementFile": "packages/calculation-application/src/productionMasterInventory.test.ts",
+    "replacementFile": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
     "replacementTest": "keeps known candidate values and bounds fail-closed servants"
   },
   {

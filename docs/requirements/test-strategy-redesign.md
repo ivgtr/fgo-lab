@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.3.0"
+document_version: "1.3.1"
 status: "Active"
 approved_at: "2026-08-30"
-updated_at: "2026-09-04"
+updated_at: "2026-09-24"
 created_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
@@ -63,7 +63,7 @@ implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 | suite | ファイル時間 | 現在の主な責務 |
 | --- | ---: | --- |
 | `rankingProduction.test.ts` | 74.62秒 | production ranking、policy、digest |
-| `productionMasterInventory.test.ts` | 30.16秒 | production effect／scenario inventory |
+| `productionMasterInventory.test.ts`／`productionMasterControlAudit.test.ts` | 46.20秒 | 2026-09-23 production artifact内訳: 通常に残すtarget-state inventory 3.15秒、全candidate値scan 17.79秒、support on操作 6.54秒、equipment／mystic-code on操作 18.72秒 |
 | `executionSemanticsProduction.test.ts` | 28.18秒 | canonical execution semantics |
 | `targetContextProduction.test.ts` | 23.42秒 | production target context |
 | `unsupportedConvergenceGolden.test.ts` | 13.37秒 | unsupported収束golden |
@@ -140,6 +140,8 @@ implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 - 監査結果は、件数、typed failure inventory、canonical digestを持つ。
 - digest不一致時に、最初の不一致identityとcanonical field差分を取得できるようにする。
 - `expect`を全件loop内で無制限に出力せず、差分を収集して上限付きで報告する。
+- 広い全件走査、全ownerのon/off展開、通常利用経路では出現しない特殊状態の組合せは、通常のunit／production suiteへ入れず、明示実行するopt-in audit suiteへ置く。通常suiteには共有inventoryの基本整合と、小さい代表fixtureを残す。
+- opt-inへ移した検査もproduction全件をsample化しない。完全な母集団を保ち、通常suiteとaudit suiteの境界をrunner contractで検証する。
 
 ### 5.4 Architecture test
 
@@ -196,6 +198,7 @@ result formatter
 | `pnpm test` | Vitest全件 | 開発者の標準ゲート。成功時compact |
 | `pnpm test:unit` | production auditを除くVitest | 高頻度のローカル確認 |
 | `pnpm test:production` | production audit、golden、parity | 全マスター品質ゲート |
+| `pnpm test:audit` | 明示登録された全件／特殊経路audit | 高コストのcontrol、owner、transaction走査。通常qualityの外で必要時に実行 |
 | `pnpm test:agent` | `pnpm test`と同じ集合 | エージェント向け固定出力 |
 | `pnpm test:diagnostic` | 指定suiteまたは全件 | verboseな対話診断 |
 | `pnpm test:runner` | Node runner／Suite／workflow contracts | canonical test基盤の自己検証 |
@@ -205,7 +208,7 @@ result formatter
 | `pnpm quality` | 下記canonical gate | CIとローカルの共通入口 |
 | `pnpm results:clean` | `.test-results`のcanonical run | 最新10完了runを残す明示的なローカル整理 |
 
-`test:unit`と`check`は開発中の高速feedbackであり、完了判定には使用しない。damage semantics、master、scenario、execution、rankingに触れた変更は、必ず`test:production`を含む`quality`を実行する。`check`と`quality`は同じquality runnerとstep定義を使い、quick profileはfull profileのstrict subsetとする。
+`test:unit`と`check`は開発中のfeedbackであり、単独では完了判定に使用しない。damage semantics、master、scenario、execution、rankingに触れた変更は、必ず`test:production`を含む`quality`を実行する。opt-in auditが該当する受入条件を所有する作業では、そのauditも明示実行してartifactとともにhandoffへ記録する。`check`と`quality`は同じquality runnerとstep定義を使い、quick profileはfull profileのstrict subsetとする。
 
 `quality`の実行集合は重複させない。
 
@@ -222,7 +225,7 @@ build
 test:e2e
 ```
 
-`test:runner`はcapture／artifact契約に加え、unit／productionの排他的分類とlocal／CI／Pagesの同一入口を検証するため、canonical gateから省略しない。`validate:evidence`は対象を絞った診断コマンドとして残してよいが、同じfileを実行済みの`quality`から再度呼ばない。`validate:master`はtest fileと異なるpublished artifact検査だけを独立stepとして実行し、master-data／data-pipelineのVitestを再実行しない。
+`test:runner`はcapture／artifact契約に加え、unit／production／opt-in auditの排他的分類とlocal／CI／Pagesの同一quality入口を検証するため、canonical gateから省略しない。opt-in auditは`test:agent`と`quality`の既定stepから除き、`test:audit`で単独起動する。`validate:evidence`は対象を絞った診断コマンドとして残してよいが、同じfileを実行済みの`quality`から再度呼ばない。`validate:master`はtest fileと異なるpublished artifact検査だけを独立stepとして実行し、master-data／data-pipelineのVitestを再実行しない。
 
 ## 8. 出力仕様
 
@@ -573,7 +576,7 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 | `TS-OUT-001` | 8 | 成功時10行以内、失敗時bounded summaryと完全結果を保持する。 |
 | `TS-ART-001` | 9 | manifest、完全log、JSON／JUnit、Playwright artifactを規定pathとretentionで保存する。 |
 | `TS-RUN-001` | 10 | child failure、timeout、signal、reporter failureを成功へ変換しない。 |
-| `TS-QUAL-001` | 7、12、T2 | unit／productionを排他的に分類し、runner contractを含む`quality`をlocal／CI／Pagesの唯一の入口にする。 |
+| `TS-QUAL-001` | 7、12、T2 | unit／production／opt-in auditを重複なく分類し、runner contractを含む通常`quality`をlocal／CI／Pagesの唯一の入口にする。opt-in auditはquality外の明示入口を持つ。 |
 | `TS-AUDIT-001` | 11、T3 | package境界ごとに共有production audit modelとruntime read／parse／compile／candidate／damage request counterを所有する。 |
 | `TS-PERF-001` | 13、T1 | runnerだけの変更は同一集合の中央値で2%または1秒の大きい方をoverhead上限とする。 |
 | `TS-PERF-002` | 13、T2〜T5 | 構造変更は同一環境3回の中央値で比較し、10%以上または5秒以上の未説明増加を拒否する。 |
@@ -584,6 +587,7 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 1.3.1 | 全件／特殊経路の高コストauditを排他的なopt-in suiteへ分け、通常のunit／production gateに代表fixtureと共有inventory整合を残す（TS-QUAL-001、TS-AUDIT-001） | approved 2026-09-24: user requested specialized sweeps stay out of ordinary tests | TSK-08、今後のproduction audit配置 | full production population／通常quality gateは不変。TSK-08 control auditは明示実行へ移動 |
 | 1.3.0 | quick feedback profileとbounded local artifact retentionを追加し、full quality集合を維持 | approved 2026-09-04 | test execution observability follow-up | none: production／E2E／damage gateは不変 |
 | 1.2.0 | phase／project closure、性能閾値、未計測counterをstable Contract IDへ収束 | retained: semantic／test集合は不変 | TSK-02.1〜09 | none: TSK-02計測値と397-test identityは不変 |
 | 1.1.2 | `quality`へrunner contractを追加し、T0〜T2のruntime counterを未計測として明確化 | approved 2026-08-30 | TSK-02〜03 | TSK-02 evidenceで再測定 |

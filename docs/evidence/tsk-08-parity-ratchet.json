@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Revised S4 production-control/mutation consumer plan pending confirmation; preserve B1-B3 and require alternate-path coverage",
+  "nextBoundedUnit": "Resume the S4 shared-model connections from its recorded findings; preserve B1-B3 and do not run the full audit while they remain.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -2277,7 +2277,118 @@
         "productTestsOrProductionAudit": "not run; this is a documentation handoff slice"
       },
       "nextOperation": "Next worker: inspect current code and canonical requirements/evidence, verify the preserved worktree state, and return a code-based S4 bounded implementation plan only. Wait for user confirmation before source edits or focused validation. After confirmation, implement independently verifiable slices and commit only complete slices. Stop and replan on any unplanned state/ownership/mutation/recovery/alternate/semantic/invariant condition; first commit any independent fully verified slice whose records match, then record the finding and wait for confirmation. Keep B1-B3 blocking, preserve protected invariants, and do not claim TSK-08 completion."
+    },
+    {
+      "name": "ordinary production inventory and opt-in special-control audit partition",
+      "status": "verified",
+      "date": "2026-09-24",
+      "baselineHead": "a0d79d45c4aadd71ee651480f0f8433ffe524f51",
+      "authorization": "User approved the revised test plan: retain small representative regression in normal suites and move exhaustive special-pattern sweeps to an explicit opt-in audit command. Product semantics and TSK-08 completion are not approved by this test-placement slice.",
+      "measuredRuntime": {
+        "artifact": ".test-results/2026-09-23T09-10-02-161Z-15-3e8208/production/vitest.json",
+        "originalFileDurationMs": 46200.858154296875,
+        "retainedOrdinaryTest": "preserves every damage-reachable target-state grant and removal",
+        "retainedTestDurationMs": 3153.1118279999996,
+        "movedTests": [
+          {
+            "name": "keeps known candidate values and bounds fail-closed servants",
+            "durationMs": 17791.193250999997
+          },
+          {
+            "name": "calculates or rejects every support projection through the shared decision path",
+            "durationMs": 6540.000685999999
+          },
+          {
+            "name": "calculates every craft-essence and mystic-code user projection",
+            "durationMs": 18715.85824
+          }
+        ],
+        "estimatedOrdinarySuiteReductionMs": 43047.052,
+        "note": "Measured pre-extraction artifact; the preserved unvalidated S4 test diff changes the moved test and its runtime has not been measured."
+      },
+      "suiteContract": {
+        "ordinary": "unit and production projects; production retains the all-master target-state trait inventory and existing core inventory/parity suites.",
+        "optIn": "test:audit runs productionMasterControlAudit.test.ts in a single-worker audit project; omitted from test, test:agent, check, quality, and CI default command.",
+        "population": "The three moved loops keep their complete existing production populations. This changes execution frequency, not coverage population.",
+        "runner": "--suite=all explicitly selects unit and production only; audit requires --suite=audit.",
+        "e2eMarkerIdentity": "The two existing inventory assertion markers now point to the moved audit test file; canonical migration-manifest digest and boundary tests cover the path move.",
+        "noSemanticChange": true
+      },
+      "changedFiles": [
+        "package.json",
+        "vitest.config.ts",
+        "scripts/test-runner.mjs",
+        "scripts/test-runner.test.mjs",
+        "scripts/test-suites.mjs",
+        "scripts/e2e-case-contract.test.mjs",
+        "e2e/assertions.json",
+        "packages/calculation-application/src/productionMasterInventory.test.ts",
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "README.md",
+        "docs/README.md",
+        "docs/requirements/test-strategy-redesign.md",
+        "docs/tasks/development-redesign-tasks.md",
+        "docs/evidence/tsk-08-parity-ratchet.json"
+      ],
+      "protectedUnvalidatedS4": {
+        "originalCombinedDiffSha256": "12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef",
+        "preservedWorkingCopy": "/tmp/tsk08-s4-productionMasterInventory-before-split.ts",
+        "preservedWorkingCopySha256": "f230265bbaa2f38accc6a3bec6ca297cf1ee8034fb5c9e054a44fe8979308931",
+        "suitePlacementCommit": "The suite-placement slice and its verification/evidence are in the local commit created at this boundary; no S4 code was staged or pushed.",
+        "currentWorktreeDiffSha256": "d1866b3b5bd0594a8457b8681b3d26b70bdcc8199971f608b4b9daabdf144011",
+        "currentWorktreeDiffArtifact": ".test-results/tsk-08-s4-reapplied-20260924/worktree.diff",
+        "currentWorktreeFiles": {
+          "packages/calculation-application/src/productionParityDiagnostics.ts": "6ea1ec053b88a9bf2e1a79da60c4b30f8472fc1281fd37b69c30a2b769116e95",
+          "packages/calculation-application/src/productionClosureAudit.test.ts": "70d08ce5054c6eb1d250cf19a423702cb115775e92f590779fbfdbfb1654f604",
+          "packages/calculation-application/src/productionMasterControlAudit.test.ts": "431f6d72c9d222d60acb66516501c74fcad118bf2775be57f98ad05c5781bafb"
+        },
+        "disposition": "Original S4 test changes have been reapplied to the explicit opt-in audit path after the suite split. This current three-path diff has a new identity and remains entirely unverified/unstaged. The original combined hash is historical pre-split identity only."
+      },
+      "verification": {
+        "status": "verified; staged diff reviewed for the authorized slice-only commit",
+        "results": {
+          "runnerContract": {
+            "command": "node --test scripts/test-runner.test.mjs scripts/test-results-cleanup.test.mjs scripts/e2e-case-contract.test.mjs scripts/browser-observer.test.mjs scripts/playwright-reporter.test.mjs",
+            "passed": 54,
+            "failed": 0,
+            "durationMs": 1596.7641,
+            "detail": "three-way exhaustive suite partition, default-quality exclusion, explicit audit project, and relocated E2E assertion markers passed."
+          },
+          "focusedOrdinaryInventory": {
+            "command": "vitest run --project=production packages/calculation-application/src/productionMasterInventory.test.ts",
+            "passed": 1,
+            "failed": 0,
+            "testDurationMs": 1844,
+            "artifact": ".test-results/tsk-08-suite-partition-20260924/production-master-inventory.json",
+            "artifactSha256": "8f4cba539449c6f2a6ba1105ed3b298d0bdc3d7575f91addbcde927ff322f569",
+            "log": ".test-results/tsk-08-suite-partition-20260924/production-master-inventory.log",
+            "logSha256": "07f34ab07e36095dfea2ae6d1a518ba2d235d790cf37ba20c180e51b5995e414"
+          },
+          "docs": {
+            "command": "node --test scripts/docs-integrity.test.mjs && node scripts/docs-integrity.mjs",
+            "passed": 6,
+            "failed": 0,
+            "integrity": "passed"
+          },
+          "targetLint": "direct eslint on both ordinary/audit inventory tests passed with --max-warnings=0.",
+          "format": "direct Prettier write/check passed for changed non-doc code/config/JSON files; docs/ is intentionally ignored by .prettierignore and passed docs integrity.",
+          "typecheck": "./node_modules/.bin/tsc -b --pretty false passed.",
+          "packageManager": "pnpm exec prettier --write failed before the requested script while pnpm tried opening its external SQLite store (ERR_SQLITE_ERROR: unable to open database file); direct installed binaries were used for the equivalent checks."
+        },
+        "audit": "not run: known TSK-08 B1-B3 remain and the S4 consumer is unvalidated.",
+        "quality": "not run: this bounded suite-placement slice does not modify product semantics; the required final quality gate remains for source closure.",
+        "diffReview": "All 14 staged paths were reviewed. Only the test-placement/config/docs/evidence/E2E-marker slice is staged; productionParityDiagnostics.ts and productionClosureAudit.test.ts are excluded, scenario.test.ts is already committed, and apps/web/next-env.d.ts remains ignored."
+      },
+      "remaining": [
+        "Return to focused S4 shared-model connections from the recorded review findings; the three-path unverified diff identity above is preserved.",
+        "Connect and validate failure artifacts and shared audit consumers after B1-B3 are resolved."
+      ],
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      }
     }
   ],
-  "currentBoundedUnit": "S4 production control/mutation consumer review (stopped-for-replan); next worker must plan before implementation"
+  "currentBoundedUnit": "ordinary production inventory and opt-in special-control audit partition (verified; S4 draft remains unverified)"
 }

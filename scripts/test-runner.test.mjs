@@ -5,7 +5,7 @@ import { relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-runner-lib.mjs';
-import { PRODUCTION_TEST_INCLUDES } from './test-suites.mjs';
+import { AUDIT_TEST_INCLUDES, PRODUCTION_TEST_INCLUDES } from './test-suites.mjs';
 import {
   classifyQualityOutcome,
   qualityRunConfiguration,
@@ -970,16 +970,23 @@ function testFiles(directory) {
   });
 }
 
-test('unit and production suites form one exhaustive non-overlapping Vitest partition', () => {
+test('unit, production, and opt-in audit suites form one exhaustive non-overlapping partition', () => {
   const all = [...testFiles(resolve(root, 'packages')), ...testFiles(resolve(root, 'apps'))].sort();
   const production = [...PRODUCTION_TEST_INCLUDES].sort();
+  const audit = [...AUDIT_TEST_INCLUDES].sort();
   assert.equal(new Set(production).size, production.length);
+  assert.equal(new Set(audit).size, audit.length);
   assert.deepEqual(
-    production.filter((file) => !all.includes(file)),
+    production.filter((file) => audit.includes(file)),
+    [],
+  );
+  assert.deepEqual(
+    [...production, ...audit].filter((file) => !all.includes(file)),
     [],
   );
 
   const productionSet = new Set(production);
+  const auditSet = new Set(audit);
   const requiredProduction = all.filter((file) => {
     const source = readFileSync(resolve(root, file), 'utf8');
     return (
@@ -989,10 +996,11 @@ test('unit and production suites form one exhaustive non-overlapping Vitest part
     );
   });
   assert.deepEqual(
-    requiredProduction.filter((file) => !productionSet.has(file)),
+    requiredProduction.filter((file) => !productionSet.has(file) && !auditSet.has(file)),
     [],
   );
-  assert.equal(all.length - production.length + production.length, all.length);
+  const unit = all.filter((file) => !productionSet.has(file) && !auditSet.has(file));
+  assert.equal(new Set([...unit, ...production, ...audit]).size, all.length);
 });
 
 test('differently capped Vitest projects use distinct execution groups', () => {
@@ -1002,10 +1010,14 @@ test('differently capped Vitest projects use distinct execution groups', () => {
     config.indexOf("name: 'production'"),
   );
   const productionProject = config.slice(config.indexOf("name: 'production'"));
+  const auditProject = config.slice(config.indexOf("name: 'audit'"));
 
   assert.match(unitProject, /sequence: \{ groupOrder: 0 \}/);
   assert.match(productionProject, /maxWorkers: '50%'/);
   assert.match(productionProject, /sequence: \{ groupOrder: 1 \}/);
+  assert.match(auditProject, /name: 'audit'/);
+  assert.match(auditProject, /maxWorkers: 1/);
+  assert.match(auditProject, /sequence: \{ groupOrder: 2 \}/);
 });
 
 test('local, CI, and Vercel use the same canonical quality command', () => {
@@ -1039,4 +1051,22 @@ test('local, CI, and Vercel use the same canonical quality command', () => {
     assert.equal(workflow.match(/run: pnpm quality/g)?.length, 1, path);
     assert.doesNotMatch(workflow, /run: pnpm (?:test|validate:evidence|validate:master|build)\b/);
   }
+});
+
+test('the exhaustive production-control audit is opt-in and outside canonical quality', () => {
+  const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+  assert.equal(
+    packageJson.scripts['test:audit'],
+    'node scripts/test-runner.mjs compact --suite=audit',
+  );
+  const full = qualityRunConfiguration([]);
+  assert.equal(
+    full.steps.some(([id]) => id === 'audit'),
+    false,
+  );
+  const runner = readFileSync(resolve(root, 'scripts/test-runner.mjs'), 'utf8');
+  assert.match(runner, /'all', 'unit', 'production', 'audit'/);
+  assert.match(runner, /suite === 'all' \? \['--project=unit', '--project=production'\]/);
+  const packageSuites = readFileSync(resolve(root, 'scripts/test-suites.mjs'), 'utf8');
+  assert.match(packageSuites, /productionMasterControlAudit\.test\.ts/);
 });

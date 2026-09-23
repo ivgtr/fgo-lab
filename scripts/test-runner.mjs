@@ -17,8 +17,8 @@ if (suiteArguments.length > 1) {
   process.exit(2);
 }
 const suite = suiteArguments[0]?.slice('--suite='.length) ?? 'all';
-if (!['all', 'unit', 'production'].includes(suite)) {
-  console.error('Runner --suite must be all, unit, or production.');
+if (!['all', 'unit', 'production', 'audit'].includes(suite)) {
+  console.error('Runner --suite must be all, unit, production, or audit.');
   process.exit(2);
 }
 const userArgs = forwardedArgs.filter((argument) => !argument.startsWith('--suite='));
@@ -39,7 +39,8 @@ const reporterArguments = [
   '--reporter=json',
   '--reporter=./scripts/vitest-observation-reporter.mjs',
 ];
-const suiteArgumentsForVitest = suite === 'all' ? [] : [`--project=${suite}`];
+const suiteArgumentsForVitest =
+  suite === 'all' ? ['--project=unit', '--project=production'] : [`--project=${suite}`];
 const timeoutMs = Number.parseInt(process.env['FGO_TEST_TIMEOUT_MS'] ?? '600000', 10);
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
   console.error('FGO_TEST_TIMEOUT_MS must be a positive integer.');

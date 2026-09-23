@@ -15,6 +15,7 @@
     "test": "node scripts/test-runner.mjs compact",
     "test:unit": "node scripts/test-runner.mjs compact --suite=unit",
     "test:production": "node scripts/test-runner.mjs compact --suite=production",
+    "test:audit": "node scripts/test-runner.mjs compact --suite=audit",
     "test:agent": "node scripts/test-runner.mjs compact",
     "test:diagnostic": "node scripts/test-runner.mjs diagnostic",
     "test:runner": "node --test scripts/test-runner.test.mjs scripts/test-results-cleanup.test.mjs scripts/e2e-case-contract.test.mjs scripts/browser-observer.test.mjs scripts/playwright-reporter.test.mjs",

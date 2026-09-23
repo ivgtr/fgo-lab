@@ -32,3 +32,9 @@ export const PRODUCTION_TEST_INCLUDES = [
   'packages/data-pipeline/src/masterGolden.test.ts',
   'packages/data-pipeline/src/productionAudit.test.ts',
 ];
+
+// Exhaustive user-control and all-owner sweeps have an explicit, opt-in suite.
+// Keep the ordinary production inventory test small enough for every quality run.
+export const AUDIT_TEST_INCLUDES = [
+  'packages/calculation-application/src/productionMasterControlAudit.test.ts',
+];
