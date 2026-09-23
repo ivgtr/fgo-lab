@@ -43,6 +43,7 @@ export function compileRankingExecutionPlan(
   profile: RankingProfileInput,
   conditions: RankingPolicyConditions,
   _versions: VersionContext,
+  captureExecutionObservation = false,
 ): RankingExecutionPlan {
   const selection = compileRankingSelection(conditions);
   if (selection.status === 'invalid') throw new TypeError(selection.reason);
@@ -59,9 +60,15 @@ export function compileRankingExecutionPlan(
     space.status === 'ready' ? materializeRankingCandidateSpace({ conditions, space }) : [],
   );
   const preparedRankingScenarios = candidates.map((candidate) =>
-    prepareCalculationScenarioWithPolicy(candidate.scenario, master, candidate.contributionPolicy, {
-      initialNpGauge: candidate.evidence.startNpGauge,
-    }),
+    prepareCalculationScenarioWithPolicy(
+      candidate.scenario,
+      master,
+      candidate.contributionPolicy,
+      {
+        initialNpGauge: candidate.evidence.startNpGauge,
+      },
+      captureExecutionObservation,
+    ),
   );
   const baselineGauge = master.npResourceSemantics.noblePhantasmUse.requirement;
   return {

@@ -17,6 +17,8 @@ import {
   calculateScenario,
   calculateScenarioWithPolicy,
   createDefaultResolvedScenario,
+  evaluatePreparedCalculationScenario,
+  prepareCalculationScenarioWithPolicy,
 } from './scenario';
 import {
   createCalculatorPortableRequest,
@@ -26,16 +28,29 @@ import {
 } from './portableCalculation';
 
 const root = resolve(import.meta.dirname, '../../..');
+const diagnosticArtifacts = new Set<string>();
 const loadMaster = async () =>
   masterSnapshotSchema.parse(
     JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
   );
 const artifact = async (name: string, value: unknown) => {
-  if (process.env['FGO_TEST_ARTIFACT_DIR'])
+  if (process.env['FGO_TEST_ARTIFACT_DIR']) {
     await writeFile(
       resolve(process.env['FGO_TEST_ARTIFACT_DIR'], name),
       `${JSON.stringify(value, null, 2)}\n`,
     );
+    diagnosticArtifacts.add(name);
+    await writeFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'artifact-declarations.json'),
+      `${JSON.stringify(
+        [...diagnosticArtifacts]
+          .sort()
+          .map((path) => ({ path, format: 'json', allowEmpty: false })),
+        null,
+        2,
+      )}\n`,
+    );
+  }
 };
 
 const sharedDomainPolicies = [
@@ -183,6 +198,56 @@ describe('production battle-point paths', () => {
     expect(calculator.map(({ maximum }) => maximum)).toEqual([33725, 44920, 56115]);
     expect(calculator.map(({ terminalPhase }) => terminalPhase)).toEqual([1, 1, 1]);
     await artifact('battle-point-3300200-calculator.json', { calculator, rejections: [] });
+  }, 30_000);
+
+  it('retains the selected BP witness and raw target candidate on the same execution', async () => {
+    const master = await loadMaster();
+    const servant = master.servants.find(({ id }) => id === '3300200')!;
+    const scenario = {
+      ...createDefaultResolvedScenario(master, undefined, servant),
+      battleState: { battlePointPhase: 1 },
+    };
+    const prepared = prepareCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    if (prepared.status !== 'executable' || !prepared.executionObservation)
+      throw new Error('selected BP execution observation required');
+    const execution = evaluatePreparedCalculationScenario(prepared, {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: APP_VERSION,
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    });
+    const observation = prepared.executionObservation;
+    const targetExecution = observation.targetExecution;
+    if (!targetExecution) throw new Error('target candidate observation required');
+    await artifact('selected-execution-observation.json', {
+      canonicalIdentity: 'tsk-08:selected-execution:3300200:phase-1',
+      battlePointWitness: observation.battlePointWitness,
+      targetExecution,
+      resolvedTarget: prepared.resolved.input.target,
+      resolvedBattlePointPhase: prepared.resolved.input.battlePointPhase,
+      executionObservation: execution.executionObservation,
+    });
+
+    expect(observation.battlePointWitness?.['3300200']).toEqual(expect.any(Number));
+    expect(targetExecution.selection).toBe('selected');
+    if (targetExecution.selection !== 'selected') return;
+    expect(typeof targetExecution.targetCandidate.classId).toBe('string');
+    expect(typeof targetExecution.targetCandidate.attribute).toBe('string');
+    expect(prepared.resolved.input.target.classId).toBeNull();
+    expect(execution.status).toBe('executable');
+    expect(execution.executionObservation).toBe(observation);
+    if (execution.status === 'executable') {
+      expect(execution.input).toBe(prepared.resolved.input);
+      expect(execution.input.battlePointPhase).toBe(2);
+    }
   }, 30_000);
 
   it.each(sharedDomainPolicies)(

@@ -88,9 +88,13 @@ export {
 } from './activationContext';
 export {
   executeOrderedScenario,
+  executeOrderedScenarioWithAuditObservation,
   executeOrderedScenarioCandidates,
   prepareOrderedScenario,
   type OrderedScenarioExecution,
+  type OrderedExecutionAuditEvent,
+  type OrderedExecutionAuditObservation,
+  type OrderedScenarioExecutionWithAuditObservation,
   type PreparedOrderedScenario,
   type ResolvedCanonicalInputSet,
   type ContributionApplicationPolicy,

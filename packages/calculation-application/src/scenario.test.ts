@@ -32,6 +32,7 @@ import {
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
+import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
 import { executeRankingScenarios } from './rankingExecution';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { rankingEffectContributes } from './rankingContribution';
@@ -873,22 +874,105 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const outcome = calculateRankingPolicyDetail(
+    const candidateSet = calculateRankingCandidateSet(
       scopedMaster.servants[0]!,
       scopedMaster,
       { servantBuilds: {} },
       DEFAULT_RANKING_POLICY_CONDITIONS,
       { ...versions, masterDataVersion: scopedMaster.version },
+      true,
+      undefined,
+      true,
     );
-    if (outcome.status !== 'calculated') throw new Error('calculated area detail required');
-    const { detail } = outcome;
+    const detail = candidateSet.details.values().next().value;
+    if (!detail) throw new Error('calculated area detail required');
+    expect(
+      candidateSet.plan.preparedRankingScenarios.some(
+        (candidate) => 'executionObservation' in candidate,
+      ),
+    ).toBe(false);
+    expect(candidateSet.executions.some((execution) => 'executionObservation' in execution)).toBe(
+      false,
+    );
     const withoutArea = detail.areaContribution;
     if (!withoutArea) throw new Error('area counterfactual required');
     if (withoutArea.withoutAreaResult.status !== 'calculated')
       throw new Error('calculated without-area damage required');
+    const profileObservation = candidateSet.executionObservations?.get(detail.entryId);
+    if (!profileObservation) throw new Error('selected and without-area observations required');
+    if (profileObservation.candidateKey !== detail.candidateEvidence.candidateKey)
+      throw new Error('selected and without-area observations must share the selected candidate');
+    if (
+      profileObservation.selected.targetExecution?.selection !== 'selected' ||
+      profileObservation.withoutAreaAlternate?.targetExecution?.selection !== 'selected'
+    )
+      throw new Error('selected target execution required on both area paths');
+    const selectedTargetExecution = profileObservation.selected.targetExecution;
+    const withoutAreaTargetExecution = profileObservation.withoutAreaAlternate.targetExecution;
+    if (profileObservation.selectedInput !== detail.input)
+      throw new Error('selected observation must belong to the detail input');
+    if (profileObservation.withoutAreaInput !== withoutArea.withoutAreaInput)
+      throw new Error('without-area observation must belong to the alternate input');
+    if (
+      profileObservation.selectedEffectiveContributions !== detail.effectiveContributions ||
+      profileObservation.withoutAreaEffectiveContributions !== withoutArea.effectiveContributions
+    )
+      throw new Error('effective contributions must belong to the observed executions');
+    const selectedPartyWide = detail.effects.find(
+      (effect) => effect.source.effectId === 'party-wide-buff',
+    );
+    const withoutAreaPartyWide = withoutArea.withoutAreaEffects.find(
+      (effect) => effect.source.effectId === 'party-wide-buff',
+    );
+    if (!selectedPartyWide || !withoutAreaPartyWide)
+      throw new Error('party-wide projection required on both area paths');
+    const exactEvent = (
+      events: typeof selectedTargetExecution.operationEvents,
+      projection: NonNullable<typeof selectedPartyWide>,
+    ) => {
+      const matches = events.filter(
+        (event) =>
+          event.operationId === projection.operationId &&
+          event.projectionKey === projection.projectionKey &&
+          event.contributionId === projection.contributionId,
+      );
+      if (matches.length !== 1) throw new Error('exact party-wide operation event required');
+      return matches[0]!;
+    };
+    const selectedPartyWideEvent = exactEvent(
+      selectedTargetExecution.operationEvents,
+      selectedPartyWide,
+    );
+    const withoutAreaPartyWideEvent = exactEvent(
+      withoutAreaTargetExecution.operationEvents,
+      withoutAreaPartyWide,
+    );
 
     expect(detail.input.attackBuff).toBe(0.3);
     expect(withoutArea.withoutAreaInput.attackBuff).toBe(0.1);
+    expect(profileObservation.selectedInput).toBe(detail.input);
+    expect(profileObservation.withoutAreaInput).toBe(withoutArea.withoutAreaInput);
+    expect(withoutAreaPartyWide).toMatchObject({
+      projectionKey: selectedPartyWide.projectionKey,
+      operationId: selectedPartyWide.operationId,
+      contributionId: selectedPartyWide.contributionId,
+    });
+    expect(selectedPartyWide.outcome).toBe('applied');
+    expect(withoutAreaPartyWide.outcome).toBe('applied');
+    expect(selectedPartyWideEvent).toMatchObject({
+      operationOutcome: 'applied',
+      projectionOutcome: 'applied',
+      projectionKey: selectedPartyWide.projectionKey,
+      operationId: selectedPartyWide.operationId,
+      contributionId: selectedPartyWide.contributionId,
+    });
+    expect(withoutAreaPartyWideEvent).toMatchObject({
+      operationOutcome: 'applied',
+      projectionOutcome: 'applied',
+      projectionKey: withoutAreaPartyWide.projectionKey,
+      operationId: withoutAreaPartyWide.operationId,
+      contributionId: withoutAreaPartyWide.contributionId,
+    });
     expect(detail.result.rows[0].average).toBeGreaterThan(
       withoutArea.withoutAreaResult.rows[0].average,
     );

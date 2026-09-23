@@ -15,7 +15,11 @@ import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
 import type { calculateDamageResolution } from './damageResolution';
 import { rankingPolicyKey } from './rankingComparisonPolicy';
-import type { CalculationExecution } from './scenario';
+import type {
+  CalculationExecution,
+  CalculationExecutionObservation,
+  PreparedCalculationScenario,
+} from './scenario';
 import type { RankingExecutionPlan } from './rankingPolicyScenario';
 import { reapplyPreparedCalculationPolicy } from './scenario';
 
@@ -23,6 +27,33 @@ export interface RankingCandidateCalculation {
   plan: RankingExecutionPlan;
   executions: readonly CalculationExecution[];
   details: ReadonlyMap<string, RankingPolicyDetail>;
+  executionObservations?: ReadonlyMap<
+    string,
+    {
+      candidateKey: string;
+      selected: CalculationExecutionObservation;
+      selectedInput: Extract<CalculationExecution, { status: 'executable' }>['input'];
+      selectedEffectiveContributions: CalculationExecution['effectiveContributions'];
+      withoutAreaAlternate: CalculationExecutionObservation | null;
+      withoutAreaInput: Extract<CalculationExecution, { status: 'executable' }>['input'] | null;
+      withoutAreaEffectiveContributions: CalculationExecution['effectiveContributions'] | null;
+    }
+  >;
+}
+
+function withoutExecutionObservation(execution: CalculationExecution): CalculationExecution {
+  const visibleExecution = { ...execution };
+  delete visibleExecution.executionObservation;
+  return visibleExecution;
+}
+
+function withoutPreparedExecutionObservation(
+  prepared: PreparedCalculationScenario,
+): PreparedCalculationScenario {
+  if (prepared.status !== 'executable') return prepared;
+  const visiblePrepared = { ...prepared };
+  delete visiblePrepared.executionObservation;
+  return visiblePrepared;
 }
 
 function isTypedUnreachableCandidate(candidate: CalculationExecution): boolean {
@@ -42,8 +73,16 @@ export function calculateRankingCandidateSet(
   versions: VersionContext,
   includeAreaSupport: boolean,
   damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>(),
+  captureExecutionObservation = false,
 ): RankingCandidateCalculation {
-  const plan = compileRankingExecutionPlan(servant, master, profile, conditions, versions);
+  const plan = compileRankingExecutionPlan(
+    servant,
+    master,
+    profile,
+    conditions,
+    versions,
+    captureExecutionObservation,
+  );
   const candidates = executeRankingScenarios(
     plan.preparedRankingScenarios,
     master,
@@ -57,6 +96,20 @@ export function calculateRankingCandidateSet(
     plan.basis.npLevel,
     plan,
   );
+  const executionObservations = captureExecutionObservation
+    ? new Map<
+        string,
+        {
+          candidateKey: string;
+          selected: CalculationExecutionObservation;
+          selectedInput: Extract<CalculationExecution, { status: 'executable' }>['input'];
+          selectedEffectiveContributions: CalculationExecution['effectiveContributions'];
+          withoutAreaAlternate: CalculationExecutionObservation | null;
+          withoutAreaInput: Extract<CalculationExecution, { status: 'executable' }>['input'] | null;
+          withoutAreaEffectiveContributions: CalculationExecution['effectiveContributions'] | null;
+        }
+      >()
+    : null;
   const details = new Map(
     [...selected].flatMap(([profileKey, selectedIndex]) => {
       const blocking = candidates.some((candidate, index) => {
@@ -94,6 +147,35 @@ export function calculateRankingCandidateSet(
           : null;
       if (execution.status !== 'executable' || execution.result.status !== 'calculated')
         throw new TypeError(`ranking_candidate_rejected:${servant.id}:${profileKey}`);
+      if (captureExecutionObservation) {
+        if (!executionObservations)
+          throw new TypeError('ranking_execution_observation_map_missing');
+        if (!execution.executionObservation)
+          throw new TypeError(
+            `ranking_selected_execution_observation_missing:${servant.id}:${profileKey}`,
+          );
+        const withoutAreaObservation =
+          withoutAreaExecution?.status === 'executable'
+            ? withoutAreaExecution.executionObservation
+            : null;
+        if (withoutAreaExecution?.status === 'executable' && !withoutAreaObservation)
+          throw new TypeError(
+            `ranking_without_area_observation_missing:${servant.id}:${profileKey}`,
+          );
+        executionObservations.set(profileKey, {
+          candidateKey: plan.candidateKeys[selectedIndex]!,
+          selected: execution.executionObservation,
+          selectedInput: execution.input,
+          selectedEffectiveContributions: execution.effectiveContributions,
+          withoutAreaAlternate: withoutAreaObservation ?? null,
+          withoutAreaInput:
+            withoutAreaExecution?.status === 'executable' ? withoutAreaExecution.input : null,
+          withoutAreaEffectiveContributions:
+            withoutAreaExecution?.status === 'executable'
+              ? withoutAreaExecution.effectiveContributions
+              : null,
+        });
+      }
       const areaContribution =
         withoutAreaExecution?.status === 'executable' && withoutAreaPolicy
           ? {
@@ -149,7 +231,22 @@ export function calculateRankingCandidateSet(
       return [[attackProfileKey(attackProfile), detail] as const];
     }),
   );
-  return { plan, executions: candidates, details };
+  const publicPlan = captureExecutionObservation
+    ? {
+        ...plan,
+        preparedRankingScenarios: plan.preparedRankingScenarios.map(
+          withoutPreparedExecutionObservation,
+        ),
+      }
+    : plan;
+  return {
+    plan: publicPlan,
+    executions: captureExecutionObservation
+      ? candidates.map(withoutExecutionObservation)
+      : candidates,
+    details,
+    ...(executionObservations ? { executionObservations } : {}),
+  };
 }
 
 export function calculateRankingCandidates(

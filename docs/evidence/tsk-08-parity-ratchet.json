@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "S2 selected execution observation transport through target/BP witness selection and without-area ranking detail",
+  "nextBoundedUnit": "S3 preparation/group partial commit and same-candidate mutation-read recovery ratchets",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -1697,7 +1697,223 @@
         "TSK-08 remains in_progress; TSK-09.1/09 remain blocked"
       ],
       "nextOperation": "Implement S2 from the actual selected execution result and the actual without-area result, without re-execution. Preserve candidate/profile status and canonical inputs."
+    },
+    {
+      "name": "S2 selected execution, BP witness, and without-area observation transport",
+      "status": "slice-complete",
+      "date": "2026-09-24",
+      "baselineHead": "0f7b549f912010ccaf9bdb29db93ec6885d4f5db",
+      "authorization": "User approved the bounded S1-S3 implementation plan. S2 adds observation transport only; it does not close TSK-08 or claim inert-control/full-production success.",
+      "objective": "Carry selected target candidate identity, ordered operation events, the BP witness selected during preparation, and the actual selected/without-area ranking executions into the existing audit-facing calculation result without rerunning selected scenarios or altering product inputs/results.",
+      "producers": [
+        "packages/battle-execution/src/engine.ts::executeOrderedScenarioWithAuditObservation runs the existing candidate comparison and captures events from that same selected candidate; ambiguous identities and unresolved target resolution remain distinct typed variants.",
+        "packages/calculation-application/src/scenario.ts::prepareCalculationScenarioWithPolicy carries the selected initialBattlePointPoints witness and the exact ordered-execution observation through evaluatePreparedCalculationScenario.",
+        "packages/calculation-application/src/rankingPolicyCandidates.ts::calculateRankingCandidateSet returns the selected profile observation together with the exact input/effective-contribution object references and the actual without-area alternate generated from the same candidate."
+      ],
+      "consumer": "The ranking candidate audit observation map is keyed by the selected profile and carries its candidateKey. Focused tests consume it. The broader production user-control inventory consumer remains in a separate unstaged S4 diff and is not claimed by this commit.",
+      "productionPopulation": {
+        "known": "The reusable TSK-08 investigation remains 73 diagnostics across 40 controls / 33 owners, with 18 follow-up observations and B1-B3. This slice does not reread or recount that inventory.",
+        "exclusions": "No user-visible control, owner, candidate eligibility status, or profile was excluded or reclassified. The BP and area fixtures are representative paths, not substitutes for a full production inventory.",
+        "fullProductionAudit": "not-run; known TSK-08-INV-B1/B2/B3 would make a success claim invalid."
+      },
+      "expected": {
+        "selectedTarget": "An observation with selection=selected must contain the exact candidate index and raw candidate identity used by the returned execution; missing candidate identity fails closed.",
+        "operationEvents": "Events retain typed operation kind/outcome, projection outcome, condition, projection key, and contribution ID from the exact selected OrderedScenarioExecution.",
+        "battlePointWitness": "The witness map is the witness used to prepare the execution; final input state may differ after ordered effects.",
+        "rankingAlternate": "Selected and without-area observations share the selected candidateKey and are tied by object identity to their own detail/input/effective-contribution values.",
+        "ratchetZeroes": "S2 establishes observation transport only. It does not report 0 unsupported/invalid/inert/stale/partial-commit outcomes or any all-production aggregate count."
+      },
+      "verifiedProductionFixture": {
+        "canonicalIdentity": "tsk-08:selected-execution:3300200:phase-1",
+        "witness": {
+          "servantId": "3300200",
+          "point": 5
+        },
+        "targetCandidate": {
+          "classId": "pretender",
+          "attribute": "beast",
+          "candidateIndex": 0
+        },
+        "redactedProductTarget": {
+          "classId": null,
+          "attribute": "unknown"
+        },
+        "resultingInputBattlePointPhase": 2,
+        "interpretation": "The selected witness and raw candidate are audit-only observations; the existing product input remains relative/redacted and its final phase reflects ordered mutations."
+      },
+      "representativeFixtures": [
+        "Production BP witness selection: servant 3300200, phase-1 request selects witness 5 and candidate 0 on the exact returned execution.",
+        "Ranking area composition: selected detail and actual without-area execution are produced inside one calculateRankingCandidateSet call; test verifies candidateKey, input references, effective-contribution references, and the exact party-wide ordered event on both paths.",
+        "Selected candidate identity loss throws; ambiguous and impossible/unsupported selection do not become selected observations.",
+        "No all-profile Cartesian fixture was added."
+      ],
+      "boundaries": {
+        "normalExecutionPath": "executeOrderedScenario remains the existing direct non-observing path; ordered event materialization runs only through the explicit observation API.",
+        "productSemantics": "Damage result, canonical input, candidate eligibility/status, ranking choice, cache identity, damage semantics, and public target redaction are unchanged.",
+        "contributionIdentity": "Observation preserves contribution IDs independently; synthetic NP-special projection and ordered NP-base operation are not merged.",
+        "areaAlternate": "No separate scenario rerun is used as evidence; the real without-area execution returned by ranking candidate calculation is observed.",
+        "transactionAndRecovery": "Preparation-wide rollback, execution-group rollback, and pre-group form/variant application are not combined here; S3 owns those checks.",
+        "staleResponseEvidence": "TSK-07 evidence is unchanged."
+      },
+      "changedFiles": [
+        "packages/battle-execution/src/engine.ts",
+        "packages/battle-execution/src/executionTypes.ts",
+        "packages/battle-execution/src/index.ts",
+        "packages/calculation-application/src/scenario.ts",
+        "packages/calculation-application/src/rankingPolicyScenario.ts",
+        "packages/calculation-application/src/rankingPolicyCandidates.ts",
+        "packages/calculation-application/src/productionBattlePointPaths.test.ts",
+        "packages/calculation-application/src/scenario.test.ts",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/evidence/README.md",
+        "docs/tasks/development-redesign-tasks.md",
+        "docs/README.md"
+      ],
+      "originalDirtyDiffDisposition": {
+        "initialFourPathDiffSha256AtS1": "6f061eeab8572bc47e996b69a1be680da4a42f7ad44d131b8a9a0cc473209348",
+        "incorporatedPath": "packages/calculation-application/src/scenario.test.ts; the prior independent rerun fixture was replaced by same-candidate selected/without-area observation assertions and is included in S2.",
+        "remainingUnstagedPaths": [
+          "packages/calculation-application/src/productionParityDiagnostics.ts",
+          "packages/calculation-application/src/productionMasterInventory.test.ts",
+          "packages/calculation-application/src/productionClosureAudit.test.ts"
+        ],
+        "remainingDiffSha256": "12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef",
+        "handling": "The three remaining paths contain the broader inert-control gate attempt and are not staged or committed with S2. They remain explicit S4 work; current S2 does not claim production gate success."
+      },
+      "ignoredGeneratedFile": {
+        "path": "apps/web/next-env.d.ts",
+        "status": "ignored and retained; no index entry",
+        "sha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b",
+        "mtime": "2026-09-23 18:32:48 +0900"
+      },
+      "verification": {
+        "focused": {
+          "command": "CI=true pnpm test:diagnostic -- packages/calculation-application/src/scenario.test.ts packages/calculation-application/src/productionBattlePointPaths.test.ts",
+          "status": "passed",
+          "files": 2,
+          "tests": 42,
+          "skipped": 0,
+          "durationMs": 25131,
+          "manifest": {
+            "path": ".test-results/2026-09-23T18-11-46-568Z-28-9c974f/manifest.json",
+            "sha256": "408f1f637f9c8539c176ee5c08da8bf84ea770490d7079edb8ae17b7562ce633"
+          },
+          "vitest": {
+            "path": ".test-results/2026-09-23T18-11-46-568Z-28-9c974f/vitest.json",
+            "sha256": "341dc43d7d33ced86e57aa87cbb7081accf62009a2c19c7a1ef3f0f47bd59ecb"
+          },
+          "artifactDeclaration": {
+            "path": ".test-results/2026-09-23T18-11-46-568Z-28-9c974f/artifact-declarations.json",
+            "sha256": "1bbab31e5c89e38d1335b72131fad8b39c6e7f24a0e6ad847f74129d3f2b9431"
+          },
+          "selectedExecutionArtifact": {
+            "path": ".test-results/2026-09-23T18-11-46-568Z-28-9c974f/selected-execution-observation.json",
+            "sha256": "bd13f4183b6ff3f35b7c0b6332dc944127ec9a95a6a1ef64695c486d4a656ea8"
+          },
+          "runnerArtifactVerificationErrors": []
+        },
+        "typecheck": {
+          "command": "CI=true pnpm typecheck",
+          "status": "passed",
+          "durationMs": 18274
+        },
+        "lint": {
+          "command": "pnpm exec eslint on the 11 changed TypeScript files",
+          "status": "passed",
+          "durationMs": 8874
+        },
+        "format": {
+          "command": "pnpm exec prettier --check on the 11 changed TypeScript files",
+          "status": "passed",
+          "durationMs": 1387
+        },
+        "fullProduction": {
+          "command": "pnpm test:production",
+          "status": "deferred because B1-B3 are known blockers; no full inventory rerun"
+        },
+        "runnerAndDocs": {
+          "runner": {
+            "command": "CI=true pnpm test:runner",
+            "status": "passed",
+            "tests": 53,
+            "skipped": 0,
+            "durationMs": 6473,
+            "artifact": "node --test output; no runner artifact manifest is emitted"
+          },
+          "docs": {
+            "command": "CI=true pnpm test:docs",
+            "status": "passed",
+            "tests": 6,
+            "skipped": 0,
+            "docsIntegrity": "passed",
+            "artifact": "node --test and docs integrity output; no runner artifact manifest is emitted"
+          }
+        },
+        "quality": {
+          "command": "pnpm quality",
+          "status": "deferred until the final source diff is stable and the known semantic blockers are resolved"
+        },
+        "sourceInvariants": {
+          "tsk065SourceDigestChanged": false,
+          "eligibilityDigestChanged": false,
+          "matrixDigestChanged": false,
+          "candidateEligibilityOrStatusChanged": false,
+          "productionOutputChanged": false,
+          "calculatorRankingPortableParityChanged": false,
+          "canonicalInputChanged": false,
+          "damageSemanticsChanged": false,
+          "cacheIdentityChanged": false,
+          "tsk07StaleResponseEvidenceChanged": false,
+          "newProducer": false,
+          "newSemanticOwner": false
+        },
+        "supplementalUncommittedS4FixtureValidation": {
+          "command": "CI=true pnpm test:diagnostic -- packages/calculation-application/src/scenario.test.ts packages/calculation-application/src/productionBattlePointPaths.test.ts packages/calculation-application/src/productionClosureAudit.test.ts",
+          "status": "passed; supplemental fixture evidence only, not S4 completion",
+          "files": 3,
+          "tests": 47,
+          "skipped": 0,
+          "manifest": {
+            "path": ".test-results/2026-09-23T17-58-30-423Z-28-b04780/manifest.json",
+            "sha256": "08dae88a0bcebc1198582d7a844129ba4195f0cee00b8fc0e70be6b56790e406"
+          },
+          "inertControlFixtureArtifact": {
+            "path": ".test-results/2026-09-23T17-58-30-423Z-28-b04780/production-inert-control-diagnostics.json",
+            "sha256": "c004992e216cc9dbe72ef7ac1ef42d62008d0df673c05dd97fa94db2bf91ffd6"
+          },
+          "limitation": "The modified productionClosureAudit/productionParityDiagnostics fixtures are part of the remaining unstaged S4 diff; no production control inventory ran and B1-B3 remain."
+        }
+      },
+      "retainedFailedAttempts": [
+        {
+          "path": ".test-results/2026-09-23T17-30-56-498Z-15-e71306/manifest.json",
+          "sha256": "06de1a9841133987d2f1a2c8625a71e1c060b482f5f0f32f3588d33f23558729",
+          "reason": "The inert-control fixture expected a non-canonical first-difference address; its assertion was corrected."
+        },
+        {
+          "path": ".test-results/2026-09-23T17-33-05-484Z-15-bb7596/manifest.json",
+          "sha256": "40578260dd5a1fb2d9a534787e03e008425ffd55e7896cce4cb5b050fea9d422",
+          "reason": "The inert-control failure fixture expected a missing damageChanged field; the canonical expected/actual shape was corrected."
+        },
+        {
+          "path": ".test-results/2026-09-23T17-33-59-882Z-15-1ed479/manifest.json",
+          "sha256": "d014c2e7aae66ac8ef332d93568dd29fb1129ff1737f0a1676ba12b3d30c68c4",
+          "reason": "The BP fixture initially equated scenario phase 1 with final input phase; the actual ordered execution selects witness 5 and ends at input phase 2, which the assertion now records."
+        }
+      ],
+      "reusedEvidence": [
+        "The existing successful 8-shard TSK-06.5 merge and eligibility digest remain parity-only evidence; they are not full-audit evidence.",
+        "The complete 73-diagnostic and 18-follow-up investigation archive remains unchanged and retains TSK-08-INV-B1/B2/B3.",
+        "No fresh full production audit was run while the known blockers remain."
+      ],
+      "remainingImplementation": [
+        "S3 preparation command/action/receipt consistency, separate transaction boundaries, exact group rollback, and same-candidate mutation/read recovery.",
+        "S4 connect user-visible control observations and actual without-area details into the production control gate. TSK-08-INV-B1/B2/B3 remain blockers and cannot be waived by the gate.",
+        "Fresh canonical 8-shard full audit only after blocking product-semantic fixes and focused verification; the prior estimate remains 16-26 minutes for two waves of at most four shards, not counting final quality.",
+        "After approved product slices, run the required full production gate only when B1-B3 no longer block it, then run one pnpm quality after final source stabilization. S2 typecheck, target lint/format, test:runner and test:docs are already passed."
+      ],
+      "nextOperation": "Implement S3 as an independent slice. Preserve preparation command, execution group, and pre-group form/variant boundaries; verify success receipt contents separately from rollback and same-candidate recovery reads."
     }
   ],
-  "currentBoundedUnit": "S1 final-profile shard gate and diagnostic artifact declaration closure"
+  "currentBoundedUnit": "S2 selected execution, BP witness, and without-area observation transport"
 }

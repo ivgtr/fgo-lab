@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.31"
+document_version: "1.7.32"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-24"
@@ -2474,6 +2474,20 @@ Current bounded-unit handoff（2026-09-24、S1 final-profile shard gate）:
 focused `pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts`は1 file／4 tests／skip 0で成功した。最終manifest `.test-results/2026-09-23T17-00-42-404Z-15-aebd6d/manifest.json`（SHA-256 `f97ed3c8c505a80158643daccbe25b8b37a0070f416ec5e9ae0ed1314319acf4`）がfinal-profile diagnostics（`production-final-outcome-diagnostics.json` SHA-256 `a1bba2e74d5a7885f2b5bf3b93a4ffb3e205222f2e8613e95c348eb2da750662`）を含み、artifact verification errors 0である。target lint、format、typecheckも成功した。修正前のfixture期待値・passed gate形状の誤りと、filterによるskipをrunnerが拒否した完全manifestはmachine evidenceにchecksum付きで保持した。
 
 TSK-06.5のsource／eligibility／matrix digest、candidate status、production output、parity、damage semantics、canonical input、cacheは変更していない。S1はmerge fail-closed closureのみであり、inert control、partial commit／recovery、stale mutation、全production ratchetの成功を主張しない。B1〜B3は引き続きblocking。次はS2でselected target／BP witness executionとactual without-area detailを同一実行から運び、再実行を観測に使わない。次のS3ではtransaction rollbackとread continuityを接続する。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。S1 implementation／evidence commitは本commit。
+
+Current bounded-unit handoff（2026-09-24、S2 selected execution observation transport）:
+
+S1 commit `0f7b549f912010ccaf9bdb29db93ec6885d4f5db`を開始点とし、承認済みplanのS2を実装した。`executeOrderedScenarioWithAuditObservation`は通常の`executeOrderedScenario`を観測用allocationで包まず、実際のcandidate comparisonが選んだexecutionからtyped operation eventとraw target candidate identityを採取する。candidate index／identityの不整合、candidate list欠損はfail-closedである。`prepareCalculationScenarioWithPolicy`は実際に選ばれたBP witnessを同じprepared executionへ保持し、`evaluatePreparedCalculationScenario`まで同じobservation referenceを運ぶ。`calculateRankingCandidateSet`はselected detailと実際のwithout-area alternateを同一candidate keyへ結び、input／effective contributionの参照を保持する。戻り値のpublic plan／candidate executionからobserver payloadを除去し、通常のexecution result、canonical input、profile selection、cache identityは変えない。
+
+既存production BP pathでowner `3300200` phase-1 requestはwitness point 5を選び、candidate 0は`pretender`／`beast`だった。公開inputのtargetは従来どおりrelative/redactedの`null`／`unknown`で、ordered effect適用後のfinal battle-point phaseは2である。area fixtureは別scenarioを再実行せず、同じranking calculation内のselected detailとwithout-area alternateのcandidate key、input、effective contribution、party-wide ordered eventを個別に照合した。
+
+focused command `pnpm test:diagnostic -- packages/calculation-application/src/scenario.test.ts packages/calculation-application/src/productionBattlePointPaths.test.ts`は2 files／42 tests／skip 0で成功し、最終manifest `.test-results/2026-09-23T18-11-46-568Z-28-9c974f/manifest.json`（SHA-256 `408f1f637f9c8539c176ee5c08da8bf84ea770490d7079edb8ae17b7562ce633`）にvitest、artifact declarations、`selected-execution-observation.json`のchecksumがある。選択execution artifactのSHA-256は`bd13f4183b6ff3f35b7c0b6332dc944127ec9a95a6a1ef64695c486d4a656ea8`。`pnpm typecheck`、対象11 TypeScript filesのESLint／Prettier check、`pnpm test:runner` 53 tests、`pnpm test:docs` 6 testsもpassした。最終コードの実測はfocused runner 25.131秒、typecheck 18.274秒、lint 8.874秒、format check 1.387秒だった。
+
+S2は73件の診断を再分類せず、production user-control inventoryも再実行していない。unsupported／invalid／inputRequiredのfinal-profile 0件、40 controls／33 ownersの分類、B1 stateTrait 10 controls、B2 owner `2501400` magicBullet、B3 owner `403400` targetRarityは従来のBlocking状態を保つ。S2 focused testとは別にclosure／inert synthetic fixture 5 testsもpassしたが、対象3 source/test filesの変更は未commitのS4差分に残り、production inventory成功を意味しない。以前のBP期待値誤りとinert fixtureのcanonical expected/actual不一致の完全manifestはmachine evidenceにchecksum付きで残す。
+
+開始時4 dirty pathのうち`scenario.test.ts`は、selectedとwithout-areaを実際の同一candidate calculationから観測するfixtureへ置き換え、このS2 commitへ含める。残る未stage差分は`productionParityDiagnostics.ts`、`productionMasterInventory.test.ts`、`productionClosureAudit.test.ts`だけで、combined diff SHA-256 `12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef`。この3ファイルはS4用に保ちS2へ混入させない。ignore済み`apps/web/next-env.d.ts`はSHA-256 `1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b`のローカル状態を保持し、stageしない。machine evidenceは[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)の最新S2 `boundedUnits`を参照する。
+
+次はS3でpreparation command／action／receipt、execution group rollback、同一candidateのmutation前後とrecovery readを別transaction boundaryとして検証する。`battle:criticalStars`は69 → cap 99 → read 99を正確に扱い、TSK-07 stale-response evidenceを変更しない。TSK-06.5の34,640 outcomes／34,600 calculated-parity／40 unavailableとfinal-profile unsupported／invalid／inputRequired各0、source／eligibility digest、inventory、production output、parity、damage semantics、canonical input、cacheは変更していない。known B1〜B3が残るためfresh full productionと最終qualityはまだ実行しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま維持する。S2 implementation／evidence commitは本commit。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

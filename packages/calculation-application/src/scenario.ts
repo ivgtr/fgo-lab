@@ -2,6 +2,7 @@ import { resolveInitialMaximumHp, type InitialHpUnavailableIssue } from './initi
 import {
   collectActivationRequirementOwners,
   executeOrderedScenario,
+  executeOrderedScenarioWithAuditObservation,
   prepareOrderedScenario,
   resolveAttackerFormExecution,
   battlePointPhase,
@@ -14,6 +15,7 @@ import {
   type EffectProjection,
   type EffectiveContributionSet,
   type OrderedScenarioExecution,
+  type OrderedExecutionAuditObservation,
   type PreparedOrderedScenario,
   type PreparationFailureCode,
   type ResolvedAttackerFormExecution,
@@ -121,6 +123,12 @@ interface CalculationExecutionCommon {
   effectControls: EffectControlViewModel[];
   activationRequirements: ActivationRequirementOwner[];
   appliedPreparationActions: readonly AppliedPreparationAction[];
+  executionObservation?: CalculationExecutionObservation;
+}
+
+export interface CalculationExecutionObservation {
+  battlePointWitness: Readonly<Record<string, number>> | null;
+  targetExecution: OrderedExecutionAuditObservation | null;
 }
 
 export type CalculationExecution =
@@ -867,6 +875,7 @@ function evaluateResolvedCalculation(
   resolved: ResolvedCalculationInput,
   versions: VersionContext,
   cachedCalculation?: ReturnType<typeof calculateDamageResolution>,
+  executionObservation?: CalculationExecutionObservation,
 ): CalculationExecution {
   const result = resolvedCalculationResult(resolved, versions, cachedCalculation);
   const effectInputs =
@@ -896,6 +905,7 @@ function evaluateResolvedCalculation(
     ),
     activationRequirements: resolved.activationRequirements,
     appliedPreparationActions: resolved.appliedPreparationActions,
+    ...(executionObservation ? { executionObservation } : {}),
   };
   if (result.status === 'invalid') return { status: 'invalid', ...common, result };
   if (resolved.status === 'invalid') throw new TypeError('invalid_result_status_mismatch');
@@ -924,6 +934,7 @@ export type PreparedCalculationScenario =
       resolved: Extract<ResolvedCalculationInput, { status: 'executable' }>;
       orderedScenario: PreparedOrderedScenario | null;
       canonicalInputs: ResolvedCanonicalInputSet | null;
+      executionObservation?: CalculationExecutionObservation;
     })
   | (PreparedCalculationScenarioCommon & {
       status: 'rejected';
@@ -996,6 +1007,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
   master: MasterDataSnapshot,
   contributionPolicy: ContributionApplicationPolicy,
   preparation: CalculationPreparationOptions = {},
+  captureExecutionObservation = false,
 ): PreparedCalculationScenario {
   if (scenario.mode === 'manual')
     return {
@@ -1045,6 +1057,16 @@ function prepareConcreteCalculationScenarioWithPolicy(
     orderedScenario.inputDefinitions,
     scenario.canonicalInputValues,
   );
+  const observedExecution = captureExecutionObservation
+    ? executeOrderedScenarioWithAuditObservation(
+        orderedScenario,
+        canonicalInputs,
+        contributionPolicy,
+      )
+    : null;
+  const execution =
+    observedExecution?.execution ??
+    executeOrderedScenario(orderedScenario, canonicalInputs, contributionPolicy);
   return {
     status: 'executable',
     master,
@@ -1054,13 +1076,21 @@ function prepareConcreteCalculationScenarioWithPolicy(
       scenario,
       orderedScenario,
       canonicalInputs,
-      executeOrderedScenario(orderedScenario, canonicalInputs, contributionPolicy),
+      execution,
       base.formExecution.state.currentFormId,
     ),
     orderedScenario,
     canonicalInputs,
     contributionPolicy,
     preparation,
+    ...(observedExecution
+      ? {
+          executionObservation: {
+            battlePointWitness: preparation.initialBattlePointPoints ?? null,
+            targetExecution: observedExecution.observation,
+          },
+        }
+      : {}),
   };
 }
 
@@ -1134,6 +1164,7 @@ export function prepareCalculationScenarioWithPolicy(
   master: MasterDataSnapshot,
   contributionPolicy: ContributionApplicationPolicy,
   preparation: CalculationPreparationOptions = {},
+  captureExecutionObservation = false,
 ): PreparedCalculationScenario {
   if (scenario.mode === 'manual' || preparation.initialBattlePointPoints)
     return prepareConcreteCalculationScenarioWithPolicy(
@@ -1141,18 +1172,31 @@ export function prepareCalculationScenarioWithPolicy(
       master,
       contributionPolicy,
       preparation,
+      captureExecutionObservation,
     );
   const witnesses = battlePointWitnesses(scenario, master);
   if (witnesses.length === 1)
-    return prepareConcreteCalculationScenarioWithPolicy(scenario, master, contributionPolicy, {
-      ...preparation,
-      initialBattlePointPoints: witnesses[0]!,
-    });
+    return prepareConcreteCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      contributionPolicy,
+      {
+        ...preparation,
+        initialBattlePointPoints: witnesses[0]!,
+      },
+      captureExecutionObservation,
+    );
   const candidates = witnesses.map((initialBattlePointPoints) =>
-    prepareConcreteCalculationScenarioWithPolicy(scenario, master, contributionPolicy, {
-      ...preparation,
-      initialBattlePointPoints,
-    }),
+    prepareConcreteCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      contributionPolicy,
+      {
+        ...preparation,
+        initialBattlePointPoints,
+      },
+      captureExecutionObservation,
+    ),
   );
   const executable = candidates.filter(
     (candidate): candidate is Extract<PreparedCalculationScenario, { status: 'executable' }> =>
@@ -1193,6 +1237,7 @@ export function rematerializePreparedCalculationInputs(
     master,
     prepared.contributionPolicy,
     prepared.preparation,
+    prepared.status === 'executable' && prepared.executionObservation !== undefined,
   );
 }
 
@@ -1206,6 +1251,7 @@ export function reapplyPreparedCalculationPolicy(
     prepared.master,
     policy,
     prepared.preparation,
+    prepared.status === 'executable' && prepared.executionObservation !== undefined,
   );
 }
 
@@ -1220,6 +1266,7 @@ export function evaluatePreparedCalculationScenario(
     prepared.resolved,
     versions,
     cachedCalculation,
+    prepared.status === 'executable' ? prepared.executionObservation : undefined,
   );
 }
 

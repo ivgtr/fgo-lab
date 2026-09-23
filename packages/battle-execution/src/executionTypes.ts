@@ -17,16 +17,51 @@ import type {
   ContributionId,
   ExecutionIssue,
   ModifierKind,
+  OperationResult,
   OperationOutcome,
   OperationSource,
 } from './contracts';
-import type { TargetResolution } from './targetContext';
+import type { TargetCandidate, TargetResolution } from './targetContext';
 import type { AppliedPreparationAction } from './preNoblePhantasm';
 
 export type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 export interface OrderedScenarioExecution extends BattleExecutionResult {
   input: DamageResolutionInput;
+}
+
+export interface OrderedExecutionAuditEvent {
+  sequence: number;
+  operationId: string;
+  projectionKey: string;
+  contributionId: string | null;
+  operationKind: BattleOperation['kind'];
+  operationOutcome: OperationOutcome;
+  projectionOutcome: EffectProjection['outcome'];
+  condition: OperationResult['condition'];
+  projectionValuePermille: EffectProjection['valuePermille'];
+}
+
+export type OrderedExecutionAuditObservation =
+  | {
+      selection: 'selected';
+      candidateIndex: number;
+      targetCandidate: TargetCandidate;
+      operationEvents: readonly OrderedExecutionAuditEvent[];
+    }
+  | {
+      selection: 'ambiguous';
+      candidates: readonly { candidateIndex: number; targetCandidate: TargetCandidate }[];
+    }
+  | {
+      selection: 'unresolved';
+      targetResolution: Extract<TargetResolution, { kind: 'impossible' | 'unsupported' }>;
+      operationEvents: readonly OrderedExecutionAuditEvent[];
+    };
+
+export interface OrderedScenarioExecutionWithAuditObservation {
+  execution: OrderedScenarioExecution;
+  observation: OrderedExecutionAuditObservation;
 }
 
 export interface PreparedOrderedScenario {
