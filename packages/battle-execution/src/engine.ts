@@ -2,6 +2,8 @@ import { compareCandidateResults } from './candidateComparison';
 import {
   executeOrderedScenarioCandidate,
   executeOrderedScenarioCandidates,
+  executeOrderedScenarioCandidateWithAudit,
+  executeOrderedScenarioCandidatesWithAudit,
 } from './candidateExecution';
 import type {
   OrderedExecutionAuditEvent,
@@ -16,6 +18,10 @@ import { assembleAmbiguousTargetResult, assembleEquivalentTargetResult } from '.
 export type {
   OrderedScenarioExecution,
   OrderedExecutionAuditEvent,
+  OrderedCandidateStateAudit,
+  OrderedExecutionGroupAuditEvent,
+  OrderedInputQuantityReadAuditEvent,
+  OrderedMutationAuditEvent,
   OrderedExecutionAuditObservation,
   OrderedScenarioExecutionWithAuditObservation,
   PreparedOrderedScenario,
@@ -63,11 +69,16 @@ export function executeOrderedScenarioWithAuditObservation(
   resolvedInputs: ResolvedCanonicalInputSet,
   contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): OrderedScenarioExecutionWithAuditObservation {
-  const executions = executeOrderedScenarioCandidates(prepared, resolvedInputs, contributionPolicy);
-  if (executions.length === 0) {
+  const auditedExecutions = executeOrderedScenarioCandidatesWithAudit(
+    prepared,
+    resolvedInputs,
+    contributionPolicy,
+  );
+  const executions = auditedExecutions.map(({ execution }) => execution);
+  if (auditedExecutions.length === 0) {
     if (prepared.targetResolution.kind === 'candidates')
       throw new TypeError('target_candidate_execution_missing');
-    const execution = executeOrderedScenarioCandidate(
+    const { execution, candidateState } = executeOrderedScenarioCandidateWithAudit(
       prepared,
       resolvedInputs,
       null,
@@ -79,6 +90,7 @@ export function executeOrderedScenarioWithAuditObservation(
         selection: 'unresolved',
         targetResolution: prepared.targetResolution,
         operationEvents: auditOperationEvents(execution),
+        candidateState,
       },
     };
   }
@@ -98,6 +110,7 @@ export function executeOrderedScenarioWithAuditObservation(
         candidateIndex,
         targetCandidate,
         operationEvents: auditOperationEvents(comparison.execution),
+        candidateState: auditedExecutions[candidateIndex]!.candidateState,
       },
     };
   }
@@ -106,7 +119,12 @@ export function executeOrderedScenarioWithAuditObservation(
     const targetCandidate = targetCandidates[candidateIndex];
     if (candidateIndex < 0 || !targetCandidate)
       throw new TypeError('ambiguous_target_candidate_identity_missing');
-    return { candidateIndex, targetCandidate };
+    return {
+      candidateIndex,
+      targetCandidate,
+      operationEvents: auditOperationEvents(candidateExecution),
+      candidateState: auditedExecutions[candidateIndex]!.candidateState,
+    };
   });
   return {
     execution: assembleAmbiguousTargetResult(prepared, comparison.executions),

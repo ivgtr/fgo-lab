@@ -86,6 +86,7 @@ export type ConditionEvaluationState = Pick<
 export function evaluateCondition(
   condition: ConditionExpression,
   state: ConditionEvaluationState,
+  onInputQuantityRead?: (inputKey: string, value: number | undefined) => void,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
     const scopeSemantics = traitConditionScopeSemantics(scope);
@@ -230,6 +231,7 @@ export function evaluateCondition(
     }
     case 'inputQuantity': {
       const actual = liveInputQuantity(state, condition.inputKey);
+      onInputQuantityRead?.(condition.inputKey, actual);
       if (actual === undefined) return null;
       if (condition.comparison === 'lessThan') return actual < condition.value;
       if (condition.comparison === 'atMost') return actual <= condition.value;
@@ -238,17 +240,21 @@ export function evaluateCondition(
       return actual > condition.value;
     }
     case 'all': {
-      const values = condition.expressions.map((value) => evaluateCondition(value, state));
+      const values = condition.expressions.map((value) =>
+        evaluateCondition(value, state, onInputQuantityRead),
+      );
       const decisive = decisiveConditionGroup('all', values);
       return decisive ?? (values.includes(null) ? null : true);
     }
     case 'any': {
-      const values = condition.expressions.map((value) => evaluateCondition(value, state));
+      const values = condition.expressions.map((value) =>
+        evaluateCondition(value, state, onInputQuantityRead),
+      );
       const decisive = decisiveConditionGroup('any', values);
       return decisive ?? (values.includes(null) ? null : false);
     }
     case 'not': {
-      const value = evaluateCondition(condition.expression, state);
+      const value = evaluateCondition(condition.expression, state, onInputQuantityRead);
       return value === null ? null : !value;
     }
   }

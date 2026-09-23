@@ -6,6 +6,7 @@ import type {
   CanonicalTargetDomain,
   NoblePhantasmVariant,
   NpDamageSpec,
+  ActorFormId,
 } from '@fgo-lab/master-data';
 import type { CombatAttribute } from '@fgo-lab/calc-core';
 import type { CalculationScenario, DamageResolutionInput, TargetPredicate } from '@fgo-lab/schema';
@@ -20,6 +21,7 @@ import type {
   OperationResult,
   OperationOutcome,
   OperationSource,
+  CardType,
 } from './contracts';
 import type { TargetCandidate, TargetResolution } from './targetContext';
 import type { AppliedPreparationAction } from './preNoblePhantasm';
@@ -42,21 +44,83 @@ export interface OrderedExecutionAuditEvent {
   projectionValuePermille: EffectProjection['valuePermille'];
 }
 
+export interface OrderedInputQuantityReadAuditEvent {
+  operationSequence: number;
+  operationGroupIndex: number;
+  operationId: string;
+  inputKey: string;
+  value: number | null;
+}
+
+export interface OrderedMutationAuditEvent {
+  operationSequence: number;
+  operationId: string;
+  operationKind: 'resourceMutation' | 'addQuantity';
+  stateAddress: string;
+  before: number | null;
+  attemptedAfter: number | null;
+  afterTransaction: number | null;
+}
+
+export interface OrderedExecutionGroupAuditEvent {
+  groupIndex: number;
+  transactionIdentity: {
+    origin: BattleOperation['source']['origin'];
+    sourceInstanceId: string;
+    transactionGroupId: string | null;
+    fallbackEffectIdentity: { skillId: string; effectOccurrenceId: string } | null;
+  };
+  operationIds: readonly string[];
+  appliedOperationIds: readonly string[];
+  outcome: 'committed' | 'rolledBack';
+  issues: readonly ExecutionIssue[];
+  mutations: readonly OrderedMutationAuditEvent[];
+  rollbackProof: {
+    battleStateRestored: boolean;
+    damageInputRestored: boolean;
+  } | null;
+}
+
+export interface OrderedCandidateStateAudit {
+  preGroupContextResolution: {
+    appliedOperationIds: readonly string[];
+    before: {
+      actorFormId: ActorFormId;
+      noblePhantasmVariantKey: string;
+      card: CardType;
+    };
+    resolved: {
+      actorFormId: ActorFormId;
+      noblePhantasmVariantKey: string;
+      card: CardType;
+    };
+  } | null;
+  executionGroups: readonly OrderedExecutionGroupAuditEvent[];
+  inputQuantityReads: readonly OrderedInputQuantityReadAuditEvent[];
+}
+
 export type OrderedExecutionAuditObservation =
   | {
       selection: 'selected';
       candidateIndex: number;
       targetCandidate: TargetCandidate;
       operationEvents: readonly OrderedExecutionAuditEvent[];
+      candidateState?: OrderedCandidateStateAudit;
     }
   | {
       selection: 'ambiguous';
-      candidates: readonly { candidateIndex: number; targetCandidate: TargetCandidate }[];
+      candidates: readonly {
+        candidateIndex: number;
+        targetCandidate: TargetCandidate;
+        operationEvents: readonly OrderedExecutionAuditEvent[];
+        candidateState?: OrderedCandidateStateAudit;
+      }[];
     }
   | {
       selection: 'unresolved';
       targetResolution: Extract<TargetResolution, { kind: 'impossible' | 'unsupported' }>;
       operationEvents: readonly OrderedExecutionAuditEvent[];
+      candidateState?: OrderedCandidateStateAudit;
     };
 
 export interface OrderedScenarioExecutionWithAuditObservation {

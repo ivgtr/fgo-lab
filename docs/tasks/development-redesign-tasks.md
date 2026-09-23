@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.32"
+document_version: "1.7.33"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-24"
@@ -2488,6 +2488,20 @@ S2は73件の診断を再分類せず、production user-control inventoryも再�
 開始時4 dirty pathのうち`scenario.test.ts`は、selectedとwithout-areaを実際の同一candidate calculationから観測するfixtureへ置き換え、このS2 commitへ含める。残る未stage差分は`productionParityDiagnostics.ts`、`productionMasterInventory.test.ts`、`productionClosureAudit.test.ts`だけで、combined diff SHA-256 `12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef`。この3ファイルはS4用に保ちS2へ混入させない。ignore済み`apps/web/next-env.d.ts`はSHA-256 `1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b`のローカル状態を保持し、stageしない。machine evidenceは[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)の最新S2 `boundedUnits`を参照する。
 
 次はS3でpreparation command／action／receipt、execution group rollback、同一candidateのmutation前後とrecovery readを別transaction boundaryとして検証する。`battle:criticalStars`は69 → cap 99 → read 99を正確に扱い、TSK-07 stale-response evidenceを変更しない。TSK-06.5の34,640 outcomes／34,600 calculated-parity／40 unavailableとfinal-profile unsupported／invalid／inputRequired各0、source／eligibility digest、inventory、production output、parity、damage semantics、canonical input、cacheは変更していない。known B1〜B3が残るためfresh full productionと最終qualityはまだ実行しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま維持する。S2 implementation／evidence commitは本commit。
+
+Current bounded-unit handoff（2026-09-24、S3 selected execution-group rollback and same-candidate mutation/read recovery observation）:
+
+S2 commit `c43bf64ad3b0c3634fce951a8ae977529bfb0f30`から、execution observerだけを拡張した。`executeOrderedScenarioWithAuditObservation`が同じcandidate executionから、pre-group context resolution、実際の`effectTransactionKey`ごとのordered group、group内で一時適用されたoperation IDs、typed issue、mutationのbefore／attemptedAfter／afterTransaction、rollback後のbattle state／damage input一致を運ぶ。`condition.ts::evaluateCondition`は実際の`inputQuantity` leafが`liveInputQuantity`から読んだ値をoperation／sequence／group indexとともに記録する。通常の`executeOrderedScenario`経路にはtrace配列やread callbackを作らない。手書きS4 fixture互換のため`candidateState`型はoptionalだが、production ratchetでは欠損を成功や0件として扱わずfail-closedにする。
+
+同一candidateのschema-legal fixtureでは`battle:criticalStars`の69 + 40がcap後99となり、後続readerの実readが99でcondition satisfiedになることを記録した。rollback fixtureでは先行modifierのtentative application後にunrepresentable star operationがtyped `unsupportedOperation`を返し、group全体のsemantic state／damage inputがgroup開始時へ復元された。別skill actionの後続groupは同じcandidateで20を読んだ。複数effectが同skill action内にある場合は実際の共通`transactionGroupId`で同一groupになることも失敗artifactから確認し、recovery readは別actionへ置いた。preparation command/action/receiptの同条件証拠は以前のbounded unitから再利用し、再実行していない。
+
+focused commandは2 files／51 tests／skip 0で成功した。manifest `.test-results/2026-09-23T18-48-04-213Z-15-e6038a/manifest.json`のSHA-256は`cef696af4ed7e0c25a3b7261fd2dec1c5e5bed68236de4f247f7966dc7cf8a9b`。mutation/read artifact `tsk-08-star-mutation-read.json`は`e371a9ec025b858baa7094cfb71ad3e19455084c5241b5aae7c28fbf4df34344`、execution-group rollback artifact `tsk-08-execution-group-rollback.json`は`f4c7d9a13f9d630d97a5b580538fe286fde7075a320270d671256313c5dc94a3`。workspace `tsc -b`と既存Next生成型を使ったWeb `tsc --noEmit`、対象ESLint／Prettierは成功した。`pnpm test:runner`、`pnpm typecheck`、`pnpm test:docs`のwrapperは依存status確認中にexternal pnpm SQLite storeを開けずscript開始前に失敗したため、runner testは同じ`node --test`引数を直接実行して53/53成功、typecheckはworkspace buildとWeb `tsc`を直接実行して成功、docs testは`node --test scripts/docs-integrity.test.mjs`の6/6と`node scripts/docs-integrity.mjs`を直接実行して成功した。Next typegenは行わず、ignore済み`apps/web/next-env.d.ts`はSHA-256 `1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b`の状態を保持した。未stageのS4用3ファイルはcombined diff SHA-256 `12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef`のまま保護している。
+
+失敗したfocused attemptのmanifestとchecksumもmachine evidenceに保持した。最初のrecovery-read fixtureは同一transaction group内にreaderを置いており、group rollback前の読取だった。後続のidentity assertion失敗はexplicit `transactionGroupId`をfallback identity経由で検索したfixtureの誤りだった。いずれも最終focused artifactに置換せず、試行artifactとして記録した。
+
+S3はproduction inventoryを再実行しておらず、73 diagnostics／40 controls／33 owners／18 follow-up observations、B1〜B3のBlocking、TSK-06.5の80 × 433 = 34,640 outcomes（34,600 calculated/parity、40 unavailable、final-profile unsupported／invalid／inputRequired各0）を変更・再解釈していない。TSK-06.5 digest／inventory／production output／parity、candidate status、canonical input、damage semantics、cache、TSK-07 stale-response evidenceも変更なし。`pnpm test:production`は既知B1〜B3があるため実行せず、`pnpm quality`も全source slice未完了のため延期した。機械証跡は[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)の最新S3 `boundedUnits`を参照する。
+
+次は残る3つのS4差分を現行要件と照合し、既存production user-control inventoryからselected／without-area executionとこのmutation/group traceをcanonical identity単位で接続する。missing trace、typed reason／first difference欠損、failure artifact／checksum不一致はfail-closedにする。B1〜B3を分類緩和で消さず、state／ownership／damage semanticsの変更衝突が見つかったら影響作業を止めて再計画する。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま維持し、TSK-08全体の完了は主張しない。S3 implementation／evidence commitは本commit。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

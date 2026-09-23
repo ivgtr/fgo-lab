@@ -34,6 +34,7 @@ interface PreparedCandidateBase {
 
 export interface ReadyCandidateExecution extends PreparedCandidateBase {
   status: 'ready';
+  selectionBaseState: ExecutableBattleState;
   state: ExecutableBattleState;
   activations: ReadonlyMap<string, OperationActivation>;
   activeDecisionSourceInstances: ReadonlySet<string>;
@@ -128,6 +129,7 @@ function prepareExecutableCandidate(
   return {
     ...base,
     status: 'ready',
+    selectionBaseState: initialState,
     ...selections,
     ...validated,
     resolvedCompileProjections: resolveCompileProjections(

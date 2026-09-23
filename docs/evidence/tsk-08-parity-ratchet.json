@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "S3 preparation/group partial commit and same-candidate mutation-read recovery ratchets",
+  "nextBoundedUnit": "S4 production control/mutation ratchets with B1-B3 preserved as blocking",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -1913,7 +1913,216 @@
         "After approved product slices, run the required full production gate only when B1-B3 no longer block it, then run one pnpm quality after final source stabilization. S2 typecheck, target lint/format, test:runner and test:docs are already passed."
       ],
       "nextOperation": "Implement S3 as an independent slice. Preserve preparation command, execution group, and pre-group form/variant boundaries; verify success receipt contents separately from rollback and same-candidate recovery reads."
+    },
+    {
+      "name": "S3 selected execution-group rollback and same-candidate mutation/read recovery observation",
+      "status": "slice-complete",
+      "date": "2026-09-24",
+      "baselineHead": "c43bf64ad3b0c3634fce951a8ae977529bfb0f30",
+      "authorization": "User approved the bounded S1-S3 implementation plan. S3 adds execution observation only and does not close TSK-08, change damage semantics, or claim production ratchet success.",
+      "objective": "Connect the actual selected candidate execution to distinct pre-group context resolution, ordered execution-group commit/rollback, and actual inputQuantity reads after mutation or rollback. Preparation command/action/receipt evidence is reused from the prior bounded unit.",
+      "producers": [
+        "packages/battle-execution/src/candidatePreparation.ts::prepareExecutableCandidate retains the actual initial state before pre-group form/variant resolution; packages/battle-execution/src/candidateExecution.ts records that resolution separately from ordered effect groups.",
+        "packages/battle-execution/src/candidateExecution.ts::executeOrderedScenarioCandidateInternal records exact group membership, transaction identity, tentative applied operation IDs, typed issues, committed/rolled-back mutation values, and rollback comparison results only when the explicit audit observation path is used.",
+        "packages/battle-execution/src/condition.ts::evaluateCondition invokes the optional observer at the actual inputQuantity leaf with the value returned by liveInputQuantity; the selected candidate trace attaches the exact operation and group sequence.",
+        "packages/battle-execution/src/engine.ts::executeOrderedScenarioWithAuditObservation preserves candidateIndex and targetCandidate identity while returning the state trace generated during that same candidate execution."
+      ],
+      "consumer": "CalculationExecutionObservation.targetExecution carries candidateState alongside the same selected execution's ordered operation events. Ambiguous executions retain each candidate's own trace. The production ratchet consumer must treat absent candidateState as missing evidence and fail closed; the TypeScript property remains optional solely so existing manually constructed, unstaged S4 fixtures can be compiled without editing/staging them in S3.",
+      "productionPopulation": {
+        "known": "Reuse the existing 73 diagnostics across 40 user-visible controls / 33 owners and the 18 follow-up observations. B1-B3 remain unchanged.",
+        "excluded": "No control, owner, candidate, profile, status, semantic reason, or unsupported/invalid outcome was excluded or reclassified.",
+        "fullProductionAudit": "not-run because known B1-B3 make a success claim invalid. S3 does not report production zero counts."
+      },
+      "expected": {
+        "preGroupContextResolution": "Record the initial and resolved actor form, NP variant key, card, and the exact preapplied operation IDs in its own boundary; do not merge it into an execution group or preparation command transaction.",
+        "executionGroupIdentity": "Match candidateExecution's grouping key: origin and sourceInstanceId plus transactionGroupId, or the skillId/effectOccurrenceId fallback only when transactionGroupId is null. Operation IDs identify every member.",
+        "commit": "A committed group retains operation membership, applied operation IDs, and each observed mutation's exact before, attemptedAfter, and afterTransaction values.",
+        "rollback": "A failed group retains typed ExecutionIssue values and tentative applied operation IDs. battleStateRestored compares every state property other than the unresolved issue log against the group-start state; damageInputRestored compares the actual group input. Either false result is a ratchet failure.",
+        "actualRead": "Each inputQuantity record is emitted by the evaluator's actual liveInputQuantity call and keeps candidate, operation sequence, group index, input key, and value; key presence alone is not evidence.",
+        "candidateStatePresenceRequiredByRatchet": true,
+        "productionZeroCounts": "not asserted by S3; full production remains blocked by B1-B3."
+      },
+      "representativeFixtures": [
+        "Schema-legal critical-star input 69 with a fixed gain of 40 records 69 -> capped 99 -> later inputQuantity read 99 and satisfied condition from selected candidate index 0.",
+        "An execution group first applies a sibling modifier, then an unrepresentable critical-star mutation returns a typed unsupportedOperation issue. The group records the tentative operation, exact restored semantic state and damage input, then a later skill-slot action in the same candidate reads 20 in a distinct group.",
+        "Multiple effects under one skill command share the real transactionGroupId and therefore remain one group; the recovery read fixture uses a separate skill action because it must occur after rollback.",
+        "Pre-group context resolution is present as a separate trace boundary. No exhaustive Cartesian fixture was added."
+      ],
+      "boundaries": {
+        "preparationTransaction": "Reuse the prior bounded unit's verified preparation command/action/receipt and rollback/recovery evidence; do not repeat its same-condition diagnostic.",
+        "executionGroup": "Represent only candidateExecution effectTransactionKey groups and their real rollback boundary.",
+        "preGroupFormVariant": "Represent candidate selection's pre-group context resolution separately; it is not treated as an execution-group transaction.",
+        "selectedCandidate": "Mutation and recovery read are produced by the same selected candidate execution; no separate rerun is used as observation.",
+        "normalExecution": "executeOrderedScenario remains the existing direct path. Read callbacks, group snapshots, and trace arrays are created only through explicit audit observation.",
+        "semantics": "Candidate eligibility/status, canonical input, damage output, NP-special/NP-base identities, damage semantics, and cache identity are unchanged.",
+        "tsk07": "TSK-07 stale response/cache evidence is unchanged."
+      },
+      "changedFiles": [
+        "packages/battle-execution/src/candidateExecution.ts",
+        "packages/battle-execution/src/candidatePreparation.ts",
+        "packages/battle-execution/src/condition.ts",
+        "packages/battle-execution/src/engine.ts",
+        "packages/battle-execution/src/executionTypes.ts",
+        "packages/battle-execution/src/index.ts",
+        "packages/calculation-application/src/scenario.test.ts",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/evidence/README.md",
+        "docs/tasks/development-redesign-tasks.md",
+        "docs/README.md"
+      ],
+      "preservedUnvalidatedChanges": {
+        "paths": [
+          "packages/calculation-application/src/productionParityDiagnostics.ts",
+          "packages/calculation-application/src/productionMasterInventory.test.ts",
+          "packages/calculation-application/src/productionClosureAudit.test.ts"
+        ],
+        "combinedDiffSha256": "12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef",
+        "handling": "These existing S4 changes remain unstaged and are not included in the S3 commit."
+      },
+      "ignoredGeneratedFile": {
+        "path": "apps/web/next-env.d.ts",
+        "status": "ignored and retained; not staged",
+        "sha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b"
+      },
+      "verification": {
+        "focused": {
+          "command": "CI=true pnpm test:diagnostic -- packages/calculation-application/src/scenario.test.ts packages/battle-execution/src/condition.property.test.ts",
+          "status": "passed",
+          "files": 2,
+          "tests": 51,
+          "skipped": 0,
+          "durationMs": 2770,
+          "manifest": {
+            "path": ".test-results/2026-09-23T18-48-04-213Z-15-e6038a/manifest.json",
+            "sha256": "cef696af4ed7e0c25a3b7261fd2dec1c5e5bed68236de4f247f7966dc7cf8a9b"
+          },
+          "vitest": {
+            "path": ".test-results/2026-09-23T18-48-04-213Z-15-e6038a/vitest.json",
+            "sha256": "7f6ce99d5ee61d4576582fb721f302b002a738f114a6afd1d82c4c2d482eec8f"
+          },
+          "artifactDeclaration": {
+            "path": ".test-results/2026-09-23T18-48-04-213Z-15-e6038a/artifact-declarations.json",
+            "sha256": "bb8dbae6402b201b953b93002764686672b1a93522c45dad32b1ce066f1340f7"
+          },
+          "selectedMutationReadArtifact": {
+            "path": ".test-results/2026-09-23T18-48-04-213Z-15-e6038a/tsk-08-star-mutation-read.json",
+            "sha256": "e371a9ec025b858baa7094cfb71ad3e19455084c5241b5aae7c28fbf4df34344",
+            "bytes": 4849
+          },
+          "executionGroupRollbackArtifact": {
+            "path": ".test-results/2026-09-23T18-48-04-213Z-15-e6038a/tsk-08-execution-group-rollback.json",
+            "sha256": "f4c7d9a13f9d630d97a5b580538fe286fde7075a320270d671256313c5dc94a3",
+            "bytes": 7094
+          },
+          "runnerArtifactVerificationErrors": []
+        },
+        "workspaceTypecheck": {
+          "command": "./node_modules/.bin/tsc -b --pretty false",
+          "status": "passed"
+        },
+        "webTypecheck": {
+          "command": "./node_modules/.bin/tsc --noEmit --pretty false -p apps/web/tsconfig.json",
+          "status": "passed",
+          "note": "Used existing generated Next types; did not run next typegen or modify ignored apps/web/next-env.d.ts."
+        },
+        "lint": {
+          "command": "./node_modules/.bin/eslint packages/battle-execution/src/candidateExecution.ts packages/battle-execution/src/candidatePreparation.ts packages/battle-execution/src/condition.ts packages/battle-execution/src/engine.ts packages/battle-execution/src/executionTypes.ts packages/battle-execution/src/index.ts packages/calculation-application/src/scenario.test.ts --max-warnings=0",
+          "status": "passed"
+        },
+        "format": {
+          "command": "./node_modules/.bin/prettier --check <the seven changed TypeScript files>",
+          "status": "passed"
+        },
+        "runner": {
+          "requiredPnpmCommand": "pnpm test:runner",
+          "status": "wrapper_blocked_before_script",
+          "reason": "pnpm attempted dependency install and failed opening its external SQLite store index (ERR_SQLITE_ERROR: unable to open database file).",
+          "underlyingCommand": "node --test scripts/test-runner.test.mjs scripts/test-results-cleanup.test.mjs scripts/e2e-case-contract.test.mjs scripts/browser-observer.test.mjs scripts/playwright-reporter.test.mjs",
+          "underlyingStatus": "passed",
+          "tests": 53,
+          "skipped": 0,
+          "durationMs": 1778,
+          "manifest": "node --test output; no runner manifest is emitted"
+        },
+        "docs": {
+          "command": "node --test scripts/docs-integrity.test.mjs; node scripts/docs-integrity.mjs (direct equivalent of pnpm test:docs)",
+          "status": "passed",
+          "tests": 6,
+          "skipped": 0,
+          "docsIntegrity": "passed",
+          "format": "manually reviewed changed Markdown; machine evidence serialized as canonical two-space UTF-8 JSON with final newline; git diff --check passed"
+        },
+        "fullProduction": {
+          "command": "pnpm test:production",
+          "status": "deferred because known B1-B3 blockers remain; no full inventory rerun"
+        },
+        "quality": {
+          "command": "pnpm quality",
+          "status": "deferred until B1-B3 are resolved and all source slices are final"
+        },
+        "sourceInvariants": {
+          "tsk065SourceDigestChanged": false,
+          "eligibilityDigestChanged": false,
+          "matrixDigestChanged": false,
+          "candidateEligibilityOrStatusChanged": false,
+          "productionOutputChanged": false,
+          "calculatorRankingPortableParityChanged": false,
+          "canonicalInputChanged": false,
+          "damageSemanticsChanged": false,
+          "cacheIdentityChanged": false,
+          "tsk07StaleResponseEvidenceChanged": false,
+          "newProducer": false,
+          "newSemanticOwner": false
+        },
+        "packageManagerWrapperFailures": {
+          "status": "pnpm could not begin these scripts because dependency status checking attempted an install and the external SQLite store index could not be opened",
+          "error": "ERR_SQLITE_ERROR: unable to open database file",
+          "commands": [
+            "pnpm typecheck",
+            "pnpm test:runner",
+            "pnpm test:docs"
+          ],
+          "directEquivalents": "workspace and web TypeScript checks passed; runner node --test passed 53/53; docs node --test passed 6/6 and docs integrity passed."
+        }
+      },
+      "retainedFailedAttempts": [
+        {
+          "path": ".test-results/2026-09-23T18-35-08-713Z-15-fbf76c/manifest.json",
+          "sha256": "628062fdf73e375e8bbed82258821e4b1d4322577c4be96e900174396344f8e0",
+          "reason": "The first recovery-read test placed the recovery fixture in the same real transaction group and expected it after rollback; the read was correctly observed before the group rolled back. The fixture was moved to a later skill action."
+        },
+        {
+          "path": ".test-results/2026-09-23T18-35-35-523Z-15-9bd82b/manifest.json",
+          "sha256": "c98097c1ed3630f81e5e5a7c891edcf6d29593c1f21617105e00aff6ab8845b7",
+          "stdoutSha256": "e59422d3beff36aa1c67139eeb9d33e92d3d41f739e5fa6e6c81661a4d411355",
+          "vitestSha256": "2e15cecf9b2316a2ae9ed4238c385344eab73b1a31e2f64cca75da30414e49c6",
+          "reason": "The complete captured execution trace showed the mutation and same-command recovery-reader all belonged to group 0; this directly confirmed that effect transactionGroupId, not individual effect occurrence, defines the group boundary."
+        },
+        {
+          "path": ".test-results/2026-09-23T18-47-32-151Z-15-751f22/manifest.json",
+          "sha256": "0c2e5406d55856df6ddcdda3e40e76768da010a9295d91b44bf1c85bde695205",
+          "reason": "The focused assertion looked up an explicit transactionGroupId through the fallback effect identity field. The fixture was corrected to identify the rollback group through its operation membership and group outcome."
+        }
+      ],
+      "reusedEvidence": [
+        {
+          "path": "docs/evidence/tsk-08-parity-ratchet.json",
+          "unit": "preparation command/action/receipt consistency and partial-commit recovery",
+          "reused": "Preparation action/receipt identity, exact rollback, and subsequent recovery read were verified in the prior bounded unit; S3 does not repeat the same condition."
+        },
+        {
+          "path": ".test-results/tsk-08-investigation-record-20260924/complete-diagnostic-artifacts.tar.gz",
+          "sha256": "25b9966bb6ea66dbfcdbcbe7cd1785929ba18316a0b31039da00f16b166ac12b",
+          "reused": "73 diagnostics / 40 controls / 33 owners plus 18 follow-up observations; B1-B3 remain blocking."
+        }
+      ],
+      "remainingImplementation": [
+        "S4 shared production inert-control and mutation/read ratchet consumer; first reconcile the three preserved unstaged files. CandidateState absence must fail closed; no B1-B3 reclassification.",
+        "TSK-08-INV-B1/B2/B3 require owner-level product correction planning if resolving them conflicts with the protected damage/canonical-input invariants. Until resolved, no full-production success claim.",
+        "S5 fresh canonical 8-shard full production, merge, runner/docs and one final quality command remain deferred until semantic blockers are resolved."
+      ],
+      "nextOperation": "Review and reconcile the preserved S4 diff against current requirement and code ownership, then connect the real 40-control inventory to this same-candidate trace. Require canonical identity, typed domain reason, first difference, complete artifact declaration/checksum, and missing-trace fail-closed behavior. Keep B1-B3 blocking and stop for replanning if S4 requires a state/ownership/semantic change."
     }
   ],
-  "currentBoundedUnit": "S2 selected execution, BP witness, and without-area observation transport"
+  "currentBoundedUnit": "S3 selected execution-group rollback and same-candidate mutation/read recovery observation"
 }
