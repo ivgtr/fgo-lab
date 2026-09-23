@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.30"
+document_version: "1.7.31"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-24"
@@ -2464,6 +2464,16 @@ partial commitは成功receiptの適用内容と、途中失敗時の正確なro
 既存8-shard merge成功とeligibility digestはparity限定で再利用する。前回4 shardの92／92／140／140はshard単位で、manifestが参照するのは各10 conditions、合計40である。237〜258秒は調査した重いconditionの時間で、shard全体ではない。condition時間合計は約479／498／748／770秒だった。将来fresh full監査が必要なら8 canonical shardsを最大4並列・2 wave（概算16〜26分）で実行する。既知Blockingがある現時点では再実行しない。
 
 次は記録されたC1（artifact／選択execution）、C2（rollback／read continuity）、C3（inert semantic gate）、C4（fresh全件接続）の計画レビューと、B1〜B3の製品修正境界の承認である。各sliceは独立に実装・検証・記録が揃ってからcommitする。製品実装後はfocused、target lint／format、typecheck、production／runner／docs、最終source確定後のqualityを必要とする。今回の文書sliceはREADME所定のformat／docs／参照・artifact整合で閉じる。`pnpm test:docs`はregistry版同期後に成功（6 tests、docs integrity passed）。初回2回のregistry不一致は失敗logとchecksumを残した。完全artifact・参照・既存4ファイル差分の照合も成功し、結果は機械証跡に記録した。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、TSK-08全体もinert-control実装も完了扱いにしない。
+
+Current bounded-unit handoff（2026-09-24、S1 final-profile shard gate）:
+
+ユーザー承認済みのbounded planからS1を実装・検証した。指定HEAD `71056afb1f4b98634f61f53465645b28a55fe985`を基点に`/tmp`のisolated cloneで作業した。元worktreeの未検証4ファイル差分（SHA-256 `6f061eeab8572bc47e996b69a1be680da4a42f7ad44d131b8a9a0cc473209348`）とignore済み`apps/web/next-env.d.ts`は変更していない。
+
+`productionFinalOutcomeShardDifference`を共有audit diagnostics ownerへ追加し、`merge-oc-matrix.ts`が各shardのgate欠損、status／identity／firstDifference／failures形状不正、gate内expected／actual不一致を既存`finalProfileOutcomes`へcanonical identity failureとして渡す。既存のunsupported／invalid／inputRequired明細は保持する。`productionClosureAudit.test.ts`では、一つのartifact declaration ownerから全production diagnosticsを宣言し、runnerがJSON・bytes・SHA-256を確認した。machine evidenceは[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)のboundedUnitsを参照する。
+
+focused `pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts`は1 file／4 tests／skip 0で成功した。最終manifest `.test-results/2026-09-23T17-00-42-404Z-15-aebd6d/manifest.json`（SHA-256 `f97ed3c8c505a80158643daccbe25b8b37a0070f416ec5e9ae0ed1314319acf4`）がfinal-profile diagnostics（`production-final-outcome-diagnostics.json` SHA-256 `a1bba2e74d5a7885f2b5bf3b93a4ffb3e205222f2e8613e95c348eb2da750662`）を含み、artifact verification errors 0である。target lint、format、typecheckも成功した。修正前のfixture期待値・passed gate形状の誤りと、filterによるskipをrunnerが拒否した完全manifestはmachine evidenceにchecksum付きで保持した。
+
+TSK-06.5のsource／eligibility／matrix digest、candidate status、production output、parity、damage semantics、canonical input、cacheは変更していない。S1はmerge fail-closed closureのみであり、inert control、partial commit／recovery、stale mutation、全production ratchetの成功を主張しない。B1〜B3は引き続きblocking。次はS2でselected target／BP witness executionとactual without-area detailを同一実行から運び、再実行を観測に使わない。次のS3ではtransaction rollbackとread continuityを接続する。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。S1 implementation／evidence commitは本commit。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

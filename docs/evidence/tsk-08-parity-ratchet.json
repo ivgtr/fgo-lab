@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Review the now-specified bounded implementation plan and separately bound the three product-semantic corrections before source editing. Investigation is complete; do not repeat the same diagnostic or full audit without a changed source or a new question.",
+  "nextBoundedUnit": "S2 selected execution observation transport through target/BP witness selection and without-area ranking detail",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -1561,7 +1561,143 @@
         "docs/tasks/development-redesign-tasks.md",
         "docs/README.md"
       ]
+    },
+    {
+      "name": "S1 final-profile shard gate and diagnostic artifact declaration closure",
+      "status": "slice-complete",
+      "date": "2026-09-24",
+      "baselineHead": "71056afb1f4b98634f61f53465645b28a55fe985",
+      "authorization": "User approved the bounded S1-S3 implementation plan. This slice covers merge fail-closed identity and its complete focused diagnostic artifact; B1-B3, inert-control production success, stale mutation, and full-production connection are not claimed.",
+      "semanticOwner": "packages/calculation-application/src/productionParityDiagnostics.ts::productionFinalOutcomeShardDifference and evaluateProductionFinalOutcomeGate",
+      "consumer": "packages/calculation-application/scripts/merge-oc-matrix.ts validates each shard finalProfileOutcomes gate before aggregating its typed failures.",
+      "expected": {
+        "conditionCount": 80,
+        "attackProfileCount": 433,
+        "outcomeCount": 34640,
+        "calculated": 34600,
+        "unavailableUnderPolicy": 40,
+        "unsupported": 0,
+        "invalid": 0,
+        "inputRequired": 0
+      },
+      "failureContract": "A missing or malformed shard gate, absent firstDifference, non-empty passed-gate failures, or unequal expected/actual gate values adds a canonical tsk-08:final-profile-shard:<index> identity difference to the existing final-profile outcome gate. Existing final-profile failure records are preserved. The merge failure artifact retains this ratchet separately from TSK-06.5 records/digests.",
+      "fixtures": [
+        "valid passed shard gate",
+        "missing shard gate",
+        "missing firstDifference property",
+        "gate expected/actual mismatch",
+        "existing unsupported/invalid/inputRequired identities and duplicates"
+      ],
+      "artifactDeclarationOwner": "productionClosureAudit.test.ts::writeProductionClosureDiagnosticArtifact maintains one declaration set for the test-file diagnostics; runner verifies declarations, JSON, bytes and SHA-256.",
+      "changedFiles": [
+        "packages/calculation-application/src/productionParityDiagnostics.ts",
+        "packages/calculation-application/scripts/merge-oc-matrix.ts",
+        "packages/calculation-application/src/productionClosureAudit.test.ts",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/evidence/README.md",
+        "docs/tasks/development-redesign-tasks.md",
+        "docs/README.md"
+      ],
+      "preservedUnvalidatedChanges": {
+        "paths": [
+          "packages/calculation-application/src/productionParityDiagnostics.ts",
+          "packages/calculation-application/src/productionMasterInventory.test.ts",
+          "packages/calculation-application/src/productionClosureAudit.test.ts",
+          "packages/calculation-application/src/scenario.test.ts"
+        ],
+        "baselineDiffSha256": "6f061eeab8572bc47e996b69a1be680da4a42f7ad44d131b8a9a0cc473209348",
+        "handling": "The original worktree diffs remained untouched. This S1 implementation started from the specified clean HEAD in an isolated /tmp clone and did not copy the unvalidated hunks wholesale."
+      },
+      "ignoredGeneratedFile": {
+        "path": "apps/web/next-env.d.ts",
+        "status": "ignored and retained in the original worktree; not staged"
+      },
+      "verification": {
+        "focused": {
+          "command": "CI=true pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts",
+          "status": "passed",
+          "files": 1,
+          "tests": 4,
+          "skipped": 0,
+          "manifest": {
+            "path": ".test-results/2026-09-23T17-00-42-404Z-15-aebd6d/manifest.json",
+            "sha256": "f97ed3c8c505a80158643daccbe25b8b37a0070f416ec5e9ae0ed1314319acf4"
+          },
+          "diagnosticArtifact": {
+            "path": ".test-results/2026-09-23T17-00-42-404Z-15-aebd6d/production-final-outcome-diagnostics.json",
+            "bytes": 2400,
+            "sha256": "a1bba2e74d5a7885f2b5bf3b93a4ffb3e205222f2e8613e95c348eb2da750662"
+          },
+          "declarationArtifact": {
+            "path": ".test-results/2026-09-23T17-00-42-404Z-15-aebd6d/artifact-declarations.json",
+            "bytes": 350,
+            "sha256": "98af52ab253a9dc6e2d46341cba5a1eced780957f68c853cdf26cd9d317baa0f"
+          },
+          "runnerArtifactVerificationErrors": []
+        },
+        "lint": {
+          "command": "CI=true pnpm exec eslint packages/calculation-application/src/productionParityDiagnostics.ts packages/calculation-application/src/productionClosureAudit.test.ts --max-warnings=0",
+          "status": "passed"
+        },
+        "format": {
+          "command": "CI=true pnpm exec prettier --check packages/calculation-application/src/productionParityDiagnostics.ts packages/calculation-application/scripts/merge-oc-matrix.ts packages/calculation-application/src/productionClosureAudit.test.ts",
+          "status": "passed"
+        },
+        "typecheck": {
+          "command": "CI=true pnpm typecheck",
+          "status": "passed"
+        },
+        "sourceInvariants": {
+          "tsk065SourceDigestChanged": false,
+          "eligibilityDigestChanged": false,
+          "matrixDigestChanged": false,
+          "candidateStatusesChanged": false,
+          "productionOutputChanged": false,
+          "calculatorRankingPortableParityChanged": false,
+          "newProducer": false,
+          "newSemanticOwner": false,
+          "damageSemanticsChanged": false,
+          "cacheChanged": false,
+          "tsk07EvidenceChanged": false
+        },
+        "documentation": {
+          "command": "CI=true pnpm test:docs",
+          "status": "passed",
+          "tests": 6,
+          "docsIntegrity": "passed",
+          "format": "manual changed-Markdown paragraph/table review, canonical two-space JSON, UTF-8 final newline, git diff --check; docs are excluded from Prettier and no Prettier no-op is claimed"
+        }
+      },
+      "retainedFailedAttempts": [
+        {
+          "path": ".test-results/2026-09-23T16-50-29-214Z-15-eaec01/manifest.json",
+          "sha256": "901ee8510a2452c3e6bda3346e86d49aaec7917e7bf1ad8f141ebfb861d6aa42",
+          "reason": "The first focused assertion used a missing-gate first-difference fixture whose actual canonical first difference was canonicalIdentity; the fixture expectation was corrected."
+        },
+        {
+          "path": ".test-results/2026-09-23T16-51-14-524Z-15-73063c/manifest.json",
+          "sha256": "6e1c18f0acc9b110d1c92a88a203e097ae7eb861e5d1b05d470f220195e715cb",
+          "reason": "A name-filtered runner invocation skipped sibling tests and correctly failed the runner contract despite the selected test passing; the complete test file then passed with zero skips."
+        },
+        {
+          "command": "pnpm test:docs",
+          "reason": "First documentation gate detected docs/README.md self-version still at 1.5.63 after the index bump. The registry self-version was synchronized and the same docs gate then passed. The failed command was short; no separate artifact manifest was emitted."
+        },
+        {
+          "path": ".test-results/2026-09-23T16-59-30-017Z-46-4b5afa/manifest.json",
+          "sha256": "14c35be0f091de5e5d916ddfe9d9d1ecb996254684ad4fdb821e31fb335b5e5e",
+          "reason": "The shard-gate validator initially compared a legitimate passed gate against an asymmetric expected shape and rejected it. The validator was corrected to accept well-formed passed and failed gates while rejecting malformed/mismatched shapes; the full focused file passed afterward."
+        }
+      ],
+      "remainingImplementation": [
+        "S2 selected target/BP execution and without-area observation transport",
+        "S3 preparation/group partial-commit and ordered mutation-read-recovery ratchets",
+        "S4 inert-control gate remains blocked by TSK-08-INV-B1/B2/B3",
+        "S5 fresh 8-shard full production remains deferred until the strict gates can pass",
+        "TSK-08 remains in_progress; TSK-09.1/09 remain blocked"
+      ],
+      "nextOperation": "Implement S2 from the actual selected execution result and the actual without-area result, without re-execution. Preserve candidate/profile status and canonical inputs."
     }
   ],
-  "currentBoundedUnit": "pre-implementation semantic investigation and bounded plan"
+  "currentBoundedUnit": "S1 final-profile shard gate and diagnostic artifact declaration closure"
 }

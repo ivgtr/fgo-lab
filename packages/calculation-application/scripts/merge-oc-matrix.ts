@@ -21,6 +21,7 @@ import {
   evaluateProductionFinalOutcomeGate,
   evaluateProductionPreparationTransactionGate,
   evaluateProductionParityGate,
+  productionFinalOutcomeShardDifference,
   type ProductionFinalOutcomeFailure,
   type ProductionFinalProfileOutcome,
   type ProductionPreparationTransactionFailure,
@@ -234,6 +235,13 @@ async function merge(): Promise<void> {
       failure.reason === 'finalProfileOutcomeIdentityMismatch' ? [failure.firstDifference] : [],
     );
   });
+  const finalOutcomeShardIdentityFailures = shards.flatMap((shard, shardIndex) => {
+    const difference = productionFinalOutcomeShardDifference(
+      shard.executionRatchets?.finalProfileOutcomes,
+      shardIndex,
+    );
+    return difference ? [difference] : [];
+  });
   const sumMaps = (values: readonly Record<string, number>[]) =>
     values.reduce<Record<string, number>>((sum, value) => {
       for (const [key, count] of Object.entries(value)) sum[key] = (sum[key] ?? 0) + count;
@@ -320,7 +328,10 @@ async function merge(): Promise<void> {
   const finalOutcomeGate = evaluateProductionFinalOutcomeGate({
     outcomes: audit.outcomes,
     failures: finalProfileFailures,
-    inheritedIdentityFailures: inheritedOutcomeIdentityFailures,
+    inheritedIdentityFailures: [
+      ...inheritedOutcomeIdentityFailures,
+      ...finalOutcomeShardIdentityFailures,
+    ],
   });
   const preparationIdentityFailures = [];
   const preparationFailures: ProductionPreparationTransactionFailure[] = [];

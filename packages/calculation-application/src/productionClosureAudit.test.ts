@@ -22,62 +22,40 @@ import {
   compareProductionParity,
   evaluateProductionPreparationTransactionGate,
   evaluateProductionParityGate,
+  productionFinalOutcomeShardDifference,
 } from './productionParityDiagnostics';
 import { combineRankingEligibilityPartitionDigests } from './rankingEligibilityAudit';
 
-async function writeParityDiagnosticArtifact(value: unknown): Promise<void> {
+const productionClosureDiagnosticArtifacts = new Set<string>();
+
+async function writeProductionClosureDiagnosticArtifact(path: string, value: unknown) {
   const artifactDirectory = process.env['FGO_TEST_ARTIFACT_DIR'];
   if (!artifactDirectory) return;
-  await writeFile(
-    resolve(artifactDirectory, 'production-closure-parity-diagnostics.json'),
-    `${JSON.stringify(value, null, 2)}\n`,
-  );
+  await writeFile(resolve(artifactDirectory, path), `${JSON.stringify(value, null, 2)}\n`);
+  productionClosureDiagnosticArtifacts.add(path);
   await writeFile(
     resolve(artifactDirectory, 'artifact-declarations.json'),
     `${JSON.stringify(
-      [
-        {
-          path: 'production-closure-parity-diagnostics.json',
-          format: 'json',
-          allowEmpty: false,
-        },
-        {
-          path: 'production-preparation-transaction-diagnostics.json',
-          format: 'json',
-          allowEmpty: false,
-        },
-      ],
+      [...productionClosureDiagnosticArtifacts]
+        .sort()
+        .map((artifactPath) => ({ path: artifactPath, format: 'json', allowEmpty: false })),
       null,
       2,
     )}\n`,
   );
 }
 
-async function writePreparationTransactionDiagnosticArtifact(value: unknown): Promise<void> {
-  const artifactDirectory = process.env['FGO_TEST_ARTIFACT_DIR'];
-  if (!artifactDirectory) return;
-  await writeFile(
-    resolve(artifactDirectory, 'production-preparation-transaction-diagnostics.json'),
-    `${JSON.stringify(value, null, 2)}\n`,
+async function writeParityDiagnosticArtifact(value: unknown): Promise<void> {
+  return writeProductionClosureDiagnosticArtifact(
+    'production-closure-parity-diagnostics.json',
+    value,
   );
-  await writeFile(
-    resolve(artifactDirectory, 'artifact-declarations.json'),
-    `${JSON.stringify(
-      [
-        {
-          path: 'production-closure-parity-diagnostics.json',
-          format: 'json',
-          allowEmpty: false,
-        },
-        {
-          path: 'production-preparation-transaction-diagnostics.json',
-          format: 'json',
-          allowEmpty: false,
-        },
-      ],
-      null,
-      2,
-    )}\n`,
+}
+
+async function writePreparationTransactionDiagnosticArtifact(value: unknown): Promise<void> {
+  return writeProductionClosureDiagnosticArtifact(
+    'production-preparation-transaction-diagnostics.json',
+    value,
   );
 }
 
@@ -334,16 +312,67 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
   });
 });
 
-it('fails closed on final profile statuses and retains unique profile identities', () => {
+it('fails closed on final profile statuses and retains unique profile identities', async () => {
   const passing = evaluateProductionFinalOutcomeGate({
     outcomes: { unsupported: 0, invalid: 0, inputRequired: 0 },
     failures: [],
+  });
+  const missingShardGateDifference = productionFinalOutcomeShardDifference(undefined, 3);
+  const missingFirstDifferenceGate = Object.fromEntries(
+    Object.entries(passing).filter(([key]) => key !== 'firstDifference'),
+  );
+  const missingFirstDifferenceShardDifference = productionFinalOutcomeShardDifference(
+    missingFirstDifferenceGate,
+    2,
+  );
+  const mismatchedShardGateDifference = productionFinalOutcomeShardDifference(
+    { ...passing, actual: { unsupported: 1, invalid: 0, inputRequired: 0 } },
+    1,
+  );
+  await writeProductionClosureDiagnosticArtifact('production-final-outcome-diagnostics.json', {
+    schemaVersion: 1,
+    boundary: 'calculation-application-final-profile-outcomes',
+    canonicalIdentity: passing.canonicalIdentity,
+    passing,
+    shardObservations: [
+      { shardIndex: 0, gate: passing, difference: null },
+      { shardIndex: 3, gate: null, difference: missingShardGateDifference },
+      {
+        shardIndex: 2,
+        gate: missingFirstDifferenceGate,
+        difference: missingFirstDifferenceShardDifference,
+      },
+      {
+        shardIndex: 1,
+        gate: { ...passing, actual: { unsupported: 1, invalid: 0, inputRequired: 0 } },
+        difference: mismatchedShardGateDifference,
+      },
+    ],
   });
   expect(passing).toMatchObject({
     status: 'passed',
     canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
     firstDifference: null,
     failures: [],
+  });
+  expect(productionFinalOutcomeShardDifference(passing, 0)).toBeNull();
+  expect(missingShardGateDifference).toMatchObject({
+    identity: 'tsk-08:final-profile-shard:3',
+    path: 'canonicalIdentity',
+    expected: 'tsk-06.5:final-profile-outcomes',
+    actual: null,
+  });
+  expect(missingFirstDifferenceShardDifference).toMatchObject({
+    identity: 'tsk-08:final-profile-shard:2',
+    path: 'hasFirstDifference',
+    expected: true,
+    actual: false,
+  });
+  expect(mismatchedShardGateDifference).toMatchObject({
+    identity: 'tsk-08:final-profile-shard:1',
+    path: 'validGateState',
+    expected: true,
+    actual: false,
   });
 
   const failed = evaluateProductionFinalOutcomeGate({
@@ -358,6 +387,7 @@ it('fails closed on final profile statuses and retains unique profile identities
       },
     ],
   });
+  expect(productionFinalOutcomeShardDifference(failed, 4)).toBeNull();
   expect(failed).toMatchObject({
     status: 'failed',
     canonicalIdentity: 'tsk-06.5:final-profile-outcomes',

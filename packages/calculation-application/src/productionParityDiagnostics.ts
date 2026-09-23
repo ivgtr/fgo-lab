@@ -124,6 +124,108 @@ export interface ProductionFinalOutcomeGateInput {
   inheritedIdentityFailures?: readonly CanonicalAuditDifference[];
 }
 
+/** Missing or malformed shard status evidence is distinct from an observed zero-failure shard. */
+export function productionFinalOutcomeShardDifference(
+  gate: unknown,
+  shardIndex: number,
+): CanonicalAuditDifference | null {
+  const candidate =
+    typeof gate === 'object' && gate !== null && !Array.isArray(gate)
+      ? (gate as Record<string, unknown>)
+      : null;
+  const failures = candidate?.['failures'];
+  const expectedValue = candidate?.['expected'];
+  const actualValue = candidate?.['actual'];
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+  const canonicalIdentity = candidate?.['canonicalIdentity'];
+  const valuesDifference =
+    isRecord(expectedValue) && isRecord(actualValue) && typeof canonicalIdentity === 'string'
+      ? firstCanonicalAuditDifference(
+          [{ identity: canonicalIdentity, value: canonicalValue(expectedValue) }],
+          [{ identity: canonicalIdentity, value: canonicalValue(actualValue) }],
+        )
+      : null;
+  const knownFailures =
+    Array.isArray(failures) &&
+    failures.every(
+      (failure) =>
+        isRecord(failure) &&
+        (failure['reason'] === 'finalProfileStatusPresent' ||
+          failure['reason'] === 'finalProfileOutcomeIdentityMismatch') &&
+        typeof failure['canonicalIdentity'] === 'string' &&
+        isRecord(failure['firstDifference']),
+    );
+  const firstDifference = candidate?.['firstDifference'];
+  const firstDifferenceMatches =
+    isRecord(firstDifference) &&
+    typeof canonicalIdentity === 'string' &&
+    (valuesDifference !== null
+      ? firstCanonicalAuditDifference(
+          [{ identity: canonicalIdentity, value: canonicalValue(firstDifference) }],
+          [{ identity: canonicalIdentity, value: canonicalValue(valuesDifference) }],
+        ) === null
+      : Array.isArray(failures) &&
+        failures.some(
+          (failure) =>
+            isRecord(failure) &&
+            isRecord(failure['firstDifference']) &&
+            firstCanonicalAuditDifference(
+              [{ identity: canonicalIdentity, value: canonicalValue(firstDifference) }],
+              [
+                {
+                  identity: canonicalIdentity,
+                  value: canonicalValue(failure['firstDifference']),
+                },
+              ],
+            ) === null,
+        ));
+  const status = candidate?.['status'];
+  const validGateState =
+    status === 'passed'
+      ? isRecord(expectedValue) &&
+        isRecord(actualValue) &&
+        valuesDifference === null &&
+        firstDifference === null &&
+        Array.isArray(failures) &&
+        failures.length === 0
+      : status === 'failed' &&
+        Array.isArray(failures) &&
+        failures.length > 0 &&
+        knownFailures &&
+        firstDifferenceMatches;
+  const expected = canonicalValue({
+    present: true,
+    canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
+    hasExpected: true,
+    hasActual: true,
+    hasFirstDifference: true,
+    validGateState: true,
+  });
+  const actual = canonicalValue({
+    present: candidate !== null,
+    canonicalIdentity: canonicalIdentity ?? null,
+    hasExpected: candidate !== null && Object.hasOwn(candidate, 'expected'),
+    hasActual: candidate !== null && Object.hasOwn(candidate, 'actual'),
+    validGateState,
+    hasFirstDifference: candidate !== null && Object.hasOwn(candidate, 'firstDifference'),
+  });
+  return firstCanonicalAuditDifference(
+    [
+      {
+        identity: `tsk-08:final-profile-shard:${String(shardIndex)}`,
+        value: expected,
+      },
+    ],
+    [
+      {
+        identity: `tsk-08:final-profile-shard:${String(shardIndex)}`,
+        value: actual,
+      },
+    ],
+  );
+}
+
 export type ProductionPreparationTransactionFailureReason =
   | 'preparationCommandActionMismatch'
   | 'preparationReceiptMismatch'
