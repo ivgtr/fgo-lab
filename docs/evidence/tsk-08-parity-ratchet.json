@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "S4 production control/mutation ratchets with B1-B3 preserved as blocking",
+  "nextBoundedUnit": "Revised S4 production-control/mutation consumer plan pending confirmation; preserve B1-B3 and require alternate-path coverage",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -2122,7 +2122,113 @@
         "S5 fresh canonical 8-shard full production, merge, runner/docs and one final quality command remain deferred until semantic blockers are resolved."
       ],
       "nextOperation": "Review and reconcile the preserved S4 diff against current requirement and code ownership, then connect the real 40-control inventory to this same-candidate trace. Require canonical identity, typed domain reason, first difference, complete artifact declaration/checksum, and missing-trace fail-closed behavior. Keep B1-B3 blocking and stop for replanning if S4 requires a state/ownership/semantic change."
+    },
+    {
+      "name": "S4 shared production control/mutation consumer review",
+      "status": "stopped-for-replan",
+      "date": "2026-09-24",
+      "baselineHead": "bf10aed9f1d94914835845e1b42cf31db6588565",
+      "scope": "Read-only review of the preserved unverified S4 source diff against the current production-inventory, without-area, stale-mutation, and artifact contracts. No S4 source edit, focused test, or production inventory rerun was performed after the gaps below were found.",
+      "preservedUnstagedDiff": {
+        "files": [
+          "packages/calculation-application/src/productionParityDiagnostics.ts",
+          "packages/calculation-application/src/productionMasterInventory.test.ts",
+          "packages/calculation-application/src/productionClosureAudit.test.ts"
+        ],
+        "sha256": "12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef",
+        "staged": false
+      },
+      "findings": [
+        {
+          "canonicalIdentity": "tsk-08:inert-controls:without-area-alternate:representative-coverage",
+          "typedReason": "userControlInventoryCoverageMismatch",
+          "firstDifference": {
+            "path": "representativeFixtureCount",
+            "expected": "at least one schema-legal selected/withoutAreaAlternate fixture linked to its own detail, input, and effective contributions",
+            "actual": 0
+          },
+          "evidence": "The preserved inventory emits only path=selectedProfile; the gate compares a total projection count and has no alternate fixture requirement. Prior production without-area occurrence count 0 is explicitly not coverage proof.",
+          "unmet": "Require a representative actual without-area execution and keep its candidate identity, detail, input, and effective contributions tied to that execution."
+        },
+        {
+          "canonicalIdentity": "tsk-08:stale-mutation:production-consumer:actual-read-continuity",
+          "typedReason": "staleMutationObservationNotConsumed",
+          "firstDifference": {
+            "path": "candidateStateConsumption",
+            "expected": "same-candidate ordered mutation values, exact later inputQuantity reads, and rollback/recovery proof are validated by the shared production gate",
+            "actual": "the preserved gate does not inspect executionGroups, mutations, inputQuantityReads, or rollbackProof"
+          },
+          "evidence": "S3 transports candidateState but the preserved S4 consumer only validates target selection and control reachability; candidateState remains optional and is not checked by hasExecutionObservation.",
+          "unmet": "Consume and validate the same selected candidate trace. Exact criticalStars 69 -> capped 99 -> read 99 and rollback/recovery continuity must remain value-checked, not key-presence checks."
+        },
+        {
+          "canonicalIdentity": "tsk-08:inert-controls:production-inventory:expected-population",
+          "typedReason": "productionInventoryExpectationNotDerived",
+          "firstDifference": {
+            "path": "expectedProjectionCount",
+            "expected": "fresh count and canonical identity set from the existing complete user-visible production inventory",
+            "actual": 1590
+          },
+          "evidence": "The preserved production test hardcodes 1590 as expectedProjectionCount and as a passing projectionCount, while current evidence defines 1590 only as prior baseline cardinality.",
+          "unmet": "Derive the expected current population from the existing production inventory and compare complete canonical identities; keep 1590 as historical context only."
+        },
+        {
+          "canonicalIdentity": "tsk-08:inert-controls:failure-artifact:persistence-before-assertion",
+          "typedReason": "completeFailureArtifactMissing",
+          "firstDifference": {
+            "path": "productionDiagnosticArtifact",
+            "expected": "complete declared domain failure artifact written before assertion with verified bytes and checksum",
+            "actual": "the preserved production inventory gate has no failure-artifact writer"
+          },
+          "evidence": "The historical focused run's manifest, Vitest report, and stderr exist and checksum correctly, but its declared production-inert-control-diagnostics.json is missing; the runner recorded artifact_failure.",
+          "unmet": "One diagnostic owner must persist the complete canonical failures before assertion and expose one artifact declaration set for generic runner byte/checksum verification."
+        }
+      ],
+      "reviewArtifact": {
+        "path": ".test-results/tsk-08-s4-replan-review-20260924/inspection-findings.json",
+        "sha256": "d19816cf88f9067b40a3fde55477af411c4a1564b4f321404b1e60688ff29ca5",
+        "kind": "code-review finding; not a test result or production audit success"
+      },
+      "historicalFailedAttempt": {
+        "path": ".test-results/2026-09-23T14-56-22-736Z-15-aa9e93",
+        "status": "artifact_failure; 42 passed, 2 failed, 0 skipped",
+        "verifiedArtifacts": [
+          {
+            "path": "manifest.json",
+            "sha256": "6a3ff15cc1500f7460e47bb35d26ad10e867b41ace14e099bb8eef287664bbeb"
+          },
+          {
+            "path": "vitest.json",
+            "sha256": "9d9fbbeb4cdd03f355fdb5464526282d4c7e78d81d4bb80ad639cc4dbe7c3b09"
+          },
+          {
+            "path": "stderr.log",
+            "sha256": "033d7e3e73ff539f2758a6f3ea99adeea31ce2c3c25c28ebf1edb3fd4914e894"
+          }
+        ],
+        "missingArtifact": "production-inert-control-diagnostics.json; missing is recorded as missing and is not inferred from captured logs"
+      },
+      "reusedPopulationEvidence": "73 diagnostics / 40 controls / 33 owners / 18 follow-up observations remain the investigation result, not a current zero-count or ratchet-pass claim.",
+      "knownBlocking": [
+        "TSK-08-INV-B1",
+        "TSK-08-INV-B2",
+        "TSK-08-INV-B3"
+      ],
+      "alreadyCommittedSlices": [
+        "0f7b549f912010ccaf9bdb29db93ec6885d4f5db",
+        "c43bf64ad3b0c3634fce951a8ae977529bfb0f30",
+        "bf10aed9f1d94914835845e1b42cf31db6588565"
+      ],
+      "sourceAndStatusInvariants": {
+        "freshProductionAuditRun": false,
+        "TSK-06.5": "80 conditions x 433 profiles = 34640 outcomes; 34600 calculated/parity; 40 unavailable; final-profile unsupported/invalid/inputRequired each 0; unchanged",
+        "TSK-07 stale response/cache evidence": "unchanged",
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      },
+      "nextOperation": "Revise the S4 plan to derive fresh production control identities, require a representative actual without-area fixture, connect the same-candidate mutation/read/rollback trace to the production consumer, and persist complete failures before assertions. Preserve all existing semantic boundaries and B1-B3. Wait for plan confirmation before source changes or focused validation."
     }
   ],
-  "currentBoundedUnit": "S3 selected execution-group rollback and same-candidate mutation/read recovery observation"
+  "currentBoundedUnit": "S4 production control/mutation consumer review (stopped-for-replan)"
 }

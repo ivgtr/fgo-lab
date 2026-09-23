@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.33"
+document_version: "1.7.34"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-24"
@@ -2502,6 +2502,16 @@ focused commandは2 files／51 tests／skip 0で成功した。manifest `.test-r
 S3はproduction inventoryを再実行しておらず、73 diagnostics／40 controls／33 owners／18 follow-up observations、B1〜B3のBlocking、TSK-06.5の80 × 433 = 34,640 outcomes（34,600 calculated/parity、40 unavailable、final-profile unsupported／invalid／inputRequired各0）を変更・再解釈していない。TSK-06.5 digest／inventory／production output／parity、candidate status、canonical input、damage semantics、cache、TSK-07 stale-response evidenceも変更なし。`pnpm test:production`は既知B1〜B3があるため実行せず、`pnpm quality`も全source slice未完了のため延期した。機械証跡は[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)の最新S3 `boundedUnits`を参照する。
 
 次は残る3つのS4差分を現行要件と照合し、既存production user-control inventoryからselected／without-area executionとこのmutation/group traceをcanonical identity単位で接続する。missing trace、typed reason／first difference欠損、failure artifact／checksum不一致はfail-closedにする。B1〜B3を分類緩和で消さず、state／ownership／damage semanticsの変更衝突が見つかったら影響作業を止めて再計画する。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま維持し、TSK-08全体の完了は主張しない。S3 implementation／evidence commitは本commit。
+
+Current bounded-unit handoff（2026-09-24、S4 production control/mutation consumer review; stopped for replan）:
+
+S3は`bf10aed9f1d94914835845e1b42cf31db6588565`でcommit済み。保存していたS4用3ファイルを現行のinventory／alternate／mutation／artifact要件に照合したところ、production observationsが`selectedProfile`だけで、`withoutAreaAlternate`の代表fixtureがgateにないこと、gateがS3の`candidateState`／実際のmutation・read・rollback observationを消費していないこと、期待値に過去baselineの1590を固定していること、production failure artifactをassertion前に保存する経路がないことを確認した。これらは監査側の緩和や分類では解決できないためS4範囲を止めた。
+
+canonical identity、typed finding reason、first difference、コード根拠は[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)の最新stopped-for-replan recordと`.test-results/tsk-08-s4-replan-review-20260924/inspection-findings.json`（SHA-256 `d19816cf88f9067b40a3fde55477af411c4a1564b4f321404b1e60688ff29ca5`）に記録した。このJSONはコードレビューfinding artifactであり、test outputやproduction audit成功証拠ではない。以前のfocused failureではmanifest `6a3ff15cc1500f7460e47bb35d26ad10e867b41ace14e099bb8eef287664bbeb`、Vitest report `9d9fbbeb4cdd03f355fdb5464526282d4c7e78d81d4bb80ad639cc4dbe7c3b09`、stderr `033d7e3e73ff539f2758a6f3ea99adeea31ce2c3c25c28ebf1edb3fd4914e894`を検証した。宣言済み`production-inert-control-diagnostics.json`は欠損しており、logsから成功証拠として補完していない。
+
+今回、S4 source変更後のfocused test／full productionは実行していない。commit可能なS4 implementation sliceはない。未検証差分3ファイルは未stageのままcombined diff SHA-256 `12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef`を保持している。独立に再利用できる証拠はS2の同一candidate selected／without-area observation transportとS3の69→99→実読99／rollback recovery observer fixtureであり、いずれもproduction control/mutation gate成功の証拠ではない。73 diagnostics／40 controls／33 owners／18追加観測およびB1〜B3は調査結果・Blockingのまま維持し、fresh production zero countは主張しない。
+
+次のbounded planでは、(1)既存production inventoryからfresh user-control identity populationを導出し、全identityを照合する、(2)production alternate count 0に依存せず、実際のselected detailとwithout-area detail／input／effective contributionsを各々の同一candidate executionへ結ぶ代表fixtureを置く、(3)S3 observerの同じcandidate `candidateState`をproduction stale-mutation consumerへ接続し、69→99→read 99とrollback/recovery値を直接比較する、(4)canonical failure一覧をassertion前に一つのartifact ownerが保存し、runnerが存在／bytes／SHA-256を検証する、という独立境界を検討する。各sliceはfocused checksと記録を揃えてから個別commitする。既存B1〜B3、TSK-06.5 status/digest／output/parity、damage semantics／canonical input、TSK-07 cache/stale-responseを変更しない。まず改訂計画を確認してからS4 source差分へ戻る。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま維持する。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 
