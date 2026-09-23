@@ -8,6 +8,7 @@ test-results/
 .test-results/
 .vite/
 .next/
+apps/web/next-env.d.ts
 out/
 .turbo/
 .pnpm-store/
