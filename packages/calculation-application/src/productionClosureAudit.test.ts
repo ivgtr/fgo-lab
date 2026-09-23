@@ -13,6 +13,7 @@ import {
   productionClosureConditions,
 } from './productionClosureAudit';
 import {
+  evaluateProductionFinalOutcomeGate,
   compareProductionParity,
   evaluateProductionParityGate,
 } from './productionParityDiagnostics';
@@ -242,5 +243,112 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
     parityGate,
     eligibilityMismatch,
     intentionalFailures: [canonicalFailure, statusFailure],
+  });
+});
+
+it('fails closed on final profile statuses and retains unique profile identities', () => {
+  const passing = evaluateProductionFinalOutcomeGate({
+    outcomes: { unsupported: 0, invalid: 0, inputRequired: 0 },
+    failures: [],
+  });
+  expect(passing).toMatchObject({
+    status: 'passed',
+    canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
+    firstDifference: null,
+    failures: [],
+  });
+
+  const failed = evaluateProductionFinalOutcomeGate({
+    outcomes: { unsupported: 1, invalid: 1, inputRequired: 1 },
+    failures: [
+      { conditionKey: 'fixture-condition', profileKey: 'fixture-profile-u', status: 'unsupported' },
+      { conditionKey: 'fixture-condition', profileKey: 'fixture-profile-i', status: 'invalid' },
+      {
+        conditionKey: 'fixture-condition',
+        profileKey: 'fixture-profile-r',
+        status: 'inputRequired',
+      },
+    ],
+  });
+  expect(failed).toMatchObject({
+    status: 'failed',
+    canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
+    firstDifference: {
+      identity: 'tsk-06.5:final-profile-outcomes',
+      path: 'inputRequired',
+      expected: 0,
+      actual: 1,
+    },
+    failures: [
+      {
+        reason: 'finalProfileStatusPresent',
+        canonicalIdentity: 'production:fixture-condition:profile:fixture-profile-u:final-outcome',
+        conditionKey: 'fixture-condition',
+        profileKey: 'fixture-profile-u',
+        status: 'unsupported',
+        expected: 'calculated',
+        actual: 'unsupported',
+        firstDifference: { path: 'status', expected: 'calculated', actual: 'unsupported' },
+      },
+      {
+        reason: 'finalProfileStatusPresent',
+        canonicalIdentity: 'production:fixture-condition:profile:fixture-profile-i:final-outcome',
+        conditionKey: 'fixture-condition',
+        profileKey: 'fixture-profile-i',
+        status: 'invalid',
+        expected: 'calculated',
+        actual: 'invalid',
+      },
+      {
+        reason: 'finalProfileStatusPresent',
+        canonicalIdentity: 'production:fixture-condition:profile:fixture-profile-r:final-outcome',
+        conditionKey: 'fixture-condition',
+        profileKey: 'fixture-profile-r',
+        status: 'inputRequired',
+        expected: 'calculated',
+        actual: 'inputRequired',
+      },
+    ],
+  });
+
+  const missingIdentity = evaluateProductionFinalOutcomeGate({
+    outcomes: { unsupported: 1, invalid: 0, inputRequired: 0 },
+    failures: [],
+  });
+  expect(missingIdentity).toMatchObject({
+    status: 'failed',
+    failures: [
+      {
+        reason: 'finalProfileOutcomeIdentityMismatch',
+        canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
+      },
+    ],
+  });
+
+  const duplicateIdentity = evaluateProductionFinalOutcomeGate({
+    outcomes: { unsupported: 2, invalid: 0, inputRequired: 0 },
+    failures: [
+      { conditionKey: 'fixture-condition', profileKey: 'fixture-profile', status: 'unsupported' },
+      { conditionKey: 'fixture-condition', profileKey: 'fixture-profile', status: 'unsupported' },
+    ],
+  });
+  expect(duplicateIdentity).toMatchObject({
+    status: 'failed',
+    failures: [
+      {
+        reason: 'finalProfileOutcomeIdentityMismatch',
+        firstDifference: { path: 'distinctProfileFailures', expected: 2, actual: 1 },
+      },
+      {
+        reason: 'finalProfileStatusPresent',
+        canonicalIdentity: 'production:fixture-condition:profile:fixture-profile:final-outcome',
+        status: 'unsupported',
+      },
+      {
+        reason: 'finalProfileStatusPresent',
+        canonicalIdentity: 'production:fixture-condition:profile:fixture-profile:final-outcome',
+        status: 'unsupported',
+      },
+    ],
   });
 });

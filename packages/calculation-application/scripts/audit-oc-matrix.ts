@@ -9,7 +9,11 @@ import {
 } from '@fgo-lab/master-data/production-audit';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { auditProductionClosure, productionClosureConditions } from '../src/productionClosureAudit';
-import { evaluateProductionParityGate } from '../src/productionParityDiagnostics';
+import {
+  evaluateProductionFinalOutcomeGate,
+  evaluateProductionParityGate,
+  type ProductionFinalProfileOutcome,
+} from '../src/productionParityDiagnostics';
 import { RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT } from '../src/rankingEligibilityAudit';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -56,12 +60,29 @@ async function audit(): Promise<void> {
   const selectedConditions = productionClosureConditions().filter(
     (_, index) => index % shardCount === shardIndex,
   );
+  const finalProfileFailures: ProductionFinalProfileOutcome[] = [];
 
   const audit = await auditProductionClosure(
     master,
     { servantBuilds: {} },
     versions,
     async ({ records, ...summary }) => {
+      for (const value of records) {
+        if (
+          typeof value === 'object' &&
+          value !== null &&
+          'profileKey' in value &&
+          'status' in value &&
+          (value.status === 'unsupported' ||
+            value.status === 'invalid' ||
+            value.status === 'inputRequired')
+        )
+          finalProfileFailures.push({
+            conditionKey: summary.key,
+            profileKey: String(value.profileKey),
+            status: value.status,
+          });
+      }
       await writeFile(
         resolve(output, `${summary.key}.json`),
         `${JSON.stringify({ identity, summary, records })}\n`,
@@ -86,11 +107,16 @@ async function audit(): Promise<void> {
         )
       : null;
   const parityGate = source ? evaluateProductionParityGate(source, audit) : null;
+  const finalOutcomeGate = evaluateProductionFinalOutcomeGate({
+    outcomes: audit.outcomes,
+    failures: finalProfileFailures,
+  });
   const sharedAuditModel =
     source && parityGate?.status === 'passed' ? connectProductionAuditMatrix(source, audit) : null;
   failureArtifact = {
     identity,
     audit,
+    executionRatchets: { finalProfileOutcomes: finalOutcomeGate },
     ...(parityGate ? { parityGate } : {}),
     ...(sharedAuditModel ? { sharedAuditModel } : {}),
     stage: 'production-parity-gate',
@@ -103,6 +129,11 @@ async function audit(): Promise<void> {
       `production_parity_gate:${parityGate.canonicalIdentity}:${parityGate.firstDifference.path || '<record>'}`,
     );
   }
+
+  if (finalOutcomeGate.status === 'failed')
+    throw new TypeError(
+      `production_final_outcome_gate:${finalOutcomeGate.canonicalIdentity}:${finalOutcomeGate.firstDifference.path}`,
+    );
 
   if (audit.conditionCount !== selectedConditions.length)
     throw new Error(`matrix_condition_count:${audit.conditionCount}`);
@@ -121,6 +152,7 @@ async function audit(): Promise<void> {
       {
         identity,
         audit,
+        executionRatchets: { finalProfileOutcomes: finalOutcomeGate },
         ...(parityGate ? { parityGate } : {}),
         ...(sharedAuditModel ? { sharedAuditModel } : {}),
       },

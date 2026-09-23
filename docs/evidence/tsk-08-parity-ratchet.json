@@ -1,6 +1,6 @@
 {
   "task": "TSK-08",
-  "status": "bounded-unit-complete",
+  "status": "in_progress",
   "unit": "records-preserving canonical eligibility digest connection and full-production parity rerun",
   "baseline": {
     "headAtStart": "be27827e7b3e9c488d425a2c8aa4e2b9dfe7592e",
@@ -239,5 +239,145 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "ratchet unsupported, invalid, partial commit, inert control, and stale mutation against this shared full-production audit model"
+  "nextBoundedUnit": "ratchet unsupported, invalid, partial commit, inert control, and stale mutation against this shared full-production audit model",
+  "boundedUnits": [
+    {
+      "name": "final-profile unsupported/invalid/inputRequired gate",
+      "status": "slice-complete",
+      "baselineHead": "f31029209205d4becdff2d13fb2b2553e5fa0486",
+      "changedFiles": [
+        "packages/calculation-application/src/productionParityDiagnostics.ts",
+        "packages/calculation-application/src/productionClosureAudit.test.ts",
+        "packages/calculation-application/scripts/audit-oc-matrix.ts",
+        "packages/calculation-application/scripts/merge-oc-matrix.ts",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/evidence/README.md",
+        "docs/tasks/development-redesign-tasks.md",
+        "docs/README.md"
+      ],
+      "semanticOwner": "packages/calculation-application/src/productionParityDiagnostics.ts::evaluateProductionFinalOutcomeGate",
+      "consumer": "audit-oc-matrix.ts and merge-oc-matrix.ts persist executionRatchets.finalProfileOutcomes outside the canonical audit object",
+      "expected": {
+        "finalProfileUnsupported": 0,
+        "finalProfileInvalid": 0,
+        "finalProfileInputRequired": 0
+      },
+      "candidateLevelStatusesChanged": false,
+      "tsk065AuditDigestInputChanged": false,
+      "canonicalIdentity": "tsk-06.5:final-profile-outcomes",
+      "failureReason": "finalProfileStatusPresent",
+      "firstDifferenceFixture": {
+        "identity": "tsk-06.5:final-profile-outcomes",
+        "path": "inputRequired",
+        "expected": 0,
+        "actual": 1
+      },
+      "failureArtifacts": [
+        {
+          "path": ".test-results/2026-09-23T13-29-09-120Z-15-2b2fec/manifest.json",
+          "sha256": "1498f1267265cdcc11d402ab0c91c9f2e8a23bc03f2e52342a919306959b53f8",
+          "diagnosticArtifact": ".test-results/2026-09-23T13-29-09-120Z-15-2b2fec/production-closure-parity-diagnostics.json",
+          "diagnosticArtifactSha256": "b641f3b3d4120c53c9b1372cacd592dd10bb3543ac705cbb52208ffb1442d565",
+          "reason": "initial test expected unsupported before the canonical first-difference key inputRequired; assertion fixture was corrected"
+        },
+        {
+          "path": ".test-results/2026-09-23T13-34-53-639Z-45-6edbec/manifest.json",
+          "sha256": "b0097708ad944afb30940ef68ed71207bc848ccd48569e8612b2ab59d7835dfd",
+          "diagnosticArtifact": ".test-results/2026-09-23T13-34-53-639Z-45-6edbec/production-closure-parity-diagnostics.json",
+          "diagnosticArtifactSha256": "0a094091050a35c7df7f0fee726970b53781191d64aa2217129302bca824e36e",
+          "reason": "the fixture's aggregate status counts exceeded its listed per-profile identities; the gate correctly returned finalProfileOutcomeIdentityMismatch and the fixture was expanded"
+        },
+        {
+          "path": ".test-results/2026-09-23T13-36-46-233Z-45-d6a627/manifest.json",
+          "sha256": "7bd4612da23fd82274ae7a1a646018582488b43ddcf1a639d21f07d19b81e173",
+          "diagnosticArtifact": ".test-results/2026-09-23T13-36-46-233Z-45-d6a627/production-closure-parity-diagnostics.json",
+          "diagnosticArtifactSha256": "06fe50aae60c29d30e576c5ba21edfa2394c5fb33c847319cd39938daa5fa3b4",
+          "reason": "the duplicate-identity assertion omitted the two preserved finalProfileStatusPresent records; expected output was corrected"
+        }
+      ],
+      "verification": {
+        "focused": {
+          "command": "pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts",
+          "status": "passed",
+          "tests": 3,
+          "durationSeconds": 2.50,
+          "manifest": ".test-results/2026-09-23T13-38-32-692Z-15-93482d/manifest.json",
+          "manifestSha256": "da5e3544b9a5c4907db57e55f7cfbe157f1bc4419e1bb28f3d9be7e0eda51a2c",
+          "diagnosticArtifact": ".test-results/2026-09-23T13-38-32-692Z-15-93482d/production-closure-parity-diagnostics.json",
+          "diagnosticArtifactSha256": "927db0e533f5db441c88a44e3211776cdbf61b14450a6b587ffdb2f90025878f"
+        },
+        "lint": {
+          "command": "pnpm exec eslint packages/calculation-application/src/productionParityDiagnostics.ts packages/calculation-application/src/productionClosureAudit.test.ts --max-warnings=0",
+          "status": "passed"
+        },
+        "format": {
+          "command": "pnpm exec prettier --check packages/calculation-application/src/productionParityDiagnostics.ts packages/calculation-application/src/productionClosureAudit.test.ts packages/calculation-application/scripts/audit-oc-matrix.ts packages/calculation-application/scripts/merge-oc-matrix.ts",
+          "status": "passed"
+        },
+        "typecheck": {
+          "command": "pnpm typecheck",
+          "status": "passed"
+        },
+        "docs": {
+          "command": "pnpm test:docs",
+          "status": "passed",
+          "tests": 6,
+          "repositoryIntegrity": "passed"
+        },
+        "sharedAuditMerge": {
+          "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/merge-oc-matrix.ts .test-results/tsk-08-slice-a-merge",
+          "input": ".test-results/tsk-08-slice-a-merge/manifest-shard-{0..7}.json",
+          "status": "passed",
+          "canonicalIdentity": "tsk-06.5:production-matrix",
+          "firstDifference": null,
+          "matrixDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
+          "eligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+          "conditionCount": 80,
+          "attackProfileCount": 433,
+          "outcomeCount": 34640,
+          "calculated": 34600,
+          "unavailableUnderPolicy": 40,
+          "unsupported": 0,
+          "invalid": 0,
+          "inputRequired": 0,
+          "parityCount": 34600,
+          "parityFailures": 0,
+          "finalOutcomeGate": {
+            "status": "passed",
+            "canonicalIdentity": "tsk-06.5:final-profile-outcomes",
+            "firstDifference": null,
+            "failures": []
+          },
+          "manifest": ".test-results/tsk-08-slice-a-merge/manifest.json",
+          "manifestSha256": "2622d2b3a1a4df0f3c26ad4cc523285c6d5009507432b6198e2a160123ec1b56",
+          "warning": "Node emitted DEP0205 module.register() deprecation warning; merge exited 0"
+        }
+      },
+      "invariants": {
+        "tsk065StaticDigestChanged": false,
+        "tsk065EligibilityDigestChanged": false,
+        "tsk065MatrixDigestChanged": false,
+        "inventoryChanged": false,
+        "supportStatusChanged": false,
+        "productionOutputChanged": false,
+        "parityChanged": false,
+        "newProducer": false,
+        "newGenerator": false,
+        "newSemanticOwner": false,
+        "numericFallback": false,
+        "runnerDomainInterpretation": false,
+        "tsk065Reopened": false,
+        "tsk0641Reopened": false
+      },
+      "unresolved": [
+        "production execution transaction and receipt observation",
+        "production user-control input/result path ratchet and without-area alternate",
+        "ordered read-mutation-read continuity and criticalStars 69-to-99 proof",
+        "all ratchets connected to fresh 80-condition production shards and merge",
+        "required production, runner, docs, and final quality gates"
+      ],
+      "nextBoundedUnit": "connect observer to existing battle-execution transaction and ordered operation owner paths"
+    }
+  ],
+  "currentBoundedUnit": "final-profile unsupported/invalid/inputRequired gate"
 }

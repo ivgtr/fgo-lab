@@ -15,7 +15,12 @@ import {
   combineRankingEligibilityPartitionDigests,
   RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT,
 } from '../src/rankingEligibilityAudit';
-import { evaluateProductionParityGate } from '../src/productionParityDiagnostics';
+import {
+  evaluateProductionFinalOutcomeGate,
+  evaluateProductionParityGate,
+  type ProductionFinalOutcomeFailure,
+  type ProductionFinalProfileOutcome,
+} from '../src/productionParityDiagnostics';
 
 const root = resolve(import.meta.dirname, '../../..');
 const output = resolve(root, process.argv[2] ?? '.test-results/tsk-06-45-production-closure');
@@ -83,6 +88,28 @@ async function merge(): Promise<void> {
   const parityFailures = shards.flatMap(
     (shard) => shard.audit.parityFailures as ProductionClosureAudit['parityFailures'],
   );
+  const finalProfileFailures = shards.flatMap((shard) => {
+    const failures = shard.executionRatchets?.finalProfileOutcomes?.failures as
+      readonly ProductionFinalOutcomeFailure[] | undefined;
+    return (failures ?? []).flatMap((failure) =>
+      failure.reason === 'finalProfileStatusPresent'
+        ? [
+            {
+              conditionKey: failure.conditionKey,
+              profileKey: failure.profileKey,
+              status: failure.status,
+            } satisfies ProductionFinalProfileOutcome,
+          ]
+        : [],
+    );
+  });
+  const inheritedOutcomeIdentityFailures = shards.flatMap((shard) => {
+    const failures = shard.executionRatchets?.finalProfileOutcomes?.failures as
+      readonly ProductionFinalOutcomeFailure[] | undefined;
+    return (failures ?? []).flatMap((failure) =>
+      failure.reason === 'finalProfileOutcomeIdentityMismatch' ? [failure.firstDifference] : [],
+    );
+  });
   const sumMaps = (values: readonly Record<string, number>[]) =>
     values.reduce<Record<string, number>>((sum, value) => {
       for (const [key, count] of Object.entries(value)) sum[key] = (sum[key] ?? 0) + count;
@@ -166,11 +193,17 @@ async function merge(): Promise<void> {
     },
   );
   const parityGate = evaluateProductionParityGate(source, audit);
+  const finalOutcomeGate = evaluateProductionFinalOutcomeGate({
+    outcomes: audit.outcomes,
+    failures: finalProfileFailures,
+    inheritedIdentityFailures: inheritedOutcomeIdentityFailures,
+  });
   const sharedAuditModel =
     parityGate.status === 'passed' ? connectProductionAuditMatrix(source, audit) : null;
   failureArtifact = {
     identity,
     audit,
+    executionRatchets: { finalProfileOutcomes: finalOutcomeGate },
     parityGate,
     ...(sharedAuditModel ? { sharedAuditModel } : {}),
     stage: 'production-parity-gate',
@@ -182,6 +215,10 @@ async function merge(): Promise<void> {
       `production_parity_gate:${parityGate.canonicalIdentity}:${parityGate.firstDifference.path || '<record>'}`,
     );
   }
+  if (finalOutcomeGate.status === 'failed')
+    throw new TypeError(
+      `production_final_outcome_gate:${finalOutcomeGate.canonicalIdentity}:${finalOutcomeGate.firstDifference.path}`,
+    );
   if (audit.outcomeCount !== 34_640)
     throw new TypeError(`production_closure_outcomes:${audit.outcomeCount}`);
   if (audit.outcomes.unsupported || audit.outcomes.invalid || audit.outcomes.inputRequired)
@@ -221,7 +258,13 @@ async function merge(): Promise<void> {
   await writeFile(
     resolve(output, 'manifest.json'),
     `${JSON.stringify(
-      { identity, audit, parityGate, ...(sharedAuditModel ? { sharedAuditModel } : {}) },
+      {
+        identity,
+        audit,
+        executionRatchets: { finalProfileOutcomes: finalOutcomeGate },
+        parityGate,
+        ...(sharedAuditModel ? { sharedAuditModel } : {}),
+      },
       null,
       2,
     )}\n`,

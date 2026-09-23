@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.27"
+document_version: "1.7.28"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-23"
@@ -2412,6 +2412,16 @@ source eligibility／matrix digest、static/candidate inventory、support status
 single unsharded 80-condition auditも試行したが、12条件後にfull gate前で意図的に中断した。個別の`satisfied`条件が135,616ms／152,410msを要し、全80条件を逐次再実行するより、同じ全conditionを含む8-shard merge gate成功と実producer shard／focused testを採用した。このpartial runはsuccess evidenceではなくmanifestもない。生成済みcondition recordは`.test-results/tsk-08-parity-ratchet/single/`に残り、machine evidenceにも未完了として明記した。
 
 次のbounded unitはunsupported／invalid／partial commit／inert control／stale mutationの全件ratchetである。legacy aggregate auditor／old loader／scan／candidate list／duplicate fixtureの整理、性能比較、TSK-09系は今回開始していない。TSK-06.41／TSK-06.5 reopen、TSK-06.5 source digest更新は不要。
+
+Current bounded-unit handoff（2026-09-23、final-profile outcome ratchet）:
+
+開始HEADは`f31029209205d4becdff2d13fb2b2553e5fa0486`、worktreeはcleanで、`apps/web/next-env.d.ts`はignore済みだった。slice Aとして`evaluateProductionFinalOutcomeGate`を追加し、最終profileのunsupported／invalid／inputRequiredを個別typed failure、canonical identity、first differenceで判定する。single／merge consumerはratchet結果を既存`audit`の外の`executionRatchets.finalProfileOutcomes`へ保存するため、TSK-06.5 matrix digestには混入しない。candidate-level statusとcandidate eligibility digest、production resultは変更していない。
+
+focused testは3/3、target ESLint／Prettier、`pnpm typecheck`が成功した。最後のfocused artifactは`.test-results/2026-09-23T13-38-32-692Z-15-93482d/manifest.json`（SHA-256 `da5e3544b9a5c4907db57e55f7cfbe157f1bc4419e1bb28f3d9be7e0eda51a2c`）。既存TSK-06.5の8 shardを再mergeし、final outcome gate pass、matrix digest `c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120`、eligibility digest `27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18`、34,640 outcomes／34,600 parity／final unsupported・invalid・inputRequired 0を確認した。manifest `.test-results/tsk-08-slice-a-merge/manifest.json`のSHA-256は`2622d2b3a1a4df0f3c26ad4cc523285c6d5009507432b6198e2a160123ec1b56`。Node `DEP0205` deprecation warningが1件出たがmergeは成功した。
+
+fixture assertionの失敗artifactも保持する。canonical first-differenceのkey順期待誤りは`.test-results/2026-09-23T13-29-09-120Z-15-2b2fec/manifest.json`（SHA-256 `1498f1267265cdcc11d402ab0c91c9f2e8a23bc03f2e52342a919306959b53f8`）、aggregate status数に対応するprofile identity不足は`.test-results/2026-09-23T13-34-53-639Z-45-6edbec/manifest.json`（SHA-256 `b0097708ad944afb30940ef68ed71207bc848ccd48569e8612b2ab59d7835dfd`）、duplicate identity fixtureの期待failure list不足は`.test-results/2026-09-23T13-36-46-233Z-45-d6a627/manifest.json`（SHA-256 `7bd4612da23fd82274ae7a1a646018582488b43ddcf1a639d21f07d19b81e173`）である。各manifestはcomplete runner artifactとdiagnostic artifactのchecksumを保持する。詳細は[machine evidence](../evidence/tsk-08-parity-ratchet.json)にある。
+
+未達はpartial commit／receipt、inert control、stale mutationのowner観測とfixture、全ratchetのfresh full-production接続、全件merge、要求されたproduction／runner／docsと最終qualityである。ここでTSK-08全体または全ratchetを完了扱いにしない。次は既存battle-execution transactionとordered operation経路へ限定observerを接続する。TSK-06.5 source digest／inventory／support status／production output／parityは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 
