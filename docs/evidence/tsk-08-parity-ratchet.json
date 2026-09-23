@@ -2227,8 +2227,57 @@
         "TSK-09.1": "blocked",
         "TSK-09": "blocked"
       },
-      "nextOperation": "Revise the S4 plan to derive fresh production control identities, require a representative actual without-area fixture, connect the same-candidate mutation/read/rollback trace to the production consumer, and persist complete failures before assertions. Preserve all existing semantic boundaries and B1-B3. Wait for plan confirmation before source changes or focused validation."
+      "nextWorkerHandoff": {
+        "planningFirst": "Next worker must inspect current HEAD, tracked/staged/ignored state, preserved S4 diff, current code, requirements, and reusable evidence, then return a code-based bounded implementation plan only. Before the user confirms that plan, do not edit source/tests, run tests, stage/commit, or change Task status. After confirmation, continue the approved scope in the same session without asking for the same scope again.",
+        "planMustCover": [
+          "For each ratchet: zero definition, production population and exclusions, producer/semantic owner/consumer direct paths, known production inventory facts and representative schema-legal fixtures.",
+          "Forward/composition/alternate-path/mutation-before-after/rollback/recovery invariants; canonical identity, typed reason, canonical first difference, complete failure artifact saved before assertion and generic runner checksum verification.",
+          "Candidate files and responsibilities, treatment of the preserved diff, independent slice order and commit boundaries, completion conditions, reusable evidence, required checks, and evidence-based duration estimates."
+        ],
+        "stopForReplan": "If a state, ownership, mutation, recovery, alternate-path, semantic, or invariant condition outside the confirmed plan appears, stop affected work immediately; do not resolve it through guessed classification, fallback, or scope expansion.",
+        "beforeReplanning": [
+          "Check whether a fully implemented and verified independent slice has matching artifact/evidence/handoff and can be committed without the new finding; commit only such a slice, or record why none is eligible.",
+          "Record canonical identity, typed reason, first difference, complete artifact path/checksum, unmet conditions, committed slices, and uncommitted diff/checksum in existing evidence and handoff.",
+          "Perform only the minimum additional code investigation, propose the revised plan, and wait for user confirmation."
+        ],
+        "sliceCommitRule": "Implement and verify bounded slices independently. Review and stage only the matching slice after its tests, artifact, evidence, and handoff agree. Commit is allowed; push is prohibited. Never commit incomplete work by omitting verification or records.",
+        "protectedInvariants": [
+          "Keep TSK-08 in_progress and TSK-09.1/09 blocked; do not claim TSK-08 completion.",
+          "Keep final-profile status distinct from candidate eligibility/status and preserve TSK-06.5 80x433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, and final-profile unsupported/invalid/inputRequired each 0.",
+          "Keep B1/B2/B3 blocking; do not alter TSK-06.5 source digest, inventory, support status, output/parity, candidate generation, damage semantics, canonical input, fingerprint, or TSK-07 stale response/cache evidence.",
+          "Keep preparation command, execution group, and pre-group form/variant application boundaries distinct. Keep synthetic :npSpecial and ordered event :npBase identities and projection/operation outcomes distinct; null resolvedValue may be valid; do not flatten trait-count composites.",
+          "Observe the same selected candidate, actual without-area detail/input/effective contribution, and same-candidate mutation/read/rollback/recovery values; criticalStars must be 69 -> cap 99 -> actual read 99."
+        ],
+        "reusableEvidence": {
+          "investigation": "73 diagnostics / 40 controls / 33 owners plus 18 follow-up observations; investigation is complete but not product-fix or ratchet-success evidence.",
+          "archive": ".test-results/tsk-08-investigation-record-20260924/complete-diagnostic-artifacts.tar.gz sha256 25b9966bb6ea66dbfcdbcbe7cd1785929ba18316a0b31039da00f16b166ac12b",
+          "review": ".test-results/tsk-08-s4-replan-review-20260924/inspection-findings.json sha256 d19816cf88f9067b40a3fde55477af411c4a1564b4f321404b1e60688ff29ca5; code-review finding, not test/audit success",
+          "committedSlices": [
+            "0f7b549f912010ccaf9bdb29db93ec6885d4f5db",
+            "c43bf64ad3b0c3634fce951a8ae977529bfb0f30",
+            "bf10aed9f1d94914835845e1b42cf31db6588565"
+          ],
+          "preservedDiff": "productionParityDiagnostics.ts, productionMasterInventory.test.ts, productionClosureAudit.test.ts; unstaged combined sha256 12f588406b96ad9115c09a6d4188fe113595f10dd3ab42e339cf5a429d9ac4ef",
+          "ignoredGeneratedFile": "apps/web/next-env.d.ts is ignored and retained; sha256 1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b"
+        },
+        "fullProduction": "Do not rerun while B1-B3 block a meaningful success claim. If later required after blockers and focused verification, use canonical 8 shards in at most 4-way parallelism and 2 waves; existing estimate is 16-26 minutes for both waves. Existing 8-shard merge and eligibility digest are parity-only evidence."
+      },
+      "handoffDocumentationVerification": {
+        "prettier": "passed for docs/README.md, docs/evidence/README.md, docs/evidence/tsk-08-parity-ratchet.json, and docs/tasks/development-redesign-tasks.md",
+        "jsonParse": "passed",
+        "directDocsTests": "node --test scripts/docs-integrity.test.mjs; 6/6 passed",
+        "docsIntegrity": "node scripts/docs-integrity.mjs; passed",
+        "pnpmTestDocs": {
+          "status": "failed before docs script during dependency status check",
+          "reason": "ERR_SQLITE_ERROR: unable to open database file",
+          "fullLog": ".test-results/tsk-08-handoff-20260924/pnpm-test-docs.log",
+          "sha256": "0db23aa6bfe0cf4b1e606e3aea841b192c1d81c2c3f31c65f4578cfb05ef4a60"
+        },
+        "gitDiffCheck": "passed",
+        "productTestsOrProductionAudit": "not run; this is a documentation handoff slice"
+      },
+      "nextOperation": "Next worker: inspect current code and canonical requirements/evidence, verify the preserved worktree state, and return a code-based S4 bounded implementation plan only. Wait for user confirmation before source edits or focused validation. After confirmation, implement independently verifiable slices and commit only complete slices. Stop and replan on any unplanned state/ownership/mutation/recovery/alternate/semantic/invariant condition; first commit any independent fully verified slice whose records match, then record the finding and wait for confirmation. Keep B1-B3 blocking, preserve protected invariants, and do not claim TSK-08 completion."
     }
   ],
-  "currentBoundedUnit": "S4 production control/mutation consumer review (stopped-for-replan)"
+  "currentBoundedUnit": "S4 production control/mutation consumer review (stopped-for-replan); next worker must plan before implementation"
 }
