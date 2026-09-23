@@ -1361,11 +1361,21 @@ describe('OC on the preparation command path', () => {
     );
     expect(np.status).toBe('applied');
     if (np.status !== 'applied') return;
-    expect(np.state.appliedActions.at(-1)?.ocUse).toMatchObject({
+    const appliedAction = np.state.appliedActions.at(-1)!;
+    const receipt = np.state.ocState.receipts.find(
+      ({ actionId }) => actionId === appliedAction.ocUse?.actionId,
+    );
+    expect(appliedAction.command).toEqual({ kind: 'executeAttackNoblePhantasm' });
+    expect(appliedAction.ocUse).toMatchObject({
+      actionId: 'preparation:1:executeAttackNoblePhantasm',
       baseOc: 1,
       effectiveOc: 3,
       boostTotal: 2,
     });
+    expect(appliedAction.ocUse).toEqual(receipt);
+    expect(appliedAction.ocUse?.gaugeBefore).toBe(appliedAction.resourceBefore.gauge);
+    expect(appliedAction.baseOvercharge).toBe(appliedAction.ocUse?.baseOc);
+    expect(appliedAction.resourceAfter.gauge).toBe(0);
     expect(np.state.ocState.boosts.map((instance) => instance.uses)).toEqual([
       { kind: 'finite', remaining: 0 },
       { kind: 'finite', remaining: 1 },
@@ -2263,7 +2273,42 @@ it('rolls BP, HP, NP, context and receipts back together when a later effect fai
     recipient: 'sourceActor',
     family: 'unknown',
   });
-  const actor = { ...servantWithSkill([applied, invalid]), battlePointDomains: [domain] };
+  const recoveryRead = effect(
+    'recovery-read',
+    null,
+    [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: { kind: 'currentGaugeRatio', values: [[500], [], [], [], []] },
+      },
+    ],
+    { kind: 'always' },
+  );
+  const baseActor = servantWithSkill([applied, invalid]);
+  const recoverySkill: MasterSkill = {
+    ...baseActor.skills[0]!,
+    id: 'recovery-skill',
+    slot: 2,
+    effects: [recoveryRead],
+  };
+  const actor = {
+    ...baseActor,
+    skills: [...baseActor.skills, recoverySkill],
+    actorFormGraph: {
+      ...baseActor.actorFormGraph,
+      forms: baseActor.actorFormGraph.forms.map((form) =>
+        form.id.limitCount === 0
+          ? { ...form, skillIds: [...form.skillIds, recoverySkill.id] }
+          : form,
+      ),
+    },
+    battlePointDomains: [domain],
+  };
   const ctx = {
     ...context,
     initialMaximumHp: 10_000,
@@ -2277,7 +2322,24 @@ it('rolls BP, HP, NP, context and receipts back together when a later effect fai
   const rejected = reducePreNoblePhantasmAction(actor, initial.state, command, ctx);
   expect(rejected.status).toBe('rejected');
   expect(rejected.state).toEqual(initial.state);
+  expect(rejected.state).toBe(initial.state);
   expect(initial.state.battlePoints.receipts).toEqual([]);
+
+  const recoveredRead = reducePreNoblePhantasmAction(
+    actor,
+    rejected.state,
+    { kind: 'useSkillSlot', slot: 2, skillLevel: 1, choice: null },
+    ctx,
+  );
+  expect(recoveredRead.status).toBe('applied');
+  if (recoveredRead.status !== 'applied') return;
+  expect(recoveredRead.state.npResource.gauge).toBe(15_000);
+  expect(recoveredRead.state.appliedActions.at(-1)).toMatchObject({
+    command: { kind: 'useSkillSlot', slot: 2, skillLevel: 1, choice: null },
+    resourceBefore: { gauge: 10_000 },
+    resourceAfter: { gauge: 15_000 },
+  });
+  expect(recoveredRead.state.stateTraits.attackerState.has('temporary')).toBe(false);
 
   const validActor = { ...servantWithSkill([applied]), battlePointDomains: [domain] };
   const committed = reducePreNoblePhantasmAction(validActor, initial.state, command, ctx);

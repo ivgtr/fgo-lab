@@ -36,12 +36,12 @@ updated_at: "2026-09-23"
 | [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.10.3／approved | comparison axes、all attack-NP coverage、maximum stack、contribution UI、source-program、portable handoff、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.3.0 | bounded output、artifact、実装修正と検証の範囲、session分離・上限、handoff |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.28 | 唯一の実装順序、依存、status、handoff |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.29 | 唯一の実装順序、依存、status、handoff |
 | [TSK-06.48 package semantic convergence plan](tasks/package-semantic-convergence-tsk-06-48.md) | task plan／Complete v1.0.9 | パッケージ別semantic owner、population／dependent resource・HP／effect-execution・battle-execution・calculation-application family、検証範囲、性能・テスト境界 |
 | [TSK-06.48 bounded completion plan](tasks/package-semantic-convergence-tsk-06-48-completion-plan.md) | task plan／Complete v1.0.4 | A／B bounded unitのowner audit、最終qualityまでの停止境界、限定的検証、過度な性能ゴール／テストを求めない方針 |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
-| [evidence index](evidence/README.md) | sub-index／Active v1.4.51 | damage／production／documentation evidence |
+| [evidence index](evidence/README.md) | sub-index／Active v1.4.52 | damage／production／documentation evidence |
 | [historical documentation index](archive/README.md) | sub-index／Active v1.0.0 | historical decision chain、現在status、Git-only復元情報 |
 | [canonical data flow](guides/data-flow.md) | guide／Guideline v1.0.0 | master、calculation／ranking、user stateの依存方向 |
 | [document governance contract](guides/document-governance.md) | guide／Guideline v1.0.1 | Contract ID、Task closure、要件改訂、ADR lifecycle、docs lint |

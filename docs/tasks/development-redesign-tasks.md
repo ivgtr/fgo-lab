@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.28"
+document_version: "1.7.29"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-23"
@@ -2422,6 +2422,16 @@ focused testは3/3、target ESLint／Prettier、`pnpm typecheck`が成功した�
 fixture assertionの失敗artifactも保持する。canonical first-differenceのkey順期待誤りは`.test-results/2026-09-23T13-29-09-120Z-15-2b2fec/manifest.json`（SHA-256 `1498f1267265cdcc11d402ab0c91c9f2e8a23bc03f2e52342a919306959b53f8`）、aggregate status数に対応するprofile identity不足は`.test-results/2026-09-23T13-34-53-639Z-45-6edbec/manifest.json`（SHA-256 `b0097708ad944afb30940ef68ed71207bc848ccd48569e8612b2ab59d7835dfd`）、duplicate identity fixtureの期待failure list不足は`.test-results/2026-09-23T13-36-46-233Z-45-d6a627/manifest.json`（SHA-256 `7bd4612da23fd82274ae7a1a646018582488b43ddcf1a639d21f07d19b81e173`）である。各manifestはcomplete runner artifactとdiagnostic artifactのchecksumを保持する。詳細は[machine evidence](../evidence/tsk-08-parity-ratchet.json)にある。
 
 未達はpartial commit／receipt、inert control、stale mutationのowner観測とfixture、全ratchetのfresh full-production接続、全件merge、要求されたproduction／runner／docsと最終qualityである。ここでTSK-08全体または全ratchetを完了扱いにしない。次は既存battle-execution transactionとordered operation経路へ限定observerを接続する。TSK-06.5 source digest／inventory／support status／production output／parityは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+Current bounded-unit handoff（2026-09-23、preparation command/action/receipt consistency and rollback recovery）:
+
+開始HEADは`94ce2e02605aac9a84c97ee513df854a21b0a687`。既存`auditProductionClosure` recordの`scenario.preNoblePhantasmPlan`と`appliedPreparationActions`を既存production observerへ接続した。semantic ownerは`preparationTransaction.ts::planPreparationResourceTransaction`／`reducePreNoblePhantasmAction`と`ocState.ts::isConsistentNpOcUseReceipt`で、別producer／別ownerは追加していない。計画commandとapplied actionの順序・内容、NP actionのcanonical action ID、receiptのgauge／base OC／内部整合性、適用後gaugeを照合し、productionではcalculated 34,600 profile全件を期待する。gateとcondition artifact metadataはcanonical TSK-06.5 `audit`の外にある。candidate-level statusは変更・再解釈せず、slice Aのfinal-profile unsupported／invalid／inputRequired gateも独立させた。
+
+部分適用fixtureはBP／HP／NP／context／receiptを書いた後のunsupported operationで拒否し、結果が元stateと値・参照の両方で一致することを確認する。その後の`currentGaugeRatio` readは復元された10,000 gaugeを読み、500‰のgainで15,000になる（部分適用が残れば16,500）。成功fixtureはskillからattack NPへの順序、command/action一致、receipt action ID／適用内容、NP全消費を照合した。production record接続はfocused test内の既存audit 1条件／1 calculated profileでpassした。これは全production証拠ではない。
+
+`audit-oc-matrix.ts`はcondition recordのpath／bytes／SHA-256をmanifestへ記録する。mergeはcanonical shard割当ての80 condition、condition key、path、JSON、identity、bytes、SHA-256を既存generic verifierで検証し、欠損・checksum mismatchを非0終了する。古いTSK-06.5 shardを入力した欠損宣言／意図的SHA mismatch fixtureは`.test-results/tsk-08-slice-b-checksum-failure/manifest.json`（SHA-256 `e2bf072f62f23b099971551fb72cf3077c6b5796abf7b3b1f81a5821498b6c0b`）に完全結果を保存した。matrix digestは`c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120`のままだが、このmergeはartifact宣言とpreparation ratchetがないため失敗しており、成功証拠ではない。
+
+focused 66 tests、target ESLint／Prettier、`pnpm typecheck`は成功した。focused runner manifestは`.test-results/2026-09-23T14-15-07-094Z-15-e79d6c/manifest.json`（SHA-256 `442fa78295d694ba6e1c9fd040c51d308fc37b2e34b707916fd044a2139ec15c`）、preparation transaction diagnosticは`production-preparation-transaction-diagnostics.json`（SHA-256 `1b24d86d5981294fb9a7937b827ed3651288e151c14ed193872c0884fa153b8b`）である。初回recovery fixtureの入力不足／500‰期待値誤りの失敗manifestもmachine evidenceにpathとchecksumを保持した。TSK-06.5 digest／inventory／support status／production output／parityに差分はない。未達はproduction全件のfresh shard／merge、inert control、stale mutation、およびproduction／runner／docs／quality gateである。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま維持する。次は既存production controlのon/offがoperationまたはdamageへ届く経路を、area-policy alternate detailも含めて接続する。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

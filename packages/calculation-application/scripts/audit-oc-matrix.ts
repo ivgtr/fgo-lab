@@ -3,16 +3,21 @@ import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { verifyArtifactFiles } from '../../../scripts/test-observation-lib.mjs';
 import {
   connectProductionAuditMatrix,
   createTsk065ProductionAuditSource,
+  firstCanonicalAuditDifference,
 } from '@fgo-lab/master-data/production-audit';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { auditProductionClosure, productionClosureConditions } from '../src/productionClosureAudit';
 import {
+  auditProductionPreparationTransactionObservations,
   evaluateProductionFinalOutcomeGate,
+  evaluateProductionPreparationTransactionGate,
   evaluateProductionParityGate,
   type ProductionFinalProfileOutcome,
+  type ProductionPreparationTransactionObservation,
 } from '../src/productionParityDiagnostics';
 import { RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT } from '../src/rankingEligibilityAudit';
 
@@ -20,6 +25,12 @@ const root = resolve(import.meta.dirname, '../../..');
 const output = resolve(root, process.argv[2] ?? '.test-results/tsk-06-45-production-closure');
 let manifestName = 'manifest.json';
 let failureArtifact: Record<string, unknown> = { output, stage: 'read-master' };
+const conditionArtifacts: Array<{
+  conditionKey: string;
+  path: string;
+  bytes: number;
+  sha256: string;
+}> = [];
 async function audit(): Promise<void> {
   await mkdir(output, { recursive: true });
   const masterPath = resolve(
@@ -61,6 +72,7 @@ async function audit(): Promise<void> {
     (_, index) => index % shardCount === shardIndex,
   );
   const finalProfileFailures: ProductionFinalProfileOutcome[] = [];
+  const preparationTransactionObservations: ProductionPreparationTransactionObservation[] = [];
 
   const audit = await auditProductionClosure(
     master,
@@ -68,6 +80,28 @@ async function audit(): Promise<void> {
     versions,
     async ({ records, ...summary }) => {
       for (const value of records) {
+        if (typeof value === 'object' && value !== null && 'status' in value) {
+          if (
+            value.status === 'calculated' &&
+            'profileKey' in value &&
+            typeof value.profileKey === 'string' &&
+            'scenario' in value &&
+            typeof value.scenario === 'object' &&
+            value.scenario !== null &&
+            'preNoblePhantasmPlan' in value.scenario &&
+            Array.isArray(value.scenario.preNoblePhantasmPlan) &&
+            'appliedPreparationActions' in value &&
+            Array.isArray(value.appliedPreparationActions)
+          )
+            preparationTransactionObservations.push({
+              conditionKey: summary.key,
+              profileKey: value.profileKey,
+              commands: value.scenario
+                .preNoblePhantasmPlan as ProductionPreparationTransactionObservation['commands'],
+              actions:
+                value.appliedPreparationActions as ProductionPreparationTransactionObservation['actions'],
+            });
+        }
         if (
           typeof value === 'object' &&
           value !== null &&
@@ -83,10 +117,20 @@ async function audit(): Promise<void> {
             status: value.status,
           });
       }
-      await writeFile(
-        resolve(output, `${summary.key}.json`),
-        `${JSON.stringify({ identity, summary, records })}\n`,
-      );
+      const content = `${JSON.stringify({ identity, summary, records })}\n`;
+      await writeFile(resolve(output, `${summary.key}.json`), content);
+      conditionArtifacts.push({
+        conditionKey: summary.key,
+        path: `${summary.key}.json`,
+        bytes: Buffer.byteLength(content),
+        sha256: createHash('sha256').update(content).digest('hex'),
+      });
+      failureArtifact = {
+        output,
+        identity,
+        productionArtifacts: { conditionRecords: conditionArtifacts },
+        stage: 'audit-conditions',
+      };
       console.log(
         `${summary.key}: ${String(summary.calculated)} calculated, ${String(summary.unavailableUnderPolicy)} unavailable, ${summary.elapsedMs.toFixed(0)}ms`,
       );
@@ -111,16 +155,64 @@ async function audit(): Promise<void> {
     outcomes: audit.outcomes,
     failures: finalProfileFailures,
   });
+  const preparationTransactionAudit = auditProductionPreparationTransactionObservations(
+    preparationTransactionObservations,
+  );
+  const preparationTransactionGate = evaluateProductionPreparationTransactionGate({
+    expectedCalculatedProfiles: audit.outcomes.calculated,
+    ...preparationTransactionAudit,
+  });
+  const productionArtifacts = { conditionRecords: conditionArtifacts };
+  const artifactVerificationResult = verifyArtifactFiles(
+    output,
+    conditionArtifacts.map(({ path, bytes, sha256 }) => ({
+      path,
+      format: 'json',
+      allowEmpty: false,
+      expectedBytes: bytes,
+      expectedSha256: sha256,
+    })),
+  );
+  const artifactDifference = artifactVerificationResult.errors.length
+    ? firstCanonicalAuditDifference(
+        [
+          {
+            identity: 'tsk-08:production-condition-artifacts',
+            value: conditionArtifacts,
+          },
+        ],
+        [
+          {
+            identity: 'tsk-08:production-condition-artifacts',
+            value: artifactVerificationResult,
+          },
+        ],
+      )
+    : null;
+  const artifactVerification = {
+    ...artifactVerificationResult,
+    firstDifference: artifactDifference,
+  };
   const sharedAuditModel =
     source && parityGate?.status === 'passed' ? connectProductionAuditMatrix(source, audit) : null;
   failureArtifact = {
     identity,
     audit,
-    executionRatchets: { finalProfileOutcomes: finalOutcomeGate },
+    productionArtifacts,
+    artifactVerification,
+    executionRatchets: {
+      finalProfileOutcomes: finalOutcomeGate,
+      preparationTransactions: preparationTransactionGate,
+    },
     ...(parityGate ? { parityGate } : {}),
     ...(sharedAuditModel ? { sharedAuditModel } : {}),
     stage: 'production-parity-gate',
   };
+
+  if (artifactVerification.errors.length > 0)
+    throw new TypeError(
+      `production_condition_artifact_verification:${artifactVerification.errors.join(',')}`,
+    );
 
   if (parityGate?.status === 'failed') {
     if (parityGate.reason === 'parityFailure')
@@ -133,6 +225,11 @@ async function audit(): Promise<void> {
   if (finalOutcomeGate.status === 'failed')
     throw new TypeError(
       `production_final_outcome_gate:${finalOutcomeGate.canonicalIdentity}:${finalOutcomeGate.firstDifference.path}`,
+    );
+
+  if (preparationTransactionGate.status === 'failed')
+    throw new TypeError(
+      `production_preparation_transaction_gate:${preparationTransactionGate.canonicalIdentity}:${preparationTransactionGate.firstDifference.path}`,
     );
 
   if (audit.conditionCount !== selectedConditions.length)
@@ -152,7 +249,12 @@ async function audit(): Promise<void> {
       {
         identity,
         audit,
-        executionRatchets: { finalProfileOutcomes: finalOutcomeGate },
+        productionArtifacts,
+        artifactVerification,
+        executionRatchets: {
+          finalProfileOutcomes: finalOutcomeGate,
+          preparationTransactions: preparationTransactionGate,
+        },
         ...(parityGate ? { parityGate } : {}),
         ...(sharedAuditModel ? { sharedAuditModel } : {}),
       },

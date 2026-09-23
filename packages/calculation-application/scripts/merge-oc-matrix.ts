@@ -2,9 +2,11 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { verifyArtifactFiles } from '../../../scripts/test-observation-lib.mjs';
 import {
   connectProductionAuditMatrix,
   createTsk065ProductionAuditSource,
+  firstCanonicalAuditDifference,
 } from '@fgo-lab/master-data/production-audit';
 import {
   productionClosureConditionKey,
@@ -17,9 +19,12 @@ import {
 } from '../src/rankingEligibilityAudit';
 import {
   evaluateProductionFinalOutcomeGate,
+  evaluateProductionPreparationTransactionGate,
   evaluateProductionParityGate,
   type ProductionFinalOutcomeFailure,
   type ProductionFinalProfileOutcome,
+  type ProductionPreparationTransactionFailure,
+  type ProductionPreparationTransactionSummary,
 } from '../src/productionParityDiagnostics';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -40,6 +45,125 @@ async function merge(): Promise<void> {
   const shards = await Promise.all(
     names.map(async (name) => JSON.parse(await readFile(resolve(output, name), 'utf8'))),
   );
+  const conditionArtifacts: Array<{
+    conditionKey: string;
+    path: string;
+    bytes: number;
+    sha256: string;
+  }> = [];
+  const artifactDeclarationErrors: string[] = [];
+  const expectedConditionKeysByShard = Array.from(
+    { length: RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT },
+    (_, shardIndex) =>
+      productionClosureConditions()
+        .filter(
+          (_, conditionIndex) =>
+            conditionIndex % RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT === shardIndex,
+        )
+        .map(productionClosureConditionKey),
+  );
+  for (const [shardIndex, shard] of shards.entries()) {
+    const declarations = shard.productionArtifacts?.conditionRecords;
+    if (!Array.isArray(declarations)) {
+      artifactDeclarationErrors.push(
+        `manifest-shard-${String(shardIndex)}.json:conditionRecords:missing`,
+      );
+      continue;
+    }
+    const declaredKeys: string[] = [];
+    for (const [declarationIndex, declaration] of declarations.entries()) {
+      if (
+        typeof declaration !== 'object' ||
+        declaration === null ||
+        typeof declaration.conditionKey !== 'string' ||
+        typeof declaration.path !== 'string' ||
+        !Number.isSafeInteger(declaration.bytes) ||
+        declaration.bytes <= 0 ||
+        typeof declaration.sha256 !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(declaration.sha256)
+      ) {
+        artifactDeclarationErrors.push(
+          `manifest-shard-${String(shardIndex)}.json:conditionRecords:${String(declarationIndex)}:invalid_declaration`,
+        );
+        continue;
+      }
+      declaredKeys.push(declaration.conditionKey);
+      const expectedKey = expectedConditionKeysByShard[shardIndex]![declarationIndex];
+      if (declaration.conditionKey !== expectedKey) {
+        artifactDeclarationErrors.push(
+          `manifest-shard-${String(shardIndex)}.json:conditionRecords:${String(declarationIndex)}:condition_key_mismatch`,
+        );
+        continue;
+      }
+      const expectedPath = `${expectedKey}.json`;
+      if (declaration.path !== expectedPath) {
+        artifactDeclarationErrors.push(
+          `manifest-shard-${String(shardIndex)}.json:conditionRecords:${String(declarationIndex)}:path_mismatch`,
+        );
+        continue;
+      }
+      conditionArtifacts.push({
+        conditionKey: declaration.conditionKey,
+        path: declaration.path,
+        bytes: declaration.bytes,
+        sha256: declaration.sha256,
+      });
+    }
+    if (JSON.stringify(declaredKeys) !== JSON.stringify(expectedConditionKeysByShard[shardIndex]))
+      artifactDeclarationErrors.push(
+        `manifest-shard-${String(shardIndex)}.json:conditionRecords:coverage_mismatch`,
+      );
+  }
+  const artifactVerificationResult = verifyArtifactFiles(
+    output,
+    conditionArtifacts.map(({ path, bytes, sha256 }) => ({
+      path,
+      format: 'json',
+      allowEmpty: false,
+      expectedBytes: bytes,
+      expectedSha256: sha256,
+    })),
+  );
+  const artifactErrors = [...artifactDeclarationErrors, ...artifactVerificationResult.errors];
+  for (const artifact of conditionArtifacts) {
+    if (artifactVerificationResult.errors.some((error) => error.startsWith(`${artifact.path}:`)))
+      continue;
+    const record = JSON.parse(await readFile(resolve(output, artifact.path), 'utf8'));
+    const shardIndex = expectedConditionKeysByShard.findIndex((keys) =>
+      keys.includes(artifact.conditionKey),
+    );
+    if (shardIndex < 0) {
+      artifactErrors.push(`${artifact.path}:condition_identity_unknown`);
+      continue;
+    }
+    const shardIdentity = shards[shardIndex]!.identity;
+    if (
+      record.summary?.key !== artifact.conditionKey ||
+      JSON.stringify(record.identity) !== JSON.stringify(shardIdentity)
+    )
+      artifactErrors.push(`${artifact.path}:condition_identity_mismatch`);
+  }
+  const artifactDifference = artifactErrors.length
+    ? firstCanonicalAuditDifference(
+        [
+          {
+            identity: 'tsk-08:production-condition-artifacts',
+            value: expectedConditionKeysByShard,
+          },
+        ],
+        [
+          {
+            identity: 'tsk-08:production-condition-artifacts',
+            value: { conditionArtifacts, errors: artifactErrors },
+          },
+        ],
+      )
+    : null;
+  const artifactVerification = {
+    ...artifactVerificationResult,
+    errors: artifactErrors,
+    firstDifference: artifactDifference,
+  };
   const identity = shards[0]!.identity;
   failureArtifact = { output, identity, stage: 'verify-master-identity' };
   if (shards.some((shard) => JSON.stringify(shard.identity) !== JSON.stringify(identity)))
@@ -198,16 +322,142 @@ async function merge(): Promise<void> {
     failures: finalProfileFailures,
     inheritedIdentityFailures: inheritedOutcomeIdentityFailures,
   });
+  const preparationIdentityFailures = [];
+  const preparationFailures: ProductionPreparationTransactionFailure[] = [];
+  const preparationSummary: ProductionPreparationTransactionSummary = {
+    calculatedProfiles: 0,
+    commandCount: 0,
+    actionCount: 0,
+    npUseReceiptCount: 0,
+  };
+  for (const [shardIndex, shard] of shards.entries()) {
+    const gate = shard.executionRatchets?.preparationTransactions;
+    if (!gate || typeof gate !== 'object' || !('summary' in gate)) {
+      const identityDifference = firstCanonicalAuditDifference(
+        [
+          {
+            identity: 'tsk-08:preparation-transactions',
+            value: { shardRatchetPresent: true, shardIndex },
+          },
+        ],
+        [
+          {
+            identity: 'tsk-08:preparation-transactions',
+            value: { shardRatchetPresent: false, shardIndex },
+          },
+        ],
+      );
+      if (!identityDifference) throw new TypeError('preparation_shard_difference_missing');
+      preparationFailures.push({
+        reason: 'preparationShardRatchetMissing',
+        canonicalIdentity: 'tsk-08:preparation-transactions',
+        expected: { shardRatchetPresent: true, shardIndex },
+        actual: { shardRatchetPresent: false, shardIndex },
+        firstDifference: identityDifference,
+      });
+      continue;
+    }
+    const summary = gate.summary as ProductionPreparationTransactionSummary;
+    for (const key of Object.keys(
+      preparationSummary,
+    ) as (keyof ProductionPreparationTransactionSummary)[])
+      preparationSummary[key] += summary[key];
+    const shardExpectedCalculatedProfiles = gate.expected?.calculatedProfiles;
+    if (
+      shardExpectedCalculatedProfiles !== shard.audit.outcomes.calculated ||
+      summary.calculatedProfiles !== shard.audit.outcomes.calculated
+    ) {
+      const identityDifference = firstCanonicalAuditDifference(
+        [
+          {
+            identity: 'tsk-08:preparation-transactions',
+            value: { calculatedProfiles: shard.audit.outcomes.calculated },
+          },
+        ],
+        [
+          {
+            identity: 'tsk-08:preparation-transactions',
+            value: {
+              calculatedProfiles: summary.calculatedProfiles,
+              shardExpectedCalculatedProfiles,
+              shardIndex,
+            },
+          },
+        ],
+      );
+      if (!identityDifference) throw new TypeError('preparation_shard_count_difference_missing');
+      preparationIdentityFailures.push(identityDifference);
+    }
+    const failures = gate.failures as readonly ProductionPreparationTransactionFailure[];
+    preparationFailures.push(...failures);
+    if (gate.status !== 'passed' && gate.status !== 'failed') {
+      const identityDifference = firstCanonicalAuditDifference(
+        [
+          {
+            identity: 'tsk-08:preparation-transactions',
+            value: { status: 'passed' },
+          },
+        ],
+        [
+          {
+            identity: 'tsk-08:preparation-transactions',
+            value: { status: gate.status ?? null, shardIndex },
+          },
+        ],
+      );
+      if (!identityDifference) throw new TypeError('preparation_shard_status_difference_missing');
+      preparationIdentityFailures.push(identityDifference);
+    }
+    if (gate.status === 'failed' && failures.length === 0) {
+      const identityDifference = gate.firstDifference as
+        ProductionPreparationTransactionFailure['firstDifference'] | undefined;
+      if (identityDifference) preparationIdentityFailures.push(identityDifference);
+      else {
+        const missingFailureDifference = firstCanonicalAuditDifference(
+          [
+            {
+              identity: 'tsk-08:preparation-transactions',
+              value: { failureCount: 1 },
+            },
+          ],
+          [
+            {
+              identity: 'tsk-08:preparation-transactions',
+              value: { failureCount: 0, shardIndex },
+            },
+          ],
+        );
+        if (!missingFailureDifference)
+          throw new TypeError('preparation_shard_failure_difference_missing');
+        preparationIdentityFailures.push(missingFailureDifference);
+      }
+    }
+  }
+  const preparationTransactionGate = evaluateProductionPreparationTransactionGate({
+    expectedCalculatedProfiles: audit.outcomes.calculated,
+    summary: preparationSummary,
+    failures: preparationFailures,
+    inheritedIdentityFailures: preparationIdentityFailures,
+  });
   const sharedAuditModel =
     parityGate.status === 'passed' ? connectProductionAuditMatrix(source, audit) : null;
   failureArtifact = {
     identity,
     audit,
-    executionRatchets: { finalProfileOutcomes: finalOutcomeGate },
+    productionArtifacts: { conditionRecords: conditionArtifacts },
+    artifactVerification,
+    executionRatchets: {
+      finalProfileOutcomes: finalOutcomeGate,
+      preparationTransactions: preparationTransactionGate,
+    },
     parityGate,
     ...(sharedAuditModel ? { sharedAuditModel } : {}),
     stage: 'production-parity-gate',
   };
+  if (artifactVerification.errors.length > 0)
+    throw new TypeError(
+      `production_condition_artifact_verification:${artifactVerification.errors.join(',')}`,
+    );
   if (parityGate.status === 'failed') {
     if (parityGate.reason === 'parityFailure')
       throw new Error(`production_closure_parity:${String(parityGate.failures.length)}`);
@@ -218,6 +468,10 @@ async function merge(): Promise<void> {
   if (finalOutcomeGate.status === 'failed')
     throw new TypeError(
       `production_final_outcome_gate:${finalOutcomeGate.canonicalIdentity}:${finalOutcomeGate.firstDifference.path}`,
+    );
+  if (preparationTransactionGate.status === 'failed')
+    throw new TypeError(
+      `production_preparation_transaction_gate:${preparationTransactionGate.canonicalIdentity}:${preparationTransactionGate.firstDifference.path}`,
     );
   if (audit.outcomeCount !== 34_640)
     throw new TypeError(`production_closure_outcomes:${audit.outcomeCount}`);
@@ -261,7 +515,12 @@ async function merge(): Promise<void> {
       {
         identity,
         audit,
-        executionRatchets: { finalProfileOutcomes: finalOutcomeGate },
+        productionArtifacts: { conditionRecords: conditionArtifacts },
+        artifactVerification,
+        executionRatchets: {
+          finalProfileOutcomes: finalOutcomeGate,
+          preparationTransactions: preparationTransactionGate,
+        },
         parityGate,
         ...(sharedAuditModel ? { sharedAuditModel } : {}),
       },

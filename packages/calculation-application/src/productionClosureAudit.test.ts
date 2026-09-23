@@ -4,6 +4,10 @@ import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { createTsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import type {
+  ProductionPreparationTransactionAction,
+  ProductionPreparationTransactionObservation,
+} from './productionParityDiagnostics';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import fixture from '../../test-fixtures/master/fixture.json';
 import tsk065Evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
@@ -14,7 +18,9 @@ import {
 } from './productionClosureAudit';
 import {
   evaluateProductionFinalOutcomeGate,
+  auditProductionPreparationTransactionObservations,
   compareProductionParity,
+  evaluateProductionPreparationTransactionGate,
   evaluateProductionParityGate,
 } from './productionParityDiagnostics';
 import { combineRankingEligibilityPartitionDigests } from './rankingEligibilityAudit';
@@ -32,6 +38,39 @@ async function writeParityDiagnosticArtifact(value: unknown): Promise<void> {
       [
         {
           path: 'production-closure-parity-diagnostics.json',
+          format: 'json',
+          allowEmpty: false,
+        },
+        {
+          path: 'production-preparation-transaction-diagnostics.json',
+          format: 'json',
+          allowEmpty: false,
+        },
+      ],
+      null,
+      2,
+    )}\n`,
+  );
+}
+
+async function writePreparationTransactionDiagnosticArtifact(value: unknown): Promise<void> {
+  const artifactDirectory = process.env['FGO_TEST_ARTIFACT_DIR'];
+  if (!artifactDirectory) return;
+  await writeFile(
+    resolve(artifactDirectory, 'production-preparation-transaction-diagnostics.json'),
+    `${JSON.stringify(value, null, 2)}\n`,
+  );
+  await writeFile(
+    resolve(artifactDirectory, 'artifact-declarations.json'),
+    `${JSON.stringify(
+      [
+        {
+          path: 'production-closure-parity-diagnostics.json',
+          format: 'json',
+          allowEmpty: false,
+        },
+        {
+          path: 'production-preparation-transaction-diagnostics.json',
           format: 'json',
           allowEmpty: false,
         },
@@ -79,6 +118,7 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
   }
 
   const master = masterSnapshotSchema.parse(fixture);
+  const preparationObservations: ProductionPreparationTransactionObservation[] = [];
   const audit = await auditProductionClosure(
     master,
     { servantBuilds: {} },
@@ -90,7 +130,33 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
       gameRegion: 'JP',
       masterDataLocale: 'ja-JP',
     },
-    undefined,
+    ({ records, ...summary }) => {
+      for (const value of records) {
+        if (
+          typeof value === 'object' &&
+          value !== null &&
+          'status' in value &&
+          value.status === 'calculated' &&
+          'profileKey' in value &&
+          typeof value.profileKey === 'string' &&
+          'scenario' in value &&
+          typeof value.scenario === 'object' &&
+          value.scenario !== null &&
+          'preNoblePhantasmPlan' in value.scenario &&
+          Array.isArray(value.scenario.preNoblePhantasmPlan) &&
+          'appliedPreparationActions' in value &&
+          Array.isArray(value.appliedPreparationActions)
+        )
+          preparationObservations.push({
+            conditionKey: summary.key,
+            profileKey: value.profileKey,
+            commands: value.scenario
+              .preNoblePhantasmPlan as ProductionPreparationTransactionObservation['commands'],
+            actions:
+              value.appliedPreparationActions as ProductionPreparationTransactionObservation['actions'],
+          });
+      }
+    },
     conditions.slice(0, 1),
   );
   expect(audit).toMatchObject({
@@ -109,6 +175,28 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
   expect(audit.eligibility.staticSemantics.sourcePrograms).toBeGreaterThan(0);
   expect(audit.eligibility.admissions.dispositions).toBeGreaterThan(0);
   expect(audit.eligibility.candidates.generated).toBeGreaterThan(0);
+  const preparationTransactionAudit =
+    auditProductionPreparationTransactionObservations(preparationObservations);
+  expect(
+    evaluateProductionPreparationTransactionGate({
+      expectedCalculatedProfiles: audit.outcomes.calculated,
+      ...preparationTransactionAudit,
+    }),
+  ).toMatchObject({
+    status: 'passed',
+    summary: {
+      calculatedProfiles: audit.outcomes.calculated,
+      commandCount: preparationObservations.reduce(
+        (count, observation) => count + observation.commands.length,
+        0,
+      ),
+      actionCount: preparationObservations.reduce(
+        (count, observation) => count + observation.actions.length,
+        0,
+      ),
+    },
+    firstDifference: null,
+  });
 
   const canonicalFailure = compareProductionParity({
     conditionKey: 'fixture-condition',
@@ -350,5 +438,144 @@ it('fails closed on final profile statuses and retains unique profile identities
         status: 'unsupported',
       },
     ],
+  });
+});
+
+it('ties production preparation commands to their committed action and NP-use receipt', async () => {
+  const skillCommand = {
+    kind: 'useSkillSlot',
+    slot: 1,
+    skillLevel: 10,
+    choice: null,
+  } as const;
+  const attackCommand = { kind: 'executeAttackNoblePhantasm' } as const;
+  const initialResource = { npLevel: 1 as const, capacity: 10_000, gauge: 10_000 };
+  const consumedResource = { ...initialResource, gauge: 0 };
+  const receipt = {
+    actionId: 'preparation:1:executeAttackNoblePhantasm',
+    gaugeBefore: 10_000,
+    baseOc: 1,
+    boostTotal: 0,
+    effectiveOc: 1,
+    participatingInstances: [],
+    excludedInstances: [],
+    boostUses: [],
+  };
+  const skillAction: ProductionPreparationTransactionAction = {
+    command: skillCommand,
+    sourceKind: 'skill',
+    baseOvercharge: null,
+    ocUse: null,
+    resourceBefore: initialResource,
+    resourceAfter: initialResource,
+  };
+  const attackAction: ProductionPreparationTransactionAction = {
+    command: attackCommand,
+    sourceKind: 'attackNoblePhantasm',
+    baseOvercharge: 1,
+    ocUse: receipt,
+    resourceBefore: initialResource,
+    resourceAfter: consumedResource,
+  };
+  const observation = {
+    conditionKey: 'fixture-condition',
+    profileKey: 'fixture-profile',
+    commands: [skillCommand, attackCommand],
+    actions: [skillAction, attackAction],
+  };
+  const audit = auditProductionPreparationTransactionObservations([observation]);
+  const passing = evaluateProductionPreparationTransactionGate({
+    expectedCalculatedProfiles: 1,
+    ...audit,
+  });
+  expect(passing).toMatchObject({
+    status: 'passed',
+    canonicalIdentity: 'tsk-08:preparation-transactions',
+    summary: {
+      calculatedProfiles: 1,
+      commandCount: 2,
+      actionCount: 2,
+      npUseReceiptCount: 1,
+    },
+    firstDifference: null,
+    failures: [],
+  });
+
+  const staleReceiptAction = {
+    ...attackAction,
+    ocUse: { ...receipt, actionId: 'preparation:0:executeAttackNoblePhantasm' },
+  };
+  const failedAudit = auditProductionPreparationTransactionObservations([
+    { ...observation, actions: [skillAction, staleReceiptAction] },
+  ]);
+  const failed = evaluateProductionPreparationTransactionGate({
+    expectedCalculatedProfiles: 1,
+    ...failedAudit,
+  });
+  expect(failed).toMatchObject({
+    status: 'failed',
+    firstDifference: {
+      identity: 'production:fixture-condition:profile:fixture-profile:preparation:action:1',
+      path: 'actionId',
+      expected: 'preparation:1:executeAttackNoblePhantasm',
+      actual: 'preparation:0:executeAttackNoblePhantasm',
+    },
+    failures: [
+      {
+        reason: 'preparationReceiptMismatch',
+        canonicalIdentity:
+          'production:fixture-condition:profile:fixture-profile:preparation:action:1',
+      },
+    ],
+  });
+
+  const missingProfile = evaluateProductionPreparationTransactionGate({
+    expectedCalculatedProfiles: 2,
+    ...audit,
+  });
+  expect(missingProfile).toMatchObject({
+    status: 'failed',
+    firstDifference: {
+      identity: 'tsk-08:preparation-transactions',
+      path: 'calculatedProfiles',
+      expected: 2,
+      actual: 1,
+    },
+    failures: [
+      {
+        reason: 'preparationProfileCoverageMismatch',
+        canonicalIdentity: 'tsk-08:preparation-transactions',
+      },
+    ],
+  });
+  const discontinuousResourceAudit = auditProductionPreparationTransactionObservations([
+    {
+      ...observation,
+      actions: [
+        { ...skillAction, resourceAfter: { ...initialResource, gauge: 15_000 } },
+        attackAction,
+      ],
+    },
+  ]);
+  expect(discontinuousResourceAudit.failures).toMatchObject([
+    {
+      reason: 'preparationResourceSequenceMismatch',
+      canonicalIdentity:
+        'production:fixture-condition:profile:fixture-profile:preparation:action:1',
+      firstDifference: { path: 'gauge', expected: 15_000, actual: 10_000 },
+    },
+  ]);
+  const discontinuousResource = evaluateProductionPreparationTransactionGate({
+    expectedCalculatedProfiles: 1,
+    ...discontinuousResourceAudit,
+  });
+  expect(discontinuousResource).toMatchObject({ status: 'failed' });
+  await writePreparationTransactionDiagnosticArtifact({
+    schemaVersion: 1,
+    boundary: 'calculation-application-production-preparation-transaction',
+    source: 'productionClosureAudit.test.ts',
+    canonicalIdentity: 'tsk-08:preparation-transactions',
+    passing,
+    intentionalFailures: [failed, missingProfile, discontinuousResource],
   });
 });

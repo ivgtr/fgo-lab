@@ -1,7 +1,7 @@
 {
   "task": "TSK-08",
   "status": "in_progress",
-  "unit": "records-preserving canonical eligibility digest connection and full-production parity rerun",
+  "unit": "records-preserving audit connection with final-profile outcome and preparation transaction ratchets",
   "baseline": {
     "headAtStart": "be27827e7b3e9c488d425a2c8aa4e2b9dfe7592e",
     "worktreeAtStart": [
@@ -227,7 +227,8 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "ratchet unsupported, invalid, partial commit, inert control, and stale mutation across the full production audit",
+    "connect inert-control and stale-mutation ratchets to the existing production projection and ordered operation owner paths",
+    "run the final fresh 80-condition production shards and merge with all current execution ratchets",
     "remove the deferred legacy aggregate auditor and old loader/scan/candidate-list/duplicate fixtures"
   ],
   "statusInvariants": {
@@ -239,7 +240,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "ratchet unsupported, invalid, partial commit, inert control, and stale mutation against this shared full-production audit model",
+  "nextBoundedUnit": "connect production-visible controls and ordered read-mutation-read state continuity; then run and merge the fresh full-production shards",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -377,7 +378,150 @@
         "required production, runner, docs, and final quality gates"
       ],
       "nextBoundedUnit": "connect observer to existing battle-execution transaction and ordered operation owner paths"
+    },
+    {
+      "name": "preparation command/action/receipt consistency and partial-commit recovery",
+      "status": "slice-complete",
+      "baselineHead": "94ce2e02605aac9a84c97ee513df854a21b0a687",
+      "changedFiles": [
+        "packages/battle-execution/src/preparationTransaction.test.ts",
+        "packages/calculation-application/src/productionParityDiagnostics.ts",
+        "packages/calculation-application/src/productionClosureAudit.test.ts",
+        "packages/calculation-application/scripts/audit-oc-matrix.ts",
+        "packages/calculation-application/scripts/merge-oc-matrix.ts",
+        "docs/README.md",
+        "docs/evidence/README.md",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/tasks/development-redesign-tasks.md"
+      ],
+      "flow": {
+        "producer": "Existing auditProductionClosure calculated records carry scenario.preNoblePhantasmPlan and appliedPreparationActions; the audit script observes these fields without introducing a producer.",
+        "semanticOwner": "packages/battle-execution/src/preparationTransaction.ts::planPreparationResourceTransaction and reducePreNoblePhantasmAction; packages/battle-execution/src/ocState.ts::isConsistentNpOcUseReceipt owns receipt consistency.",
+        "consumer": "packages/calculation-application/src/productionParityDiagnostics.ts::auditProductionPreparationTransactionObservations and evaluateProductionPreparationTransactionGate; single and merge audit scripts persist executionRatchets.preparationTransactions outside audit.",
+        "artifactConsumer": "merge-oc-matrix.ts checks the complete 80-condition shard assignment, canonical condition key/path, JSON, byte count, SHA-256, condition key, and shard identity through the existing generic verifyArtifactFiles helper."
+      },
+      "expected": {
+        "calculatedProfiles": 34600,
+        "commandActionSequenceMismatch": 0,
+        "receiptIdentityOrContentMismatch": 0,
+        "npResourceCommitMismatch": 0,
+        "preparationResourceSequenceMismatch": 0,
+        "candidateLevelStatusReinterpreted": false,
+        "tsk065AuditDigestInputChanged": false
+      },
+      "productionObservation": {
+        "scope": "one condition from productionClosureConditions using the existing auditProductionClosure records",
+        "conditionKey": "naturalLimit-included-baseline-np1-oc1",
+        "calculatedProfiles": 1,
+        "gate": "passed",
+        "sequenceRule": "Every calculated record must have one ordered applied action per planned command; action command and sourceKind match, NP-consuming actions carry the canonical actionId/gaugeBefore/base OC receipt, the receipt is internally consistent, and committed NP gauge is zero."
+      },
+      "rollbackRecoveryFixture": {
+        "transaction": "The first skill writes BP, HP, NP gauge, context trait and receipts before a later unsupported effect rejects the command.",
+        "rollback": "The rejected result is deeply equal to and reference-identical with the pre-command state; no BP receipt remains.",
+        "recoveryRead": "A following currentGaugeRatio 500‰ operation reads the restored 10000 gauge and produces 15000. A leaked 1000 gauge write would produce 16500.",
+        "forwardFixture": "A skill followed by attack NP checks ordered command/action equality, exact state receipt identity, gaugeBefore, base OC, effective OC, and full gauge consumption."
+      },
+      "failureIdentity": "tsk-08:preparation-transactions",
+      "failureReasonFixture": "preparationReceiptMismatch and preparationResourceSequenceMismatch with canonical action identity production:<condition>:profile:<profile>:preparation:action:1",
+      "firstDifferenceFixture": {
+        "identity": "production:fixture-condition:profile:fixture-profile:preparation:action:1",
+        "path": "actionId",
+        "expected": "preparation:1:executeAttackNoblePhantasm",
+        "actual": "preparation:0:executeAttackNoblePhantasm"
+      },
+      "failureArtifacts": [
+        {
+          "path": ".test-results/2026-09-23T14-21-21-994Z-15-44a1e0/production-preparation-transaction-diagnostics.json",
+          "sha256": "68da3b529e056c09fb1f46cd44938fde08a7cef5eadbecbb8ba979a4d66b107b",
+          "runnerManifest": ".test-results/2026-09-23T14-21-21-994Z-15-44a1e0/manifest.json",
+          "runnerManifestSha256": "0cb58c674a0144aa7da593dd10fc4eeded9a7cd019667ac8250163c434a37ee8",
+          "reason": "The complete typed gate preserves stale receipt identity, discontinuous resource sequence, and missing profile-coverage failures with expected/actual values and first differences."
+        },
+        {
+          "path": ".test-results/tsk-08-slice-b-checksum-failure-final/manifest.json",
+          "sha256": "11ebd28f468421d4ce634f08549fb9adf1948310428155e8e0826025f50f53ef",
+          "reason": "Merge rejected an intentionally wrong condition-record SHA-256 and incomplete shard artifact declarations; the manifest retains the canonical artifact first difference and preparationShardRatchetMissing failures. This is fail-closed evidence, not a successful merge."
+        },
+        {
+          "path": ".test-results/2026-09-23T14-00-28-637Z-15-eee281/manifest.json",
+          "sha256": "de0ce024dfeabfd5135e51ec8248fa4b4a7061a01029101f961f7df048cb0d25",
+          "reason": "The initial recovery-read fixture requested an unavailable trait input; the fixture was narrowed to an input-free resource read."
+        },
+        {
+          "path": ".test-results/2026-09-23T14-00-58-664Z-15-f07947/manifest.json",
+          "sha256": "28ed12d62336cff8742359c909b732a74a7de2dc6e8d4c1a265854db2443fd71",
+          "reason": "The recovery fixture still carried an unknown trait world-state input; the input source was removed."
+        },
+        {
+          "path": ".test-results/2026-09-23T14-01-43-119Z-44-8a1826/manifest.json",
+          "sha256": "3d66801c384ddbceaf0b43570892300dc2ba6210b5a08b1f30d3475df1f04ee6",
+          "reason": "The initial recovery expectation treated 500 as 5%; currentGaugeRatio uses 500‰ and the restored 10000 gauge correctly yields 15000."
+        }
+      ],
+      "verification": {
+        "focused": {
+          "command": "pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts packages/battle-execution/src/preparationTransaction.test.ts",
+          "status": "passed",
+          "tests": 66,
+          "durationSeconds": 2.55,
+          "artifact": ".test-results/2026-09-23T14-21-21-994Z-15-44a1e0/manifest.json",
+          "manifestSha256": "0cb58c674a0144aa7da593dd10fc4eeded9a7cd019667ac8250163c434a37ee8",
+          "diagnosticArtifactSha256": "68da3b529e056c09fb1f46cd44938fde08a7cef5eadbecbb8ba979a4d66b107b"
+        },
+        "mergeArtifactFailClosed": {
+          "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/merge-oc-matrix.ts .test-results/tsk-08-slice-b-checksum-failure-final",
+          "status": "failed-as-required",
+          "reason": "production_condition_artifact_verification",
+          "shaFailure": "naturalLimit-included-baseline-np1-oc1.json:sha256",
+          "preparationMissingRatchetReason": "preparationShardRatchetMissing",
+          "outputIsSuccessEvidence": false,
+          "manifestSha256": "11ebd28f468421d4ce634f08549fb9adf1948310428155e8e0826025f50f53ef"
+        },
+        "targetLint": {
+          "command": "pnpm exec eslint packages/calculation-application/src/productionParityDiagnostics.ts packages/calculation-application/src/productionClosureAudit.test.ts packages/battle-execution/src/preparationTransaction.test.ts --max-warnings=0",
+          "status": "passed"
+        },
+        "format": {
+          "command": "pnpm exec prettier --check packages/calculation-application/src/productionParityDiagnostics.ts packages/calculation-application/src/productionClosureAudit.test.ts packages/calculation-application/scripts/audit-oc-matrix.ts packages/calculation-application/scripts/merge-oc-matrix.ts packages/battle-execution/src/preparationTransaction.test.ts",
+          "status": "passed"
+        },
+        "typecheck": {
+          "command": "pnpm typecheck",
+          "status": "passed"
+        },
+        "docs": {
+          "command": "pnpm test:docs",
+          "status": "passed",
+          "tests": 6
+        },
+        "productionRunnerAndFinalQuality": "deferred until all execution ratchets and the final source diff are complete"
+      },
+      "invariants": {
+        "tsk065StaticDigestChanged": false,
+        "tsk065EligibilityDigestChanged": false,
+        "tsk065MatrixDigestChanged": false,
+        "inventoryChanged": false,
+        "supportStatusChanged": false,
+        "productionOutputChanged": false,
+        "parityChanged": false,
+        "newProducer": false,
+        "newGenerator": false,
+        "newSemanticOwner": false,
+        "numericFallback": false,
+        "runnerDomainInterpretation": false,
+        "tsk065Reopened": false,
+        "tsk0641Reopened": false
+      },
+      "unresolved": [
+        "production-wide final-profile status confirmation with the fresh source-bound shards",
+        "production-visible user-control on/off result-difference ratchet including area-policy alternate details",
+        "ordered operation read-mutation-read fingerprint continuity, including criticalStars 69 to 99",
+        "fresh full-production 8-shard producer and merge with every ratchet",
+        "required production, runner, docs, and final quality gates"
+      ],
+      "nextBoundedUnit": "connect existing production user-visible controls through their selected and alternate execution detail paths"
     }
   ],
-  "currentBoundedUnit": "final-profile unsupported/invalid/inputRequired gate"
+  "currentBoundedUnit": "preparation command/action/receipt consistency and partial-commit recovery"
 }

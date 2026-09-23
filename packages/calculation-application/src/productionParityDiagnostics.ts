@@ -6,6 +6,13 @@ import {
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
 import type { Tsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import {
+  DEFAULT_NP_RESOURCE_SEMANTICS,
+  deriveBaseOvercharge,
+  isConsistentNpOcUseReceipt,
+  type AppliedPreparationAction,
+} from '@fgo-lab/battle-execution';
+import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 
 export type ProductionParityPath = 'calculator' | 'portable';
 
@@ -114,6 +121,72 @@ export interface ProductionFinalOutcomeGateInput {
     inputRequired: number;
   };
   failures: readonly ProductionFinalProfileOutcome[];
+  inheritedIdentityFailures?: readonly CanonicalAuditDifference[];
+}
+
+export type ProductionPreparationTransactionFailureReason =
+  | 'preparationCommandActionMismatch'
+  | 'preparationReceiptMismatch'
+  | 'preparationResourceCommitMismatch'
+  | 'preparationResourceSequenceMismatch'
+  | 'preparationProfileCoverageMismatch'
+  | 'preparationShardRatchetMissing'
+  | 'preparationAuditIdentityMismatch';
+
+export interface ProductionPreparationTransactionFailure {
+  reason: ProductionPreparationTransactionFailureReason;
+  canonicalIdentity: string;
+  conditionKey?: string;
+  profileKey?: string;
+  actionIndex?: number;
+  expected: CanonicalAuditValue;
+  actual: CanonicalAuditValue;
+  firstDifference: CanonicalAuditDifference;
+}
+
+export interface ProductionPreparationTransactionObservation {
+  conditionKey: string;
+  profileKey: string;
+  commands: readonly PreNoblePhantasmCommand[];
+  actions: readonly ProductionPreparationTransactionAction[];
+}
+
+export type ProductionPreparationTransactionAction = Pick<
+  AppliedPreparationAction,
+  'command' | 'sourceKind' | 'baseOvercharge' | 'ocUse' | 'resourceBefore' | 'resourceAfter'
+>;
+
+export interface ProductionPreparationTransactionSummary {
+  calculatedProfiles: number;
+  commandCount: number;
+  actionCount: number;
+  npUseReceiptCount: number;
+}
+
+export type ProductionPreparationTransactionGate =
+  | {
+      status: 'passed';
+      canonicalIdentity: 'tsk-08:preparation-transactions';
+      expected: CanonicalAuditValue;
+      actual: CanonicalAuditValue;
+      summary: ProductionPreparationTransactionSummary;
+      firstDifference: null;
+      failures: readonly [];
+    }
+  | {
+      status: 'failed';
+      canonicalIdentity: 'tsk-08:preparation-transactions';
+      expected: CanonicalAuditValue;
+      actual: CanonicalAuditValue;
+      summary: ProductionPreparationTransactionSummary;
+      firstDifference: CanonicalAuditDifference;
+      failures: readonly ProductionPreparationTransactionFailure[];
+    };
+
+export interface ProductionPreparationTransactionGateInput {
+  expectedCalculatedProfiles: number;
+  summary: ProductionPreparationTransactionSummary;
+  failures: readonly ProductionPreparationTransactionFailure[];
   inheritedIdentityFailures?: readonly CanonicalAuditDifference[];
 }
 
@@ -277,6 +350,320 @@ export function evaluateProductionFinalOutcomeGate(
     firstDifference,
     failures: profileFailures,
   };
+}
+
+function preparationTransactionDifference(
+  canonicalIdentity: string,
+  expectedValue: unknown,
+  actualValue: unknown,
+): {
+  expected: CanonicalAuditValue;
+  actual: CanonicalAuditValue;
+  difference: CanonicalAuditDifference | null;
+} {
+  const expected = canonicalValue(expectedValue);
+  const actual = canonicalValue(actualValue);
+  return {
+    expected,
+    actual,
+    difference: firstCanonicalAuditDifference(
+      [{ identity: canonicalIdentity, value: expected }],
+      [{ identity: canonicalIdentity, value: actual }],
+    ),
+  };
+}
+
+function preparationFailure(
+  reason: ProductionPreparationTransactionFailureReason,
+  canonicalIdentity: string,
+  expectedValue: unknown,
+  actualValue: unknown,
+  context: Pick<
+    ProductionPreparationTransactionFailure,
+    'conditionKey' | 'profileKey' | 'actionIndex'
+  > = {},
+): ProductionPreparationTransactionFailure | null {
+  const { expected, actual, difference } = preparationTransactionDifference(
+    canonicalIdentity,
+    expectedValue,
+    actualValue,
+  );
+  return difference
+    ? { reason, canonicalIdentity, ...context, expected, actual, firstDifference: difference }
+    : null;
+}
+
+function preparationActionIdentity(
+  observation: ProductionPreparationTransactionObservation,
+  actionIndex: number,
+): string {
+  return `production:${observation.conditionKey}:profile:${observation.profileKey}:preparation:action:${String(actionIndex)}`;
+}
+
+export function auditProductionPreparationTransactionObservations(
+  observations: readonly ProductionPreparationTransactionObservation[],
+): {
+  summary: ProductionPreparationTransactionSummary;
+  failures: readonly ProductionPreparationTransactionFailure[];
+} {
+  const summary: ProductionPreparationTransactionSummary = {
+    calculatedProfiles: observations.length,
+    commandCount: 0,
+    actionCount: 0,
+    npUseReceiptCount: 0,
+  };
+  const failures: ProductionPreparationTransactionFailure[] = [];
+  const observedProfileIdentities = new Set<string>();
+
+  for (const observation of observations) {
+    const profileIdentity = `production:${observation.conditionKey}:profile:${observation.profileKey}:preparation`;
+    if (observedProfileIdentities.has(profileIdentity)) {
+      const duplicateFailure = preparationFailure(
+        'preparationProfileCoverageMismatch',
+        profileIdentity,
+        { distinctCalculatedProfiles: summary.calculatedProfiles },
+        { distinctCalculatedProfiles: observedProfileIdentities.size },
+        { conditionKey: observation.conditionKey, profileKey: observation.profileKey },
+      );
+      if (duplicateFailure) failures.push(duplicateFailure);
+    }
+    observedProfileIdentities.add(profileIdentity);
+    summary.commandCount += observation.commands.length;
+    summary.actionCount += observation.actions.length;
+
+    if (observation.commands.length !== observation.actions.length) {
+      const actionCountFailure = preparationFailure(
+        'preparationCommandActionMismatch',
+        profileIdentity,
+        { actionCount: observation.commands.length },
+        { actionCount: observation.actions.length },
+        { conditionKey: observation.conditionKey, profileKey: observation.profileKey },
+      );
+      if (actionCountFailure) failures.push(actionCountFailure);
+    }
+
+    for (let actionIndex = 0; actionIndex < observation.actions.length; actionIndex += 1) {
+      const action = observation.actions[actionIndex]!;
+      const command = observation.commands[actionIndex] ?? null;
+      const canonicalIdentity = preparationActionIdentity(observation, actionIndex);
+      const actionContext = {
+        conditionKey: observation.conditionKey,
+        profileKey: observation.profileKey,
+        actionIndex,
+      };
+      const commandFailure = preparationFailure(
+        'preparationCommandActionMismatch',
+        canonicalIdentity,
+        { command, sourceKind: command ? expectedSourceKind(command) : null },
+        { command: action.command, sourceKind: action.sourceKind },
+        actionContext,
+      );
+      if (commandFailure) failures.push(commandFailure);
+
+      if (actionIndex > 0) {
+        const previousAction = observation.actions[actionIndex - 1]!;
+        const sequenceFailure = preparationFailure(
+          'preparationResourceSequenceMismatch',
+          canonicalIdentity,
+          previousAction.resourceAfter,
+          action.resourceBefore,
+          actionContext,
+        );
+        if (sequenceFailure) failures.push(sequenceFailure);
+      }
+
+      if (!command) continue;
+      const consumesNp = command.kind !== 'useSkillSlot';
+      const receipt = action.ocUse;
+      if (receipt) summary.npUseReceiptCount += 1;
+      if (!consumesNp) {
+        const unexpectedReceiptFailure = preparationFailure(
+          'preparationReceiptMismatch',
+          canonicalIdentity,
+          { ocUse: null, baseOvercharge: null },
+          { ocUse: receipt, baseOvercharge: action.baseOvercharge },
+          actionContext,
+        );
+        if (unexpectedReceiptFailure) failures.push(unexpectedReceiptFailure);
+        continue;
+      }
+
+      const expectedActionId = `preparation:${String(actionIndex)}:${command.kind}`;
+      if (!receipt) {
+        const missingReceiptFailure = preparationFailure(
+          'preparationReceiptMismatch',
+          canonicalIdentity,
+          {
+            actionId: expectedActionId,
+            gaugeBefore: action.resourceBefore.gauge,
+            baseOc: deriveBaseOvercharge(
+              DEFAULT_NP_RESOURCE_SEMANTICS,
+              action.resourceBefore.gauge,
+            ),
+          },
+          { ocUse: null },
+          actionContext,
+        );
+        if (missingReceiptFailure) failures.push(missingReceiptFailure);
+      } else {
+        const expectedReceipt = {
+          actionId: expectedActionId,
+          gaugeBefore: action.resourceBefore.gauge,
+          baseOc: deriveBaseOvercharge(DEFAULT_NP_RESOURCE_SEMANTICS, action.resourceBefore.gauge),
+        };
+        const actualReceipt = {
+          actionId: receipt.actionId,
+          gaugeBefore: receipt.gaugeBefore,
+          baseOc: receipt.baseOc,
+        };
+        const receiptIdentityFailure = preparationFailure(
+          'preparationReceiptMismatch',
+          canonicalIdentity,
+          expectedReceipt,
+          actualReceipt,
+          actionContext,
+        );
+        if (receiptIdentityFailure) failures.push(receiptIdentityFailure);
+
+        const receiptContentFailure = preparationFailure(
+          'preparationReceiptMismatch',
+          canonicalIdentity,
+          { consistent: true, actionBaseOvercharge: expectedReceipt.baseOc },
+          {
+            consistent: isConsistentNpOcUseReceipt(receipt),
+            actionBaseOvercharge: action.baseOvercharge,
+          },
+          actionContext,
+        );
+        if (receiptContentFailure) failures.push(receiptContentFailure);
+      }
+
+      if (action.resourceAfter.gauge !== 0) {
+        const resourceCommitFailure = preparationFailure(
+          'preparationResourceCommitMismatch',
+          canonicalIdentity,
+          { resourceAfter: { gauge: 0 } },
+          { resourceAfter: { gauge: action.resourceAfter.gauge } },
+          actionContext,
+        );
+        if (resourceCommitFailure) failures.push(resourceCommitFailure);
+      }
+    }
+  }
+
+  return {
+    summary,
+    failures: failures.sort((left, right) =>
+      `${left.canonicalIdentity}:${left.reason}:${left.firstDifference.path}`.localeCompare(
+        `${right.canonicalIdentity}:${right.reason}:${right.firstDifference.path}`,
+      ),
+    ),
+  };
+}
+
+export function evaluateProductionPreparationTransactionGate(
+  input: ProductionPreparationTransactionGateInput,
+): ProductionPreparationTransactionGate {
+  const canonicalIdentity = 'tsk-08:preparation-transactions' as const;
+  const expectedValue = {
+    calculatedProfiles: input.expectedCalculatedProfiles,
+    commandActionMismatches: 0,
+    receiptMismatches: 0,
+    resourceCommitMismatches: 0,
+    resourceSequenceMismatches: 0,
+  };
+  const failureCounts = {
+    commandActionMismatches: input.failures.filter(
+      ({ reason }) => reason === 'preparationCommandActionMismatch',
+    ).length,
+    receiptMismatches: input.failures.filter(
+      ({ reason }) => reason === 'preparationReceiptMismatch',
+    ).length,
+    resourceCommitMismatches: input.failures.filter(
+      ({ reason }) => reason === 'preparationResourceCommitMismatch',
+    ).length,
+    resourceSequenceMismatches: input.failures.filter(
+      ({ reason }) => reason === 'preparationResourceSequenceMismatch',
+    ).length,
+  };
+  const actualValue = {
+    calculatedProfiles: input.summary.calculatedProfiles,
+    ...failureCounts,
+  };
+  const countDifference = preparationTransactionDifference(
+    canonicalIdentity,
+    expectedValue,
+    actualValue,
+  ).difference;
+  const expected = canonicalValue(expectedValue);
+  const actual = canonicalValue(actualValue);
+  const failures = [...input.failures];
+  if (input.summary.calculatedProfiles !== input.expectedCalculatedProfiles) {
+    const coverageFailure = preparationFailure(
+      'preparationProfileCoverageMismatch',
+      canonicalIdentity,
+      { calculatedProfiles: input.expectedCalculatedProfiles },
+      { calculatedProfiles: input.summary.calculatedProfiles },
+    );
+    if (coverageFailure) failures.push(coverageFailure);
+  }
+  for (const difference of input.inheritedIdentityFailures ?? []) {
+    failures.push({
+      reason: 'preparationAuditIdentityMismatch',
+      canonicalIdentity,
+      expected: canonicalValue(difference.expected),
+      actual: canonicalValue(difference.actual),
+      firstDifference: difference,
+    });
+  }
+  if (countDifference && failures.length === 0) {
+    failures.push({
+      reason: 'preparationAuditIdentityMismatch',
+      canonicalIdentity,
+      expected,
+      actual,
+      firstDifference: countDifference,
+    });
+  }
+  failures.sort((left, right) =>
+    `${left.canonicalIdentity}:${left.reason}:${left.firstDifference.path}`.localeCompare(
+      `${right.canonicalIdentity}:${right.reason}:${right.firstDifference.path}`,
+    ),
+  );
+  if (failures.length === 0 && countDifference === null)
+    return {
+      status: 'passed',
+      canonicalIdentity,
+      expected,
+      actual,
+      summary: input.summary,
+      firstDifference: null,
+      failures: [],
+    };
+  const firstDifference = failures[0]?.firstDifference ?? countDifference;
+  if (!firstDifference) throw new TypeError('production_preparation_first_difference_missing');
+  return {
+    status: 'failed',
+    canonicalIdentity,
+    expected,
+    actual,
+    summary: input.summary,
+    firstDifference,
+    failures,
+  };
+}
+
+function expectedSourceKind(
+  command: PreNoblePhantasmCommand,
+): AppliedPreparationAction['sourceKind'] {
+  switch (command.kind) {
+    case 'useSkillSlot':
+      return 'skill';
+    case 'useTransformNoblePhantasm':
+      return 'noblePhantasm';
+    case 'executeAttackNoblePhantasm':
+      return 'attackNoblePhantasm';
+  }
 }
 
 export function compareProductionParity(
