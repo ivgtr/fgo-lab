@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.29"
+document_version: "1.7.30"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-23"
+updated_at: "2026-09-24"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -2433,7 +2433,7 @@ Current bounded-unit handoff（2026-09-23、preparation command/action/receipt c
 
 focused 66 tests、target ESLint／Prettier、`pnpm typecheck`は成功した。focused runner manifestは`.test-results/2026-09-23T14-15-07-094Z-15-e79d6c/manifest.json`（SHA-256 `442fa78295d694ba6e1c9fd040c51d308fc37b2e34b707916fd044a2139ec15c`）、preparation transaction diagnosticは`production-preparation-transaction-diagnostics.json`（SHA-256 `1b24d86d5981294fb9a7937b827ed3651288e151c14ed193872c0884fa153b8b`）である。初回recovery fixtureの入力不足／500‰期待値誤りの失敗manifestもmachine evidenceにpathとchecksumを保持した。TSK-06.5 digest／inventory／support status／production output／parityに差分はない。未達はproduction全件のfresh shard／merge、inert control、stale mutation、およびproduction／runner／docs／quality gateである。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま維持する。次は既存production controlのon/offがoperationまたはdamageへ届く経路を、area-policy alternate detailも含めて接続する。
 
-Current bounded-unit handoff（2026-09-24、inert-control event identityの再計画で停止）:
+Previous bounded-unit handoff（2026-09-24、inert-control event identityの再計画で停止）:
 
 開始HEADは`5d9540f403f9d2be9ed2e67b770f8339db17ed7e`でworktreeはcleanだった。inert-control試行は`productionParityDiagnostics.ts`のtyped gate、既存`productionMasterInventory.test.ts`からのordered-event observation、production closure gate fixture、selected／`withoutAreaAlternate` execution fixtureを変更した。変更は未検証のためstage／commitしていない。`apps/web/next-env.d.ts`は引き続きignore済み。
 
@@ -2446,6 +2446,24 @@ focused command `pnpm test:diagnostic -- packages/calculation-application/src/pr
 test runnerは診断テスト失敗後に宣言済み`production-inert-control-diagnostics.json`の欠損も検出し、run全体を`artifact_failure`にした。完全な失敗結果は`.test-results/2026-09-23T14-56-22-736Z-15-aa9e93/manifest.json`（SHA-256 `6a3ff15cc1500f7460e47bb35d26ad10e867b41ace14e099bb8eef287664bbeb`）、`vitest.json`（`9d9fbbeb4cdd03f355fdb5464526282d4c7e78d81d4bb80ad639cc4dbe7c3b09`）、`stderr.log`（`033d7e3e73ff539f2758a6f3ea99adeea31ce2c3c25c28ebf1edb3fd4914e894`）に保存されている。manifestは完全なstdout／stderr artifactも宣言し、欠損diagnostic artifactをfailureとして記録する。別個の`production-inert-control-diagnostics.json`は生成されておらずchecksumはない。
 
 次の最小調査は、`candidateExecution.ts`／`projection.ts`のordered event projection生成と`effectiveContributions`、`npDamageOperation.ts::applyNpDamageOperation`の`npSpecialMultipliers`への伝達を読み、synthetic `:npSpecial` projection、operation eventの`:npBase`、selected execution inputの関係をtyped identityのまま確定すること。その後、上記19／2／2 diagnosticsを各canonical identityとfirst differenceから分類する。これらのowner／意味を確定するまで再実装、範囲拡張、成功扱いをしない。次の実行はコード調査と改訂bounded planの提示であり、TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。TSK-06.5 matrix digest比較はこの試行では行っていない。
+
+Current bounded-unit handoff（2026-09-24、実装前調査完了・記録専用slice）:
+
+ユーザー承認範囲は調査、限定診断、Taskに紐づく記録、文書検証とcommitである。製品実装計画の承認ではない。開始HEADは`aa032edf2c5f08833026beda982f6d2806b0a0fb`。前回から残る`productionParityDiagnostics.ts`、`productionMasterInventory.test.ts`、`productionClosureAudit.test.ts`、`scenario.test.ts`の4ファイル（969 additions／10 deletions）は、HEAD・差分SHA-256・各ファイルSHA-256を診断前後で照合し保持した。今回commitはこのTask、evidence index、`tsk-08-parity-ratchet.json`と、版番号を同期する文書registryだけを対象にする。`apps/web/next-env.d.ts`はignore済みのまま保持する。
+
+[機械証跡](../evidence/tsk-08-parity-ratchet.json)の最新`boundedUnits`が、4 ratchetの0件定義、production母集団／除外、producer／owner／consumer、直接の保存・消費経路、composition／alternate／mutation／recovery fixture、変更候補、失敗artifact契約、sliceと検証計画を所有する。全73 diagnostic identityを40 controls／33 ownersへ対応付け、既存applicationが選んだexecutionをプロセス内の観測hookで採取した（11.190秒）。追加18観測（12.160秒）でHP／BP成立経路、7件のcount修復、form再有効化、NP evaluatorの実readを確認した。追跡ソースと実行結果を変更していない。以前のdirty source snapshotは保存されていないため、今回の診断を前回sourceの認証や成功証拠へ置き換えない。
+
+確定した分類は次のとおり。50件のevent欠損診断は25 synthetic projectionsのon/offであり、`:npSpecial`と`:npBase`を別identityのまま選択されたinput／readへ接続する必要がある。7件のstack/world assertion矛盾はtyped unsupportedで、count修復後にcalculatedへ復帰した。HPは500‰から準備回復後752‰を読み、成立入力ではon/off差が出る。BPも成立時にignoreDefense operation差が出る。null modifierのform control 2件はform／variantで観測し、非攻撃NPへの変更によるunsupportedと復帰を隠さない。
+
+**実装上のBlockingは3 familyで確定した。** `TSK-08-INV-B1`はstateTraitの10 controlsで、offのprojection／effective contributionが非適用なのに特攻multiplierが残る。原因はNP evaluatorが無効化されたlocal decisionとは別に自然traitをOR評価する経路である。`TSK-08-INV-B2`はowner `2501400`のmagicBulletで、toggleのattacker world factがform変換時に消え、選択NPはon/off共通のattackerState count 3を読む。`TSK-08-INV-B3`はowner `403400`のtargetRarityで、quantity-only条件をtoggleが設定できずnullと中立multiplierが残る。これらは既存control／projection／execution ownerの責務であり、audit側の分類緩和、別owner、numeric fallbackでは解決しない。現在の「damage semantics／canonical input／source不変」の境界内で0件成功とは扱えない。調査の未完了として同じ調査を繰り返すのでなく、製品修正の別途bounded planが必要なBlockingとして残す。
+
+partial commitは成功receiptの適用内容と、途中失敗時の正確なrollback＋recovery readを別々に検証する。preparation command全体のrollback、candidateExecutionのgroup rollback、group開始前のform／variant preapplyを同じ境界としない。stale mutationは同じcandidateのcanonical seed → typed mutation before/after → 後続readを観測し、`battle:criticalStars`の69 → cap 99 → read 99を正確に扱う。TSK-07のstale response証拠を置換しない。without-areaは`rankingPolicyCandidates.ts`の実際のalternate detail／input／effective contributionsを観測する。前回inventoryのalternate 0は網羅証拠ではない。
+
+完全な診断artifact 76件と観測scriptをchecksum照合し、archiveへ保存して中身も照合した。archiveは`.test-results/tsk-08-investigation-record-20260924/complete-diagnostic-artifacts.tar.gz`（SHA-256 `25b9966bb6ea66dbfcdbcbe7cd1785929ba18316a0b31039da00f16b166ac12b`）。canonical identity、typed diagnostic reason、共有`firstCanonicalAuditDifference`によるfirst difference、完全な各観測とchecksumは`.test-results/tsk-08-preplan-control-followup-20260924/findings.json`（`264dd4c32b288805fd08109e74c8a47e478dc0080b4d56bcd31825ac84196639`）と`artifact-manifest.json`（`329a166796c3a648787b68be6fc30a82365b793ddd4c743da99a5bd15836b05e`）へ接続する。reasonの追加案は診断用で、production union実装ではない。前回73件、44 tests中42 pass／2 fail、欠損によるartifact_failureは失敗のまま保持する。
+
+既存8-shard merge成功とeligibility digestはparity限定で再利用する。前回4 shardの92／92／140／140はshard単位で、manifestが参照するのは各10 conditions、合計40である。237〜258秒は調査した重いconditionの時間で、shard全体ではない。condition時間合計は約479／498／748／770秒だった。将来fresh full監査が必要なら8 canonical shardsを最大4並列・2 wave（概算16〜26分）で実行する。既知Blockingがある現時点では再実行しない。
+
+次は記録されたC1（artifact／選択execution）、C2（rollback／read continuity）、C3（inert semantic gate）、C4（fresh全件接続）の計画レビューと、B1〜B3の製品修正境界の承認である。各sliceは独立に実装・検証・記録が揃ってからcommitする。製品実装後はfocused、target lint／format、typecheck、production／runner／docs、最終source確定後のqualityを必要とする。今回の文書sliceはREADME所定のformat／docs／参照・artifact整合で閉じる。`pnpm test:docs`はregistry版同期後に成功（6 tests、docs integrity passed）。初回2回のregistry不一致は失敗logとchecksumを残した。完全artifact・参照・既存4ファイル差分の照合も成功し、結果は機械証跡に記録した。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、TSK-08全体もinert-control実装も完了扱いにしない。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

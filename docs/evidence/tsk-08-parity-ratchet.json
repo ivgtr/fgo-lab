@@ -228,9 +228,10 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "connect inert-control and stale-mutation ratchets to the existing production projection and ordered operation owner paths",
-    "run the final fresh 80-condition production shards and merge with all current execution ratchets",
-    "remove the deferred legacy aggregate auditor and old loader/scan/candidate-list/duplicate fixtures"
+    "resolve the three recorded product-semantic blockers without weakening inert-control classification",
+    "implement selected execution observation, complete failure artifacts, rollback/recovery and stale-mutation ratchets",
+    "run fresh 80-condition shards/merge only after focused semantic gates pass",
+    "retain deferred legacy cleanup for its own later bounded unit; no TSK-09 work in this unit"
   ],
   "statusInvariants": {
     "TSK-06.5": "done",
@@ -241,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "re-establish the typed event-to-damage relationship for inert controls, then validate the revised focused observer before any full production inventory run",
+  "nextBoundedUnit": "Review the now-specified bounded implementation plan and separately bound the three product-semantic corrections before source editing. Investigation is complete; do not repeat the same diagnostic or full audit without a changed source or a new question.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -654,7 +655,913 @@
         "Revise the bounded implementation plan before resuming source changes or rerunning the full inventory."
       ],
       "nextBoundedUnit": "re-establish the typed event-to-damage relationship for inert controls, then validate the revised focused observer before any full production inventory run"
+    },
+    {
+      "name": "pre-implementation semantic investigation and bounded plan",
+      "status": "investigation-complete-implementation-blocked",
+      "date": "2026-09-24",
+      "baselineHead": "aa032edf2c5f08833026beda982f6d2806b0a0fb",
+      "authorization": "Investigation, bounded diagnostic execution, task-linked evidence/handoff updates, documentation verification and a documentation-only commit. Product implementation remains subject to review of the revised plan.",
+      "scopeComplete": "Direct production control command/state/input/result paths, all 73 prior diagnostic identities, recovery probes, four ratchet contracts, transaction boundaries and alternate-path observation ownership are specified. This is investigation completion, not a passing ratchet or TSK-08 completion.",
+      "requirements": [
+        "TS-AUDIT-001",
+        "TS-OUT-001",
+        "TS-ART-001",
+        "RK-AUDIT-001",
+        "damage-effect-execution-requirements.md sections 4.5, 8.11, 8.12, 8.13",
+        "ranking-self-and-conditional-effects-requirements.md sections 7.2, 7.3, 15"
+      ],
+      "unchangedSource": {
+        "head": "aa032edf2c5f08833026beda982f6d2806b0a0fb",
+        "diffSha256": "6f061eeab8572bc47e996b69a1be680da4a42f7ad44d131b8a9a0cc473209348",
+        "files": {
+          "packages/calculation-application/src/productionClosureAudit.test.ts": "37fb97f7181aff3eefa1b1234f6a4ca062724fe4fab1f6c1fc49e9d2ddef74eb",
+          "packages/calculation-application/src/productionMasterInventory.test.ts": "a477a36576c9ff3fc5086114a5e458c7036dd68256ea82a6a0deaa91304e3701",
+          "packages/calculation-application/src/productionParityDiagnostics.ts": "6ad0cff394a7c1d4370ac65584f82c84929c948e5f3bef81416c93b92f8db8f2",
+          "packages/calculation-application/src/scenario.test.ts": "140ab2de8c706a0a33b241c095c5d653ef3496caa6960610566a4d6055a41dca"
+        },
+        "stagedPaths": ""
+      },
+      "ignoredGeneratedFile": {
+        "path": "apps/web/next-env.d.ts",
+        "rule": ".gitignore:11",
+        "retained": true,
+        "tracked": false
+      },
+      "diagnostics": {
+        "priorDiagnosticCount": 73,
+        "distinctControls": 40,
+        "owners": 33,
+        "additionalObservations": 18,
+        "countsAreNotFullProductionMatrixTotals": true,
+        "firstRunMs": 11190,
+        "followupRunMs": 12160,
+        "executionCapture": "Diagnostic-process-only Vite transform observes the existing resolvePreparedOrderedScenario input. Exact object identity links each selected prepared.resolved.input to one captured execution. No second execution is used as a selected-path substitute. Follow-up hooks capture actual form transition and NP evaluator context; all hooks and scripts are archived.",
+        "historyLimit": "The previous failed runner recorded dirty=true without a dirty-diff checksum. These observations establish behavior on aa032edf plus the preserved four-file diff; they do not authenticate the historical dirty source or turn its 73 diagnostics into success evidence.",
+        "manifest": {
+          "path": ".test-results/tsk-08-preplan-control-followup-20260924/artifact-manifest.json",
+          "bytes": 18873,
+          "sha256": "329a166796c3a648787b68be6fc30a82365b793ddd4c743da99a5bd15836b05e"
+        },
+        "findings": {
+          "path": ".test-results/tsk-08-preplan-control-followup-20260924/findings.json",
+          "bytes": 25623,
+          "sha256": "264dd4c32b288805fd08109e74c8a47e478dc0080b4d56bcd31825ac84196639"
+        },
+        "fullArchive": {
+          "archive": ".test-results/tsk-08-investigation-record-20260924/complete-diagnostic-artifacts.tar.gz",
+          "bytes": 18113717,
+          "sha256": "25b9966bb6ea66dbfcdbcbe7cd1785929ba18316a0b31039da00f16b166ac12b",
+          "artifactCount": 76,
+          "archiveMembersVerified": 76,
+          "uncompressedBytes": 385511919
+        },
+        "archiveVerification": {
+          "path": ".test-results/tsk-08-investigation-record-20260924/archive-verification.json",
+          "bytes": 409,
+          "sha256": "30c695a5fda55ff80294551e02f040a33b7f1ba9e8307aefa1be1bce4ecdf640"
+        },
+        "all76ArtifactChecksumsVerified": true,
+        "ratchetSuccess": false
+      },
+      "resolvedFamilies": [
+        {
+          "family": "synthetic NP-special projection / ordered event",
+          "priorDiagnostics": 50,
+          "controls": 25,
+          "classification": "observer identity mismatch; not a product failure verdict",
+          "producer": "npDamageCompilation.ts::compileNoblePhantasmDamageOperation -> projection.ts::traitCountProjections",
+          "owner": "candidateExecution.ts -> npDamageExecution.ts::applyNoblePhantasmDamage -> npDamageOperation.ts::applyNpDamageOperation / evaluateNpDamageOperation",
+          "conclusion": "Preserve projection key, operation ID and distinct npSpecial/npBase contribution IDs. Observe the selected evaluator context/input/result; null effective resolvedValue is legal. Composite trait count is not equal to one projection value. 4000100 limitCount 1 visible world-predicate controls update target context consumed by selected limitCount 3; do not relabel the inactive event or discard a visible control."
+        },
+        {
+          "family": "canonical stack versus world assertion",
+          "controls": 7,
+          "classification": "typed rejected input with verified recovery; not a successful on/off numeric application",
+          "owners": [
+            "106600",
+            "204300",
+            "305700",
+            "604800",
+            "1101700",
+            "2300400",
+            "2801100"
+          ],
+          "producer": "effectDecision.ts worldFact command and canonicalInputs.ts integer input",
+          "owner": "candidatePreparation.ts::prepareExecutableCandidate -> seedStackQuantities -> candidateSelection.ts::validateCandidateSelections -> state.ts::applyWorldFacts",
+          "conclusion": "Seed count 0 asserts absence. Toggle true conflicts before world-fact application and returns unsupported. Explicit count 1 removes the contradiction; all seven recovery probes return calculated and change the special input. Keep the toggle and count as distinct UI controls; preserve rejection and recovery rather than exempting a visible toggle as owned by another input."
+        },
+        {
+          "family": "HP condition",
+          "controls": 1,
+          "owner": "preparation HP transaction -> candidatePreparation.ts hpPermille -> candidateExecution.ts condition/value read",
+          "conclusion": "Owner 1000100 input 500 permille seeds HP 5950/11901, preparation NP receipt heals to 8950/11901, reader sees 752. Input 100 produces an applicable case with attackBuff on/off 0.66/0.3. Legitimate false condition is a typed non-application, with positive reachability retained."
+        },
+        {
+          "family": "BP condition",
+          "controls": 1,
+          "owner": "scenario.ts selected BP witness -> candidateExecution.ts ignoreDefense",
+          "conclusion": "Owner 3300200 phase 0 does not satisfy atLeast 7. Phase 7 probe changes ignoreDefense applied/notApplied. Multiple witness executions occur; use only the selected prepared input/event, not the first observed context or an unrelated result delta."
+        },
+        {
+          "family": "form/variant control",
+          "controls": 2,
+          "owner": "variantSelection.ts::resolveActiveVariantTransactions / applySelectedNoblePhantasmContext and state.ts::applyActorFormTransition",
+          "conclusion": "205000 and 505600 null-modifier controls affect form/variant and actual damage input. 505600 off selects non-attack NP and is unsupported; re-enable returns calculated. Record this rejection without changing ranking candidate-level status or final-profile policy."
+        }
+      ],
+      "blockingFamilies": [
+        {
+          "id": "TSK-08-INV-B1",
+          "controls": 10,
+          "status": "confirmed contract mismatch; implementation deferred",
+          "owners": [
+            "200300",
+            "504800",
+            "505600",
+            "603700",
+            "604900",
+            "605300",
+            "705100",
+            "1002200",
+            "1101100",
+            "1101400"
+          ],
+          "contract": "damage-effect section 4.5 notApplied means not applied to calculation; RK contribution contract and actual-damage projection must agree. A projection or effective contribution cannot be used as proof of input exclusion when its special multiplier remains active.",
+          "path": "effectDecision.ts writes operationEnabled=false -> npDamageExecution.ts computes effectLocalConditionSatisfied=false -> evaluateNpDamageOperation stateTrait branch ORs in actual trait -> multiplier remains non-neutral; createOperationProjection / effectiveContributionsForOperation report notApplied/effective=false.",
+          "recurrenceScope": "The same local-condition OR actual-fact mechanism occurs in trait, stateTrait, traitExpression and targetRarity. Only the ten listed stateTrait controls were observed in this bounded production diagnostic; no full-family production count is inferred.",
+          "decision": "Keep effectiveContributionInputDisagreement as a failure. No exclusion based on already-present state; no rewriting damage or contribution outcome in the auditor. A product fix would cross the currently prohibited damage/control semantics boundary."
+        },
+        {
+          "id": "TSK-08-INV-B2",
+          "controls": 1,
+          "status": "confirmed lost control fact; implementation deferred",
+          "owner": "2501400",
+          "contract": "damage-effect section 8.12.6 requires displayed control values to reach related operation/damage.",
+          "path": "traitCountProjections emits attacker:magicBullet worldFact (stateTraitNames selects the scope); applyWorldFacts writes it; applyActorFormTransition replaces intrinsic attacker traits/counts; selected NP consumes unchanged attackerState count 3.",
+          "decision": "Keep userControlWorldFactLostBeforeDamage. Do not change scope, form order, raw-derived data or numeric values in the auditor. Inline count reachability cannot excuse the separately displayed toggle.",
+          "recurrenceScope": "world assumptions about intrinsic attacker traits followed by selected-form replacement; also distinguish attackerState, target/targetState, preapply and runtime form paths."
+        },
+        {
+          "id": "TSK-08-INV-B3",
+          "controls": 1,
+          "status": "confirmed control-to-quantity gap; implementation deferred",
+          "owner": "403400",
+          "contract": "damage-effect sections 8.12.6 and 8.13 require actual reachability and typed unresolved versus false/disabled presentation.",
+          "path": "specialAttackCondition any(targetRarity==1, targetRarity==2) -> effectDecision.ts -> conditionAllowsEffectLocalDecision rejects quantity-only conditions -> targetRarity remains null -> special evaluator returns neutral multiplier on both sides.",
+          "decision": "Retain userControlNpSpecialInputNotChanged and the unresolved quantity observation. Do not invent rarity, treat unresolved as false, suppress the control or add an inventory exemption. The correction belongs to existing command/input/projection owners and must be separately bounded before implementation.",
+          "recurrenceScope": "quantity-only any/all/not and mixed quantity/trait composition; do not let one assumable leaf silently satisfy another quantity leaf."
+        }
+      ],
+      "failureDetails": [
+        {
+          "canonicalIdentity": "production:control-inventory:owner:200300:profile:default:path:selectedProfile:projection:np:[\"200300\",0,\"200301\"]:24:damage:operation:np:[\"200300\",0,\"200301\"]:24:damage:contribution:np:[\"200300\",0,\"200301\"]:24:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:200300:profile:default:path:selectedProfile:projection:np:[\"200300\",0,\"200301\"]:24:damage:operation:np:[\"200300\",0,\"200301\"]:24:damage:contribution:np:[\"200300\",0,\"200301\"]:24:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              2,
+              2,
+              2,
+              2,
+              2
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-06-200300.json",
+            "bytes": 2285941,
+            "sha256": "5c1c26cf249f505fed5e81841445d4da2d17d7b1cd1469e588f11e4f8eb2c2cb"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:504800:profile:default:path:selectedProfile:projection:np:[\"504800\",0,\"504801\"]:24:damage:operation:np:[\"504800\",0,\"504801\"]:24:damage:contribution:np:[\"504800\",0,\"504801\"]:24:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:504800:profile:default:path:selectedProfile:projection:np:[\"504800\",0,\"504801\"]:24:damage:operation:np:[\"504800\",0,\"504801\"]:24:damage:contribution:np:[\"504800\",0,\"504801\"]:24:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-15-504800.json",
+            "bytes": 3860491,
+            "sha256": "1c73b3c167aee7624fa4bff7c3efa7bb7271f8d481388413914c6ca1ef6aa574"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:505600:profile:default:path:selectedProfile:projection:np:[\"505700\",0,\"505701\"]:25:damage:operation:np:[\"505700\",0,\"505701\"]:25:damage:contribution:np:[\"505700\",0,\"505701\"]:25:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:505600:profile:default:path:selectedProfile:projection:np:[\"505700\",0,\"505701\"]:25:damage:operation:np:[\"505700\",0,\"505701\"]:25:damage:contribution:np:[\"505700\",0,\"505701\"]:25:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-17-505600.json",
+            "bytes": 8167553,
+            "sha256": "720caf8906787980d510a0a16587f80e95d6ebd037ed93ba6e9055d084ca146a"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:603700:profile:default:path:selectedProfile:projection:np:[\"603700\",0,\"603702\"]:24:damage:operation:np:[\"603700\",0,\"603702\"]:24:damage:contribution:np:[\"603700\",0,\"603702\"]:24:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:603700:profile:default:path:selectedProfile:projection:np:[\"603700\",0,\"603702\"]:24:damage:operation:np:[\"603700\",0,\"603702\"]:24:damage:contribution:np:[\"603700\",0,\"603702\"]:24:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-18-603700.json",
+            "bytes": 5896141,
+            "sha256": "202ac55b0bff4b5159bd571ca386b78245751647ec88f447fd8bb28dbe5f5444"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:604900:profile:default:path:selectedProfile:projection:np:[\"604900\",0,\"604901\"]:25:damage:operation:np:[\"604900\",0,\"604901\"]:25:damage:contribution:np:[\"604900\",0,\"604901\"]:25:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:604900:profile:default:path:selectedProfile:projection:np:[\"604900\",0,\"604901\"]:25:damage:operation:np:[\"604900\",0,\"604901\"]:25:damage:contribution:np:[\"604900\",0,\"604901\"]:25:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-20-604900.json",
+            "bytes": 4441744,
+            "sha256": "c54e2b1d510b8777a97e913e891869ca86c314607a3c32ca88a2c9d72f13481b"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:605300:profile:default:path:selectedProfile:projection:np:[\"605300\",0,\"605301\"]:24:damage:operation:np:[\"605300\",0,\"605301\"]:24:damage:contribution:np:[\"605300\",0,\"605301\"]:24:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:605300:profile:default:path:selectedProfile:projection:np:[\"605300\",0,\"605301\"]:24:damage:operation:np:[\"605300\",0,\"605301\"]:24:damage:contribution:np:[\"605300\",0,\"605301\"]:24:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-21-605300.json",
+            "bytes": 6467840,
+            "sha256": "a7098c57f839251eab1c44c4957f1063cbc8fede2b6b0ec1c08d5056fe2ad300"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:705100:profile:default:path:selectedProfile:projection:np:[\"705100\",0,\"705101\"]:24:damage:operation:np:[\"705100\",0,\"705101\"]:24:damage:contribution:np:[\"705100\",0,\"705101\"]:24:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:705100:profile:default:path:selectedProfile:projection:np:[\"705100\",0,\"705101\"]:24:damage:operation:np:[\"705100\",0,\"705101\"]:24:damage:contribution:np:[\"705100\",0,\"705101\"]:24:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-22-705100.json",
+            "bytes": 8788246,
+            "sha256": "4223e709b8549dcf3c4f4f4e6692e134674afcef8ecaa2aecf585c8725fc7e74"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:1002200:profile:default:path:selectedProfile:projection:np:[\"1002200\",0,\"1002201\"]:25:damage:operation:np:[\"1002200\",0,\"1002201\"]:25:damage:contribution:np:[\"1002200\",0,\"1002201\"]:25:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:1002200:profile:default:path:selectedProfile:projection:np:[\"1002200\",0,\"1002201\"]:25:damage:operation:np:[\"1002200\",0,\"1002201\"]:25:damage:contribution:np:[\"1002200\",0,\"1002201\"]:25:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-25-1002200.json",
+            "bytes": 5682644,
+            "sha256": "b1953d42860b0aea76e15d8e6ec3073efc737712f55cf5dd0a17ed7b1108e6c2"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:1101100:profile:default:path:selectedProfile:projection:np:[\"1101100\",0,\"1101101\"]:25:damage:operation:np:[\"1101100\",0,\"1101101\"]:25:damage:contribution:np:[\"1101100\",0,\"1101101\"]:25:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:1101100:profile:default:path:selectedProfile:projection:np:[\"1101100\",0,\"1101101\"]:25:damage:operation:np:[\"1101100\",0,\"1101101\"]:25:damage:contribution:np:[\"1101100\",0,\"1101101\"]:25:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-27-1101100.json",
+            "bytes": 4330591,
+            "sha256": "72c3b7de1f8ada25bcb24ff533f31606095006e314baf9373d964f2d6c2985ba"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:1101400:profile:default:path:selectedProfile:projection:np:[\"1101400\",0,\"1101401\"]:24:damage:operation:np:[\"1101400\",0,\"1101401\"]:24:damage:contribution:np:[\"1101400\",0,\"1101401\"]:24:damage:npSpecial:np-special-damage-input",
+          "reason": "effectiveContributionInputDisagreement",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "effectiveContribution": {
+              "effective": true
+            }
+          },
+          "actual": {
+            "effectiveContribution": {
+              "effective": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:1101400:profile:default:path:selectedProfile:projection:np:[\"1101400\",0,\"1101401\"]:24:damage:operation:np:[\"1101400\",0,\"1101401\"]:24:damage:contribution:np:[\"1101400\",0,\"1101401\"]:24:damage:npSpecial:np-special-damage-input",
+            "path": "effectiveContribution.effective",
+            "expected": true,
+            "actual": false
+          },
+          "observed": {
+            "projectionOutcome": "notApplied",
+            "contributionOutcome": "notApplied",
+            "input": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-28-1101400.json",
+            "bytes": 3809281,
+            "sha256": "b10bef2548b2ae4eedef0c4dd7ba11a42276a571e66f7f23e965b0b54196b3ff"
+          },
+          "interpretation": "Selected damage has a non-neutral special contribution while the same typed contribution is recorded ineffective. No damage semantics correction or exemption is inferred."
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:2501400:profile:default:path:selectedProfile:projection:np:[\"2501500\",0,\"2501501\"]:5337:trait:magicBullet:operation:np:[\"2501500\",0,\"2501501\"]:5337:damage:contribution:np:[\"2501500\",0,\"2501501\"]:5337:damage:npSpecial",
+          "reason": "userControlWorldFactLostBeforeDamage",
+          "reasonStatus": "diagnostic proposal; production union unchanged",
+          "expected": {
+            "selectedConsumer": {
+              "assertedTraitPresent": true
+            }
+          },
+          "actual": {
+            "selectedConsumer": {
+              "assertedTraitPresent": false
+            }
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:2501400:profile:default:path:selectedProfile:projection:np:[\"2501500\",0,\"2501501\"]:5337:trait:magicBullet:operation:np:[\"2501500\",0,\"2501501\"]:5337:damage:contribution:np:[\"2501500\",0,\"2501501\"]:5337:damage:npSpecial",
+            "path": "selectedConsumer.assertedTraitPresent",
+            "expected": true,
+            "actual": false
+          },
+          "transitionOperationId": "np:np:[\"2501400\",0,\"2501401\"]:np:[\"2501400\",0,\"2501401\"]:532:0:actor-form",
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-followup-20260924/control-33-2501400-on.json",
+            "bytes": 4183609,
+            "sha256": "56c5e80d289469ec3786c63a30c6273739b46e040bec15810509b7522f9ab876"
+          },
+          "comparisonArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-followup-20260924/control-33-2501400-off.json",
+            "bytes": 4181364,
+            "sha256": "53c5533e860563ddac7bd52d8464695043cca6e87bf0f5fb7f140b3c06364083"
+          },
+          "interpretation": "worldFact applied to attacker scope is removed by actor form transition; the damage reads attackerState magicBullet=3 on both sides. No scope rewrite or fallback is authorized."
+        },
+        {
+          "reason": "userControlNpSpecialInputNotChanged",
+          "canonicalIdentity": "production:control-inventory:owner:403400:profile:default:path:selectedProfile:projection:np:[\"403400\",0,\"403401\"]:3854:damage:operation:np:[\"403400\",0,\"403401\"]:3854:damage:contribution:np:[\"403400\",0,\"403401\"]:3854:damage:npSpecial:np-special-damage-input",
+          "expected": {
+            "address": "npSpecialMultipliers",
+            "changed": true
+          },
+          "actual": {
+            "enabled": {
+              "kind": "bound",
+              "address": "npSpecialMultipliers",
+              "value": [
+                1,
+                1,
+                1,
+                1,
+                1
+              ]
+            },
+            "excluded": {
+              "kind": "bound",
+              "address": "npSpecialMultipliers",
+              "value": [
+                1,
+                1,
+                1,
+                1,
+                1
+              ]
+            },
+            "changed": false
+          },
+          "firstDifference": {
+            "identity": "production:control-inventory:owner:403400:profile:default:path:selectedProfile:projection:np:[\"403400\",0,\"403401\"]:3854:damage:operation:np:[\"403400\",0,\"403401\"]:3854:damage:contribution:np:[\"403400\",0,\"403401\"]:3854:damage:npSpecial:np-special-damage-input",
+            "path": "address",
+            "expected": "npSpecialMultipliers"
+          },
+          "classification": "conditionQuantityUnresolved; not an approved inventory exemption",
+          "fullArtifact": {
+            "path": ".test-results/tsk-08-preplan-control-diagnostic-20260924/control-14-403400.json",
+            "bytes": 3230237,
+            "sha256": "22e4bc89df5251cf10d586838ba1adb59bf314d704580bed7f4a6219cd0526f1"
+          },
+          "consumerReadArtifacts": [
+            {
+              "path": ".test-results/tsk-08-preplan-control-followup-20260924/control-14-403400-on.json",
+              "bytes": 1088071,
+              "sha256": "c6cc5f31aeb3b567583455f7dd1b51d7cf6b740dafdd56911ca97dd557afb08a"
+            },
+            {
+              "path": ".test-results/tsk-08-preplan-control-followup-20260924/control-14-403400-off.json",
+              "bytes": 1088079,
+              "sha256": "0c7a48f8143dc190dfbc5cb6802a86fee8580a403b7158309ddbaf1eaf2bd775"
+            }
+          ]
+        }
+      ],
+      "ratchetPlan": {
+        "finalProfileOutcomes": {
+          "zero": "Across exactly 80 conditions x 433 profiles, final-profile unsupported/invalid/inputRequired counts are each zero; 34600 calculated plus 40 unavailableUnderPolicy are preserved. Duplicate/missing identity or disagreement between counts and complete failure list fails closed.",
+          "population": "Final profile outcomes only. Candidate calculated/unreachable/unsupported dispositions and eligibility digest retain their existing meaning; no candidate-level zero assertion.",
+          "path": "rankingProfileOutcome.ts::unresolvedProfileResult -> calculateRankingPolicy -> productionClosureAudit.ts records -> productionParityDiagnostics.ts::evaluateProductionFinalOutcomeGate -> audit-oc-matrix.ts/merge-oc-matrix.ts top-level executionRatchets.",
+          "fixtures": [
+            "candidate unsupported/unreachable alongside an executable candidate",
+            "final unsupported, invalid, inputRequired and legitimate unavailable",
+            "mixed statuses and actual repairable-input recovery without hiding rejected profiles",
+            "missing/duplicate identity and digest/failure-list discrepancy"
+          ],
+          "invariants": "Candidate status and final profile status remain separate on forward, rejection, retry and alternate detail. No audit exception is converted by the product calculation catch into final invalid.",
+          "candidateFiles": [
+            "packages/calculation-application/src/productionParityDiagnostics.ts",
+            "packages/calculation-application/src/productionClosureAudit.ts",
+            "packages/calculation-application/src/productionClosureAudit.test.ts",
+            "packages/calculation-application/scripts/audit-oc-matrix.ts",
+            "packages/calculation-application/scripts/merge-oc-matrix.ts"
+          ]
+        },
+        "partialCommit": {
+          "zero": "(a) zero command/action/receipt identity or applied-value disagreement on success; (b) zero mutable-state leakage after rejected transaction, with a subsequent recovery read proving restoration. These are independent checks, never identity-only.",
+          "population": "Existing calculated-profile applied preparation actions in condition records provide forward receipts. Production may not contain rejected mid-transaction programs; focused semantic fixtures cover those.",
+          "path": "application preNoblePhantasmPlan -> existing preparation command reducers / preparationTransaction.ts plan -> committed state and appliedActions/NP-OC/HP receipts -> scenario resolved preparation actions -> productionClosureAudit compact records -> preparation gate. candidateExecution effect groups have a separate rollback boundary.",
+          "transactionBoundaries": [
+            "preparation command rollback restores the original whole state and action/receipt collections; existing tests cover resource, HP, BP, context, form and variant",
+            "candidateExecution clones group state/input, applies operations, then restores both on group issue while retaining typed unresolved diagnostics; observe attempted transitions before markOperationGroupUnsupported rewrites results",
+            "candidateSelection applies world facts and selected form/variant before the group loop; do not present a post-preapply group baseline as proof of whole-action rollback"
+          ],
+          "fixtures": [
+            "success skill -> NP identity, exact gauge/OC/resource and effect application",
+            "write resource/HP/BP/traits/form/variant then later unsupported; exact rollback and recovery read",
+            "500 permille currentGaugeRatio reads restored 10000 and yields 15000, not leaked 16500",
+            "unknown marker read then repaired retry",
+            "selected-form preapply plus later same-transaction failure: compare action and group boundaries explicitly; any retained partial state is a failure, never an exemption"
+          ],
+          "invariants": "Capture baseline, attempted before/after, commit or rejection and recovery read from the owning transaction. Separate expected retained error diagnostics from mutable battle state; do not omit state fields to force equality.",
+          "candidateFiles": [
+            "packages/battle-execution/src/preparationTransaction.ts",
+            "packages/battle-execution/src/preparationTransaction.test.ts",
+            "packages/battle-execution/src/candidateExecution.ts",
+            "packages/calculation-application/src/productionParityDiagnostics.ts",
+            "packages/calculation-application/src/productionClosureAudit.test.ts"
+          ]
+        },
+        "inertControl": {
+          "zero": "Zero displayed/input controls whose exact value/decision fails to reach its relevant operation read or damage input/result, zero unexplained projection/effective-contribution versus input disagreement, and zero unclassified controls. A legitimate typed rejection or condition-false state is retained and paired with an applicable or recovery fixture; it is not counted as successful application.",
+          "population": "Reuse productionMasterInventory.test.ts existing complete default calculated-servant user control inventory, all members of composite control groups, exact source/visibility/interaction information, on/off inputs and results. Prior 1590 is a baseline cardinality, not the fresh inventory result. Never exclude a visible inactive-variant world control whose fact is read by a selected operation.",
+          "path": "projection.ts + candidateResult.ts -> scenario effects -> effectControls.ts / AppliedEffects.tsx -> effectDecision.ts command -> prepareCalculationScenario -> actual selected engine/candidateExecution -> NP or modifier consumer -> DamageResolutionInput -> result -> existing production inventory -> audit gate.",
+          "observationTransport": "Extend the existing execution observer surface through candidatePreparation/candidateExecution and engine selection, retain only an optional scoped audit observation associated with the selected prepared result in scenario.ts. Carry it through BP witness selection and ranking prepared-plan reuse; never re-execute to guess the chosen path, add canonical fields, change candidate keys or cache inputs, or retain million-candidate state history.",
+          "typedClassifications": [
+            "observed operation/damage reachability",
+            "typed rejection with complete issue and subsequent repair",
+            "false condition with exact quantity/state read and applicable fixture",
+            "automatic/hidden/source-inactive entries outside the user-visible control population, recorded with their typed projection facts",
+            "null modifier form/variant control observed through its state mutation and selected input, not excluded"
+          ],
+          "blockedClassifications": [
+            "natural condition already true is not an exemption for an excluded projection still contributing",
+            "inline count ownership is not an exemption for a separately displayed inert toggle",
+            "missing input, numeric null or alternate production count 0 is not an exemption"
+          ],
+          "fixtures": [
+            "synthetic npSpecial with npBase event and null resolvedValue",
+            "trait-count multiple traits and cap: consume aggregate input without comparing it to a single projection value",
+            "stateTrait present/absent x on/off, targetRarity known/unknown, traitExpression all/any/not mixed ownership",
+            "count/assertion conflict -> canonical input repair -> repeat read",
+            "form selection and preapply vs runtime, non-attack rejection -> re-enable",
+            "HP heal before threshold read; BP alternate witness selection",
+            "selected detail and actual withoutArea detail/input/effective contributions"
+          ],
+          "candidateFiles": [
+            "packages/battle-execution/src/candidatePreparation.ts",
+            "packages/battle-execution/src/candidateExecution.ts",
+            "packages/battle-execution/src/engine.ts",
+            "packages/battle-execution/src/executionTypes.ts",
+            "packages/calculation-application/src/scenario.ts",
+            "packages/calculation-application/src/rankingPolicyScenario.ts",
+            "packages/calculation-application/src/rankingPolicyCandidates.ts",
+            "packages/calculation-application/src/productionMasterInventory.test.ts",
+            "packages/calculation-application/src/productionParityDiagnostics.ts",
+            "packages/calculation-application/src/productionClosureAudit.test.ts",
+            "packages/calculation-application/src/scenario.test.ts"
+          ]
+        },
+        "staleMutation": {
+          "zero": "Zero mismatch among the same candidate canonical seed, actual ordered read, committed mutation before/after and later read; zero ordering or observation-fingerprint discontinuities, including rollback/recovery. Direct reads must equal the expected current value, not merely mention the key.",
+          "population": "All executed production candidates observed by the existing candidateExecution owner, with absent transition families explicitly inventoried. This is execution continuity, not TSK-07 worker/cache response rejection.",
+          "path": "canonicalInputs resolution -> candidatePreparation seed and validated/preapplied state -> candidateExecution actual condition/modifier/NP reads -> resourceSemantics mutation -> next operation read -> group rollback or final result -> scoped audit consumer.",
+          "fixtures": [
+            "battle:criticalStars canonical 69 -> typed resource mutation capped to 99 -> later exact read 99",
+            "direct read without mutation stays 69",
+            "multiple writes and short-circuit/non-read paths",
+            "mutation then failure -> rollback -> recovery read of original value",
+            "stack and trait count reads, HP/quantity changes, form/preapply boundary",
+            "selected target/BP witness and withoutArea policy path keep distinct observation identities"
+          ],
+          "invariants": "Observer fingerprint serializes the complete relevant execution state with deterministic Map/Set handling and operation sequence; it is audit metadata only, not a replacement product fingerprint. Before/after copies are captured at mutation time. Record source of seeded/preapplied values instead of pretending all reads equal canonical input.",
+          "candidateFiles": [
+            "packages/battle-execution/src/candidateExecution.ts",
+            "packages/battle-execution/src/candidatePreparation.ts",
+            "packages/battle-execution/src/resourceSemantics.ts",
+            "packages/battle-execution/src/executionTypes.ts",
+            "packages/calculation-application/src/productionParityDiagnostics.ts",
+            "packages/calculation-application/src/productionClosureAudit.test.ts",
+            "packages/calculation-application/src/scenario.test.ts"
+          ]
+        }
+      },
+      "alternateAndCacheBoundary": {
+        "selected": "engine.ts selects equivalent/ambiguous target execution; scenario.ts selects the actual BP witness. Preserve this selection, including raw candidate identity and relative-target redaction boundary.",
+        "withoutArea": "rankingPolicyCandidates.ts reapplyPreparedCalculationPolicy(selectedPrepared, withoutAreaPolicy) -> executeRankingScenarios -> areaContribution.withoutAreaScenario/withoutAreaInput/withoutAreaResult/withoutAreaEffects/effectiveContributions. Observe those values and their matching execution, not selectedProfile copies.",
+        "productionZero": "Prior without-area inventory occurrence 0 proves no alternate coverage. A representative fixture is mandatory.",
+        "cache": "rankingExecution.ts PreparedDamageMatrixCache is keyed by selected variant ref and resolved input. Audit observations are scoped separately; preserve cache value/lifetime/cardinality, candidate evidence/digest and TSK-07 evidence."
+      },
+      "failureArtifactContract": {
+        "identity": "condition/profile/candidate/path/sequence plus projectionKey, operationId, contributionId and command/action identity where relevant; preserve both projection-level and operation-level outcome.",
+        "differenceOwner": "master-data/productionAudit.ts::firstCanonicalAuditDifference; canonical expected/actual records are retained completely, alongside typed domain reason.",
+        "persistence": "Write complete failure observations before assertions or nonzero exit. Domain observation owners supply domain reasons; runner only verifies declared existence, format, bytes and SHA-256. Avoid competing test-file writers overwriting artifact-declarations.json; use one owned declaration set per diagnostic output path.",
+        "failClosed": [
+          "digest mismatch",
+          "canonical first difference or required observation missing",
+          "incomplete failure artifact",
+          "checksum mismatch",
+          "duplicate/missing shard/condition/candidate identity",
+          "unknown typed classification"
+        ],
+        "separation": "executionRatchets and failure summaries stay outside TSK-06.5 canonical audit records and digests."
+      },
+      "boundedImplementationPlan": [
+        {
+          "slice": "C1 diagnostic persistence and identity transport",
+          "boundary": "One declaration owner, complete artifacts before assertion, selected-execution observation transport and exact distinct identities. No product semantic correction.",
+          "focused": "productionClosureAudit/scenario representative selected-vs-alternate and missing/checksum/digest failure fixtures; no full rerun.",
+          "commitCondition": "Focused checks and artifact/evidence agree independently. Existing failed four-file changes must be separated by reviewed hunks, not staged as one inherited slice."
+        },
+        {
+          "slice": "C2 execution continuity and rollback observation",
+          "boundary": "Existing owner callbacks capture seed/preapply/read/mutation/rollback/recovery; no alternate executor or state correction.",
+          "focused": "preparation transaction and candidate execution boundary fixtures, 69 -> 99 read continuity and recovery.",
+          "commitCondition": "All planned state boundaries are observed exactly and no source/digest/candidate/cache invariant changes. Any unexpected preapply/action leakage remains a blocker."
+        },
+        {
+          "slice": "C3 inert-control semantic gate",
+          "boundary": "Existing production inventory consumes exact observations and typed classifications; B1/B2/B3 remain failures until separately approved product corrections or a requirement-backed resolution.",
+          "focused": "All identified semantic families and composed/alternate/recovery fixtures, then existing inventory.",
+          "commitCondition": "Cannot be called a zero-failure success while the three blocking families remain. Do not stage incomplete semantic correction with an earlier independent slice."
+        },
+        {
+          "slice": "C4 full-production connection",
+          "boundary": "Reuse audit-oc-matrix/merge-oc-matrix and canonical condition shards, metadata outside source audit.",
+          "focused": "Consumer/serialization/checksum contracts first; fresh full shards only after earlier gates can pass.",
+          "commitCondition": "Required full production and final source gates pass with exact artifacts and unchanged TSK-06.5 invariants. TSK-08 still remains in_progress for other deferred items."
+        }
+      ],
+      "evidenceReuseAndTiming": {
+        "reusedParityOnly": {
+          "path": ".test-results/tsk-08-parity-ratchet/merge/manifest.json",
+          "bytes": 352916,
+          "sha256": "30101b9690355603def36d404cd1b0297d8b9a5a6ad089f0a1377be85d8d4aa4"
+        },
+        "reusedPreparation": "Existing 66-test preparation/rollback evidence remains scoped to its unchanged source and assertions; no new control or stale-mutation success is inferred.",
+        "failedShards": "Four previous shard manifests claim 10 conditions each, not the full 80. Counts 92/92/140/140 are per shard. 44 condition files exist; four are not claimed by those manifests. Old manifests do not declare individual condition checksums, so freshly computed hashes are diagnostic provenance, not historical authentication.",
+        "timingCorrection": "237-258 seconds is the maximum heavy condition duration in each examined shard, not shard total. Sum of recorded condition times is 479.387/498.347/747.848/769.813 seconds. Other recorded conditions took about 136/152 seconds.",
+        "futureEstimate": "Focused control inventory approximately 30-60 seconds (prior focused run 32.59 seconds); production approximately 1-2 minutes (prior quality production step 67.260 seconds); final quality approximately 6-8 minutes (374.886 seconds measured). Eight canonical shards in two waves with at most four concurrent processes approximately 16-26 minutes, plus merge; contention may increase this. No sequential unsharded default and no eight-way run.",
+        "futureRequiredVerification": [
+          "change-specific focused tests",
+          "target lint/format",
+          "typecheck",
+          "pnpm test:production",
+          "pnpm test:runner",
+          "pnpm test:docs",
+          "one pnpm quality after final product source is fixed"
+        ],
+        "currentDocumentationScope": "README permits documentation-only closure with target format, pnpm test:docs and reference/artifact verification. Product/production/full quality gates are not rerun for this record-only commit.",
+        "checksumDiscrepancy": "tsk-08-shared-audit-model.json quality.manifestSha256 has 63 characters; actual referenced manifest SHA-256 is 764c0ff9b0068cd0a6da45ebfb743f03843ffe646d3f3095c4c0401134d7d2d5. This malformed reference is not reused as authenticated evidence; its historical file is left unchanged.",
+        "historicalArtifactInspection": {
+          "path": ".test-results/tsk-08-investigation-record-20260924/historical-artifact-inspection.json",
+          "bytes": 81685,
+          "sha256": "31ae5fc481370c0793bc1cb63e6c40a4fbe6ff2b69e93b527b2c41bea21997e7"
+        }
+      },
+      "verification": {
+        "status": "documentation-gates-passed",
+        "docs": {
+          "command": [
+            "pnpm",
+            "test:docs"
+          ],
+          "startedAt": "2026-09-23T16:29:36.336181+00:00",
+          "durationMs": 666,
+          "exitCode": 0,
+          "status": "passed",
+          "stdout": {
+            "path": ".test-results/tsk-08-investigation-record-20260924/docs-verified.stdout.log",
+            "bytes": 527,
+            "sha256": "2c30bf54d256b09922970d566e36ee35569c7dd2366e0c110a07497d220e19e9"
+          },
+          "stderr": {
+            "path": ".test-results/tsk-08-investigation-record-20260924/docs-verified.stderr.log",
+            "bytes": 81,
+            "sha256": "08ca8cc422b43c1d66290de303d3e4bb4c2bd8df1969326c85eb6eeb276b2307"
+          },
+          "resultArtifact": {
+            "path": ".test-results/tsk-08-investigation-record-20260924/docs-verified-verification.json",
+            "bytes": 579,
+            "sha256": "e286c573a8ba4f54fcef41b7c5fb2d74fe5ad7abd31b7ac90546581882f77c3f"
+          }
+        },
+        "references": {
+          "path": ".test-results/tsk-08-investigation-record-20260924/reference-verification.json",
+          "bytes": 5294,
+          "sha256": "e93e0de8fff78c545d5e5ee34cb1083e6b3d4b8467d6608523377fc4a93743c0"
+        },
+        "archive": {
+          "path": ".test-results/tsk-08-investigation-record-20260924/archive-verification.json",
+          "bytes": 409,
+          "sha256": "30c695a5fda55ff80294551e02f040a33b7f1ba9e8307aefa1be1bce4ecdf640"
+        },
+        "retainedFailedAttempts": [
+          {
+            "result": {
+              "path": ".test-results/tsk-08-investigation-record-20260924/docs-verification.json",
+              "bytes": 563,
+              "sha256": "fcbf8dc19b06ae61a44143d5dcafb4375139d3983d59e5f2410d8142d41f9544"
+            },
+            "reason": "Task/evidence versions not yet synchronized to registry",
+            "status": "failed"
+          },
+          {
+            "result": {
+              "path": ".test-results/tsk-08-investigation-record-20260924/docs-final-verification.json",
+              "bytes": 574,
+              "sha256": "e8a0f9d4bdd78b966c070c2e5b41b432323ae223a301cd837348bce64ec29bcb"
+            },
+            "reason": "registry self-version not yet synchronized",
+            "status": "failed"
+          }
+        ],
+        "format": {
+          "status": "passed",
+          "checkedAt": "2026-09-23T16:31:14.806765+00:00",
+          "files": [
+            "docs/README.md",
+            "docs/evidence/README.md",
+            "docs/evidence/tsk-08-parity-ratchet.json",
+            "docs/tasks/development-redesign-tasks.md"
+          ],
+          "checks": [
+            "git diff --check on changed documentation",
+            "JSON parse and canonical two-space indentation",
+            "UTF-8 and final newline",
+            "changed Markdown paragraphs/tables/list separation reviewed"
+          ],
+          "prettier": "docs/ is excluded by .prettierignore; the no-output prettier invocations were no-op, not formatting verification evidence",
+          "resultArtifact": {
+            "path": ".test-results/tsk-08-investigation-record-20260924/format-verification.json",
+            "bytes": 600,
+            "sha256": "7de8f10d5170dc252b679d71083d1032b2ac6474b65cf48d4f1a5f3e32ba539f"
+          }
+        },
+        "scope": "Documentation only; no product implementation, focused product tests, production rerun or quality run. Initial product dirty diff remains unvalidated."
+      },
+      "remainingImplementation": [
+        "TSK-08-INV-B1/B2/B3 product-semantic blockers; no correction authorized in this record-only unit",
+        "selected execution observer transport and complete failure lifecycle",
+        "ordered rollback/recovery and stale-mutation ratchets",
+        "fresh all-condition connection and required product gates",
+        "deferred TSK-08 items remain; no legacy cleanup or TSK-09 work"
+      ],
+      "nextOperation": "Review the now-specified bounded implementation plan and separately bound the three product-semantic corrections before source editing. Investigation is complete; do not repeat the same diagnostic or full audit without a changed source or a new question.",
+      "commitScope": [
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/evidence/README.md",
+        "docs/tasks/development-redesign-tasks.md",
+        "docs/README.md"
+      ]
     }
   ],
-  "currentBoundedUnit": "inert-control production inventory to ordered event and damage input connection"
+  "currentBoundedUnit": "pre-implementation semantic investigation and bounded plan"
 }
