@@ -101,7 +101,8 @@
     "parity failure retains the complete typed parity failure list",
     "seven of eight eligibility partition digests and duplicate partition identities fail closed",
     "master checksum mismatch exits non-zero and writes expected/actual checksum and failure reason to manifest",
-    "generic runner artifact tests reject missing, outside, byte-mismatched, and SHA-mismatched artifacts"
+    "generic runner artifact tests reject missing, outside, byte-mismatched, and SHA-mismatched artifacts",
+    "The inert-control observer stopped fail-closed: synthetic :npSpecial control identity did not match the ordered executeNpDamage event :npBase contribution identity; full focused runner manifest and stderr checksums are in the latest boundedUnits entry."
   ],
   "verification": {
     "focused": {
@@ -240,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "connect production-visible controls and ordered read-mutation-read state continuity; then run and merge the fresh full-production shards",
+  "nextBoundedUnit": "re-establish the typed event-to-damage relationship for inert controls, then validate the revised focused observer before any full production inventory run",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -301,7 +302,7 @@
           "command": "pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts",
           "status": "passed",
           "tests": 3,
-          "durationSeconds": 2.50,
+          "durationSeconds": 2.5,
           "manifest": ".test-results/2026-09-23T13-38-32-692Z-15-93482d/manifest.json",
           "manifestSha256": "da5e3544b9a5c4907db57e55f7cfbe157f1bc4419e1bb28f3d9be7e0eda51a2c",
           "diagnosticArtifact": ".test-results/2026-09-23T13-38-32-692Z-15-93482d/production-closure-parity-diagnostics.json",
@@ -521,7 +522,139 @@
         "required production, runner, docs, and final quality gates"
       ],
       "nextBoundedUnit": "connect existing production user-visible controls through their selected and alternate execution detail paths"
+    },
+    {
+      "name": "inert-control production inventory to ordered event and damage input connection",
+      "status": "stopped-for-replan",
+      "baselineHead": "5d9540f403f9d2be9ed2e67b770f8339db17ed7e",
+      "changedFiles": [
+        "packages/calculation-application/src/productionParityDiagnostics.ts",
+        "packages/calculation-application/src/productionMasterInventory.test.ts",
+        "packages/calculation-application/src/productionClosureAudit.test.ts",
+        "packages/calculation-application/src/scenario.test.ts",
+        "docs/evidence/README.md",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/tasks/development-redesign-tasks.md"
+      ],
+      "ownership": {
+        "producer": "Existing productionMasterInventory.test.ts user-visible projection inventory and control on/off calculation path; 1590 projection identities were observed.",
+        "eventOwner": "candidateExecution.ts ordered OperationResult event and its createOperationProjection output.",
+        "damageOwner": "npDamageOperation.ts::applyNpDamageOperation / evaluateNpDamageOperation; selected execution input field npSpecialMultipliers.",
+        "consumer": "productionParityDiagnostics.ts::auditProductionUserControlObservations; incomplete mapping, not a passing gate.",
+        "alternatePathFixture": "scenario.test.ts selected and withoutAreaAlternate paths directly observed and compared input, ordered event, and effective contribution; that focused test passed.",
+        "noNewProducerOrSemanticOwner": true
+      },
+      "observedInventory": {
+        "projectionCount": 1590,
+        "selectedProfileCount": 1590,
+        "withoutAreaAlternateCount": 0,
+        "operationEventCount": 3130,
+        "effectiveContributionCount": 3170,
+        "directInputDifferenceCount": 1557,
+        "operationOutcomeDifferenceCount": 1421,
+        "eventProjectionOutcomeDifferenceCount": 1547,
+        "damageResultDifferenceCount": 1549,
+        "diagnosticFailureCount": 73,
+        "typedReasonCounts": {
+          "userControlOperationEventMissing": 50,
+          "userControlNpSpecialInputNotChanged": 19,
+          "userControlDidNotReachOperationOrDamage": 2,
+          "userControlInputBindingUnsupported": 2
+        },
+        "interpretation": "These counts describe a failed observer attempt. They are not a production success result or a final count of inert controls."
+      },
+      "firstFailure": {
+        "canonicalIdentity": "production:control-inventory:owner:101700:profile:default:path:selectedProfile:projection:np:[\"101700\",0,\"101703\"]:5336:class:alterEgo:operation:np:[\"101700\",0,\"101703\"]:5336:damage:contribution:np:[\"101700\",0,\"101703\"]:5336:damage:npSpecial:enabled:operation-event",
+        "reason": "userControlOperationEventMissing",
+        "firstDifference": {
+          "path": "contributionId",
+          "expected": "np:[\"101700\",0,\"101703\"]:5336:damage:npSpecial",
+          "actual": "missing from linked event identity"
+        },
+        "observedEventIdentity": {
+          "projectionKey": "np:[\"101700\",0,\"101703\"]:5336:damage",
+          "operationId": "np:[\"101700\",0,\"101703\"]:5336:damage",
+          "contributionId": "np:[\"101700\",0,\"101703\"]:5336:damage:npBase",
+          "kind": "executeNpDamage"
+        },
+        "condition": "Do not merge :npSpecial and :npBase identities or infer a relation from shared operationId alone; resolve how the existing selected execution input carries the synthetic user control."
+      },
+      "additionalUnresolvedIdentities": [
+        {
+          "canonicalIdentity": "production:control-inventory:owner:106600:profile:default:path:selectedProfile:projection:np:[\"106600\",0,\"106601\"]:5337:trait:buffBurn:operation:np:[\"106600\",0,\"106601\"]:5337:damage:contribution:np:[\"106600\",0,\"106601\"]:5337:damage:npSpecial:np-special-damage-input",
+          "reason": "userControlNpSpecialInputNotChanged",
+          "observed": "enabled and excluded npSpecialMultipliers are both [1.1,1.1,1.1,1.1,1.1]"
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:1000100:profile:default:path:selectedProfile:projection:attacker:attacker:1000100:355551:2465:0:operation:attacker:attacker:1000100:355551:2465:0:modifier:attackBuff:contribution:attacker:attacker:1000100:355551:2465:0:modifier:attackBuff:modifier:enabled-vs-excluded",
+          "reason": "userControlDidNotReachOperationOrDamage"
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:3300200:profile:default:path:selectedProfile:projection:np:np:[\"3300200\",0,\"3300201\"]:np:[\"3300200\",0,\"3300201\"]:1588:0:operation:np:np:[\"3300200\",0,\"3300201\"]:np:[\"3300200\",0,\"3300201\"]:1588:0:ignore-defense:contribution:np:np:[\"3300200\",0,\"3300201\"]:np:[\"3300200\",0,\"3300201\"]:1588:0:ignore-defense:ignore:enabled-vs-excluded",
+          "reason": "userControlDidNotReachOperationOrDamage"
+        },
+        {
+          "canonicalIdentity": "production:control-inventory:owner:205000:profile:default:path:selectedProfile:projection:attacker:attacker:205000:2281675:532:0:operation:attacker:attacker:205000:2281675:532:0:actor-form:contribution:none:damage-input-binding",
+          "reason": "userControlInputBindingUnsupported",
+          "firstDifference": {
+            "path": "enabled",
+            "expected": "bound",
+            "actual": {
+              "kind": "unbound",
+              "reason": "projection_has_no_damage_input_binding"
+            }
+          }
+        }
+      ],
+      "verification": {
+        "focusedCommand": "pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts packages/calculation-application/src/productionMasterInventory.test.ts packages/calculation-application/src/scenario.test.ts",
+        "status": "failed",
+        "tests": {
+          "passed": 42,
+          "failed": 2,
+          "skipped": 0
+        },
+        "testDurationSeconds": 32.59,
+        "typecheck": {
+          "command": "pnpm typecheck",
+          "status": "passed"
+        },
+        "runnerOutcome": "artifact_failure",
+        "runnerArtifactError": "production-inert-control-diagnostics.json:missing",
+        "sourceMatrixComparison": "not run; do not infer TSK-06.5 unchanged from this failed attempt"
+      },
+      "failureArtifacts": [
+        {
+          "path": ".test-results/2026-09-23T14-56-22-736Z-15-aa9e93/manifest.json",
+          "sha256": "6a3ff15cc1500f7460e47bb35d26ad10e867b41ace14e099bb8eef287664bbeb",
+          "role": "complete runner failure manifest; outcome artifact_failure"
+        },
+        {
+          "path": ".test-results/2026-09-23T14-56-22-736Z-15-aa9e93/vitest.json",
+          "sha256": "9d9fbbeb4cdd03f355fdb5464526282d4c7e78d81d4bb80ad639cc4dbe7c3b09",
+          "role": "complete Vitest report with both failed tests and inventory gate payload"
+        },
+        {
+          "path": ".test-results/2026-09-23T14-56-22-736Z-15-aa9e93/stderr.log",
+          "sha256": "033d7e3e73ff539f2758a6f3ea99adeea31ce2c3c25c28ebf1edb3fd4914e894",
+          "role": "complete stderr including 73 typed production-control diagnostics"
+        },
+        {
+          "path": ".test-results/2026-09-23T14-56-22-736Z-15-aa9e93/production-inert-control-diagnostics.json",
+          "status": "missing",
+          "reason": "The fixture assertion failed before its declared diagnostic artifact was written; runner rejected the missing artifact."
+        }
+      ],
+      "uncommitted": true,
+      "commitAvailable": false,
+      "nextMinimalInvestigation": [
+        "Inspect candidateExecution.ts / projection.ts event projection identity and contribution identity, and effectiveContributions ownership, to define the typed relation between a synthetic :npSpecial control and the ordered executeNpDamage event carrying :npBase while preserving both identities.",
+        "Trace that control through the selected execution output and npDamageOperation.ts::applyNpDamageOperation input field npSpecialMultipliers.",
+        "Inspect canonical identities for the 19 unchanged npSpecial inputs, two unchanged operation/damage controls, and two unbound actor-form projections; classify none until the owning path is established.",
+        "Revise the bounded implementation plan before resuming source changes or rerunning the full inventory."
+      ],
+      "nextBoundedUnit": "re-establish the typed event-to-damage relationship for inert controls, then validate the revised focused observer before any full production inventory run"
     }
   ],
-  "currentBoundedUnit": "preparation command/action/receipt consistency and partial-commit recovery"
+  "currentBoundedUnit": "inert-control production inventory to ordered event and damage input connection"
 }
