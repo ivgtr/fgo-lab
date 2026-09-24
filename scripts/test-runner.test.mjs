@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { relative, resolve, sep } from 'node:path';
 import test from 'node:test';
@@ -55,6 +63,7 @@ function fixtureScript({
   delayMs = 0,
   stdout = '',
   stderr = '',
+  artifactWrites = [],
 }) {
   return `
     const fs = require('node:fs');
@@ -63,6 +72,8 @@ function fixtureScript({
     setTimeout(() => {
       ${reportValue === undefined ? '' : `fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(reportValue))});`}
       ${observationValue === undefined ? '' : `if (process.env.FGO_TEST_OBSERVATION_PATH) fs.writeFileSync(process.env.FGO_TEST_OBSERVATION_PATH, ${JSON.stringify(JSON.stringify(observationValue))});`}
+      for (const artifact of ${JSON.stringify(artifactWrites)})
+        fs.writeFileSync(require('node:path').join(process.env.FGO_TEST_ARTIFACT_DIR, artifact.path), artifact.contents);
       ${signal ? `process.kill(process.pid, ${JSON.stringify(signal)});` : `process.exit(${exitCode});`}
     }, ${delayMs});
   `;
@@ -417,51 +428,370 @@ test('a declared missing artifact overrides a passing child', async () => {
   assert.deepEqual(result.manifest.artifactVerification.errors, ['required.json:missing']);
 });
 
-test('a test-owned artifact declaration is checksum-verified and reachable from the child manifest', async () => {
+test('report metadata requires a receipt for every active declared artifact', async () => {
+  const reportValue = report(false, true);
+  reportValue.testResults[0].assertionResults[0].meta = {
+    fgoProductionAuditArtifacts: {
+      version: 1,
+      requiredArtifacts: [{ path: 'diagnostic.json', format: 'json', allowEmpty: false }],
+      receipts: [],
+    },
+  };
   const result = await runFixture(
-    'declared-artifact-file',
-    `
-      const fs = require('node:fs');
-      const path = require('node:path');
-      const artifact = path.join(process.env.FGO_TEST_ARTIFACT_DIR, 'diagnostic.json');
-      fs.writeFileSync(artifact, JSON.stringify({ boundary: 'fixture' }));
-      fs.writeFileSync(
-        path.join(process.env.FGO_TEST_ARTIFACT_DIR, 'artifact-declarations.json'),
-        JSON.stringify([{ path: 'diagnostic.json', format: 'json' }]),
-      );
-      fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
-      process.exit(0);
-    `,
-    2_000,
-    { observationName: null },
-  );
-  assert.equal(result.exitCode, 0);
-  assert.equal(result.manifest.outcome, 'success');
-  const artifact = result.manifest.artifacts.find(({ path }) => path === 'diagnostic.json');
-  assert.equal(artifact?.format, 'json');
-  assert.equal(typeof artifact?.sha256, 'string');
-  assert.equal(result.manifest.artifactVerification.errors.length, 0);
-});
-
-test('a test-owned artifact declaration fails closed on an outside path', async () => {
-  const result = await runFixture(
-    'declared-artifact-outside',
-    `
-      const fs = require('node:fs');
-      const path = require('node:path');
-      const root = process.env.FGO_TEST_ARTIFACT_DIR;
-      fs.writeFileSync(path.join(root, 'artifact-declarations.json'), JSON.stringify([{ path: '../outside.json' }]));
-      fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
-      process.exit(0);
-    `,
+    'missing-metadata-receipt',
+    fixtureScript({ reportValue }),
     2_000,
     { observationName: null },
   );
   assert.equal(result.exitCode, 1);
   assert.equal(result.manifest.outcome, 'artifact_failure');
   assert.deepEqual(result.manifest.artifactVerification.errors, [
-    'artifact-declarations.json:[0]:outside_run_directory',
+    'vitest.json:0:0:receipt_missing:diagnostic.json',
+    'diagnostic.json:missing',
   ]);
+});
+
+test('metadata receipts verify intended bytes and reject same-length mutation', async () => {
+  const intended = Buffer.from('{"value":1}\n');
+  const reportValue = report(false, true);
+  reportValue.testResults[0].assertionResults[0].meta = {
+    fgoProductionAuditArtifacts: {
+      version: 1,
+      requiredArtifacts: [{ path: 'diagnostic.json', format: 'json', allowEmpty: false }],
+      receipts: [
+        {
+          path: 'diagnostic.json',
+          expectedBytes: intended.byteLength,
+          expectedSha256: createHash('sha256').update(intended).digest('hex'),
+        },
+      ],
+    },
+  };
+  const altered = Buffer.from('{"value":2}\n');
+  assert.equal(altered.byteLength, intended.byteLength);
+  reportValue.testResults[0].assertionResults[0].meta.fgoProductionAuditArtifacts.receipts[0].expectedSha256 =
+    createHash('sha256').update(intended).digest('hex');
+  const result = await runFixture(
+    'metadata-checksum-mismatch',
+    fixtureScript({
+      reportValue,
+      artifactWrites: [{ path: 'diagnostic.json', contents: altered.toString() }],
+    }),
+    2_000,
+    { observationName: null },
+  );
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.manifest.outcome, 'artifact_failure');
+  assert.ok(result.manifest.artifactVerification.errors.includes('diagnostic.json:sha256'));
+});
+
+test('the real Vitest JSON reporter carries writer receipts into the generic runner', async () => {
+  const result = await runCapturedTest({
+    root,
+    command: resolve(root, 'node_modules/.bin/vitest'),
+    args: [
+      'run',
+      '--project=unit',
+      '--reporter=json',
+      '--reporter=./scripts/vitest-observation-reporter.mjs',
+      '--outputFile.json=$FGO_TEST_REPORT_PATH',
+      'packages/calculation-application/src/productionAuditArtifacts.test.ts',
+    ],
+    commandLabel: 'test:runner:vitest-artifact-metadata',
+    timeoutMs: 30_000,
+    artifactRoot: mkdtempSync(resolve(tmpdir(), 'fgo-lab-vitest-metadata-')),
+    runId: 'run',
+    extraEnv: { FGO_ARTIFACT_CONTRACT_EXPECT_FAILURE: '1' },
+  });
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.manifest.outcome, 'test_failure');
+  assert.deepEqual(result.manifest.artifactVerification.errors, []);
+  const artifact = result.manifest.artifacts.find(
+    ({ path }) => path === 'tsk-08-artifact-contract.json',
+  );
+  assert.equal(typeof artifact?.sha256, 'string');
+  const assertion = result.report.testResults
+    .flatMap(({ assertionResults }) => assertionResults)
+    .find(({ fullName }) => fullName.includes('publishes complete bytes and a receipt'));
+  assert.equal(assertion?.status, 'failed');
+  assert.equal(
+    assertion?.meta?.fgoProductionAuditArtifacts?.receipts?.[0]?.expectedSha256,
+    artifact?.sha256,
+  );
+});
+
+function artifactMetadata(path = 'diagnostic.json', contents = '{"value":1}\n') {
+  return {
+    version: 1,
+    requiredArtifacts: [{ path, format: 'json', allowEmpty: false }],
+    receipts: [
+      {
+        path,
+        expectedBytes: Buffer.byteLength(contents),
+        expectedSha256: createHash('sha256').update(contents).digest('hex'),
+      },
+    ],
+  };
+}
+
+function artifactReport(contracts) {
+  const result = report(true);
+  result.testResults[0].assertionResults = contracts.map((contract, index) => ({
+    fullName: `artifact fixture ${index}`,
+    status: 'passed',
+    failureMessages: [],
+    meta: { fgoProductionAuditArtifacts: contract },
+  }));
+  return result;
+}
+
+test('artifact obligations reject missing, malformed, duplicate, unsafe and altered publications', async () => {
+  const cases = [
+    ['missing-file', (c) => c, [], 'diagnostic.json:missing'],
+    ['bytes', (c) => c, [{ path: 'diagnostic.json', contents: '{}' }], 'diagnostic.json:bytes:'],
+    [
+      'invalid-json',
+      (c) => {
+        c.receipts[0].expectedBytes = 12;
+        return c;
+      },
+      [{ path: 'diagnostic.json', contents: 'not-json!!!!' }],
+      'diagnostic.json:invalid_json:',
+    ],
+    ['empty', (c) => c, [{ path: 'diagnostic.json', contents: '' }], 'diagnostic.json:empty'],
+    [
+      'duplicate-required',
+      (c) => {
+        c.requiredArtifacts.push(c.requiredArtifacts[0]);
+        return c;
+      },
+      [],
+      'duplicate_required_path:',
+    ],
+    [
+      'normalized-duplicate',
+      (c) => {
+        c.requiredArtifacts.push({ ...c.requiredArtifacts[0], path: 'sub/../diagnostic.json' });
+        return c;
+      },
+      [],
+      'duplicate_required_path:',
+    ],
+    [
+      'duplicate-receipt',
+      (c) => {
+        c.receipts.push(c.receipts[0]);
+        return c;
+      },
+      [],
+      'duplicate_receipt:',
+    ],
+    [
+      'extra-receipt',
+      (c) => {
+        c.receipts.push({ ...c.receipts[0], path: 'extra.json' });
+        return c;
+      },
+      [],
+      'receipt_unexpected:',
+    ],
+    [
+      'bad-receipt',
+      (c) => {
+        c.receipts[0].expectedBytes = -1;
+        return c;
+      },
+      [],
+      'receipt_0_invalid',
+    ],
+    [
+      'bad-contract',
+      (c) => {
+        c.version = 2;
+        return c;
+      },
+      [],
+      'invalid_artifact_contract',
+    ],
+    [
+      'absolute',
+      (c) => {
+        c.requiredArtifacts[0].path = '/tmp/outside.json';
+        return c;
+      },
+      [],
+      'required_artifact_0_',
+    ],
+    [
+      'escape',
+      (c) => {
+        c.requiredArtifacts[0].path = '../outside.json';
+        return c;
+      },
+      [],
+      'required_artifact_0_',
+    ],
+    [
+      'reserved',
+      (c) => {
+        c.requiredArtifacts[0].path = 'manifest.json';
+        return c;
+      },
+      [],
+      'reserved_path:',
+    ],
+  ];
+  for (const [name, change, artifactWrites, error] of cases) {
+    const result = await runFixture(
+      `artifact-${name}`,
+      fixtureScript({ reportValue: artifactReport([change(artifactMetadata())]), artifactWrites }),
+    );
+    assert.equal(result.manifest.outcome, 'artifact_failure', name);
+    assert.ok(
+      result.manifest.artifactVerification.errors.some((value) => value.includes(error)),
+      `${name}: ${result.manifest.artifactVerification.errors}`,
+    );
+  }
+  const duplicate = await runFixture(
+    'duplicate-workers',
+    fixtureScript({ reportValue: artifactReport([artifactMetadata(), artifactMetadata()]) }),
+  );
+  assert.equal(duplicate.manifest.outcome, 'artifact_failure');
+  assert.ok(
+    duplicate.manifest.artifactVerification.errors.some((value) =>
+      value.includes('duplicate_path:'),
+    ),
+  );
+});
+
+test('directory discovery cannot replace an intended artifact receipt with observed bytes', async () => {
+  const metadata = artifactMetadata('nested/value.json');
+  const result = await runFixture(
+    'discovery-receipt',
+    `require('node:fs').mkdirSync(require('node:path').join(process.env.FGO_TEST_ARTIFACT_DIR, 'nested'));\n${fixtureScript(
+      {
+        reportValue: artifactReport([metadata]),
+        artifactWrites: [{ path: 'nested/value.json', contents: '{"value":2}\n' }],
+      },
+    )}`,
+    2_000,
+    { additionalArtifactDirectories: ['nested'] },
+  );
+  assert.equal(result.manifest.outcome, 'artifact_failure');
+  assert.ok(result.manifest.artifactVerification.errors.includes('nested/value.json:sha256'));
+});
+
+test('the real writer preserves malformed diagnostics before their producer assertions fail', async () => {
+  for (const field of ['canonicalIdentity', 'reason', 'firstDifference']) {
+    const result = await runArtifactVitest({ FGO_ARTIFACT_MALFORMED_FIELD: field });
+    assert.equal(result.manifest.outcome, 'test_failure', result.summary);
+    assert.deepEqual(result.manifest.artifactVerification.errors, []);
+    const saved = JSON.parse(
+      readFileSync(resolve(result.runDirectory, 'tsk-08-artifact-contract.json'), 'utf8'),
+    );
+    assert.equal(saved.payload.failures.length, 6);
+    assert.equal(Object.hasOwn(saved.payload.failures[0], field), false);
+  }
+  const early = await runArtifactVitest({ FGO_ARTIFACT_CONTRACT_EXPECT_FAILURE: 'before-save' });
+  assert.equal(early.manifest.outcome, 'artifact_failure');
+  assert.ok(
+    early.manifest.artifactVerification.errors.some((value) =>
+      value.includes('receipt_missing:tsk-08-artifact-contract.json'),
+    ),
+  );
+});
+
+function runArtifactVitest(extraEnv) {
+  return runCapturedTest({
+    root,
+    command: resolve(root, 'node_modules/.bin/vitest'),
+    args: [
+      'run',
+      '--project=unit',
+      '--reporter=json',
+      '--reporter=./scripts/vitest-observation-reporter.mjs',
+      '--outputFile.json=$FGO_TEST_REPORT_PATH',
+      'packages/calculation-application/src/productionAuditArtifacts.test.ts',
+    ],
+    commandLabel: 'test:runner:artifact-publication',
+    timeoutMs: 30_000,
+    artifactRoot: mkdtempSync(resolve(tmpdir(), 'fgo-artifact-publication-')),
+    runId: 'run',
+    extraEnv,
+  });
+}
+
+test('two real workers retain separate receipts and filtered tests create no missing artifacts', async () => {
+  const directory = mkdtempSync(resolve(tmpdir(), 'fgo-artifact-workers-'));
+  symlinkSync(resolve(root, 'node_modules'), resolve(directory, 'node_modules'), 'dir');
+  writeFileSync(
+    resolve(directory, 'vitest.config.mjs'),
+    'export default { test: { include: ["*.test.ts"], maxWorkers: 2, fileParallelism: true } };\n',
+  );
+  const writer = JSON.stringify(
+    resolve(root, 'packages/calculation-application/src/productionAuditArtifacts.ts'),
+  );
+  for (const name of ['first', 'second']) {
+    writeFileSync(
+      resolve(directory, `${name}.test.ts`),
+      `
+      import { it } from 'vitest';
+      import { existsSync, writeFileSync } from 'node:fs';
+      import { resolve } from 'node:path';
+      import { productionAuditTestOptions, writeProductionAuditArtifact } from ${writer};
+      it('${name}', productionAuditTestOptions(['${name}.json']), async ({ task }) => {
+        const root = process.env.FGO_TEST_ARTIFACT_DIR!;
+        if ('${name}' === 'first' && process.env.FGO_ARTIFACT_WAIT_SECOND === '1') {
+          const deadline = Date.now() + 5000;
+          while (!existsSync(resolve(root, 'second.json'))) {
+            if (Date.now() > deadline) throw new Error('second worker did not publish');
+            await new Promise(resolve => setTimeout(resolve, 20));
+          }
+        }
+        await writeProductionAuditArtifact(task.meta, '${name}.json', { worker: '${name}', groups: new Set(['b', 'a']) });
+      });
+    `,
+    );
+  }
+  for (const filtered of [false, true]) {
+    const result = await runCapturedTest({
+      root,
+      command: resolve(root, 'node_modules/.bin/vitest'),
+      args: [
+        'run',
+        '--root',
+        directory,
+        '--config',
+        resolve(directory, 'vitest.config.mjs'),
+        '--reporter=json',
+        `--reporter=${resolve(root, 'scripts/vitest-observation-reporter.mjs')}`,
+        '--outputFile.json=$FGO_TEST_REPORT_PATH',
+        ...(filtered ? ['-t', '^first$'] : []),
+      ],
+      commandLabel: 'test:runner:artifact-workers',
+      timeoutMs: 30_000,
+      artifactRoot: mkdtempSync(resolve(tmpdir(), 'fgo-artifact-worker-run-')),
+      runId: 'run',
+      extraEnv: { FGO_ARTIFACT_WAIT_SECOND: filtered ? '0' : '1' },
+    });
+    assert.deepEqual(result.manifest.artifactVerification.errors, [], result.summary);
+    assert.ok(
+      ['success', ...(filtered ? ['contract_failure'] : [])].includes(result.manifest.outcome),
+      result.summary,
+    );
+    assert.ok(result.manifest.artifacts.some(({ path }) => path === 'first.json'));
+    assert.equal(
+      result.manifest.artifacts.some(({ path }) => path === 'second.json'),
+      !filtered,
+    );
+    if (!filtered) {
+      const tests = result.report.testResults.flatMap(({ assertionResults }) => assertionResults);
+      assert.equal(
+        tests.filter(({ meta }) => meta.fgoProductionAuditArtifacts.receipts.length === 1).length,
+        2,
+      );
+    }
+  }
 });
 
 test('the quality parent rejects missing and changed child artifacts', () => {

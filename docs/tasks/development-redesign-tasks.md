@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.40"
+document_version: "1.7.41"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-24"
+updated_at: "2026-09-25"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -2674,3 +2674,18 @@ Handoff: 未記録
 - Handoffへblocking condition、確認済み事実、未確定事項、影響path、安全な再開commandを記録する。
 - 次のsessionはTask、Handoff、記録済みcommitまたは差分、canonical evidenceを現在のworktreeと照合し、未達条件から再開する。関連変更・新しい反例・根拠不足がなければ確定済みの調査を繰り返さない。
 - 一時的なraw logや巨大なtool outputをHandoffへ貼らず、必要なpath、digest、要約だけを残す。
+
+
+Current bounded-unit handoff（2026-09-25、保存責務だけを独立して検証）:
+
+ユーザーが現行コードからの計画を確認し、保存実装・focused検証・独立責務のlocal commitを承認した。開始HEAD `86c0e5b737658c16ff7d3f3d4b7b548662212d3f`、7 tracked＋2 untracked、stagedなし、snapshot 39 entries／source 9 filesのhashを照合した。snapshotをdirty treeへ再適用していない。今回の正本は`tsk-08-parity-ratchet.json`のbounded unit「S4-independent failure artifact persistence and existing writer migration」。以前の停止記録は履歴として保持する。
+
+このhandoffを含むcommitの独立責務は、artifact専用version 2のSet／Map／undefined保存、metadata宣言・intended bytes／SHA-256 receipt、既存generic verifier接続と3 writerの一括移行。旧`artifact-declarations.json`上書き経路を廃止した。保存完了後もdomain assertion failureを失敗のまま保持する。705300の全result比較・元timeoutを維持し、3300200の生成済みexecution、全failureと対応観測を保存する。snapshotの`firstDifference:null`や正当な`resolvedValue:null`はfailed gateへ読み替えない。
+
+検証はHEADからの隔離candidateで実施し、`productionParityDiagnostics.ts`と`productionMasterControlAudit.test.ts`はHEADと同一、closureの未検証user-control import／helper／fixtureは除外した。workspace依存もcandidate内へ解決した。source candidate tree `d78faf7c13f396a43b3b03fde933ad12bb751425`、7 file hashとpatchはmachine evidenceを参照。runner 45/45のうち非変更43件を再利用し、最終fixtureの影響2件を再実行して2/2。unit 46/46のうちscenario 36／HEAD-only closure 4を再利用し、最終artifact fixtureは6/6。最終Battle Point 7/7、7 artifactのbytes／SHA-256検証成功、26.54秒。target TypeScript lint／typecheck、7 file format、runner構文検査が成功した。`.mjs`は既存ESLintの型情報設定対象外であるため、config緩和せず構文・format・contract testsで検証した。文書も隔離candidateでdocs tests 6/6、docs integrity、JSON／既存evidence保持、diff検査が成功した。禁止されたfull production／audit／qualityは実行していない。
+
+完全な検証artifact、途中失敗、最終source patchは`.test-results/tsk-08-persistence-20260925/archive-manifest.json`（SHA-256 `d6d6424805b698ec730019d32bf65dff4354a8614b231a33cd93400dffe5c60f`）へ保持した。607 manifest artifact entriesのbytes／hashは一致し、実reporterのreceiptから期待checksumを検証した。保存fileを期待checksumの生成元にはしていない。これはignored local artifactで、Gitだけには含まれない。
+
+S4依存の3 pathは未コミットで保持する。diagnosticsの型・gate、master-controlの観測採取とproduction保存接続、closureの追加user-control fixtureは今回の成功証拠に含めない。fixtureの宣言／保存pathを`production-inert-control-fixture.json`へ揃えた変更も残存差分側である。残存patch SHA-256 `df928b3fbeb0ef8bbadf8cd72ce1d6707c06a28ff6b9b3303fe8d171996092ff`、個別file hashはmachine evidenceに記録した。別途承認・検証されたS4 baselineができるまで、production接続のcommit・完成は保留する。型抽出、fallback、休眠hookによる依存隠蔽はない。
+
+B1のstateTrait 10 controls、B2の2501400 magicBullet、B3の403400 targetRarityはBlockingのまま。TSK-06.5の80×433＝34,640 outcomes、34,600 calculated／parity、40 unavailable、final unsupported／invalid／inputRequired各0とdigest、candidate／damage／canonical input／fingerprint、TSK-07 evidenceは変更していない。複数ratchet、fresh control population、without-area alternate、production stale-mutation consumer、TSK-08全体は未達。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。次の操作は残存S4の別途承認・baseline検証であり、保存テストでS4意味論を検証済みとは扱わない。pushは行わない。

@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Resume the S4 shared-model connections from its recorded findings; preserve B1-B3 and do not run the full audit while they remain.",
+  "nextBoundedUnit": "Preserve the three residual S4 paths and ignored artifacts. Obtain separate authorization/verification for the S4 producer/gate baseline before committing or certifying the production persistence connection. No push.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -2706,7 +2706,531 @@
         "evidenceIntegrity": "All copied run-manifest artifact bytes/SHA-256 and all snapshot manifest entries match. Prior boundedUnits and other historical evidence fields are unchanged.",
         "completion": "This closes the documentation handoff only. No persistence implementation or production connection is certified."
       }
+    },
+    {
+      "name": "S4-independent failure artifact persistence and existing writer migration",
+      "date": "2026-09-25",
+      "status": "independent persistence responsibility verified; committed by the commit containing this record; production S4 connection remains uncommitted and unverified",
+      "authorization": "User confirmed the current-code plan with OK,進めてください. Persistence only; focused verification and local commits authorized; push, full production/audit/quality and S4 baseline verification excluded.",
+      "baselineHead": "86c0e5b737658c16ff7d3f3d4b7b548662212d3f",
+      "initialStateVerification": {
+        "headAndPathsMatched": true,
+        "staged": false,
+        "snapshotManifestSha256": "7584c6032f880245a322b930bf3a5f0b5ed5615b3b6fde1980b9cfc2364bfc33",
+        "matchedSourceFiles": 9,
+        "matchedSnapshotEntries": 39,
+        "snapshotReapplied": false,
+        "ignoredNextEnvSha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b"
+      },
+      "independentCandidate": {
+        "baselineHead": "86c0e5b737658c16ff7d3f3d4b7b548662212d3f",
+        "sourceCandidateTree": "d78faf7c13f396a43b3b03fde933ad12bb751425",
+        "files": {
+          "packages/calculation-application/src/productionAuditArtifacts.test.ts": "9e4c56f523cd9fad17d93373c5fe7baa921d98557e71358c212e86a585fa4d0c",
+          "packages/calculation-application/src/productionAuditArtifacts.ts": "e159bbf99c6be14885dbeeaab3cd68316941a7a45d653ce4ce2ecd7e169d1a79",
+          "packages/calculation-application/src/productionBattlePointPaths.test.ts": "3a3f6db297e0f4b086defe609dbbd54e672a33c8f56ef02e6b3e373711eb99c8",
+          "packages/calculation-application/src/productionClosureAudit.test.ts": "ae308ef9bcef1c310f717cf779a47ae97c9b815e4a75a47740b271d185b1fc3b",
+          "packages/calculation-application/src/scenario.test.ts": "f87294873331a4b285528e164e50940e0ae5b0a4f0f2b68fe5266dcce18a0299",
+          "scripts/test-runner-lib.mjs": "25ecfbaa780f870db4d8a4a2c162c0ef75c508cf506cdf54334f7471647bacd2",
+          "scripts/test-runner.test.mjs": "caf5cf302e53b2ecf421faa25b18dd1c2e3a983807fb5499ba1d509adba0c2fe"
+        },
+        "excludedS4": [
+          "productionParityDiagnostics.ts",
+          "productionMasterControlAudit.test.ts",
+          "productionClosureAudit.test.ts user-control imports/helper/fixture"
+        ],
+        "workspaceDependencyResolution": "All candidate packages/*/node_modules/@fgo-lab links resolve within the isolated candidate. Only installed third-party dependencies are shared."
+      },
+      "commitBoundary": {
+        "committedResponsibility": "HEAD-only artifact codec/publication, metadata declarations and receipts, runner reconciliation and checksum verification, all three legacy writers, focused contracts and this handoff. No legacy artifact-declarations.json writer or reader remains.",
+        "committedFiles": [
+          "packages/calculation-application/src/productionAuditArtifacts.test.ts",
+          "packages/calculation-application/src/productionAuditArtifacts.ts",
+          "packages/calculation-application/src/productionBattlePointPaths.test.ts",
+          "packages/calculation-application/src/productionClosureAudit.test.ts",
+          "packages/calculation-application/src/scenario.test.ts",
+          "scripts/test-runner-lib.mjs",
+          "scripts/test-runner.test.mjs"
+        ],
+        "excludedS4": "productionParityDiagnostics.ts additions; productionMasterControlAudit.test.ts observation collection/types/gate/save connection; productionClosureAudit.test.ts user-control imports/helper/fixture. No type extraction, unresolved S4 import or dormant hook.",
+        "proof": "Detached clone at baseline HEAD; only the seven candidate files applied. Diagnostics and master-control test matched HEAD bytes; all workspace package links resolved within the candidate. Typecheck and focused tests ran there. Candidate source tree and source hashes are recorded above. Main worktree success is not used as independence evidence.",
+        "sourcePatch": {
+          "path": ".test-results/tsk-08-persistence-20260925/tsk08-independent-source.patch",
+          "bytes": 151874,
+          "sha256": "c7114dd8a8c32b9e555d46bc76af2ee2bfd0cf7adec9734eab2cf3f635c67d19"
+        }
+      },
+      "flow": {
+        "producer": "Existing closure parity/final-outcome/preparation fixtures, scenario mutation/rollback snapshots and seven Battle Point cases. Full supplied failure arrays and corresponding observations/selected traces are retained before assertions; no candidate replay added for persistence.",
+        "owner": "productionAuditArtifacts.ts::serializeProductionAuditArtifact / writeProductionAuditArtifact; application producers retain typed diagnostic meaning and assertions.",
+        "transport": "productionAuditTestOptions registers required paths at collection; writer adds intended UTF-8 buffer length/SHA-256 receipt before publication; Vitest JSON reporter carries task.meta into assertionResults.meta.",
+        "verifier": "test-runner-lib.mjs::declaredArtifactFiles reconciles requirements/receipts and paths; runCapturedTest calls existing test-observation-lib.mjs::verifyArtifactFiles and records manifest artifacts/errors. Directory discovery precedes explicit specs so discovery cannot replace expected checksums.",
+        "publication": "Exclusive same-directory temporary file, no-overwrite link, cleanup, await publication before domain assertions. Missing contract/root, duplicates, unsafe paths and write failure throw.",
+        "recovery": "Failed active tests still owe declared artifacts. Before-save producer failure leaves receipt/file missing and artifact_failure. Saved malformed diagnostics remain available before producer assertions fail. Timeout/signal/reporter precedence and skip/todo gates are retained. Filtered tests do not owe missing publications. No successful full-audit claim follows an abnormal run."
+      },
+      "codec": {
+        "artifactVersion": 2,
+        "metadataContractVersion": 1,
+        "representation": "JSON payload plus undefinedPaths and typed containers (set/map/nullObject). Sets use ordered members; Maps use ordered entries; nested undefined, absent properties and null remain distinct. Decoder restores children before containers; malformed metadata and duplicate primitive Set members/Map keys fail closed.",
+        "scope": "Artifact transport only; canonical input/digest/schema/fingerprint unchanged. Unsupported runtime shapes are rejected, not silently stringified.",
+        "producerFindings": "Previous five logs all named artifact_non_plain_object but only the 705300 Set location was previously established. New successful per-producer artifacts now explicitly record Set paths for the other three policy results and both Map/Set paths for included:satisfied (including semantics.stackWitnesses and canonicalInputDefaults); this does not retroactively invent the precise former throw locations.",
+        "actualPayloadShapes": [
+          {
+            "artifact": "battle-point-705300.json",
+            "containers": {
+              "set": 19,
+              "map": 0,
+              "nullObject": 0
+            },
+            "undefinedPaths": 0
+          },
+          {
+            "artifact": "battle-point-3300200-calculator.json",
+            "containers": {
+              "set": 3,
+              "map": 0,
+              "nullObject": 0
+            },
+            "undefinedPaths": 0
+          },
+          {
+            "artifact": "selected-execution-observation.json",
+            "containers": {
+              "set": 1,
+              "map": 0,
+              "nullObject": 0
+            },
+            "undefinedPaths": 0
+          },
+          {
+            "artifact": "battle-point-3300200-included-baseline.json",
+            "containers": {
+              "set": 1,
+              "map": 0,
+              "nullObject": 0
+            },
+            "undefinedPaths": 0
+          },
+          {
+            "artifact": "battle-point-3300200-included-satisfied.json",
+            "containers": {
+              "set": 17,
+              "map": 32,
+              "nullObject": 0
+            },
+            "undefinedPaths": 0
+          },
+          {
+            "artifact": "battle-point-3300200-excluded-baseline.json",
+            "containers": {
+              "set": 1,
+              "map": 0,
+              "nullObject": 0
+            },
+            "undefinedPaths": 0
+          },
+          {
+            "artifact": "battle-point-3300200-excluded-satisfied.json",
+            "containers": {
+              "set": 1,
+              "map": 0,
+              "nullObject": 0
+            },
+            "undefinedPaths": 0
+          }
+        ]
+      },
+      "retainedAssertions": "705300 full result parity restored; original 60s/30s test timeouts restored; null coalescing added by the prototype removed from snapshots; generated calculator/replay executions retained. Existing candidate upper-bound assertion and numeric expectations unchanged. Failed gate reason/identity/difference remain producer-owned; snapshot firstDifference:null and resolvedValue:null remain legal; parity digest mismatch with no subordinate failures is retained.",
+      "verification": {
+        "genericRunner": {
+          "command": "node --test scripts/test-runner.test.mjs",
+          "result": "45/45 passed before the final fixture-only assertion adjustment; 43 unaffected contracts reused, both affected real-reporter contracts rerun on final source",
+          "log": {
+            "path": ".test-results/tsk-08-persistence-20260925/tsk08-runner-final.log",
+            "bytes": 4065,
+            "sha256": "18edb02bed851e435e3cc3c481ae085b12dfceac49bce64450560b6811d1f323"
+          }
+        },
+        "finalReporterContracts": {
+          "command": "node --test --test-name-pattern='real Vitest JSON reporter|real writer preserves' scripts/test-runner.test.mjs",
+          "result": "2/2 passed; nested real Vitest runs preserve all six diagnostics, missing identity/reason/firstDifference before assertion failure, and reject before-save failure",
+          "log": {
+            "path": ".test-results/tsk-08-persistence-20260925/tsk08-runner-affected-final.log",
+            "bytes": 321,
+            "sha256": "d206726d8f37913b6829b5a57f54bf46d196c5e1a9512472ef4c3742c5c2a90c"
+          }
+        },
+        "unit": {
+          "result": "46/46 passed (scenario 36, HEAD-only closure 4, artifact fixture 6). Scenario/closure source unchanged since this run; final artifact fixture subsequently rerun alone.",
+          "run": {
+            "path": ".test-results/tsk-08-persistence-20260925/focused-runs/2026-09-24T16-31-19-959Z-2-7b0403/manifest.json",
+            "bytes": 4412,
+            "sha256": "6d30aaf88a3c91eaba3ada3e6cf3c4ebfac83e868fdcdbbb415a5041706dc447",
+            "outcome": "success",
+            "tests": {
+              "total": 46,
+              "passed": 46,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "durationMs": 3402,
+            "artifactErrors": [],
+            "artifacts": [
+              {
+                "path": "vitest.json",
+                "format": "json",
+                "allowEmpty": false,
+                "bytes": 18110,
+                "sha256": "bc2883ebe47684b866cf36d674c2671a6fa6fe9381772f2df900b56979061ec1"
+              },
+              {
+                "path": "observations.json",
+                "format": "json",
+                "allowEmpty": false,
+                "bytes": 47,
+                "sha256": "91ae9d1772193754d584658213a9742a7374854f69a5858e609eee3beac9efe0"
+              },
+              {
+                "path": "stdout.log",
+                "format": "text",
+                "allowEmpty": true,
+                "bytes": 8351,
+                "sha256": "509735ed611929867a37ae0de3e163aa39bc0a9bb447f9a0b520bc33177434a1"
+              },
+              {
+                "path": "stderr.log",
+                "format": "text",
+                "allowEmpty": true,
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              {
+                "path": "warnings.jsonl",
+                "format": "jsonl",
+                "allowEmpty": true,
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              {
+                "path": "tsk-08-artifact-contract.json",
+                "format": "json",
+                "allowEmpty": false,
+                "bytes": 4450,
+                "sha256": "36e0bcb9568d7a072e336d955680e13e7663bc95ddfd1daae900cfef5674ead8"
+              },
+              {
+                "path": "production-closure-parity-diagnostics.json",
+                "format": "json",
+                "allowEmpty": false,
+                "bytes": 18614,
+                "sha256": "3d1080b92bff9f2e6ae744e8cdd4507e0a0a2cca7e59caca7f9eed3e6c68b756"
+              },
+              {
+                "path": "production-final-outcome-diagnostics.json",
+                "format": "json",
+                "allowEmpty": false,
+                "bytes": 8317,
+                "sha256": "faf99a63479a9ff0deb0392705119c1239a9a73925c9a7c142387ae7b4df7993"
+              },
+              {
+                "path": "production-preparation-transaction-diagnostics.json",
+                "format": "json",
+                "allowEmpty": false,
+                "bytes": 13913,
+                "sha256": "f0f705d0565b0768cb8207c52871005a0abe621d11f503ae2f14208f9245e65f"
+              },
+              {
+                "path": "tsk-08-star-mutation-read.json",
+                "format": "json",
+                "allowEmpty": false,
+                "bytes": 11030,
+                "sha256": "27572265ebe7d79a108734a996b8a5fae182cf53c0cbd7d20a82c228b1917e34"
+              },
+              {
+                "path": "tsk-08-execution-group-rollback.json",
+                "format": "json",
+                "allowEmpty": false,
+                "bytes": 15529,
+                "sha256": "dbf30a0c10cf3361a9c996293d30cf86f246eac4e3df8bc370de3fb43a62f42b"
+              }
+            ]
+          }
+        },
+        "finalArtifactFixture": {
+          "path": ".test-results/tsk-08-persistence-20260925/focused-runs/2026-09-24T16-37-05-202Z-2-c06fa2/manifest.json",
+          "bytes": 3132,
+          "sha256": "c5a9ba8fccc8e5a07056713e1d86cf018cd70a14c2655285447166964e248b42",
+          "outcome": "success",
+          "tests": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "durationMs": 1663,
+          "artifactErrors": [],
+          "artifacts": [
+            {
+              "path": "vitest.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 2731,
+              "sha256": "8b1e328491075085150096dd796a76ceb7c100ce4a160ba22c43469ab19ef156"
+            },
+            {
+              "path": "observations.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 47,
+              "sha256": "91ae9d1772193754d584658213a9742a7374854f69a5858e609eee3beac9efe0"
+            },
+            {
+              "path": "stdout.log",
+              "format": "text",
+              "allowEmpty": true,
+              "bytes": 1332,
+              "sha256": "fa3951ee89d44675a06b5cd5add6fa663d2529cbeb16c61268c0aa3d9061d617"
+            },
+            {
+              "path": "stderr.log",
+              "format": "text",
+              "allowEmpty": true,
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "warnings.jsonl",
+              "format": "jsonl",
+              "allowEmpty": true,
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "tsk-08-artifact-contract.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 4450,
+              "sha256": "36e0bcb9568d7a072e336d955680e13e7663bc95ddfd1daae900cfef5674ead8"
+            }
+          ]
+        },
+        "finalBattlePoint": {
+          "path": ".test-results/tsk-08-persistence-20260925/focused-runs/2026-09-24T16-34-38-555Z-2-d5b038/manifest.json",
+          "bytes": 4518,
+          "sha256": "92e2a9b65d18cacd31d3d4e6189a8718268f17e073278b1d7b6912204809535a",
+          "outcome": "success",
+          "tests": {
+            "total": 7,
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "durationMs": 26538,
+          "artifactErrors": [],
+          "artifacts": [
+            {
+              "path": "vitest.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 5407,
+              "sha256": "b0b4bf8fe65e6e57a0977c1721d425d8fc1f842971b66a8010be10ae55083944"
+            },
+            {
+              "path": "observations.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 47,
+              "sha256": "91ae9d1772193754d584658213a9742a7374854f69a5858e609eee3beac9efe0"
+            },
+            {
+              "path": "stdout.log",
+              "format": "text",
+              "allowEmpty": true,
+              "bytes": 1811,
+              "sha256": "5be1c2f54a3eefc0abeeae151f42821cd92b1d584ea3992f4408118e4173b47b"
+            },
+            {
+              "path": "stderr.log",
+              "format": "text",
+              "allowEmpty": true,
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "warnings.jsonl",
+              "format": "jsonl",
+              "allowEmpty": true,
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "battle-point-705300.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 4562252,
+              "sha256": "aad71169de60c95a79cc8572fe258b45a4dcef0f69476c065f430b073e686fe2"
+            },
+            {
+              "path": "battle-point-3300200-calculator.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1129019,
+              "sha256": "342c902fcac735c4816dc4fa6a495f8736875bfeaf6924de8cfc7442780be124"
+            },
+            {
+              "path": "selected-execution-observation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 405835,
+              "sha256": "b646e9a1f5c508ae6c1a03b2d7179465dfc8c0b7cb3cb3b61c7336d3e824a82b"
+            },
+            {
+              "path": "battle-point-3300200-included-baseline.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 141368,
+              "sha256": "7076814bcb89eff9f75e6960ab5921b295a7b97db1aaeb97c43a9b38f68fed96"
+            },
+            {
+              "path": "battle-point-3300200-included-satisfied.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 9422042,
+              "sha256": "388df6ba759f378ca6878540add95895093d644979739df2796b8881b748079d"
+            },
+            {
+              "path": "battle-point-3300200-excluded-baseline.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 90929,
+              "sha256": "5eefb0c8e0c6fba2ae65b359c8e7e02fe0930ede68b3585cd0850d205e1543ae"
+            },
+            {
+              "path": "battle-point-3300200-excluded-satisfied.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92314,
+              "sha256": "644ee02e2b2d8b2f2e529b5c39477038f2a004c7017da223d781c278120678b6"
+            }
+          ]
+        },
+        "typecheck": {
+          "command": "./node_modules/.bin/tsc -b --pretty false",
+          "result": "passed on independent final candidate",
+          "log": {
+            "path": ".test-results/tsk-08-persistence-20260925/tsk08-typecheck-final.log",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "lint": {
+          "result": "Target TypeScript ESLint passed; writer/scenario/closure results reused, changed fixture/Battle Point targets passed after final edits. Existing ESLint configuration cannot supply type services for .mjs; scripts verified with node --check, Prettier and runner contracts. No ESLint rule/config relaxation.",
+          "finalChangedTargetsLog": {
+            "path": ".test-results/tsk-08-persistence-20260925/tsk08-lint-affected-final.log",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "format": "Prettier --check passed on seven candidate source/script files; node --check passed on both runner scripts; git diff --check passed. docs/ remains ignored by Prettier, with no no-op counted.",
+        "environment": "Reused the recorded pnpm pre-script external SQLite-store failure; focused runs used existing installed Vitest through the same runCapturedTest with explicit suite/file filters. No install or dependency update.",
+        "coverage": "Set/Map/undefined/null/absent round trip; >5 failures; input not mutated; publication before assertion; malformed diagnostic preservation; missing root/contract/receipt/file; write/duplicate/symlink/path failures; bytes/JSON/empty/same-length mutation; directory-discovery checksum precedence; reversed real worker publication and filtered test obligations; inherited timeout/signal/reporter/skip contracts.",
+        "intermediateCorrections": "Initial added malformed-diagnostic fixture omitted its failure injection and one normalized-duplicate expectation used the wrong error category; fixed and rerun. Typecheck caught access to an absent rejected-scenario property; redundant invented field removed, full prepared payload retained. ESLint fixture assertion syntax corrected and affected checks rerun.",
+        "documentation": "Passed on the isolated candidate: node --test scripts/docs-integrity.test.mjs (6/6), node scripts/docs-integrity.mjs, JSON parse, historical boundedUnits/value preservation and git diff --check. Final status/verification-only record update does not change source/test inputs."
+      },
+      "diagnosticExample": {
+        "origin": "intentional parity fixture, not production finding",
+        "failure": {
+          "conditionKey": "artifact-fixture",
+          "profileKey": "profile-0",
+          "path": "calculator",
+          "reason": "canonicalMismatch",
+          "canonicalIdentity": "production:artifact-fixture:profile:profile-0:parity:calculator",
+          "mismatch": "value",
+          "firstDifference": {
+            "identity": "production:artifact-fixture:profile:profile-0:parity:calculator",
+            "path": "value",
+            "expected": 0,
+            "actual": 1
+          },
+          "expected": {
+            "value": 0
+          },
+          "actual": {
+            "value": 1
+          }
+        },
+        "fullArtifact": {
+          "path": ".test-results/tsk-08-persistence-20260925/focused-runs/2026-09-24T16-37-05-202Z-2-c06fa2/tsk-08-artifact-contract.json",
+          "bytes": 4450,
+          "sha256": "36e0bcb9568d7a072e336d955680e13e7663bc95ddfd1daae900cfef5674ead8"
+        }
+      },
+      "performance": {
+        "historicalFailedBattlePointMs": 25598,
+        "finalSuccessfulBattlePointMs": 26538,
+        "interpretation": "About 3.7% longer than the preserved failing transport run, now including complete artifact publication (15,843,759 bytes across seven artifacts). This is a bounded observation, not a three-run hot-path benchmark. No calculation structure, candidate cap, timeout ratchet or production inventory changed. Added runner time is attributable to explicit real Vitest negative/worker fixtures."
+      },
+      "archive": {
+        "manifest": {
+          "path": ".test-results/tsk-08-persistence-20260925/archive-manifest.json",
+          "bytes": 160851,
+          "sha256": "d6d6424805b698ec730019d32bf65dff4354a8614b231a33cd93400dffe5c60f"
+        },
+        "scope": "Ignored local evidence, including intermediate runs and negative contracts; only the final runs and explicitly unaffected reused checks above certify this candidate. All 607 captured manifest artifact entries matched archived bytes/SHA-256; real successful publication receipts also matched their prior intended checksums."
+      },
+      "remainingS4": {
+        "status": "uncommitted; not verified by persistence tests",
+        "paths": [
+          "packages/calculation-application/src/productionParityDiagnostics.ts",
+          "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+          "packages/calculation-application/src/productionClosureAudit.test.ts"
+        ],
+        "residualPatch": {
+          "path": ".test-results/tsk-08-persistence-20260925/residual-s4.diff",
+          "bytes": 87323,
+          "sha256": "df928b3fbeb0ef8bbadf8cd72ce1d6707c06a28ff6b9b3303fe8d171996092ff"
+        },
+        "residualFileSha256": {
+          "packages/calculation-application/src/productionParityDiagnostics.ts": "6ea1ec053b88a9bf2e1a79da60c4b30f8472fc1281fd37b69c30a2b769116e95",
+          "packages/calculation-application/src/productionMasterControlAudit.test.ts": "7265ab7862bd79f441e73ec3663d0ae4ca7426d25023d78e332ac20aff5b8225",
+          "packages/calculation-application/src/productionClosureAudit.test.ts": "81e271e583fcb028296afb48a066e1507af0e7521d108805035a38ebc53bee24"
+        },
+        "integrationOnly": "User-control fixture writer path aligned with its production-inert-control-fixture.json declaration. Production save call remains before the S4 throw and includes the supplied gate/observations. Neither producer/gate semantics nor production connection is certified or committed.",
+        "releaseCondition": "Separately approved and verified S4 producer/gate baseline, then focused production connection verification; no blanket S4 import into this commit."
+      },
+      "unchanged": {
+        "TSK-06.5": {
+          "conditions": 80,
+          "profiles": 433,
+          "outcomes": 34640,
+          "calculated": 34600,
+          "parity": 34600,
+          "unavailableUnderPolicy": 40,
+          "unsupported": 0,
+          "invalid": 0,
+          "inputRequired": 0,
+          "mergedDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
+          "eligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18"
+        },
+        "candidateStatusEligibilityProductionOutputDamageCanonicalInputFingerprint": "unchanged",
+        "TSK-07CacheAndStaleResponseEvidence": "unchanged",
+        "B1-B3": "Blocking: B1 ten stateTrait controls; B2 2501400 magicBullet; B3 403400 targetRarity"
+      },
+      "unmet": [
+        "Unverified S4 observation/gate baseline and production persistence connection",
+        "Multiple ratchets; fresh control population; without-area alternate; production stale-mutation consumer",
+        "B1-B3 product fixes and full production/audit/quality; TSK-08 overall completion"
+      ],
+      "nextOperation": "Preserve the three residual S4 paths and ignored artifacts. Obtain separate authorization/verification for the S4 producer/gate baseline before committing or certifying the production persistence connection. No push.",
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      }
     }
   ],
-  "currentBoundedUnit": "Persistence implementation stopped on Set payload; documentation-only handoff; next worker starts from code-based planning"
+  "currentBoundedUnit": "HEAD-independent persistence and three existing writers verified; S4-dependent production connection uncommitted"
 }

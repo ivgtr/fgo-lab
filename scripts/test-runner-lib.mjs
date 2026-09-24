@@ -1,7 +1,14 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import {
   classifyObservations,
@@ -309,85 +316,147 @@ function artifactFiles(runDirectory, directories) {
   return files.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-function declaredArtifactFiles(runDirectory) {
-  const declarationPath = 'artifact-declarations.json';
-  const declarationFile = resolve(runDirectory, declarationPath);
-  if (!existsSync(declarationFile)) return { artifacts: [], errors: [] };
-  const artifacts = [{ path: declarationPath, format: 'json', allowEmpty: false }];
+function declaredArtifactFiles(report, runDirectory, reservedPaths) {
+  const contractKey = 'fgoProductionAuditArtifacts';
+  const artifacts = [];
   const errors = [];
-  let declarations;
-  try {
-    declarations = readJson(declarationFile);
-  } catch (cause) {
-    return {
-      artifacts,
-      errors: [
-        `artifact-declarations.json:invalid_json:${cause instanceof Error ? cause.message : String(cause)}`,
-      ],
-    };
-  }
-  if (!Array.isArray(declarations)) {
-    return { artifacts, errors: ['artifact-declarations.json:expected_array'] };
-  }
-  const paths = new Set([declarationPath]);
-  for (const [index, declaration] of declarations.entries()) {
-    if (!declaration || typeof declaration !== 'object' || Array.isArray(declaration)) {
-      errors.push(`artifact-declarations.json:[${String(index)}]:expected_object`);
-      continue;
+  const paths = new Set();
+  for (const [suiteIndex, suite] of (report?.testResults ?? []).entries()) {
+    for (const [testIndex, assertion] of (suite.assertionResults ?? []).entries()) {
+      const meta = assertion.meta;
+      if (
+        !meta ||
+        typeof meta !== 'object' ||
+        Array.isArray(meta) ||
+        !Object.hasOwn(meta, contractKey)
+      )
+        continue;
+      const label = `vitest.json:${String(suiteIndex)}:${String(testIndex)}`;
+      const contract = meta[contractKey];
+      if (
+        !contract ||
+        typeof contract !== 'object' ||
+        Array.isArray(contract) ||
+        contract.version !== 1 ||
+        !Array.isArray(contract.requiredArtifacts) ||
+        !Array.isArray(contract.receipts)
+      ) {
+        errors.push(`${label}:invalid_artifact_contract`);
+        continue;
+      }
+      const active = assertion.status === 'passed' || assertion.status === 'failed';
+      const requiredPaths = new Set();
+      for (const [index, descriptor] of contract.requiredArtifacts.entries()) {
+        if (
+          !descriptor ||
+          typeof descriptor !== 'object' ||
+          Array.isArray(descriptor) ||
+          typeof descriptor.path !== 'string' ||
+          descriptor.path.length === 0 ||
+          descriptor.format !== 'json' ||
+          descriptor.allowEmpty !== false
+        ) {
+          errors.push(`${label}:required_artifact_${String(index)}_invalid`);
+          continue;
+        }
+        const normalized = normalizeDeclaredArtifactPath(descriptor.path, runDirectory);
+        if (!normalized.path) {
+          errors.push(`${label}:required_artifact_${String(index)}_${normalized.error}`);
+          continue;
+        }
+        const path = normalized.path;
+        if (requiredPaths.has(path)) {
+          errors.push(`${label}:duplicate_required_path:${path}`);
+          continue;
+        }
+        requiredPaths.add(path);
+        if (!active) continue;
+        if (reservedPaths.has(path)) {
+          errors.push(`${label}:reserved_path:${path}`);
+          continue;
+        }
+        if (paths.has(path)) {
+          errors.push(`${label}:duplicate_path:${path}`);
+          continue;
+        }
+        paths.add(path);
+        artifacts.push({ path, format: 'json', allowEmpty: false });
+      }
+      const receiptsByPath = new Map();
+      for (const [index, receipt] of contract.receipts.entries()) {
+        if (
+          !receipt ||
+          typeof receipt !== 'object' ||
+          Array.isArray(receipt) ||
+          typeof receipt.path !== 'string' ||
+          !Number.isSafeInteger(receipt.expectedBytes) ||
+          receipt.expectedBytes < 0 ||
+          typeof receipt.expectedSha256 !== 'string' ||
+          !/^[a-f0-9]{64}$/.test(receipt.expectedSha256)
+        ) {
+          errors.push(`${label}:receipt_${String(index)}_invalid`);
+          continue;
+        }
+        const normalized = normalizeDeclaredArtifactPath(receipt.path, runDirectory);
+        if (!normalized.path) {
+          errors.push(`${label}:receipt_${String(index)}_${normalized.error}`);
+          continue;
+        }
+        const path = normalized.path;
+        if (receiptsByPath.has(path)) errors.push(`${label}:duplicate_receipt:${path}`);
+        else receiptsByPath.set(path, receipt);
+      }
+      if (active) {
+        for (const path of requiredPaths)
+          if (!receiptsByPath.has(path)) errors.push(`${label}:receipt_missing:${path}`);
+        for (const path of receiptsByPath.keys())
+          if (!requiredPaths.has(path)) errors.push(`${label}:receipt_unexpected:${path}`);
+        for (const path of requiredPaths) {
+          const receipt = receiptsByPath.get(path);
+          if (receipt && artifacts.some((artifact) => artifact.path === path)) {
+            const root = resolve(runDirectory);
+            const target = resolve(root, ...path.split('/'));
+            if (hasSymlinkBetween(root, target)) errors.push(`${label}:symlink_path:${path}`);
+            artifacts[artifacts.findIndex((artifact) => artifact.path === path)] = {
+              path,
+              format: 'json',
+              allowEmpty: false,
+              expectedBytes: receipt.expectedBytes,
+              expectedSha256: receipt.expectedSha256,
+            };
+          }
+        }
+      }
     }
-    const path = declaration.path;
-    if (typeof path !== 'string' || path.length === 0) {
-      errors.push(`artifact-declarations.json:[${String(index)}]:invalid_path`);
-      continue;
-    }
-    const resolvedPath = resolve(runDirectory, path);
-    const localPath = relative(runDirectory, resolvedPath).split(sep).join('/');
-    if (isAbsolute(path) || localPath === '..' || localPath.startsWith('../')) {
-      errors.push(`artifact-declarations.json:[${String(index)}]:outside_run_directory`);
-      continue;
-    }
-    if (paths.has(localPath)) {
-      errors.push(`artifact-declarations.json:[${String(index)}]:duplicate_path:${localPath}`);
-      continue;
-    }
-    const format = declaration.format ?? 'binary';
-    if (!['binary', 'json', 'jsonl', 'text'].includes(format)) {
-      errors.push(`artifact-declarations.json:[${String(index)}]:invalid_format`);
-      continue;
-    }
-    if (declaration.allowEmpty !== undefined && typeof declaration.allowEmpty !== 'boolean') {
-      errors.push(`artifact-declarations.json:[${String(index)}]:invalid_allow_empty`);
-      continue;
-    }
-    if (
-      declaration.expectedBytes !== undefined &&
-      (!Number.isSafeInteger(declaration.expectedBytes) || declaration.expectedBytes < 0)
-    ) {
-      errors.push(`artifact-declarations.json:[${String(index)}]:invalid_expected_bytes`);
-      continue;
-    }
-    if (
-      declaration.expectedSha256 !== undefined &&
-      (typeof declaration.expectedSha256 !== 'string' ||
-        !/^[a-f0-9]{64}$/.test(declaration.expectedSha256))
-    ) {
-      errors.push(`artifact-declarations.json:[${String(index)}]:invalid_expected_sha256`);
-      continue;
-    }
-    paths.add(localPath);
-    artifacts.push({
-      path: localPath,
-      format,
-      allowEmpty: declaration.allowEmpty ?? false,
-      ...(declaration.expectedBytes === undefined
-        ? {}
-        : { expectedBytes: declaration.expectedBytes }),
-      ...(declaration.expectedSha256 === undefined
-        ? {}
-        : { expectedSha256: declaration.expectedSha256 }),
-    });
   }
   return { artifacts, errors };
+}
+
+function normalizeDeclaredArtifactPath(path, runDirectory) {
+  if (isAbsolute(path) || path.includes('\\')) return { error: 'outside_run_directory' };
+  const resolvedPath = resolve(runDirectory, path);
+  const localPath = relative(runDirectory, resolvedPath).split(sep).join('/');
+  if (localPath === '.' || localPath === '..' || localPath.startsWith('../'))
+    return { error: 'outside_run_directory' };
+  if (localPath.split('/').some((segment) => segment === '.' || segment === '..'))
+    return { error: 'invalid_path' };
+  return { path: localPath };
+}
+
+function hasSymlinkBetween(root, target) {
+  const localPath = relative(root, target);
+  if (localPath === '..' || localPath.startsWith(`..${sep}`)) return true;
+  let current = root;
+  for (const segment of localPath.split(sep)) {
+    current = resolve(current, segment);
+    try {
+      if (lstatSync(current).isSymbolicLink()) return true;
+    } catch (cause) {
+      if (cause?.code !== 'ENOENT') return true;
+      break;
+    }
+  }
+  return false;
 }
 
 function playwrightAttachmentArtifacts(report, runDirectory) {
@@ -738,8 +807,22 @@ export async function runCapturedTest(options) {
     resultKind === 'playwright'
       ? playwrightAttachmentArtifacts(report, runDirectory)
       : { artifacts: [], errors: [] };
-  const declaredArtifacts = declaredArtifactFiles(runDirectory);
+  const reservedArtifactPaths = new Set([
+    reportName,
+    ...(observationName ? [observationName] : []),
+    'stdout.log',
+    'stderr.log',
+    'warnings.jsonl',
+    'manifest.json',
+    ...runtimeCounters.map(({ artifact }) => artifact),
+    ...additionalArtifacts.map(({ path }) => path),
+  ]);
+  const declaredArtifacts =
+    resultKind === 'vitest'
+      ? declaredArtifactFiles(report, runDirectory, reservedArtifactPaths)
+      : { artifacts: [], errors: [] };
   const artifactSpecs = [
+    ...artifactFiles(runDirectory, additionalArtifactDirectories),
     ...(existsSync(reportPath) ? [{ path: reportName, format: 'json', allowEmpty: false }] : []),
     ...(observationName ? [{ path: observationName, format: 'json', allowEmpty: false }] : []),
     { path: 'stdout.log', format: 'text', allowEmpty: true },
@@ -752,7 +835,6 @@ export async function runCapturedTest(options) {
     })),
     ...additionalArtifacts,
     ...declaredArtifacts.artifacts,
-    ...artifactFiles(runDirectory, additionalArtifactDirectories),
     ...attachmentContract.artifacts,
   ];
   const uniqueArtifactSpecs = [

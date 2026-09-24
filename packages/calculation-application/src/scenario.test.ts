@@ -1,5 +1,3 @@
-import { writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { createCalculatorPortableRequest, executePortableCalculation } from './portableCalculation';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
@@ -35,6 +33,10 @@ import {
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
+import {
+  productionAuditTestOptions,
+  writeProductionAuditArtifact,
+} from './productionAuditArtifacts';
 import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
 import { executeRankingScenarios } from './rankingExecution';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
@@ -118,23 +120,12 @@ const versions: VersionContext = {
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
 };
-const tsk08AuditArtifactNames = new Set<string>();
-
-async function recordTsk08AuditArtifact(name: string, value: unknown): Promise<void> {
-  const artifactDirectory = process.env['FGO_TEST_ARTIFACT_DIR'];
-  if (!artifactDirectory) return;
-  await writeFile(resolve(artifactDirectory, name), `${JSON.stringify(value, null, 2)}\n`);
-  tsk08AuditArtifactNames.add(name);
-  await writeFile(
-    resolve(artifactDirectory, 'artifact-declarations.json'),
-    `${JSON.stringify(
-      [...tsk08AuditArtifactNames]
-        .sort()
-        .map((path) => ({ path, format: 'json', allowEmpty: false })),
-      null,
-      2,
-    )}\n`,
-  );
+async function recordTsk08AuditArtifact(
+  taskMetadata: unknown,
+  name: string,
+  value: unknown,
+): Promise<void> {
+  await writeProductionAuditArtifact(taskMetadata, name, value);
 }
 const unconditionalConditions = {
   recipient: [{ operator: 'any' as const, traits: [] }],
@@ -1565,346 +1556,349 @@ describe('scenario calculation facade', () => {
     },
   );
 
-  it('observes the selected candidate star mutation and the later read of its capped value', async () => {
-    const baseServant = fixture.servants[0]!;
-    const modifier = modifierEffect('star-audit-transaction', 'upAtk', 500);
-    const starMutation = {
-      ...modifier,
-      occurrenceId: 'star-audit-mutation:0',
-      id: 'star-audit-mutation',
-      label: 'star audit mutation',
-      inputDefinitions: [],
-      requirement: { recipient: 'sourceSelf' as const, expression: { kind: 'always' as const } },
-      execution: [
-        {
-          kind: 'resourceMutation' as const,
-          resource: 'criticalStars' as const,
-          direction: 'gain' as const,
-          unit: 'fixed' as const,
+  it(
+    'observes the selected candidate star mutation and the later read of its capped value',
+    productionAuditTestOptions(['tsk-08-star-mutation-read.json']),
+    async ({ task }) => {
+      const baseServant = fixture.servants[0]!;
+      const modifier = modifierEffect('star-audit-transaction', 'upAtk', 500);
+      const starMutation = {
+        ...modifier,
+        occurrenceId: 'star-audit-mutation:0',
+        id: 'star-audit-mutation',
+        label: 'star audit mutation',
+        inputDefinitions: [],
+        requirement: { recipient: 'sourceSelf' as const, expression: { kind: 'always' as const } },
+        execution: [
+          {
+            kind: 'resourceMutation' as const,
+            resource: 'criticalStars' as const,
+            direction: 'gain' as const,
+            unit: 'fixed' as const,
+            recipient: 'sourceSelf' as const,
+            amount: {
+              kind: 'fixed' as const,
+              values: [Array<number>(10).fill(40), [], [], [], []] as [
+                number[],
+                number[],
+                number[],
+                number[],
+                number[],
+              ],
+            },
+            subjectId: null,
+          },
+        ],
+      };
+      const starReader = {
+        ...modifierEffect('star-audit-reader', 'upAtk', 500),
+        inputDefinitions: [
+          {
+            key: 'battle:criticalStars',
+            kind: 'criticalStars' as const,
+            owner: 'field' as const,
+            label: 'クリティカルスター',
+            description: '星依存効果の現在値',
+            minimum: 0,
+            maximum: 99,
+            step: 1,
+            defaultValue: 69,
+            defaultReason: 'fixture',
+          },
+        ],
+        requirement: {
           recipient: 'sourceSelf' as const,
-          amount: {
-            kind: 'fixed' as const,
-            values: [Array<number>(10).fill(40), [], [], [], []] as [
-              number[],
-              number[],
-              number[],
-              number[],
-              number[],
+          expression: {
+            kind: 'inputQuantity' as const,
+            inputKey: 'battle:criticalStars',
+            comparison: 'atLeast' as const,
+            value: 99,
+          },
+        },
+      };
+      const resourceMaster = parseTestMaster({
+        ...fixture,
+        servants: [
+          {
+            ...baseServant,
+            skills: [
+              {
+                id: 'star-audit-skill',
+                slot: 1,
+                priority: 1,
+                name: 'star audit',
+                detail: '',
+                imageKey: null,
+                resourceRequirement: null,
+                effects: [starMutation, starReader],
+              },
             ],
           },
-          subjectId: null,
-        },
-      ],
-    };
-    const starReader = {
-      ...modifierEffect('star-audit-reader', 'upAtk', 500),
-      inputDefinitions: [
-        {
-          key: 'battle:criticalStars',
-          kind: 'criticalStars' as const,
-          owner: 'field' as const,
-          label: 'クリティカルスター',
-          description: '星依存効果の現在値',
-          minimum: 0,
-          maximum: 99,
-          step: 1,
-          defaultValue: 69,
-          defaultReason: 'fixture',
-        },
-      ],
-      requirement: {
-        recipient: 'sourceSelf' as const,
-        expression: {
-          kind: 'inputQuantity' as const,
-          inputKey: 'battle:criticalStars',
-          comparison: 'atLeast' as const,
-          value: 99,
-        },
-      },
-    };
-    const resourceMaster = parseTestMaster({
-      ...fixture,
-      servants: [
-        {
-          ...baseServant,
-          skills: [
-            {
-              id: 'star-audit-skill',
-              slot: 1,
-              priority: 1,
-              name: 'star audit',
-              detail: '',
-              imageKey: null,
-              resourceRequirement: null,
-              effects: [starMutation, starReader],
-            },
-          ],
-        },
-      ],
-    });
-    const scenario: ResolvedScenario = {
-      ...createDefaultResolvedScenario(resourceMaster, undefined),
-      preNoblePhantasmPlan: [
-        { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
-        { kind: 'executeAttackNoblePhantasm' },
-      ],
-    };
-    const prepared = prepareCalculationScenarioWithPolicy(
-      scenario,
-      resourceMaster,
-      { kind: 'calculator' },
-      {},
-      true,
-    );
-    const execution = evaluatePreparedCalculationScenario(prepared, {
-      ...versions,
-      masterDataVersion: resourceMaster.version,
-    });
-    const selected = execution.executionObservation?.targetExecution;
-    if (!selected || selected.selection !== 'selected')
-      throw new Error('selected candidate audit observation required');
-    const candidateState = selected.candidateState;
-    if (!candidateState) throw new Error('selected candidate state audit required');
+        ],
+      });
+      const scenario: ResolvedScenario = {
+        ...createDefaultResolvedScenario(resourceMaster, undefined),
+        preNoblePhantasmPlan: [
+          { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
+          { kind: 'executeAttackNoblePhantasm' },
+        ],
+      };
+      const prepared = prepareCalculationScenarioWithPolicy(
+        scenario,
+        resourceMaster,
+        { kind: 'calculator' },
+        {},
+        true,
+      );
+      const execution = evaluatePreparedCalculationScenario(prepared, {
+        ...versions,
+        masterDataVersion: resourceMaster.version,
+      });
+      const targetExecution = execution.executionObservation?.targetExecution;
+      const candidateState =
+        targetExecution?.selection === 'selected' ? targetExecution.candidateState : undefined;
+      await recordTsk08AuditArtifact(task.meta, 'tsk-08-star-mutation-read.json', {
+        schemaVersion: 1,
+        canonicalIdentity: 'tsk-08:ordered-mutation-read:critical-stars:69-cap-99-read-99',
+        targetExecution,
+        executionObservation: execution.executionObservation,
+        calculationStatus: execution.result.status,
+        firstDifference: null,
+      });
+      if (!targetExecution || targetExecution.selection !== 'selected')
+        throw new Error('selected candidate audit observation required');
+      const selected = targetExecution;
+      if (!candidateState) throw new Error('selected candidate state audit required');
 
-    const starMutationEvent = selected.operationEvents.find(
-      ({ operationKind }) => operationKind === 'resourceMutation',
-    );
-    if (!starMutationEvent) throw new Error('critical star mutation event required');
-    const mutationGroup = candidateState.executionGroups.find((group) =>
-      group.mutations.some(({ operationId }) => operationId === starMutationEvent.operationId),
-    );
-    if (!mutationGroup) throw new Error('critical star mutation transaction required');
-    const mutation = mutationGroup.mutations.find(
-      ({ operationId }) => operationId === starMutationEvent.operationId,
-    )!;
-    const laterRead = candidateState.inputQuantityReads.find(
-      ({ inputKey, operationSequence, value }) =>
-        inputKey === 'battle:criticalStars' &&
-        value === 99 &&
-        operationSequence > mutation.operationSequence,
-    );
+      const starMutationEvent = selected.operationEvents.find(
+        ({ operationKind }) => operationKind === 'resourceMutation',
+      );
+      if (!starMutationEvent) throw new Error('critical star mutation event required');
+      const mutationGroup = candidateState.executionGroups.find((group) =>
+        group.mutations.some(({ operationId }) => operationId === starMutationEvent.operationId),
+      );
+      if (!mutationGroup) throw new Error('critical star mutation transaction required');
+      const mutation = mutationGroup.mutations.find(
+        ({ operationId }) => operationId === starMutationEvent.operationId,
+      )!;
+      const laterRead = candidateState.inputQuantityReads.find(
+        ({ inputKey, operationSequence, value }) =>
+          inputKey === 'battle:criticalStars' &&
+          value === 99 &&
+          operationSequence > mutation.operationSequence,
+      );
 
-    await recordTsk08AuditArtifact('tsk-08-star-mutation-read.json', {
-      schemaVersion: 1,
-      canonicalIdentity: 'tsk-08:ordered-mutation-read:critical-stars:69-cap-99-read-99',
-      selection: selected.selection,
-      candidateIndex: selected.candidateIndex,
-      targetCandidate: selected.targetCandidate,
-      operationEvents: selected.operationEvents,
-      candidateState,
-      calculationStatus: execution.result.status,
-      firstDifference: null,
-    });
+      expect(execution.result.status).toBe('calculated');
+      if (execution.status !== 'executable') throw new Error('executable calculation required');
+      expect(candidateState.preGroupContextResolution).not.toBeNull();
+      expect(mutationGroup.outcome).toBe('committed');
+      expect(mutation).toMatchObject({
+        stateAddress: 'battle:criticalStars',
+        before: 69,
+        attemptedAfter: 99,
+        afterTransaction: 99,
+      });
+      expect(laterRead).toMatchObject({ inputKey: 'battle:criticalStars', value: 99 });
+      expect(
+        selected.operationEvents.find(({ operationId }) => operationId === laterRead?.operationId)
+          ?.condition,
+      ).toBe('satisfied');
+      expect(execution.input.attackBuff).toBe(0.5);
+    },
+  );
 
-    expect(execution.result.status).toBe('calculated');
-    if (execution.status !== 'executable') throw new Error('executable calculation required');
-    expect(candidateState.preGroupContextResolution).not.toBeNull();
-    expect(mutationGroup.outcome).toBe('committed');
-    expect(mutation).toMatchObject({
-      stateAddress: 'battle:criticalStars',
-      before: 69,
-      attemptedAfter: 99,
-      afterTransaction: 99,
-    });
-    expect(laterRead).toMatchObject({ inputKey: 'battle:criticalStars', value: 99 });
-    expect(
-      selected.operationEvents.find(({ operationId }) => operationId === laterRead?.operationId)
-        ?.condition,
-    ).toBe('satisfied');
-    expect(execution.input.attackBuff).toBe(0.5);
-  });
-
-  it('rolls back a sibling modifier when a star transition amount is unrepresentable', async () => {
-    const baseServant = fixture.servants[0]!;
-    const modifier = modifierEffect('star-rollback', 'upAtk', 500);
-    const unsupportedStar = {
-      ...modifier,
-      inputDefinitions: [
-        {
-          key: 'battle:criticalStars',
-          kind: 'criticalStars' as const,
-          owner: 'field' as const,
-          label: 'クリティカルスター',
-          description: '星依存効果の現在値',
-          minimum: 0,
-          maximum: 99,
-          step: 1,
-          defaultValue: 20,
-          defaultReason: 'fixture',
-        },
-      ],
-      requirement: {
-        recipient: 'sourceSelf' as const,
-        expression: {
-          kind: 'inputQuantity' as const,
-          inputKey: 'battle:criticalStars',
-          comparison: 'atLeast' as const,
-          value: 10,
-        },
-      },
-      execution: [
-        ...modifier.execution,
-        {
-          kind: 'resourceMutation' as const,
-          resource: 'criticalStars' as const,
-          direction: 'gain' as const,
-          unit: 'fixed' as const,
+  it(
+    'rolls back a sibling modifier when a star transition amount is unrepresentable',
+    productionAuditTestOptions(['tsk-08-execution-group-rollback.json']),
+    async ({ task }) => {
+      const baseServant = fixture.servants[0]!;
+      const modifier = modifierEffect('star-rollback', 'upAtk', 500);
+      const unsupportedStar = {
+        ...modifier,
+        inputDefinitions: [
+          {
+            key: 'battle:criticalStars',
+            kind: 'criticalStars' as const,
+            owner: 'field' as const,
+            label: 'クリティカルスター',
+            description: '星依存効果の現在値',
+            minimum: 0,
+            maximum: 99,
+            step: 1,
+            defaultValue: 20,
+            defaultReason: 'fixture',
+          },
+        ],
+        requirement: {
           recipient: 'sourceSelf' as const,
-          amount: {
-            kind: 'fixed' as const,
-            values: [Array<null>(10).fill(null), [], [], [], []] as [
-              null[],
-              null[],
-              null[],
-              null[],
-              null[],
+          expression: {
+            kind: 'inputQuantity' as const,
+            inputKey: 'battle:criticalStars',
+            comparison: 'atLeast' as const,
+            value: 10,
+          },
+        },
+        execution: [
+          ...modifier.execution,
+          {
+            kind: 'resourceMutation' as const,
+            resource: 'criticalStars' as const,
+            direction: 'gain' as const,
+            unit: 'fixed' as const,
+            recipient: 'sourceSelf' as const,
+            amount: {
+              kind: 'fixed' as const,
+              values: [Array<null>(10).fill(null), [], [], [], []] as [
+                null[],
+                null[],
+                null[],
+                null[],
+                null[],
+              ],
+            },
+            subjectId: null,
+          },
+        ],
+      };
+      const recoveryReader = {
+        ...modifierEffect('star-recovery-reader', 'upDamage', 700),
+        inputDefinitions: [
+          {
+            key: 'battle:criticalStars',
+            kind: 'criticalStars' as const,
+            owner: 'field' as const,
+            label: 'クリティカルスター',
+            description: '星依存効果の現在値',
+            minimum: 0,
+            maximum: 99,
+            step: 1,
+            defaultValue: 20,
+            defaultReason: 'fixture',
+          },
+        ],
+        requirement: {
+          recipient: 'sourceSelf' as const,
+          expression: {
+            kind: 'inputQuantity' as const,
+            inputKey: 'battle:criticalStars',
+            comparison: 'atLeast' as const,
+            value: 20,
+          },
+        },
+      };
+      const resourceMaster = parseTestMaster({
+        ...fixture,
+        servants: [
+          {
+            ...baseServant,
+            skills: [
+              {
+                id: 'star-rollback-skill',
+                slot: 1,
+                priority: 1,
+                name: 'star rollback',
+                detail: '',
+                imageKey: null,
+                resourceRequirement: null,
+                effects: [unsupportedStar],
+              },
+              {
+                id: 'star-recovery-skill',
+                slot: 2,
+                priority: 2,
+                name: 'star recovery',
+                detail: '',
+                imageKey: null,
+                resourceRequirement: null,
+                effects: [recoveryReader],
+              },
             ],
           },
-          subjectId: null,
-        },
-      ],
-    };
-    const recoveryReader = {
-      ...modifierEffect('star-recovery-reader', 'upDamage', 700),
-      inputDefinitions: [
-        {
-          key: 'battle:criticalStars',
-          kind: 'criticalStars' as const,
-          owner: 'field' as const,
-          label: 'クリティカルスター',
-          description: '星依存効果の現在値',
-          minimum: 0,
-          maximum: 99,
-          step: 1,
-          defaultValue: 20,
-          defaultReason: 'fixture',
-        },
-      ],
-      requirement: {
-        recipient: 'sourceSelf' as const,
-        expression: {
-          kind: 'inputQuantity' as const,
-          inputKey: 'battle:criticalStars',
-          comparison: 'atLeast' as const,
-          value: 20,
-        },
-      },
-    };
-    const resourceMaster = parseTestMaster({
-      ...fixture,
-      servants: [
-        {
-          ...baseServant,
-          skills: [
-            {
-              id: 'star-rollback-skill',
-              slot: 1,
-              priority: 1,
-              name: 'star rollback',
-              detail: '',
-              imageKey: null,
-              resourceRequirement: null,
-              effects: [unsupportedStar],
-            },
-            {
-              id: 'star-recovery-skill',
-              slot: 2,
-              priority: 2,
-              name: 'star recovery',
-              detail: '',
-              imageKey: null,
-              resourceRequirement: null,
-              effects: [recoveryReader],
-            },
-          ],
-        },
-      ],
-    });
-    const scenario: ResolvedScenario = {
-      ...createDefaultResolvedScenario(resourceMaster, undefined),
-      preNoblePhantasmPlan: [
-        { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
-        { kind: 'useSkillSlot', slot: 2, skillLevel: 10, choice: null },
-        { kind: 'executeAttackNoblePhantasm' },
-      ],
-    };
-    const prepared = prepareCalculationScenarioWithPolicy(
-      scenario,
-      resourceMaster,
-      { kind: 'calculator' },
-      {},
-      true,
-    );
-    const execution = evaluatePreparedCalculationScenario(prepared, {
-      ...versions,
-      masterDataVersion: resourceMaster.version,
-    });
+        ],
+      });
+      const scenario: ResolvedScenario = {
+        ...createDefaultResolvedScenario(resourceMaster, undefined),
+        preNoblePhantasmPlan: [
+          { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
+          { kind: 'useSkillSlot', slot: 2, skillLevel: 10, choice: null },
+          { kind: 'executeAttackNoblePhantasm' },
+        ],
+      };
+      const prepared = prepareCalculationScenarioWithPolicy(
+        scenario,
+        resourceMaster,
+        { kind: 'calculator' },
+        {},
+        true,
+      );
+      const execution = evaluatePreparedCalculationScenario(prepared, {
+        ...versions,
+        masterDataVersion: resourceMaster.version,
+      });
 
-    expect(execution.result.status).toBe('unsupported');
-    if (execution.status !== 'executable') throw new Error('executable calculation required');
-    expect(execution.input.attackBuff).toBe(0);
-    expect(
-      execution.effectiveContributions.contributions.find(
-        ({ source }) => source.effectOccurrenceId === 'star-rollback:0',
-      )?.effective,
-    ).toBe(false);
+      const targetExecution = execution.executionObservation?.targetExecution;
+      await recordTsk08AuditArtifact(task.meta, 'tsk-08-execution-group-rollback.json', {
+        schemaVersion: 1,
+        canonicalIdentity: 'tsk-08:execution-group-rollback:critical-stars:restore-20-read-20',
+        targetExecution,
+        executionObservation: execution.executionObservation,
+        calculationStatus: execution.result.status,
+        firstDifference: null,
+      });
+      expect(execution.result.status).toBe('unsupported');
+      if (execution.status !== 'executable') throw new Error('executable calculation required');
+      expect(execution.input.attackBuff).toBe(0);
+      expect(
+        execution.effectiveContributions.contributions.find(
+          ({ source }) => source.effectOccurrenceId === 'star-rollback:0',
+        )?.effective,
+      ).toBe(false);
 
-    const selected = execution.executionObservation?.targetExecution;
-    if (!selected || selected.selection !== 'selected')
-      throw new Error('selected candidate rollback observation required');
-    const candidateState = selected.candidateState;
-    if (!candidateState) throw new Error('selected candidate state audit required');
-    const rollbackGroup = candidateState.executionGroups.find(
-      ({ outcome }) => outcome === 'rolledBack',
-    );
-    if (!rollbackGroup) throw new Error('star effect execution group required');
-    const recoveryRead = candidateState.inputQuantityReads.find(
-      ({ inputKey, operationGroupIndex, value }) =>
-        inputKey === 'battle:criticalStars' &&
-        value === 20 &&
-        operationGroupIndex > rollbackGroup.groupIndex,
-    );
-    const recoveryGroup = recoveryRead
-      ? candidateState.executionGroups.find(({ operationIds }) =>
-          operationIds.includes(recoveryRead.operationId),
-        )
-      : undefined;
+      if (!targetExecution || targetExecution.selection !== 'selected')
+        throw new Error('selected candidate rollback observation required');
+      const selected = targetExecution;
+      const candidateState = selected.candidateState;
+      if (!candidateState) throw new Error('selected candidate state audit required');
+      const rollbackGroup = candidateState.executionGroups.find(
+        ({ outcome }) => outcome === 'rolledBack',
+      );
+      if (!rollbackGroup) throw new Error('star effect execution group required');
+      const recoveryRead = candidateState.inputQuantityReads.find(
+        ({ inputKey, operationGroupIndex, value }) =>
+          inputKey === 'battle:criticalStars' &&
+          value === 20 &&
+          operationGroupIndex > rollbackGroup.groupIndex,
+      );
+      const recoveryGroup = recoveryRead
+        ? candidateState.executionGroups.find(({ operationIds }) =>
+            operationIds.includes(recoveryRead.operationId),
+          )
+        : undefined;
 
-    await recordTsk08AuditArtifact('tsk-08-execution-group-rollback.json', {
-      schemaVersion: 1,
-      canonicalIdentity: 'tsk-08:execution-group-rollback:critical-stars:restore-20-read-20',
-      selection: selected.selection,
-      candidateIndex: selected.candidateIndex,
-      targetCandidate: selected.targetCandidate,
-      operationEvents: selected.operationEvents,
-      candidateState,
-      calculationStatus: execution.result.status,
-      issues: rollbackGroup.issues,
-      firstDifference: null,
-    });
-
-    expect(rollbackGroup.outcome).toBe('rolledBack');
-    expect(rollbackGroup.transactionIdentity.transactionGroupId).not.toBeNull();
-    expect(rollbackGroup.appliedOperationIds.length).toBeGreaterThan(0);
-    expect(rollbackGroup.rollbackProof).toEqual({
-      battleStateRestored: true,
-      damageInputRestored: true,
-    });
-    expect(
-      selected.operationEvents
-        .filter(({ operationId }) => rollbackGroup.operationIds.includes(operationId))
-        .every(({ operationOutcome }) => operationOutcome === 'unsupported'),
-    ).toBe(true);
-    expect(recoveryRead).toMatchObject({ inputKey: 'battle:criticalStars', value: 20 });
-    expect(recoveryGroup).toBeDefined();
-    expect(recoveryGroup?.transactionIdentity.transactionGroupId).not.toBe(
-      rollbackGroup.transactionIdentity.transactionGroupId,
-    );
-    expect(
-      selected.operationEvents.find(({ operationId }) => operationId === recoveryRead?.operationId)
-        ?.condition,
-    ).toBe('satisfied');
-  });
+      expect(rollbackGroup.outcome).toBe('rolledBack');
+      expect(rollbackGroup.transactionIdentity.transactionGroupId).not.toBeNull();
+      expect(rollbackGroup.appliedOperationIds.length).toBeGreaterThan(0);
+      expect(rollbackGroup.rollbackProof).toEqual({
+        battleStateRestored: true,
+        damageInputRestored: true,
+      });
+      expect(
+        selected.operationEvents
+          .filter(({ operationId }) => rollbackGroup.operationIds.includes(operationId))
+          .every(({ operationOutcome }) => operationOutcome === 'unsupported'),
+      ).toBe(true);
+      expect(recoveryRead).toMatchObject({ inputKey: 'battle:criticalStars', value: 20 });
+      expect(recoveryGroup).toBeDefined();
+      expect(recoveryGroup?.transactionIdentity.transactionGroupId).not.toBe(
+        rollbackGroup.transactionIdentity.transactionGroupId,
+      );
+      expect(
+        selected.operationEvents.find(
+          ({ operationId }) => operationId === recoveryRead?.operationId,
+        )?.condition,
+      ).toBe('satisfied');
+    },
+  );
 
   it('rolls back every operation in an effect when a later runtime value is unresolved', () => {
     const baseServant = fixture.servants[0]!;
