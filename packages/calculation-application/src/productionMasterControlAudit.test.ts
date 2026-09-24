@@ -28,13 +28,30 @@ import {
   applyEffectProjectionDecision,
 } from './effectDecision';
 import {
+  evaluatePreparedCalculationScenario,
+  prepareCalculationScenarioWithPolicy,
   calculateScenario as calculateScenarioOutcome,
   createDefaultResolvedScenario,
   requireExecutableCalculation,
+  type CalculationExecutionObservation,
 } from './scenario';
 const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
   requireExecutableCalculation(calculateScenarioOutcome(...args));
 import { setEffectSourceEnabled } from './scenarioCommands';
+import {
+  productionAuditTestOptions,
+  writeProductionAuditArtifact,
+} from './productionAuditArtifacts';
+import {
+  auditProductionUserControlObservations,
+  type ProductionUserControlEffectiveContribution,
+  type ProductionUserControlInputBinding,
+  type ProductionUserControlIdentity,
+  type ProductionUserControlObservation,
+  type ProductionUserControlOperationEvent,
+  type ProductionUserControlProjectionObservation,
+  type ProductionUserControlSideObservation,
+} from './productionParityDiagnostics';
 
 const root = resolve(import.meta.dirname, '../../..');
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
@@ -70,6 +87,168 @@ function loadProductionMaster() {
     (content) => masterSnapshotSchema.parse(JSON.parse(content)),
   );
   return productionMaster;
+}
+
+function evaluateWithOrderedOperationEvents(
+  scenario: ResolvedScenario,
+  master: ReturnType<typeof masterSnapshotSchema.parse>,
+  versions: VersionContext,
+) {
+  const prepared = prepareCalculationScenarioWithPolicy(
+    scenario,
+    master,
+    { kind: 'calculator' },
+    {},
+    true,
+  );
+  if (
+    prepared.status !== 'executable' ||
+    prepared.orderedScenario === null ||
+    prepared.canonicalInputs === null ||
+    prepared.executionObservation?.targetExecution === null ||
+    prepared.executionObservation === undefined
+  )
+    throw new TypeError(
+      `production_control_scenario_not_executable:${scenario.attacker.servantId}`,
+    );
+  const calculation = requireExecutableCalculation(
+    evaluatePreparedCalculationScenario(prepared, versions),
+  );
+  if (calculation.executionObservation !== prepared.executionObservation)
+    throw new TypeError(`production_control_observation_mismatch:${scenario.attacker.servantId}`);
+  return { calculation, observation: prepared.executionObservation };
+}
+
+function controlDamageInputBinding(
+  projection: EffectProjection,
+  calculation: ReturnType<typeof calculateScenario>,
+): ProductionUserControlInputBinding {
+  const input = calculation.input;
+  switch (projection.modifier) {
+    case 'attackBuff':
+    case 'defenseBuff':
+    case 'cardBuff':
+    case 'cardResistance':
+    case 'npDamageBuff':
+    case 'npResistance':
+    case 'eventDamageBuff':
+    case 'specialDamageBuff':
+    case 'powerMod':
+    case 'flatDamage':
+      return { kind: 'bound', address: projection.modifier, value: input[projection.modifier] };
+    case 'ignoreDefense':
+      return {
+        kind: 'bound',
+        address: 'damageFunction.ignoreDefense',
+        value:
+          input.damageFunction.status === 'resolved'
+            ? input.damageFunction.ignoreDefense
+            : input.damageFunction,
+      };
+    case 'ignoreDamageCut':
+      return { kind: 'bound', address: 'ignoreDamageCut', value: input.ignoreDamageCut };
+    case 'npSpecial':
+      return {
+        kind: 'bound',
+        address: 'npSpecialMultipliers',
+        value: input.npSpecialMultipliers,
+      };
+    case 'npVariantSelection':
+      return {
+        kind: 'bound',
+        address: 'npVariantSelection.damageInput',
+        value: {
+          variant: calculation.noblePhantasmVariant,
+          cardType: input.cardType,
+          npMultipliers: input.npMultipliers,
+          damageFunction: input.damageFunction,
+        },
+      };
+    case null:
+      return { kind: 'unbound', reason: 'projection_has_no_damage_input_binding' };
+  }
+}
+
+function userControlSideObservation(
+  projection: EffectProjection,
+  calculation: ReturnType<typeof calculateScenario>,
+  executionObservation: CalculationExecutionObservation,
+): ProductionUserControlSideObservation {
+  if (calculation.executionObservation !== executionObservation)
+    throw new TypeError('production_control_execution_observation_identity_mismatch');
+  const operationEvents: ProductionUserControlOperationEvent[] =
+    executionObservation.targetExecution?.selection === 'selected' ||
+    executionObservation.targetExecution?.selection === 'unresolved'
+      ? executionObservation.targetExecution.operationEvents
+          .filter((event) => event.operationId === projection.operationId)
+          .map((event) => ({
+            projectionKey: event.projectionKey,
+            operationId: event.operationId,
+            contributionId: event.contributionId,
+            kind: event.operationKind,
+            operationOutcome: event.operationOutcome,
+            projectionOutcome: event.projectionOutcome,
+            projectionValuePermille: event.projectionValuePermille,
+          }))
+      : [];
+  const projections: ProductionUserControlProjectionObservation[] = calculation.effects
+    .filter(
+      (candidate) =>
+        candidate.projectionKey === projection.projectionKey &&
+        candidate.operationId === projection.operationId &&
+        candidate.contributionId === projection.contributionId,
+    )
+    .map((candidate) => ({
+      projectionKey: candidate.projectionKey,
+      operationId: candidate.operationId,
+      contributionId: candidate.contributionId,
+      outcome: candidate.outcome,
+      valuePermille: candidate.valuePermille,
+    }));
+  const effectiveContributions: ProductionUserControlEffectiveContribution[] =
+    projection.contributionId === null
+      ? []
+      : calculation.effectiveContributions.contributions
+          .filter(
+            (contribution) =>
+              contribution.operationId === projection.operationId &&
+              contribution.contributionId === projection.contributionId,
+          )
+          .map((contribution) => ({
+            operationId: contribution.operationId,
+            contributionId: contribution.contributionId,
+            modifier: contribution.modifier,
+            resolvedValue: contribution.resolvedValue,
+            executionOutcome: contribution.executionOutcome,
+            effective: contribution.effective,
+          }));
+  return {
+    executionObservation,
+    operationEvents,
+    projections,
+    inputBinding: controlDamageInputBinding(projection, calculation),
+    effectiveContributions,
+    damageResult:
+      calculation.result.status === 'calculated'
+        ? { status: calculation.result.status, rows: calculation.result.rows }
+        : { status: calculation.result.status, rows: calculation.result },
+  };
+}
+
+function selectedProfileControlIdentity(
+  ownerId: string,
+  projection: EffectProjection,
+): ProductionUserControlIdentity {
+  return {
+    ownerId,
+    profileKey: 'default',
+    path: 'selectedProfile',
+    projectionKey: projection.projectionKey,
+    operationId: projection.operationId,
+    contributionId: projection.contributionId,
+    modifier: projection.modifier,
+    contributionControl: projection.contributionControl,
+  };
 }
 
 const expectedUnsupportedFamilies = {} as const;
@@ -142,489 +321,572 @@ function hasCanonicalInputConflict(input: {
 }
 
 describe('production master inventory ratchet', () => {
-  it('keeps known candidate values and bounds fail-closed servants', async () => {
-    const master = await loadProductionMaster();
-    const versions: VersionContext = {
-      schemaVersion: SCHEMA_VERSION,
-      engineVersion: ENGINE_VERSION,
-      appVersion: '0.1.0',
-      gameRegion: 'JP',
-      masterDataLocale: 'ja-JP',
-      masterDataVersion: master.version,
-    };
-    const calculations = master.servants.flatMap((servant) => {
-      try {
-        const scenario = createDefaultResolvedScenario(master, undefined, servant);
-        return [
-          {
-            servant,
-            scenario,
-            calculation: calculateScenario(scenario, master, versions),
-          },
-        ];
-      } catch {
-        return [];
-      }
-    });
-    const semanticInventory = {
-      parameters: {} as Record<string, number>,
-      scripts: {} as Record<string, number>,
-    };
-    const normalizationErrors: string[] = [];
-    const literalUnknownTraits: string[] = [];
-    const inspectEffect = (
-      servantId: string,
-      effect: (typeof master.servants)[number]['skills'][number]['effects'][number],
-      origin: 'attacker' | 'passive' | 'np',
-    ) => {
-      const semanticKeys = Object.values(effect.atlasEvidence.parameterSemantics).flat();
-      const rawKeys = [
-        ...new Set(
-          effect.atlasEvidence.parameterSets.flatMap((set) =>
-            set.flatMap((item) => Object.keys(item)),
-          ),
-        ),
-      ];
-      if (
-        semanticKeys.length !== new Set(semanticKeys).size ||
-        [...rawKeys].sort().join('|') !== [...semanticKeys].sort().join('|')
-      )
-        normalizationErrors.push(`${servantId}:${effect.occurrenceId}`);
-      if (
-        canonicalRequirementLeaves(effect.requirement.expression).some(
-          (requirement) => requirement.kind === 'trait' && requirement.trait === 'unknown',
-        )
-      )
-        literalUnknownTraits.push(`${servantId}:${effect.occurrenceId}`);
-      if (!canNormalizeDamageEffect(effect, origin)) return;
-      for (const key of effect.atlasEvidence.parameterSemantics.unresolved)
-        semanticInventory.parameters[key] = (semanticInventory.parameters[key] ?? 0) + 1;
-      for (const key of effect.atlasEvidence.unresolvedSemanticKeys)
-        semanticInventory.scripts[key] = (semanticInventory.scripts[key] ?? 0) + 1;
-    };
-    for (const servant of master.servants) {
-      for (const skill of servant.skills)
-        for (const effect of skill.effects) inspectEffect(servant.id, effect, 'attacker');
-      for (const passive of servant.passives)
-        for (const effect of passive.effects) inspectEffect(servant.id, effect, 'passive');
-      for (const noblePhantasm of getNoblePhantasmVariants(servant))
-        if (noblePhantasm.kind === 'attack')
-          for (const effect of noblePhantasm.effects) inspectEffect(servant.id, effect, 'np');
-    }
-    const unsupported = calculations.filter(
-      ({ calculation }) => calculation.result.status === 'unsupported',
-    );
-    const missingCandidateValues = calculations.flatMap(({ servant, calculation }) =>
-      calculation.effects.flatMap((effect) =>
-        effect.explanation.code === 'disabled' &&
-        effect.modifier !== null &&
-        effect.requiredQuantity === null &&
-        effect.modifier !== 'ignoreDefense' &&
-        effect.modifier !== 'ignoreDamageCut' &&
-        effect.modifier !== 'npVariantSelection' &&
-        effect.value === null
-          ? [`${servant.id}:${effect.source.skillId}:${effect.source.effectId}`]
-          : [],
-      ),
-    );
-    const archetype = calculations.find(
-      ({ servant }) => servant.name === 'アーキタイプ：アース',
-    )?.calculation;
-    const soujuurou = calculations.find(
-      ({ servant }) => servant.name === '静希草十郎',
-    )?.calculation;
-    const dante = calculations.find(
-      ({ servant }) => servant.name === 'ダンテ・アリギエーリ',
-    )?.calculation;
-    const summerWu = calculations.find(({ servant }) => servant.id === '505200')?.calculation;
-    const summerLilith = calculations.find(({ servant }) => servant.id === '405900')?.calculation;
-    const unsupportedFamilies = Object.fromEntries(
-      unsupported.map(({ servant, calculation }) => {
-        if (calculation.result.status !== 'unsupported')
-          throw new Error('unsupported audit lost its discriminant');
-        return [
-          servant.id,
-          [...new Set(calculation.result.missingEvidence.map(reasonFamily))].sort(),
-        ];
-      }),
-    );
-    const multiBranchOrEffects = calculations.flatMap(({ servant, calculation }) =>
-      calculation.effects.flatMap((effect) =>
-        effect.visibility === 'visible' && containsMultiBranchOr(effect.explanation.condition)
-          ? [{ servantId: servant.id, projectionKey: effect.projectionKey }]
-          : [],
-      ),
-    );
-    const conditionKinds = new Set<string>();
-    calculations.forEach(({ calculation }) =>
-      calculation.effects.forEach((effect) =>
-        collectConditionKinds(effect.explanation.condition, conditionKinds),
-      ),
-    );
-    const allProjections = calculations.flatMap(({ calculation }) => calculation.effects);
-    const inertUserProjections: string[] = [];
-    const selectedUnsupportedProjections: string[] = [];
-    const targetContextRequiredProjections: string[] = [];
-    const invalidAutomaticConditions: string[] = [];
-    const invalidExclusiveCalculations: string[] = [];
-    const invalidConflictInputs: string[] = [];
-    const conflictPairs = { effectEffect: 0, factFact: 0, factEffect: 0 };
-    let canonicalFactConditionConflicts = 0;
-    const canonicalConflictEffects = new Set<string>();
-    const canonicalConflictServants = new Set<string>();
-    let exclusivePairCount = 0;
-    let declaredExclusivePairCount = 0;
-    const skippedExclusivePairs: string[] = [];
-    for (const { servant, scenario, calculation } of calculations) {
-      const userControls = calculation.effectControls.filter(
-        (control) =>
-          control.projection.controllability === 'user' && control.projection.sourceActive,
-      );
-      const userEffects = userControls.map((control) => control.projection);
-      const selectedCalculations = new Map<string, ReturnType<typeof calculateScenario>>();
-      for (const effect of calculation.effects) {
-        if (
-          effect.visibility === 'visible' &&
-          effect.modifier !== null &&
-          effect.executionSupport === 'supported' &&
-          effect.explanation.condition !== null &&
-          effect.outcome !== 'applied' &&
-          effect.controllability === 'automatic'
-        )
-          invalidAutomaticConditions.push(`${servant.id}:${effect.projectionKey}`);
-      }
-      for (const effect of userEffects) {
-        const control = userControls.find((candidate) => candidate.key === effect.projectionKey)!;
-        const decisionScenario =
-          effect.requiredQuantity === 'attackerHpPermille' &&
-          effect.requiredQuantityOwner === 'attacker'
-            ? { ...scenario, attackerHpPermille: 500 }
-            : scenario;
-        const selectedScenario = applyEffectControlPresentationDecision(
-          decisionScenario,
-          control,
-          true,
-          calculation.activationRequirements,
-          userEffects,
-          calculation.effectInputs,
-        );
-        const active = calculateScenario(selectedScenario, master, versions);
-        selectedCalculations.set(effect.projectionKey, active);
-        const activeEffect = active.effects.find(
-          (candidate) => candidate.projectionKey === effect.projectionKey,
-        );
-        const constraintOnlyFailure =
-          active.result.status === 'unsupported' &&
-          active.result.missingEvidence.length > 0 &&
-          active.result.missingEvidence.every((reason) => reason.startsWith('constraintConflict:'));
-        const targetContextFailure =
-          active.result.status === 'unsupported' &&
-          active.result.missingEvidence.length > 0 &&
-          active.result.missingEvidence.every((reason) =>
-            reason.startsWith('invalidTargetContext:'),
-          );
-        if (targetContextFailure)
-          targetContextRequiredProjections.push(`${servant.id}:${effect.projectionKey}`);
-        if (
-          (active.result.status !== 'calculated' &&
-            !constraintOnlyFailure &&
-            !targetContextFailure) ||
-          (activeEffect?.outcome === 'unsupported' &&
-            !constraintOnlyFailure &&
-            !targetContextFailure)
-        )
-          selectedUnsupportedProjections.push(`${servant.id}:${effect.projectionKey}`);
-        const activeControl = active.effectControls.find(
-          (candidate) => candidate.key === effect.projectionKey,
-        );
-        const excludedScenario = applyEffectControlPresentationDecision(
-          selectedScenario,
-          activeControl ?? control,
-          false,
-          active.activationRequirements,
-          active.effects,
-          active.effectInputs,
-        );
-        const excluded = calculateScenario(excludedScenario, master, versions);
-        if (
-          !activeEffect ||
-          (JSON.stringify(active.input) === JSON.stringify(excluded.input) &&
-            JSON.stringify(active.result) === JSON.stringify(excluded.result))
-        )
-          inertUserProjections.push(`${servant.id}:${effect.projectionKey}`);
-      }
-
-      const exclusiveCandidates = userEffects;
-      const checkedPairs = new Set<string>();
-      for (let leftIndex = 0; leftIndex < exclusiveCandidates.length; leftIndex += 1) {
-        const left = exclusiveCandidates[leftIndex]!;
-        for (
-          let rightIndex = leftIndex + 1;
-          rightIndex < exclusiveCandidates.length;
-          rightIndex += 1
-        ) {
-          const right = exclusiveCandidates[rightIndex]!;
-          const pairKey = `${left.projectionKey}|${right.projectionKey}`;
-          if (checkedPairs.has(pairKey)) continue;
-          checkedPairs.add(pairKey);
-          const isDeclaredExclusive = left.selectionGroups.some((leftGroup) =>
-            right.selectionGroups.some(
-              (rightGroup) =>
-                rightGroup.groupKey === leftGroup.groupKey &&
-                rightGroup.candidateKey !== leftGroup.candidateKey,
-            ),
-          );
-          if (!isDeclaredExclusive) continue;
-          declaredExclusivePairCount += 1;
-          const leftSelected = assumeProjectedCondition(
-            applyEffectProjectionDecision(setEffectSourceEnabled(scenario, left, true), left, true),
-            left,
-          );
-          const rightSelected = assumeProjectedCondition(
-            applyEffectProjectionDecision(
-              setEffectSourceEnabled(scenario, right, true),
-              right,
-              true,
-            ),
-            right,
-          );
-          const rightDecisionKey =
-            right.decision.state === 'none' ? right.projectionKey : right.decision.decisionKey;
-          const leftOnly = selectedCalculations.get(left.projectionKey)!;
-          const rightOnly = selectedCalculations.get(right.projectionKey)!;
-          if (
-            leftOnly.effectWarnings.some((warning) => warning.startsWith('constraintConflict:')) ||
-            rightOnly.effectWarnings.some((warning) => warning.startsWith('constraintConflict:'))
-          ) {
-            skippedExclusivePairs.push(`${servant.id}:${pairKey}`);
-            continue;
-          }
-          const conflict = calculateScenario(
+  it(
+    'keeps known candidate values and bounds fail-closed servants',
+    {
+      timeout: 60_000,
+      ...productionAuditTestOptions(['production-inert-control-production.json']),
+    },
+    async ({ task }) => {
+      const master = await loadProductionMaster();
+      const versions: VersionContext = {
+        schemaVersion: SCHEMA_VERSION,
+        engineVersion: ENGINE_VERSION,
+        appVersion: '0.1.0',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+        masterDataVersion: master.version,
+      };
+      const calculations = master.servants.flatMap((servant) => {
+        try {
+          const scenario = createDefaultResolvedScenario(master, undefined, servant);
+          return [
             {
-              ...leftSelected,
-              effectDecisions: [
-                ...new Map(
-                  [
-                    ...leftSelected.effectDecisions,
-                    ...rightSelected.effectDecisions.filter(
-                      ({ decisionKey }) => decisionKey === rightDecisionKey,
-                    ),
-                  ].map((decision) => [decision.decisionKey, decision]),
-                ).values(),
-              ],
-              activationFacts: [
-                ...new Map(
-                  [...leftSelected.activationFacts, ...rightSelected.activationFacts].map(
-                    (fact) => [activationFactKey(fact), fact],
-                  ),
-                ).values(),
-              ].sort((leftFact, rightFact) =>
-                activationFactKey(leftFact).localeCompare(activationFactKey(rightFact)),
-              ),
-              worldFactAssertions: [
-                ...leftSelected.worldFactAssertions,
-                ...rightSelected.worldFactAssertions.filter(
-                  ({ decisionKey }) => decisionKey === rightDecisionKey,
-                ),
-              ],
+              servant,
+              scenario,
+              calculation: calculateScenario(scenario, master, versions),
             },
-            master,
-            versions,
-          );
-          const hasConflict = conflict.effectWarnings.some(
-            (warning) =>
-              warning.startsWith('constraintConflict:') ||
-              warning.startsWith('invalidActivationContext:'),
-          );
-          if (!hasConflict) continue;
-          exclusivePairCount += 1;
-          const leftKind = projectionDecisionKind(left);
-          const rightKind = projectionDecisionKind(right);
-          if (leftKind === 'effect' && rightKind === 'effect') conflictPairs.effectEffect += 1;
-          else if (leftKind === 'worldFact' && rightKind === 'worldFact')
-            conflictPairs.factFact += 1;
-          else conflictPairs.factEffect += 1;
-          const outcomes = conflict.effects
-            .filter(
-              (effect) =>
-                effect.projectionKey === left.projectionKey ||
-                effect.projectionKey === right.projectionKey,
-            )
-            .map((effect) => effect.outcome);
-          if (conflict.result.status !== 'unsupported' || outcomes.includes('applied'))
-            invalidExclusiveCalculations.push(`${servant.id}:${pairKey}`);
-          if (hasCanonicalInputConflict(conflict.input))
-            invalidConflictInputs.push(`${servant.id}:${pairKey}`);
+          ];
+        } catch {
+          return [];
         }
+      });
+      const semanticInventory = {
+        parameters: {} as Record<string, number>,
+        scripts: {} as Record<string, number>,
+      };
+      const normalizationErrors: string[] = [];
+      const literalUnknownTraits: string[] = [];
+      const inspectEffect = (
+        servantId: string,
+        effect: (typeof master.servants)[number]['skills'][number]['effects'][number],
+        origin: 'attacker' | 'passive' | 'np',
+      ) => {
+        const semanticKeys = Object.values(effect.atlasEvidence.parameterSemantics).flat();
+        const rawKeys = [
+          ...new Set(
+            effect.atlasEvidence.parameterSets.flatMap((set) =>
+              set.flatMap((item) => Object.keys(item)),
+            ),
+          ),
+        ];
+        if (
+          semanticKeys.length !== new Set(semanticKeys).size ||
+          [...rawKeys].sort().join('|') !== [...semanticKeys].sort().join('|')
+        )
+          normalizationErrors.push(`${servantId}:${effect.occurrenceId}`);
+        if (
+          canonicalRequirementLeaves(effect.requirement.expression).some(
+            (requirement) => requirement.kind === 'trait' && requirement.trait === 'unknown',
+          )
+        )
+          literalUnknownTraits.push(`${servantId}:${effect.occurrenceId}`);
+        if (!canNormalizeDamageEffect(effect, origin)) return;
+        for (const key of effect.atlasEvidence.parameterSemantics.unresolved)
+          semanticInventory.parameters[key] = (semanticInventory.parameters[key] ?? 0) + 1;
+        for (const key of effect.atlasEvidence.unresolvedSemanticKeys)
+          semanticInventory.scripts[key] = (semanticInventory.scripts[key] ?? 0) + 1;
+      };
+      for (const servant of master.servants) {
+        for (const skill of servant.skills)
+          for (const effect of skill.effects) inspectEffect(servant.id, effect, 'attacker');
+        for (const passive of servant.passives)
+          for (const effect of passive.effects) inspectEffect(servant.id, effect, 'passive');
+        for (const noblePhantasm of getNoblePhantasmVariants(servant))
+          if (noblePhantasm.kind === 'attack')
+            for (const effect of noblePhantasm.effects) inspectEffect(servant.id, effect, 'np');
       }
+      const unsupported = calculations.filter(
+        ({ calculation }) => calculation.result.status === 'unsupported',
+      );
+      const missingCandidateValues = calculations.flatMap(({ servant, calculation }) =>
+        calculation.effects.flatMap((effect) =>
+          effect.explanation.code === 'disabled' &&
+          effect.modifier !== null &&
+          effect.requiredQuantity === null &&
+          effect.modifier !== 'ignoreDefense' &&
+          effect.modifier !== 'ignoreDamageCut' &&
+          effect.modifier !== 'npVariantSelection' &&
+          effect.value === null
+            ? [`${servant.id}:${effect.source.skillId}:${effect.source.effectId}`]
+            : [],
+        ),
+      );
+      const archetype = calculations.find(
+        ({ servant }) => servant.name === 'アーキタイプ：アース',
+      )?.calculation;
+      const soujuurou = calculations.find(
+        ({ servant }) => servant.name === '静希草十郎',
+      )?.calculation;
+      const dante = calculations.find(
+        ({ servant }) => servant.name === 'ダンテ・アリギエーリ',
+      )?.calculation;
+      const summerWu = calculations.find(({ servant }) => servant.id === '505200')?.calculation;
+      const summerLilith = calculations.find(({ servant }) => servant.id === '405900')?.calculation;
+      const unsupportedFamilies = Object.fromEntries(
+        unsupported.map(({ servant, calculation }) => {
+          if (calculation.result.status !== 'unsupported')
+            throw new Error('unsupported audit lost its discriminant');
+          return [
+            servant.id,
+            [...new Set(calculation.result.missingEvidence.map(reasonFamily))].sort(),
+          ];
+        }),
+      );
+      const multiBranchOrEffects = calculations.flatMap(({ servant, calculation }) =>
+        calculation.effects.flatMap((effect) =>
+          effect.visibility === 'visible' && containsMultiBranchOr(effect.explanation.condition)
+            ? [{ servantId: servant.id, projectionKey: effect.projectionKey }]
+            : [],
+        ),
+      );
+      const conditionKinds = new Set<string>();
+      calculations.forEach(({ calculation }) =>
+        calculation.effects.forEach((effect) =>
+          collectConditionKinds(effect.explanation.condition, conditionKinds),
+        ),
+      );
+      const allProjections = calculations.flatMap(({ calculation }) => calculation.effects);
+      const expectedUserControlIdentities = calculations.flatMap(({ servant, calculation }) =>
+        calculation.effectControls
+          .filter(
+            (control) =>
+              control.projection.controllability === 'user' && control.projection.sourceActive,
+          )
+          .flatMap((control) =>
+            calculation.effects
+              .filter(
+                (projection) =>
+                  projection.projectionKey === control.key && projection.controllability === 'user',
+              )
+              .map((projection) => selectedProfileControlIdentity(servant.id, projection)),
+          ),
+      );
+      const userControlObservations: ProductionUserControlObservation[] = [];
+      const selectedUnsupportedProjections: string[] = [];
+      const targetContextRequiredProjections: string[] = [];
+      const invalidAutomaticConditions: string[] = [];
+      const invalidExclusiveCalculations: string[] = [];
+      const invalidConflictInputs: string[] = [];
+      const conflictPairs = { effectEffect: 0, factFact: 0, factEffect: 0 };
+      let canonicalFactConditionConflicts = 0;
+      const canonicalConflictEffects = new Set<string>();
+      const canonicalConflictServants = new Set<string>();
+      let exclusivePairCount = 0;
+      let declaredExclusivePairCount = 0;
+      const skippedExclusivePairs: string[] = [];
+      for (const { servant, scenario, calculation } of calculations) {
+        const userControls = calculation.effectControls.filter(
+          (control) =>
+            control.projection.controllability === 'user' && control.projection.sourceActive,
+        );
+        const userEffects = userControls.map((control) => control.projection);
+        const selectedCalculations = new Map<string, ReturnType<typeof calculateScenario>>();
+        for (const effect of calculation.effects) {
+          if (
+            effect.visibility === 'visible' &&
+            effect.modifier !== null &&
+            effect.executionSupport === 'supported' &&
+            effect.explanation.condition !== null &&
+            effect.outcome !== 'applied' &&
+            effect.controllability === 'automatic'
+          )
+            invalidAutomaticConditions.push(`${servant.id}:${effect.projectionKey}`);
+        }
+        for (const effect of userEffects) {
+          const control = userControls.find((candidate) => candidate.key === effect.projectionKey)!;
+          const decisionScenario =
+            effect.requiredQuantity === 'attackerHpPermille' &&
+            effect.requiredQuantityOwner === 'attacker'
+              ? { ...scenario, attackerHpPermille: 500 }
+              : scenario;
+          const selectedScenario = applyEffectControlPresentationDecision(
+            decisionScenario,
+            control,
+            true,
+            calculation.activationRequirements,
+            userEffects,
+            calculation.effectInputs,
+          );
+          const { calculation: active, observation: activeObservation } =
+            evaluateWithOrderedOperationEvents(selectedScenario, master, versions);
+          selectedCalculations.set(effect.projectionKey, active);
+          const activeEffect = active.effects.find(
+            (candidate) => candidate.projectionKey === effect.projectionKey,
+          );
+          const constraintOnlyFailure =
+            active.result.status === 'unsupported' &&
+            active.result.missingEvidence.length > 0 &&
+            active.result.missingEvidence.every((reason) =>
+              reason.startsWith('constraintConflict:'),
+            );
+          const targetContextFailure =
+            active.result.status === 'unsupported' &&
+            active.result.missingEvidence.length > 0 &&
+            active.result.missingEvidence.every((reason) =>
+              reason.startsWith('invalidTargetContext:'),
+            );
+          if (targetContextFailure)
+            targetContextRequiredProjections.push(`${servant.id}:${effect.projectionKey}`);
+          if (
+            (active.result.status !== 'calculated' &&
+              !constraintOnlyFailure &&
+              !targetContextFailure) ||
+            (activeEffect?.outcome === 'unsupported' &&
+              !constraintOnlyFailure &&
+              !targetContextFailure)
+          )
+            selectedUnsupportedProjections.push(`${servant.id}:${effect.projectionKey}`);
+          const activeControl = active.effectControls.find(
+            (candidate) => candidate.key === effect.projectionKey,
+          );
+          const excludedScenario = applyEffectControlPresentationDecision(
+            selectedScenario,
+            activeControl ?? control,
+            false,
+            active.activationRequirements,
+            active.effects,
+            active.effectInputs,
+          );
+          const { calculation: excluded, observation: excludedObservation } =
+            evaluateWithOrderedOperationEvents(excludedScenario, master, versions);
+          const controlMembers = calculation.effects.filter(
+            (candidate) =>
+              candidate.projectionKey === effect.projectionKey &&
+              candidate.controllability === 'user',
+          );
+          for (const member of controlMembers)
+            userControlObservations.push({
+              identity: selectedProfileControlIdentity(servant.id, member),
+              enabled: userControlSideObservation(member, active, activeObservation),
+              excluded: userControlSideObservation(member, excluded, excludedObservation),
+            });
+        }
 
-      for (const effect of userEffects.filter(
-        (candidate) => projectionDecisionKind(candidate) === 'effect',
-      )) {
-        const canonicalAtoms = positiveTraitAtoms(effect.explanation.condition).flatMap((atom) => {
-          const group = canonicalExclusiveGroup(atom.scope, atom.trait);
-          return group ? [{ ...atom, group }] : [];
-        });
-        const checkedFacts = new Set<string>();
-        for (const atom of canonicalAtoms)
-          for (const conflictingTrait of canonicalExclusiveTraits(atom.scope, atom.group)) {
-            if (conflictingTrait === atom.trait) continue;
-            const factKey = `${atom.scope}:${conflictingTrait}`;
-            if (checkedFacts.has(factKey)) continue;
-            checkedFacts.add(factKey);
-            const selected = selectedCalculations.get(effect.projectionKey)!.scenario;
-            if (selected.mode !== 'resolved') throw new Error('expected resolved scenario');
+        const exclusiveCandidates = userEffects;
+        const checkedPairs = new Set<string>();
+        for (let leftIndex = 0; leftIndex < exclusiveCandidates.length; leftIndex += 1) {
+          const left = exclusiveCandidates[leftIndex]!;
+          for (
+            let rightIndex = leftIndex + 1;
+            rightIndex < exclusiveCandidates.length;
+            rightIndex += 1
+          ) {
+            const right = exclusiveCandidates[rightIndex]!;
+            const pairKey = `${left.projectionKey}|${right.projectionKey}`;
+            if (checkedPairs.has(pairKey)) continue;
+            checkedPairs.add(pairKey);
+            const isDeclaredExclusive = left.selectionGroups.some((leftGroup) =>
+              right.selectionGroups.some(
+                (rightGroup) =>
+                  rightGroup.groupKey === leftGroup.groupKey &&
+                  rightGroup.candidateKey !== leftGroup.candidateKey,
+              ),
+            );
+            if (!isDeclaredExclusive) continue;
+            declaredExclusivePairCount += 1;
+            const leftSelected = assumeProjectedCondition(
+              applyEffectProjectionDecision(
+                setEffectSourceEnabled(scenario, left, true),
+                left,
+                true,
+              ),
+              left,
+            );
+            const rightSelected = assumeProjectedCondition(
+              applyEffectProjectionDecision(
+                setEffectSourceEnabled(scenario, right, true),
+                right,
+                true,
+              ),
+              right,
+            );
+            const rightDecisionKey =
+              right.decision.state === 'none' ? right.projectionKey : right.decision.decisionKey;
+            const leftOnly = selectedCalculations.get(left.projectionKey)!;
+            const rightOnly = selectedCalculations.get(right.projectionKey)!;
+            if (
+              leftOnly.effectWarnings.some((warning) =>
+                warning.startsWith('constraintConflict:'),
+              ) ||
+              rightOnly.effectWarnings.some((warning) => warning.startsWith('constraintConflict:'))
+            ) {
+              skippedExclusivePairs.push(`${servant.id}:${pairKey}`);
+              continue;
+            }
             const conflict = calculateScenario(
               {
-                ...selected,
+                ...leftSelected,
+                effectDecisions: [
+                  ...new Map(
+                    [
+                      ...leftSelected.effectDecisions,
+                      ...rightSelected.effectDecisions.filter(
+                        ({ decisionKey }) => decisionKey === rightDecisionKey,
+                      ),
+                    ].map((decision) => [decision.decisionKey, decision]),
+                  ).values(),
+                ],
+                activationFacts: [
+                  ...new Map(
+                    [...leftSelected.activationFacts, ...rightSelected.activationFacts].map(
+                      (fact) => [activationFactKey(fact), fact],
+                    ),
+                  ).values(),
+                ].sort((leftFact, rightFact) =>
+                  activationFactKey(leftFact).localeCompare(activationFactKey(rightFact)),
+                ),
                 worldFactAssertions: [
-                  {
-                    decisionKey: `audit:canonical:${effect.projectionKey}:${factKey}`,
-                    fact: {
-                      kind: 'trait',
-                      scope: atom.scope,
-                      trait: conflictingTrait,
-                      present: true,
-                    },
-                  },
+                  ...leftSelected.worldFactAssertions,
+                  ...rightSelected.worldFactAssertions.filter(
+                    ({ decisionKey }) => decisionKey === rightDecisionKey,
+                  ),
                 ],
               },
               master,
               versions,
             );
-            if (
-              !conflict.effectWarnings.some((warning) => warning.startsWith('constraintConflict:'))
-            )
-              continue;
-            canonicalFactConditionConflicts += 1;
-            canonicalConflictEffects.add(`${servant.id}:${effect.projectionKey}`);
-            canonicalConflictServants.add(servant.id);
-            const outcome = conflict.effects.find(
-              (candidate) => candidate.projectionKey === effect.projectionKey,
-            )?.outcome;
-            if (conflict.result.status !== 'unsupported' || outcome === 'applied')
-              invalidExclusiveCalculations.push(`${servant.id}:${effect.projectionKey}:${factKey}`);
+            const hasConflict = conflict.effectWarnings.some(
+              (warning) =>
+                warning.startsWith('constraintConflict:') ||
+                warning.startsWith('invalidActivationContext:'),
+            );
+            if (!hasConflict) continue;
+            exclusivePairCount += 1;
+            const leftKind = projectionDecisionKind(left);
+            const rightKind = projectionDecisionKind(right);
+            if (leftKind === 'effect' && rightKind === 'effect') conflictPairs.effectEffect += 1;
+            else if (leftKind === 'worldFact' && rightKind === 'worldFact')
+              conflictPairs.factFact += 1;
+            else conflictPairs.factEffect += 1;
+            const outcomes = conflict.effects
+              .filter(
+                (effect) =>
+                  effect.projectionKey === left.projectionKey ||
+                  effect.projectionKey === right.projectionKey,
+              )
+              .map((effect) => effect.outcome);
+            if (conflict.result.status !== 'unsupported' || outcomes.includes('applied'))
+              invalidExclusiveCalculations.push(`${servant.id}:${pairKey}`);
             if (hasCanonicalInputConflict(conflict.input))
-              invalidConflictInputs.push(`${servant.id}:${effect.projectionKey}:${factKey}`);
+              invalidConflictInputs.push(`${servant.id}:${pairKey}`);
           }
-      }
-    }
+        }
 
-    // E2E-A032-DANTE-INVENTORY E2E-A032-SUMMER-WU-INVENTORY
-    expect(master.servants).toHaveLength(469);
-    expect(calculations).toHaveLength(422);
-    expect(normalizationErrors).toEqual([]);
-    expect(literalUnknownTraits).toEqual([]);
-    expect({
-      parameters: Object.fromEntries(Object.entries(semanticInventory.parameters).sort()),
-      scripts: Object.fromEntries(Object.entries(semanticInventory.scripts).sort()),
-    }).toEqual(expectedUnresolvedDamageSemantics);
-    expect({
-      user: allProjections.filter((effect) => effect.controllability === 'user').length,
-      automaticVisible: allProjections.filter(
-        (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
-      ).length,
-      hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({
-      automaticVisible: 0,
-      hidden: 5960,
-      user: 1590,
-    });
-    expect(
-      allProjections.filter(
-        (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
-      ),
-    ).toEqual([]);
-    expect({
-      servants: new Set(multiBranchOrEffects.map((effect) => effect.servantId)).size,
-      effects: multiBranchOrEffects.length,
-    }).toEqual({ servants: 16, effects: 20 });
-    expect([...conditionKinds].sort()).toEqual([
-      'all',
-      'always',
-      'any',
-      'card',
-      'choice',
-      'inputQuantity',
-      'noblePhantasmVariant',
-      'not',
-      'operationTrigger',
-      'quantity',
-      'sourceQuantity',
-      'targetPredicate',
-      'trait',
-      'unsupported',
-    ]);
-    expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
-    expect(missingCandidateValues).toEqual([]);
-    expect(invalidAutomaticConditions).toEqual([]);
-    expect(inertUserProjections).toEqual([]);
-    expect(selectedUnsupportedProjections).toEqual([]);
-    expect(targetContextRequiredProjections).toEqual([]);
-    expect(
-      Object.fromEntries(
-        [...new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0]))]
-          .sort()
-          .map((servantId) => [
-            servantId,
-            selectedUnsupportedProjections.filter((item) => item.startsWith(`${servantId}:`))
-              .length,
-          ]),
-      ),
-    ).toEqual({});
-    expect(declaredExclusivePairCount).toBe(4);
-    expect(skippedExclusivePairs).toEqual([
-      '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
-      '2301100:attacker:attacker:2301100:2536550:22888:0|attacker:attacker:2301100:2536550:22887:0',
-      '2301100:attacker:attacker:2301100:2536550:22887:0|passive:passive:2301100:2534650:22874:0',
-    ]);
-    expect(exclusivePairCount).toBe(1);
-    expect(conflictPairs).toEqual({ effectEffect: 1, factFact: 0, factEffect: 0 });
-    expect({
-      combinations: canonicalFactConditionConflicts,
-      effects: canonicalConflictEffects.size,
-      servants: canonicalConflictServants.size,
-    }).toEqual({ combinations: 10, effects: 7, servants: 3 });
-    expect(invalidExclusiveCalculations).toEqual([]);
-    expect(invalidConflictInputs).toEqual([]);
-    expect(archetype?.result.status).toBe('calculated');
-    expect(archetype?.input.fieldTraits).toContain('milleniumCastle');
-    expect(
-      archetype?.effects.find((effect) => effect.label === 'バスターアップ：千年城'),
-    ).toMatchObject({ value: 0.3, outcome: 'applied' });
-    expect(
-      archetype?.effects.find(
-        (effect) => effect.label === '防御力ダウン' && effect.visibility === 'visible',
-      ),
-    ).toMatchObject({
-      value: 0.2,
-      outcome: 'applied',
-      explanation: { code: 'applied' },
-    });
-    expect(soujuurou?.result.status).toBe('calculated');
-    expect(soujuurou?.input.ignoreDamageCut).toBe(true);
-    expect(
-      soujuurou?.effects.find((effect) => effect.label === 'ダメージカット貫通'),
-    ).toMatchObject({
-      modifier: 'ignoreDamageCut',
-      outcome: 'applied',
-    });
-    expect(dante?.result.status).toBe('calculated');
-    for (const label of ['威力アップ・対 天の力', '威力アップ・対 地の力', '宝具威力アップ'])
-      expect(dante?.effects.some((effect) => effect.label === label)).toBe(true);
-    expect(summerWu?.result.status).toBe('calculated');
-    expect(summerWu?.input.targetStateTraits).toContain('undead');
-    expect(summerWu?.effects.find((effect) => effect.label === '死霊特性付与')).toMatchObject({
-      visibility: 'hidden',
-      outcome: 'applied',
-    });
-    expect(summerLilith?.result.status).toBe('calculated');
-    expect(summerLilith?.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
-    expect(summerLilith?.effects.find((effect) => effect.modifier === 'npSpecial')).toMatchObject({
-      outcome: 'notApplied',
-      explanation: { code: 'unresolved' },
-    });
-  }, 60_000);
+        for (const effect of userEffects.filter(
+          (candidate) => projectionDecisionKind(candidate) === 'effect',
+        )) {
+          const canonicalAtoms = positiveTraitAtoms(effect.explanation.condition).flatMap(
+            (atom) => {
+              const group = canonicalExclusiveGroup(atom.scope, atom.trait);
+              return group ? [{ ...atom, group }] : [];
+            },
+          );
+          const checkedFacts = new Set<string>();
+          for (const atom of canonicalAtoms)
+            for (const conflictingTrait of canonicalExclusiveTraits(atom.scope, atom.group)) {
+              if (conflictingTrait === atom.trait) continue;
+              const factKey = `${atom.scope}:${conflictingTrait}`;
+              if (checkedFacts.has(factKey)) continue;
+              checkedFacts.add(factKey);
+              const selected = selectedCalculations.get(effect.projectionKey)!.scenario;
+              if (selected.mode !== 'resolved') throw new Error('expected resolved scenario');
+              const conflict = calculateScenario(
+                {
+                  ...selected,
+                  worldFactAssertions: [
+                    {
+                      decisionKey: `audit:canonical:${effect.projectionKey}:${factKey}`,
+                      fact: {
+                        kind: 'trait',
+                        scope: atom.scope,
+                        trait: conflictingTrait,
+                        present: true,
+                      },
+                    },
+                  ],
+                },
+                master,
+                versions,
+              );
+              if (
+                !conflict.effectWarnings.some((warning) =>
+                  warning.startsWith('constraintConflict:'),
+                )
+              )
+                continue;
+              canonicalFactConditionConflicts += 1;
+              canonicalConflictEffects.add(`${servant.id}:${effect.projectionKey}`);
+              canonicalConflictServants.add(servant.id);
+              const outcome = conflict.effects.find(
+                (candidate) => candidate.projectionKey === effect.projectionKey,
+              )?.outcome;
+              if (conflict.result.status !== 'unsupported' || outcome === 'applied')
+                invalidExclusiveCalculations.push(
+                  `${servant.id}:${effect.projectionKey}:${factKey}`,
+                );
+              if (hasCanonicalInputConflict(conflict.input))
+                invalidConflictInputs.push(`${servant.id}:${effect.projectionKey}:${factKey}`);
+            }
+        }
+      }
+
+      const userControlGate = auditProductionUserControlObservations({
+        expectedProjectionCount: expectedUserControlIdentities.length,
+        expectedIdentities: expectedUserControlIdentities,
+        observations: userControlObservations,
+      });
+      await writeProductionAuditArtifact(task.meta, 'production-inert-control-production.json', {
+        schemaVersion: 1,
+        boundary: 'calculation-application-production-inert-controls',
+        source: 'productionMasterControlAudit.test.ts',
+        canonicalIdentity: userControlGate.canonicalIdentity,
+        expectedIdentities: expectedUserControlIdentities,
+        gate: userControlGate,
+        observations: userControlObservations,
+      });
+      if (userControlGate.status !== 'passed')
+        throw new Error(
+          `production_user_control_ratchet_failed:${JSON.stringify({
+            canonicalIdentity: userControlGate.canonicalIdentity,
+            firstDifference: userControlGate.firstDifference,
+            failureCount: userControlGate.failures.length,
+          })}`,
+        );
+      console.info(
+        `production_user_control_ratchet:${JSON.stringify({
+          status: userControlGate.status,
+          canonicalIdentity: userControlGate.canonicalIdentity,
+          summary: userControlGate.summary,
+        })}`,
+      );
+
+      // E2E-A032-DANTE-INVENTORY E2E-A032-SUMMER-WU-INVENTORY
+      expect(master.servants).toHaveLength(469);
+      expect(calculations).toHaveLength(422);
+      expect(normalizationErrors).toEqual([]);
+      expect(literalUnknownTraits).toEqual([]);
+      expect({
+        parameters: Object.fromEntries(Object.entries(semanticInventory.parameters).sort()),
+        scripts: Object.fromEntries(Object.entries(semanticInventory.scripts).sort()),
+      }).toEqual(expectedUnresolvedDamageSemantics);
+      expect({
+        user: allProjections.filter((effect) => effect.controllability === 'user').length,
+        automaticVisible: allProjections.filter(
+          (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
+        ).length,
+        hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
+      }).toEqual({
+        automaticVisible: 0,
+        hidden: 5960,
+        user: 1590,
+      });
+      expect(
+        allProjections.filter(
+          (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
+        ),
+      ).toEqual([]);
+      expect({
+        servants: new Set(multiBranchOrEffects.map((effect) => effect.servantId)).size,
+        effects: multiBranchOrEffects.length,
+      }).toEqual({ servants: 16, effects: 20 });
+      expect([...conditionKinds].sort()).toEqual([
+        'all',
+        'always',
+        'any',
+        'card',
+        'choice',
+        'inputQuantity',
+        'noblePhantasmVariant',
+        'not',
+        'operationTrigger',
+        'quantity',
+        'sourceQuantity',
+        'targetPredicate',
+        'trait',
+        'unsupported',
+      ]);
+      expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
+      expect(missingCandidateValues).toEqual([]);
+      expect(invalidAutomaticConditions).toEqual([]);
+      expect(userControlGate).toMatchObject({
+        status: 'passed',
+        summary: {
+          projectionCount: expectedUserControlIdentities.length,
+          selectedProfileCount: expectedUserControlIdentities.length,
+          withoutAreaAlternateCount: 0,
+        },
+        failures: [],
+      });
+      expect(selectedUnsupportedProjections).toEqual([]);
+      expect(targetContextRequiredProjections).toEqual([]);
+      expect(
+        Object.fromEntries(
+          [...new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0]))]
+            .sort()
+            .map((servantId) => [
+              servantId,
+              selectedUnsupportedProjections.filter((item) => item.startsWith(`${servantId}:`))
+                .length,
+            ]),
+        ),
+      ).toEqual({});
+      expect(declaredExclusivePairCount).toBe(4);
+      expect(skippedExclusivePairs).toEqual([
+        '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
+        '2301100:attacker:attacker:2301100:2536550:22888:0|attacker:attacker:2301100:2536550:22887:0',
+        '2301100:attacker:attacker:2301100:2536550:22887:0|passive:passive:2301100:2534650:22874:0',
+      ]);
+      expect(exclusivePairCount).toBe(1);
+      expect(conflictPairs).toEqual({ effectEffect: 1, factFact: 0, factEffect: 0 });
+      expect({
+        combinations: canonicalFactConditionConflicts,
+        effects: canonicalConflictEffects.size,
+        servants: canonicalConflictServants.size,
+      }).toEqual({ combinations: 10, effects: 7, servants: 3 });
+      expect(invalidExclusiveCalculations).toEqual([]);
+      expect(invalidConflictInputs).toEqual([]);
+      expect(archetype?.result.status).toBe('calculated');
+      expect(archetype?.input.fieldTraits).toContain('milleniumCastle');
+      expect(
+        archetype?.effects.find((effect) => effect.label === 'バスターアップ：千年城'),
+      ).toMatchObject({ value: 0.3, outcome: 'applied' });
+      expect(
+        archetype?.effects.find(
+          (effect) => effect.label === '防御力ダウン' && effect.visibility === 'visible',
+        ),
+      ).toMatchObject({
+        value: 0.2,
+        outcome: 'applied',
+        explanation: { code: 'applied' },
+      });
+      expect(soujuurou?.result.status).toBe('calculated');
+      expect(soujuurou?.input.ignoreDamageCut).toBe(true);
+      expect(
+        soujuurou?.effects.find((effect) => effect.label === 'ダメージカット貫通'),
+      ).toMatchObject({
+        modifier: 'ignoreDamageCut',
+        outcome: 'applied',
+      });
+      expect(dante?.result.status).toBe('calculated');
+      for (const label of ['威力アップ・対 天の力', '威力アップ・対 地の力', '宝具威力アップ'])
+        expect(dante?.effects.some((effect) => effect.label === label)).toBe(true);
+      expect(summerWu?.result.status).toBe('calculated');
+      expect(summerWu?.input.targetStateTraits).toContain('undead');
+      expect(summerWu?.effects.find((effect) => effect.label === '死霊特性付与')).toMatchObject({
+        visibility: 'hidden',
+        outcome: 'applied',
+      });
+      expect(summerLilith?.result.status).toBe('calculated');
+      expect(summerLilith?.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+      expect(summerLilith?.effects.find((effect) => effect.modifier === 'npSpecial')).toMatchObject(
+        {
+          outcome: 'notApplied',
+          explanation: { code: 'unresolved' },
+        },
+      );
+    },
+  );
 
   it('calculates or rejects every support projection through the shared decision path', async () => {
     const master = await loadProductionMaster();

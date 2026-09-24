@@ -444,6 +444,7 @@ export type ProductionUserControlGate =
 
 export interface ProductionUserControlGateInput {
   expectedProjectionCount: number;
+  expectedIdentities: readonly ProductionUserControlIdentity[];
   observations: readonly ProductionUserControlObservation[];
 }
 
@@ -648,6 +649,21 @@ export function auditProductionUserControlObservations(
   };
   const failures: ProductionUserControlFailure[] = [];
   const identityCounts = new Map<string, number>();
+
+  const expectedIdentities = input.expectedIdentities.map((identity) =>
+    userControlAuditValue(identity),
+  );
+  const actualIdentities = input.observations.map(({ identity }) =>
+    userControlAuditValue(identity),
+  );
+  const sortedIdentities = (identities: CanonicalAuditValue[]) =>
+    identities.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+  const identitySetFailure = productionUserControlFailure(
+    'userControlInventoryCoverageMismatch',
+    canonicalIdentity,
+    { identities: sortedIdentities(expectedIdentities) },
+    { identities: sortedIdentities(actualIdentities) },
+  );
 
   const inventoryCountFailure = productionUserControlFailure(
     'userControlInventoryCoverageMismatch',
@@ -1149,6 +1165,7 @@ export function auditProductionUserControlObservations(
     }
   }
 
+  if (identitySetFailure) failures.push(identitySetFailure);
   const expected = userControlAuditValue({ projectionCount: input.expectedProjectionCount });
   const actual = userControlAuditValue({ projectionCount: input.observations.length });
   const matrixDifference = firstCanonicalAuditDifference(

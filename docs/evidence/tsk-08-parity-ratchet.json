@@ -3361,7 +3361,67 @@
         "TSK-09.1": "blocked",
         "TSK-09": "blocked"
       }
+    },
+    {
+      "name": "S4 production observation and failure artifact connection",
+      "date": "2026-09-25",
+      "status": "fresh selected-profile population, actual ordered-operation observations and failure artifact/receipt verified in an isolated candidate; production gate failed on 47 observed differences; semantic repair stopped",
+      "authorization": "User approved the code-based producer/save plan. B1-B3 product fixes, S4 overall convergence, full production/audit/quality and push excluded.",
+      "baselineHead": "b473fe8324af0285ebd7d0e63eedd183b6a69711",
+      "initialState": {
+        "trackedDirtyPaths": ["packages/calculation-application/src/productionMasterControlAudit.test.ts"],
+        "indexEmpty": true,
+        "dirtyDiffSha256": "b528362377c1f086eeef4dad1eadda3b0088aa2059ff56ef1826d53e9b5fa96e",
+        "committedGateEvidenceSha256": "821a65a30047e4bb731278c9434e1f6c0b9f2a457702d3d3c5c841ff26d3369e",
+        "ignoredNextEnvPreserved": true
+      },
+      "flow": {
+        "population": "productionMasterControlAudit.test.ts derives 1590 selected-profile identities independently from current calculation.effectControls and calculation.effects before creating observations. The 1590 result is fresh; the historical 1590 inventory assertion remains separate. The gate compares full typed identity values, so equal-count substitution fails.",
+        "producer": "prepareCalculationScenarioWithPolicy captures executeOrderedScenarioWithAuditObservation. evaluateWithOrderedOperationEvents and userControlSideObservation map actual ordered events, projection, effective contribution, damage input and result from enabled/excluded calculations.",
+        "save": "The producer writes production-inert-control-production.json before the failure assertion using productionAuditTestOptions and writeProductionAuditArtifact. Vitest JSON metadata contains the writer receipt; the same generic runner verifies bytes and SHA-256. The throw contains only first difference and failure count; full diagnostics remain in the artifact."
+      },
+      "verification": {
+        "candidate": "Detached HEAD clone with only the three approved source paths applied; package workspace links resolve within candidate, third-party node_modules shared. Candidate tracked diff SHA-256 e502b002030564fc774d1b8d429fa62b2cf0cbdb89e06578cbe74c09941d9a8f.",
+        "typecheckLintFormat": "candidate tsc -b, target ESLint and Prettier passed",
+        "fixture": "generic runner unit 5/5 passed, skip/todo 0",
+        "productionFocused": "generic runner audit-project single producer test failed as expected at S4 gate; 2 other tests filtered, artifact verification errors 0",
+        "artifact": ".test-results/tsk-08-s4-producer-20260925/producer-run/production-inert-control-production.json",
+        "artifactBytes": 55824551,
+        "artifactSha256": "a780c6dabfbb1e2262b83bbe1397b210b2befb0c677b43b62997394ad3afc08f",
+        "machineEvidence": ".test-results/tsk-08-s4-producer-20260925/producer-evidence.json",
+        "machineEvidenceSha256": "98d10745d4c26818f5a5e6ed81bcb62793f605c12babbc27ede5d1159223cfa4",
+        "pnpm": "external SQLite store failure before script; same generic runner retried with installed Vitest"
+      },
+      "actualGate": {
+        "status": "failed",
+        "expectedIdentities": 1590,
+        "observations": 1590,
+        "identityCoverageFailures": 0,
+        "failureCount": 47,
+        "reasonCounts": {
+          "userControlObservationInconsistent": 19,
+          "userControlDamageOutcomeNotCalculated": 14,
+          "userControlNpSpecialInputNotChanged": 12,
+          "userControlDidNotReachOperationOrDamage": 2
+        },
+        "firstDifference": {
+          "canonicalIdentity": "production:control-inventory:[\"101700\",\"default\",\"selectedProfile\",\"np:[\\\"101700\\\",0,\\\"101703\\\"]:5336:class:alterEgo\",\"np:[\\\"101700\\\",0,\\\"101703\\\"]:5336:damage\",\"np:[\\\"101700\\\",0,\\\"101703\\\"]:5336:damage:npSpecial\"]:excluded:effective-contribution-state",
+          "path": "effective",
+          "expected": false,
+          "actual": true
+        },
+        "additionalActualExamples": [
+          "106600 selected npSpecial damage status unsupported versus expected calculated",
+          "200300 npSpecialMultipliers enabled/excluded unchanged versus expected changed",
+          "1000100 selected attackBuff operation/damage not reached"
+        ]
+      },
+      "finding": "The actual production producer/save connection is complete, but the gate's treatment of shared NP contributions and related control paths encounters a semantic family beyond the approved connection plan. Do not change product semantics, gate classification or ownership under this unit. The 47 failures are Blocking for S4; the receipt is evidence of persistence only, not gate success.",
+      "preserved": "B1 stateTrait 10 controls, B2 2501400 magicBullet and B3 403400 targetRarity remain Blocking. TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digests remain unchanged; candidate status/eligibility, production output, damage semantics, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "unmet": "S4 gate pass and semantic classification of 47 observed failures; production without-area alternate, stale-mutation consumer, other ratchets, B1-B3 product repairs and TSK-08 closure",
+      "nextOperation": "After user confirmation of a revised bounded plan, inspect the shared NP contribution/control semantics using the saved actual observations and governing rules; classify independent cases without weakening the gate or changing product semantics by inference.",
+      "taskStatus": {"TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked"}
     }
   ],
-  "currentBoundedUnit": "S4 typed observation gate and independent semantic fixture verified; production collection and save connection uncommitted"
+  "currentBoundedUnit": "S4 production observation and failure artifact connection verified; actual gate remains Blocking"
 }

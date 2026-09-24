@@ -749,6 +749,7 @@ it(
     };
     const passing = auditProductionUserControlObservations({
       expectedProjectionCount: 1,
+      expectedIdentities: [identity],
       observations: [observation],
     });
     const inertNpSpecialObservation: ProductionUserControlObservation = {
@@ -765,6 +766,7 @@ it(
     };
     const inertNpSpecial = auditProductionUserControlObservations({
       expectedProjectionCount: 1,
+      expectedIdentities: [identity],
       observations: [inertNpSpecialObservation],
     });
 
@@ -872,6 +874,7 @@ it(
     };
     const inertOperation = auditProductionUserControlObservations({
       expectedProjectionCount: 1,
+      expectedIdentities: [modifierIdentity],
       observations: [inertModifier],
     });
     const unresolvedSelectionObservation: ProductionUserControlObservation = {
@@ -890,11 +893,13 @@ it(
     };
     const unresolvedSelection = auditProductionUserControlObservations({
       expectedProjectionCount: 1,
+      expectedIdentities: [identity],
       observations: [unresolvedSelectionObservation],
     });
     const auditOne = (candidate: ProductionUserControlObservation) =>
       auditProductionUserControlObservations({
         expectedProjectionCount: 1,
+        expectedIdentities: [candidate.identity],
         observations: [candidate],
       });
     const nonAppliedEvent: ProductionUserControlObservation['excluded']['operationEvents'][number] =
@@ -1141,11 +1146,18 @@ it(
     const failureCases = {
       inventoryCount: auditProductionUserControlObservations({
         expectedProjectionCount: 2,
+        expectedIdentities: [identity, modifierIdentity],
         observations: [observation],
       }),
       duplicateIdentity: auditProductionUserControlObservations({
         expectedProjectionCount: 2,
+        expectedIdentities: [identity, modifierIdentity],
         observations: [observation, observation],
+      }),
+      sameCountDifferentIdentity: auditProductionUserControlObservations({
+        expectedProjectionCount: 1,
+        expectedIdentities: [identity],
+        observations: [normalNonApplication],
       }),
       missingProjection: auditOne(missingProjection),
       missingEvent: auditOne(missingEvent),
@@ -1241,6 +1253,7 @@ it(
     const reasons = {
       inventoryCount: 'userControlInventoryCoverageMismatch',
       duplicateIdentity: 'userControlDuplicateIdentity',
+      sameCountDifferentIdentity: 'userControlInventoryCoverageMismatch',
       missingProjection: 'userControlProjectionIdentityMismatch',
       missingEvent: 'userControlOperationEventMissing',
       missingContribution: 'userControlEffectiveContributionMissing',
@@ -1281,6 +1294,9 @@ it(
     );
     expect(failureCases.undefinedIdentity.failures[0]?.firstDifference.path).toBe(
       'contributionIdType',
+    );
+    expect(failureCases.sameCountDifferentIdentity.failures[0]?.firstDifference.path).toContain(
+      'identities',
     );
   },
 );
