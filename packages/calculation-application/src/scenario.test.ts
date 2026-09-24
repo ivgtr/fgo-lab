@@ -2191,6 +2191,38 @@ describe('scenario calculation facade', () => {
         expect.objectContaining({ component: 'npSpecial', effective: true }),
       ]),
     );
+
+    const withoutStacksMaster = parseTestMaster({
+      ...stackedMaster,
+      servants: stackedMaster.servants.map((servant) => ({
+        ...servant,
+        noblePhantasmVariantGroups: servant.noblePhantasmVariantGroups.map((group) => ({
+          ...group,
+          variants: group.variants.map((np) => ({ ...np, effects: [] })),
+        })),
+      })),
+    });
+    const withoutStacks = calculateScenario(
+      createDefaultResolvedScenario(withoutStacksMaster, undefined),
+      withoutStacksMaster,
+      { ...versions, masterDataVersion: withoutStacksMaster.version },
+    );
+    expect(withoutStacks.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(
+      withoutStacks.effects
+        .filter((effect) => effect.contributionControl === 'worldAssumption')
+        .map((effect) => effect.outcome),
+    ).toEqual(['notApplied', 'notApplied']);
+    expect(withoutStacks.effectiveContributions.contributions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ component: 'npBase', effective: true }),
+        expect.objectContaining({
+          component: 'npSpecial',
+          executionOutcome: 'notApplied',
+          effective: false,
+        }),
+      ]),
+    );
   });
 
   it('applies NP-before target state and explicit removal without leaking NP-after state', () => {

@@ -1,6 +1,7 @@
 import type {
   BattleOperation,
   ConditionExpression,
+  EffectProjection,
   OperationOutcome,
   OperationResult,
 } from './contracts';
@@ -14,6 +15,7 @@ import { classifyContributionCondition, traitConditionScopeSemantics } from './c
 import { markerTraitRead } from './buffInstances';
 import { contributionId } from './contributionIdentity';
 import type { ConditionEvaluationState } from './condition';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
 
 const included = (): ContributionPolicyDecision => ({ kind: 'included' });
 const excluded = (
@@ -150,6 +152,8 @@ function contribution(
 
 export function effectiveContributionsForOperation(
   result: Pick<OperationResult, 'operation' | 'outcome' | 'projection' | 'state'>,
+  damageInput: DamageResolutionInput,
+  finalProjections: readonly EffectProjection[],
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): EffectiveContribution[] {
   const { operation, outcome, projection, state } = result;
@@ -193,6 +197,24 @@ export function effectiveContributionsForOperation(
       ),
     ];
   if (operation.kind !== 'executeNpDamage') return [];
+  // A trait-count NP can expose several world-assumption projections for one
+  // damage operation. Its operation projection reports the base NP execution;
+  // the resolved special input reports whether that shared contribution reached damage.
+  const worldAssumptionProjections = finalProjections.filter(
+    (item) =>
+      item.operationId === operation.operationId &&
+      item.contributionId === contributionId(operation.operationId, 'npSpecial') &&
+      item.contributionControl === 'worldAssumption',
+  );
+  const specialOutcome =
+    operation.damage.kind === 'traitCount' && worldAssumptionProjections.length > 0
+      ? worldAssumptionProjections.some((item) => item.outcome === 'unsupported')
+        ? 'unsupported'
+        : worldAssumptionProjections.some((item) => item.outcome === 'applied') &&
+            damageInput.npSpecialMultipliers.some((multiplier) => multiplier !== 1)
+          ? 'applied'
+          : 'notApplied'
+      : projection.outcome;
   return [
     contribution(operation, 'npBase', null, null, operation.condition, outcome, policy, state),
     ...(operation.specialAttackDependency.kind === 'always'
@@ -204,7 +226,7 @@ export function effectiveContributionsForOperation(
             'npSpecial',
             projection.valuePermille,
             operation.specialAttackDependency,
-            projection.outcome,
+            specialOutcome,
             policy,
             state,
           ),
@@ -214,10 +236,12 @@ export function effectiveContributionsForOperation(
 
 export function createEffectiveContributionSet(
   operations: readonly Pick<OperationResult, 'operation' | 'outcome' | 'projection' | 'state'>[],
+  damageInput: DamageResolutionInput,
+  finalProjections: readonly EffectProjection[],
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): EffectiveContributionSet {
   const contributions = operations.flatMap((result) =>
-    effectiveContributionsForOperation(result, policy),
+    effectiveContributionsForOperation(result, damageInput, finalProjections, policy),
   );
   return {
     contributions,

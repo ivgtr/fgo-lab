@@ -95,8 +95,9 @@ export function assembleCandidateResult({
   if (relevantMissingDefinitions.length > 0) precision = 'inputRequired';
   else if (issues.length > 0) precision = 'unsupported';
   else precision = 'exact';
+  const damageInput = foldDamageInput(input, state);
   return {
-    input: foldDamageInput(input, state),
+    input: damageInput,
     state,
     operations: [...results],
     projections,
@@ -115,6 +116,11 @@ export function assembleCandidateResult({
         .filter((value, index, all) => all.indexOf(value) === index),
     })),
     inputDefinitions: [...inputDefinitions],
-    effectiveContributions: createEffectiveContributionSet(results, contributionPolicy),
+    effectiveContributions: createEffectiveContributionSet(
+      results,
+      damageInput,
+      projections,
+      contributionPolicy,
+    ),
   };
 }
