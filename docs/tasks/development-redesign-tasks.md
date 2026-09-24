@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.41"
+document_version: "1.7.42"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2676,7 +2676,7 @@ Handoff: 未記録
 - 一時的なraw logや巨大なtool outputをHandoffへ貼らず、必要なpath、digest、要約だけを残す。
 
 
-Current bounded-unit handoff（2026-09-25、保存責務だけを独立して検証）:
+Previous bounded-unit handoff（2026-09-25、保存責務だけを独立して検証）:
 
 ユーザーが現行コードからの計画を確認し、保存実装・focused検証・独立責務のlocal commitを承認した。開始HEAD `86c0e5b737658c16ff7d3f3d4b7b548662212d3f`、7 tracked＋2 untracked、stagedなし、snapshot 39 entries／source 9 filesのhashを照合した。snapshotをdirty treeへ再適用していない。今回の正本は`tsk-08-parity-ratchet.json`のbounded unit「S4-independent failure artifact persistence and existing writer migration」。以前の停止記録は履歴として保持する。
 
@@ -2689,3 +2689,13 @@ Current bounded-unit handoff（2026-09-25、保存責務だけを独立して検
 S4依存の3 pathは未コミットで保持する。diagnosticsの型・gate、master-controlの観測採取とproduction保存接続、closureの追加user-control fixtureは今回の成功証拠に含めない。fixtureの宣言／保存pathを`production-inert-control-fixture.json`へ揃えた変更も残存差分側である。残存patch SHA-256 `df928b3fbeb0ef8bbadf8cd72ce1d6707c06a28ff6b9b3303fe8d171996092ff`、個別file hashはmachine evidenceに記録した。別途承認・検証されたS4 baselineができるまで、production接続のcommit・完成は保留する。型抽出、fallback、休眠hookによる依存隠蔽はない。
 
 B1のstateTrait 10 controls、B2の2501400 magicBullet、B3の403400 targetRarityはBlockingのまま。TSK-06.5の80×433＝34,640 outcomes、34,600 calculated／parity、40 unavailable、final unsupported／invalid／inputRequired各0とdigest、candidate／damage／canonical input／fingerprint、TSK-07 evidenceは変更していない。複数ratchet、fresh control population、without-area alternate、production stale-mutation consumer、TSK-08全体は未達。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。次の操作は残存S4の別途承認・baseline検証であり、保存テストでS4意味論を検証済みとは扱わない。pushは行わない。
+
+Current bounded-unit handoff（2026-09-25、S4 gateと小さいsemantic fixture）:
+
+ユーザーが現行コードからの計画を確認して実装を承認した。開始HEADは`6c07c0dcd2f9a9710fee02b1aee5611584918c87`。3 tracked差分、空index、前回archive／残存patch／3 file hash、ignore済み`apps/web/next-env.d.ts`を照合し、残存patchを再適用していない。今回の正本は`tsk-08-parity-ratchet.json`の最新bounded unit「S4 typed observation gate and independent semantic fixture baseline」。
+
+独立責務は`productionParityDiagnostics.ts::auditProductionUserControlObservations`と直接helperの型付き観測・fail-closed判定、`productionClosureAudit.test.ts`の小さいsemantic fixtureである。実producerは`scenario.ts::prepareCalculationScenarioWithPolicy`、`battle-execution/engine.ts::auditOperationEvents`、`effectiveContributions.ts::effectiveContributionsForOperation`、未コミットの`productionMasterControlAudit.test.ts::userControlSideObservation/controlDamageInputBinding`まで確認した。gateは選択候補の元event、projection、contribution、入力binding、計算結果を結び、欠損／明示undefined／null、正常な非適用、unresolved／ambiguous、invalid／unsupported／inputRequiredを区別する。正当な`resolvedValue:null`とpassed時の`firstDifference:null`を保持する。fixtureのwithoutAreaAlternateはschema-legal gate経路でありproduction coverageではない。
+
+HEADからの隔離candidateには上記2 source fileだけを適用し、production採取・保存接続のfileはHEADのままにした。candidate内のworkspace package link解決、typecheck、focused unit 5/5（skip／todo 0）、target ESLint／Prettierを確認した。fixture artifactはassertion前に保存し、generic runnerのmanifest 9 artifactsと4 writer receiptsのbytes／SHA-256が一致した。machine evidenceは`.test-results/tsk-08-s4-gate-20260925/gate-evidence.json`（SHA-256 `821a65a30047e4bb731278c9434e1f6c0b9f2a457702d3d3c5c841ff26d3369e`）、focused manifestは同directoryの`focused-run/manifest.json`（SHA-256 `6152b8212ff429aa374eb2b5099b8c83770ccf71ef514e4fb457755a31a70b5c`）。保存基盤の既存証拠は再利用し、S4意味論の証拠へ読み替えていない。禁止された全件production／audit／qualityは実行していない。
+
+`productionMasterControlAudit.test.ts`の観測採取・production gate呼出・保存接続は未コミット、未検証で保持する。残存producer差分SHA-256は`b528362377c1f086eeef4dad1eadda3b0088aa2059ff56ef1826d53e9b5fa96e`。fresh control population、complete identity set、production without-area alternate、stale-mutation consumer、B1〜B3は未達。TSK-06.5の80×433＝34,640 outcomes、34,600 calculated／parity、40 unavailable、final異常各0と既存digest、candidate／damage／canonical input／fingerprint、TSK-07 evidenceは変更していない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。次のsessionではこのgate baselineに対して実producerとproduction保存接続を検証し、今回のfixture成功をproduction採取の証明にしない。pushは行わない。

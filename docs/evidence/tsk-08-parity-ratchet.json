@@ -3230,7 +3230,138 @@
         "TSK-09.1": "blocked",
         "TSK-09": "blocked"
       }
+    },
+    {
+      "name": "S4 typed observation gate and independent semantic fixture baseline",
+      "date": "2026-09-25",
+      "status": "independent gate and small semantic fixture verified; committed by the commit containing this record; production producer and persistence connection remain uncommitted and unverified",
+      "authorization": "User confirmed the current-code plan with OK,進めて. Gate/fixture implementation, focused verification, and local commit authorized. Push, full production/audit/quality and production connection excluded.",
+      "baselineHead": "6c07c0dcd2f9a9710fee02b1aee5611584918c87",
+      "initialState": {
+        "headMatched": true,
+        "trackedDirtyPaths": [
+          "packages/calculation-application/src/productionParityDiagnostics.ts",
+          "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+          "packages/calculation-application/src/productionClosureAudit.test.ts"
+        ],
+        "indexEmpty": true,
+        "originalResidualPatchSha256": "df928b3fbeb0ef8bbadf8cd72ce1d6707c06a28ff6b9b3303fe8d171996092ff",
+        "originalArchiveManifestSha256": "d6d6424805b698ec730019d32bf65dff4354a8614b231a33cd93400dffe5c60f",
+        "originalThreeFileHashesMatched": true,
+        "ignoredNextEnvSha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b",
+        "snapshotReapplied": false
+      },
+      "flow": {
+        "producers": "scenario.ts::prepareCalculationScenarioWithPolicy captures executeOrderedScenarioWithAuditObservation; battle-execution/engine.ts::auditOperationEvents and effectiveContributions.ts::effectiveContributionsForOperation own event and contribution meaning. The uncommitted productionMasterControlAudit.test.ts::evaluateWithOrderedOperationEvents/userControlSideObservation/controlDamageInputBinding maps actual calculations into the observation.",
+        "gate": "productionParityDiagnostics.ts::auditProductionUserControlObservations and direct helpers consume typed owner fields, require selected target identity, source-event consistency, projection/contribution/binding consistency, calculated result and a control-related change.",
+        "fixtureAndSaveConsumer": "productionClosureAudit.test.ts small supplied-observation fixture writes production-inert-control-fixture.json before assertions via the committed writeProductionAuditArtifact. ProductionMasterControlAudit.test.ts producer-to-gate call and production-inert-control-production.json save connection stay uncommitted."
+      },
+      "gateContract": {
+        "typedOwner": "EffectProjection, OrderedExecutionAuditEvent, EffectiveContribution, DamageResolutionInput and CalculationApplicationResult supply modifier, identity, outcomes, bound value and status types. No servant ID/name/label/raw-key runtime branch.",
+        "presence": "Absent binding value, explicit undefined, null, and passed firstDifference:null are distinct. Numeric or boolean binding null fails; legitimate resolvedValue:null remains valid.",
+        "outcomes": "Normal excluded notApplied/notRelevant/impossible can pass when a selected applied control reaches a linked operation; missing/ambiguous/unsupported target selection and unsupported/invalid/inputRequired damage fail with typed reasons. No numeric correction.",
+        "firstDifferenceExamples": {
+          "duplicateIdentity": {
+            "path": "occurrences",
+            "expected": 1,
+            "actual": 2
+          },
+          "eventContradiction": {
+            "path": "event.projectionOutcome",
+            "expected": "applied",
+            "actual": "notApplied"
+          },
+          "partialContribution": {
+            "path": "effective",
+            "expected": true,
+            "actual": false
+          },
+          "absentInputValue": {
+            "path": "present",
+            "expected": true,
+            "actual": false
+          },
+          "undefinedInputValue": {
+            "path": "valueDefined",
+            "expected": true,
+            "actual": false
+          },
+          "invalidDamage": {
+            "path": "enabled",
+            "expected": "calculated",
+            "actual": "invalid"
+          }
+        }
+      },
+      "fixture": {
+        "scope": "supplied typed observations: one selected npSpecial, ordinary modifier, no-bound operation, withoutAreaAlternate path, five passing variants and 22 named failing variants; not production occurrence evidence",
+        "persistedBeforeAssertion": true,
+        "passingFirstDifferenceNull": true,
+        "validResolvedValueNull": true,
+        "withoutAreaAlternateProductionCountClaim": false
+      },
+      "independentCandidate": {
+        "sourceCandidateDiff": {
+          "path": ".test-results/tsk-08-s4-gate-20260925/gate-source.patch",
+          "bytes": 63617,
+          "sha256": "fbe2295d4912074adada9cc52591b76c2e87aa0b4bb47b07d6b69ee605d7fc2f"
+        },
+        "sourceHashes": {
+          "packages/calculation-application/src/productionParityDiagnostics.ts": "f3523d42619c44da7df23077de19ef4046e96405016496f5a3085d3574c132f8",
+          "packages/calculation-application/src/productionClosureAudit.test.ts": "e9b3ed153d160af6f6ccae3b09bbcb00e4eb780170ee7771b27382f94eb9bec1"
+        },
+        "changedTracked": [
+          "packages/calculation-application/src/productionClosureAudit.test.ts",
+          "packages/calculation-application/src/productionParityDiagnostics.ts"
+        ],
+        "producerAtHeadSha256": "a6d101968196d38eb1ae7ded3881db49ef5ea0f28c821a11d7d4bed633d68011",
+        "workspaceDependencyResolution": "Candidate packages/*/node_modules/@fgo-lab relative links resolve to the isolated candidate; root installed third-party node_modules is shared. ProductionMasterControlAudit.test.ts is HEAD-only in the candidate.",
+        "proof": "Detached clone at the baseline HEAD. Only gate and fixture source files applied. Candidate typecheck and focused test ran there; main dirty-tree success is not used as independence evidence."
+      },
+      "verification": {
+        "focused": {
+          "command": "node <existing tsk08-focused-current.mjs> unit packages/calculation-application/src/productionClosureAudit.test.ts",
+          "result": "5/5 passed, skip/todo 0; generic runCapturedTest",
+          "manifest": ".test-results/tsk-08-s4-gate-20260925/focused-run/manifest.json",
+          "manifestSha256": "6152b8212ff429aa374eb2b5099b8c83770ccf71ef514e4fb457755a31a70b5c",
+          "fixtureSha256": "c9dc72f05711c7c6354899bcdf2425d67161e13dff4ea35c5f59945fe356ecc4",
+          "artifactCount": 9,
+          "receiptCount": 4,
+          "artifactBytesAndSha256Matched": true
+        },
+        "candidateTypecheck": "./node_modules/.bin/tsc -b --pretty false passed in isolated candidate",
+        "mainProducerCompatibilityTypecheck": "./node_modules/.bin/tsc -b --pretty false passed with preserved dirty producer; not independence evidence",
+        "targetLintAndFormat": "./node_modules/.bin/eslint two source files --max-warnings=0 and prettier --write/check target; passed",
+        "machineEvidence": {
+          "path": ".test-results/tsk-08-s4-gate-20260925/gate-evidence.json",
+          "sha256": "821a65a30047e4bb731278c9434e1f6c0b9f2a457702d3d3c5c841ff26d3369e"
+        },
+        "pnpm": "Prior same-environment pnpm external SQLite store failure is recorded by the preceding bounded unit; reused direct generic runner with installed Vitest. No new pnpm retry."
+      },
+      "preserved": {
+        "tsk06_5": "80 × 433 = 34,640 outcomes; 34,600 calculated/parity; 40 unavailable; final unsupported/invalid/inputRequired each 0; merged c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120; eligibility 27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+        "candidateStatusEligibilityProductionOutputDamageCanonicalInputFingerprint": "unchanged",
+        "tsk07CacheStaleResponseEvidence": "unchanged",
+        "B1B2B3": "Blocking retained: stateTrait 10 controls, 2501400 magicBullet, 403400 targetRarity"
+      },
+      "remainingS4": {
+        "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "sha256": "7265ab7862bd79f441e73ec3663d0ae4ca7426d25023d78e332ac20aff5b8225",
+        "diffSha256": "b528362377c1f086eeef4dad1eadda3b0088aa2059ff56ef1826d53e9b5fa96e",
+        "producerCollectionAndSaveConnection": "uncommitted and unverified; fixture success does not certify producer correctness or production artifact publication"
+      },
+      "unmet": [
+        "Fresh production control population and complete identity-set expectation; current producer supplies historical 1590 count",
+        "Actual without-area alternate producer/detail/input/effective contribution and production stale-mutation consumer",
+        "B1-B3 product fixes; multiple ratchets; full production/audit/quality; TSK-08 completion"
+      ],
+      "nextOperation": "Preserve the uncommitted productionMasterControlAudit.test.ts diff and ignored artifacts. In the next session verify actual producer observations and production save connection against the committed gate; derive fresh population/identities and handle B1-B3 separately. No push.",
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      }
     }
   ],
-  "currentBoundedUnit": "HEAD-independent persistence and three existing writers verified; S4-dependent production connection uncommitted"
+  "currentBoundedUnit": "S4 typed observation gate and independent semantic fixture verified; production collection and save connection uncommitted"
 }

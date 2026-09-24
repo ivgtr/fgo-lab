@@ -11,8 +11,12 @@ import {
   deriveBaseOvercharge,
   isConsistentNpOcUseReceipt,
   type AppliedPreparationAction,
+  type EffectiveContribution,
+  type OrderedExecutionAuditEvent,
 } from '@fgo-lab/battle-execution';
-import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
+import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { DamageResolutionInput, PreNoblePhantasmCommand } from '@fgo-lab/schema';
+import type { CalculationApplicationResult, CalculationExecutionObservation } from './scenario';
 
 export type ProductionParityPath = 'calculator' | 'portable';
 
@@ -292,9 +296,887 @@ export interface ProductionPreparationTransactionGateInput {
   inheritedIdentityFailures?: readonly CanonicalAuditDifference[];
 }
 
+export type ProductionUserControlPath = 'selectedProfile' | 'withoutAreaAlternate';
+
+export interface ProductionUserControlIdentity {
+  ownerId: string;
+  profileKey: string;
+  path: ProductionUserControlPath;
+  projectionKey: string;
+  operationId: string;
+  contributionId: EffectProjection['contributionId'];
+  modifier: EffectProjection['modifier'];
+  contributionControl: 'operation' | 'worldAssumption';
+}
+
+export interface ProductionUserControlOperationEvent extends Pick<
+  OrderedExecutionAuditEvent,
+  | 'operationId'
+  | 'contributionId'
+  | 'operationOutcome'
+  | 'projectionOutcome'
+  | 'projectionValuePermille'
+> {
+  projectionKey: OrderedExecutionAuditEvent['projectionKey'];
+  kind: OrderedExecutionAuditEvent['operationKind'];
+}
+
+export interface ProductionUserControlProjectionObservation {
+  projectionKey: string;
+  operationId: string;
+  contributionId: string | null;
+  outcome: EffectProjection['outcome'];
+  valuePermille: EffectProjection['valuePermille'];
+}
+
+export type ProductionUserControlEffectiveContribution = Pick<
+  EffectiveContribution,
+  'operationId' | 'contributionId' | 'modifier' | 'resolvedValue' | 'executionOutcome' | 'effective'
+>;
+
+export type ProductionUserControlInputBinding =
+  | {
+      kind: 'bound';
+      address:
+        | 'attackBuff'
+        | 'defenseBuff'
+        | 'cardBuff'
+        | 'cardResistance'
+        | 'npDamageBuff'
+        | 'npResistance'
+        | 'eventDamageBuff'
+        | 'specialDamageBuff'
+        | 'powerMod'
+        | 'flatDamage';
+      value: number;
+    }
+  | { kind: 'bound'; address: 'ignoreDamageCut'; value: boolean }
+  | {
+      kind: 'bound';
+      address: 'damageFunction.ignoreDefense';
+      value: boolean | DamageResolutionInput['damageFunction'];
+    }
+  | {
+      kind: 'bound';
+      address: 'npSpecialMultipliers';
+      value: DamageResolutionInput['npSpecialMultipliers'];
+    }
+  | {
+      kind: 'bound';
+      address: 'npVariantSelection.damageInput';
+      value: {
+        variant: unknown;
+        cardType: DamageResolutionInput['cardType'];
+        npMultipliers: DamageResolutionInput['npMultipliers'];
+        damageFunction: DamageResolutionInput['damageFunction'];
+      };
+    }
+  | { kind: 'unbound'; reason: 'projection_has_no_damage_input_binding' };
+
+export interface ProductionUserControlSideObservation {
+  executionObservation: CalculationExecutionObservation;
+  operationEvents: readonly ProductionUserControlOperationEvent[];
+  projections: readonly ProductionUserControlProjectionObservation[];
+  inputBinding: ProductionUserControlInputBinding;
+  effectiveContributions: readonly ProductionUserControlEffectiveContribution[];
+  damageResult: { status: CalculationApplicationResult['status']; rows: unknown };
+}
+
+export interface ProductionUserControlObservation {
+  identity: ProductionUserControlIdentity;
+  enabled: ProductionUserControlSideObservation;
+  excluded: ProductionUserControlSideObservation;
+}
+
+export type ProductionUserControlFailureReason =
+  | 'userControlInventoryCoverageMismatch'
+  | 'userControlDuplicateIdentity'
+  | 'userControlProjectionIdentityMismatch'
+  | 'userControlOperationEventMissing'
+  | 'userControlEffectiveContributionMissing'
+  | 'userControlInputBindingUnsupported'
+  | 'userControlExecutionObservationMissing'
+  | 'userControlExecutionSelectionNotUnique'
+  | 'userControlObservationInconsistent'
+  | 'userControlDamageOutcomeNotCalculated'
+  | 'userControlNpSpecialInputNotChanged'
+  | 'userControlDidNotReachOperationOrDamage';
+
+export interface ProductionUserControlFailure {
+  reason: ProductionUserControlFailureReason;
+  canonicalIdentity: string;
+  expected: CanonicalAuditValue;
+  actual: CanonicalAuditValue;
+  firstDifference: CanonicalAuditDifference;
+}
+
+export interface ProductionUserControlSummary {
+  projectionCount: number;
+  selectedProfileCount: number;
+  withoutAreaAlternateCount: number;
+  operationEventCount: number;
+  effectiveContributionCount: number;
+  directInputDifferenceCount: number;
+  operationOutcomeDifferenceCount: number;
+  eventProjectionOutcomeDifferenceCount: number;
+  damageResultDifferenceCount: number;
+}
+
+export type ProductionUserControlGate =
+  | {
+      status: 'passed';
+      canonicalIdentity: 'tsk-08:inert-controls';
+      expected: CanonicalAuditValue;
+      actual: CanonicalAuditValue;
+      summary: ProductionUserControlSummary;
+      firstDifference: null;
+      failures: readonly [];
+    }
+  | {
+      status: 'failed';
+      canonicalIdentity: 'tsk-08:inert-controls';
+      expected: CanonicalAuditValue;
+      actual: CanonicalAuditValue;
+      summary: ProductionUserControlSummary;
+      firstDifference: CanonicalAuditDifference;
+      failures: readonly ProductionUserControlFailure[];
+    };
+
+export interface ProductionUserControlGateInput {
+  expectedProjectionCount: number;
+  observations: readonly ProductionUserControlObservation[];
+}
+
 function canonicalValue(value: unknown): CanonicalAuditValue {
   const serialized = JSON.stringify(value === undefined ? null : value);
   return JSON.parse(serialized) as CanonicalAuditValue;
+}
+
+function productionUserControlIdentity(identity: ProductionUserControlIdentity): string {
+  return `production:control-inventory:${JSON.stringify([
+    identity.ownerId,
+    identity.profileKey,
+    identity.path,
+    identity.projectionKey,
+    identity.operationId,
+    identity.contributionId,
+  ])}`;
+}
+
+// The shared canonical diff distinguishes absent object keys. Encode an explicitly
+// present undefined value so it cannot become indistinguishable from null.
+function userControlAuditValue(value: unknown, seen = new Set<object>()): CanonicalAuditValue {
+  if (value === undefined) return { kind: 'presentUndefined' };
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new TypeError('production_user_control_nonfinite_value');
+    return value;
+  }
+  if (typeof value !== 'object' || seen.has(value))
+    throw new TypeError('production_user_control_unsupported_audit_value');
+  seen.add(value);
+  const result: CanonicalAuditValue = Array.isArray(value)
+    ? value.map((item) => userControlAuditValue(item, seen))
+    : Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null
+      ? Object.fromEntries(
+          Object.entries(value).map(([key, item]) => [key, userControlAuditValue(item, seen)]),
+        )
+      : (() => {
+          throw new TypeError('production_user_control_unsupported_audit_value');
+        })();
+  seen.delete(value);
+  return result;
+}
+
+function productionUserControlFailure(
+  reason: ProductionUserControlFailureReason,
+  canonicalIdentity: string,
+  expectedValue: unknown,
+  actualValue: unknown,
+): ProductionUserControlFailure | null {
+  const expected = userControlAuditValue(expectedValue);
+  const actual = userControlAuditValue(actualValue);
+  const firstDifference = firstCanonicalAuditDifference(
+    [{ identity: canonicalIdentity, value: expected }],
+    [{ identity: canonicalIdentity, value: actual }],
+  );
+  return firstDifference ? { reason, canonicalIdentity, expected, actual, firstDifference } : null;
+}
+
+function isUserControlRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isTargetCandidateIdentity(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate['classId'] === 'string' &&
+    typeof candidate['attribute'] === 'string' &&
+    Array.isArray(candidate['families']) &&
+    Array.isArray(candidate['facts'])
+  );
+}
+
+function hasExecutionObservation(value: unknown): value is CalculationExecutionObservation {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const observation = value as Record<string, unknown>;
+  const witness = observation['battlePointWitness'];
+  const witnessValid =
+    witness === null ||
+    (typeof witness === 'object' &&
+      !Array.isArray(witness) &&
+      Object.values(witness).every((point) => typeof point === 'number' && Number.isFinite(point)));
+  const targetExecution = observation['targetExecution'];
+  if (!witnessValid || typeof targetExecution !== 'object' || targetExecution === null)
+    return false;
+  const target = targetExecution as Record<string, unknown>;
+  if (target['selection'] === 'selected')
+    return (
+      Array.isArray(target['operationEvents']) &&
+      target['operationEvents'].every(isUserControlRecord) &&
+      Number.isSafeInteger(target['candidateIndex']) &&
+      isTargetCandidateIdentity(target['targetCandidate'])
+    );
+  if (target['selection'] === 'unresolved') {
+    const resolution = target['targetResolution'];
+    return (
+      Array.isArray(target['operationEvents']) &&
+      target['operationEvents'].every(isUserControlRecord) &&
+      typeof resolution === 'object' &&
+      resolution !== null &&
+      !Array.isArray(resolution) &&
+      ((resolution as Record<string, unknown>)['kind'] === 'impossible' ||
+        (resolution as Record<string, unknown>)['kind'] === 'unsupported')
+    );
+  }
+  if (target['selection'] !== 'ambiguous' || !Array.isArray(target['candidates'])) return false;
+  const candidates = target['candidates'];
+  return (
+    candidates.length > 1 &&
+    candidates.every(
+      (candidate) =>
+        typeof candidate === 'object' &&
+        candidate !== null &&
+        !Array.isArray(candidate) &&
+        Number.isSafeInteger((candidate as Record<string, unknown>)['candidateIndex']) &&
+        isTargetCandidateIdentity((candidate as Record<string, unknown>)['targetCandidate']),
+    ) &&
+    new Set(candidates.map((candidate) => (candidate as Record<string, unknown>)['candidateIndex']))
+      .size === candidates.length
+  );
+}
+
+function eventMatchesUserControl(
+  identity: ProductionUserControlIdentity,
+  event: ProductionUserControlOperationEvent,
+): boolean {
+  if (event.operationId !== identity.operationId) return false;
+  if (
+    event.projectionKey === identity.projectionKey &&
+    event.contributionId === identity.contributionId
+  )
+    return true;
+  return (
+    identity.modifier === 'npSpecial' &&
+    identity.contributionControl === 'worldAssumption' &&
+    event.kind === 'executeNpDamage'
+  );
+}
+
+function userControlBindingAddress(
+  modifier: ProductionUserControlIdentity['modifier'],
+): Extract<ProductionUserControlInputBinding, { kind: 'bound' }>['address'] | null {
+  switch (modifier) {
+    case null:
+      return null;
+    case 'ignoreDefense':
+      return 'damageFunction.ignoreDefense';
+    case 'npSpecial':
+      return 'npSpecialMultipliers';
+    case 'npVariantSelection':
+      return 'npVariantSelection.damageInput';
+    default:
+      return modifier;
+  }
+}
+
+function isValidUserControlBindingValue(
+  binding: Extract<ProductionUserControlInputBinding, { kind: 'bound' }>,
+): boolean {
+  if (!Object.hasOwn(binding, 'value')) return false;
+  const value: unknown = binding.value;
+  switch (binding.address) {
+    case 'ignoreDamageCut':
+    case 'damageFunction.ignoreDefense':
+      return typeof value === 'boolean';
+    case 'npSpecialMultipliers':
+      return (
+        Array.isArray(value) &&
+        value.length === 5 &&
+        value.every((member) => typeof member === 'number' && Number.isFinite(member))
+      );
+    case 'npVariantSelection.damageInput':
+      return (
+        typeof value === 'object' &&
+        value !== null &&
+        Object.hasOwn(value, 'variant') &&
+        Object.hasOwn(value, 'cardType') &&
+        Object.hasOwn(value, 'npMultipliers') &&
+        Object.hasOwn(value, 'damageFunction')
+      );
+    default:
+      return typeof value === 'number' && Number.isFinite(value);
+  }
+}
+
+/** Ratchets every user-visible production projection to an observed event or damage result. */
+export function auditProductionUserControlObservations(
+  input: ProductionUserControlGateInput,
+): ProductionUserControlGate {
+  const canonicalIdentity = 'tsk-08:inert-controls' as const;
+  const summary: ProductionUserControlSummary = {
+    projectionCount: input.observations.length,
+    selectedProfileCount: 0,
+    withoutAreaAlternateCount: 0,
+    operationEventCount: 0,
+    effectiveContributionCount: 0,
+    directInputDifferenceCount: 0,
+    operationOutcomeDifferenceCount: 0,
+    eventProjectionOutcomeDifferenceCount: 0,
+    damageResultDifferenceCount: 0,
+  };
+  const failures: ProductionUserControlFailure[] = [];
+  const identityCounts = new Map<string, number>();
+
+  const inventoryCountFailure = productionUserControlFailure(
+    'userControlInventoryCoverageMismatch',
+    canonicalIdentity,
+    { projectionCount: input.expectedProjectionCount },
+    { projectionCount: input.observations.length },
+  );
+  if (inventoryCountFailure) failures.push(inventoryCountFailure);
+
+  for (const observation of input.observations) {
+    const { identity, enabled, excluded } = observation;
+    const rawIdentity: unknown = identity;
+    const identityFields = rawIdentity as Record<string, unknown> | null;
+    if (
+      typeof rawIdentity !== 'object' ||
+      identityFields === null ||
+      typeof identityFields.ownerId !== 'string' ||
+      typeof identityFields.profileKey !== 'string' ||
+      typeof identityFields.projectionKey !== 'string' ||
+      typeof identityFields.operationId !== 'string' ||
+      !Object.hasOwn(identityFields, 'contributionId') ||
+      !Object.hasOwn(identityFields, 'modifier') ||
+      (identityFields.contributionId !== null &&
+        typeof identityFields.contributionId !== 'string') ||
+      (identityFields.modifier !== null && typeof identityFields.modifier !== 'string') ||
+      (identityFields.contributionControl !== 'operation' &&
+        identityFields.contributionControl !== 'worldAssumption') ||
+      (identityFields.path !== 'selectedProfile' && identityFields.path !== 'withoutAreaAlternate')
+    ) {
+      const identityShape = {
+        baseFieldsValid:
+          typeof rawIdentity === 'object' &&
+          identityFields !== null &&
+          typeof identityFields.ownerId === 'string' &&
+          typeof identityFields.profileKey === 'string' &&
+          typeof identityFields.projectionKey === 'string' &&
+          typeof identityFields.operationId === 'string',
+        contributionIdPresent:
+          identityFields !== null && Object.hasOwn(identityFields, 'contributionId'),
+        contributionIdType:
+          identityFields?.contributionId === null ? 'null' : typeof identityFields?.contributionId,
+        modifierPresent: identityFields !== null && Object.hasOwn(identityFields, 'modifier'),
+        modifierType: identityFields?.modifier === null ? 'null' : typeof identityFields?.modifier,
+        contributionControlValid:
+          identityFields?.contributionControl === 'operation' ||
+          identityFields?.contributionControl === 'worldAssumption',
+        pathValid:
+          identityFields?.path === 'selectedProfile' ||
+          identityFields?.path === 'withoutAreaAlternate',
+      };
+      const identityFailure = productionUserControlFailure(
+        'userControlProjectionIdentityMismatch',
+        canonicalIdentity,
+        {
+          ...identityShape,
+          baseFieldsValid: true,
+          contributionIdPresent: true,
+          contributionIdType: identityShape.contributionIdType === 'null' ? 'null' : 'string',
+          modifierPresent: true,
+          modifierType: identityShape.modifierType === 'null' ? 'null' : 'string',
+          contributionControlValid: true,
+          pathValid: true,
+        },
+        identityShape,
+      );
+      if (identityFailure) failures.push(identityFailure);
+      continue;
+    }
+    const profileIdentity = productionUserControlIdentity(identity);
+    if (identity.path === 'selectedProfile') summary.selectedProfileCount += 1;
+    else summary.withoutAreaAlternateCount += 1;
+
+    const occurrenceCount = (identityCounts.get(profileIdentity) ?? 0) + 1;
+    if (occurrenceCount > 1) {
+      const duplicateFailure = productionUserControlFailure(
+        'userControlDuplicateIdentity',
+        profileIdentity,
+        { occurrences: 1 },
+        { occurrences: occurrenceCount },
+      );
+      if (duplicateFailure) failures.push(duplicateFailure);
+    }
+    identityCounts.set(profileIdentity, occurrenceCount);
+
+    let sidesComplete = true;
+    for (const [sideName, side] of [
+      ['enabled', enabled],
+      ['excluded', excluded],
+    ] as const) {
+      const rawSide: unknown = side;
+      const sideFields = rawSide as Record<string, unknown> | null;
+      const damageResult = sideFields?.damageResult;
+      const binding = sideFields?.inputBinding;
+      const fields = {
+        operationEvents:
+          Array.isArray(sideFields?.operationEvents) &&
+          sideFields.operationEvents.every(isUserControlRecord),
+        projections:
+          Array.isArray(sideFields?.projections) &&
+          sideFields.projections.every(isUserControlRecord),
+        inputBinding:
+          isUserControlRecord(binding) &&
+          ((binding.kind === 'bound' && typeof binding.address === 'string') ||
+            (binding.kind === 'unbound' &&
+              binding.reason === 'projection_has_no_damage_input_binding')),
+        effectiveContributions:
+          Array.isArray(sideFields?.effectiveContributions) &&
+          sideFields.effectiveContributions.every(isUserControlRecord),
+        damageResult:
+          typeof damageResult === 'object' &&
+          damageResult !== null &&
+          Object.hasOwn(damageResult, 'status') &&
+          Object.hasOwn(damageResult, 'rows'),
+      };
+      if (Object.values(fields).some((present) => !present)) {
+        const sideFailure = productionUserControlFailure(
+          'userControlObservationInconsistent',
+          `${profileIdentity}:${sideName}:side-fields`,
+          Object.fromEntries(Object.keys(fields).map((key) => [key, true])),
+          fields,
+        );
+        if (sideFailure) failures.push(sideFailure);
+        sidesComplete = false;
+        continue;
+      }
+      if (!hasExecutionObservation(side.executionObservation)) {
+        const rawExecution: unknown = side.executionObservation;
+        const rawTarget = isUserControlRecord(rawExecution) ? rawExecution.targetExecution : null;
+        const observationFailure = productionUserControlFailure(
+          'userControlExecutionObservationMissing',
+          `${profileIdentity}:${sideName}:execution-selection`,
+          { selection: 'selected', targetCandidateIdentity: true, validObservation: true },
+          {
+            selection: isUserControlRecord(rawTarget) ? rawTarget.selection : null,
+            targetCandidateIdentity:
+              isUserControlRecord(rawTarget) &&
+              isTargetCandidateIdentity(rawTarget.targetCandidate),
+            validObservation: false,
+          },
+        );
+        if (observationFailure) failures.push(observationFailure);
+      } else if (side.executionObservation.targetExecution?.selection !== 'selected') {
+        const selectionFailure = productionUserControlFailure(
+          'userControlExecutionSelectionNotUnique',
+          `${profileIdentity}:${sideName}:execution-selection`,
+          { selection: 'selected' },
+          { selection: side.executionObservation.targetExecution?.selection ?? null },
+        );
+        if (selectionFailure) failures.push(selectionFailure);
+      }
+      const selectedEvents =
+        hasExecutionObservation(side.executionObservation) &&
+        side.executionObservation.targetExecution?.selection === 'selected'
+          ? side.executionObservation.targetExecution.operationEvents
+          : null;
+      const projectionMatches = side.projections.filter(
+        (projection) =>
+          projection.projectionKey === identity.projectionKey &&
+          projection.operationId === identity.operationId &&
+          projection.contributionId === identity.contributionId,
+      );
+      if (projectionMatches.length !== 1) {
+        const projectionFailure = productionUserControlFailure(
+          'userControlProjectionIdentityMismatch',
+          `${profileIdentity}:${sideName}:projection`,
+          { count: 1, identity },
+          {
+            count: projectionMatches.length,
+            identities: side.projections.map(({ projectionKey, operationId, contributionId }) => ({
+              projectionKey,
+              operationId,
+              contributionId,
+            })),
+          },
+        );
+        if (projectionFailure) failures.push(projectionFailure);
+      } else if (projectionMatches[0]!.outcome === 'unsupported') {
+        const projectionFailure = productionUserControlFailure(
+          'userControlObservationInconsistent',
+          `${profileIdentity}:${sideName}:projection-outcome`,
+          { supported: true },
+          { supported: false, outcome: projectionMatches[0]!.outcome },
+        );
+        if (projectionFailure) failures.push(projectionFailure);
+      }
+
+      const linkedEvents = side.operationEvents.filter((event) =>
+        eventMatchesUserControl(identity, event),
+      );
+      if (linkedEvents.length !== 1) {
+        const eventFailure = productionUserControlFailure(
+          'userControlOperationEventMissing',
+          `${profileIdentity}:${sideName}:operation-event`,
+          { count: 1, operationId: identity.operationId, contributionId: identity.contributionId },
+          {
+            count: linkedEvents.length,
+            events: side.operationEvents.map(
+              ({ projectionKey, operationId, contributionId, kind }) => ({
+                projectionKey,
+                operationId,
+                contributionId,
+                kind,
+              }),
+            ),
+          },
+        );
+        if (eventFailure) failures.push(eventFailure);
+      } else {
+        summary.operationEventCount += 1;
+        if (selectedEvents !== null) {
+          const sourceEvents = selectedEvents.filter((event) =>
+            eventMatchesUserControl(identity, {
+              projectionKey: event.projectionKey,
+              operationId: event.operationId,
+              contributionId: event.contributionId,
+              kind: event.operationKind,
+              operationOutcome: event.operationOutcome,
+              projectionOutcome: event.projectionOutcome,
+              projectionValuePermille: event.projectionValuePermille,
+            }),
+          );
+          const source = sourceEvents[0];
+          const sourceEvent = source && {
+            projectionKey: source.projectionKey,
+            operationId: source.operationId,
+            contributionId: source.contributionId,
+            kind: source.operationKind,
+            operationOutcome: source.operationOutcome,
+            projectionOutcome: source.projectionOutcome,
+            projectionValuePermille: source.projectionValuePermille,
+          };
+          const sourceFailure = productionUserControlFailure(
+            'userControlObservationInconsistent',
+            `${profileIdentity}:${sideName}:event-source`,
+            { count: 1, event: sourceEvent },
+            { count: sourceEvents.length, event: linkedEvents[0] },
+          );
+          if (sourceFailure) failures.push(sourceFailure);
+        }
+      }
+
+      if (identity.contributionId !== null) {
+        const effectiveMatches = side.effectiveContributions.filter(
+          (contribution) =>
+            contribution.operationId === identity.operationId &&
+            contribution.contributionId === identity.contributionId,
+        );
+        if (effectiveMatches.length !== 1) {
+          const effectiveFailure = productionUserControlFailure(
+            'userControlEffectiveContributionMissing',
+            `${profileIdentity}:${sideName}:effective-contribution`,
+            {
+              count: 1,
+              operationId: identity.operationId,
+              contributionId: identity.contributionId,
+            },
+            {
+              count: effectiveMatches.length,
+              contributions: side.effectiveContributions.map(
+                ({ operationId, contributionId, modifier, effective }) => ({
+                  operationId,
+                  contributionId,
+                  modifier,
+                  effective,
+                }),
+              ),
+            },
+          );
+          if (effectiveFailure) failures.push(effectiveFailure);
+        } else {
+          summary.effectiveContributionCount += 1;
+          const contribution = effectiveMatches[0]!;
+          const projection = projectionMatches[0];
+          const contributionFailure = productionUserControlFailure(
+            'userControlObservationInconsistent',
+            `${profileIdentity}:${sideName}:effective-contribution-state`,
+            {
+              modifier: identity.modifier,
+              executionOutcome: projection?.outcome,
+              effective: projection?.outcome === 'applied',
+            },
+            {
+              modifier: contribution.modifier,
+              executionOutcome: contribution.executionOutcome,
+              effective: contribution.effective,
+            },
+          );
+          if (contributionFailure) failures.push(contributionFailure);
+        }
+      }
+    }
+    if (!sidesComplete) continue;
+
+    const expectedAddress = userControlBindingAddress(identity.modifier);
+    for (const [sideName, side] of [
+      ['enabled', enabled],
+      ['excluded', excluded],
+    ] as const) {
+      const actualAddress = side.inputBinding.kind === 'bound' ? side.inputBinding.address : null;
+      if (actualAddress !== expectedAddress) {
+        const addressFailure = productionUserControlFailure(
+          'userControlInputBindingUnsupported',
+          `${profileIdentity}:${sideName}:damage-input-binding`,
+          { address: expectedAddress },
+          { address: actualAddress, binding: side.inputBinding },
+        );
+        if (addressFailure) failures.push(addressFailure);
+      }
+      if (
+        side.inputBinding.kind === 'bound' &&
+        !isValidUserControlBindingValue(side.inputBinding)
+      ) {
+        const valueFailure = productionUserControlFailure(
+          'userControlInputBindingUnsupported',
+          `${profileIdentity}:${sideName}:damage-input-value`,
+          { present: true, valueDefined: true, valueValid: true },
+          {
+            present: Object.hasOwn(side.inputBinding, 'value'),
+            valueDefined: (side.inputBinding as { value?: unknown }).value !== undefined,
+            valueValid: isValidUserControlBindingValue(side.inputBinding),
+          },
+        );
+        if (valueFailure) failures.push(valueFailure);
+      }
+    }
+
+    if (
+      enabled.damageResult.status !== 'calculated' ||
+      excluded.damageResult.status !== 'calculated'
+    ) {
+      const outcomeFailure = productionUserControlFailure(
+        'userControlDamageOutcomeNotCalculated',
+        `${profileIdentity}:damage-outcome`,
+        { enabled: 'calculated', excluded: 'calculated' },
+        { enabled: enabled.damageResult.status, excluded: excluded.damageResult.status },
+      );
+      if (outcomeFailure) failures.push(outcomeFailure);
+      continue;
+    }
+    if (enabled.inputBinding.kind !== excluded.inputBinding.kind) {
+      const bindingFailure = productionUserControlFailure(
+        'userControlInputBindingUnsupported',
+        `${profileIdentity}:damage-input-binding`,
+        { sameKind: true },
+        { sameKind: false, enabled: enabled.inputBinding, excluded: excluded.inputBinding },
+      );
+      if (bindingFailure) failures.push(bindingFailure);
+      continue;
+    }
+    if (enabled.inputBinding.kind === 'unbound' && excluded.inputBinding.kind === 'unbound') {
+      const enabledReason: unknown = enabled.inputBinding.reason;
+      const excludedReason: unknown = excluded.inputBinding.reason;
+      if (identity.modifier !== null || enabledReason !== excludedReason) {
+        const bindingFailure = productionUserControlFailure(
+          'userControlInputBindingUnsupported',
+          `${profileIdentity}:damage-input-binding`,
+          { modifier: null, sameReason: true },
+          {
+            modifier: identity.modifier,
+            sameReason: enabledReason === excludedReason,
+          },
+        );
+        if (bindingFailure) failures.push(bindingFailure);
+      }
+    } else if (
+      enabled.inputBinding.kind === 'bound' &&
+      excluded.inputBinding.kind === 'bound' &&
+      enabled.inputBinding.address !== excluded.inputBinding.address
+    ) {
+      const bindingFailure = productionUserControlFailure(
+        'userControlInputBindingUnsupported',
+        `${profileIdentity}:damage-input-binding`,
+        { address: enabled.inputBinding.address },
+        { address: excluded.inputBinding.address },
+      );
+      if (bindingFailure) failures.push(bindingFailure);
+      continue;
+    }
+
+    const inputDifference =
+      enabled.inputBinding.kind === 'bound' && excluded.inputBinding.kind === 'bound'
+        ? firstCanonicalAuditDifference(
+            [
+              {
+                identity: `${profileIdentity}:damage-input:${enabled.inputBinding.address}`,
+                value: userControlAuditValue(enabled.inputBinding.value),
+              },
+            ],
+            [
+              {
+                identity: `${profileIdentity}:damage-input:${excluded.inputBinding.address}`,
+                value: userControlAuditValue(excluded.inputBinding.value),
+              },
+            ],
+          )
+        : null;
+    if (inputDifference) summary.directInputDifferenceCount += 1;
+
+    const enabledEvent = enabled.operationEvents.find((event) =>
+      eventMatchesUserControl(identity, event),
+    );
+    const excludedEvent = excluded.operationEvents.find((event) =>
+      eventMatchesUserControl(identity, event),
+    );
+    const operationOutcomeDifference =
+      enabledEvent !== undefined &&
+      excludedEvent !== undefined &&
+      enabledEvent.operationOutcome !== excludedEvent.operationOutcome;
+    const eventProjectionOutcomeDifference =
+      enabledEvent !== undefined &&
+      excludedEvent !== undefined &&
+      enabledEvent.projectionOutcome !== excludedEvent.projectionOutcome;
+    if (operationOutcomeDifference) summary.operationOutcomeDifferenceCount += 1;
+    if (eventProjectionOutcomeDifference) summary.eventProjectionOutcomeDifferenceCount += 1;
+
+    const resultDifference = firstCanonicalAuditDifference(
+      [
+        {
+          identity: `${profileIdentity}:damage-result`,
+          value: userControlAuditValue(enabled.damageResult),
+        },
+      ],
+      [
+        {
+          identity: `${profileIdentity}:damage-result`,
+          value: userControlAuditValue(excluded.damageResult),
+        },
+      ],
+    );
+    if (resultDifference) summary.damageResultDifferenceCount += 1;
+
+    const mustReachNpSpecialInput = identity.modifier === 'npSpecial';
+    const reachesNpSpecialInput =
+      mustReachNpSpecialInput &&
+      enabled.inputBinding.kind === 'bound' &&
+      excluded.inputBinding.kind === 'bound' &&
+      enabled.inputBinding.address === 'npSpecialMultipliers' &&
+      excluded.inputBinding.address === 'npSpecialMultipliers' &&
+      Array.isArray(enabled.inputBinding.value) &&
+      Array.isArray(excluded.inputBinding.value) &&
+      enabled.inputBinding.value.every(
+        (value) => typeof value === 'number' && Number.isFinite(value),
+      ) &&
+      excluded.inputBinding.value.every(
+        (value) => typeof value === 'number' && Number.isFinite(value),
+      ) &&
+      inputDifference !== null;
+    if (mustReachNpSpecialInput && !reachesNpSpecialInput) {
+      const npSpecialFailure = productionUserControlFailure(
+        'userControlNpSpecialInputNotChanged',
+        `${profileIdentity}:np-special-damage-input`,
+        {
+          enabledAddress: 'npSpecialMultipliers',
+          excludedAddress: 'npSpecialMultipliers',
+          changed: true,
+        },
+        {
+          enabledAddress:
+            enabled.inputBinding.kind === 'bound' ? enabled.inputBinding.address : null,
+          excludedAddress:
+            excluded.inputBinding.kind === 'bound' ? excluded.inputBinding.address : null,
+          changed: inputDifference !== null,
+          validArrays:
+            enabled.inputBinding.kind === 'bound' &&
+            excluded.inputBinding.kind === 'bound' &&
+            Array.isArray(enabled.inputBinding.value) &&
+            Array.isArray(excluded.inputBinding.value),
+          enabled: enabled.inputBinding,
+          excluded: excluded.inputBinding,
+        },
+      );
+      if (npSpecialFailure) failures.push(npSpecialFailure);
+    } else if (
+      !mustReachNpSpecialInput &&
+      !inputDifference &&
+      !operationOutcomeDifference &&
+      !eventProjectionOutcomeDifference &&
+      !resultDifference
+    ) {
+      const inertFailure = productionUserControlFailure(
+        'userControlDidNotReachOperationOrDamage',
+        `${profileIdentity}:enabled-vs-excluded`,
+        {
+          reached: true,
+          operationOutcomeChanged: operationOutcomeDifference,
+          eventProjectionOutcomeChanged: eventProjectionOutcomeDifference,
+          damageInputChanged: false,
+          damageResultChanged: false,
+        },
+        {
+          reached: false,
+          operationOutcomeChanged: operationOutcomeDifference,
+          eventProjectionOutcomeChanged: eventProjectionOutcomeDifference,
+          damageInputChanged: false,
+          damageResultChanged: false,
+        },
+      );
+      if (inertFailure) failures.push(inertFailure);
+    }
+  }
+
+  const expected = userControlAuditValue({ projectionCount: input.expectedProjectionCount });
+  const actual = userControlAuditValue({ projectionCount: input.observations.length });
+  const matrixDifference = firstCanonicalAuditDifference(
+    [{ identity: canonicalIdentity, value: expected }],
+    [{ identity: canonicalIdentity, value: actual }],
+  );
+  if (failures.length === 0 && !matrixDifference)
+    return {
+      status: 'passed',
+      canonicalIdentity,
+      expected,
+      actual,
+      summary,
+      firstDifference: null,
+      failures: [],
+    };
+
+  const failureIdentity = failures[0]?.firstDifference ?? matrixDifference;
+  if (!failureIdentity) throw new TypeError('production_user_control_failure_difference_missing');
+  return {
+    status: 'failed',
+    canonicalIdentity,
+    expected,
+    actual,
+    summary,
+    firstDifference: failureIdentity,
+    failures,
+  };
 }
 
 function identityOf(comparison: ProductionParityComparison): string {
