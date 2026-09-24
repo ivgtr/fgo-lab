@@ -3421,7 +3421,78 @@
       "unmet": "S4 gate pass and semantic classification of 47 observed failures; production without-area alternate, stale-mutation consumer, other ratchets, B1-B3 product repairs and TSK-08 closure",
       "nextOperation": "After user confirmation of a revised bounded plan, inspect the shared NP contribution/control semantics using the saved actual observations and governing rules; classify independent cases without weakening the gate or changing product semantics by inference.",
       "taskStatus": {"TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked"}
+    },
+    {
+      "name": "S4 B1 explicit-off NP special contribution",
+      "date": "2026-09-25",
+      "status": "B1 ten controls corrected and independently verified; 37 other observed failures remain Blocking",
+      "authorization": "User confirmed a bounded plan based on the saved 47 failures; only one semantic family, focused verification, records and local commit are in scope.",
+      "baselineHead": "8de6890fd758239ed5a636db2e2f6966b88e2b2b",
+      "initialState": {
+        "trackedWorktreeEmpty": true,
+        "indexEmpty": true,
+        "ignoredNextEnvPreserved": true,
+        "productionArtifactSha256": "a780c6dabfbb1e2262b83bbe1397b210b2befb0c677b43b62997394ad3afc08f",
+        "summaryActualPath": ".test-results/tsk-08-s4-producer-20260925/producer-evidence.json",
+        "summarySha256": "98d10745d4c26818f5a5e6ed81bcb62793f605c12babbc27ede5d1159223cfa4"
+      },
+      "classification": {
+        "before": {
+          "userControlObservationInconsistent": 19,
+          "userControlDamageOutcomeNotCalculated": 14,
+          "userControlNpSpecialInputNotChanged": 12,
+          "userControlDidNotReachOperationOrDamage": 2
+        },
+        "firstDifference": {
+          "ownerId": "101700",
+          "side": "excluded",
+          "path": "effective",
+          "expected": false,
+          "actual": true
+        },
+        "selectedFamily": "B1: explicit-off NP special control with satisfied state trait still producing non-neutral multiplier",
+        "b1Owners": ["200300", "504800", "505600", "603700", "604900", "605300", "705100", "1002200", "1101100", "1101400"],
+        "b2Owner": "2501400",
+        "b3Owner": "403400",
+        "fullCanonicalFailures": ".test-results/tsk-08-s4-b1-20260925/b1-evidence.json"
+      },
+      "flow": {
+        "producer": "productionMasterControlAudit.test.ts obtains enabled and excluded calculations from the same application and ordered execution path; no producer or gate change in this unit.",
+        "semanticOwner": "effectDecision.ts writes operationEnabled=false; npDamageExecution.ts now includes that explicit decision in the special contribution gate before npDamageOperation.ts resolves the multiplier. Base NP damage remains executable.",
+        "consumer": "productionParityDiagnostics.ts compares typed projection, contribution, bound input and calculated result; its classification and thresholds are unchanged.",
+        "governingRule": "damage-effect-execution requirements section 3.2: off excludes the final damage effect from calculation, while conditional NP base damage always executes.",
+        "representative": "200300 excluded multiplier [2,2,2,2,2] -> [1,1,1,1,1], NP1 average 72786.53 -> 36393.03; stateTrait fixture retains target state and base NP multiplier while excluding the special multiplier."
+      },
+      "verification": {
+        "independentCandidate": "Detached baseline HEAD with only npDamageExecution.ts and scenario.test.ts applied; main and candidate binary patch SHA-256 02b0da799b845b8495091cefa7116ed1c284e41d638c4a11fe2f9d7104c2a9d2.",
+        "unit": "generic runner scenario 36/36, npDamageOperation 5/5 and rankingContribution 3/3, skip/todo 0",
+        "rankingContributionManifestSha256": "64656550cc5963148cce6457f7ac33a86650c788e2d46044ddc69448b926af11",
+        "typecheckLintFormat": "candidate tsc -b, target ESLint --max-warnings=0 and Prettier check passed",
+        "producer": "single actual producer test still fails at S4 gate as expected: 47 -> 37, exactly the ten B1 typed identities removed, no added failures; expected and observed identity sets each remain the same 1590 entries",
+        "artifact": ".test-results/tsk-08-s4-b1-20260925/producer-run/production-inert-control-production.json",
+        "artifactBytes": 55807315,
+        "artifactSha256": "d96319836f98fa74a5ef5f67aae318ff9542340bacb2da43be83a6d92da19856",
+        "manifestSha256": "cbfd788e7f800dcdaf70cc92f639b40a99906949ed8b852bf7b6afbef5a41d47",
+        "artifactVerificationErrors": 0,
+        "machineEvidence": ".test-results/tsk-08-s4-b1-20260925/b1-evidence.json",
+        "machineEvidenceSha256": "baa600817209bd3ee366a68c1d21ecc8408beccc8960488b1127af6a5faaa1d1",
+        "durationMs": { "baseline": 16482, "candidateFirst": 20179, "candidateRepeat": 17174 },
+        "pnpm": "external SQLite store failure before script; switched to installed Vitest under the same generic runCapturedTest"
+      },
+      "remaining": {
+        "after": {
+          "userControlObservationInconsistent": 19,
+          "userControlDamageOutcomeNotCalculated": 14,
+          "userControlNpSpecialInputNotChanged": 2,
+          "userControlDidNotReachOperationOrDamage": 2
+        },
+        "B2B3": "Blocking: 2501400 magicBullet and 403400 targetRarity",
+        "other": "without-area alternate, stale-mutation consumer, other ratchets, full production/audit/quality, TSK-08 overall closure remain unmet"
+      },
+      "preserved": "TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digest; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "nextOperation": "Select one remaining semantic family from the saved 37 typed failures and propose a new bounded plan. Keep the current 37 Blocking; no push.",
+      "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
     }
   ],
-  "currentBoundedUnit": "S4 production observation and failure artifact connection verified; actual gate remains Blocking"
+  "currentBoundedUnit": "S4 B1 ten explicit-off NP special controls corrected; 37 gate failures remain Blocking"
 }

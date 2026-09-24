@@ -31,6 +31,7 @@ export function applyNoblePhantasmDamage(
     contributionPolicy,
     state,
   );
+  const specialContributionEnabled = specialIncluded && specialDecision?.operationEnabled !== false;
   return applyNpDamageOperation(input, operation.damage, {
     overcharge: operation.overcharge,
     attackerTraitCounts: combinedTraitCounts(state.traitCounts.attacker, attackerStateTraitCounts),
@@ -47,7 +48,7 @@ export function applyNoblePhantasmDamage(
     attackerHpRatio: state.hp ? hpRatio(state.hp.actors.attacker) : null,
     targetRarity: state.quantities.targetRarity,
     battlePointPhase: state.quantities.battlePointPhase,
-    effectLocalConditionSatisfied: specialIncluded && effectLocalConditionSatisfied,
-    includeSpecialContribution: specialIncluded,
+    effectLocalConditionSatisfied: specialContributionEnabled && effectLocalConditionSatisfied,
+    includeSpecialContribution: specialContributionEnabled,
   });
 }

@@ -2454,6 +2454,38 @@ describe('scenario calculation facade', () => {
     expect(calculateProc(false).input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
     expect(calculateProc(true).input.targetStateTraits).toEqual(['buffPoison']);
     expect(calculateProc(true).input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
+
+    const activeScenario = applyEffectPresentationDecision(
+      initialScenario,
+      control.projection,
+      true,
+      initial.activationRequirements,
+      initial.effects,
+    );
+    const active = calculateScenario(activeScenario, procMaster, {
+      ...versions,
+      masterDataVersion: procMaster.version,
+    });
+    const special = active.effects.find((effect) => effect.modifier === 'npSpecial')!;
+    expect(special.contributionControl).toBe('operation');
+    const excluded = calculateScenario(
+      applyEffectProjectionDecision(activeScenario, special, false),
+      procMaster,
+      { ...versions, masterDataVersion: procMaster.version },
+    );
+    expect(excluded.result.status).toBe('calculated');
+    expect(excluded.input.targetStateTraits).toEqual(['buffPoison']);
+    expect(excluded.input.npMultipliers).toEqual(active.input.npMultipliers);
+    expect(excluded.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(
+      excluded.effects.find((effect) => effect.projectionKey === special.projectionKey),
+    ).toMatchObject({ outcome: 'notApplied' });
+    expect(excluded.effectiveContributions.contributions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ component: 'npBase', effective: true }),
+        expect.objectContaining({ component: 'npSpecial', effective: false }),
+      ]),
+    );
   });
 
   it('returns empty inputRequired rows and calculates after repair', () => {

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.42"
+document_version: "1.7.43"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2709,3 +2709,13 @@ Current bounded-unit handoff（2026-09-25、S4 production観測・failure artifa
 隔離candidateのfocused producer testはS4 gateで失敗したが、55,824,551 bytesのfailure artifactはreceiptのSHA-256 `a780c6dabfbb1e2262b83bbe1397b210b2befb0c677b43b62997394ad3afc08f`と一致し、runnerのartifact errorは0。gate failureは47件（観測矛盾19、計算結果非calculated 14、NP特殊入力不変12、operation／damage未到達2）。最初の実差分は`101700`のNP特殊効果excluded側`effective`でexpected `false`／actual `true`。他に`106600`のenabled `unsupported`、`200300`のNP特殊入力不変、`1000100`の未到達がある。これはB1〜B3だけで説明済みとせず、共有contribution／controlの未計画意味論familyとして影響作業を停止する。gate分類の緩和や製品修正は行わない。保存成功はgate成功を意味しない。
 
 次の操作は、ユーザー確認を得た改訂bounded planで保存済み観測とgoverning ruleから47件を分類し、shared NP contributionとcontrolのownershipを判断すること。B1 stateTrait 10 controls、B2 2501400 magicBullet、B3 403400 targetRarityはBlockingを維持する。without-area alternate production接続、stale-mutation consumer、他ratchet、全件production／audit／quality、TSK-08全体収束は未達。TSK-06.5の80×433＝34,640 outcomes、34,600 calculated／parity、40 unavailable、final異常各0と既存digest、candidate／damage／canonical input／fingerprint、TSK-07 evidenceは変更していない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、pushは行わない。
+
+Current bounded-unit handoff（2026-09-25、S4 B1の明示offとNP特殊倍率）:
+
+開始HEAD `8de6890fd758239ed5a636db2e2f6966b88e2b2b`、tracked worktree／index空、ignore済み`apps/web/next-env.d.ts`を照合した。保存済みproduction artifact SHA-256 `a780c6dabfbb1e2262b83bbe1397b210b2befb0c677b43b62997394ad3afc08f`と要約 `98d10745d4c26818f5a5e6ed81bcb62793f605c12babbc27ede5d1159223cfa4`は一致した。要約の実pathは`.test-results/tsk-08-s4-producer-20260925/producer-evidence.json`である。47 failureのtyped reason／identity／first differenceを保存実値から分類し、B1の10 controlsを今回の対象と確定した。全分類と47 identityは[TSK-08 parity ratchet](../evidence/tsk-08-parity-ratchet.json)の最新bounded unitおよびignored `b1-evidence.json`を参照する。
+
+B1の実値は`200300`等10 ownerで、off後のprojection `notApplied`／effective `false`にもかかわらずNP特殊倍率が残る。代表`200300`のexcluded入力は旧`[2,2,2,2,2]`、修正後`[1,1,1,1,1]`、NP1平均は`72786.53`から`36393.03`へ変化し、基礎NP倍率とtarget stateを保持する。governing ruleはdamage execution §3.2のoff＝計算から除外、条件付きNPの基礎ダメージ実行である。`npDamageExecution.ts`が明示offを特殊寄与の包含判定へ反映し、`scenario.test.ts`の小fixtureが状態特性の存在と特殊寄与の非適用を同時に確認する。servant ID分岐、数値fallback、gate分類変更はない。
+
+HEADから今回の2 source fileだけを適用した隔離candidateのpatch SHA-256は`02b0da799b845b8495091cefa7116ed1c284e41d638c4a11fe2f9d7104c2a9d2`でmain差分と一致した。focused scenario 36/36、NP damage 5/5、ranking contribution 3/3、typecheck、対象ESLint／Prettier成功。単独producerは既知の別Blockingによりgate失敗を維持したが、47→37件、消えたfailure identityはB1の10件だけ、新規0件、fresh expected／observed identity各1,590件で集合も不変。最終artifact 55,807,315 bytes／SHA-256 `d96319836f98fa74a5ef5f67aae318ff9542340bacb2da43be83a6d92da19856`はreceipt／generic runnerと一致した。実測producerは前回16.48秒、初回candidate 20.18秒、再実行17.17秒で、初回の22.4%増は再現せず、二回目は4.2%増。candidate数やinventory生成は変更していない。`pnpm`はscript前にexternal SQLite storeで失敗したため、既存Vitestを同じgeneric runnerへ直接指定した。機械証跡は`.test-results/tsk-08-s4-b1-20260925/b1-evidence.json`（SHA-256 `baa600817209bd3ee366a68c1d21ecc8408beccc8960488b1127af6a5faaa1d1`）。
+
+B1はこの限定経路で解消した。B2 `2501400`、B3 `403400`と観測矛盾19、非calculated 14、NP特殊入力不変2、operation／damage未到達2の計37件はBlockingのまま。without-area alternate、stale-mutation consumer、他ratchet、全件production／audit／qualityは実行していない。TSK-06.5の80×433＝34,640 outcomes、34,600 calculated／parity、40 unavailable、final unsupported／invalid／inputRequired各0と既存digest、candidate status／eligibility、production output、canonical input、fingerprint、TSK-07 evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。次は残る37件の別familyを実値で選び、改訂bounded planから再開する。pushしない。
