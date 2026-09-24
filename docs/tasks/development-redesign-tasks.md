@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.37"
+document_version: "1.7.40"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-24"
@@ -2547,6 +2547,40 @@ runner／suite／E2E contractsは54/54 pass（`.test-results`にJSON artifactを
 suite-placementの実装・検証・handoffは同一のlocal commitに含めた。commit後、S4 test内容を`/tmp/tsk08-s4-productionMasterInventory-before-split.ts`（SHA-256 `f230265bbaa2f38accc6a3bec6ca297cf1ee8034fb5c9e054a44fe8979308931`）から`productionMasterControlAudit.test.ts`へ再配置した。現在の未検証S4 worktree差分は3 pathで、combined SHA-256 `d1866b3b5bd0594a8457b8681b3d26b70bdcc8199971f608b4b9daabdf144011`。完全なpatchは`.test-results/tsk-08-s4-reapplied-20260924/worktree.diff`（同じSHA-256）へ保存した。各file content SHA-256は`productionParityDiagnostics.ts`: `6ea1ec053b88a9bf2e1a79da60c4b30f8472fc1281fd37b69c30a2b769116e95`、`productionClosureAudit.test.ts`: `70d08ce5054c6eb1d250cf19a423702cb115775e92f590779fbfdbfb1654f604`、`productionMasterControlAudit.test.ts`: `431f6d72c9d222d60acb66516501c74fcad118bf2775be57f98ad05c5781bafb`である。これは新しい差分identityであり、元のcombined diff hashとは別物。S4は未検証で、suite-placement commitへ含めていない。`apps/web/next-env.d.ts`はignore済みでchecksum `1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b`を保持し、stageしていない。
 
 今後は既存S4 review findingに従って限定scopeのconsumer接続planへ戻る。B1〜B3はBlockingのままとし、`test:audit`／`test:production`／`quality`を実行せず、TSK-08全体を完了扱いにしない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+Previous bounded-unit handoff（2026-09-24、failure artifact保存契約の設計・commit境界確定）:
+
+当時の依頼はcommit境界の解消と保存契約の具体化までであり、実装開始前だった。後続handoffでユーザーがこのbounded persistence planの実装を承認した。HEADは`ee80ef9fe6c2e30c68f95b0097e5a6f36c578926`。上記3 pathのS4 source diffはSHA-256 `d1866b3b5bd0594a8457b8681b3d26b70bdcc8199971f608b4b9daabdf144011`のまま保持する。source／test編集、test実行、stage／commitは行っていない。設計の正本は[parity ratchet evidence](../evidence/tsk-08-parity-ratchet.json)の最新`boundedUnits` recordとする。
+
+commit境界はユーザー回答「保存経路に限定し、依存部分のcommit・完了は保留」で確定した。productionの観測採取、control型、`auditProductionUserControlObservations`は未コミットS4に含まれ、保存接続だけのHEAD上の独立commitは成立しない。これらのgate実装を今回の検証済み差分として取り込まない。今後保存基盤の独立部分を実装・検証できても、production接続はS4依存解消まで未コミットとし、今回依頼されたend-to-end sliceの完了には数えない。保留解除にはS4 producer／gateについて別途承認・検証されたbaselineが必要である。基盤単独commitも今回の設計作業では行わない。
+
+保存契約案は、test定義時のVitest metadataに必須artifact一覧を置き、共有writerが確定したUTF-8 bytesの長さ／SHA-256を同じtestのmetadataへ記録して、既存JSON reporterの`vitest.json`からgeneric runnerへ渡す。既存3writerによる`artifact-declarations.json`上書きを廃止し、runnerの`verifyArtifactFiles`を唯一のbytes／checksum verifierとして使う。これはインストール済みVitest 4.1.11の`TestOptions.meta`とJSON reporterの`assertionResults.meta`を読んだ設計根拠で、実行成功証拠ではない。必要file、payloadの欠損値表現、保存順序、重複・欠損・書込失敗時の動作、focused verification matrixは上記evidenceを参照する。
+
+productionの完全性は既存producerが生成したfailure／observation全件の保存を意味し、fresh control population、without-area alternate、stale-mutation consumerの未達は引き続き残る。B1〜B3の分類緩和、TSK-06.5 digest／inventory／outcome／parity、damage semantics／canonical input／fingerprint、TSK-07 cache／stale-responseへの変更はない。`quality`は内部で`test:production`を実行するため、現在の禁止を迂回せず、従来の全source slice確定後のゲートに残す。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。この保存案は後続ターンで実装承認済み。実装中に見つかったSet payloadのため、最新handoffでserializer再計画を停止・確認待ちとしている。 文書はJSON parse、既存evidenceの値保持、docs integrity、`git diff --check`を静的確認した。強制Prettierで既存table書式が変わりintegrityが失敗したため、formatterだけの変更を除去して再確認した。test suiteは未実行で、文書commitの完了ゲートを通過したとは扱わない。
+
+
+Current bounded-unit handoff（2026-09-24、実装中のSet payload発見で保存経路を停止）:
+
+開始HEADは`ee80ef9fe6c2e30c68f95b0097e5a6f36c578926`。ユーザー承認後、failure artifact保存基盤、既存writer移行、generic runner接続の未完実装を作成した。focused実行で既存producer payloadに提案serializerが表現できない値が出たため、影響する実装を停止した。
+
+実体は`productionBattlePointPaths.test.ts`の705300 recordに含まれる`calculator[0].portable.execution.effectiveContributions.effectivePresentationGroupIds`の`Set`である。`productionAuditArtifacts.ts::encodeLossless`はnon-plain objectを`artifact_non_plain_object`で拒否する。この値を落とすと選択execution traceの完全payloadを失うため、JSON.stringify、配列化だけの無記録変換、domain assertion緩和はしない。これはartifact transport failureで、canonical identity／FGO typed reason／firstDifferenceは生成されていない。これらの値は`null`として記録し、診断を捏造しない。
+
+`node --test scripts/test-runner.test.mjs`は41/41 passし、実Vitest JSON reporterからwriter receiptがrunnerへ到達するfixtureのartifactは1806 bytes、SHA-256 `96abaf906fdf585ca9302ce3add4504ebacd29ad2a8c53b3c11bccaf1e137379`だった。scenario suiteは汎用`runCapturedTest`で36/36 passし、manifest `.test-results/2026-09-24T09-48-50-961Z-2-a6ac51/manifest.json` SHA-256 `197ddbc4f116d6eaf622161f06e6d5f40559c8cb71acbddf9fbeee2e35f9e222`、star artifact SHA-256 `f8ad68a3956875ba000e7857b8f70bd663daf29099cc3317b6eb5a252343a39d`、rollback artifact SHA-256 `eb11b4c66a4e454b550eb8e7278f92b42dbca0a0da492856776cb31e11e773a6`である。Battle Point fileは7 tests中2 pass／5 fail、manifest outcomeは`artifact_failure`。manifest `.test-results/2026-09-24T09-48-57-848Z-2-3e3adb/manifest.json` SHA-256 `95a29e9e4761503c0d8b46c8bad2c5da22f7b09c0a00a06dde13be4884b4c01b`、Vitest report SHA-256 `a79a0ca8814a1e9fe78d261c3777c3b825e203a1e3aa755cf74f6b688d8b12c0`。失敗した5件はwriterが保存前に拒否し、必要receipt／artifactが欠けた。これは保存契約が正しくfail-closedした証拠であり、producer移行の成功証拠ではない。
+
+最初のfocused runner呼び出しはVitest前にexternal SQLite storeを開けず、`ERR_SQLITE_ERROR: unable to open database file`で停止した。以後は既存`node_modules/.bin/vitest`と同じ`runCapturedTest`を使った。target ESLintと`tsc -b --pretty false`は通過した。`productionClosureAudit.test.ts`のfocused runはS4 user-control fixtureを含むため実行していない。
+
+このfindingにより共通writerのserializerが対象producer payloadを保存できず、scenario単独成功も責務全体を閉じない。停止時点では独立したcandidate treeの検証が完了しておらず、実装のstage／commitは行っていない。次作業者はコードから責務単位の独立性を再評価する。元のS4 patch `.test-results/tsk-08-s4-reapplied-20260924/worktree.diff`はSHA-256 `d1866b3b5bd0594a8457b8681b3d26b70bdcc8199971f608b4b9daabdf144011`で保持。今回作業後のS4 3-path combined diffはSHA-256 `47e26adcd339c71b992aea40136513fdde3a85b78bf59fcc94781e59f2183791`。`productionParityDiagnostics.ts`内容は元のSHA-256 `6ea1ec053b88a9bf2e1a79da60c4b30f8472fc1281fd37b69c30a2b769116e95`のまま。ignored `apps/web/next-env.d.ts`はSHA-256 `1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b`で維持。実装source diff（tracked source/script部分）はSHA-256 `8e8737a1349f5b52a3f0a41c0e76b45428c656787570bafdb2e9e39bb7285861`、新規writer／testの個別hashはmachine evidenceに記録した。
+
+改訂案はartifact-only serialization envelopeにSetの明示的なencodingを加え、memberとiteration order、nested undefined／null／absentを保つことに限定する。まず関連writer payloadに他の未対応runtime shapeがないかread-onlyで範囲調査し、Setのversioned round-trip fixtureと実Battle Point writer／reporter／generic runnerを確認する。別のunsupported shapeが広いframeworkやdomain projectionを要求したら再停止する。S4依存のproduction接続はbaseline承認まで未コミットのまま維持する。この改訂案は確認待ちであり、確認までserializer／producer migrationを再開しない。文書検証は`node --test scripts/docs-integrity.test.mjs`（6/6）、`node scripts/docs-integrity.mjs`、JSON parse、`git diff --check`が成功した。docsはPrettier対象外のまま維持した。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+引継ぎ確定（文書だけのlocal commit）: ユーザーは既存Task／evidenceの記録と依頼文作成を承認した。今回commitは`docs/README.md`、`docs/evidence/README.md`、`docs/evidence/tsk-08-parity-ratchet.json`、このTaskの4 pathだけとし、未完実装・S4の9 source/script pathは未コミットで保持する。これは保存基盤・production接続・TSK-08全体の完了commitではない。開始HEADと文書4 pathだけの隔離候補でdocs test 6/6とdocs integrityを確認し、既存table書式・JSON・参照・`git diff --check`も確認した。source patchの隔離復元は9/9 file hash一致、既存artifactのbytes／SHA-256も一致した。
+
+未追跡writer／testを含む全source差分と一時領域の実行証拠は、ローカルartifact `.test-results/tsk-08-persistence-handoff-20260924/manifest.json`（SHA-256 `7584c6032f880245a322b930bf3a5f0b5ed5615b3b6fde1980b9cfc2364bfc33`）へ保存した。`pending-source.diff`（SHA-256 `e8d9699b3d6e999933482153816e38bc884b9ec292f872d3f9e78a1d0727ba4c`）は開始HEADに対する7 tracked＋2 untracked fileの完全patchである。ignored artifactのためGit commitだけでは未完実装を復元できない。同じworktreeで再開するか、このdirectoryを別環境へ引き渡し、checksumを確認する。既存dirty treeへのpatch再適用は禁止。
+
+次作業者はまず現行コードからproducer → 保存owner → metadata／reporter → generic verifier → manifestを追い、payload境界、Set以外の関連shape、HEADだけで成立するfile／hunk、S4依存部分、最初の代表経路、focused検証・所要時間・停止条件を計画する。SetのsetPaths化やversion変更は技術案であり、実装方法を固定しない。計画確認前はsource／test編集・source test実行・実装のstage／commitを行わない。確認後は同じsessionで承認範囲を進め、確実な依存・期待値から実装する。実writer／reporter／runner／manifestを早期に接続し、責務単位の実装・必要な検証・artifact・evidence・handoffが揃い、未コミットS4へ依存しないcandidate treeを確認した部分からlocal commitする。
+
+計画にない条件、owner、保存／回復経路、意味論、依存、または不変条件との衝突が見つかったら、影響作業を止める。推測・分類緩和・fallback・範囲拡張で解決せず、findingで検証根拠が無効になっていない独立完成部分があれば先に検証・差分を確認してcommitする。不完全ならcommitせず理由を記録する。既存Task／evidenceへ事実・根拠symbol・実在するidentity／reason／first difference・artifact／checksum・未達・commit済み範囲・残存diff identityを更新し、改訂計画を提示して確認を待つ。通常の承認範囲内の技術判断では再承認を求めない。push、full production／audit／qualityは禁止のまま。
+
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

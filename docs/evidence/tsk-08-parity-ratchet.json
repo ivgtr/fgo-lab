@@ -2388,7 +2388,325 @@
         "TSK-09.1": "blocked",
         "TSK-09": "blocked"
       }
+    },
+    {
+      "name": "S4 failure artifact persistence contract and commit boundary design",
+      "status": "implementation incomplete; documentation handoff authorized for local commit; next worker must plan from current code before implementation",
+      "date": "2026-09-24",
+      "baselineHead": "ee80ef9fe6c2e30c68f95b0097e5a6f36c578926",
+      "authorization": {
+        "currentWork": "User authorized a documentation-only local handoff commit and a next-worker prompt. Preserve all incomplete implementation and S4 changes unstaged; the next worker starts with code-based planning, waits for confirmation, then implements in the same session.",
+        "userDecision": "保存経路に限定し、依存部分のcommit・完了は保留",
+        "effect": "Keep the scope at persistence. Do not absorb unverified S4 producer/gate implementation into a verified artifact-only commit. Production connection commit and the requested end-to-end slice completion wait for the S4 dependency.",
+        "implementationApproval": "The preceding implementation approval remains historical. Latest instruction requires the next worker to present a fresh code-based plan before resuming; Set encoding details are proposals, not a fixed implementation decision."
+      },
+      "preservedSource": {
+        "files": [
+          "packages/calculation-application/src/productionParityDiagnostics.ts",
+          "packages/calculation-application/src/productionClosureAudit.test.ts",
+          "packages/calculation-application/src/productionMasterControlAudit.test.ts"
+        ],
+        "combinedDiffSha256": "d1866b3b5bd0594a8457b8681b3d26b70bdcc8199971f608b4b9daabdf144011",
+        "patch": ".test-results/tsk-08-s4-reapplied-20260924/worktree.diff",
+        "ignoredFile": "apps/web/next-env.d.ts",
+        "ignoredFileSha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b"
+      },
+      "commitBoundary": {
+        "headIndependentPart": "Generic declaration transport, lossless payload persistence, existing committed fixture writer migration, runner verification contracts and matching documentation can depend on HEAD alone. This is an independently verifiable part, not completion of the requested production connection.",
+        "dependentPart": "The production call after auditProductionUserControlObservations and the uncommitted control fixture depend on S4 observation collection, ProductionUserControl types and the gate implementation. Keep these dependent changes unstaged/uncommitted until their prerequisite baseline is approved and verified.",
+        "dependencyChain": [
+          "production on/off execution and observation collection (uncommitted S4)",
+          "ProductionUserControlObservation and auditProductionUserControlObservations (uncommitted S4)",
+          "canonical typed gate and full observations",
+          "artifact writer and declaration transport",
+          "existing generic runner verifier"
+        ],
+        "whyTypeExtractionIsInsufficient": "The diagnostics diff adds 515 lines including event matching, observation admission and inert-control decisions. The audit test also changes how executions and observations are obtained. Moving interfaces alone cannot make a saved gate available on HEAD.",
+        "releaseCondition": "A separately authorized and verified S4 producer/gate baseline exists; the production connection passes its own required focused verification and artifact/evidence/handoff agree. No implication that B1-B3 or full-production audit have passed.",
+        "noShortcut": [
+          "Do not commit unresolved imports or references to unstaged S4 variables.",
+          "Do not use unknown casts, duplicate reason unions, dormant hooks or legacy fallback to claim the production connection exists.",
+          "Do not use a foundation-only commit to mark the original slice complete.",
+          "Do not validate the S4 gate semantics by testing artifact transport alone."
+        ],
+        "currentCommit": "Implementation commits: none. This documentation-only handoff commit records the incomplete state and does not certify the persistence foundation, production connection, S4 gate semantics or TSK-08 completion.",
+        "independentlyVerifiedButNotCommitted": [
+          "Generic runner metadata/receipt checks: node --test scripts/test-runner.test.mjs passed 41/41, including real Vitest JSON reporter transport and byte/SHA verification.",
+          "scenario.test.ts migration: the existing generic runner verified 36/36 tests and both artifact receipts."
+        ]
+      },
+      "storageContractProposal": {
+        "ownership": {
+          "domainProducer": "Existing application audit/diagnostic owners retain all game meaning, canonical identity, typed reasons, expected/actual values and canonical differences. No new audit scan, mutation consumer or ratchet.",
+          "payloadWriter": "One application test-support writer owns serialization and publication of artifacts. All three existing artifact-declarations.json writers migrate to this writer/metadata protocol.",
+          "declarationTransport": "Each test declares required artifact descriptors in TestOptions.meta before execution. The writer adds bytes/checksum receipts to that test task metadata. Existing Vitest JSON reporter writes assertionResults.meta into vitest.json.",
+          "runnerConsumer": "Replace declaredArtifactFiles file discovery with generic report-metadata normalization and exact requirement/receipt reconciliation, then call existing verifyArtifactFiles. Runner never parses the domain payload or reasons.",
+          "singleDeclarationOwner": "The existing JSON reporter writes the run report. Test workers no longer read/modify/write a shared artifact-declarations.json; no second declaration file or legacy fallback remains for current producers."
+        },
+        "metadata": {
+          "artifactContractVersion": 1,
+          "requiredArtifacts": "Collection-time array of {path, format, allowEmpty}. Paths are fixed by each test case, relative to its run directory and unique across active tests; descriptors do not contain FGO reasons or servant semantics.",
+          "artifactReceipts": "Execution-time array of {path, expectedBytes, expectedSha256}, one per required descriptor. Hash the intended final bytes before filesystem writes, never reconstruct an expected checksum from the later file.",
+          "reconciliation": "Require one receipt per active requirement, reject missing/extra/duplicate receipts and duplicate normalized paths across tests. Do not silently deduplicate competing declarations via Map last-write-wins.",
+          "activation": "Require artifacts for passed or failed tests; filtered-out tests do not acquire obligations. Preserve existing skip/todo/timeout/signal/reporter-failure gates. A collection/beforeAll failure remains nonzero even when no test body ran; do not claim a complete audit was produced.",
+          "reportMissing": "Missing/invalid vitest.json remains reporter/test failure under existing outcome precedence. With a report present, a required descriptor lacking a receipt is artifact_failure even if the child reported success.",
+          "metadataMissing": "A typed test-definition helper must install the collection-time contract and the writer must reject an absent contract. A focused real-reporter contract must assert that metadata survives. A generic runner cannot infer a removed source declaration from a file name or domain reason."
+        },
+        "payload": {
+          "contents": "Preserve the entire supplied gate, all failures in original order, all supplied observations and existing selected candidate traces. Keep production and fixture artifacts distinct by origin and path. No console truncation, grouping or sampling in the artifact.",
+          "completeness": "Complete means all data produced by the existing invocation. It is not proof of a fresh control identity population, alternate execution coverage or a production stale-mutation consumer.",
+          "serialization": "The implementation used the proposed artifact-only versioned envelope with undefinedPaths. A focused existing producer run disproved the proposal as complete: calculator[0].portable.execution.effectiveContributions.effectivePresentationGroupIds is a Set, and the serializer currently rejects non-plain objects. Do not omit or coerce this generated trace. An artifact-only Set representation is a proposed plan revision, not implemented or verified.",
+          "unsupportedTransportValues": "The current implementation rejects cycles, functions, symbols, bigint, non-finite numbers, sparse arrays and non-plain objects. This remains fail-closed but is insufficient for the observed Set in the existing Battle Point producer. Keep rejection for unhandled shapes; do not stringify or drop them. Any newly supported artifact representation must remain outside canonical input and digest calculations.",
+          "domainValidation": "Application-side gate validation requires the existing typed reason/identity and a firstDifference object with identity/path/expected/actual presence for a failed gate. Undefined expected/actual values are legal and preserved; missing firstDifference is not. Empty path may mean a root difference. Preserve each existing union shape, including top-level parity mismatch with an empty subordinate failures array.",
+          "snapshotVsGate": "Existing scenario mutation/rollback observation snapshots with firstDifference:null are snapshots, not failed gates. Transport migration must not reinterpret these as a new stale-mutation ratchet.",
+          "malformedGate": "Serialize the available payload before raising its diagnostic-contract error, so missing reason/identity/firstDifference is not repaired or discarded. This artifact is malformed-domain evidence, not a valid/passing gate.",
+          "digest": "Preserve the producer source/digest and typed mismatch unchanged. Artifact byte SHA-256 is transport integrity only; no new canonical digest or TSK-06.5 expected-value update."
+        },
+        "publicationOrder": [
+          "At test definition, register its required artifact descriptors in metadata independently of reaching the writer.",
+          "Collect the existing producer result and observations once; do not reexecute the selected candidate for artifact generation.",
+          "Serialize all available payload losslessly, record any application diagnostic-contract error without repairing it, and freeze the exact UTF-8 buffer including its final newline.",
+          "Compute Buffer byte length and SHA-256 from that buffer. Attach the expected receipt to the test metadata before filesystem publication, so a caught write error cannot silently satisfy a required artifact.",
+          "Publish through an exclusive temporary file in the same run directory followed by a no-overwrite atomic link to the final path; await completion and remove only the writer-owned temporary file. Duplicate final paths fail. Do not overwrite another test artifact.",
+          "After publication, raise any diagnostic-contract error; otherwise run the existing domain assertion. Domain gate failure remains failure even when persistence succeeds.",
+          "The JSON reporter emits metadata with the ordinary result. The runner reconciles required descriptors/receipts, validates paths and invokes verifyArtifactFiles, then records manifest artifacts/errors."
+        ],
+        "filesystemContract": "The wrapper-created FGO_TEST_ARTIFACT_DIR is required. No silent return or implicit temporary-root fallback. Reject absolute paths, traversal, normalized duplicates and paths escaping the run root through symlinks. A direct installed-binary test must be launched through runCapturedTest with explicit environment/reporters.",
+        "failureMatrix": [
+          {
+            "case": "domain assertion fails after successful publication",
+            "result": "nonzero test failure; complete artifact and verified checksum remain reachable"
+          },
+          {
+            "case": "missing identity/reason/firstDifference in a failed gate",
+            "result": "application diagnostic-contract failure after preserving available serializable payload; no invented reason or difference"
+          },
+          {
+            "case": "producer exits before payload exists",
+            "result": "nonzero producer/test failure and unsatisfied required artifact; collected partial data must not be labelled complete"
+          },
+          {
+            "case": "missing run directory or serialization/write/publication failure",
+            "result": "throw and retain original failure context; no numeric fallback or success"
+          },
+          {
+            "case": "required artifact or receipt missing, duplicate, unexpected, empty or invalid JSON",
+            "result": "artifact_failure when a valid result report exists"
+          },
+          {
+            "case": "wrong byte length or same-length altered contents",
+            "result": "artifact_failure from existing bytes/SHA-256 verification"
+          },
+          {
+            "case": "two workers finish in reverse order",
+            "result": "each test metadata preserved; no shared declaration file to overwrite; collision rejected"
+          },
+          {
+            "case": "timeout, signal, crash or report failure",
+            "result": "preserve existing abnormal outcome precedence and logs; no completion claim"
+          }
+        ]
+      },
+      "codeEvidence": [
+        "productionMasterControlAudit.test.ts: auditProductionUserControlObservations is followed by a throw before any artifact writer.",
+        "productionClosureAudit.test.ts, scenario.test.ts, productionBattlePointPaths.test.ts: independent Sets overwrite the same run artifact-declarations.json.",
+        "scripts/test-runner-lib.mjs::declaredArtifactFiles currently treats an absent declaration file as no requirements; verifyArtifactFiles already supports expectedBytes and expectedSha256.",
+        "Installed @vitest/runner 4.1.11 TestOptions.meta and TaskBase.meta; installed Vitest JsonReporter copies t.meta to assertionResults.meta. This is read-only API evidence, not a runtime verification.",
+        "scripts/quality-runner-lib.mjs::QUALITY_STEPS contains test:production; quality is not a way around the present production prohibition."
+      ],
+      "candidateFiles": {
+        "headIndependent": [
+          "packages/calculation-application/src/productionAuditArtifacts.ts (new test-support writer and metadata types)",
+          "packages/calculation-application/src/productionAuditArtifacts.test.ts (new focused fixtures)",
+          "packages/calculation-application/src/productionClosureAudit.test.ts (committed writer/fixture portions only)",
+          "packages/calculation-application/src/scenario.test.ts (artifact transport only)",
+          "packages/calculation-application/src/productionBattlePointPaths.test.ts (artifact transport only)",
+          "scripts/test-runner-lib.mjs",
+          "scripts/test-runner.test.mjs",
+          "docs/evidence/tsk-08-parity-ratchet.json",
+          "docs/tasks/development-redesign-tasks.md"
+        ],
+        "dependentUncommitted": [
+          "packages/calculation-application/src/productionMasterControlAudit.test.ts (registration and save before existing S4 throw)",
+          "packages/calculation-application/src/productionClosureAudit.test.ts (uncommitted control fixture writer call)"
+        ],
+        "preserveWithoutSemanticEdit": [
+          "packages/calculation-application/src/productionParityDiagnostics.ts"
+        ],
+        "unchangedOwners": [
+          "scripts/vitest-observation-reporter.mjs (JSON reporter already transports metadata)",
+          "scripts/test-observation-lib.mjs::verifyArtifactFiles (reuse existing verifier unless a focused path-boundary defect requires a separately explained minimal fix)"
+        ]
+      },
+      "focusedVerificationPlan": [
+        "A small real Vitest fixture uses the actual writer, collection-time metadata and existing JSON reporter, then the generic runCapturedTest/verifier. Intentional child failures are expected by an outer contract, not reclassified as production success.",
+        "Lossless roundtrip with nested own undefined, absent property, array undefined and null; more than five failures remain intact; original payload object is unchanged.",
+        "Failed domain gate, missing firstDifference/identity/reason, and existing parity digest mismatch retain supplied diagnostics and exit nonzero; a snapshot with null firstDifference is not rejected as a failed gate.",
+        "Writer not reached, missing receipt/file, removed metadata receipt, invalid JSON, byte mismatch, same-length mutation, duplicate normalized paths, out-of-root paths and symlink escape fail closed.",
+        "Two worker-owned artifacts and reversed completion order retain both obligations/receipts. Filtered tests acquire no false missing-artifact errors. Existing skip/abnormal termination gates remain unchanged.",
+        "Target lint/format and typecheck for the final affected files, static docs validation and required docs tests when implementation is approved. No full production/audit run while B1-B3 remain.",
+        "For any future head-independent commit, inspect and verify its actual candidate tree without relying on uncommitted S4; preserve the user worktree. A successful combined dirty-tree check alone cannot establish commit independence."
+      ],
+      "preservedInvariants": {
+        "B1-B3": "blocking; no reclassification, exclusion or fallback",
+        "TSK-06.5": "80 x 433 = 34640 outcomes; 34600 calculated/parity; 40 unavailable; final unsupported/invalid/inputRequired each 0; source digest unchanged",
+        "runtime": "damage semantics, canonical input, candidate status/eligibility, fingerprint, production outputs, parity and TSK-07 cache/stale response unchanged",
+        "deferred": "fresh control population, without-area alternate and stale-mutation consumer remain outside this persistence design",
+        "quality": "Deferred to the existing final all-source-slices gate; do not run production/audit/quality now"
+      },
+      "verification": {
+        "sourceTests": "Implementation checks were run after user approval. Generic runner tests and scenario producer passed; focused Battle Point producer failed closed on the Set transport finding. This is not completion evidence.",
+        "sourceEdits": "Implementation started within the approved persistence scope and paused when the real producer contradicted the proposed serialization support.",
+        "stagingOrCommit": "No implementation staged or committed. Documentation-only handoff is the authorized commit scope; it is independent of the dirty source implementation.",
+        "documentationChecks": "Passed after the record update: node --test scripts/docs-integrity.test.mjs (6/6), node scripts/docs-integrity.mjs, JSON parse, and git diff --check. No Prettier run was used as a substitute for docs validation. No full quality, production or audit suite was run."
+      },
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      },
+      "nextOperation": "Next worker: compare the recorded handoff state and prepare a new code-based persistence plan. Wait for confirmation, then implement and verify the bounded scope in the same session, committing complete independent responsibilities before any necessary replan.",
+      "implementationAttempt": {
+        "status": "paused after the focused producer exposed an unsupported transport value; no source was staged or committed",
+        "finding": {
+          "producer": "packages/calculation-application/src/productionBattlePointPaths.test.ts: the 705300 test records calculator rows containing the existing portable execution result before assertions",
+          "runtimePath": "calculator[0].portable.execution.effectiveContributions.effectivePresentationGroupIds",
+          "runtimeValue": "Set",
+          "serializer": "packages/calculation-application/src/productionAuditArtifacts.ts::encodeLossless rejects non-plain objects with artifact_non_plain_object",
+          "canonicalIdentity": null,
+          "typedDomainReason": null,
+          "firstDifference": null,
+          "classification": "Artifact transport failure only. No FGO gate diagnostic or canonical first difference was produced; none is inferred."
+        },
+        "verification": {
+          "pnpmAttempt": {
+            "command": "node scripts/test-runner.mjs diagnostic --suite=unit packages/calculation-application/src/scenario.test.ts",
+            "status": "failed before Vitest; pnpm reported ERR_SQLITE_ERROR unable to open database file while opening external SQLite store",
+            "runnerManifest": ".test-results/2026-09-24T09-47-50-186Z-2-96380c/manifest.json",
+            "runnerManifestSha256": "d1947e592ac3dadcd6620d162d6e198e33f8ec8432eec81e34c4f344fec22d63"
+          },
+          "directInstalledRunnerFallback": "The same runCapturedTest generic runner was used with node_modules/.bin/vitest directly, as required after pnpm failed before the script.",
+          "genericRunnerTests": {
+            "command": "node --test scripts/test-runner.test.mjs",
+            "status": "passed",
+            "tests": 41,
+            "realVitestReporterArtifact": "/tmp/fgo-lab-vitest-metadata-Uuitua/run/tsk-08-artifact-contract.json",
+            "artifactBytes": 1806,
+            "artifactSha256": "96abaf906fdf585ca9302ce3add4504ebacd29ad2a8c53b3c11bccaf1e137379",
+            "childOutcome": "Intentional post-save assertion failure; outer test confirmed test_failure with zero artifact verification errors."
+          },
+          "scenarioProducer": {
+            "command": "node /tmp/tsk08-focused-runner.mjs unit packages/calculation-application/src/scenario.test.ts",
+            "status": "passed",
+            "tests": 36,
+            "manifest": ".test-results/2026-09-24T09-48-50-961Z-2-a6ac51/manifest.json",
+            "manifestSha256": "197ddbc4f116d6eaf622161f06e6d5f40559c8cb71acbddf9fbeee2e35f9e222",
+            "reportSha256": "9b147cc6b9c3f19253542c47fae4c411fba0bc9f9ab9fe1ef8eb493bbd3a2409",
+            "artifacts": [
+              {
+                "path": "tsk-08-star-mutation-read.json",
+                "bytes": 11010,
+                "sha256": "f8ad68a3956875ba000e7857b8f70bd663daf29099cc3317b6eb5a252343a39d"
+              },
+              {
+                "path": "tsk-08-execution-group-rollback.json",
+                "bytes": 15509,
+                "sha256": "eb11b4c66a4e454b550eb8e7278f92b42dbca0a0da492856776cb31e11e773a6"
+              }
+            ]
+          },
+          "battlePointProducer": {
+            "command": "node /tmp/tsk08-focused-runner.mjs production packages/calculation-application/src/productionBattlePointPaths.test.ts",
+            "status": "artifact_failure; 2 passed and 5 failed",
+            "manifest": ".test-results/2026-09-24T09-48-57-848Z-2-3e3adb/manifest.json",
+            "manifestSha256": "95a29e9e4761503c0d8b46c8bad2c5da22f7b09c0a00a06dde13be4884b4c01b",
+            "vitestReportSha256": "a79a0ca8814a1e9fe78d261c3777c3b825e203a1e3aa755cf74f6b688d8b12c0",
+            "outcomeReason": "The writer rejected artifact_non_plain_object before publication; five active declarations therefore lacked receipts and files. The manifest is failure evidence, not a successful producer verification.",
+            "completeFailurePayloadArtifact": null
+          },
+          "targetLint": {
+            "command": "./node_modules/.bin/eslint packages/calculation-application/src/productionAuditArtifacts.ts packages/calculation-application/src/productionAuditArtifacts.test.ts packages/calculation-application/src/productionClosureAudit.test.ts packages/calculation-application/src/productionBattlePointPaths.test.ts packages/calculation-application/src/scenario.test.ts --max-warnings=0",
+            "status": "passed"
+          },
+          "typecheck": {
+            "command": "./node_modules/.bin/tsc -b --pretty false",
+            "status": "passed"
+          },
+          "focusedClosureWriter": "Not run: the current file also contains the unverified S4 user-control fixture; keep it out of the HEAD-only verification boundary."
+        },
+        "currentDiffIdentity": {
+          "head": "ee80ef9fe6c2e30c68f95b0097e5a6f36c578926",
+          "staged": false,
+          "trackedSourceDiffSha256": "8e8737a1349f5b52a3f0a41c0e76b45428c656787570bafdb2e9e39bb7285861",
+          "combinedCurrentS4PathsDiffSha256": "47e26adcd339c71b992aea40136513fdde3a85b78bf59fcc94781e59f2183791",
+          "preservedOriginalS4Patch": ".test-results/tsk-08-s4-reapplied-20260924/worktree.diff",
+          "preservedOriginalS4PatchSha256": "d1866b3b5bd0594a8457b8681b3d26b70bdcc8199971f608b4b9daabdf144011",
+          "s4PathContentSha256": {
+            "packages/calculation-application/src/productionParityDiagnostics.ts": "6ea1ec053b88a9bf2e1a79da60c4b30f8472fc1281fd37b69c30a2b769116e95",
+            "packages/calculation-application/src/productionClosureAudit.test.ts": "46274d8307bd58e8a6c320ef76b713ab487b6eaf3a653c1aec7cad9146b904ba",
+            "packages/calculation-application/src/productionMasterControlAudit.test.ts": "7265ab7862bd79f441e73ec3663d0ae4ca7426d25023d78e332ac20aff5b8225"
+          },
+          "newSourceFiles": {
+            "packages/calculation-application/src/productionAuditArtifacts.ts": "682a61dd99571eafd270e0d12779f3c8324b598a2cd619c98e4dbb6b059aded0",
+            "packages/calculation-application/src/productionAuditArtifacts.test.ts": "12ec0904948f182cd5729d914776dd8e78248a889270b961cedc15dff450344a"
+          },
+          "ignoredNextEnvSha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b"
+        },
+        "commitDecision": "At the stop point no implementation candidate tree had completed verification independently of the incomplete writer and S4 diff, so no implementation commit was made. The next worker must re-evaluate actual responsibility boundaries from code; the earlier decision does not prohibit a genuinely independent verified commit."
+      },
+      "revisedPlanAwaitingConfirmation": {
+        "reason": "The approved JSON transport proposal rejected all non-plain objects, but a required existing producer emits a Set inside the selected portable execution trace. JSON.stringify would silently lose its members and violates complete-payload preservation.",
+        "boundedProposal": "Set-aware artifact-only representation is a candidate, not the prescribed solution. Re-read the producer payloads, required failure/observation/trace boundary and existing serializer/runner code before proposing support and versioning. Preserve all required generated data and distinguish undefined, property absence and null without changing canonical input/digest or domain behavior.",
+        "steps": [
+          "First compare HEAD, staged/unstaged/untracked state and snapshot hashes, then read the directly related producer/writer/transport/verifier/manifest paths. Do not edit source/tests or run source tests before the user confirms the new plan.",
+          "Plan from actual payload shapes and ownership. Explain whether Set belongs to the required complete evidence, how to preserve it, and whether other directly relevant unsupported shapes exist. setPaths, an envelope version change and broad runtime-object serialization are not predetermined requirements.",
+          "Identify the smallest independent responsibility and its real writer/reporter/runner/manifest path; specify HEAD-only and S4-dependent hunks, focused checks, artifact/receipt failure cases, candidate-tree isolation, estimated time and stop conditions.",
+          "After confirmation continue in the same session, prove the small representative path first, then migrate directly related writers. Reuse valid evidence; rerun checks affected by the final contract changes.",
+          "On a condition outside the approved plan stop affected work. Commit only already complete independently verified responsibilities whose evidence remains valid; record why none qualifies if applicable. Update the existing Task/evidence, present a revised plan and await confirmation."
+        ],
+        "approvalRequired": true
+      },
+      "codeEvidenceBasis": "These codeEvidence entries describe the pre-implementation baseline inspected for the original proposal; current uncommitted writer/runner edits are identified in implementationAttempt and the handoff snapshot.",
+      "handoffSnapshot": {
+        "directory": ".test-results/tsk-08-persistence-handoff-20260924",
+        "manifest": ".test-results/tsk-08-persistence-handoff-20260924/manifest.json",
+        "manifestSha256": "7584c6032f880245a322b930bf3a5f0b5ed5615b3b6fde1980b9cfc2364bfc33",
+        "pendingSourcePatch": ".test-results/tsk-08-persistence-handoff-20260924/pending-source.diff",
+        "pendingSourcePatchSha256": "e8d9699b3d6e999933482153816e38bc884b9ec292f872d3f9e78a1d0727ba4c",
+        "contents": "All 7 tracked source/script changes plus 2 untracked writer/test files, the original S4 patch, the direct runner invocation helper, real-reporter fixture and three focused-run directories. File bytes and SHA-256 are listed in the manifest.",
+        "availability": "Ignored local artifact, not included in the documentation commit. Same-workspace handoff retains the dirty source files. For another workspace transfer this directory and verify hashes before use; do not claim Git alone contains the unfinished implementation.",
+        "restoreBoundary": "Never apply pending-source.diff over an existing dirty tree. Compare first; isolated reconstruction must start at ee80ef9fe6c2e30c68f95b0097e5a6f36c578926."
+      },
+      "nextWorkerContract": {
+        "firstResponse": "A concrete code-based implementation plan only; wait for user confirmation before source/test edits, source tests or staging/committing implementation.",
+        "afterConfirmation": "Continue the confirmed scope in the same session without re-requesting approval for ordinary technical decisions. Start with certain dependencies and expected results; commit independently complete responsibilities as soon as their required gates pass.",
+        "commitGate": "Implementation, focused tests, target lint/format, necessary typecheck, artifact bytes/checksum, machine evidence and Task handoff agree; no in-scope Blocking remains in that responsibility; staged content has no unrelated or unverified S4 hunks; verify the candidate tree without relying on unstaged changes.",
+        "unexpectedCondition": "Stop affected work when an unplanned condition, ownership/recovery path, dependency, semantic change or invariant conflict appears. Do not solve by speculation, relaxation, fallback or scope expansion. Before replanning commit only independently complete and verified pieces not invalidated by the finding; otherwise record why no commit qualifies. Record facts, file/symbol, available identity/reason/difference, artifacts/checksums and remaining diff identity, then present a revised plan and wait.",
+        "scope": "Persistence only. ProductionUserControl observation collection/types/gate remain an unverified S4 dependency; no production connection commit before a separately approved and verified S4 baseline. No push."
+      },
+      "handoffDocumentationVerification": {
+        "scope": "Documentation-only candidate based on ee80ef9fe6c2e30c68f95b0097e5a6f36c578926 plus the four handoff document paths; no uncommitted source modules or S4 implementation loaded.",
+        "checks": [
+          {
+            "command": "node --test scripts/docs-integrity.test.mjs",
+            "status": "passed",
+            "tests": 6
+          },
+          {
+            "command": "node scripts/docs-integrity.mjs",
+            "status": "passed"
+          },
+          {
+            "command": "git diff --check",
+            "status": "passed"
+          }
+        ],
+        "format": "JSON two-space formatting and existing Markdown table syntax reviewed; docs/ is ignored by Prettier, so no ignored/no-op formatter run is counted as verification.",
+        "snapshotReconstruction": "pending-source.diff applied to an isolated start-HEAD source tree; all nine resulting source file hashes matched the preserved worktree.",
+        "evidenceIntegrity": "All copied run-manifest artifact bytes/SHA-256 and all snapshot manifest entries match. Prior boundedUnits and other historical evidence fields are unchanged.",
+        "completion": "This closes the documentation handoff only. No persistence implementation or production connection is certified."
+      }
     }
   ],
-  "currentBoundedUnit": "ordinary production inventory and opt-in special-control audit partition (verified; S4 draft remains unverified)"
+  "currentBoundedUnit": "Persistence implementation stopped on Set payload; documentation-only handoff; next worker starts from code-based planning"
 }
