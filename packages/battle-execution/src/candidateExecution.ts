@@ -15,9 +15,10 @@ import { fixedConstraintFactsFromState, validateConstraintSet } from './constrai
 import { createOperationProjection, resolveOperationProjectionEvaluation } from './projection';
 import {
   applyActorFormTransition,
+  applyInitialTraitSuppression,
   applyTraitAddition,
+  applyTraitRemoval,
   cloneBattleState,
-  withoutTraitCount,
 } from './state';
 import type { TargetCandidate } from './targetContext';
 import type {
@@ -44,6 +45,7 @@ import {
   applyRuntimeNoblePhantasmVariantSelection,
   needsMutationValidation,
 } from './variantSelection';
+import { validateActorFormWorldFacts } from './formConstraintValidation';
 import { applyNoblePhantasmDamage } from './npDamageExecution';
 import {
   includedByPolicy,
@@ -59,6 +61,19 @@ function effectTransactionKey(operation: BattleOperation): string {
     source.sourceInstanceId,
     source.transactionGroupId ?? `${source.skillId}:${source.effectOccurrenceId}`,
   ].join(':');
+}
+
+function applyOrderedActorFormTransition(
+  state: ExecutableBattleState,
+  operation: Extract<BattleOperation, { kind: 'transformActorForm' }>,
+): ExecutionIssue | null {
+  const issue = validateActorFormWorldFacts(state, operation);
+  if (issue) return issue;
+  const changed = applyActorFormTransition(state, operation);
+  state.actorFormId = changed.actorFormId;
+  state.traits = changed.traits;
+  state.traitCounts = changed.traitCounts;
+  return null;
 }
 function effectOperationGroups(operations: readonly BattleOperation[]): BattleOperation[][] {
   const groups: BattleOperation[][] = [];
@@ -618,19 +633,18 @@ function executeOrderedScenarioCandidateInternal(
           candidateState.traits = changed.traits;
           candidateState.traitCounts = changed.traitCounts;
         } else if (operation.kind === 'removeTrait') {
-          (candidateState.traits[operation.scope] as Map<string, boolean>).set(
-            operation.trait,
-            false,
-          );
-          candidateState.traitCounts[operation.scope] = withoutTraitCount(
-            candidateState.traitCounts[operation.scope],
-            operation.trait,
-          );
+          const changed = applyTraitRemoval(candidateState, operation.scope, operation.trait);
+          candidateState.traits = changed.traits;
+          candidateState.traitCounts = changed.traitCounts;
         } else if (operation.kind === 'suppressInitialTrait') {
-          candidateState.initialTraitSuppressions[operation.scope] = new Set([
-            ...candidateState.initialTraitSuppressions[operation.scope],
+          const changed = applyInitialTraitSuppression(
+            candidateState,
+            operation.scope,
             operation.trait,
-          ]);
+          );
+          candidateState.initialTraitSuppressions = changed.initialTraitSuppressions;
+          candidateState.traits = changed.traits;
+          candidateState.traitCounts = changed.traitCounts;
         } else if (operation.kind === 'addQuantity') {
           const mutationBefore = audit ? mutationAuditAddress(operation, state) : null;
           issue = applyOrderedQuantityMutation(operation, candidateState);
@@ -665,8 +679,8 @@ function executeOrderedScenarioCandidateInternal(
             ),
           };
         else if (operation.kind === 'transformActorForm') {
-          const changed = applyActorFormTransition(candidateState, operation);
-          candidateState.actorFormId = changed.actorFormId;
+          issue = applyOrderedActorFormTransition(candidateState, operation);
+          if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (operation.kind === 'selectNoblePhantasmVariant') {
           const selection = applyRuntimeNoblePhantasmVariantSelection(
             candidateState,
@@ -703,7 +717,9 @@ function executeOrderedScenarioCandidateInternal(
                 .concat(activeMutationConstraints),
             })
           : { status: 'satisfied' as const, alternativeCount: 1 };
-        if (mutationValidation.status !== 'satisfied') {
+        if (issue) {
+          // The enclosing effect group rolls back every state and input mutation.
+        } else if (mutationValidation.status !== 'satisfied') {
           outcome = 'unsupported';
           code = 'unresolved';
           issue = mutationValidation.issue;

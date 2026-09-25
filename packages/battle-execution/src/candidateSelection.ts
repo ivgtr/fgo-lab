@@ -1,9 +1,5 @@
 import { resolveOperationActivation } from './activation';
-import {
-  fixedConstraintFactsFromState,
-  validateConstraintSet,
-  type SatisfiableConditionConstraint,
-} from './constraints';
+import { validateConstraintSet, type SatisfiableConditionConstraint } from './constraints';
 import {
   assumedDecisionConstraints,
   collectDecisionConditions,
@@ -18,6 +14,10 @@ import type {
 } from './contracts';
 import type { PreparedOrderedScenario } from './executionTypes';
 import { applyWorldFacts } from './state';
+import {
+  initialSelectionFixedFacts,
+  validateSelectedFormConstraints,
+} from './formConstraintValidation';
 import type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 import {
   applySelectedNoblePhantasmContext,
@@ -115,34 +115,13 @@ export function validateCandidateSelections(
     };
   const selectedVariant = resolvedVariant.variant;
   const validation = validateConstraintSet({
-    fixedFacts: [
-      ...fixedConstraintFactsFromState(initialState, 'initial').filter(
-        ({ fact }) => !finalSelectedNoblePhantasmVariant || fact.kind !== 'card',
-      ),
-      ...(finalSelectedNoblePhantasmVariant && selectedVariant.kind === 'attack'
-        ? [
-            {
-              sourceKey:
-                finalSelectedNoblePhantasmVariant.decisionKey ??
-                finalSelectedNoblePhantasmVariant.operationId,
-              fact: { kind: 'card' as const, card: selectedVariant.card },
-            },
-          ]
-        : []),
-      ...targetFacts.map((assertion) => ({
-        sourceKey: assertion.sourceKey,
-        fact: {
-          kind: 'targetPredicate' as const,
-          scope: 'target' as const,
-          predicate: assertion.predicate,
-          present: assertion.present,
-        },
-      })),
-      ...scenario.worldFactAssertions.map((assertion) => ({
-        sourceKey: assertion.decisionKey,
-        fact: assertion.fact,
-      })),
-    ],
+    fixedFacts: initialSelectionFixedFacts(
+      initialState,
+      targetFacts,
+      scenario.worldFactAssertions,
+      selectedVariant,
+      finalSelectedNoblePhantasmVariant,
+    ),
     expressions: [...activeConditionConstraints, ...activeMutationConstraints],
   });
   if (validation.status !== 'satisfied')
@@ -170,6 +149,19 @@ export function validateCandidateSelections(
       state: initialState,
       constraintIssues: [applied.issue],
       invalidDecisionKeys: new Set(),
+    };
+  const terminalIssue = validateSelectedFormConstraints(applied.state, [
+    ...activeConditionConstraints,
+    ...activeMutationConstraints,
+  ]);
+  if (terminalIssue)
+    return {
+      state: initialState,
+      constraintIssues: [terminalIssue],
+      invalidDecisionKeys: new Set([
+        ...activeConditionConstraints.map((constraint) => constraint.sourceKey),
+        ...activeMutationConstraints.map((constraint) => constraint.sourceKey),
+      ]),
     };
   return {
     state: applied.state,

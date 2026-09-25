@@ -228,9 +228,9 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "resolve the three recorded product-semantic blockers without weakening inert-control classification",
-    "implement selected execution observation, complete failure artifacts, rollback/recovery and stale-mutation ratchets",
-    "run fresh 80-condition shards/merge only after focused semantic gates pass",
+    "resolve B3 403400 targetRarity and five other S4 failures without weakening inert-control classification",
+    "complete without-area alternate and stale-mutation consumer ratchets",
+    "run remaining full production/audit/quality gates only after known Blocking repairs",
     "retain deferred legacy cleanup for its own later bounded unit; no TSK-09 work in this unit"
   ],
   "statusInvariants": {
@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Select one family from the 18 residual S4 typed failures using current code and saved producer values; provide a new bounded plan before implementation. No push.",
+  "nextBoundedUnit": "Select one family from the six residual S4 typed failures using current code and saved producer values; provide a new bounded plan before implementation. No push.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -4122,7 +4122,43 @@
       "verification": "Ignored focused Vitest diagnostic 2/2 passed. Independent HEAD plus two document files candidate: docs tests 6/6 and docs integrity passed; target Prettier, JSON parse, artifact bytes/SHA-256 passed. No product source test, production producer, full audit, or quality was run.",
       "decision": "Implementation boundary is now grounded in connected master-schema/compiler/candidate counterexamples. Keep external attacker assertion provenance separate from replaceable form intrinsic traits, validate terminal fixed facts before selected transaction commit, and unify preapply/ordered mutation predicate-count rules and typed rollback. Do not use a simple fact overlay or projection-only gate.",
       "nextOperation": "Present this bounded B2 product implementation plan for user confirmation; then implement only B2 and same-cause direct paths with focused semantic and producer on/off proof. B2/B3 and five other S4 failures remain Blocking; TSK-08 in_progress, TSK-09.1/09 blocked. Do not change TSK-06.5/TSK-07 protected evidence, run full gates, or push in the research unit."
+    },
+    {
+      "name": "S4 B2 2501400 magicBullet product correction",
+      "baselineHead": "169d8d1465529e7eb572c491c88eecd5968bab5b",
+      "scope": "B2 world assertion persistence across actor form transition and same-cause initial/state trait mutation count paths; no S4 gate relaxation, ranking/UI rule, B3 or other failure repair.",
+      "governing": "ADR 024 form intrinsic replacement and effect retention; ADR 009 E3.3 external actor world fact as initial layer; damage-effect-execution 8.6/8.8/8.12.6 fixed-fact, atomic mutation and input reachability.",
+      "implementation": "battle-execution state retains attacker external world trait assertions separately from replaceable form intrinsic traits. Preapplied and ordered transitions validate form intrinsic facts against assertions and preserve the external initial layer. Initial and selected-form constraints are checked. Preapplied and ordered remove/suppress share predicate/count mutation helpers, and selected transaction rejection restores initial state with typed issue.",
+      "semanticMatrix": {
+        "positiveTransition": "external attacker magicBullet remains count 1 after form switch; synthetic attackerState count 3 gives NP-special input 1.4; off count 0 plus state count 3 gives 1.3",
+        "terminalTrueVsNegative": "constraintConflict and unchanged pretransaction state; no accepted NP input",
+        "initialOnlyTrueVsNegative": "initial fixed-fact constraint conflict",
+        "legalMutations": "compiler diagnostic establishes attackerState add/remove and attacker initial-layer suppress; product helper aligns preapplied and ordered map/count for remove and suppress; attacker direct add/remove synthetic probe is excluded",
+        "sameFormAndAlternate": "same-form remove/suppress and changed-form variant selection use the same canonical state helpers; existing variant selection tests cover alternate and invalid selection",
+        "rollbackAndRecovery": "invalid selected variant or form fact conflict returns typed issue and original state; focused off to re-on restores external assertion and the NP-special input",
+        "projectionAndInput": "world-assumption projection may be applied on both sides from three attackerState stacks; S4 requires actual npSpecialMultipliers difference"
+      },
+      "producer": {
+        "identity": "owner:2501400:np:[\"2501500\",0,\"2501501\"]:5337:trait:magicBullet",
+        "on": {"terminalForm": "2501500/0", "selectedNp": "2501500/2501501", "status": "calculated", "npSpecialMultipliers": [1.4, 1.4, 1.4, 1.4, 1.4], "np1Average": 51810.655},
+        "off": {"terminalForm": "2501500/0", "selectedNp": "2501500/2501501", "status": "calculated", "npSpecialMultipliers": [1.3, 1.3, 1.3, 1.3, 1.3], "np1Average": 48109.855},
+        "expectedObservedControls": 1590,
+        "failureCount": 6,
+        "remaining": "B3 403400 targetRarity and five other S4 failures; B2 absent"
+      },
+      "artifacts": {
+        "productSummary": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/product-result.json", "bytes": 2730, "sha256": "ac00cf7f6d1abb175ba1b5dc928b9a1bea25b5a22cc7ed760aee22eeeec697e5"},
+        "producer": {"path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/production-inert-control-production.json", "bytes": 61523591, "sha256": "9e6a4529a3d64d3a20a9a75d927cec43f06377368e3020c12b81aadad2dc0001"},
+        "producerManifest": {"path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/manifest.json", "bytes": 3163, "sha256": "e46c359ba44587da4ccadc56a9f3949d9cf9cf6ef8ddaab915671a07fcb4d3ef"},
+        "candidateFocusedUnitManifest": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-unit-manifest.json", "bytes": 2854, "sha256": "8284cf4a12dc0d47756ce82ac783b155ae95205e98f0a2d43eb1b52c09ab988e"},
+        "candidateBattleManifest": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-battle-manifest.json", "bytes": 4307, "sha256": "5e9b621595d5d422bde0aa4bb16e0b1c5eb7bffc201eb5353ec7b8d7fbdf59ba"},
+        "candidateApplicationManifest": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-application-manifest.json", "bytes": 3304, "sha256": "c3a24a8afa4c8846ceec2915660347729af2b3248a68eec61be17561326293b2"}
+      },
+      "verification": "Independent HEAD-plus-unit-diff candidate: root TypeScript project references and web Next typegen/tsc passed; target ESLint and Prettier, docs tests 6/6 and integrity passed; focused state/NP-input 24/24, battle-execution tests excluding architecture 307/307, and calculator/ranking application tests 40/40 passed. Architecture suite has two pre-existing line-count failures: unchanged HEAD engine.ts 133 > 80 and candidateExecution.ts HEAD 785 > 400 (candidate 801 > 400); its remaining seven tests passed. pnpm stopped before script on external SQLite store; installed tools and the same generic runCapturedTest runner used. Focused production producer retains 1590 expected/observed controls with six known out-of-scope failures; its 16,427 ms compares with saved prior 16,430 ms for the same test, with no candidate increase.",
+      "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and existing digests; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "remaining": "Six other S4 failures remain Blocking. No full production/audit/quality or push. TSK-08 in_progress; TSK-09.1/09 blocked.",
+      "nextOperation": "Treat B3 and the five other S4 failures as separately bounded families; preserve the B2 form/world-fact and count semantics."
     }
   ],
-  "currentBoundedUnit": "S4 B2 2501400 transition/mutation deep diagnostic; product implementation remains Blocking"
+  "currentBoundedUnit": "S4 B2 2501400 magicBullet product correction; six other S4 failures remain Blocking"
 }

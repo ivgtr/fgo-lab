@@ -280,6 +280,8 @@ export interface BattleStateBase {
   >;
   stackQuantitySources: Record<string, StackSource>;
   traitCounts: Record<TraitScope, Readonly<Record<string, number>>>;
+  /** External initial-layer assertions survive an actor form transition. */
+  attackerWorldTraits: ReadonlyMap<string, boolean>;
   initialTraitSuppressions: Record<ActorScope, ReadonlySet<string>>;
   quantities: {
     attackerHpPermille: number | null;

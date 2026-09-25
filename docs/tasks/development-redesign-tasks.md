@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.48"
+document_version: "1.7.49"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2813,3 +2813,11 @@ Current bounded-unit handoff（2026-09-25、S4 B2 magicBullet境界の追加診�
 重要な訂正として、add／removeを`attacker`へ直接作用させる初回小fixtureは製品compilerから到達しない。schema合法なadd／removeのscopeは`attackerState`、suppressだけが`attacker`初期layerである。初期negativeとstate add、初期positiveとstate removeは別layerなので固定事実の矛盾とみなさない。根拠はADR 024の形態固有trait切替、ADR 009 E3.3の外部actor fact＝initial layer、damage-effect-execution §8.8の固定事実・commit済みmutationの統合制約／原子的commit、§8.12.6のcontrol到達契約。安全な実装境界は、外部assertionのprovenanceを形態固有traitと分けること、初期と終端で必要な固定事実を検証すること、事前適用とordered mutationでcount／predicateを一致させること、失敗した選択transactionのstate・input・operation outcomeを一緒に戻すことである。`candidateExecution`の非事前適用transform経路も同じ遷移規則を使う必要がある。単純なfact再適用やprojectionによるgate緩和は採用しない。
 
 ignored資料は`.test-results/tsk-08-b2-magic-bullet-20260925/deep-diagnostic.json`（18,877 bytes、SHA-256 `f140911146d09103db4cf58629d70ce08838d55c24f74d63b4c376041626a51c`）。再現用の抽出master／fixture／configと結果のbytes・SHA-256、各caseのstate・制約・typed issue・projection・NP特殊入力は[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitへ記録した。ignored診断はVitest 2/2、HEAD＋今回の文書2ファイルだけの独立candidateでdocs test 6/6、docs integrity、対象Prettier、JSONとchecksum照合に成功した。次はこの境界を製品実装計画として提示し、確認後にB2と同じ直接経路だけを修正する。B2を含む残り7件はBlocking、TSK-08は`in_progress`、TSK-09.1／09は`blocked`。保護対象TSK-06.5／TSK-07の値・digest等は変更せず、全件production／audit／qualityとpushは行わない。
+
+Current bounded-unit handoff（2026-09-25、S4 B2 `2501400` magicBullet製品修正）:
+
+開始HEAD `169d8d1465529e7eb572c491c88eecd5968bab5b`、tracked worktree／index空。利用者確認後、battle-executionのcanonical stateに外部attacker assertionの由来を保持し、形態固有traitの置換後も外部factを残す。選択形態の固有traitと外部factの矛盾をtransaction前にtyped conflictとし、選択後の固定事実／条件も再検証する。事前適用とordered実行のremove／suppressは同じmap・count更新を使い、ordered形態遷移でも同じ固定事実を検証する。application command、ranking policy、UI、S4 gateの意味は変更しない。根拠と反例は[evidence](../evidence/tsk-08-parity-ratchet.json)の今回bounded unitを参照する。
+
+focused semantic fixtureは肯定fact＋形態変更、終端固有true対negative、初期だけのtrait対negative、同一形態のremove／suppress、選択transaction失敗、off→再onを確認した。保存済みcompiler診断で合法scopeはadd／removeが`attackerState`、suppressが`attacker`初期layerであることを再利用し、attacker直接add／removeは根拠にしていない。実producerは対象B2のonで選択形態`2501500/0`・NP `2501500/2501501`、NP特殊倍率全level `1.4`、NP1平均`51810.655`、offで`1.3`／`48109.855`、両側`calculated`を観測した。S4 failureは7件から6件へ減り、B2は消えた。残るB3と他5件はBlockingで、全件production／audit／qualityは実行しない。
+
+検証artifactのpath・bytes・SHA-256、独立candidateのtypecheck／対象lint・format／文書検証、既存architecture ratchetのHEAD由来失敗と今回差分の境界は[evidence](../evidence/tsk-08-parity-ratchet.json)に記録する。TSK-06.5の34,640 outcomes、34,600 calculated／parity、40 unavailable、final unsupported／invalid／inputRequired各0と既存digest、candidate status／eligibility、production output、canonical input、fingerprint、TSK-07 cache／stale-response evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、pushしない。次は残る6件を別のbounded unitで計画する。

@@ -34,6 +34,7 @@ export function cloneBattleState(state: ExecutableBattleState): ExecutableBattle
       targetState: { ...state.traitCounts.targetState },
       field: { ...state.traitCounts.field },
     },
+    attackerWorldTraits: new Map(state.attackerWorldTraits),
     initialTraitSuppressions: {
       attacker: new Set(state.initialTraitSuppressions.attacker),
       target: new Set(state.initialTraitSuppressions.target),
@@ -108,6 +109,7 @@ function createBattleStateBase<
       attackerPredicateAssertions,
       activationContext,
     ),
+    attackerWorldTraits: new Map(),
     actorFormId: noblePhantasmVariant.ref.actorFormId,
     modifiers: [],
     modifierRates: {},
@@ -129,6 +131,8 @@ export function applyWorldFacts(
       if (fact.quantity !== 'attackerHpPermille' || !state.hp)
         candidate.quantities[fact.quantity] = fact.value;
     } else {
+      if (fact.scope === 'attacker')
+        (candidate.attackerWorldTraits as Map<string, boolean>).set(fact.trait, fact.present);
       (candidate.traits[fact.scope] as Map<string, boolean>).set(fact.trait, fact.present);
       candidate.traitCounts[fact.scope] = fact.present
         ? {
@@ -160,6 +164,45 @@ export function applyActorFormTransition(
   const traits = [...operation.targetTraits, 'cardNP'];
   candidate.traits.attacker = traitFacts(traits);
   candidate.traitCounts.attacker = traitCounts(traits);
+  for (const [trait, present] of candidate.attackerWorldTraits) {
+    (candidate.traits.attacker as Map<string, boolean>).set(trait, present);
+    candidate.traitCounts.attacker = present
+      ? {
+          ...candidate.traitCounts.attacker,
+          [trait]: Math.max(1, candidate.traitCounts.attacker[trait] ?? 0),
+        }
+      : withoutTraitCount(candidate.traitCounts.attacker, trait);
+  }
+  for (const trait of candidate.initialTraitSuppressions.attacker) {
+    (candidate.traits.attacker as Map<string, boolean>).set(trait, false);
+    candidate.traitCounts.attacker = withoutTraitCount(candidate.traitCounts.attacker, trait);
+  }
+  return candidate;
+}
+
+export function applyTraitRemoval(
+  state: ExecutableBattleState,
+  scope: Extract<BattleOperation, { kind: 'removeTrait' }>['scope'],
+  trait: string,
+): ExecutableBattleState {
+  const candidate = cloneBattleState(state);
+  (candidate.traits[scope] as Map<string, boolean>).set(trait, false);
+  candidate.traitCounts[scope] = withoutTraitCount(candidate.traitCounts[scope], trait);
+  return candidate;
+}
+
+export function applyInitialTraitSuppression(
+  state: ExecutableBattleState,
+  scope: Extract<BattleOperation, { kind: 'suppressInitialTrait' }>['scope'],
+  trait: string,
+): ExecutableBattleState {
+  const candidate = cloneBattleState(state);
+  candidate.initialTraitSuppressions[scope] = new Set([
+    ...candidate.initialTraitSuppressions[scope],
+    trait,
+  ]);
+  (candidate.traits[scope] as Map<string, boolean>).set(trait, false);
+  candidate.traitCounts[scope] = withoutTraitCount(candidate.traitCounts[scope], trait);
   return candidate;
 }
 

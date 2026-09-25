@@ -8,10 +8,13 @@ import type { EffectDecision } from './contracts';
 import { activationRequirementsSatisfied, evaluateCondition } from './condition';
 import type { OperationActivation } from './candidateSelection';
 import type { PreparedOrderedScenario } from './executionTypes';
+import { validateActorFormWorldFacts } from './formConstraintValidation';
 import {
   applyActorFormTransition,
+  applyInitialTraitSuppression,
   applyNoblePhantasmVariantSelection,
   applyTraitAddition,
+  applyTraitRemoval,
 } from './state';
 
 type SelectionOperation = Extract<BattleOperation, { kind: 'selectNoblePhantasmVariant' }>;
@@ -153,7 +156,12 @@ export function applySelectedNoblePhantasmContext(
     (operation): operation is Extract<BattleOperation, { kind: 'transformActorForm' }> =>
       operation.kind === 'transformActorForm',
   );
-  let state = transitions.reduce(applyActorFormTransition, initialState);
+  let state = initialState;
+  for (const transition of transitions) {
+    const issue = validateActorFormWorldFacts(state, transition);
+    if (issue) return { state: initialState, issue };
+    state = applyActorFormTransition(state, transition);
+  }
   if (!actorFormEquals(state.actorFormId, variant.ref.actorFormId))
     return { state: initialState, issue: variantIssue(selection, 'formMismatch') };
   state = applyNoblePhantasmVariantSelection(state, variant);
@@ -161,12 +169,9 @@ export function applySelectedNoblePhantasmContext(
     if (operation.kind === 'addTrait')
       state = applyTraitAddition(state, operation.scope, operation.trait);
     if (operation.kind === 'removeTrait')
-      (state.traits[operation.scope] as Map<string, boolean>).set(operation.trait, false);
+      state = applyTraitRemoval(state, operation.scope, operation.trait);
     if (operation.kind === 'suppressInitialTrait')
-      state.initialTraitSuppressions[operation.scope] = new Set([
-        ...state.initialTraitSuppressions[operation.scope],
-        operation.trait,
-      ]);
+      state = applyInitialTraitSuppression(state, operation.scope, operation.trait);
   }
   return { state, issue: null };
 }

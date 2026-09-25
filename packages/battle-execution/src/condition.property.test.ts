@@ -49,6 +49,7 @@ function state(
       targetState: Object.fromEntries(targetState.map((trait) => [trait, 1])),
       field: {},
     },
+    attackerWorldTraits: new Map(),
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
     activationContext: {

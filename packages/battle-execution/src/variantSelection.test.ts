@@ -7,7 +7,14 @@ import type {
   NpDamageSpec,
 } from '@fgo-lab/master-data';
 import type { BattleOperation } from './contracts';
-import { createInitialBattleState } from './state';
+import {
+  applyInitialTraitSuppression,
+  applyTraitRemoval,
+  applyWorldFacts,
+  createInitialBattleState,
+} from './state';
+import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
+import { applyNoblePhantasmDamage } from './npDamageExecution';
 import {
   applyRuntimeNoblePhantasmVariantSelection,
   applySelectedNoblePhantasmContext,
@@ -108,6 +115,254 @@ const selection = {
 } satisfies BattleOperation;
 
 describe('noble phantasm variant selection', () => {
+  it('carries an external initial trait across a form transition while replacing intrinsic traits', () => {
+    const damageInput = {
+      ...input,
+      attackerStateTraits: ['magicBullet', 'magicBullet', 'magicBullet'],
+    };
+    const initial = createInitialBattleState(
+      damageInput,
+      base,
+      ['initial-only'],
+      {},
+      [],
+      [],
+      activation.factSet,
+    );
+    const asserted = applyWorldFacts(initial, [
+      {
+        decisionKey: 'world',
+        fact: { kind: 'trait', scope: 'attacker', trait: 'magicBullet', present: true },
+      },
+    ]);
+    const transform = {
+      ...operationBase,
+      operationId: 'transform',
+      kind: 'transformActorForm' as const,
+      targetFormId: changedForm,
+      targetTraits: ['terminal-only'],
+    } satisfies BattleOperation;
+    const operations = [transform, selection];
+    const activations = new Map(
+      operations.map((operation) => [
+        operation.operationId,
+        {
+          enabled: true,
+          enabledBeforeStochasticOutcome: true,
+          stochasticOutcome: { status: 'success' as const },
+          activeDecisionKeys: [],
+          assumesLocalCondition: false,
+        },
+      ]),
+    );
+    const selected = applySelectedNoblePhantasmContext(
+      asserted,
+      changed,
+      selection,
+      operations,
+      new Set(operations.map((operation) => operation.operationId)),
+      activations,
+    );
+    expect(selected.issue).toBeNull();
+    expect(selected.state.traits.attacker.get('magicBullet')).toBe(true);
+    expect(selected.state.traitCounts.attacker.magicBullet).toBe(1);
+    expect(selected.state.traits.attacker.has('initial-only')).toBe(false);
+    expect(selected.state.traits.attacker.get('terminal-only')).toBe(true);
+    const excluded = applySelectedNoblePhantasmContext(
+      initial,
+      changed,
+      selection,
+      operations,
+      new Set(operations.map((operation) => operation.operationId)),
+      activations,
+    );
+    const restored = applySelectedNoblePhantasmContext(
+      applyWorldFacts(initial, [
+        {
+          decisionKey: 'world',
+          fact: { kind: 'trait', scope: 'attacker', trait: 'magicBullet', present: true },
+        },
+      ]),
+      changed,
+      selection,
+      operations,
+      new Set(operations.map((operation) => operation.operationId)),
+      activations,
+    );
+    const traitDamage = {
+      ...damage,
+      kind: 'traitCount' as const,
+      rawFunctionType: 'damageNpIndividualSum' as const,
+      quantity: { kind: 'stacks' as const, inputs: [] },
+      parametersByOvercharge: Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () => ({
+          ratePermille: 1_000,
+          valuePermille: 3_000,
+          targetId: 0,
+          targetIds: [2],
+          targetTraits: [{ kind: 'trait' as const, name: 'magicBullet' }],
+          secondaryValuePermille: 1_000,
+          correctionPermille: 100,
+          maximumTargetCount: 10,
+        })),
+      ) as NpDamageSpec['parametersByOvercharge'],
+    } as NpDamageSpec;
+    const npOperation = {
+      ...operationBase,
+      operationId: 'damage',
+      kind: 'executeNpDamage' as const,
+      damage: traitDamage,
+      overcharge: 1,
+      selectedNpLevel: 1,
+      npMultipliers: [300, 300, 300, 300, 300] as const,
+      specialAttackCondition: { kind: 'always' as const },
+      specialAttackDependency: { kind: 'always' as const },
+      specialAttackDecisionKey: null,
+    } satisfies BattleOperation;
+    const specialInput = (candidate: typeof selected) =>
+      applyNoblePhantasmDamage(damageInput, npOperation, candidate.state, new Map())
+        .npSpecialMultipliers;
+    expect(excluded.issue).toBeNull();
+    expect(specialInput(selected)).toEqual([1.4, 1.4, 1.4, 1.4, 1.4]);
+    expect(specialInput(excluded)).toEqual([1.3, 1.3, 1.3, 1.3, 1.3]);
+    expect(specialInput(restored)).toEqual(specialInput(selected));
+  });
+
+  it('rejects an external negative against a terminal intrinsic trait without committing selection', () => {
+    const asserted = applyWorldFacts(state, [
+      {
+        decisionKey: 'world',
+        fact: { kind: 'trait', scope: 'attacker', trait: 'terminal-only', present: false },
+      },
+    ]);
+    const transform = {
+      ...operationBase,
+      operationId: 'transform',
+      kind: 'transformActorForm' as const,
+      targetFormId: changedForm,
+      targetTraits: ['terminal-only'],
+    } satisfies BattleOperation;
+    const operations = [transform, selection];
+    const activations = new Map(
+      operations.map((operation) => [
+        operation.operationId,
+        {
+          enabled: true,
+          enabledBeforeStochasticOutcome: true,
+          stochasticOutcome: { status: 'success' as const },
+          activeDecisionKeys: [],
+          assumesLocalCondition: false,
+        },
+      ]),
+    );
+    const selected = applySelectedNoblePhantasmContext(
+      asserted,
+      changed,
+      selection,
+      operations,
+      new Set(operations.map((operation) => operation.operationId)),
+      activations,
+    );
+    expect(selected.issue?.kind).toBe('constraintConflict');
+    expect(selected.state).toBe(asserted);
+  });
+
+  it('keeps preapplied and ordered remove and suppress counts consistent', () => {
+    const initial = createInitialBattleState(
+      { ...input, attackerStateTraits: ['magicBullet'] },
+      base,
+      ['magicBullet'],
+      {},
+      [],
+      [],
+      activation.factSet,
+    );
+    const remove = {
+      ...operationBase,
+      operationId: 'remove',
+      kind: 'removeTrait' as const,
+      scope: 'attackerState' as const,
+      trait: 'magicBullet',
+    } satisfies BattleOperation;
+    const suppress = {
+      ...operationBase,
+      operationId: 'suppress',
+      kind: 'suppressInitialTrait' as const,
+      scope: 'attacker' as const,
+      trait: 'magicBullet',
+    } satisfies BattleOperation;
+    const sameFormSelection = { ...selection, variant: base.ref };
+    const operations = [sameFormSelection, remove, suppress];
+    const activations = new Map(
+      operations.map((operation) => [
+        operation.operationId,
+        {
+          enabled: true,
+          enabledBeforeStochasticOutcome: true,
+          stochasticOutcome: { status: 'success' as const },
+          activeDecisionKeys: [],
+          assumesLocalCondition: false,
+        },
+      ]),
+    );
+    const selected = applySelectedNoblePhantasmContext(
+      initial,
+      base,
+      sameFormSelection,
+      operations,
+      new Set(operations.map((operation) => operation.operationId)),
+      activations,
+    );
+    expect(selected.issue).toBeNull();
+    const ordered = applyInitialTraitSuppression(
+      applyTraitRemoval(initial, 'attackerState', 'magicBullet'),
+      'attacker',
+      'magicBullet',
+    );
+    expect(selected.state.traits.attackerState.get('magicBullet')).toBe(false);
+    expect(selected.state.traitCounts.attackerState.magicBullet).toBeUndefined();
+    expect(selected.state.traits.attacker.get('magicBullet')).toBe(false);
+    expect(selected.state.traitCounts.attacker.magicBullet).toBeUndefined();
+    expect(selected.state.traitCounts).toEqual(ordered.traitCounts);
+    expect(
+      fixedConstraintFactsFromState(selected.state).filter(
+        (item) => item.fact.kind === 'trait' && item.fact.trait === 'magicBullet',
+      ),
+    ).toEqual(
+      fixedConstraintFactsFromState(ordered).filter(
+        (item) => item.fact.kind === 'trait' && item.fact.trait === 'magicBullet',
+      ),
+    );
+  });
+
+  it('rejects an initial-only intrinsic trait against an explicit negative', () => {
+    const initial = createInitialBattleState(
+      input,
+      base,
+      ['initial-only'],
+      {},
+      [],
+      [],
+      activation.factSet,
+    );
+    const validation = validateConstraintSet({
+      fixedFacts: [
+        ...fixedConstraintFactsFromState(initial),
+        {
+          sourceKey: 'world',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'attacker' as const,
+            trait: 'initial-only',
+            present: false,
+          },
+        },
+      ],
+      expressions: [],
+    });
+    expect(validation.status).toBe('conflict');
+  });
+
   it('changes the complete form-qualified variant rather than mutating only its card', () => {
     const result = applyRuntimeNoblePhantasmVariantSelection(
       { ...state, actorFormId: changed.ref.actorFormId },
