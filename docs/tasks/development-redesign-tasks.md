@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.51"
+document_version: "1.7.52"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2837,3 +2837,14 @@ Current bounded-unit handoff（2026-09-25、S4 B3 `403400` targetRarity製品修
 小fixtureはnullのon/off、rarity 1／2・対象外・範囲外、quantity-onlyとtrait混合のany／all／not、off→再on、保存復元、calculator／ranking、非一意倍率を確認した。実producer 1,590 controlではB3のonが`calculated`／projection `applied`／NP特殊入力全level `1.5`／NP1平均`36304.49`、offが`calculated`／`notApplied`／全level `1`／`24202.825`。前artifactのfailure 6件と今回5件のidentity差分はB3の除去1件、追加0件である。残る5件は別bounded unitのBlockingであり、全件production／audit／qualityとpushは行わない。
 
 focused 60/60、独立HEAD＋今回差分candidateのroot・web typecheck、対象lint／format、focused 60/60を確認した。`pnpm`はscript前に外部SQLite storeで失敗したため、既存node_modulesと同じgeneric runnerへ切り替えた。artifactのbytes・SHA-256、文書検証、既存architecture行数テストのHEAD由来2件との境界は[evidence](../evidence/tsk-08-parity-ratchet.json)へ記録する。TSK-06.5の34,640 outcomes、34,600 calculated／parity、40 unavailable、final unsupported／invalid／inputRequired各0と既存digest、candidate status／eligibility、production output・canonical input・fingerprint、TSK-07 cache／stale-response evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。次は残る5件を別のbounded unitで計画する。
+
+
+Current bounded-unit handoff（2026-09-25、S4 owner `2301100` 3 controlの読み取り診断）:
+
+開始HEAD `d08108a5d79c887b64d354b4ba5ece58cadd9865`、tracked worktree／index空。保存済み実producer（61,521,901 bytes、SHA-256 `8def9c53552cdfb6ec6f82e041a3437cd28ea0b001fbe73cda31960372db2875`）を照合した。3件のonは同じ`selected-form`の`exclusiveTrait:attacker:npCardForm`で`unsupported`、offは`calculated`。data pipelineがactive-only recipient trait条件を正規化し、commandは`operationEnabled=true`／`assumeSatisfied`を送る。passive 2534650:22871が先に付与する`traitId:3122`と、3件が要求する`traitId:3121`はcanonical排他groupで衝突する。22874のArts条件は観測経路で成立している。candidate検証後の対象event／projectionはon/offとも`notApplied`、effective contributionはfalse、damage input bindingは同値。保存済みgateの`damage-outcome`分類だけで原因を確定せず、直接issueを採取した。
+
+UI既定calculator scenarioはskill slot 2のchoice 1を含み、画面にはchoice 0への切替chipがある。applicationの`setPreparationSkillChoice`でchoice 0を明示選択すると、宝具variantは`2301198`となる。この実経路で3件ともon/offが`calculated`、対象event・projectionは`applied`／`notApplied`、入力差分とNP1平均差分を持つ。off→再on、JSON schema保存復元も一致した。rankingの`conditionalEffects=satisfied`では114候補中、同じchoice 0＋skill slot 3の候補を確認し、3件とも`applied`／`calculated`。元のproducer既定scenarioはslot 2を含まず宝具variant `2301101`であり、月下の有効経路とはAttackProfileが異なる。
+
+確定した共通原因は、S4 producerが日輪の固定状態だけで3件のon/offを採取し、到達可能な月下profile上の操作応答と混同していることである。executorのtyped conflictは妥当であり、chip操作からchoiceやtraitを捏造しない。次の**承認待ち計画**は、canonicalな準備候補とAttackProfile identityを使って対象controlの到達可能な同一scenario on/offをS4 producerへ接続し、日輪側のtyped conflictも別の反例として保持すること。件数・candidate数・時間の差分を測り、単なるgate除外、数値fallback、ID／label分岐を行わない。audit ownership変更の境界が確認されるまで製品source／test／gateを変更しない。根拠symbol、ignored診断artifactのbytes・SHA-256、実identityと値は[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを参照する。
+
+診断用のignored Vitest 1/1のみ実行し、製品source／testは未編集。full producer／audit／qualityは未実行。残るowner 1000100／3300200の2件、他ratchet、TSK-08全体の収束は対象外。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、保護されたTSK-06.5／TSK-07 evidenceは維持する。資料だけを検証してlocal commitし、pushは行わない。

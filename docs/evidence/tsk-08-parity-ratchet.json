@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "B3 403400 targetRarity: present a code-derived one-session implementation plan for confirmation before product edits. If ownership cannot be fixed safely, plan only the minimum diagnostic. Five other S4 failures remain outside the unit. No push.",
+  "nextBoundedUnit": "Owner 2301100 three-control reachable-profile S4 audit correction: present a bounded implementation plan for confirmation before product edits. Owner 1000100 and 3300200, other ratchets, and TSK-08 closure remain outside the unit. No push.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -4285,7 +4285,59 @@
       "protected": "TSK-06.5 34,640 outcomes, 34,600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and existing digests; candidate status/eligibility, production output, canonical input, fingerprint, and TSK-07 cache/stale-response evidence unchanged.",
       "remaining": "Five other S4 failures and other ratchets remain Blocking. TSK-08 in_progress; TSK-09.1/09 blocked. No full production/audit/quality or push.",
       "nextOperation": "Plan the remaining five S4 failures in separate bounded units; keep B3 effect-local quantity semantics and typed gate intact."
+    },
+    {
+      "name": "S4 owner 2301100 three-control selected-profile diagnostic",
+      "baselineHead": "d08108a5d79c887b64d354b4ba5ece58cadd9865",
+      "scope": "Read-only diagnosis for skill 2536550 attackBuff 22883 / npDamageBuff 22888 and passive 2534650 cardBuff 22874. No product source/test change or full producer rerun.",
+      "cause": "All three enabled commands assert attacker traitId:3121. Passive 2534650:22871 commits attackerState traitId:3122 first. Both are exclusive npCardForm traits. validateSelectedFormConstraints returns selected-form exclusiveTrait conflict for each enabled command; ordered operations and projection remain notApplied, and no modifier reaches damage input. The passive cardBuff also requires Arts, which the observed NP satisfies.",
+      "commandAndOutcome": "The producer uses createDefaultResolvedScenario with slots 1 and 3 and NP 2301101. Enabled commands are operationEnabled=true/assumeSatisfied; excluded commands are false/evaluate. Enabled result is unsupported with typed selected-form conflict; excluded result is calculated. All three enabled/excluded target events and projections are notApplied and input binding is equal.",
+      "reachableContrast": "The UI default calculator scenario includes slot 2 choice 1 and exposes choice 0. setPreparationSkillChoice(choice 0) selects NP 2301198 and establishes traitId:3121. Its three controls have calculated on/off, applied/notApplied events and projections, differing damage inputs and NP1 averages; off->re-on and JSON schema restoration agree. A satisfied ranking plan also materializes this choice and all three contributions.",
+      "planningDecision": "The S4 producer/gate currently samples an incompatible fixed state while requiring every selected control on/off pair to calculate. The product executor correctly fails closed. A future correction must use canonical reachable preparation/profile candidates, keep actual attack-profile identity in the audit, check the real moon-side control pair and retain the day-side typed-conflict counterexample. Do not make a chip toggle select the preparation choice, invent trait facts, suppress the failure, or add owner/effect-ID runtime branches. This is a proposed audit ownership change requiring a separate confirmed product plan.",
+      "sourceSymbols": [
+        "effectNormalization.normalizeTraitProvenance/canonicalTraitRequirement",
+        "operationCompiler.compileEffectCondition",
+        "conditionSemantics.canonicalExclusiveGroup",
+        "effectDecision.applyEffectControlPresentationDecision",
+        "scenarioCommands.setPreparationSkillChoice",
+        "candidateSelection.validateCandidateSelections",
+        "formConstraintValidation.validateSelectedFormConstraints",
+        "candidateExecution.resolveOperationDisposition",
+        "rankingPolicyScenario.compileRankingExecutionPlan",
+        "productionMasterControlAudit.userControlSideObservation"
+      ],
+      "artifacts": {
+        "priorProducer": {
+          "path": ".test-results/2026-09-25T08-55-00-545Z-2-7b93f9/production-inert-control-production.json",
+          "bytes": 61521901,
+          "sha256": "8def9c53552cdfb6ec6f82e041a3437cd28ea0b001fbe73cda31960372db2875"
+        },
+        "diagnostic": {
+          "path": ".test-results/tsk-08-2301100-diagnostic-20260925/diagnostic.json",
+          "bytes": 145779,
+          "sha256": "4f8f8627d645f60f42362c5f0904a983d3090521e1deef37f49c59362d20c1f9"
+        },
+        "finding": {
+          "path": ".test-results/tsk-08-2301100-diagnostic-20260925/finding.json",
+          "bytes": 14101,
+          "sha256": "aa58178277f5a4a1efc293a7f983c17432334c7a221287a1b35ac69900006460"
+        },
+        "diagnosticSource": {
+          "path": ".test-results/tsk-08-2301100-diagnostic-20260925/diagnostic.test.ts",
+          "bytes": 8574,
+          "sha256": "ffa3a7faf5b8c53359d66ade745dabe6819edb8dca824b39e2d5daa068a1c626"
+        },
+        "diagnosticConfig": {
+          "path": ".test-results/tsk-08-2301100-diagnostic-20260925/vitest.config.ts",
+          "bytes": 227,
+          "sha256": "9eee43274aa6a0b9197f505734cd71e701c4a9ca945bc4975843632179381e5c"
+        }
+      },
+      "verification": "One bounded ignored diagnostic test passed 1/1 using existing Vitest. Prior producer bytes/SHA-256 verified. No source product tests, fresh full producer, full audit, or quality run. Documentation verification passed; local documentation commit follows this record.",
+      "protected": "TSK-06.5 34640 outcomes (34600 calculated/parity, 40 unavailable), digests, candidate status/eligibility, production output/canonical input/fingerprint, TSK-07 cache/stale-response evidence unchanged.",
+      "remaining": "Owner 1000100 and 3300200 failures and other ratchets remain outside this unit. TSK-08 in_progress; TSK-09.1/09 blocked. No push.",
+      "nextOperation": "Present the reachable-profile S4 audit correction and typed-conflict guardrail as a bounded implementation plan for confirmation. Before approval, make no product source/test/gate changes."
     }
   ],
-  "currentBoundedUnit": "S4 B3 403400 targetRarity product correction; five other S4 failures remain Blocking"
+  "currentBoundedUnit": "S4 owner 2301100 read-only diagnostic complete; reachable-profile audit plan awaits confirmation; five S4 failures remain Blocking"
 }
