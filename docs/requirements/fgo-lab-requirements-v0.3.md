@@ -1,11 +1,11 @@
 ---
 title: "FGO Lab プロダクト要件定義書"
-document_version: "0.3.8"
+document_version: "0.3.9"
 status: "Active"
 approval: "approved"
-approved_at: "2026-09-01"
+approved_at: "2026-09-26"
 created_at: "2026-08-24"
-updated_at: "2026-09-01"
+updated_at: "2026-09-26"
 supersedes: "FGO Lab requirements v0.2.2 (docs/archive/README.md recovery index)"
 ui_baseline: "docs/requirements/ui-design-spec.md v1.4.1 approved"
 ---
@@ -348,6 +348,7 @@ scenarioやversionを並行fieldとして扱わず、次のdiscriminated contrac
 type CanonicalContributionIntent = 'standard' | 'excludeVoluntarySkillModifiers';
 
 interface CalculationVersionContext {
+  schemaVersion: 41;
   masterDataVersion: string;
   engineVersion: string;
 }
@@ -376,6 +377,12 @@ type PortableCalculationRequest =
       executionIntent: { kind: 'manual' };
     };
 ```
+
+schema v41のresolved／manual requestは`versionContext.schemaVersion: 41`を必須とし、
+resultの`versions.schemaVersion`と一致させる。新requestのfingerprintは、このfieldを含むrequest全体から算出する。
+v40 requestのversion contextはmaster／engineの2 fieldのまま歴史的identityとして保持し、保存済みrequest・result・fingerprintを
+自動でv41へ書き換えない。v40からの明示再計算でのみ、元のscenario／execution intentを使ってv41 requestと新identityを生成する。
+この構造版fieldはdamage式の版ではないため、identity変更のためだけにengineVersionを上げない。
 
 - `standard`はcanonical executionで適用可能な寄与を通常どおり含める。
 - `excludeVoluntarySkillModifiers`は、任意skill由来のdamage modifierだけを反実仮想として除外する。
@@ -731,4 +738,5 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 0.3.9 | v41 resolved／manual requestのversion contextにschemaVersionを必須化し、v40 manual requestと新identityの衝突を解消（`CALC-PORTABLE-001`） | approved 2026-09-26: user confirmed the staged-plan contract | TSK-08、TSK-09.1／09の依存確認 | v41 portable fingerprintとTSK-06.5 matrix mergedDigestは意図的に変わる。旧v40 request／result／fingerprintと旧digestを履歴として保持し、S4 1,590 identity、34,640 outcomes、ranking条件fingerprint、candidate status／eligibility、production output／canonical input、TSK-07 cache／stale-responseを別定義の保護対象として検証する |
 | 0.3.8 | version context／originを内包するportable calculation identity、明示version遷移、schema 32 migrationを追加（`CALC-PORTABLE-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでschema／engine version、fingerprint、draft／history／share／backup schemaが破壊的に変わる。damage digestは不変を期待するが実装時に検証する |

@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab documentation registry"
-document_version: "1.5.87"
+document_version: "1.5.88"
 status: "Active"
-updated_at: "2026-09-25"
+updated_at: "2026-09-26"
 ---
 
 # FGO Lab documentation registry
@@ -28,15 +28,15 @@ updated_at: "2026-09-25"
 
 | Path | Kind／status | Authority／scope |
 | --- | --- | --- |
-| [docs/README.md](README.md) | registry／Active v1.5.87 | 唯一のdocumentation navigation entry |
-| [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.8／approved | product目的、機能範囲、portable calculation identity、データ境界、横断受入条件 |
+| [docs/README.md](README.md) | registry／Active v1.5.88 | 唯一のdocumentation navigation entry |
+| [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.9／approved | product目的、機能範囲、portable calculation identity、データ境界、横断受入条件 |
 | [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.5.1／approved | 画面構造、ranking comparison controls、versioned calculator recovery、responsive、a11y、UI受入条件 |
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
 | [damage effect execution requirements](requirements/damage-effect-execution-requirements.md) | requirement／Active v1.2.4 | condition、state mutation、ordered damage execution、UI不変条件 |
 | [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.10.3／approved | comparison axes、all attack-NP coverage、maximum stack、contribution UI、source-program、portable handoff、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.1 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.3.0 | bounded output、artifact、実装修正と検証の範囲、session分離・上限、handoff |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.54 | 唯一の実装順序、依存、status、handoff |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.55 | 唯一の実装順序、依存、status、handoff |
 | [TSK-06.48 package semantic convergence plan](tasks/package-semantic-convergence-tsk-06-48.md) | task plan／Complete v1.0.9 | パッケージ別semantic owner、population／dependent resource・HP／effect-execution・battle-execution・calculation-application family、検証範囲、性能・テスト境界 |
 | [TSK-06.48 bounded completion plan](tasks/package-semantic-convergence-tsk-06-48-completion-plan.md) | task plan／Complete v1.0.4 | A／B bounded unitのowner audit、最終qualityまでの停止境界、限定的検証、過度な性能ゴール／テストを求めない方針 |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |

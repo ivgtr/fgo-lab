@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Implement owner 1000100 audit witness selection only after confirmation, using ordered HP read and canonical finite candidate boundaries. Owner 3300200 and other ratchets remain separate Blocking work.",
+  "nextBoundedUnit": "Implement owner 3300200 S4 battle-point operation-read witness and independent resolved enemy defense with exact v40 historical identity and v41 migration, following the latest bounded-unit handoff. Preserve 1000100 HP and 2301100 moon/day regressions; other ratchets remain Blocking.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -4522,7 +4522,174 @@
       "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, existing digests, candidate status/eligibility, production output/canonical input/fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "remaining": "Owner 3300200 and other ratchets remain Blocking. TSK-08 in_progress; TSK-09.1/09 blocked. No full production/audit/quality or push.",
       "nextOperation": "Diagnose owner 3300200 battle point phase in a separate bounded unit, then resolve other ratchets and run final gates only after Blocking is zero."
+    },
+    {
+      "name": "S4 owner 3300200 pre-implementation code and saved-artifact handoff",
+      "status": "research_only_no_execution",
+      "baselineHead": "c0b353b03dd9de303983ee36a1a92ddd95a72678",
+      "worktree": {
+        "trackedFiles": 16,
+        "untrackedFiles": 2,
+        "indexEmpty": true,
+        "trackedBinaryDiffSha256": "9ebfe78d21fd99b8dd47eb22fb53971f28236e09f5f6af172b05c88d4f97c9d1",
+        "untrackedSha256": {
+          "apps/web/src/adapters/v40Migration.test.ts": "cf3ec0a869e13f954caeae466c61683488d1817a43700296ea113114b1ef16de",
+          "packages/calculation-application/src/productionBattlePointControlWitness.test.ts": "91584e5e325e645f7607572024a6ca20668f2fcaa66dbb8a1622c4f9033b0391"
+        }
+      },
+      "sourceOfTruth": [
+        "AGENTS.md",
+        "docs/tasks/development-redesign-tasks.md latest 3300200 handoff",
+        "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md",
+        "docs/requirements/fgo-lab-requirements-v0.3.md portable identity",
+        "docs/requirements/damage-effect-execution-requirements.md section 7",
+        "docs/requirements/development-execution-efficiency-requirements.md"
+      ],
+      "canonicalPath": {
+        "pipeline": "data-pipeline/src/effectNormalization.ts normalizeQuantityConditions reads CheckBattlePointPhaseRange into subjectId 3300200, comparison atLeast, value 7; snapshotNormalization.ts creates BattlePointDomain",
+        "master": "master-data/src/index.ts battlePointDomainSchema; production master NP variant 3300201 effect occurrence 1588:0 ignoreDefense with required recipient attacker",
+        "scenarioAndPreparation": "calculation-application/src/scenario.ts battlePointWitnesses -> prepareCalculationScenarioWithPolicy -> prepareConcreteCalculationScenarioWithPolicy; scenarioCommands.ts setEnemyDefenseBuff; default plan skills 1,2,3 then attack NP",
+        "orderedRead": "battle-execution/src/candidateExecution.ts evaluateConditionAgainstKnownFacts in operation loop calls condition.ts evaluateCondition; condition.ts quantity with subjectId reads current battlePoints through battlePointPhase; current audit callback records inputQuantity only",
+        "outcome": "battle-execution/src/engine.ts auditOperationEvents and projection.ts; effectiveContributions.ts; state.ts foldDamageInput; calc-core/src/index.ts subtracts defenseBuff only when ignoreDefense false",
+        "producerAndGate": "calculation-application/src/productionMasterControlAudit.test.ts evaluates the selected calculation, writes production-inert-control-production.json before assertion; productionParityDiagnostics.ts auditProductionUserControlObservations verifies 1590 identity population and selected event/projection/input/result"
+      },
+      "changeOwners": {
+        "auditRead": "packages/battle-execution/src/condition.ts, candidateExecution.ts, executionTypes.ts: observation only, no alternate condition evaluator or damage semantics",
+        "s4ProducerAndGate": "packages/calculation-application/src/productionMasterControlAudit.test.ts, productionParityDiagnostics.ts and focused semantic fixture: canonical finite witness, exact read-to-result proof and fail-closed typed reason",
+        "scenarioAndRanking": "packages/schema/src/index.ts, packages/calculation-application/src/scenario.ts, scenarioCommands.ts, rankingContracts.ts, rankingPolicy.ts: resolved input and neutral ranking default; schema/src/quantityFacts.ts is the existing 0..10 domain reference",
+        "portablePersistence": "packages/schema/src/index.ts migration boundary, apps/web/src/adapters/repository.ts, share.ts, shareValidation.ts, app/startup.ts and portableDraft.ts: exact old identity, fresh request, atomic restore; packages/workspace-domain/src/index.ts current full-request fingerprint algorithm is a protected reference",
+        "display": "apps/web/src/features/calculator/Calculator.tsx, CalculationContextNotice.tsx, app/CalculatorRoute.tsx, HomeRoute.tsx, App.tsx, features/data/DataPage.tsx: independent defense input, repair, historical-only labeling and explicit recalculation",
+        "evidence": "docs/tasks/development-redesign-tasks.md and docs/evidence/tsk-08-parity-ratchet.json; TSK-06.5 evidence digest only after canonical matrix measurement"
+      },
+      "canonicalDomain": {
+        "subjectId": "3300200",
+        "phaseScale": "point",
+        "phases": "0..10, 11 entries",
+        "thresholds": [-1, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90],
+        "capacityDefault": null,
+        "capacityMaximum": null,
+        "scenarioPhaseDomain": "0..10 from schema/src/quantityFacts.ts",
+        "pointWitnessCountForCurrentPlanner": 92,
+        "candidateDerivation": "The current planner enumerates absent -1 for phase 0 and points 0..90. This is a finite witness set, not the canonical legal point domain: null capacity permits unbounded nonnegative points, and phase 10 covers every point >=90. No arbitrary 32-phase cap.",
+        "failClosed": "Missing or ambiguous subject/domain, domain phase outside scenario schema, absent read, target ambiguity, partial transaction, invalid/unsupported or no complete on/off proof remain typed failures. Do not use owner/effect ID or label branching."
+      },
+      "savedEvidence": {
+        "priorProducer": {
+          "path": ".test-results/tsk-08-1000100-final-20260925/producer-verified/production-inert-control-production.json",
+          "bytes": 65443217,
+          "sha256": "aaff5eaf4bad9c631d99f9e61643d042c124dc9b1dc4217be22613d49cab2f5e",
+          "controlIdentities": 1590,
+          "targetFailure": "userControlDidNotReachOperationOrDamage"
+        },
+        "unverifiedProbe": {
+          "path": ".test-results/tsk-08-3300200-producer-probe4-20260925/production-inert-control-production.json",
+          "bytes": 65438394,
+          "sha256": "73da2cdbb0ea923491176bc5ddb6d6717338090f9e08d6eabd3cc8cfb2fcfaf1",
+          "manifestBytes": 3876,
+          "manifestSha256": "0cd05c3793760b0a708b4838123ac370fa071ec6ea33c28c2aa7a5ef4417267a",
+          "manifestOutcome": "contract_failure: unexpected console observation despite 3/3 Vitest tests and gate pass; not successful producer evidence",
+          "initialPhase": 7,
+          "selectedInitialPoint": 65,
+          "preparedPoint": 70,
+          "preparedPhase": 8,
+          "operationReadPhase": "unobserved",
+          "enemyDefenseBuff": 0.3,
+          "plan": "skills 1,2,3 then attack NP on both sides",
+          "on": { "operation": "applied", "projection": "applied", "effective": true, "ignoreDefenseInput": true, "np1Average": 50121.67 },
+          "off": { "operation": "notApplied", "projection": "notApplied", "effective": false, "ignoreDefenseInput": false, "np1Average": 37626.165 },
+          "candidatesEvaluated": 1,
+          "caveat": "Current producer explicitly replays only off with selected initial point; on is the automatically selected point. Both must be explicitly replayed and read-traced before acceptance."
+        }
+      },
+      "implementationContract": {
+        "auditObservation": "Add audit-only quantity read observation with operation sequence/group, operationId, subjectId, actor, point, phase, comparison and condition value. Match selected candidate on both sides to target operation event; preparedPhase is context, not proof.",
+        "scenario": "Resolved enemyDefenseBuff is independent of effect decision, including calculator input and ranking default 0. Repairable UI input is distinct from invalid persisted values; no numeric fallback.",
+        "identity": "Portable SHA-256 hashes complete canonicalized request; adding enemyDefenseBuff changes new resolved request fingerprint. Ranking condition fingerprint and 1590 S4 identity population are separate.",
+        "migration": "Do not relabel a v40 result to v41. Validate and retain exact v40 request/result/fingerprint for historical-only draft/history/backup. A v40 share has request/result but no stored fingerprint; derive old fingerprint from its exact request. Protect old draft outside capped 20-entry history so explicit recalculation can create a new v41 request/fingerprint/result while retaining old evidence. Startup migration requires ADR-002 pre-backup, staging validation and a single transaction switch; failure preserves original record. Existing v33..38 records already transformed under v40 must be preserved as stored; original pre-v40 bytes cannot be reconstructed.",
+        "historyAndShareUI": "CalculatorRoute historical regeneration currently creates a fresh default calculator request instead of carrying the saved scenario; v40 historical explicit recalculation needs a distinct command. startup.ts, CalculationWorkspace, CalculatorRoute, HomeRoute, shareValidation.ts and DataPage need a read-only historical representation without old engine runtime. HomeRoute must not present a historical value as the current damage headline.",
+        "matrix": "v41 changes TSK-06.5 mergedDigest because scenario/result schemaVersion occurs in matrix records. Preserve old digest as history and measure/update the new digest with canonical eight-shard merge after target Blocking clears; compare 34640 outcomes and candidate status/eligibility, production output/canonical input separately."
+      },
+      "candidateAndTimeBaseline": {
+        "phaseCandidatesUpperBound": 11,
+        "pointWitnessesInCurrentPlanner": 92,
+        "targetConcreteEvaluationsUpperBound": 94,
+        "probeCandidatesEvaluated": 1,
+        "priorFocusedProducerMs": 32820,
+        "unverifiedProbeProducerMs": 31780,
+        "fullMatrixEstimate": "8 shards, at most 4 parallel x 2 waves, 16-26 minutes plus merge from existing TSK-08 evidence; no new measurement in this research-only session",
+        "nextMeasurement": "Record generated/evaluated candidates and elapsed time on final same-source candidate; explain change against prior focused artifact."
+      },
+      "requiredVerificationAfterImplementation": [
+        "small fixture: 0/6/7/10 phase, before/after mutation, exact target read, on/off and typed invalid/unsupported; fix untracked productionBattlePointControlWitness.test.ts expectation to include canonical subjectId",
+        "same explicit preparation point/plan, AttackProfile, scenario and enemy defense on/off through operation/projection/effective/input/rows",
+        "v40 draft, history, share, backup and startup restore plus explicit recalculation and original-record preservation on failure",
+        "calculator UI repairable input and ranking fixed enemy defense 0 through shared application/execution",
+        "independent HEAD-plus-scope candidate tree, focused checks, 1590 S4 identities and 2301100 moon/day and 1000100 HP regressions",
+        "artifact bytes/SHA-256, candidate/time comparison, protected TSK-06.5 and TSK-07 evidence; no full production/audit/quality while target Blocking remains"
+      ],
+      "workPerformed": "Read-only code and existing artifact inspection; documentation-only handoff. No source/test edits, source tests, producer or new diagnostic executed.",
+      "documentationVerification": "pnpm test:docs failed before script on external SQLite store. Existing node_modules with the same direct docs commands: node --test scripts/docs-integrity.test.mjs 6/6, node scripts/docs-integrity.mjs passed, targeted Prettier passed. JSON parse and git diff --check passed. No source tests or producer ran.",
+      "remaining": "Exact operation phase read, final producer success, v41 matrix digest and migration/UI checks require implementation and execution. Other ratchets remain Blocking. TSK-08 in_progress; TSK-09.1/09 blocked. No push.",
+      "preImplementationSelfCheck": {
+        "result": "The initial handoff had three material gaps; this record and the matching Task addendum replace those statements before implementation approval.",
+        "canonicalPointBound": "Phase domain 0..10 has 11 values; null-capacity legal points are unbounded. The 92 values are the present planner's finite witness set, with at most 92 concrete evaluations plus two explicit selected-candidate on/off replays for this single domain. Failure to find a complete proof remains a typed gate failure, not a claim that phase-10 points above 90 are invalid. Generated and evaluated candidate counts and elapsed time must be measured.",
+        "gateReadContract": "Expected battlePointPhase reads must come from canonical condition IR keyed to the existing S4 control identity, not from optional witness fields. Audit-only ordered evaluator callbacks capture candidate, plan, initial point, operation sequence/group/ID, actor/domain, actual point/phase, leaf comparison and aggregate condition. Gate requires both selected-candidate on/off traces and matches typed event, projection, effective contribution, damage input and rows. Missing/ambiguous/mismatched trace or differing scenario except target effect decision, defense, plan, explicit initial point or AttackProfile fails closed.",
+        "migrationContract": "Add typed historical snapshot and separate historical draft slot for exact v40 request/result/fingerprint; preserve old history ID/timestamps and already-stored v33..38 entries. Validate the complete v40 result and version match without silently stripping identity-bearing fields. V40 resolved and manual are historical-only. Share derives the absent stored fingerprint from its original request. Startup and backup restore use ADR-002 prebackup, staging validation and single transaction switch, preserving original on failure. Explicit recalculation creates a distinct v41 request/fingerprint/result and current draft only on success; no legacy runtime. Show old output as historical, not Home current headline. UI defense edit keeps an invalid intermediate string and commits only finite -500..500 percent values.",
+        "matrixRevision": "After target Blocking clears, produce eight canonical shards, run merge once to collect the expected old-vs-v41 mergedDigest mismatch from failure manifest, compare protected 34640 outcomes and candidate status/eligibility plus production output/canonical input, retain old digest as history, register measured new digest, then rerun merge on the same shards for success. Existing estimate 16-26 min plus merge; no new execution diagnostic is needed to choose the plan.",
+        "stopBoundary": "No product source/test edit, source test or producer, stage or commit before implementation confirmation. Stop and present a revision only if a new product-semantic or contract conflict is established."
+      },
+      "stagedImplementationPlan": [
+        {
+          "stage": 0,
+          "name": "contract_and_baseline",
+          "status": "research_only_confirmation_pending",
+          "exit": "Record HEAD, preserved worktree/index, direct symbols, canonical domain versus finite witness set, identity and migration contract, saved artifact bytes/SHA-256 and passing docs checks. No product edits, source tests, producer, stage or commit."
+        },
+        {
+          "stage": 1,
+          "name": "v41_user_path",
+          "exit": "Resolved defense input and neutral ranking default, v41 request/result, exact historical v40 draft/history/share/backup/startup and v33..38 preservation, ADR-002 atomic switch, explicit recalculation and repairable Calculator/UI path pass focused fixtures, typecheck and local checks. Matrix digest remains an explicit later measurement, not a passed ratchet."
+        },
+        {
+          "stage": 2,
+          "name": "s4_actual_read_and_producer",
+          "exit": "Canonical expected read and ordered audit trace are checked by the gate on both explicitly replayed sides; actual read, typed event/projection, effective contribution, damage input and rows differ with one plan, profile, scenario and defense. Keep 1590 identities and 2301100 moon/day and 1000100 HP regressions; record generated/evaluated candidates, elapsed time and producer artifact bytes/SHA-256. No full production/audit/quality while target Blocking remains."
+        },
+        {
+          "stage": 3,
+          "name": "matrix_identity_and_handoff",
+          "exit": "After target Blocking clears, verify an independent HEAD-plus-scope candidate, eight canonical shards and first merge's expected schema digest difference; compare protected 34640 outcomes, candidate status/eligibility, output and canonical input; retain old digest, register measured new digest, and rerun merge on the same shards. Update existing Task/evidence and artifact bytes/SHA-256, review scope diff, then local commit only completed authorized scope. No push; TSK-08 remains in_progress and TSK-09.1/09 blocked."
+        }
+      ],
+      "stageSelfAudit": {
+        "stage0": "Complete as research-only baseline; no implementation authorization or product execution.",
+        "stage1": "Contract approval pending. Current requirement section 7.4 gives CalculationVersionContext only masterDataVersion and engineVersion. A v40 manual request and tentative v41 manual request are otherwise structurally identical, so changing only result.schemaVersion cannot create a new whole-request fingerprint. Proposed v41 versionContext.schemaVersion literal 41 for both resolved and manual; update constructors, parse, request/result matching, portable storage and cache boundary. Preserve the original two-field v40 request and its original fingerprint. This materially changes the current requirement type description and must be confirmed before product implementation. Do not bump engineVersion merely to force a fingerprint or add irrelevant defense to manual scenario.",
+        "stage1HistoricalEntry": "A historical v40 entry with top-level request would be mistaken for editable current history by workspace-domain finalizeHistory and Calculator 'request' in entry checks. Put exact v40 request/result/fingerprint in a typed historicalOnly legacySnapshot and branch by disposition through history selection/finalization/deduplication/startup/Home. Keep historical draft in a separate slot; preserve v33..38 stored result versions; parse known v40 structure but retain raw identity-bearing JSON. Startup and backup migration require ADR-002 prebackup, staging and one transaction; no partial overwrite on failure.",
+        "stage1Outcome": "An explicitly recalculated executed outcome can be calculated, inputRequired or unavailable and is stored as its typed new current draft. Invalid or unsupported rejects and retains the historical snapshot. Condition not met is a normal notApplied outcome. Repairable UI text cannot be coerced to zero. The untracked v40Migration.test.ts expectation that automatically relabels the draft is rejected.",
+        "stage2": "Clear after stage1: ordered evaluator evaluates condition even for disabled operation, enabling actual reads on both selected-candidate sides. Gate expected reads must derive from canonical operation conditions, not optional witness fields. Verify phase 6/7, phase 10 with point above 90, preparation mutation, missing/wrong candidate trace, typed invalid/unsupported, 1590 S4 identities and 2301100/1000100 regressions. Count generated and actually evaluated candidates and compare elapsed time.",
+        "stage3": "Clear after stage2 target gate: first canonical eight-shard merge is expected to fail old digest gate and save new audit digest in failure manifest. Compare protected outcome/status/eligibility/output/input and TSK-07 evidence, retain historical digest, register new expected digest, rerun merge on same shards, then independent candidate and artifact checks before local commit. No push or TSK-08 overall completion.",
+        "sessionBoundary": "Stage1 is portable versioning and user path; stage2 is S4 evidence; stage3 is matrix ratchet. At 60 minutes checkpoint the existing handoff; after 90 minutes start no next semantic family. Do not treat intermediate stages as TSK-08 completion or execute full production/audit/quality while target Blocking remains.",
+        "result": "The previous four-stage table was not implementation-ready because stage1 had a real portable identity contract collision and historical mutability trap. The revised plan is explicit but stage1 contract change needs user confirmation before implementation. No source test or producer is needed to decide it."
+      },
+      "nextOperation": "Present the proposed v41 versionContext.schemaVersion identity contract and revised stage1 boundary for confirmation; do not implement the affected product code until accepted."
+    },
+    {
+      "name": "S4 owner 3300200 portable identity contract approval and worker handoff",
+      "status": "approved_contract_documentation_only",
+      "baselineHead": "c0b353b03dd9de303983ee36a1a92ddd95a72678",
+      "decision": "User accepted the v41 request version marker proposed in the prior stage self-audit. Product requirements v0.3.9 and ADR-028 now require versionContext.schemaVersion 41 in both resolved and manual portable requests. Preserve old v40 request/result/fingerprint and calculate a new fingerprint only for an explicit v41 request. This does not change the ranking condition fingerprint or engine damage version.",
+      "documentation": [
+        "docs/requirements/fgo-lab-requirements-v0.3.md",
+        "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md",
+        "docs/README.md",
+        "docs/tasks/development-redesign-tasks.md",
+        "docs/evidence/tsk-08-parity-ratchet.json"
+      ],
+      "worktreeBoundary": "The preexisting 16 tracked product source/test differences and two untracked tests remain candidate material, not adopted implementation. Documentation is the only intended local commit scope; index and final diff must be checked before committing.",
+      "workerEntry": "First produce a code-grounded staged implementation plan with direct producer/consumer symbols, explicit adoption or rejection of each tentative change, small fixtures, real S4 proof, v40 persistence/UI and matrix digest revision. Wait for user confirmation before product source/test/document implementation or source test/producer execution. After confirmation continue the same task without routine reapproval. If an execution diagnostic is indispensable to choose the plan, request only that bounded diagnostic first; if approved alone, record ignored artifact identity/value/symbols and Task/evidence with bytes/SHA-256, commit documentation only, and stop before product implementation.",
+      "protected": "S4 1590 identities; TSK-06.5 34640 outcomes and candidate status/eligibility, production output/canonical input; TSK-07 cache/stale-response. The prior mergedDigest is historical and v41 portable/schema fingerprint and matrix digest are intentionally revised, each under its own definition.",
+      "remaining": "Implementation plan confirmation, product implementation, focused S4 producer and gate, v41 migration/restore/UI checks, new matrix digest and final local implementation commit. Other ratchets remain Blocking; TSK-08 in_progress and TSK-09.1/09 blocked. No push."
     }
   ],
-  "currentBoundedUnit": "S4 owner 1000100 HP live-read audit witness implemented; owner 3300200 and other ratchets remain Blocking"
+  "currentBoundedUnit": "S4 owner 3300200 v41 portable identity contract approved and documented; staged product implementation plan confirmation and proof remain Blocking"
 }

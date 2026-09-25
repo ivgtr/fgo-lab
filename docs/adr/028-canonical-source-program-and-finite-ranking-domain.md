@@ -3,7 +3,7 @@ title: "Canonical source programと有限ranking domain"
 status: accepted
 date: "2026-09-02"
 approved_at: "2026-09-02"
-amended_at: "2026-09-04"
+amended_at: "2026-09-26"
 supersedes:
   - "ADR-019"
   - "ADR-027"
@@ -161,6 +161,10 @@ type ResolvedExecutionIntent =
 manual requestは別variantである。compiled operation ID、projection、resolved execution stateは保存しない。applicationだけが
 stored intentと一致するcurrent masterからadmission／contribution policyをcompileする。fingerprint、draft、history、share、
 backupはrequest全体をidentityに使う。
+
+schema v41ではresolved／manual双方のrequestの`versionContext.schemaVersion`を必須とする。v40 requestにはそのfieldがなく、
+旧request／result／fingerprintは歴史的identityとして保持する。v41への明示再計算は新request全体から新fingerprintを作る。
+これはportable identityの版境界の明文化であり、ranking条件fingerprintやdamage式の版を兼ねない。
 
 normal calculator resetはsubject／build等の明示入力からfresh calculator scenarioを作り、ranking world、choice、field、state、
 canonical inputを引き継がない。version upgradeとは別commandである。schema不正、参照欠落、version不一致、capacity超過は
