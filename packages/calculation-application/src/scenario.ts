@@ -34,6 +34,7 @@ import {
   canonicalRequirementLeaves,
   findActorForm,
   findNoblePhantasmVariant,
+  noblePhantasmVariantKey,
   naturalServantLevel,
   type MasterDataSnapshot,
   type ServantMaster,
@@ -50,6 +51,11 @@ import {
   type VersionContext,
 } from '@fgo-lab/schema';
 import { calculateDamageResolution } from './damageResolution';
+import {
+  attackProfileForSelection,
+  attackProfileKey,
+  createStaticActorFormProfiles,
+} from './attackProfile';
 import { evaluateCalculationEvidence } from './evidence';
 import {
   createEffectInputViewModels,
@@ -76,7 +82,24 @@ interface ResolvedCalculationInputCommon {
   activationRequirements: ActivationRequirementOwner[];
   appliedPreparationActions: readonly AppliedPreparationAction[];
   targetStateTraitsAtDamage: readonly string[];
+  profileContinuity?: AttackProfileContinuity;
 }
+
+export type AttackProfileContinuity =
+  | { kind: 'matched'; intendedProfileKey: string; actualProfileKey: string }
+  | {
+      kind: 'unavailableNoAttack';
+      intendedProfileKey: string;
+      actualProfileKey: null;
+      disabledSelectionOperationId: string;
+    }
+  | {
+      kind: 'unavailableDifferentAttack';
+      intendedProfileKey: string;
+      actualProfileKey: string;
+      disabledSelectionOperationId: string;
+    }
+  | { kind: 'unresolved'; reason: string };
 
 export type ResolvedCalculationInput =
   | (ResolvedCalculationInputCommon & {
@@ -123,6 +146,7 @@ interface CalculationExecutionCommon {
   effectControls: EffectControlViewModel[];
   activationRequirements: ActivationRequirementOwner[];
   appliedPreparationActions: readonly AppliedPreparationAction[];
+  profileContinuity?: AttackProfileContinuity;
   executionObservation?: CalculationExecutionObservation;
 }
 
@@ -518,12 +542,92 @@ export function resolveScenarioPreparationOutcome(
   };
 }
 
+function resolveAttackProfileContinuity(
+  servant: ServantMaster,
+  formExecution: ResolvedAttackerFormExecution,
+  scenario: ResolvedCalculationScenario,
+  prepared: PreparedOrderedScenario,
+  execution: OrderedScenarioExecution,
+): AttackProfileContinuity {
+  const intendedVariant = formExecution.state.selectedNoblePhantasmVariant;
+  if (!intendedVariant) return { kind: 'unresolved', reason: 'intendedAttackVariantMissing' };
+  const profiles = createStaticActorFormProfiles(servant);
+  let intendedProfileKey: string;
+  try {
+    intendedProfileKey = attackProfileKey(
+      attackProfileForSelection(
+        servant,
+        profiles,
+        formExecution.state.currentFormId,
+        intendedVariant,
+      ),
+    );
+  } catch {
+    return { kind: 'unresolved', reason: 'intendedAttackProfileUnresolved' };
+  }
+  const actualVariant = execution.state.noblePhantasmVariant;
+  let actualProfileKey: string | null = null;
+  if (actualVariant.kind === 'attack') {
+    try {
+      actualProfileKey = attackProfileKey(
+        attackProfileForSelection(
+          servant,
+          profiles,
+          execution.state.actorFormId,
+          actualVariant.ref,
+        ),
+      );
+    } catch {
+      return { kind: 'unresolved', reason: 'actualAttackProfileUnresolved' };
+    }
+  }
+  if (actualProfileKey === intendedProfileKey)
+    return { kind: 'matched', intendedProfileKey, actualProfileKey };
+  const disabledSelection = prepared.operations.find(
+    (operation) =>
+      operation.kind === 'selectNoblePhantasmVariant' &&
+      noblePhantasmVariantKey(operation.variant) === noblePhantasmVariantKey(intendedVariant) &&
+      scenario.effectDecisions.some(
+        (decision) => decision.decisionKey === operation.decisionKey && !decision.operationEnabled,
+      ),
+  );
+  if (!disabledSelection)
+    return { kind: 'unresolved', reason: 'selectionChangedWithoutDisabledStructuralControl' };
+  if (actualVariant.kind === 'nonAttack') {
+    if (
+      execution.requiredInputs.length > 0 ||
+      prepared.preparationRequiredInputs.length > 0 ||
+      execution.issues.length !== 1 ||
+      execution.issues[0]?.kind !== 'invalidNoblePhantasmVariant' ||
+      execution.issues[0].detail !== 'nonAttackDamage'
+    )
+      return { kind: 'unresolved', reason: 'nonAttackSelectionHasAdditionalIssues' };
+    return {
+      kind: 'unavailableNoAttack',
+      intendedProfileKey,
+      actualProfileKey: null,
+      disabledSelectionOperationId: disabledSelection.operationId,
+    };
+  }
+  if (execution.precision !== 'exact' || prepared.preparationRequiredInputs.length > 0)
+    return { kind: 'unresolved', reason: 'changedSelectionHasAdditionalIssues' };
+  if (actualProfileKey === null)
+    return { kind: 'unresolved', reason: 'changedAttackProfileMissing' };
+  return {
+    kind: 'unavailableDifferentAttack',
+    intendedProfileKey,
+    actualProfileKey,
+    disabledSelectionOperationId: disabledSelection.operationId,
+  };
+}
+
 function resolvePreparedOrderedScenario(
   scenario: ResolvedCalculationScenario,
   prepared: PreparedOrderedScenario,
   canonicalInputs: ResolvedCanonicalInputSet,
   execution: OrderedScenarioExecution,
   terminalActorFormId: ActorFormId,
+  profileContinuity: AttackProfileContinuity,
 ): Extract<ResolvedCalculationInput, { status: 'executable' }> {
   const projections = [...execution.projections, ...execution.retainedProjections];
   const damageState = execution.operations.find(
@@ -588,6 +692,7 @@ function resolvePreparedOrderedScenario(
     status: 'executable',
     noblePhantasmVariant: execution.state.noblePhantasmVariant,
     terminalActorFormId,
+    profileContinuity,
     input: execution.input,
     precision:
       prepared.preparationRequiredInputs.length > 0 ? 'inputRequired' : execution.precision,
@@ -735,12 +840,20 @@ export function resolveScenario(
     prepared.inputDefinitions,
     scenario.canonicalInputValues,
   );
+  const execution = executeOrderedScenario(prepared, canonicalInputs);
   return resolvePreparedOrderedScenario(
     scenario,
     prepared,
     canonicalInputs,
-    executeOrderedScenario(prepared, canonicalInputs),
+    execution,
     base.formExecution.state.currentFormId,
+    resolveAttackProfileContinuity(
+      master.servants.find(({ id }) => id === scenario.attacker.servantId)!,
+      base.formExecution,
+      scenario,
+      prepared,
+      execution,
+    ),
   );
 }
 
@@ -816,6 +929,41 @@ function resolvedCalculationResult(
           ...common,
           status: 'unsupported',
           missingEvidence: [`preparation:${resolved.preparationRejection.code}`],
+        };
+  }
+  if (
+    resolved.profileContinuity &&
+    resolved.precision !== 'inputRequired' &&
+    resolved.profileContinuity.kind !== 'matched'
+  ) {
+    const continuity = resolved.profileContinuity;
+    const evidence = evaluateCalculationEvidence(resolved.evidenceKeys);
+    const common = {
+      rows: [] as [],
+      effects: resolved.effects.map((effect) => ({
+        projectionKey: effect.projectionKey,
+        outcome: effect.outcome,
+        explanationCode: effect.explanation.code,
+      })),
+      assumptions: [],
+      issues: resolved.warnings.map((warning) => ({ code: warning, detail: warning })),
+      trace: resolved.trace,
+      versions,
+      evidence: evidence.evidence,
+    };
+    return continuity.kind === 'unresolved'
+      ? {
+          ...common,
+          status: 'unsupported',
+          missingEvidence: [`attackProfileContinuity:${continuity.reason}`],
+        }
+      : {
+          ...common,
+          status: 'unavailable',
+          reason:
+            continuity.kind === 'unavailableNoAttack'
+              ? 'selectedAttackProfileHasNoAttack'
+              : 'selectedAttackProfileChanged',
         };
   }
   const calculation = cachedCalculation ?? calculateDamageResolution(resolved.input, versions);
@@ -905,6 +1053,7 @@ function evaluateResolvedCalculation(
     ),
     activationRequirements: resolved.activationRequirements,
     appliedPreparationActions: resolved.appliedPreparationActions,
+    ...(resolved.profileContinuity ? { profileContinuity: resolved.profileContinuity } : {}),
     ...(executionObservation ? { executionObservation } : {}),
   };
   if (result.status === 'invalid') return { status: 'invalid', ...common, result };
@@ -1078,6 +1227,13 @@ function prepareConcreteCalculationScenarioWithPolicy(
       canonicalInputs,
       execution,
       base.formExecution.state.currentFormId,
+      resolveAttackProfileContinuity(
+        master.servants.find(({ id }) => id === scenario.attacker.servantId)!,
+        base.formExecution,
+        scenario,
+        orderedScenario,
+        execution,
+      ),
     ),
     orderedScenario,
     canonicalInputs,

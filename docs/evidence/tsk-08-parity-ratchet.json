@@ -3991,7 +3991,83 @@
       "sourceDiffIdentity": "tracked binary diff SHA-256 9167825aed66a689e6ee80598808c6bb1a0f95fbfe06c8696d2ca15fa88ef8b4; new test 4762 bytes SHA-256 1d68e699dd8854063ee4227252e9389ce8a7ec9f01d4ab507ca4de9dc35312f0; index empty",
       "remaining": "HEAD product S4 nine failures; retained candidate seven. B2/B3 and other families stay Blocking. Owner 205000 portable recovery, same-profile alternate and explicit-invalid/unresolved input still require focused acceptance if the candidate is adopted.",
       "nextOperation": "In a later implementation session, settle calculator profile pinning versus explicit re-selection from the governing contract, then complete 205000 and schema-legal focused proofs before an independent candidate gate. Do not adopt the retained product diff in this research session."
+    },
+    {
+      "name": "S4 structural control four-identity selected AttackProfile continuity",
+      "baselineHead": "840587e9325b027a3b50ad3ae4668ffc97b598b7",
+      "scope": {
+        "owners": [
+          "505600",
+          "205000"
+        ],
+        "effectOccurrences": [
+          "2619550:532:0",
+          "2281675:532:0"
+        ],
+        "controlCount": 4
+      },
+      "governingDecision": "Calculator effect off preserves the preparation-selected AttackProfile; a different attack profile requires an explicit selection command. The current effect-off command sends no such selection. ADR 024, damage-effect-execution 3.2, and ranking requirements 3.1/5.1 govern this result.",
+      "flow": {
+        "producer": "operationCompiler.ts generates structural operations; sourceCollection.ts::resolveAttackerFormExecution supplies the preparation terminal state; effectDecision.ts::applyEffectControlPresentationDecision sends inclusion changes.",
+        "semanticOwner": "attackProfile.ts::attackProfileForSelection maps typed form/variant; variantSelection.ts and candidateSelection.ts choose the last enabled ordered selection; scenario.ts::resolveAttackProfileContinuity compares intended and actual profile.",
+        "consumer": "candidateResult.ts produces projection/effective contribution/damage input; scenario.ts returns typed outcome; portableCalculation.ts commits off/recovery; rankingExecution.ts skips wrong-profile cache; UI projects typed result; productionParityDiagnostics.ts validates typed proof."
+      },
+      "realValues": {
+        "owner505600": {
+          "enabledVariant": "505700/505701",
+          "enabledNp1Average": 63235.92,
+          "excludedVariant": "505600/505601 non-attack",
+          "excluded": "unavailable:selectedAttackProfileHasNoAttack, zero rows"
+        },
+        "owner205000": {
+          "enabledVariant": "205000/205001",
+          "enabledNp1Average": 88414.945,
+          "excludedVariant": "205000/205002 attack",
+          "priorDifferentProfileNp1Average": 48259.59,
+          "excluded": "unavailable:selectedAttackProfileChanged, zero rows"
+        },
+        "both": "two operation identities per owner; each excluded operation notApplied; portable off and re-on committed, re-on calculated at original average"
+      },
+      "semanticMatrix": {
+        "sameProfileAlternate": "calculated and typed profile proof matched",
+        "nonAttackBase": "unavailableNoAttack, no numeric rows",
+        "differentAttack": "unavailableDifferentAttack, no numeric rows",
+        "explicitInvalid": "existing unsupported boundary in semantic fixture, no numeric fallback",
+        "unresolvedOrRepairable": "existing typed unsupported/inputRequired boundary; proof unresolved is not accepted by S4 gate",
+        "schemaLegalAlternate": "two-action path raw calculations 32474.71 to 48664.825 with different profiles; both-calculated gate would miss the mismatch"
+      },
+      "verification": {
+        "independentCandidate": "HEAD archive plus only 10 tracked source/test changes and one new test; workspace and Web TypeScript, target ESLint and Prettier passed",
+        "focusedUnit": "46 passed, 0 failed, 0 skipped on independent candidate",
+        "focusedProducer": "1590 expected/observed; 7 known out-of-scope failures, no new failures; artifact byte-identical to prior retained candidate",
+        "pnpm": "test:diagnostic stopped before script in external SQLite store; installed Vitest used via the same runCapturedTest generic runner",
+        "artifacts": {
+          "ignoredEvidence": {
+            "path": ".test-results/tsk-08-s4-structural-control-20260925/four-control-final-evidence.json",
+            "bytes": 4644,
+            "sha256": "7590f3106e1814516cb6840b216eb6c65c1d63111252ca176f06952eaa6fc63c"
+          },
+          "producer": {
+            "path": ".test-results/2026-09-25T04-53-13-611Z-2-261add/production-inert-control-production.json",
+            "bytes": 61527967,
+            "sha256": "5fd4e7f00f7c6f39ba3ea0a6f6134704a7a274ae10f48de1536ab8a77e8130d7"
+          },
+          "producerManifest": {
+            "path": ".test-results/2026-09-25T04-53-13-611Z-2-261add/manifest.json",
+            "bytes": 3160,
+            "sha256": "23500466e1348b2bba10d9ca54b49e0af47a2f2d881b899f24ebc1d1f46ef401"
+          },
+          "candidateUnitManifest": {
+            "path": ".test-results/tsk-08-s4-structural-control-20260925/four-control-candidate-unit-final/manifest.json",
+            "bytes": 3393,
+            "sha256": "e68130558e8bc60135ead03c79111c8eed0f4d14c54ebd2064b1b58185b9c914"
+          }
+        }
+      },
+      "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and digests; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "remaining": "Seven other S4 failures and B2/B3 remain Blocking. No full production/audit/quality or push. TSK-08 in_progress; TSK-09.1/09 blocked.",
+      "nextOperation": "Address the remaining seven identities in a separately bounded unit; keep the four-control selected-profile rule and typed gate intact."
     }
   ],
-  "currentBoundedUnit": "S4 205000 read-only contract investigation; HEAD product has 9 S4 failures, retained uncommitted candidate has 7"
+  "currentBoundedUnit": "S4 four structural controls closed; seven other S4 failures remain Blocking"
 }

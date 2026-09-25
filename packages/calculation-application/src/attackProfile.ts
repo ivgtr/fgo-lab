@@ -269,18 +269,25 @@ export function attackProfileForTerminalState(
 ): AttackProfile {
   const variantRef = state.selectedNoblePhantasmVariant;
   if (!variantRef) throw new TypeError(`terminal_attack_variant_missing:${servant.id}`);
+  return attackProfileForSelection(servant, profiles, state.currentFormId, variantRef);
+}
+
+export function attackProfileForSelection(
+  servant: ServantMaster,
+  profiles: readonly ActorFormProfile[],
+  formId: ActorFormId,
+  variantRef: NoblePhantasmVariantRef,
+): AttackProfile {
   const variant = indexNoblePhantasmVariants(servant).get(noblePhantasmVariantKey(variantRef));
   if (!variant || variant.kind !== 'attack')
     throw new TypeError(`terminal_attack_variant_invalid:${noblePhantasmVariantKey(variantRef)}`);
   const matchingProfiles = profiles.filter(({ formIds }) =>
-    formIds.some((formId) => actorFormKey(formId) === actorFormKey(state.currentFormId)),
+    formIds.some((candidate) => actorFormKey(candidate) === actorFormKey(formId)),
   );
   if (matchingProfiles.length === 0)
-    throw new TypeError(`terminal_actor_form_profile_missing:${actorFormKey(state.currentFormId)}`);
+    throw new TypeError(`terminal_actor_form_profile_missing:${actorFormKey(formId)}`);
   if (matchingProfiles.length > 1)
-    throw new TypeError(
-      `terminal_actor_form_profile_ambiguous:${actorFormKey(state.currentFormId)}`,
-    );
+    throw new TypeError(`terminal_actor_form_profile_ambiguous:${actorFormKey(formId)}`);
   const profile = matchingProfiles[0]!;
   if (profile.id.servantLineageId !== servant.id)
     throw new TypeError(`terminal_actor_form_profile_lineage_mismatch:${servant.id}`);

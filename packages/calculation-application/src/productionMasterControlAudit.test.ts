@@ -228,10 +228,12 @@ function userControlSideObservation(
     projections,
     inputBinding: controlDamageInputBinding(projection, calculation),
     effectiveContributions,
-    damageResult:
-      calculation.result.status === 'calculated'
-        ? { status: calculation.result.status, rows: calculation.result.rows }
-        : { status: calculation.result.status, rows: calculation.result },
+    damageResult: {
+      status: calculation.result.status,
+      rows: 'rows' in calculation.result ? calculation.result.rows : [],
+      ...(calculation.result.status === 'unavailable' ? { reason: calculation.result.reason } : {}),
+    },
+    ...(calculation.profileContinuity ? { profileContinuity: calculation.profileContinuity } : {}),
   };
 }
 

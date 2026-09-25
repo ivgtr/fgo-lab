@@ -16,7 +16,11 @@ import {
 } from '@fgo-lab/battle-execution';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import type { DamageResolutionInput, PreNoblePhantasmCommand } from '@fgo-lab/schema';
-import type { CalculationApplicationResult, CalculationExecutionObservation } from './scenario';
+import type {
+  AttackProfileContinuity,
+  CalculationApplicationResult,
+  CalculationExecutionObservation,
+} from './scenario';
 
 export type ProductionParityPath = 'calculator' | 'portable';
 
@@ -379,7 +383,12 @@ export interface ProductionUserControlSideObservation {
   projections: readonly ProductionUserControlProjectionObservation[];
   inputBinding: ProductionUserControlInputBinding;
   effectiveContributions: readonly ProductionUserControlEffectiveContribution[];
-  damageResult: { status: CalculationApplicationResult['status']; rows: unknown };
+  damageResult: {
+    status: CalculationApplicationResult['status'];
+    rows: unknown;
+    reason?: Extract<CalculationApplicationResult, { status: 'unavailable' }>['reason'];
+  };
+  profileContinuity?: AttackProfileContinuity;
 }
 
 export interface ProductionUserControlObservation {
@@ -399,6 +408,7 @@ export type ProductionUserControlFailureReason =
   | 'userControlExecutionSelectionNotUnique'
   | 'userControlObservationInconsistent'
   | 'userControlDamageOutcomeNotCalculated'
+  | 'userControlSelectedProfileProofMissing'
   | 'userControlNpSpecialInputNotChanged'
   | 'userControlDidNotReachOperationOrDamage';
 
@@ -990,9 +1000,73 @@ export function auditProductionUserControlObservations(
       }
     }
 
+    const controlledEvent = enabled.operationEvents.find((event) =>
+      eventMatchesUserControl(identity, event),
+    );
+    const structuralControl =
+      controlledEvent?.kind === 'transformActorForm' ||
+      controlledEvent?.kind === 'selectNoblePhantasmVariant';
+    const enabledProfile = enabled.profileContinuity;
+    const excludedProfile = excluded.profileContinuity;
+    const excludedControlledEvent = excluded.operationEvents.find((event) =>
+      eventMatchesUserControl(identity, event),
+    );
+    const excludedSelectionEvents =
+      excluded.executionObservation.targetExecution?.selection === 'selected'
+        ? excluded.executionObservation.targetExecution.operationEvents
+        : [];
+    const matchedProfileProof =
+      enabledProfile?.kind === 'matched' &&
+      enabledProfile.intendedProfileKey === enabledProfile.actualProfileKey &&
+      excludedProfile?.kind === 'matched' &&
+      excludedProfile.intendedProfileKey === enabledProfile.intendedProfileKey &&
+      excludedProfile.actualProfileKey === enabledProfile.intendedProfileKey &&
+      enabled.damageResult.status === 'calculated' &&
+      excluded.damageResult.status === 'calculated' &&
+      excludedControlledEvent?.operationOutcome === 'notApplied';
+    const unavailableProfileProof =
+      enabledProfile?.kind === 'matched' &&
+      enabledProfile.intendedProfileKey === enabledProfile.actualProfileKey &&
+      excludedProfile !== undefined &&
+      (excludedProfile.kind === 'unavailableNoAttack' ||
+        excludedProfile.kind === 'unavailableDifferentAttack') &&
+      excludedProfile.intendedProfileKey === enabledProfile.intendedProfileKey &&
+      excludedProfile.actualProfileKey !== enabledProfile.intendedProfileKey &&
+      excludedControlledEvent?.operationOutcome === 'notApplied' &&
+      excludedSelectionEvents.some(
+        (event) =>
+          event.operationId === excludedProfile.disabledSelectionOperationId &&
+          event.operationKind === 'selectNoblePhantasmVariant' &&
+          event.operationOutcome === 'notApplied',
+      ) &&
+      enabled.damageResult.status === 'calculated' &&
+      excluded.damageResult.status === 'unavailable' &&
+      excluded.damageResult.reason ===
+        (excludedProfile.kind === 'unavailableNoAttack'
+          ? 'selectedAttackProfileHasNoAttack'
+          : 'selectedAttackProfileChanged') &&
+      Array.isArray(excluded.damageResult.rows) &&
+      excluded.damageResult.rows.length === 0;
+    if (structuralControl && !matchedProfileProof && !unavailableProfileProof) {
+      const profileFailure = productionUserControlFailure(
+        'userControlSelectedProfileProofMissing',
+        `${profileIdentity}:selected-profile-proof`,
+        { enabledProfile: 'matched', excludedProfile: 'matched-or-typed-unavailable' },
+        {
+          enabledProfile: enabledProfile ?? null,
+          excludedProfile: excludedProfile ?? null,
+          enabledStatus: enabled.damageResult.status,
+          excludedStatus: excluded.damageResult.status,
+          excludedReason: excluded.damageResult.reason ?? null,
+        },
+      );
+      if (profileFailure) failures.push(profileFailure);
+      continue;
+    }
     if (
-      enabled.damageResult.status !== 'calculated' ||
-      excluded.damageResult.status !== 'calculated'
+      !structuralControl &&
+      (enabled.damageResult.status !== 'calculated' ||
+        excluded.damageResult.status !== 'calculated')
     ) {
       const outcomeFailure = productionUserControlFailure(
         'userControlDamageOutcomeNotCalculated',

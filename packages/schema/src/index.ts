@@ -729,6 +729,8 @@ export const calculationUnavailabilityReasonSchema = z.enum([
   'insufficientNpGauge',
   'npCapacityExceeded',
   'attackerDead',
+  'selectedAttackProfileHasNoAttack',
+  'selectedAttackProfileChanged',
 ]);
 export type CalculationUnavailabilityReason = z.infer<typeof calculationUnavailabilityReasonSchema>;
 const unavailableResultSchema = resultBaseSchema.extend({

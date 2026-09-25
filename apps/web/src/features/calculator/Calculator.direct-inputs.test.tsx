@@ -144,3 +144,26 @@ it('shows an unreachable NP as nonnumeric and explains the repairable preparatio
   ).toBeTruthy();
   expect(screen.queryByRole('table', { name: '宝具レベル別のダメージ' })).toBeNull();
 });
+
+it.each([
+  [
+    'selectedAttackProfileHasNoAttack',
+    '選択中の攻撃宝具へ到達できません。形態変更と宝具選択の効果を確認してください。',
+  ],
+  [
+    'selectedAttackProfileChanged',
+    '選択中とは別の攻撃宝具が選ばれました。形態変更と宝具選択の効果を確認してください。',
+  ],
+] as const)(
+  'shows structural profile unavailability for %s without damage rows',
+  (reason, message) => {
+    renderCalculator(resolvedScenario, vi.fn(), {
+      ...resolved.result,
+      status: 'unavailable',
+      rows: [],
+      reason,
+    });
+    expect(screen.getByText(message)).toBeTruthy();
+    expect(screen.queryByRole('table', { name: '宝具レベル別のダメージ' })).toBeNull();
+  },
+);

@@ -89,6 +89,8 @@ export function rankingExclusionLabel(
     attackProfileNotReachable: '攻撃宝具へ到達する準備手順がありません',
     noSatisfiableCandidate: '条件を満たす実行候補がありません',
     npCapacityExceeded: '開始NPまたは必要NPがNP上限を超えています',
+    selectedAttackProfileHasNoAttack: '選択中の攻撃宝具へ到達できません',
+    selectedAttackProfileChanged: '選択中とは別の攻撃宝具が選ばれました',
     candidateExecutionUnsupported: '候補の実行意味論に未対応部分があります',
     unsupportedActionAdmission: '実行条件を判定できない候補があります',
     unexpectedRankingFailure: 'ランキング計算で予期しない失敗が発生しました',

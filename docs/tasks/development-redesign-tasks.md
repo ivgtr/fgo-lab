@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.46"
+document_version: "1.7.47"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2785,3 +2785,13 @@ Current bounded-unit handoff（2026-09-25、S4 owner 205000への波及を読み
 契約上、ADR 024はscenarioへinitial formとordered commandを保存し、resolved NP／ranking identityを保存しない。`sourceCollection.ts::resolveAttackerFormExecution`はeffect offとは独立に準備planのterminal stateを導き、`attackProfile.ts::attackProfileForSelection`がその形態・variantをprofileへ写す。`Calculator.tsx::changeEffect`は`effectDecision.ts::applyEffectControlPresentationDecision`からeffect除外commandを送り、別profileへの明示選択commandは送らない。ordered executorでは同一effect内の両構造operationが非適用となる。ranking要件§3.1／§5.1は別profileの数値混成を禁止し、damage-effect-execution §3.2は確定効果offを比較用除外として許す。したがって別profileの数値を**元の選択profileの結果として返すことはできない**。ただし通常calculatorの要件は、構造効果off時に準備profileを固定するか、結果に合わせて別profileへ明示的に選択し直すかを明文化していない。現候補の`unavailable`は前者を採る設計判断であり、後者を望むならapplicationのprofile再選択commandとS4 gateのtyped proofが必要になる。ID例外や「両側calculated」だけのgateでは解決しない。`rankingPolicy.ts`が生成するscenarioの`effectDecisions`は空で、自己バフ二軸は別のcontribution policyで処理するため、今回のoff分岐が既存ranking結果へ直結する経路は見つからなかった。ただし保護対象の34,640 outcomeは再計算しておらず、不変性の最終証明ではない。
 
 調査資料 `.test-results/tsk-08-s4-structural-control-20260925/owner-205000-readonly-research.json`（7,983 bytes、SHA-256 `761a1f779c652ce1f8d37e0a28f5b8b948871a4f0ecc3d70f6aa7a2888c75977`）へ対象2件のbaseline／候補status・profile canonical ID・operation outcomeを限定抽出した。次の実装sessionでは、通常calculatorの選択profile契約を確定してから205000のoff／再on portable回復、同profile alternate path、明示不正／未解決入力、ranking／UI表示を小fixtureと実producerで検証する。今回source／test編集・source test・producer再実行・製品差分のstage／commit・pushは行わず、調査文書だけをlocal commitする。HEAD製品にはS4 9件、候補には7件のBlockingが残り、B2／B3、TSK-08全体、TSK-09.1／09と保護対象ratchetは前handoffどおりである。詳細は[parity ratchet evidence](../evidence/tsk-08-parity-ratchet.json)の最新bounded unitを参照する。
+
+Current bounded-unit handoff（2026-09-25、S4 505600／205000の構造control 4件）:
+
+開始HEAD `840587e9325b027a3b50ad3ae4668ffc97b598b7`、index空。保持中tracked source／test binary diff SHA-256 `9167825aed66a689e6ee80598808c6bb1a0f95fbfe06c8696d2ca15fa88ef8b4`、新testと指定2 ignored資料のbytes／SHA-256は引継ぎと一致した。通常calculatorでは準備planのterminal AttackProfileを選択結果とし、effect offはその包含を変える。別profileへの選択commandがないため、offで別攻撃variantへ移った数値を元profileの結果として返さない。ADR 024、damage-effect-execution §3.2、ranking §3.1／§5.1、`Calculator.changeEffect`のcommandから判断した。保持中の一般則候補を採用し、owner `205000`の2 controlも今回の承認範囲へ含めた。servant IDによるruntime分岐はない。
+
+実値は505600のon `505700/505701`／NP1平均`63235.92`、offは非攻撃基底で`unavailable:selectedAttackProfileHasNoAttack`／0行。205000のon `205000/205001`／`88414.945`、offは別攻撃`205000/205002`へ移るため`unavailable:selectedAttackProfileChanged`／0行。旧`48259.59`は別profileの値である。両効果とも形態／NP選択の2 operationはoff時`notApplied`で、portable off／再onはcommittedされ、再onは元数値へ回復した。schema-legalな前段別攻撃variantの反例は両側raw `calculated`（`32474.71`→`48664.825`）でもprofileが異なるため、S4 gateは準備・実行profileの一致または型付き非数値理由、transaction非適用、0行を確認する。同profile alternateは`calculated`を許す。明示不正・未解決入力は既存のtyped `unsupported`／`inputRequired`を優先し、曖昧・追加issueを`unavailable`へ丸めない。
+
+独立candidateはHEAD archiveに今回のtracked source／test差分と新testだけを載せた。focused unitは46/46、workspace `tsc -b`とWeb `tsc --noEmit`、対象11 source／test fileのESLint／Prettierが成功した。focused producerは1,590 expected／observed、保存済み候補と同一artifact SHA-256 `5fd4e7f00f7c6f39ba3ea0a6f6134704a7a274ae10f48de1536ab8a77e8130d7`、failure 7件は既知の対象外identityのみで新規0。`pnpm test:diagnostic`はscript前にexternal SQLite storeで失敗したため、既存Vitestを同じgeneric runnerで実行した。artifactのbytes・SHA-256、4 identityのtyped値、forward／recovery／alternate／production外schema-legal反例は[parity ratchet evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitとignored `.test-results/tsk-08-s4-structural-control-20260925/four-control-final-evidence.json`（4,644 bytes、SHA-256 `7590f3106e1814516cb6840b216eb6c65c1d63111252ca176f06952eaa6fc63c`）を参照する。
+
+今回の4件は閉じたが、残るS4 7件、B2／B3、他ratchetはBlockingのまま。TSK-06.5の34,640 outcomes・34,600 calculated／parity・40 unavailable・final unsupported／invalid／inputRequired各0と既存digest、candidate status／eligibility、production output、canonical input、fingerprint、TSK-07 cache／stale-response evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。全件production／audit／qualityとpushは行わない。次は残存7 identityを既存Taskの別bounded unitとして扱う。

@@ -1,4 +1,9 @@
-import { createCalculatorPortableRequest, executePortableCalculation } from './portableCalculation';
+import {
+  attemptPortableCalculationScenarioChange,
+  createCalculatorPortableRequest,
+  currentCalculationVersionContext,
+  executePortableCalculation,
+} from './portableCalculation';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
@@ -16,6 +21,7 @@ import {
 } from '@fgo-lab/schema';
 import {
   applyEffectConditionDecision,
+  applyEffectControlPresentationDecision,
   applyEffectPresentationDecision,
   applyEffectProjectionDecision,
 } from './effectDecision';
@@ -3031,6 +3037,249 @@ describe('scenario calculation facade', () => {
       status: 'unavailableUnderPolicy',
       reason: 'attackProfileNotReachable',
     });
+  });
+
+  it('keeps a selected attack profile through structural control changes and recovery', () => {
+    const source = fixture.servants[0]!;
+    const baseForm = source.actorFormGraph.forms[0]!.id;
+    const firstForm = { actorId: source.id, limitCount: 1 };
+    const secondForm = { actorId: source.id, limitCount: 2 };
+    const baseRef = { actorFormId: baseForm, noblePhantasmId: 'base-non-attack' };
+    const firstRef = { actorFormId: firstForm, noblePhantasmId: 'first-attack' };
+    const secondRef = { actorFormId: secondForm, noblePhantasmId: 'second-attack' };
+    const attack = source.noblePhantasmVariantGroups[0]!.variants[0]!;
+    if (attack.kind !== 'attack') throw new TypeError('fixture_attack_required');
+    const firstEffect = {
+      ...modifierEffect('first-structure', 'stateContext', 0),
+      execution: [
+        {
+          kind: 'transformActorForm' as const,
+          route: mutationRoute('sourceSelf'),
+          targetFormId: firstForm,
+        },
+        {
+          kind: 'selectNoblePhantasmVariant' as const,
+          route: mutationRoute('sourceSelf'),
+          variant: firstRef,
+        },
+      ],
+    };
+    const secondEffect = {
+      ...modifierEffect('second-structure', 'stateContext', 0),
+      execution: [
+        {
+          kind: 'transformActorForm' as const,
+          route: mutationRoute('sourceSelf'),
+          targetFormId: secondForm,
+        },
+        {
+          kind: 'selectNoblePhantasmVariant' as const,
+          route: mutationRoute('sourceSelf'),
+          variant: secondRef,
+        },
+      ],
+    };
+    const structuralMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...source,
+          actorFormGraph: {
+            ...source.actorFormGraph,
+            forms: [
+              { ...source.actorFormGraph.forms[0]!, baseNoblePhantasmVariant: baseRef },
+              {
+                ...source.actorFormGraph.forms[0]!,
+                id: firstForm,
+                name: 'first',
+                baseNoblePhantasmVariant: firstRef,
+              },
+              {
+                ...source.actorFormGraph.forms[0]!,
+                id: secondForm,
+                name: 'second',
+                baseNoblePhantasmVariant: secondRef,
+              },
+            ],
+            transitions: [
+              {
+                id: 'first-transition',
+                from: baseForm,
+                to: firstForm,
+                direction: 'forward' as const,
+                activation: {
+                  sourceKind: 'skill' as const,
+                  sourceId: 'first-skill',
+                  effectOccurrenceIds: [firstEffect.occurrenceId],
+                },
+                operations: firstEffect.execution,
+              },
+              {
+                id: 'second-transition',
+                from: firstForm,
+                to: secondForm,
+                direction: 'forward' as const,
+                activation: {
+                  sourceKind: 'skill' as const,
+                  sourceId: 'second-skill',
+                  effectOccurrenceIds: [secondEffect.occurrenceId],
+                },
+                operations: secondEffect.execution,
+              },
+            ],
+          },
+          noblePhantasmVariantGroups: [
+            {
+              id: 'structural-group',
+              baseVariant: baseRef,
+              variants: [
+                {
+                  kind: 'nonAttack' as const,
+                  canonicalId: '1'.repeat(64),
+                  ref: baseRef,
+                  name: 'base',
+                  priority: 1,
+                  effects: [],
+                },
+                { ...attack, canonicalId: '2'.repeat(64), ref: firstRef, name: 'first' },
+                { ...attack, canonicalId: '3'.repeat(64), ref: secondRef, name: 'second' },
+              ],
+            },
+          ],
+          baseNoblePhantasmGroupId: 'structural-group',
+          skills: [
+            {
+              id: 'first-skill',
+              slot: 1,
+              priority: 1,
+              name: 'first',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [firstEffect],
+            },
+            {
+              id: 'second-skill',
+              slot: 2,
+              priority: 1,
+              name: 'second',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [secondEffect],
+            },
+          ],
+        },
+      ],
+    });
+    const structuralVersions = { ...versions, masterDataVersion: structuralMaster.version };
+    const base = createDefaultResolvedScenario(master, undefined);
+    const command = (slot: 1 | 2) => ({
+      kind: 'useSkillSlot' as const,
+      slot,
+      skillLevel: 10,
+      choice: null,
+    });
+    const attackCommand = { kind: 'executeAttackNoblePhantasm' as const };
+    const firstScenario: ResolvedScenario = {
+      ...base,
+      preNoblePhantasmPlan: [command(1), attackCommand],
+    };
+    const first = calculateScenario(firstScenario, structuralMaster, structuralVersions);
+    expect(first.result.status).toBe('calculated');
+    const firstControl = first.effectControls.find(
+      ({ projection }) => projection.source.skillId === 'first-skill',
+    );
+    expect(firstControl).toBeDefined();
+    const firstOff = applyEffectControlPresentationDecision(
+      firstScenario,
+      firstControl!,
+      false,
+      first.activationRequirements,
+      first.effects,
+      first.effectInputs,
+    );
+    const noAttack = calculateScenario(firstOff, structuralMaster, structuralVersions);
+    expect(noAttack.result).toMatchObject({
+      status: 'unavailable',
+      reason: 'selectedAttackProfileHasNoAttack',
+      rows: [],
+    });
+    expect(noAttack.profileContinuity).toMatchObject({ kind: 'unavailableNoAttack' });
+    expect(calculationResultSchema.parse(noAttack.result)).toMatchObject({
+      status: 'unavailable',
+      reason: 'selectedAttackProfileHasNoAttack',
+    });
+    const invalidInput = calculateScenario(
+      {
+        ...firstOff,
+        canonicalInputValues: { 'not-a-canonical-input': { kind: 'integer', value: 1 } },
+      },
+      structuralMaster,
+      structuralVersions,
+    );
+    expect(invalidInput.result.status).toBe('unsupported');
+
+    const secondScenario: ResolvedScenario = {
+      ...base,
+      preNoblePhantasmPlan: [command(1), command(2), attackCommand],
+    };
+    const second = calculateScenario(secondScenario, structuralMaster, structuralVersions);
+    expect(second.result.status).toBe('calculated');
+    const secondControl = second.effectControls.find(
+      ({ projection }) => projection.source.skillId === 'second-skill',
+    );
+    expect(secondControl).toBeDefined();
+    const secondOff = applyEffectControlPresentationDecision(
+      secondScenario,
+      secondControl!,
+      false,
+      second.activationRequirements,
+      second.effects,
+      second.effectInputs,
+    );
+    const changed = calculateScenario(secondOff, structuralMaster, structuralVersions);
+    expect(changed.noblePhantasmVariant?.ref).toEqual(firstRef);
+    expect(changed.result).toMatchObject({
+      status: 'unavailable',
+      reason: 'selectedAttackProfileChanged',
+      rows: [],
+    });
+    expect(changed.profileContinuity).toMatchObject({ kind: 'unavailableDifferentAttack' });
+    expect(calculationResultSchema.parse(changed.result)).toMatchObject({
+      status: 'unavailable',
+      reason: 'selectedAttackProfileChanged',
+    });
+    expect(
+      executeRankingScenarios([secondOff], structuralMaster, structuralVersions)[0]?.result,
+    ).toMatchObject({
+      status: 'unavailable',
+      reason: 'selectedAttackProfileChanged',
+      rows: [],
+    });
+    const retained = createCalculatorPortableRequest(
+      secondScenario,
+      currentCalculationVersionContext(structuralMaster),
+    );
+    const offAttempt = attemptPortableCalculationScenarioChange(
+      retained,
+      second.result,
+      secondOff,
+      structuralMaster,
+    );
+    expect(offAttempt.status).toBe('committed');
+    if (offAttempt.status !== 'committed') return;
+    expect(offAttempt.result).toMatchObject({
+      status: 'unavailable',
+      reason: 'selectedAttackProfileChanged',
+    });
+    const recovery = attemptPortableCalculationScenarioChange(
+      offAttempt.request,
+      offAttempt.result,
+      secondScenario,
+      structuralMaster,
+    );
+    expect(recovery).toMatchObject({ status: 'committed', result: { status: 'calculated' } });
   });
 
   it('keeps ordinary stochastic ownership in the executor for a mixed preparation skill', () => {

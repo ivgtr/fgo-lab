@@ -166,7 +166,11 @@ export function CalculationResult({
               : result.status === 'unavailable'
                 ? result.reason === 'attackerDead'
                   ? 'HPが0のため宝具を使用できません。準備開始時のHPと準備操作を確認してください。'
-                  : '現在の準備状態では宝具を使用できません。NPゲージと準備操作を確認してください。'
+                  : result.reason === 'selectedAttackProfileHasNoAttack'
+                    ? '選択中の攻撃宝具へ到達できません。形態変更と宝具選択の効果を確認してください。'
+                    : result.reason === 'selectedAttackProfileChanged'
+                      ? '選択中とは別の攻撃宝具が選ばれました。形態変更と宝具選択の効果を確認してください。'
+                      : '現在の準備状態では宝具を使用できません。NPゲージと準備操作を確認してください。'
                 : '現在の条件は正確に計算できないため、ダメージ値を表示していません。'}
           </p>
         ) : (

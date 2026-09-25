@@ -77,7 +77,8 @@ export function executeRankingScenarios(
     if (candidate.status !== 'executable')
       return evaluatePreparedCalculationScenario(candidate, versions);
     const variant = candidate.resolved.noblePhantasmVariant;
-    if (!variant) return evaluatePreparedCalculationScenario(candidate, versions);
+    if (!variant || candidate.resolved.profileContinuity?.kind !== 'matched')
+      return evaluatePreparedCalculationScenario(candidate, versions);
     const calculation = damageCache.getOrCreate(
       { noblePhantasmVariant: variant.ref, input: candidate.resolved.input },
       () => calculateDamageResolution(candidate.resolved.input, versions),
