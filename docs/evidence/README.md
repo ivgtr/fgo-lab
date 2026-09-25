@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.70"
+document_version: "1.4.71"
 status: "Active"
 updated_at: "2026-09-25"
 ---
@@ -57,7 +57,7 @@ updated_at: "2026-09-25"
 | [tsk-07-outcome-closure](tsk-07-outcome-closure.json) | Complete | machine-readable: five typed outcome presentation、numeric-row boundary、exact AttackProfile normal-calculator recovery、typed invalid reset/reload、unsupported／policy-unavailable non-recovery、focused consumer checks | TSK-07 | `3ec65cd` baseline／no new commit |
 | [tsk-07-responsive-accessibility-closure](tsk-07-responsive-accessibility-closure.json) | Complete | machine-readable: desktop／390px／320px responsive containment、accessible names／roles／keyboard／focus、five-outcome recovery presentation、stale/cache identity preservation、integrated quality evidence | TSK-07 | `b9c323a` baseline／no new commit |
 | [tsk-08-parity-diagnostics](tsk-08-parity-diagnostics.json) | Active | machine-readable: typed calculator／ranking／portable parity failure reason、canonical identity／first diff、bounded summary、declared artifact checksum reachability | TSK-08 | `34828ea` baseline／no new commit |
-| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: parity／final-profile／preparation／control／mutation ratchets。S4実producerの1,590 identityを維持。owner 505600／205000の構造control計4件は型付き選択profile連続性と逐次回復をfocused検証済み。B2 `2501400`の形態遷移によるworld fact消失を読み取り診断済み。残るS4 7件、B2／B3、alternate／mutation consumer、full auditは未達 | TSK-08 | S4構造control 4件、B2調査、残存Blocking |
+| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: parity／final-profile／preparation／control／mutation ratchets。S4実producerの1,590 identityを維持。構造control計4件、B2形態変更、B3 targetRarityのNP特殊入力を修正済み。残るS4 5件と他ratchet、full auditは未達 | TSK-08 | S4 B3修正、残存Blocking |
 | [tsk-08-shared-audit-model](tsk-08-shared-audit-model.json) | Active | machine-readable: TSK-06.5 source reference、data-pipeline／calculation-application boundary model、full matrix first-difference gate、artifact reachability | TSK-08 | `5d82e38` baseline／no new commit |
 | [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／historical closure had no commit; current baseline `197ff30` |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Complete | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 final closure | `49efe62`／TSK-06.48 complete |

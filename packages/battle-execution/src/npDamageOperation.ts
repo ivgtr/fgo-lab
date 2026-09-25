@@ -4,6 +4,7 @@ import { targetPredicateKey } from './targetPredicate';
 
 export interface NpDamageOperationContext {
   overcharge: number;
+  selectedNpLevel: number;
   attackerTraitCounts: Readonly<Record<string, number>>;
   attackerStateTraitCounts: Readonly<Record<string, number>>;
   targetTraitCounts: Readonly<Record<string, number>>;
@@ -129,18 +130,27 @@ export function evaluateNpDamageOperation(
     );
   }
   if (damage.kind === 'targetRarity') {
-    if (context.effectLocalConditionSatisfied)
-      return resolved(
-        baseMultipliers,
-        parameters.map((parameter) => (parameter.correctionPermille ?? 1_000) / 1_000) as [
-          number,
-          number,
-          number,
-          number,
-          number,
-        ],
-      );
-    if (context.targetRarity === null) return resolved();
+    if (context.effectLocalConditionSatisfied && context.targetRarity === null) {
+      const selected = parameters[context.selectedNpLevel - 1];
+      if (!selected?.targetRarities?.length)
+        return { status: 'unsupported', missingEvidence: 'missing_target_rarity_condition' };
+      const witnesses = selected.targetRarities;
+      const multipliers = parameters.map((parameter) => {
+        const values = new Set(
+          witnesses.map((rarity) =>
+            parameter.targetRarities?.includes(rarity)
+              ? (parameter.correctionPermille ?? 1_000) / 1_000
+              : 1,
+          ),
+        );
+        return values.size === 1 ? [...values][0] : null;
+      });
+      if (multipliers.includes(null))
+        return { status: 'unsupported', missingEvidence: 'ambiguous_target_rarity' };
+      return resolved(baseMultipliers, multipliers as [number, number, number, number, number]);
+    }
+    if (context.targetRarity === null)
+      return { status: 'unsupported', missingEvidence: 'missing_target_rarity' };
     const targetRarity = context.targetRarity;
     return resolved(
       baseMultipliers,

@@ -90,7 +90,8 @@ export function conditionAllowsEffectLocalDecision(condition: ConditionExpressio
     condition.kind === 'trait' ||
     condition.kind === 'traitCount' ||
     isActivationAtom(condition) ||
-    condition.kind === 'targetPredicate'
+    condition.kind === 'targetPredicate' ||
+    condition.kind === 'quantity'
   );
 }
 

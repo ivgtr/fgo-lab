@@ -134,6 +134,7 @@ function context(testCase: GoldenCase): NpDamageOperationContext {
   const targetStateTraits = testCase.context.targetStateTraits ?? [];
   return {
     overcharge: 1,
+    selectedNpLevel: 1,
     attackerTraitCounts: counts(attackerTraits),
     attackerStateTraitCounts: counts(attackerTraits),
     targetTraitCounts: counts(targetTraits),

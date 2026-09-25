@@ -68,6 +68,15 @@ export function resolveCandidateSelections(
     scenario.effectDecisions,
     conditionsByDecisionKey,
     state,
+    new Set(
+      operations.flatMap((operation) =>
+        operation.kind === 'executeNpDamage' &&
+        operation.damage.kind === 'targetRarity' &&
+        operation.specialAttackDecisionKey
+          ? [operation.specialAttackDecisionKey]
+          : [],
+      ),
+    ),
   );
   const activeMutationConstraints: SatisfiableConditionConstraint[] = operations.flatMap(
     (operation) =>

@@ -34,8 +34,10 @@ import {
   prepareCalculationScenarioWithPolicy,
   rematerializePreparedCalculationInputs,
   requireExecutableCalculation,
+  calculateScenarioWithPolicy,
   resolveScenarioPreparationOutcome,
 } from './scenario';
+import { materializeRankingQuantity } from './rankingQuantityWorld';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
@@ -865,6 +867,121 @@ describe('scenario calculation facade', () => {
       excluded.effects.find((effect) => effect.projectionKey === condition!.projectionKey),
     ).toMatchObject({ outcome: 'notApplied', explanation: { code: 'disabled' } });
     expect(excluded.result.status).toBe('calculated');
+  });
+
+  it('keeps a rarity OR decision local while checking explicit target rarity facts', () => {
+    const baseServant = fixture.servants[0]!;
+    const rarityMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+            ...group,
+            variants: group.variants.map((np) => ({
+              ...np,
+              damage: np.damage.map((damage) => ({
+                ...damage,
+                kind: 'targetRarity',
+                rawFunctionType: 'damageNpRare',
+                parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                  row.map((parameter) => ({
+                    ...parameter,
+                    targetId: 0,
+                    targetRarities: [1, 2],
+                    correctionPermille: 1_500,
+                  })),
+                ),
+              })),
+            })),
+          })),
+        },
+      ],
+    });
+    const version = { ...versions, masterDataVersion: rarityMaster.version };
+    const baseScenario = createDefaultResolvedScenario(rarityMaster, undefined);
+    const baseline = calculateScenario(baseScenario, rarityMaster, version);
+    const control = baseline.effectControls.find(
+      ({ projection }) => projection.modifier === 'npSpecial',
+    )!;
+    expect(control).toMatchObject({ active: false, presentationState: 'conditionUnselected' });
+    const decide = (scenario: ResolvedScenario, enabled: boolean) =>
+      applyEffectControlPresentationDecision(
+        scenario,
+        control,
+        enabled,
+        baseline.activationRequirements,
+        baseline.effects,
+        baseline.effectInputs,
+      );
+    const onScenario = decide(baseScenario, true);
+    expect(onScenario.effectDecisions).toContainEqual({
+      decisionKey:
+        control.projection.decision.state === 'none' ? '' : control.projection.decision.decisionKey,
+      operationEnabled: true,
+      conditionSatisfaction: 'assumeSatisfied',
+    });
+    expect(onScenario.worldFactAssertions).toEqual([]);
+    const restored = calculationScenarioSchema.parse(JSON.parse(JSON.stringify(onScenario)));
+    expect(calculateScenario(restored, rarityMaster, version).input.npSpecialMultipliers).toEqual([
+      1.5, 1.5, 1.5, 1.5, 1.5,
+    ]);
+    const on = calculateScenario(onScenario, rarityMaster, version);
+    expect(on.result.status).toBe('calculated');
+    expect(on.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
+    expect(on.effects.find(({ modifier }) => modifier === 'npSpecial')).toMatchObject({
+      outcome: 'applied',
+    });
+    expect(on.effectControls.find(({ key }) => key === control.key)).toMatchObject({
+      active: true,
+      presentationState: 'applied',
+    });
+    const offScenario = decide(onScenario, false);
+    const off = calculateScenario(offScenario, rarityMaster, version);
+    expect(off.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(off.effects.find(({ modifier }) => modifier === 'npSpecial')).toMatchObject({
+      outcome: 'notApplied',
+    });
+    expect(off.effectControls.find(({ key }) => key === control.key)).toMatchObject({
+      active: false,
+      presentationState: 'manuallyExcluded',
+    });
+    expect(
+      calculateScenario(decide(offScenario, true), rarityMaster, version).input
+        .npSpecialMultipliers,
+    ).toEqual(on.input.npSpecialMultipliers);
+    for (const rarity of [1, 2, 3, 6]) {
+      const withFact = {
+        ...onScenario,
+        worldFactAssertions: [
+          {
+            decisionKey: 'explicit:targetRarity',
+            fact: { kind: 'quantity' as const, quantity: 'targetRarity' as const, value: rarity },
+          },
+        ],
+      };
+      const result = calculateScenario(withFact, rarityMaster, version);
+      expect(result.result.status, String(rarity)).toBe(rarity >= 3 ? 'unsupported' : 'calculated');
+      if (rarity < 3)
+        expect(result.input.npSpecialMultipliers).toEqual(on.input.npSpecialMultipliers);
+    }
+    const rankingScenario = materializeRankingQuantity(onScenario, {
+      key: 'quantity:targetRarity:1',
+      values: { targetRarity: 1 },
+    });
+    expect(rankingScenario.worldFactAssertions).toContainEqual({
+      decisionKey: 'ranking:quantity:targetRarity',
+      fact: { kind: 'quantity', quantity: 'targetRarity', value: 1 },
+    });
+    const ranked = requireExecutableCalculation(
+      calculateScenarioWithPolicy(rankingScenario, rarityMaster, version, {
+        kind: 'ranking',
+        selfBuffs: 'included',
+        conditionalEffects: 'satisfied',
+        areaView: 'included',
+      }),
+    );
+    expect(ranked.input.npSpecialMultipliers).toEqual(on.input.npSpecialMultipliers);
   });
 
   it('replays the selected scenario without area by removing only party-wide final damage', () => {

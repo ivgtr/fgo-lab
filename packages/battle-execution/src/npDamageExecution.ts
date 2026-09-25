@@ -31,9 +31,15 @@ export function applyNoblePhantasmDamage(
     contributionPolicy,
     state,
   );
-  const specialContributionEnabled = specialIncluded && specialDecision?.operationEnabled !== false;
+  const specialContributionEnabled =
+    specialIncluded &&
+    specialDecision?.operationEnabled !== false &&
+    (operation.damage.kind !== 'targetRarity' ||
+      specialDecision !== undefined ||
+      state.quantities.targetRarity !== null);
   return applyNpDamageOperation(input, operation.damage, {
     overcharge: operation.overcharge,
+    selectedNpLevel: operation.selectedNpLevel,
     attackerTraitCounts: combinedTraitCounts(state.traitCounts.attacker, attackerStateTraitCounts),
     attackerStateTraitCounts,
     targetTraitCounts: state.traitCounts.target,

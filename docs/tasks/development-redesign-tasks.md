@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.50"
+document_version: "1.7.51"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2829,3 +2829,11 @@ Current bounded-unit handoff（2026-09-25、S4 B3 `403400` targetRarityの事前
 現行コードではquantity-only条件は`conditionAllowsEffectLocalDecision`の対象外なので、`applyEffectPresentationDecision`は成立宣言を作らずoperationのon/offだけを保存する。calculatorの基底入力はtarget rarityをnullに置き、NP evaluatorはnullを中立倍率へ解決する。一方rankingには具体的なrarity world factをmaterializeする経路がある。この差の製品上の扱い、2つの適格rarityでの入力所有権、onかつ未解決時のtyped outcomeはまだ決めていない。数値を捏造せず、既存のquantity／effect-local／canonical input契約とUIの実操作を照合した**コード起点の実装計画を先に提示し、確認を待つ**。安全な変更境界が決まらなければ、必要最小の診断計画に切り替える。根拠symbol、artifact identity・checksum、未決事項は[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitとignored `.test-results/tsk-08-b3-rarity-20260925/preplan.json`を参照する。
 
 B3と他5件はBlockingのまま。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。TSK-06.5／TSK-07の保護対象は変更せず、全件production／audit／qualityとpushは行わない。次の作業者はこのB3一件と同じ原因の直接経路だけを1セッションの対象とする。
+
+Current bounded-unit handoff（2026-09-25、S4 B3 `403400` targetRarity製品修正）:
+
+開始HEAD `43437070691726bd9972c69d12f5cf125681f59b`、tracked worktree／index空。計画確認後、quantity-only条件のonをeffect-local成立宣言として保存し、NP特殊decisionをcandidateの統合制約へ登録した。利用者の操作はrarity 1／2のどちらかを捏造せず、条件に合う全rarityでNP1〜5入力が一意な場合だけ特殊倍率を確定する。明示rarityとの矛盾・範囲外、枝ごとに倍率が異なる場合はtyped fail-closedとし、nullをfalseや数値fallbackへ変換しない。rankingの具体rarity fact生成は維持した。
+
+小fixtureはnullのon/off、rarity 1／2・対象外・範囲外、quantity-onlyとtrait混合のany／all／not、off→再on、保存復元、calculator／ranking、非一意倍率を確認した。実producer 1,590 controlではB3のonが`calculated`／projection `applied`／NP特殊入力全level `1.5`／NP1平均`36304.49`、offが`calculated`／`notApplied`／全level `1`／`24202.825`。前artifactのfailure 6件と今回5件のidentity差分はB3の除去1件、追加0件である。残る5件は別bounded unitのBlockingであり、全件production／audit／qualityとpushは行わない。
+
+focused 60/60、独立HEAD＋今回差分candidateのroot・web typecheck、対象lint／format、focused 60/60を確認した。`pnpm`はscript前に外部SQLite storeで失敗したため、既存node_modulesと同じgeneric runnerへ切り替えた。artifactのbytes・SHA-256、文書検証、既存architecture行数テストのHEAD由来2件との境界は[evidence](../evidence/tsk-08-parity-ratchet.json)へ記録する。TSK-06.5の34,640 outcomes、34,600 calculated／parity、40 unavailable、final unsupported／invalid／inputRequired各0と既存digest、candidate status／eligibility、production output・canonical input・fingerprint、TSK-07 cache／stale-response evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。次は残る5件を別のbounded unitで計画する。

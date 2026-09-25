@@ -4182,7 +4182,110 @@
       "protected": "TSK-06.5 outcomes/digests, candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "remaining": "B3 and five other S4 failures Blocking; TSK-08 in_progress, TSK-09.1/09 blocked. No full production/audit/quality or push.",
       "nextOperation": "Present a B3-only code-derived implementation plan and counterexample matrix; wait for user confirmation before source/test edits, tests, producer, stage or product commit. If no safe ownership boundary emerges, propose the minimum additional diagnostic instead."
+    },
+    {
+      "name": "S4 B3 403400 targetRarity product correction",
+      "baselineHead": "43437070691726bd9972c69d12f5cf125681f59b",
+      "scope": "One NP-special targetRarity control and same-cause quantity decision, candidate validation, and NP input paths; no other S4 family or ratchet repair.",
+      "governing": "ADR 009 E3.3; damage-effect-execution 8.6/8.8/8.12.6/8.13; systematic review forward/recovery and schema-legal counterexamples.",
+      "ownership": "The user toggle is an effect-local assertion of the master condition. It does not choose rarity 1 or 2 or create a quantity fact. Explicit scenario quantity facts and ranking materialization own concrete targetRarity. The executor validates both together and resolves NP1-5 input only if every allowed rarity witness gives one value.",
+      "directPath": "npDamageCompilation condition/dependency -> projection/control -> activationCondition and effectDecision command -> scenario targetRarity null or explicit quantity fact -> decisionConditions and candidateSelection fixed facts/constraint validation -> evaluateCondition -> npDamageExecution/npDamageOperation -> projection/effectiveContributions/S4 NP-special input gate. Calculator and ranking use shared scenario/execution; rankingQuantityWorld may add concrete quantity fact.",
+      "semanticCases": "Focused 60/60: rarity 1/2, outside 3 and out-of-domain 6, null on/off, explicit quantity fact, quantity-only any/all/not plus quantity/trait mix, off/re-on, JSON schema save/restore, calculator/ranking path, ambiguous cross-level NP input. Contradictory or out-of-domain facts are typed unsupported with no accepted numeric result; missing selected rarity without a satisfiable declaration and ambiguous multipliers are typed unsupported. B3 null/on is exact because both valid rarity witnesses produce [1.5,1.5,1.5,1.5,1.5].",
+      "producer": {
+        "expectedControls": 1590,
+        "beforeFailureCount": 6,
+        "afterFailureCount": 5,
+        "removedFailureIdentity": "production:control-inventory:[\"403400\",\"default\",\"selectedProfile\",\"np:[\\\"403400\\\",0,\\\"403401\\\"]:3854:damage\",\"np:[\\\"403400\\\",0,\\\"403401\\\"]:3854:damage\",\"np:[\\\"403400\\\",0,\\\"403401\\\"]:3854:damage:npSpecial\"]:np-special-damage-input",
+        "addedFailureIdentities": [],
+        "remainingFailureIdentities": [
+          "production:control-inventory:[\"1000100\",\"default\",\"selectedProfile\",\"attacker:attacker:1000100:355551:2465:0\",\"attacker:attacker:1000100:355551:2465:0:modifier:attackBuff\",\"attacker:attacker:1000100:355551:2465:0:modifier:attackBuff:modifier\"]:enabled-vs-excluded",
+          "production:control-inventory:[\"2301100\",\"default\",\"selectedProfile\",\"attacker:attacker:2301100:2536550:22883:0\",\"attacker:attacker:2301100:2536550:22883:0:modifier:attackBuff\",\"attacker:attacker:2301100:2536550:22883:0:modifier:attackBuff:modifier\"]:damage-outcome",
+          "production:control-inventory:[\"2301100\",\"default\",\"selectedProfile\",\"attacker:attacker:2301100:2536550:22888:0\",\"attacker:attacker:2301100:2536550:22888:0:modifier:npDamageBuff\",\"attacker:attacker:2301100:2536550:22888:0:modifier:npDamageBuff:modifier\"]:damage-outcome",
+          "production:control-inventory:[\"2301100\",\"default\",\"selectedProfile\",\"passive:passive:2301100:2534650:22874:0\",\"passive:passive:2301100:2534650:22874:0:modifier:cardBuff\",\"passive:passive:2301100:2534650:22874:0:modifier:cardBuff:modifier\"]:damage-outcome",
+          "production:control-inventory:[\"3300200\",\"default\",\"selectedProfile\",\"np:np:[\\\"3300200\\\",0,\\\"3300201\\\"]:np:[\\\"3300200\\\",0,\\\"3300201\\\"]:1588:0\",\"np:np:[\\\"3300200\\\",0,\\\"3300201\\\"]:np:[\\\"3300200\\\",0,\\\"3300201\\\"]:1588:0:ignore-defense\",\"np:np:[\\\"3300200\\\",0,\\\"3300201\\\"]:np:[\\\"3300200\\\",0,\\\"3300201\\\"]:1588:0:ignore-defense:ignore\"]:enabled-vs-excluded"
+        ],
+        "targetIdentity": {
+          "ownerId": "403400",
+          "profileKey": "default",
+          "path": "selectedProfile",
+          "projectionKey": "np:[\"403400\",0,\"403401\"]:3854:damage",
+          "operationId": "np:[\"403400\",0,\"403401\"]:3854:damage",
+          "contributionId": "np:[\"403400\",0,\"403401\"]:3854:damage:npSpecial",
+          "modifier": "npSpecial",
+          "contributionControl": "operation"
+        },
+        "on": {
+          "status": "calculated",
+          "projection": "applied",
+          "input": {
+            "kind": "bound",
+            "address": "npSpecialMultipliers",
+            "value": [
+              1.5,
+              1.5,
+              1.5,
+              1.5,
+              1.5
+            ]
+          },
+          "np1Average": 36304.49
+        },
+        "off": {
+          "status": "calculated",
+          "projection": "notApplied",
+          "input": {
+            "kind": "bound",
+            "address": "npSpecialMultipliers",
+            "value": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "np1Average": 24202.825
+        },
+        "firstTestDurationMsBefore": 14427.016556,
+        "firstTestDurationMsAfter": 14266.812335
+      },
+      "artifacts": {
+        "priorProducer": {
+          "path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/production-inert-control-production.json",
+          "bytes": 61523591,
+          "sha256": "9e6a4529a3d64d3a20a9a75d927cec43f06377368e3020c12b81aadad2dc0001"
+        },
+        "producer": {
+          "path": ".test-results/2026-09-25T08-55-00-545Z-2-7b93f9/production-inert-control-production.json",
+          "bytes": 61521901,
+          "sha256": "8def9c53552cdfb6ec6f82e041a3437cd28ea0b001fbe73cda31960372db2875"
+        },
+        "producerManifest": {
+          "path": ".test-results/2026-09-25T08-55-00-545Z-2-7b93f9/manifest.json",
+          "bytes": 3093,
+          "sha256": "7690e1eacb7490c87175cbc09e9018c341683560e4ac4aad167388dd40cc6a93"
+        },
+        "focusedManifest": {
+          "path": ".test-results/2026-09-25T09-04-26-078Z-2-516f43/manifest.json",
+          "bytes": 3391,
+          "sha256": "0aff3f2ede1719c95bbfa6aa42e6c7de5e58fc09cc0655eddf9c00c2db202553"
+        },
+        "isolatedFocusedManifest": {
+          "path": ".test-results/2026-09-25T09-06-31-637Z-2-c0d52f/manifest.json",
+          "bytes": 3385,
+          "sha256": "ad838eb888969012b099f246c35443d2ec1847c472bf5d0c8bf18b3fc51e0b39"
+        },
+        "isolatedGoldenManifest": {
+          "path": ".test-results/2026-09-25T09-06-58-977Z-2-bd7e62/manifest.json",
+          "bytes": 2841,
+          "sha256": "142f69ffffe288844f06f8308a4e80f3cc7e0fe7040c65a2187fce7e57536259"
+        }
+      },
+      "verification": "pnpm stopped before the script on external SQLite store. Existing node_modules with generic runCapturedTest: focused 60/60 in source and independent HEAD-plus-unit-diff candidate, isolated NP-function golden 12/12; producer 1,590 controls, five prior out-of-scope failures, no added failure. Candidate root and web typecheck, targeted ESLint/Prettier, docs tests 6/6, docs integrity, JSON and all recorded artifact bytes/SHA-256 passed. Existing architecture line-count failures for unchanged HEAD engine.ts and candidateExecution.ts remain baseline findings, not B3 regressions.",
+      "protected": "TSK-06.5 34,640 outcomes, 34,600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and existing digests; candidate status/eligibility, production output, canonical input, fingerprint, and TSK-07 cache/stale-response evidence unchanged.",
+      "remaining": "Five other S4 failures and other ratchets remain Blocking. TSK-08 in_progress; TSK-09.1/09 blocked. No full production/audit/quality or push.",
+      "nextOperation": "Plan the remaining five S4 failures in separate bounded units; keep B3 effect-local quantity semantics and typed gate intact."
     }
   ],
-  "currentBoundedUnit": "S4 B3 403400 targetRarity read-only preplan; product correction awaits code-derived plan and confirmation"
+  "currentBoundedUnit": "S4 B3 403400 targetRarity product correction; five other S4 failures remain Blocking"
 }

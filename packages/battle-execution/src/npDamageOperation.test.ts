@@ -20,6 +20,7 @@ const base = {
 };
 const context: NpDamageOperationContext = {
   overcharge: 1,
+  selectedNpLevel: 1,
   attackerTraitCounts: {},
   attackerStateTraitCounts: {},
   targetTraitCounts: {},
@@ -250,7 +251,7 @@ describe('NP damage operation', () => {
       );
   });
 
-  it('uses the inactive rarity-special baseline and fails closed for required inputs', () => {
+  it('requires a rarity for an enabled special and retains the excluded baseline', () => {
     const rarity = {
       ...base,
       kind: 'targetRarity',
@@ -264,9 +265,14 @@ describe('NP damage operation', () => {
       maximumBattlePointPhase: 10,
       parametersByOvercharge: matrix({ secondaryValuePermille: 1_000, correctionPermille: 100 }),
     } as NpDamageSpec;
-    expect(evaluateNpDamageOperation(rarity, context)).toMatchObject({
+    expect(evaluateNpDamageOperation(rarity, context)).toEqual({
+      status: 'unsupported',
+      missingEvidence: 'missing_target_rarity',
+    });
+    expect(
+      evaluateNpDamageOperation(rarity, { ...context, includeSpecialContribution: false }),
+    ).toMatchObject({
       status: 'resolved',
-      npMultipliers: [300, 400, 500, 600, 700],
       npSpecialMultipliers: [1, 1, 1, 1, 1],
     });
     expect(evaluateNpDamageOperation(battle, context)).toEqual({
@@ -277,5 +283,31 @@ describe('NP damage operation', () => {
       status: 'unsupported',
       missingEvidence: 'invalid_overcharge',
     });
+  });
+
+  it('resolves a rarity OR only when every witness gives the same NP inputs', () => {
+    const rarity = {
+      ...base,
+      kind: 'targetRarity',
+      rawFunctionType: 'damageNpRare',
+      parametersByOvercharge: matrix({ targetRarities: [1, 2], correctionPermille: 1_500 }),
+    } as NpDamageSpec;
+    expect(
+      evaluateNpDamageOperation(rarity, { ...context, effectLocalConditionSatisfied: true }),
+    ).toMatchObject({ npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5] });
+    const differentAtLevelTwo = {
+      ...rarity,
+      parametersByOvercharge: rarity.parametersByOvercharge.map((row) =>
+        row.map((parameter, index) =>
+          index === 1 ? { ...parameter, targetRarities: [1] } : parameter,
+        ),
+      ),
+    } as NpDamageSpec;
+    expect(
+      evaluateNpDamageOperation(differentAtLevelTwo, {
+        ...context,
+        effectLocalConditionSatisfied: true,
+      }),
+    ).toEqual({ status: 'unsupported', missingEvidence: 'ambiguous_target_rarity' });
   });
 });

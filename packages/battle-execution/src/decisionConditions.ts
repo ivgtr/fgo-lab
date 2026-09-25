@@ -12,10 +12,16 @@ export function collectDecisionConditions(
 ): ReadonlyMap<string, readonly ConditionExpression[]> {
   const conditionsByDecisionKey = new Map<string, ConditionExpression[]>();
   for (const operation of operations) {
-    if (!operation.decisionKey) continue;
-    const conditions = conditionsByDecisionKey.get(operation.decisionKey) ?? [];
-    conditions.push(operation.condition);
-    conditionsByDecisionKey.set(operation.decisionKey, conditions);
+    if (operation.decisionKey) {
+      const conditions = conditionsByDecisionKey.get(operation.decisionKey) ?? [];
+      conditions.push(operation.condition);
+      conditionsByDecisionKey.set(operation.decisionKey, conditions);
+    }
+    if (operation.kind === 'executeNpDamage' && operation.specialAttackDecisionKey) {
+      const conditions = conditionsByDecisionKey.get(operation.specialAttackDecisionKey) ?? [];
+      conditions.push(operation.specialAttackCondition);
+      conditionsByDecisionKey.set(operation.specialAttackDecisionKey, conditions);
+    }
   }
   return conditionsByDecisionKey;
 }
@@ -49,6 +55,7 @@ export function assumedDecisionConstraints(
   decisions: readonly EffectDecision[],
   conditionsByDecisionKey: ReadonlyMap<string, readonly ConditionExpression[]>,
   state: ExecutableBattleState,
+  enforceKnownFalseDecisionKeys: ReadonlySet<string> = new Set(),
 ): readonly SatisfiableConditionConstraint[] {
   return decisions.flatMap((decision) => {
     const expressions = conditionsByDecisionKey.get(decision.decisionKey);
@@ -58,16 +65,13 @@ export function assumedDecisionConstraints(
       !expressions
     )
       return [];
-    return expressions.flatMap((expression) =>
-      evaluateCondition(expression, state) === null &&
-      activationRequirementsSatisfied(expression, state)
-        ? [
-            {
-              sourceKey: decision.decisionKey,
-              expression,
-            },
-          ]
-        : [],
-    );
+    return expressions.flatMap((expression) => {
+      const evaluated = evaluateCondition(expression, state);
+      return (evaluated === null ||
+        (enforceKnownFalseDecisionKeys.has(decision.decisionKey) && !evaluated)) &&
+        activationRequirementsSatisfied(expression, state)
+        ? [{ sourceKey: decision.decisionKey, expression }]
+        : [];
+    });
   });
 }

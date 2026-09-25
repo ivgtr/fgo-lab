@@ -282,6 +282,45 @@ describe('unified constraint validation', () => {
     ).toBe('satisfied');
   });
 
+  it('preserves quantity any/all/not and mixed trait branches against fixed facts', () => {
+    const oneOrTwo: ConditionExpression = {
+      kind: 'any',
+      expressions: [1, 2].map((value) => ({
+        kind: 'quantity',
+        quantity: 'targetRarity',
+        comparison: 'equal',
+        value,
+      })),
+    };
+    const mixed: ConditionExpression = {
+      kind: 'all',
+      expressions: [
+        oneOrTwo,
+        {
+          kind: 'not',
+          expression: { kind: 'trait', scope: 'target', trait: 'dragon', present: true },
+        },
+      ],
+    };
+    for (const rarity of [1, 2])
+      expect(
+        validateConstraintSet({
+          fixedFacts: [
+            quantity('rarity', 'targetRarity', rarity),
+            trait('dragon', 'target', 'dragon', false),
+          ],
+          expressions: [condition('selected', mixed)],
+        }).status,
+      ).toBe('satisfied');
+    for (const fixedFacts of [
+      [quantity('rarity', 'targetRarity', 3), trait('dragon', 'target', 'dragon', false)],
+      [quantity('rarity', 'targetRarity', 1), trait('dragon', 'target', 'dragon', true)],
+    ])
+      expect(
+        validateConstraintSet({ fixedFacts, expressions: [condition('selected', mixed)] }).status,
+      ).toBe('conflict');
+  });
+
   it('fails typed-unsupported instead of truncating excessive OR alternatives', () => {
     expect(
       validateConstraintSet({
