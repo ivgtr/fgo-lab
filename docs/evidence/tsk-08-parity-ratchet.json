@@ -3959,7 +3959,39 @@
       },
       "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and existing digests were not recomputed or edited. Candidate status, eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence were not edited. No full production/audit/quality or push.",
       "nextOperation": "Decide whether the general selected AttackProfile-continuity correction may cover the two 205000 controls as a direct semantic consequence. If approved, retain the existing product diff, add the 205000 pair to focused acceptance and rerun the independent HEAD-plus-diff candidate gates. If limited strictly to 505600, revise the product approach without owner-ID or issue-name branching and prove the schema-legal different-attack case remains fail closed. Do not commit the current product diff before this decision."
+    },
+    {
+      "name": "S4 owner 205000 structural control read-only contract investigation",
+      "baselineHead": "aeb78e877231d0e3f2f2bae541964b64d5081e43",
+      "scope": {
+        "ownerId": "205000",
+        "effectOccurrenceId": "2281675:532:0",
+        "structuralControlCount": 2,
+        "productImplementation": "none in this session"
+      },
+      "realValues": {
+        "enabled": "205000/205001 attack NP, calculated, NP1 average 88414.945",
+        "excludedBaseline": "both structural operations notApplied, 205000/205002 attack NP, calculated, NP1 average 48259.59",
+        "excludedRetainedCandidate": "preparation profile remains 205000/205001 while ordered actual profile becomes 205000/205002; unavailable:selectedAttackProfileChanged, zero rows"
+      },
+      "governingContract": {
+        "scenarioPersistence": "ADR 024 stores initial form and ordered commands, not resolved NP or ranking entry identity",
+        "calculatorControl": "damage-effect-execution 3.2 permits deterministic effect off as an exclusion for comparison; Calculator.tsx::changeEffect sends effectDecision.ts::applyEffectControlPresentationDecision without an explicit new-profile selection",
+        "rankingProfile": "ranking requirements 3.1 and 5.1 prohibit mixing a different AttackProfile into the selected entry",
+        "preparationAndExecution": "sourceCollection.ts::resolveAttackerFormExecution derives the plan terminal profile independently of effect off; ordered execution excludes both structural operations, and attackProfile.ts::attackProfileForSelection identifies the two different profiles",
+        "rankingPath": "rankingPolicy.ts creates scenarios with empty effectDecisions and uses a separate contribution policy for self-buff axes; no direct route from this calculator off command to the protected ranking outcomes was found by read-only call-graph review, but the full 34640 outcomes were not recomputed"
+      },
+      "finding": "The old 48259.59 is a valid damage result for a different AttackProfile, but cannot be reported as the original selected profile. The retained candidate chooses unavailable for that change. Normal calculator requirements do not explicitly decide whether off pins the preparation profile or sends an explicit re-selection to the resulting profile; this must be settled before product adoption. An owner-ID exception or both-calculated S4 gate cannot establish profile continuity.",
+      "artifact": {
+        "path": ".test-results/tsk-08-s4-structural-control-20260925/owner-205000-readonly-research.json",
+        "bytes": 7983,
+        "sha256": "761a1f779c652ce1f8d37e0a28f5b8b948871a4f0ecc3d70f6aa7a2888c75977"
+      },
+      "reusedEvidence": "Saved baseline and candidate producer observations only; no source test or producer rerun. Candidate has 1590 expected/observed, failures 9 to 7, no new failure, with exactly these two non-target semantic changes.",
+      "sourceDiffIdentity": "tracked binary diff SHA-256 9167825aed66a689e6ee80598808c6bb1a0f95fbfe06c8696d2ca15fa88ef8b4; new test 4762 bytes SHA-256 1d68e699dd8854063ee4227252e9389ce8a7ec9f01d4ab507ca4de9dc35312f0; index empty",
+      "remaining": "HEAD product S4 nine failures; retained candidate seven. B2/B3 and other families stay Blocking. Owner 205000 portable recovery, same-profile alternate and explicit-invalid/unresolved input still require focused acceptance if the candidate is adopted.",
+      "nextOperation": "In a later implementation session, settle calculator profile pinning versus explicit re-selection from the governing contract, then complete 205000 and schema-legal focused proofs before an independent candidate gate. Do not adopt the retained product diff in this research session."
     }
   ],
-  "currentBoundedUnit": "S4 505600 structural control product diff stopped at unplanned 205000 effect; HEAD product still has 9 S4 failures; uncommitted candidate has 7"
+  "currentBoundedUnit": "S4 205000 read-only contract investigation; HEAD product has 9 S4 failures, retained uncommitted candidate has 7"
 }
