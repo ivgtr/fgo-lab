@@ -3721,7 +3721,79 @@
       "preserved": "TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digest; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "nextOperation": "Select one semantic family from the remaining 9 typed failures using actual identities and values; propose a new bounded plan. Keep the 9 Blocking; no push.",
       "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
+    },
+    {
+      "name": "S4 structural control exclusion diagnostic",
+      "date": "2026-09-25",
+      "status": "diagnostic only; product and gate semantics unresolved; 9 failures remain Blocking",
+      "authorization": "User confirmed a bounded diagnostic-only plan for the 505600 structural control family, existing Task/evidence record and local documentation commit.",
+      "baselineHead": "400a952d390c5e3cda8e1489dd7230ef929ca570",
+      "initialState": {
+        "trackedWorktreeEmpty": true,
+        "indexEmpty": true,
+        "ignoredNextEnvPreserved": true,
+        "productionArtifactBytes": 55653544,
+        "productionArtifactSha256": "e81df02a156005183f280548b8b8b0fffe7f437802d41d6b2c460e98c3d4603d",
+        "manifestSha256": "c4eab685dc6985246895b1c6c7724646d99a797a79eb00411c1d2448c738a932",
+        "sharedPoisonEvidenceSha256": "995b889341caa6d8784f67f8c618712422c91d59fb516b170233f818a7531792"
+      },
+      "family": {
+        "ownerId": "505600",
+        "profileKey": "default",
+        "path": "selectedProfile",
+        "projectionKey": "attacker:attacker:505600:2619550:532:0",
+        "operationIds": [
+          "attacker:attacker:505600:2619550:532:0:actor-form",
+          "attacker:attacker:505600:2619550:532:0:np-variant"
+        ],
+        "typedReason": "userControlDamageOutcomeNotCalculated",
+        "firstDifference": {
+          "path": "excluded.damageResult.status",
+          "expected": "calculated",
+          "actual": "unsupported"
+        },
+        "masterFacts": {
+          "activation": "skillUse",
+          "effectOccurrenceId": "532:0",
+          "baseFormId": "505600",
+          "baseNoblePhantasmId": "505601",
+          "baseVariantKind": "nonAttack",
+          "selectedFormId": "505700",
+          "selectedNoblePhantasmId": "505701",
+          "selectedVariantKind": "attack"
+        },
+        "observed": {
+          "enabled": "both operations applied; calculated, NP Lv1 average 63235.92",
+          "excluded": "both operations notApplied; unsupported, invalidNoblePhantasmVariant:np:base:nonAttackDamage",
+          "npVariantDamageInput": "505700/505701 -> 505600/505601"
+        }
+      },
+      "flow": {
+        "producer": "productionMasterControlAudit.test.ts enumerates two members of the same user control and applies it on/off through applyEffectControlPresentationDecision; operationCompiler.ts compiles the skillUse effect with transactionGroupId 2619550:action.",
+        "semanticOwner": "battle-execution variantSelection.ts resolves the selected or base NP; nonAttack is rejected for damage. The form and NP selection are one source effect's ordered structural operations.",
+        "consumer": "productionParityDiagnostics.ts currently requires calculated damage on both sides before checking event/input/result differences. Ranking structuralRequired is candidate-local and does not specify this calculator control's off outcome.",
+        "governingRule": "damage-effect-execution section 4.3 preserves target/order/handler under user assumption; ranking requirements structuralRequired depends on AttackProfile, initial state and full ordered path; nonnumeric outcomes do not fall back to numeric damage."
+      },
+      "diagnosticArtifact": {
+        "path": ".test-results/tsk-08-s4-structural-control-20260925/structural-control-diagnostic.json",
+        "bytes": 10972,
+        "sha256": "35d5133e364fca96a05c13686188f9883d806ea468f03296cf2558c08eb8831c",
+        "fixture": "enabled attack form, excluded nonAttack base, sequential re-enable pending"
+      },
+      "unresolved": [
+        "Define the user-visible calculator outcome when a selected AttackProfile loses its only attack NP path by disabling a structural control.",
+        "Decide whether this control remains switchable for that selected profile and what typed S4 proof is required; do not accept arbitrary unsupported by gate exception.",
+        "Verify sequential recovery and schema-legal alternate form/variant before changing source, gate, or outcome classification."
+      ],
+      "verification": {
+        "producer": "Reused checksum-verified fresh production observation under unchanged HEAD/source: expected and observed identity sets each 1590, gate failures 9, selected identities 2; no new source producer run or source test.",
+        "documentation": "Independent HEAD-only documentation candidate: node --test scripts/docs-integrity.test.mjs passed 6/6; node scripts/docs-integrity.mjs passed; bounded-unit/status JSON check passed. Both changed candidate documents matched worktree SHA-256 after the verification record update."
+      },
+      "remaining": "All 9 S4 failures remain Blocking, including 7 outside this family and B2/B3; without-area alternate, stale-mutation consumer, other ratchets and full production/audit/quality remain unmet.",
+      "preserved": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0, existing digest, candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "nextOperation": "Set the governing calculator structural-control-off contract and typed proof boundary; then propose one bounded implementation plan and focused recovery/alternate fixtures. No push.",
+      "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
     }
   ],
-  "currentBoundedUnit": "S4 shared targetState poison stack condition corrected; 9 gate failures remain Blocking"
+  "currentBoundedUnit": "S4 505600 structural control exclusion diagnosed without product or gate change; 9 gate failures remain Blocking"
 }
