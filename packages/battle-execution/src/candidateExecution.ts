@@ -9,7 +9,7 @@ import type {
   ExecutableBattleState,
   OperationResult,
 } from './contracts';
-import { evaluateCondition } from './condition';
+import { evaluateCondition, type ConditionReadAudit } from './condition';
 import { markerOperationDisposition, applyOrderedMarkerMutation } from './markerExecution';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
 import { createOperationProjection, resolveOperationProjectionEvaluation } from './projection';
@@ -25,6 +25,7 @@ import type {
   OrderedCandidateStateAudit,
   OrderedExecutionGroupAuditEvent,
   OrderedInputQuantityReadAuditEvent,
+  OrderedBattlePointPhaseReadAuditEvent,
   OrderedMutationAuditEvent,
   OrderedScenarioExecution,
   PreparedOrderedScenario,
@@ -88,9 +89,9 @@ function effectOperationGroups(operations: readonly BattleOperation[]): BattleOp
 function evaluateConditionAgainstKnownFacts(
   operation: BattleOperation,
   state: ExecutableBattleState,
-  onInputQuantityRead?: (inputKey: string, value: number | undefined) => void,
+  onConditionRead?: (read: ConditionReadAudit) => void,
 ): boolean | null {
-  const evaluated = evaluateCondition(operation.condition, state, onInputQuantityRead);
+  const evaluated = evaluateCondition(operation.condition, state, onConditionRead);
   if (evaluated !== null) return evaluated;
   const satisfiable = validateConstraintSet({
     fixedFacts: fixedConstraintFactsFromState(state, operation.operationId),
@@ -103,6 +104,37 @@ interface MutableCandidateStateAudit {
   preGroupContextResolution: OrderedCandidateStateAudit['preGroupContextResolution'];
   executionGroups: OrderedExecutionGroupAuditEvent[];
   inputQuantityReads: OrderedInputQuantityReadAuditEvent[];
+  battlePointPhaseReads: OrderedBattlePointPhaseReadAuditEvent[];
+}
+
+function appendConditionReadAudit(
+  audit: MutableCandidateStateAudit,
+  read: ConditionReadAudit,
+  operationSequence: number,
+  operationGroupIndex: number,
+  operationId: string,
+): void {
+  if (read.kind === 'inputQuantity')
+    audit.inputQuantityReads.push({
+      operationSequence,
+      operationGroupIndex,
+      operationId,
+      inputKey: read.inputKey,
+      value: read.value ?? null,
+    });
+  else
+    audit.battlePointPhaseReads.push({
+      operationSequence,
+      operationGroupIndex,
+      operationId,
+      subjectId: read.subjectId,
+      actor: read.actor,
+      point: read.point,
+      phase: read.phase,
+      comparison: read.comparison,
+      expectedValue: read.expectedValue,
+      evaluated: read.evaluated,
+    });
 }
 
 type PendingMutationAuditEvent = Omit<OrderedMutationAuditEvent, 'afterTransaction'>;
@@ -113,7 +145,12 @@ interface CandidateExecutionWithAudit {
 }
 
 function createMutableCandidateStateAudit(): MutableCandidateStateAudit {
-  return { preGroupContextResolution: null, executionGroups: [], inputQuantityReads: [] };
+  return {
+    preGroupContextResolution: null,
+    executionGroups: [],
+    inputQuantityReads: [],
+    battlePointPhaseReads: [],
+  };
 }
 
 function mutationAuditAddress(
@@ -571,15 +608,14 @@ function executeOrderedScenarioCandidateInternal(
         operation,
         state,
         audit
-          ? (inputKey, value) => {
-              audit.inputQuantityReads.push({
+          ? (read) =>
+              appendConditionReadAudit(
+                audit,
+                read,
                 operationSequence,
-                operationGroupIndex: groupIndex,
-                operationId: operation.operationId,
-                inputKey,
-                value: value ?? null,
-              });
-            }
+                groupIndex,
+                operation.operationId,
+              )
           : undefined,
       );
       const resolvedModifierValue = modifierValue(operation, state);

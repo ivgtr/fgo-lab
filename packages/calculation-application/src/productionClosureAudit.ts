@@ -108,6 +108,17 @@ export function productionClosureConditionKey(conditions: RankingPolicyCondition
 
 const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
+export function productionClosureMatrixDigest(
+  result: Omit<ProductionClosureAudit, 'digest'>,
+): string {
+  return digest({
+    ...result,
+    conditionSummaries: result.conditionSummaries.map(
+      ({ elapsedMs: _elapsedMs, ...summary }) => summary,
+    ),
+  });
+}
+
 function compactPreparationActions(
   actions: ReturnType<typeof calculateScenarioWithPolicy>['appliedPreparationActions'],
 ) {
@@ -124,6 +135,7 @@ function compactPreparationActions(
     transition: action.transition,
     resourceBefore: action.resourceBefore,
     resourceAfter: action.resourceAfter,
+    resourceTransaction: action.resourceTransaction,
     hpBefore: action.hpBefore,
     hpAfter: action.hpAfter,
     baseOvercharge: action.baseOvercharge,
@@ -350,5 +362,5 @@ export async function auditProductionClosure(
     conditionSummaries: summaries,
     eligibility: eligibility.finalize(),
   };
-  return { ...result, digest: digest(result) };
+  return { ...result, digest: productionClosureMatrixDigest(result) };
 }

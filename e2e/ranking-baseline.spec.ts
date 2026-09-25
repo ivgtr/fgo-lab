@@ -624,7 +624,7 @@ test('[E2E-053] independent marker profiles retain calculator state across saved
   }
 });
 
-test('[E2E-054] battle-point phase intent survives replay and resets with attacker @desktop @journey', async ({
+test('[E2E-054] battle-point starting point survives replay and resets with attacker @desktop @journey', async ({
   page,
 }) => {
   // E2E-A054-BP-REPLAY
@@ -644,16 +644,16 @@ test('[E2E-054] battle-point phase intent survives replay and resets with attack
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   let picker = page.getByRole('dialog', { name: '攻撃役を選択' });
   await picker.getByRole('tab', { name: '全DB' }).click();
-  await picker.getByLabel('名前で検索').fill('紅閻魔');
+  await picker.getByLabel('名前で検索').fill('エレシュキガル');
   await picker
-    .getByRole('button', { name: /紅閻魔.*Lv/ })
+    .getByRole('button', { name: /エレシュキガル.*Lv/ })
     .nth(1)
     .click();
 
-  const phase = page.getByRole('spinbutton', { name: 'バトルポイント段階' });
+  const point = page.getByRole('spinbutton', { name: '開始バトルポイント' });
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
-  await expect(phase).toHaveValue('0');
-  await phase.fill('2');
+  await expect(point).toHaveValue('');
+  await point.fill('50');
   await page.getByRole('combobox', { name: '宝具Lv', exact: true }).selectOption('2');
   await page.getByRole('combobox', { name: '初期OC', exact: true }).selectOption('2');
   await expect(table).toBeVisible();
@@ -661,31 +661,31 @@ test('[E2E-054] battle-point phase intent survives replay and resets with attack
   await expect
     .poll(
       async () =>
-        JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario?.battleState
-          ?.battlePointPhase,
+        JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario
+          ?.initialBattlePointPoints?.['3300200'],
     )
-    .toBe(2);
+    .toBe(50);
   await page.reload();
-  await expect(phase).toHaveValue('2');
+  await expect(point).toHaveValue('50');
   await expect(table).toHaveText(damage!);
-  await phase.locator('..').screenshot({ path: test.info().outputPath('battle-point-replay.png') });
+  await point.locator('..').screenshot({ path: test.info().outputPath('battle-point-replay.png') });
 
-  await page.getByRole('button', { name: '攻撃役を変更' }).click();
-  picker = page.getByRole('dialog', { name: '攻撃役を選択' });
-  await picker.getByRole('tab', { name: '全DB' }).click();
-  await picker.getByLabel('名前で検索').fill('エレシュキガル');
-  await picker
-    .getByRole('button', { name: /エレシュキガル.*Lv/ })
-    .first()
-    .click();
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   picker = page.getByRole('dialog', { name: '攻撃役を選択' });
   await picker.getByRole('tab', { name: '全DB' }).click();
   await picker.getByLabel('名前で検索').fill('紅閻魔');
   await picker
     .getByRole('button', { name: /紅閻魔.*Lv/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await picker.getByRole('tab', { name: '全DB' }).click();
+  await picker.getByLabel('名前で検索').fill('エレシュキガル');
+  await picker
+    .getByRole('button', { name: /エレシュキガル.*Lv/ })
     .nth(1)
     .click();
-  await expect(phase).toHaveValue('0');
+  await expect(point).toHaveValue('');
   await expect(table).toBeVisible();
 });

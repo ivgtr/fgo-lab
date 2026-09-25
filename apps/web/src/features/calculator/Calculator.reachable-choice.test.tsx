@@ -49,6 +49,7 @@ function renderCalculator(scenario: CalculationScenario, onScenarioChange = vi.f
       activationRequirements={calculation.activationRequirements}
       result={calculation.result}
       request={createCalculatorPortableRequest(scenario, {
+        schemaVersion: SCHEMA_VERSION,
         masterDataVersion: master.version,
         engineVersion: ENGINE_VERSION,
       })}

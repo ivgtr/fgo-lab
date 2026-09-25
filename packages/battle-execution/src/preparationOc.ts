@@ -183,6 +183,12 @@ export function executePreparationOc(args: {
   const resourceOutcome: {
     failure: Extract<PreparationSourceResourceResult, { status: 'rejected' }> | null;
   } = { failure: null };
+  const resourceMutations: {
+    step: number;
+    occurrenceId: string;
+    before: PreNoblePhantasmState['npResource'];
+    after: PreNoblePhantasmState['npResource'];
+  }[] = [];
   let occurrenceId: string | null = null;
   const sourceFacts = new Map<MasterEffect, ConditionEvaluationState>();
   const missingSourceConditions = new Map<MasterEffect, CanonicalInputDefinition>();
@@ -769,6 +775,7 @@ export function executePreparationOc(args: {
         continue;
       }
       if (isPreparationNpOperation(operation)) {
+        const resourceStep = steps.length;
         steps.push((ocState, outcomes) => {
           if (
             outcomes.some(
@@ -872,6 +879,12 @@ export function executePreparationOc(args: {
             }
             if (transfer.status !== 'applied')
               return { kind: 'reject', status: transfer.status, reason: 'npTransfer' };
+            resourceMutations.push({
+              step: resourceStep,
+              occurrenceId: source.effect.occurrenceId,
+              before: current.npResource,
+              after: transfer.state,
+            });
             current = {
               ...current,
               npResource: transfer.state,
@@ -914,8 +927,15 @@ export function executePreparationOc(args: {
               reason: 'preparationResource',
             };
           }
-          if (resource.state.gauge !== current.npResource.gauge)
+          if (resource.state.gauge !== current.npResource.gauge) {
+            resourceMutations.push({
+              step: resourceStep,
+              occurrenceId: source.effect.occurrenceId,
+              before: current.npResource,
+              after: resource.state,
+            });
             current = { ...current, npResource: resource.state };
+          }
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -1140,6 +1160,7 @@ export function executePreparationOc(args: {
   }
   return {
     result,
+    resourceMutations: result.status === 'committed' ? resourceMutations : [],
     resourceFailure: resourceOutcome.failure,
     requiredInput: result.status === 'inputRequired' ? requiredInput : null,
     occurrenceId,

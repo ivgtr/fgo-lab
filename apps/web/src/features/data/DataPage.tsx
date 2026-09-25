@@ -6,7 +6,7 @@ import {
   type UserDataBackup,
 } from '@fgo-lab/schema';
 import { clearUserData } from '../../adapters/repository';
-import { exportBackup, importBackup } from '../../adapters/share';
+import { exportBackup, importBackupWithMigration } from '../../adapters/share';
 import './data.css';
 
 export function DataPage({
@@ -80,8 +80,8 @@ export function DataPage({
             if (file)
               void file
                 .text()
-                .then((text) => {
-                  const parsed = importBackup(text);
+                .then(async (text) => {
+                  const parsed = await importBackupWithMigration(text);
                   setPendingBackup(parsed);
                   setPreImportBackupSaved(false);
                   setMessage('形式を検証しました。内容と全置換を確認してください。');

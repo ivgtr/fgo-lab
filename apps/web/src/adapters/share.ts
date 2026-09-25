@@ -1,5 +1,12 @@
 import type { CalculationShareSnapshot, UserDataBackup } from '@fgo-lab/schema';
-import { parseCalculationShareSnapshot, parseUserDataBackup } from '@fgo-lab/schema';
+import {
+  migrateUserDataBackupV40,
+  parseCalculationShareSnapshot,
+  parseCalculationShareSnapshotV40,
+  parseUserDataBackup,
+  validateHistoricalV40Identities,
+} from '@fgo-lab/schema';
+import { portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
 export const MAX_SHARE_FRAGMENT_LENGTH = 16_384;
 export const RESULT_CARD_EXPORT_WIDTH = 560;
 function encode(value: unknown): string {
@@ -22,10 +29,25 @@ export function createShareFragment(snapshot: CalculationShareSnapshot): string 
   if (fragment.length > MAX_SHARE_FRAGMENT_LENGTH) throw new RangeError('share_too_large');
   return fragment;
 }
-export function readShareFragment(fragment: string): CalculationShareSnapshot | null {
+export function readShareFragment(fragment: string):
+  | CalculationShareSnapshot
+  | {
+      disposition: 'historicalOnly';
+      snapshot: ReturnType<typeof parseCalculationShareSnapshotV40>;
+      raw: unknown;
+    }
+  | null {
   if (fragment.length > MAX_SHARE_FRAGMENT_LENGTH + 1) throw new RangeError('share_too_large');
   const value = new URLSearchParams(fragment.replace(/^#/, '')).get('share');
-  return value ? parseCalculationShareSnapshot(decode(value)) : null;
+  if (!value) return null;
+  const raw = decode(value);
+  if (
+    typeof raw === 'object' &&
+    raw !== null &&
+    (raw as Record<string, unknown>)['schemaVersion'] === 40
+  )
+    return { disposition: 'historicalOnly', snapshot: parseCalculationShareSnapshotV40(raw), raw };
+  return parseCalculationShareSnapshot(raw);
 }
 export function exportBackup(backup: UserDataBackup): string {
   return JSON.stringify(backup, null, 2);
@@ -33,6 +55,31 @@ export function exportBackup(backup: UserDataBackup): string {
 export function importBackup(text: string, maxBytes = 5_000_000): UserDataBackup {
   if (new Blob([text]).size > maxBytes) throw new RangeError('backup_too_large');
   return parseUserDataBackup(JSON.parse(text));
+}
+
+export async function importBackupWithMigration(
+  text: string,
+  maxBytes = 5_000_000,
+): Promise<UserDataBackup> {
+  if (new Blob([text]).size > maxBytes) throw new RangeError('backup_too_large');
+  const value: unknown = JSON.parse(text);
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as Record<string, unknown>)['schemaVersion'] === 40
+  )
+    return migrateUserDataBackupV40(value, (request) =>
+      portableCalculationFingerprint(request, async (data) =>
+        crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+      ),
+    );
+  const backup = parseUserDataBackup(value);
+  await validateHistoricalV40Identities(backup.profiles, (request) =>
+    portableCalculationFingerprint(request, async (data) =>
+      crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+    ),
+  );
+  return backup;
 }
 
 async function blobDataUrl(blob: Blob): Promise<string> {

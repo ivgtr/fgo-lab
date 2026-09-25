@@ -3609,6 +3609,7 @@ describe('scenario calculation facade', () => {
         issues: [{ code: `preparation:${code}` }],
       });
       const request = createCalculatorPortableRequest(scenario, {
+        schemaVersion: SCHEMA_VERSION,
         masterDataVersion: rejectedMaster.version,
         engineVersion: ENGINE_VERSION,
       });

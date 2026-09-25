@@ -64,7 +64,11 @@ const versions = {
 } as const;
 
 const request = {
-  versionContext: { masterDataVersion: versions.masterDataVersion, engineVersion: ENGINE_VERSION },
+  versionContext: {
+    schemaVersion: SCHEMA_VERSION,
+    masterDataVersion: versions.masterDataVersion,
+    engineVersion: ENGINE_VERSION,
+  },
   scenario,
   executionIntent: { kind: 'manual' },
 } satisfies PortableCalculationRequest;
@@ -160,6 +164,7 @@ describe('workspace derivations', () => {
           families: [],
         },
         attackerHpPermille: null,
+        enemyDefenseBuff: 0,
         battleState: { battlePointPhase: null },
         canonicalInputValues: {},
         craftEssence: null,

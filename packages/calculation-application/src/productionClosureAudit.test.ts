@@ -531,6 +531,8 @@ it(
       ocUse: null,
       resourceBefore: initialResource,
       resourceAfter: initialResource,
+      resourceTransaction: { afterConsumption: initialResource, mutations: [] },
+      ocOutcomes: [],
     };
     const attackAction: ProductionPreparationTransactionAction = {
       command: attackCommand,
@@ -539,6 +541,8 @@ it(
       ocUse: receipt,
       resourceBefore: initialResource,
       resourceAfter: consumedResource,
+      resourceTransaction: { afterConsumption: consumedResource, mutations: [] },
+      ocOutcomes: [],
     };
     const observation = {
       conditionKey: 'fixture-condition',
@@ -547,6 +551,47 @@ it(
       actions: [skillAction, attackAction],
     };
     const audit = auditProductionPreparationTransactionObservations([observation]);
+    const gainedResource = { ...consumedResource, gauge: 2_000 };
+    const gainAction: ProductionPreparationTransactionAction = {
+      ...attackAction,
+      resourceAfter: gainedResource,
+      ocOutcomes: [{ step: 0, outcome: 'notApplicable' }],
+      resourceTransaction: {
+        afterConsumption: consumedResource,
+        mutations: [
+          {
+            step: 0,
+            occurrenceId: 'np-before-damage-gain',
+            before: consumedResource,
+            after: gainedResource,
+          },
+        ],
+      },
+    };
+    expect(
+      auditProductionPreparationTransactionObservations([
+        { ...observation, actions: [skillAction, gainAction] },
+      ]).failures,
+    ).toEqual([]);
+    expect(
+      auditProductionPreparationTransactionObservations([
+        {
+          ...observation,
+          actions: [
+            skillAction,
+            {
+              ...gainAction,
+              resourceTransaction: {
+                ...gainAction.resourceTransaction,
+                mutations: [
+                  { ...gainAction.resourceTransaction.mutations[0]!, before: initialResource },
+                ],
+              },
+            },
+          ],
+        },
+      ]).failures,
+    ).toMatchObject([{ reason: 'preparationResourceCommitMismatch' }]);
     const passing = evaluateProductionPreparationTransactionGate({
       expectedCalculatedProfiles: 1,
       ...audit,
@@ -636,14 +681,16 @@ it(
         },
       ],
     });
-    expect(discontinuousResourceAudit.failures).toMatchObject([
-      {
-        reason: 'preparationResourceSequenceMismatch',
-        canonicalIdentity:
-          'production:fixture-condition:profile:fixture-profile:preparation:action:1',
-        firstDifference: { path: 'gauge', expected: 15_000, actual: 10_000 },
-      },
-    ]);
+    expect(
+      discontinuousResourceAudit.failures.find(
+        ({ reason }) => reason === 'preparationResourceSequenceMismatch',
+      ),
+    ).toMatchObject({
+      reason: 'preparationResourceSequenceMismatch',
+      canonicalIdentity:
+        'production:fixture-condition:profile:fixture-profile:preparation:action:1',
+      firstDifference: { path: 'gauge', expected: 15_000, actual: 10_000 },
+    });
     expect(discontinuousResource).toMatchObject({ status: 'failed' });
   },
 );

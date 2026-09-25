@@ -4,12 +4,21 @@ import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react
 import { afterEach, expect, it, vi } from 'vitest';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { createProfileCollection } from '@fgo-lab/profile-domain';
-import { historicalCalculationHistoryEntrySchema, type LocalProfile } from '@fgo-lab/schema';
+import {
+  historicalCalculationDraftV40Schema,
+  historicalCalculationHistoryEntrySchema,
+  portableCalculationRequestV40Schema,
+  type LocalProfile,
+} from '@fgo-lab/schema';
 import {
   createDefaultCalculatorPortableRequest,
   executePortableCalculation,
 } from '@fgo-lab/calculation-application';
-import { finalizeHistory, portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
+import {
+  canonicalize,
+  finalizeHistory,
+  portableCalculationFingerprint,
+} from '@fgo-lab/workspace-domain';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
 import { CalculatorRoute } from './CalculatorRoute';
 import type { CalculationWorkspace } from './App';
@@ -64,8 +73,11 @@ async function setup(
     historyId: sessionB,
   }).history[0]!;
   if (requestB.scenario.mode !== 'resolved') throw new Error('resolved fixture required');
-  const { initialOvercharge, ...legacyScenario } = requestB.scenario;
+  const { initialOvercharge, enemyDefenseBuff, initialBattlePointPoints, ...legacyScenario } =
+    requestB.scenario;
   expect(initialOvercharge).toBe(1);
+  expect(enemyDefenseBuff).toBe(0);
+  expect(initialBattlePointPoints).toEqual({});
   const entryB =
     kind === 'current'
       ? currentB
@@ -217,3 +229,92 @@ it.each(['missingSubject', 'missingLevel'] as const)(
     expect(test.current()).toEqual(original);
   },
 );
+
+it('shows a v40 draft as historical and creates a separate v41 draft only on explicit recalculation', async () => {
+  if (requestA.scenario.mode !== 'resolved') throw new Error('resolved fixture required');
+  const { schemaVersion, ...oldContext } = requestA.versionContext;
+  const { enemyDefenseBuff, initialBattlePointPoints, ...oldScenario } = requestA.scenario;
+  expect(schemaVersion).toBe(41);
+  expect(enemyDefenseBuff).toBe(0);
+  expect(initialBattlePointPoints).toEqual({});
+  const oldRequest = portableCalculationRequestV40Schema.parse({
+    ...requestA,
+    versionContext: oldContext,
+    scenario: oldScenario,
+  });
+  const oldResult = { ...resultA, versions: { ...resultA.versions, schemaVersion: 40 as const } };
+  const fingerprint = await portableCalculationFingerprint(oldRequest, (bytes) =>
+    crypto.subtle.digest('SHA-256', new Uint8Array(bytes)),
+  );
+  const base = createProfileCollection(
+    'history',
+    { now: () => new Date(now) },
+    { next: () => sessionA },
+  ).profiles[0]!;
+  const raw = {
+    profileId: base.profileId,
+    calculationSessionId: sessionA,
+    request: oldRequest,
+    result: oldResult,
+    requestFingerprint: fingerprint,
+    updatedAt: now,
+  };
+  const historicalDraft = historicalCalculationDraftV40Schema.parse({
+    disposition: 'historicalOnly',
+    sourceSchemaVersion: 40,
+    profileId: base.profileId,
+    calculationSessionId: sessionA,
+    scenario: oldScenario,
+    result: oldResult,
+    requestFingerprint: fingerprint,
+    updatedAt: now,
+    legacySnapshot: raw,
+  });
+  let observed: { profile: LocalProfile; workspace: CalculationWorkspace } = {
+    profile: { ...base, historicalDraft },
+    workspace: {
+      request: undefined,
+      storedResult: undefined,
+      source: 'draft',
+      historical: historicalDraft,
+    },
+  };
+  let mutation = 0;
+  function Harness() {
+    const [profile, setProfile] = useState(observed.profile);
+    const [workspace, setWorkspace] = useState(observed.workspace);
+    useEffect(() => {
+      observed = { profile, workspace };
+    }, [profile, workspace]);
+    return (
+      <CalculatorRoute
+        master={master}
+        profile={profile}
+        calculation={workspace}
+        setCalculation={setWorkspace}
+        calculationSessionId={sessionA}
+        setCalculationSessionId={() => {}}
+        updateActiveProfile={(update) => {
+          setProfile(update);
+          return Promise.resolve();
+        }}
+        updateSupportTemplate={() => Promise.resolve()}
+        registerFinalizer={() => {}}
+        recoveryFocus={null}
+        setRecoveryFocus={() => {}}
+        calculationMutation={{ begin: () => ++mutation, isCurrent: (token) => token === mutation }}
+      />
+    );
+  }
+  const view = render(<Harness />);
+  expect(view.getByText('履歴値・再計算されていません')).toBeTruthy();
+  expect(observed.profile.draft).toBeNull();
+  fireEvent.click(view.getByRole('button', { name: '現在のバージョンで再計算' }));
+  await waitFor(() =>
+    expect(observed.profile.draft?.request.versionContext.schemaVersion).toBe(41),
+  );
+  expect(observed.profile.historicalDraft?.legacySnapshot).toEqual(raw);
+  expect(observed.profile.draft?.request.scenario).toMatchObject({ enemyDefenseBuff: 0 });
+  expect(observed.profile.draft?.requestFingerprint).not.toBe(fingerprint);
+  expect(canonicalize(observed.profile.draft?.request)).not.toBe(canonicalize(oldRequest));
+});

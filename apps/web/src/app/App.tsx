@@ -24,6 +24,7 @@ import {
 } from '@fgo-lab/profile-domain';
 import type {
   CalculationResult,
+  HistoricalCalculationDraftV40,
   CraftEssenceCopy,
   PortableCalculationRequest,
   ServantBuild,
@@ -102,6 +103,7 @@ export interface CalculationWorkspace {
   request: PortableCalculationRequest | undefined;
   storedResult: CalculationResult | undefined;
   source: 'share' | 'draft' | 'history' | undefined;
+  historical?: HistoricalCalculationDraftV40 | undefined;
   upgradeAttempt?: Extract<PortableVersionUpgradeResult, { status: 'rejected' }>;
 }
 
@@ -155,7 +157,6 @@ export function App() {
     profiles,
     undoSnapshot,
     initialize: initializeProfiles,
-    replace: replaceProfiles,
     updateActive: updateActiveProfile,
     undo: undoLastChange,
   } = useProfileCollection(repository);
@@ -467,7 +468,26 @@ export function App() {
               masterVersion={currentMaster.version}
               onImport={async (next) => {
                 calculationMutation.begin();
-                await replaceProfiles(next);
+                await repository.replaceAtomicallyWithBackup(next);
+                initializeProfiles(next);
+                const imported = activeProfile(next);
+                setCalculation(
+                  imported.draft
+                    ? {
+                        request: imported.draft.request,
+                        storedResult: imported.draft.result,
+                        source: 'draft',
+                      }
+                    : {
+                        request: undefined,
+                        storedResult: undefined,
+                        source: imported.historicalDraft ? 'draft' : undefined,
+                        ...(imported.historicalDraft
+                          ? { historical: imported.historicalDraft }
+                          : {}),
+                      },
+                );
+                setCalculationSessionId(crypto.randomUUID());
               }}
             />
           )}{' '}

@@ -347,3 +347,10 @@ export function setInitialHp(
     ),
   };
 }
+
+/** Set the target's independent defense modifier before ordered effect execution. */
+export function setEnemyDefenseBuff(scenario: ResolvedScenario, value: number): ResolvedScenario {
+  if (!Number.isFinite(value) || value < -5 || value > 5)
+    throw new TypeError('invalid_enemy_defense_buff');
+  return { ...scenario, enemyDefenseBuff: value };
+}

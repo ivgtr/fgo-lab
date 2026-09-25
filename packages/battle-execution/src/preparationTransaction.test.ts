@@ -1376,6 +1376,10 @@ describe('OC on the preparation command path', () => {
     expect(appliedAction.ocUse?.gaugeBefore).toBe(appliedAction.resourceBefore.gauge);
     expect(appliedAction.baseOvercharge).toBe(appliedAction.ocUse?.baseOc);
     expect(appliedAction.resourceAfter.gauge).toBe(0);
+    expect(appliedAction.resourceTransaction).toEqual({
+      afterConsumption: appliedAction.resourceAfter,
+      mutations: [],
+    });
     expect(np.state.ocState.boosts.map((instance) => instance.uses)).toEqual([
       { kind: 'finite', remaining: 0 },
       { kind: 'finite', remaining: 1 },
@@ -1389,6 +1393,57 @@ describe('OC on the preparation command path', () => {
         context,
       ),
     ).toMatchObject({ status: 'rejected', state: np.state });
+  });
+  it('records an NP-body resource gain after consumption in the ordered transaction', () => {
+    const servant = servantWithSkill([]);
+    const gain = {
+      ...effect('np-body-gain', null, [
+        {
+          kind: 'resourceMutation',
+          resource: 'npGauge',
+          direction: 'gain',
+          unit: 'fixed',
+          recipient: 'partyMember',
+          subjectId: null,
+          amount: {
+            kind: 'fixed',
+            values: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 2000)) as [
+              number[],
+              number[],
+              number[],
+              number[],
+              number[],
+            ],
+          },
+        },
+      ]),
+      gameActivation: 'npBeforeDamage' as const,
+      timing: 'afterDamage' as const,
+    };
+    servant.noblePhantasmVariantGroups[0]!.variants[0] = {
+      ...baseAttack,
+      effects: [
+        gain,
+        { ...ocEffect('np-oc'), timing: 'beforeDamage', gameActivation: 'npBeforeDamage' },
+      ],
+    };
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const result = reducePreNoblePhantasmAction(
+      servant,
+      initial.state,
+      { kind: 'executeAttackNoblePhantasm' },
+      context,
+    );
+    expect(result.status, JSON.stringify(result)).toBe('applied');
+    if (result.status !== 'applied') return;
+    const action = result.state.appliedActions.at(-1)!;
+    expect(action.resourceBefore.gauge).toBe(10_000);
+    expect(action.resourceTransaction.afterConsumption.gauge).toBe(0);
+    expect(action.resourceTransaction.mutations).toMatchObject([
+      { occurrenceId: 'np-body-gain', before: { gauge: 0 }, after: { gauge: 2_000 } },
+    ]);
+    expect(action.resourceAfter.gauge).toBe(2_000);
   });
   it.each([false, true])(
     'selects ordered NP amount cells from the frozen receipt after an NP-body OC grant (proportional: %s)',

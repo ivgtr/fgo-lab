@@ -150,7 +150,7 @@ describe('production battle-point paths', () => {
           expect(portable.execution.result).toEqual(execution.result);
       }
       expect(ranking.map(({ status }) => status)).toEqual(Array(4).fill('calculated'));
-      expect(ranking.map(({ maximum }) => maximum)).toEqual([33715, 106204, 21612, 48628]);
+      expect(ranking.map(({ maximum }) => maximum)).toEqual([33715, 96089, 21612, 48628]);
       for (const entry of ranking) {
         if (entry.status === 'calculated') {
           expect(entry.portable?.status).toBe('executed');
@@ -165,7 +165,7 @@ describe('production battle-point paths', () => {
             (command) =>
               command.kind === 'useSkillSlot' &&
               command.slot === 1 &&
-              command.choice?.candidateKey === '2',
+              command.choice?.candidateKey === '1',
           ),
       ).toBe(true);
     },
@@ -367,7 +367,7 @@ describe('production battle-point paths', () => {
             compiledCandidateUpperBound: candidateUpperBound,
           };
           await artifact(task.meta, artifactPath, record);
-          expect(candidateUpperBound).toBe(3072);
+          expect(candidateUpperBound).toBe(1536);
           expect(execution.result.status).toBe('calculated');
           expect(record.maximum).toBe(maximum);
           return;

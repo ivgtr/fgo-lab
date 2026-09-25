@@ -197,6 +197,17 @@ const preparationActionSchema = z.object({
   transition: actorFormGraphSchema.shape.transitions.element.nullable(),
   resourceBefore: resourceSchema,
   resourceAfter: resourceSchema,
+  resourceTransaction: z.object({
+    afterConsumption: resourceSchema,
+    mutations: z.array(
+      z.object({
+        step: z.number().int().nonnegative(),
+        occurrenceId: z.string().min(1),
+        before: resourceSchema,
+        after: resourceSchema,
+      }),
+    ),
+  }),
   baseOvercharge: z.number().nullable(),
   ocUse: z
     .object({
@@ -301,7 +312,24 @@ export const rankingDetailResponseSchema: z.ZodType<RankingPolicyDetail> = z
           (action.sourceKind === 'skill') !== (action.ocUse === null) ||
           (action.ocUse !== null &&
             (action.ocUse.gaugeBefore !== action.resourceBefore.gauge ||
-              action.ocUse.baseOc !== action.baseOvercharge)),
+              action.ocUse.baseOc !== action.baseOvercharge)) ||
+          (action.sourceKind === 'skill'
+            ? JSON.stringify(action.resourceTransaction.afterConsumption) !==
+              JSON.stringify(action.resourceBefore)
+            : action.resourceTransaction.afterConsumption.gauge !== 0) ||
+          JSON.stringify(
+            action.resourceTransaction.mutations.at(-1)?.after ??
+              action.resourceTransaction.afterConsumption,
+          ) !== JSON.stringify(action.resourceAfter) ||
+          action.resourceTransaction.mutations.some(
+            (mutation, index) =>
+              JSON.stringify(mutation.before) !==
+              JSON.stringify(
+                index === 0
+                  ? action.resourceTransaction.afterConsumption
+                  : action.resourceTransaction.mutations[index - 1]!.after,
+              ),
+          ),
       ) ||
       terminal?.sourceKind !== 'attackNoblePhantasm' ||
       terminal.ocUse?.effectiveOc !== detail.input.overcharge ||

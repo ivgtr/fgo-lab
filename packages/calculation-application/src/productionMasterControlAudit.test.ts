@@ -8,9 +8,11 @@ import {
 } from '@fgo-lab/master-data';
 import {
   canNormalizeDamageEffect,
+  battlePointPhase,
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
   hpPermille,
+  readBattlePoint,
   type ConditionExpression,
   type EffectProjection,
   type TraitScope,
@@ -35,6 +37,7 @@ import {
   createDefaultResolvedScenario,
   requireExecutableCalculation,
   type CalculationExecutionObservation,
+  type CalculationPreparationOptions,
   type AttackProfileContinuity,
 } from './scenario';
 const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
@@ -108,12 +111,13 @@ function evaluateWithOrderedOperationEvents(
   scenario: ResolvedScenario,
   master: ReturnType<typeof masterSnapshotSchema.parse>,
   versions: VersionContext,
+  preparation: CalculationPreparationOptions = {},
 ) {
   const prepared = prepareCalculationScenarioWithPolicy(
     scenario,
     master,
     { kind: 'calculator' },
-    {},
+    preparation,
     true,
   );
   if (
@@ -132,6 +136,110 @@ function evaluateWithOrderedOperationEvents(
   if (calculation.executionObservation !== prepared.executionObservation)
     throw new TypeError(`production_control_observation_mismatch:${scenario.attacker.servantId}`);
   return { calculation, observation: prepared.executionObservation, prepared };
+}
+
+function battlePointPhaseLeaves(condition: ConditionExpression | null) {
+  const leaves: Extract<ConditionExpression, { kind: 'quantity' }>[] = [];
+  const visit = (expression: ConditionExpression): void => {
+    if (expression.kind === 'quantity' && expression.quantity === 'battlePointPhase')
+      leaves.push(expression);
+    else if (expression.kind === 'all' || expression.kind === 'any')
+      expression.expressions.forEach(visit);
+    else if (expression.kind === 'not') visit(expression.expression);
+  };
+  if (condition) visit(condition);
+  return leaves;
+}
+
+function canonicalBattlePointLeavesForProjection(
+  servant: ReturnType<typeof masterSnapshotSchema.parse>['servants'][number],
+  projection: EffectProjection,
+) {
+  const sources = [
+    ...servant.skills.map((skill) => ({ sourceId: skill.id, effects: skill.effects })),
+    ...servant.passives.map((skill) => ({ sourceId: skill.id, effects: skill.effects })),
+    ...servant.noblePhantasmVariantGroups.flatMap((group) =>
+      group.variants.map((variant) => ({
+        sourceId: variant.ref.noblePhantasmId,
+        effects: variant.effects,
+      })),
+    ),
+  ];
+  const matching = sources
+    .flatMap(({ effects }) => effects)
+    .filter((effect) => effect.occurrenceId === projection.source.effectOccurrenceId);
+  const groups = [
+    ...new Set(
+      matching.map((effect) =>
+        JSON.stringify(
+          canonicalRequirementLeaves(effect.requirement.expression).flatMap((leaf) =>
+            leaf.kind === 'quantity' && leaf.quantity === 'battlePointPhase'
+              ? [
+                  {
+                    subjectId: leaf.subjectId ?? '',
+                    comparison: leaf.comparison,
+                    value: leaf.value,
+                  },
+                ]
+              : [],
+          ),
+        ),
+      ),
+    ),
+  ];
+  if (groups.length !== 1)
+    return battlePointPhaseLeaves(projection.explanation.condition).map((leaf) => ({
+      subjectId: '',
+      comparison: leaf.comparison,
+      value: leaf.value,
+    }));
+  return JSON.parse(groups[0]!) as {
+    subjectId: string;
+    comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
+    value: number;
+  }[];
+}
+
+function battlePointControlInitialPhases(
+  leaves: readonly {
+    subjectId: string;
+    comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
+    value: number;
+  }[],
+  domains: ReturnType<typeof masterSnapshotSchema.parse>['battlePointDomains'],
+  ownerDomains: ReturnType<
+    typeof masterSnapshotSchema.parse
+  >['servants'][number]['battlePointDomains'],
+) {
+  if (!leaves.length) return null;
+  const ids = [...new Set(leaves.map(({ subjectId }) => subjectId))];
+  const domainId = ids.length === 1 ? ids[0] : null;
+  if (!domainId || (ownerDomains ?? []).some(({ id }) => id !== domainId)) return null;
+  const domain = domains.find(({ id }) => id === domainId);
+  if (!domain || domain.phases.some(({ phase }) => phase < 0 || phase > 10)) return null;
+  const boundary = leaves[0]!.value;
+  const capacity = domain.capacity.default;
+  const ceiling = capacity ?? Math.max(0, ...domain.phases.map(({ threshold }) => threshold));
+  const witnesses = [-1, ...Array.from({ length: ceiling + 1 }, (_, point) => point)]
+    .map((point) => ({
+      point,
+      phase: battlePointPhase(
+        domain,
+        point === -1
+          ? { kind: 'absent' as const, eligible: true }
+          : { kind: 'present' as const, point, capacity, capacityModifiers: [] },
+      ),
+    }))
+    .filter((witness): witness is { point: number; phase: number } => witness.phase !== null);
+  return {
+    domain,
+    witnesses: witnesses.sort(
+      (left, right) =>
+        Math.abs(left.phase - boundary) - Math.abs(right.phase - boundary) ||
+        left.phase - right.phase ||
+        left.point - right.point,
+    ),
+  };
 }
 
 function hpControlInitialCandidates(condition: ConditionExpression): readonly number[] {
@@ -275,6 +383,7 @@ function userControlSideObservation(
     operationEvents,
     projections,
     inputBinding: controlDamageInputBinding(projection, calculation),
+    damageInputDefenseBuff: calculation.input.defenseBuff,
     effectiveContributions,
     damageResult: {
       status: calculation.result.status,
@@ -590,6 +699,8 @@ describe('production master inventory ratchet', () => {
                 evaluatedCandidates: number;
               }
             | undefined;
+          let battlePointWitness: ProductionUserControlObservation['battlePointWitness'];
+          let selectedBattlePointPreparation: CalculationPreparationOptions = {};
           let conflictCounterexample:
             | {
                 plan: ResolvedScenario['preNoblePhantasmPlan'];
@@ -828,6 +939,147 @@ describe('production master inventory ratchet', () => {
               break;
             }
           }
+          const battlePointCandidates = battlePointControlInitialPhases(
+            canonicalBattlePointLeavesForProjection(servant, effect),
+            master.battlePointDomains,
+            servant.battlePointDomains,
+          );
+          if (
+            battlePointCandidates &&
+            active.effects.find(
+              (projection) =>
+                projection.projectionKey === effect.projectionKey &&
+                projection.operationId === effect.operationId,
+            )?.outcome !== 'applied'
+          ) {
+            let evaluatedCandidates = 0;
+            for (const {
+              point: initialPoint,
+              phase: initialPhase,
+            } of battlePointCandidates.witnesses) {
+              evaluatedCandidates += 1;
+              const candidateScenario = {
+                ...selectedScenario,
+                enemyDefenseBuff: 0.3,
+                battleState: { battlePointPhase: initialPhase },
+              };
+              const selectedPreparation = {
+                initialBattlePointPoints: { [battlePointCandidates.domain.id]: initialPoint },
+              };
+              const candidate = evaluateWithOrderedOperationEvents(
+                candidateScenario,
+                master,
+                versions,
+                selectedPreparation,
+              );
+              if (
+                candidate.observation.battlePointWitness?.[battlePointCandidates.domain.id] !==
+                initialPoint
+              )
+                continue;
+              const on = evaluateWithOrderedOperationEvents(
+                candidateScenario,
+                master,
+                versions,
+                selectedPreparation,
+              );
+              const preparedValue = readBattlePoint(
+                on.prepared.orderedScenario?.battlePoints,
+                'attacker',
+                battlePointCandidates.domain.id,
+              );
+              const preparedPhase = battlePointPhase(battlePointCandidates.domain, preparedValue);
+              const candidateEffect = on.calculation.effects.find(
+                (projection) =>
+                  projection.projectionKey === effect.projectionKey &&
+                  projection.operationId === effect.operationId,
+              );
+              if (
+                !candidateEffect ||
+                preparedValue?.kind !== 'present' ||
+                preparedPhase === null ||
+                on.calculation.result.status !== 'calculated' ||
+                on.calculation.profileContinuity?.kind !== 'matched' ||
+                candidateEffect.outcome !== 'applied'
+              )
+                continue;
+              const candidateControl = on.calculation.effectControls.find(
+                ({ key }) => key === effect.projectionKey,
+              );
+              if (!candidateControl) continue;
+              const offScenario = applyEffectControlPresentationDecision(
+                candidateScenario,
+                candidateControl,
+                false,
+                on.calculation.activationRequirements,
+                on.calculation.effects,
+                on.calculation.effectInputs,
+              );
+              const off = evaluateWithOrderedOperationEvents(
+                offScenario,
+                master,
+                versions,
+                selectedPreparation,
+              );
+              const onSide = userControlSideObservation(
+                candidateEffect,
+                on.calculation,
+                on.observation,
+              );
+              const offSide = userControlSideObservation(
+                candidateEffect,
+                off.calculation,
+                off.observation,
+              );
+              if (
+                off.calculation.result.status !== 'calculated' ||
+                off.calculation.profileContinuity?.kind !== 'matched' ||
+                off.calculation.profileContinuity.intendedProfileKey !==
+                  on.calculation.profileContinuity.intendedProfileKey ||
+                JSON.stringify({ ...candidateScenario, effectDecisions: [] }) !==
+                  JSON.stringify({ ...offScenario, effectDecisions: [] }) ||
+                off.observation.battlePointWitness?.[battlePointCandidates.domain.id] !==
+                  initialPoint ||
+                !onSide.operationEvents.some(
+                  ({ operationOutcome }) => operationOutcome === 'applied',
+                ) ||
+                !offSide.operationEvents.some(
+                  ({ operationOutcome }) => operationOutcome === 'notApplied',
+                ) ||
+                !onSide.effectiveContributions.some(({ effective }) => effective) ||
+                !offSide.effectiveContributions.some(({ effective }) => !effective) ||
+                onSide.inputBinding.kind !== 'bound' ||
+                offSide.inputBinding.kind !== 'bound' ||
+                onSide.inputBinding.value !== true ||
+                offSide.inputBinding.value !== false ||
+                JSON.stringify(onSide.damageResult.rows) ===
+                  JSON.stringify(offSide.damageResult.rows)
+              )
+                continue;
+              selectedScenario = candidateScenario;
+              active = on.calculation;
+              activeObservation = on.observation;
+              selectedControlMembers = active.effects.filter(
+                (projection) =>
+                  projection.projectionKey === effect.projectionKey &&
+                  projection.controllability === 'user',
+              );
+              battlePointWitness = {
+                domainId: battlePointCandidates.domain.id,
+                initialPoint,
+                preparedPoint: preparedValue.point,
+                preparedPhase,
+                initialPhase,
+                generatedCandidates: battlePointCandidates.witnesses.length,
+                evaluatedCandidates,
+                enemyDefenseBuff: candidateScenario.enemyDefenseBuff,
+                enabledScenario: candidateScenario,
+                excludedScenario: offScenario,
+              };
+              selectedBattlePointPreparation = selectedPreparation;
+              break;
+            }
+          }
           selectedCalculations.set(effect.projectionKey, active);
           const activeEffect = active.effects.find(
             (candidate) => candidate.projectionKey === effect.projectionKey,
@@ -867,7 +1119,12 @@ describe('production master inventory ratchet', () => {
             active.effectInputs,
           );
           const { calculation: excluded, observation: excludedObservation } =
-            evaluateWithOrderedOperationEvents(excludedScenario, master, versions);
+            evaluateWithOrderedOperationEvents(
+              excludedScenario,
+              master,
+              versions,
+              selectedBattlePointPreparation,
+            );
           for (const member of selectedControlMembers) {
             const profileKey = intendedProfileKey(active.profileContinuity);
             if (!profileKey) throw new TypeError('production_control_profile_key_missing');
@@ -881,6 +1138,7 @@ describe('production master inventory ratchet', () => {
                 plan: selectedScenario.preNoblePhantasmPlan,
               },
               ...(hpWitness ? { hpWitness } : {}),
+              ...(battlePointWitness ? { battlePointWitness } : {}),
               ...(conflictCounterexample
                 ? {
                     conflictCounterexample: {
@@ -1078,9 +1336,26 @@ describe('production master inventory ratchet', () => {
           selectedProfileKeys.get(`${identity.ownerId}:${identity.projectionKey}`) ??
           identity.profileKey,
       }));
+      const expectedBattlePointReads = calculations.flatMap(({ servant, calculation }) =>
+        calculation.effects.flatMap((projection) => {
+          if (projection.controllability !== 'user' || !projection.sourceActive) return [];
+          const leaves = canonicalBattlePointLeavesForProjection(servant, projection);
+          return leaves.length
+            ? [
+                {
+                  ownerId: servant.id,
+                  projectionKey: projection.projectionKey,
+                  operationId: projection.operationId,
+                  leaves,
+                },
+              ]
+            : [];
+        }),
+      );
       const userControlGate = auditProductionUserControlObservations({
         expectedProjectionCount: expectedUserControlIdentities.length,
         expectedIdentities: selectedExpectedIdentities,
+        expectedBattlePointReads,
         observations: userControlObservations,
       });
       await writeProductionAuditArtifact(task.meta, 'production-inert-control-production.json', {
@@ -1089,6 +1364,7 @@ describe('production master inventory ratchet', () => {
         source: 'productionMasterControlAudit.test.ts',
         canonicalIdentity: userControlGate.canonicalIdentity,
         expectedIdentities: selectedExpectedIdentities,
+        expectedBattlePointReads,
         preparationInventories: Object.fromEntries(preparationInventories),
         gate: userControlGate,
         observations: userControlObservations,
@@ -1101,14 +1377,40 @@ describe('production master inventory ratchet', () => {
             failureCount: userControlGate.failures.length,
           })}`,
         );
-      console.info(
-        `production_user_control_ratchet:${JSON.stringify({
-          status: userControlGate.status,
-          canonicalIdentity: userControlGate.canonicalIdentity,
-          summary: userControlGate.summary,
-        })}`,
+      const battlePointProof = userControlObservations.find(
+        (observation) => observation.battlePointWitness,
       );
-
+      const target = battlePointProof?.enabled.executionObservation.targetExecution;
+      if (battlePointProof && target?.selection === 'selected' && target.candidateState) {
+        const missingRead = {
+          ...battlePointProof,
+          enabled: {
+            ...battlePointProof.enabled,
+            executionObservation: {
+              ...battlePointProof.enabled.executionObservation,
+              targetExecution: {
+                ...target,
+                candidateState: { ...target.candidateState, battlePointPhaseReads: [] },
+              },
+            },
+          },
+        };
+        const rejected = auditProductionUserControlObservations({
+          expectedProjectionCount: expectedUserControlIdentities.length,
+          expectedIdentities: selectedExpectedIdentities,
+          expectedBattlePointReads,
+          observations: userControlObservations.map((observation) =>
+            observation === battlePointProof ? missingRead : observation,
+          ),
+        });
+        expect(rejected.status).toBe('failed');
+        if (rejected.status === 'failed')
+          expect(
+            rejected.failures.some(
+              (failure) => failure.reason === 'userControlBattlePointReadProofMissing',
+            ),
+          ).toBe(true);
+      } else throw new Error('production_battle_point_proof_missing');
       // E2E-A032-DANTE-INVENTORY E2E-A032-SUMMER-WU-INVENTORY
       expect(master.servants).toHaveLength(469);
       expect(calculations).toHaveLength(422);
@@ -1180,13 +1482,9 @@ describe('production master inventory ratchet', () => {
         ),
       ).toEqual({});
       expect(declaredExclusivePairCount).toBe(4);
-      expect(skippedExclusivePairs).toEqual([
-        '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
-        '2301100:attacker:attacker:2301100:2536550:22888:0|attacker:attacker:2301100:2536550:22887:0',
-        '2301100:attacker:attacker:2301100:2536550:22887:0|passive:passive:2301100:2534650:22874:0',
-      ]);
-      expect(exclusivePairCount).toBe(1);
-      expect(conflictPairs).toEqual({ effectEffect: 1, factFact: 0, factEffect: 0 });
+      expect(skippedExclusivePairs).toEqual([]);
+      expect(exclusivePairCount).toBe(4);
+      expect(conflictPairs).toEqual({ effectEffect: 4, factFact: 0, factEffect: 0 });
       expect({
         combinations: canonicalFactConditionConflicts,
         effects: canonicalConflictEffects.size,

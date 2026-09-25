@@ -51,6 +51,9 @@ type CanonicalSourceProgram =
 ```
 
 skillまたはNP useがtransaction boundaryであり、choice branch、cost、mutation、damage contributionをatomicに扱う。
+NP useの資源監査はexecutionが発行する消費直後のstate、順序付きmutation receipt、最終stateで行う。
+NP消費後かつdamage前のcanonical resource mutationは最終gaugeを変えうるため、監査側で最終値を固定0とせず、
+receiptの連続性とcommit／rollbackを照合する。
 passive、intrinsic、craft essence、support、mystic-codeの非command sourceはautomatic variantであり、fake actionを作らない。
 各stepの一つのordered operation列だけがresource／HP／state／field／form／NP variant mutationとdamage contributionを
 所有する。admission用consequence summary、dependency graph、conditionality同期fieldを併設しない。

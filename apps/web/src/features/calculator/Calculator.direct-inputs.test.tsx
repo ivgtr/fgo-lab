@@ -30,6 +30,7 @@ const versions = {
   masterDataLocale: 'ja-JP',
 } as const;
 const requestVersions = {
+  schemaVersion: SCHEMA_VERSION,
   masterDataVersion: versions.masterDataVersion,
   engineVersion: versions.engineVersion,
 };
@@ -38,15 +39,66 @@ const resolved = requireExecutableCalculation(
   calculateScenario(resolvedScenario, master, versions),
 );
 
+it('edits enemy defense in resolved mode without changing effect decisions', () => {
+  const onScenarioChange = vi.fn();
+  renderCalculator(resolvedScenario, onScenarioChange);
+  fireEvent.change(screen.getAllByLabelText(/^敵防御力（%）/)[0]!, { target: { value: '30' } });
+  expect(onScenarioChange).toHaveBeenCalledWith({
+    ...resolvedScenario,
+    enemyDefenseBuff: 0.3,
+  });
+});
+
+it('keeps repairable enemy defense text without committing a numeric fallback', () => {
+  const onScenarioChange = vi.fn();
+  renderCalculator(resolvedScenario, onScenarioChange);
+  const input = screen.getAllByLabelText(/^敵防御力（%）/)[0] as HTMLInputElement;
+  fireEvent.change(input, { target: { value: '' } });
+  expect(input.value).toBe('');
+  expect(input.getAttribute('aria-invalid')).toBe('true');
+  fireEvent.change(input, { target: { value: '600' } });
+  expect(input.value).toBe('600');
+  expect(onScenarioChange).not.toHaveBeenCalled();
+  fireEvent.change(input, { target: { value: '-25.5' } });
+  expect(onScenarioChange).toHaveBeenCalledWith({ ...resolvedScenario, enemyDefenseBuff: -0.255 });
+});
+
+it('sends a domain-keyed initial battle point and clears legacy phase intent', () => {
+  const domain = {
+    id: 'fixture-point-domain',
+    phaseScale: 'point' as const,
+    phases: [
+      { phase: 0, threshold: -1 },
+      { phase: 1, threshold: 0 },
+    ],
+    eligibility: [
+      { kind: 'actor' as const, actorId: resolvedScenario.attacker.initialActorFormId.actorId },
+    ],
+    capacity: { default: null, maximum: null, traitOverrides: [] },
+  };
+  const withDomain = structuredClone(master);
+  withDomain.battlePointDomains.push(domain);
+  withDomain.servants[0]!.battlePointDomains = [domain];
+  const onScenarioChange = vi.fn();
+  renderCalculator(resolvedScenario, onScenarioChange, undefined, withDomain);
+  fireEvent.change(screen.getByLabelText(/^開始バトルポイント/), { target: { value: '60' } });
+  expect(onScenarioChange).toHaveBeenCalledWith({
+    ...resolvedScenario,
+    initialBattlePointPoints: { [domain.id]: 60 },
+    battleState: { battlePointPhase: null },
+  });
+});
+
 function renderCalculator(
   scenario: CalculationScenario,
   onScenarioChange = vi.fn(),
   resultOverride?: CalculationResult,
+  displayMaster = master,
 ) {
   const calculation = requireExecutableCalculation(calculateScenario(scenario, master, versions));
   render(
     <Calculator
-      master={master}
+      master={displayMaster}
       resolvedInput={calculation.input}
       scenarioInput={calculation.input}
       resolvedEffects={calculation.effects}
@@ -58,7 +110,7 @@ function renderCalculator(
       result={resultOverride ?? calculation.result}
       request={createCalculatorPortableRequest(scenario, requestVersions)}
       scenario={scenario}
-      servants={master.servants}
+      servants={displayMaster.servants}
       builds={{}}
       craftEssenceCopies={[]}
       craftEssences={master.craftEssences}

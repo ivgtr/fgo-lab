@@ -231,6 +231,7 @@ describe('portable calculation application owner', () => {
     });
 
     const historicalRequest = upgradePortableCalculationRequestVersion(request, {
+      schemaVersion: SCHEMA_VERSION,
       masterDataVersion: 'old-master',
       engineVersion: 'old-engine',
     });
@@ -265,6 +266,7 @@ describe('portable calculation application owner', () => {
     if (!detail) throw new Error('ranking detail missing');
     const request = createRankingPortableRequest(detail.detail, versionContext);
     const historicalRequest = upgradePortableCalculationRequestVersion(request, {
+      schemaVersion: SCHEMA_VERSION,
       masterDataVersion: 'old-master',
       engineVersion: 'old-engine',
     });
@@ -449,6 +451,7 @@ describe('portable calculation application owner', () => {
     const current = executePortableCalculation(currentRequest, master);
     if (current.status !== 'executed') throw new Error('current execution required');
     const retainedRequest = upgradePortableCalculationRequestVersion(currentRequest, {
+      schemaVersion: SCHEMA_VERSION,
       masterDataVersion: 'old-master',
       engineVersion: 'old-engine',
     });
@@ -483,7 +486,11 @@ describe('portable calculation application owner', () => {
     if (currentRequest.scenario.mode !== 'resolved') throw new Error('resolved request required');
     const retainedRequest = portableCalculationRequestSchema.parse({
       ...currentRequest,
-      versionContext: { masterDataVersion: 'old-master', engineVersion: 'old-engine' },
+      versionContext: {
+        schemaVersion: SCHEMA_VERSION,
+        masterDataVersion: 'old-master',
+        engineVersion: 'old-engine',
+      },
       scenario: { ...currentRequest.scenario, initialOvercharge: 2 },
       executionIntent: {
         kind: 'ranking',
@@ -528,6 +535,7 @@ describe('portable calculation application owner', () => {
       versionContext,
     );
     const retainedRequest = upgradePortableCalculationRequestVersion(currentRequest, {
+      schemaVersion: SCHEMA_VERSION,
       masterDataVersion: 'old-master',
       engineVersion: 'old-engine',
     });
@@ -574,10 +582,24 @@ it('retains schema 38 ranking history with its exact initial OC basis and old en
     (candidate) => candidate.status === 'calculated',
   );
   if (selected?.status !== 'calculated') throw new Error('fixture ranking unavailable');
-  const request = createRankingPortableRequest(selected.detail, {
+  const currentRequest = createRankingPortableRequest(selected.detail, {
     ...versionContext,
     engineVersion: '37.0.0',
   });
+  if (currentRequest.scenario.mode !== 'resolved')
+    throw new Error('resolved ranking request required');
+  const request = {
+    ...currentRequest,
+    versionContext: {
+      masterDataVersion: currentRequest.versionContext.masterDataVersion,
+      engineVersion: currentRequest.versionContext.engineVersion,
+    },
+    scenario: Object.fromEntries(
+      Object.entries(currentRequest.scenario).filter(
+        ([key]) => key !== 'enemyDefenseBuff' && key !== 'initialBattlePointPoints',
+      ),
+    ),
+  };
   const profileId = '00000000-0000-4000-8000-000000000046';
   const timestamp = '2026-09-09T00:00:00.000Z';
   const snapshot = {

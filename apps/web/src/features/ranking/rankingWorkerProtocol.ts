@@ -151,6 +151,7 @@ export function parseRankingWorkerResponse(value: unknown): RankingWorkerRespons
       !portableCalculationRequestSchema.safeParse({
         scenario: detail.scenario,
         versionContext: {
+          schemaVersion: detail.result.versions.schemaVersion,
           masterDataVersion: detail.result.versions.masterDataVersion,
           engineVersion: detail.result.versions.engineVersion,
         },

@@ -120,6 +120,7 @@ export function reducePreparationSkillAction(
           hpAfter: resource.hp,
           resourceBefore: state.npResource,
           resourceAfter: resource.resource.state,
+          resourceTransaction: resource.resourceTransaction,
           ocUse: resource.ocUse,
           ocOutcomes: resource.ocOutcomes,
           baseOvercharge: resource.resource.baseOvercharge,

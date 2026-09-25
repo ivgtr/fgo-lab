@@ -10,6 +10,7 @@ import {
   type CalculationScenario,
   type CalculationVersionContext,
   type PortableCalculationRequest,
+  type PortableCalculationRequestV40,
   type ServantBuild,
   type VersionContext,
 } from '@fgo-lab/schema';
@@ -49,6 +50,7 @@ export type PortableCalculationOutcome =
         | 'runtimeVersionMismatch'
         | 'initialNpGaugeExceedsCapacity'
         | 'attackerLevelStatUnavailable'
+        | 'invalidBattlePointIntent'
         | 'initialHpUnavailable'
         | 'scenarioInvalid'
         | 'requestResultVersionMismatch'
@@ -105,7 +107,26 @@ export type PortableCalculationAttemptResult<
 export function currentCalculationVersionContext(
   master: MasterDataSnapshot,
 ): CalculationVersionContext {
-  return { masterDataVersion: master.version, engineVersion: ENGINE_VERSION };
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    masterDataVersion: master.version,
+    engineVersion: ENGINE_VERSION,
+  };
+}
+
+/** Explicitly creates a new portable identity from a validated historical v40 intent. */
+export function createV41RequestFromHistoricalV40(
+  historical: PortableCalculationRequestV40,
+  master: MasterDataSnapshot,
+): PortableCalculationRequest {
+  return portableCalculationRequestSchema.parse({
+    versionContext: currentCalculationVersionContext(master),
+    scenario:
+      historical.scenario.mode === 'resolved'
+        ? { ...historical.scenario, enemyDefenseBuff: 0 }
+        : historical.scenario,
+    executionIntent: historical.executionIntent,
+  });
 }
 
 export function createCalculatorPortableRequest(
@@ -525,9 +546,9 @@ export function regenerateHistoricalCalculatorRequest(
   master: MasterDataSnapshot,
   builds: Readonly<Record<string, ServantBuild>>,
 ): PortableCalculationRequest | null {
-  const subject = master.servants.find(
-    (servant) => servant.id === entry.scenario.attacker.servantId,
-  );
+  const scenario = entry.scenario;
+  if (!('attacker' in scenario)) return null;
+  const subject = master.servants.find((servant) => servant.id === scenario.attacker.servantId);
   return subject
     ? createDefaultCalculatorPortableRequest(master, builds[subject.id], subject)
     : null;

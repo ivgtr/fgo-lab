@@ -8,7 +8,8 @@ import {
 } from '@fgo-lab/profile-domain';
 import type {
   CalculationResult,
-  CalculationShareSnapshot,
+  HistoricalCalculationDraftV40,
+  LocalProfile,
   PortableCalculationRequest,
   ProfileCollection,
 } from '@fgo-lab/schema';
@@ -21,6 +22,7 @@ import {
   type ActiveMaster,
 } from '../adapters/repository';
 import { readShareFragment } from '../adapters/share';
+import { portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
 
 interface StartupOptions {
   baseUrl: string;
@@ -34,6 +36,7 @@ interface StartupBase {
     request: PortableCalculationRequest | undefined;
     storedResult: CalculationResult | undefined;
     source: 'share' | 'draft' | undefined;
+    historical?: HistoricalCalculationDraftV40 | undefined;
   };
   warning: string;
   offline: boolean;
@@ -52,6 +55,43 @@ interface SetupRequiredResult extends StartupBase {
 }
 
 export type StartupResult = ReadyStartupResult | SetupRequiredResult;
+
+async function startupCalculation(
+  shared: ReturnType<typeof readShareFragment>,
+  profile: LocalProfile,
+): Promise<StartupBase['calculation']> {
+  if (shared && 'disposition' in shared) {
+    const { request, result } = shared.snapshot;
+    const requestFingerprint = await portableCalculationFingerprint(request, (data) =>
+      crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+    );
+    return {
+      request: undefined,
+      storedResult: undefined,
+      source: 'share',
+      historical: {
+        disposition: 'historicalOnly',
+        sourceSchemaVersion: 40,
+        profileId: profile.profileId,
+        calculationSessionId: crypto.randomUUID(),
+        scenario: request.scenario,
+        result,
+        requestFingerprint,
+        updatedAt: shared.snapshot.sharedAt,
+        legacySnapshot: shared.raw,
+      },
+    };
+  }
+  if (shared) return { request: shared.request, storedResult: shared.result, source: 'share' };
+  if (profile.draft)
+    return { request: profile.draft.request, storedResult: profile.draft.result, source: 'draft' };
+  return {
+    request: undefined,
+    storedResult: undefined,
+    source: profile.historicalDraft ? 'draft' : undefined,
+    ...(profile.historicalDraft ? { historical: profile.historicalDraft } : {}),
+  };
+}
 
 async function activateCurrentMaster(options: StartupOptions) {
   const candidate = await fetchMasterCandidate(options.baseUrl);
@@ -110,12 +150,15 @@ export async function bootstrapApplication(
     }
     if (!active || !profiles) return emptyResult(warning, offline);
 
-    let shared: CalculationShareSnapshot | null = null;
+    let shared: ReturnType<typeof readShareFragment> = null;
     try {
       const candidate = readShareFragment(options.fragment);
       if (candidate) {
         const { validateCalculationShareSnapshot } = await import('../adapters/shareValidation');
-        shared = validateCalculationShareSnapshot(candidate, active.snapshot);
+        shared =
+          'disposition' in candidate
+            ? candidate
+            : validateCalculationShareSnapshot(candidate, active.snapshot);
       }
     } catch (cause) {
       warning = `共有URLを復元できませんでした: ${errorMessage(cause)}`;
@@ -125,11 +168,7 @@ export async function bootstrapApplication(
       state: 'ready',
       master: active.snapshot,
       profiles,
-      calculation: {
-        request: shared?.request ?? profile.draft?.request,
-        storedResult: shared?.result ?? profile.draft?.result,
-        source: shared ? 'share' : profile.draft ? 'draft' : undefined,
-      },
+      calculation: await startupCalculation(shared, profile),
       warning,
       offline,
     };
@@ -159,12 +198,15 @@ export async function setupApplication(
     profilesLoad.state === 'ready' && profilesLoad.discardedCalculationSnapshots
       ? '保存済みの育成データを引き継ぎ、旧形式の支援条件・計算下書き・履歴を削除しました。'
       : '';
-  let shared: CalculationShareSnapshot | null = null;
+  let shared: ReturnType<typeof readShareFragment> = null;
   try {
     const candidate = readShareFragment(options.fragment);
     if (candidate) {
       const { validateCalculationShareSnapshot } = await import('../adapters/shareValidation');
-      shared = validateCalculationShareSnapshot(candidate, active.snapshot);
+      shared =
+        'disposition' in candidate
+          ? candidate
+          : validateCalculationShareSnapshot(candidate, active.snapshot);
     }
   } catch (cause) {
     warning = `共有URLを復元できませんでした: ${errorMessage(cause)}`;
@@ -174,11 +216,7 @@ export async function setupApplication(
     state: 'ready',
     master: active.snapshot,
     profiles,
-    calculation: {
-      request: shared?.request ?? profile.draft?.request,
-      storedResult: shared?.result ?? profile.draft?.result,
-      source: shared ? 'share' : profile.draft ? 'draft' : undefined,
-    },
+    calculation: await startupCalculation(shared, profile),
     warning,
     offline: fromOfflineCache,
   };

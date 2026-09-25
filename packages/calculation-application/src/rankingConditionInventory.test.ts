@@ -88,14 +88,14 @@ describe('production ranking condition provenance', () => {
     const fieldOccurrences = [
       ...new Set(field.map(({ servantId, occurrenceId }) => `${servantId}:${occurrenceId}`)),
     ].sort();
-    expect(inventory).toHaveLength(121);
+    expect(inventory).toHaveLength(129);
     expect(inventory.filter(({ activationLocal }) => activationLocal)).toHaveLength(34);
     expect(byKind).toEqual({
-      intrinsic: 70,
+      intrinsic: 72,
       derivedOrExternalField: 37,
       externalScenarioFact: 36,
       target: 5,
-      procOrQuantity: 12,
+      procOrQuantity: 20,
     });
     expect(field).toHaveLength(37);
     expect(fieldOccurrences).toHaveLength(37);

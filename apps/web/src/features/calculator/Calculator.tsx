@@ -39,6 +39,7 @@ import {
   changeResolvedNpLevel,
   changeResolvedInitialOc,
   setInitialHp,
+  setEnemyDefenseBuff,
   setAttackerSkillLevel,
   setCalculationSupportSkillLevel,
   setCalculationSupportSkillEnabled,
@@ -162,6 +163,23 @@ export function Calculator({
   const [attackerDialogOpen, setAttackerDialogOpen] = useState(false);
   const [craftEssenceDialogOpen, setCraftEssenceDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const defenseValue = scenario.mode === 'resolved' ? scenario.enemyDefenseBuff : null;
+  const [enemyDefenseEdit, setEnemyDefenseEdit] = useState({
+    base: defenseValue,
+    text: defenseValue === null ? '' : String(defenseValue * 100),
+  });
+  const enemyDefenseText =
+    enemyDefenseEdit.base === defenseValue
+      ? enemyDefenseEdit.text
+      : defenseValue === null
+        ? ''
+        : String(defenseValue * 100);
+  const enemyDefenseValue = enemyDefenseText.trim() === '' ? null : Number(enemyDefenseText);
+  const enemyDefenseValid =
+    enemyDefenseValue !== null &&
+    Number.isFinite(enemyDefenseValue) &&
+    enemyDefenseValue >= -500 &&
+    enemyDefenseValue <= 500;
   const attackerTriggerRef = useRef<HTMLButtonElement>(null);
   const craftEssenceTriggerRef = useRef<HTMLButtonElement>(null);
   const manualOverrides = new Set(Object.keys(resolvedScenario?.explicitOverrides ?? {}));
@@ -292,6 +310,25 @@ export function Calculator({
       battleState: { ...scenario.battleState, battlePointPhase: value },
     });
   }
+  function changeInitialBattlePoint(domainId: string, value: number | null) {
+    if (scenario.mode !== 'resolved') return;
+    const points =
+      value === null
+        ? Object.fromEntries(
+            Object.entries(scenario.initialBattlePointPoints ?? {}).filter(
+              ([id]) => id !== domainId,
+            ),
+          )
+        : { ...scenario.initialBattlePointPoints, [domainId]: value };
+    void onScenarioChange({
+      ...scenario,
+      initialBattlePointPoints: points,
+      battleState: {
+        ...scenario.battleState,
+        battlePointPhase: Object.keys(points).length === 0 ? 0 : null,
+      },
+    });
+  }
   function changeCanonicalInput(key: string, value: number | null) {
     if (scenario.mode !== 'resolved') return;
     void onScenarioChange(
@@ -372,6 +409,7 @@ export function Calculator({
           }),
           attackerHpPermille: input.attackerHpPermille,
           battleState: { battlePointPhase: input.battlePointPhase },
+          enemyDefenseBuff: input.defenseBuff,
           canonicalInputValues: {},
           craftEssence: null,
           preNoblePhantasmPlan: defaultPlan.commands.map((command) =>
@@ -456,9 +494,8 @@ export function Calculator({
               effectDecisions: [],
               worldFactAssertions: [],
               attackerHpPermille: 1000,
-              battleState: {
-                battlePointPhase: candidate.battlePointDomains?.length ? 0 : null,
-              },
+              battleState: { battlePointPhase: candidate.battlePointDomains?.length ? 0 : null },
+              initialBattlePointPoints: {},
               canonicalInputValues: {},
               explicitOverrides: {},
             },
@@ -961,7 +998,35 @@ export function Calculator({
               </button>
             </label>
           ) : null}
-          {attackerBattlePointMaximumPhase !== null ? (
+          {scenario.mode === 'resolved' ? (
+            <label className="damage-context-input form-grid-wide">
+              敵防御力（%）
+              <input
+                type="text"
+                inputMode="decimal"
+                required
+                aria-invalid={!enemyDefenseValid}
+                value={enemyDefenseText}
+                onChange={(event) => {
+                  const text = event.target.value;
+                  setEnemyDefenseEdit({ base: defenseValue, text });
+                  const numeric = text.trim() === '' ? null : Number(text);
+                  if (
+                    numeric !== null &&
+                    Number.isFinite(numeric) &&
+                    numeric >= -500 &&
+                    numeric <= 500
+                  )
+                    void onScenarioChange(setEnemyDefenseBuff(scenario, numeric / 100));
+                }}
+              />
+              <small>対象に設定された防御力です。効果のオン・オフとは独立します</small>
+            </label>
+          ) : null}
+          {attackerBattlePointMaximumPhase !== null &&
+          (scenario.mode === 'manual' ||
+            (scenario.battleState.battlePointPhase !== null &&
+              scenario.battleState.battlePointPhase > 0)) ? (
             <label className="damage-context-input form-grid-wide">
               バトルポイント段階
               <input
@@ -988,6 +1053,26 @@ export function Calculator({
               <small>0〜{attackerBattlePointMaximumPhase}の開始段階を入力します</small>
             </label>
           ) : null}
+          {scenario.mode === 'resolved' &&
+            attacker?.battlePointDomains?.map((domain) => (
+              <label className="damage-context-input form-grid-wide" key={domain.id}>
+                開始バトルポイント{attacker.battlePointDomains!.length > 1 ? ` (${domain.id})` : ''}
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={scenario.initialBattlePointPoints?.[domain.id] ?? ''}
+                  placeholder="自動"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value === '') changeInitialBattlePoint(domain.id, null);
+                    else if (Number.isSafeInteger(Number(value)) && Number(value) >= 0)
+                      changeInitialBattlePoint(domain.id, Number(value));
+                  }}
+                />
+                <small>準備前の値です。空欄では自動で開始状態を選びます</small>
+              </label>
+            ))}
           {mode === 'direct' && (
             <>
               <div className="direct-input-summary form-grid-wide">

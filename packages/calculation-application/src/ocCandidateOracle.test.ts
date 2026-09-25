@@ -264,9 +264,9 @@ it('separates an NP1 selected scenario NP5 column from independently optimized N
   }
 });
 
-// The OC prerequisite may use a conditional world quantity; replay retains that witness.
+// A scoped world quantity replays its witness; an unscoped battle point read fails closed.
 it.each(['attackerHpPermille', 'battlePointPhase'] as const)(
-  'replays a selected OC prerequisite quantity %s under its original policy',
+  'handles an OC prerequisite quantity %s under its original policy',
   (quantity) => {
     const master = fixture();
     const actor = master.servants[0]!;
@@ -296,12 +296,16 @@ it.each(['attackerHpPermille', 'battlePointPhase'] as const)(
       policy,
       versions,
     );
+    if (quantity === 'battlePointPhase') {
+      expect(outcome.status).toBe('unsupported');
+      if (outcome.status === 'unsupported')
+        expect(outcome.reason).toBe('candidateExecutionUnsupported');
+      return;
+    }
     if (outcome.status !== 'calculated') throw new Error(JSON.stringify(outcome));
     const detail = outcome.detail;
     expect(detail.appliedPreparationActions.at(-1)?.ocUse?.effectiveOc).toBe(2);
-    if (quantity === 'attackerHpPermille')
-      expect(detail.scenario.attackerHpPermille).toBeLessThanOrEqual(500);
-    else expect(detail.scenario.battleState.battlePointPhase).toBeGreaterThanOrEqual(1);
+    expect(detail.scenario.attackerHpPermille).toBeLessThanOrEqual(500);
     const request = createRankingPortableRequest(detail, context);
     const replay = executePortableCalculation(request, master);
     expect(replay.status).toBe('executed');

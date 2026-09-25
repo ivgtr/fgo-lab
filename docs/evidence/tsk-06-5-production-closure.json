@@ -113,14 +113,14 @@
     "conditionCount": 80,
     "observations": 33760,
     "candidatePlans": 33760,
-    "generated": 1028810,
-    "deduplicated": 1028810,
-    "finiteUpperBound": 1028810,
+    "generated": 988570,
+    "deduplicated": 988570,
+    "finiteUpperBound": 988570,
     "maximumSingleProfileUpperBound": 3435,
     "maximumSingleProfileGenerated": 3435,
     "cap": 4096,
     "byStatus": {
-      "calculated": 967810,
+      "calculated": 927570,
       "unreachable": 55090,
       "inputRequired": 0,
       "invalid": 0,
@@ -129,7 +129,7 @@
     "candidateSpaceStatus": {
       "ready": 34640
     },
-    "digest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18"
+    "digest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
   },
   "productionMatrix": {
     "dimensions": "naturalLimit|uniformLevel90 × selfBuffs included|excluded × conditionalEffects baseline|satisfied × NP1..5 × legal initial OC",
@@ -145,11 +145,11 @@
     },
     "parityCount": 34600,
     "parityFailures": 0,
-    "mergedDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
-    "eligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
-    "artifact": ".test-results/tsk-06-5-production-closure-final/manifest.json",
-    "command": "FGO_AUDIT_SHARDS=8 FGO_AUDIT_SHARD=<0..7> pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts <output> followed by merge-oc-matrix.ts",
-    "reuseAfterObserverBoundaryPatch": "The final observer exception boundary was moved outside canonical result classification after this matrix run. It changes only audit-failure propagation; successful canonical output, support status, operation order, candidate inventory and parity are unchanged. Focused production closure and the final quality production suite passed after the patch, so the matrix artifact is reused under the approved no-semantic-delta condition."
+    "mergedDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+    "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+    "artifact": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest.json",
+    "command": "FGO_AUDIT_SHARDS=8 FGO_AUDIT_SHARD=<0..7> node --import ./packages/data-pipeline/node_modules/tsx/dist/loader.mjs packages/calculation-application/scripts/audit-oc-matrix.ts <output>; then node --import the same loader packages/calculation-application/scripts/merge-oc-matrix.ts <output>",
+    "currentArtifactProvenance": "Final-source eight-shard rerun; matrix digest excludes measured condition elapsedMs while summaries retain timings. Semantic record and candidate identity match the prior eight-shard run."
   },
   "oracleAndFixtures": {
     "finiteMaximumOracle": "rankingCandidateSpace.test.ts independent exhaustive oracle and finite-domain certificate",
@@ -251,5 +251,37 @@
     "newCommit": false
   },
   "unresolved": [],
-  "nextTask": "TSK-07 starts from this closed inventory only after its own worker/cache/URL/notice/responsive cutover scope is reopened"
+  "nextTask": "TSK-07 starts from this closed inventory only after its own worker/cache/URL/notice/responsive cutover scope is reopened",
+  "revisionHistory": [
+    {
+      "date": "2026-09-26",
+      "reason": "TSK-08 S4: canonical battlePointPhase subject read removes unreachable 705300 scalar candidates; v41 portable/schema identity and execution resource receipt revise the record digest",
+      "previous": {
+        "candidateEligibility": {
+          "generated": 1028810,
+          "deduplicated": 1028810,
+          "finiteUpperBound": 1028810,
+          "byStatus": {
+            "calculated": 967810,
+            "unreachable": 55090,
+            "inputRequired": 0,
+            "invalid": 0,
+            "unsupported": 5910
+          },
+          "digest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18"
+        },
+        "productionMatrix": {
+          "mergedDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
+          "eligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+          "artifact": ".test-results/tsk-06-5-production-closure-final/manifest.json"
+        }
+      },
+      "new": {
+        "candidateEligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+        "productionMatrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4"
+      },
+      "evidence": "docs/evidence/tsk-08-parity-ratchet.json",
+      "intermediateRunDigest": "cb23821f72d614c9e7d2abe03c040d2473c39c25e30d5e7d86f8c32aaf02a7b9"
+    }
+  ]
 }

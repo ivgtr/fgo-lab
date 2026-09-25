@@ -370,7 +370,7 @@ describe('canonical operation compilation', () => {
     ]);
   });
 
-  it('binds the current attacker quantity subject to the executable state', () => {
+  it('keeps the canonical battle point domain for the live operation read', () => {
     const attacker = source([modifier('npDamageBuff', 200)]);
     attacker.origin = 'attacker';
     attacker.phase = 'attackerSkill';
@@ -399,12 +399,13 @@ describe('canonical operation compilation', () => {
         condition: {
           kind: 'quantity',
           quantity: 'battlePointPhase',
+          subjectId: '705300',
           comparison: 'atMost',
           value: 1,
         },
       },
     ]);
-    expect(compiled.operations[0]?.condition).not.toHaveProperty('subjectId');
+    expect(compiled.operations[0]?.condition).toHaveProperty('subjectId', '705300');
   });
 
   it('assigns unique trace IDs to repeated operations without changing singleton IDs', () => {

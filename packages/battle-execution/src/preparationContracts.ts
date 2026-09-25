@@ -71,6 +71,15 @@ export interface AppliedPreparationAction {
   transition: ActorFormTransition | null;
   resourceBefore: NpResourceState;
   resourceAfter: NpResourceState;
+  resourceTransaction: {
+    afterConsumption: NpResourceState;
+    mutations: readonly {
+      step: number;
+      occurrenceId: string;
+      before: NpResourceState;
+      after: NpResourceState;
+    }[];
+  };
   baseOvercharge: number | null;
   ocUse: NpOcUseReceipt | null;
   ocOutcomes: readonly OcActionOutcome[];

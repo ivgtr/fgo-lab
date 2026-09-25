@@ -51,6 +51,18 @@ export interface OrderedInputQuantityReadAuditEvent {
   inputKey: string;
   value: number | null;
 }
+export interface OrderedBattlePointPhaseReadAuditEvent {
+  operationSequence: number;
+  operationGroupIndex: number;
+  operationId: string;
+  subjectId: string;
+  actor: string;
+  point: number | null;
+  phase: number | null;
+  comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
+  expectedValue: number;
+  evaluated: boolean | null;
+}
 
 export interface OrderedMutationAuditEvent {
   operationSequence: number;
@@ -97,6 +109,7 @@ export interface OrderedCandidateStateAudit {
   } | null;
   executionGroups: readonly OrderedExecutionGroupAuditEvent[];
   inputQuantityReads: readonly OrderedInputQuantityReadAuditEvent[];
+  battlePointPhaseReads: readonly OrderedBattlePointPhaseReadAuditEvent[];
 }
 
 export type OrderedExecutionAuditObservation =

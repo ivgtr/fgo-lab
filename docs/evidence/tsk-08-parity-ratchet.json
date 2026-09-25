@@ -3369,7 +3369,9 @@
       "authorization": "User approved the code-based producer/save plan. B1-B3 product fixes, S4 overall convergence, full production/audit/quality and push excluded.",
       "baselineHead": "b473fe8324af0285ebd7d0e63eedd183b6a69711",
       "initialState": {
-        "trackedDirtyPaths": ["packages/calculation-application/src/productionMasterControlAudit.test.ts"],
+        "trackedDirtyPaths": [
+          "packages/calculation-application/src/productionMasterControlAudit.test.ts"
+        ],
         "indexEmpty": true,
         "dirtyDiffSha256": "b528362377c1f086eeef4dad1eadda3b0088aa2059ff56ef1826d53e9b5fa96e",
         "committedGateEvidenceSha256": "821a65a30047e4bb731278c9434e1f6c0b9f2a457702d3d3c5c841ff26d3369e",
@@ -3420,7 +3422,11 @@
       "preserved": "B1 stateTrait 10 controls, B2 2501400 magicBullet and B3 403400 targetRarity remain Blocking. TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digests remain unchanged; candidate status/eligibility, production output, damage semantics, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "unmet": "S4 gate pass and semantic classification of 47 observed failures; production without-area alternate, stale-mutation consumer, other ratchets, B1-B3 product repairs and TSK-08 closure",
       "nextOperation": "After user confirmation of a revised bounded plan, inspect the shared NP contribution/control semantics using the saved actual observations and governing rules; classify independent cases without weakening the gate or changing product semantics by inference.",
-      "taskStatus": {"TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked"}
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      }
     },
     {
       "name": "S4 B1 explicit-off NP special contribution",
@@ -3451,7 +3457,18 @@
           "actual": true
         },
         "selectedFamily": "B1: explicit-off NP special control with satisfied state trait still producing non-neutral multiplier",
-        "b1Owners": ["200300", "504800", "505600", "603700", "604900", "605300", "705100", "1002200", "1101100", "1101400"],
+        "b1Owners": [
+          "200300",
+          "504800",
+          "505600",
+          "603700",
+          "604900",
+          "605300",
+          "705100",
+          "1002200",
+          "1101100",
+          "1101400"
+        ],
         "b2Owner": "2501400",
         "b3Owner": "403400",
         "fullCanonicalFailures": ".test-results/tsk-08-s4-b1-20260925/b1-evidence.json"
@@ -3476,7 +3493,11 @@
         "artifactVerificationErrors": 0,
         "machineEvidence": ".test-results/tsk-08-s4-b1-20260925/b1-evidence.json",
         "machineEvidenceSha256": "baa600817209bd3ee366a68c1d21ecc8408beccc8960488b1127af6a5faaa1d1",
-        "durationMs": { "baseline": 16482, "candidateFirst": 20179, "candidateRepeat": 17174 },
+        "durationMs": {
+          "baseline": 16482,
+          "candidateFirst": 20179,
+          "candidateRepeat": 17174
+        },
         "pnpm": "external SQLite store failure before script; switched to installed Vitest under the same generic runCapturedTest"
       },
       "remaining": {
@@ -3491,7 +3512,11 @@
       },
       "preserved": "TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digest; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "nextOperation": "Select one remaining semantic family from the saved 37 typed failures and propose a new bounded plan. Keep the current 37 Blocking; no push.",
-      "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      }
     },
     {
       "name": "S4 traitCount NP special effective contribution",
@@ -3594,7 +3619,15 @@
           "userControlDidNotReachOperationOrDamage": 2
         },
         "selectedFamily": "exact state-trait world-fact control conflicts with its canonical zero stack count",
-        "owners": ["106600", "204300", "305700", "604800", "1101700", "2300400", "2801100"],
+        "owners": [
+          "106600",
+          "204300",
+          "305700",
+          "604800",
+          "1101700",
+          "2300400",
+          "2801100"
+        ],
         "firstDifference": {
           "ownerId": "106600",
           "side": "enabled",
@@ -3648,7 +3681,11 @@
       },
       "preserved": "TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digest; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "nextOperation": "Select one semantic family from the remaining 11 typed failures and propose a new bounded plan. Keep the current 11 Blocking; no push.",
-      "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      }
     },
     {
       "name": "S4 shared targetState stack condition control",
@@ -3720,7 +3757,11 @@
       },
       "preserved": "TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digest; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "nextOperation": "Select one semantic family from the remaining 9 typed failures using actual identities and values; propose a new bounded plan. Keep the 9 Blocking; no push.",
-      "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      }
     },
     {
       "name": "S4 structural control exclusion diagnostic",
@@ -3792,7 +3833,11 @@
       "remaining": "All 9 S4 failures remain Blocking, including 7 outside this family and B2/B3; without-area alternate, stale-mutation consumer, other ratchets and full production/audit/quality remain unmet.",
       "preserved": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0, existing digest, candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "nextOperation": "Set the governing calculator structural-control-off contract and typed proof boundary; then propose one bounded implementation plan and focused recovery/alternate fixtures. No push.",
-      "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
+      "taskStatus": {
+        "TSK-08": "in_progress",
+        "TSK-09.1": "blocked",
+        "TSK-09": "blocked"
+      }
     },
     {
       "name": "S4 505600 structural control implementation boundary stopped before product edits",
@@ -3937,8 +3982,14 @@
         "genericRunnerUnit": "76 passed, 0 failed, 0 skipped; artifact verification errors 0",
         "genericRunnerProducer": "Expected failure outside the approved family: 1590 expected/observed, failure count 9 to 7, exactly the two 505600 identities removed, no new failures; artifact verification errors 0",
         "nonTargetSemanticObservationChangeCount": 2,
-        "nonTargetSemanticObservationChanges": ["205000:2281675:532:0:actor-form", "205000:2281675:532:0:np-variant"],
-        "producerDurationMs": { "baseline": 16698, "candidate": 16453 },
+        "nonTargetSemanticObservationChanges": [
+          "205000:2281675:532:0:actor-form",
+          "205000:2281675:532:0:np-variant"
+        ],
+        "producerDurationMs": {
+          "baseline": 16698,
+          "candidate": 16453
+        },
         "pnpm": "pnpm typecheck failed before its script while opening the external SQLite store; the installed TypeScript and Vitest runners were used with the existing runCapturedTest generic runner."
       },
       "artifact": {
@@ -4111,13 +4162,41 @@
         "rollbackAndRecovery": "Invalid selected variant and failed preapplied form transaction return typed invalidNoblePhantasmVariant without NP input. Application off removes and re-on restores assertion identity, but unchanged B2 transition still loses it."
       },
       "artifacts": {
-        "summary": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/deep-diagnostic.json", "bytes": 18877, "sha256": "f140911146d09103db4cf58629d70ce08838d55c24f74d63b4c376041626a51c"},
-        "masterSlice": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-b2-fixture.json", "bytes": 140333, "sha256": "fdedfc93a5b32089997890ab7fd44daa02c4ee7bb58847276f006c4083e2d8a7"},
-        "masterProbeSource": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-boundary.test.ts", "bytes": 12059, "sha256": "818fd78860ac3f53b9b62c29321c14b9de22fd4a382bac12b0e8e510427b1c48"},
-        "masterProbeResult": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-boundary.json", "bytes": 7805, "sha256": "5c37cd57bbe1799b6a6ea7c71bacbe384538f6d32e7440893e2ac42e2b45d3c2"},
-        "probeResult": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.json", "bytes": 35227, "sha256": "5680f0c632d396310a5fd6ba9f5247e5e2bc0b6d7c55cb16f97f095a2d0b90f8"},
-        "probeSource": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.test.ts", "bytes": 10930, "sha256": "1fc9f25e42e2ef8cd2987d822b00bd62ea79e5f2e3cec8c0a86e884dc7f8516d"},
-        "probeConfig": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.config.ts", "bytes": 602, "sha256": "19c574f420d0a8e0535823737caefe93060b1ca8a5e6316983d9d9842cd7890a"}
+        "summary": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/deep-diagnostic.json",
+          "bytes": 18877,
+          "sha256": "f140911146d09103db4cf58629d70ce08838d55c24f74d63b4c376041626a51c"
+        },
+        "masterSlice": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-b2-fixture.json",
+          "bytes": 140333,
+          "sha256": "fdedfc93a5b32089997890ab7fd44daa02c4ee7bb58847276f006c4083e2d8a7"
+        },
+        "masterProbeSource": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-boundary.test.ts",
+          "bytes": 12059,
+          "sha256": "818fd78860ac3f53b9b62c29321c14b9de22fd4a382bac12b0e8e510427b1c48"
+        },
+        "masterProbeResult": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-boundary.json",
+          "bytes": 7805,
+          "sha256": "5c37cd57bbe1799b6a6ea7c71bacbe384538f6d32e7440893e2ac42e2b45d3c2"
+        },
+        "probeResult": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.json",
+          "bytes": 35227,
+          "sha256": "5680f0c632d396310a5fd6ba9f5247e5e2bc0b6d7c55cb16f97f095a2d0b90f8"
+        },
+        "probeSource": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.test.ts",
+          "bytes": 10930,
+          "sha256": "1fc9f25e42e2ef8cd2987d822b00bd62ea79e5f2e3cec8c0a86e884dc7f8516d"
+        },
+        "probeConfig": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.config.ts",
+          "bytes": 602,
+          "sha256": "19c574f420d0a8e0535823737caefe93060b1ca8a5e6316983d9d9842cd7890a"
+        }
       },
       "verification": "Ignored focused Vitest diagnostic 2/2 passed. Independent HEAD plus two document files candidate: docs tests 6/6 and docs integrity passed; target Prettier, JSON parse, artifact bytes/SHA-256 passed. No product source test, production producer, full audit, or quality was run.",
       "decision": "Implementation boundary is now grounded in connected master-schema/compiler/candidate counterexamples. Keep external attacker assertion provenance separate from replaceable form intrinsic traits, validate terminal fixed facts before selected transaction commit, and unify preapply/ordered mutation predicate-count rules and typed rollback. Do not use a simple fact overlay or projection-only gate.",
@@ -4140,19 +4219,67 @@
       },
       "producer": {
         "identity": "owner:2501400:np:[\"2501500\",0,\"2501501\"]:5337:trait:magicBullet",
-        "on": {"terminalForm": "2501500/0", "selectedNp": "2501500/2501501", "status": "calculated", "npSpecialMultipliers": [1.4, 1.4, 1.4, 1.4, 1.4], "np1Average": 51810.655},
-        "off": {"terminalForm": "2501500/0", "selectedNp": "2501500/2501501", "status": "calculated", "npSpecialMultipliers": [1.3, 1.3, 1.3, 1.3, 1.3], "np1Average": 48109.855},
+        "on": {
+          "terminalForm": "2501500/0",
+          "selectedNp": "2501500/2501501",
+          "status": "calculated",
+          "npSpecialMultipliers": [
+            1.4,
+            1.4,
+            1.4,
+            1.4,
+            1.4
+          ],
+          "np1Average": 51810.655
+        },
+        "off": {
+          "terminalForm": "2501500/0",
+          "selectedNp": "2501500/2501501",
+          "status": "calculated",
+          "npSpecialMultipliers": [
+            1.3,
+            1.3,
+            1.3,
+            1.3,
+            1.3
+          ],
+          "np1Average": 48109.855
+        },
         "expectedObservedControls": 1590,
         "failureCount": 6,
         "remaining": "B3 403400 targetRarity and five other S4 failures; B2 absent"
       },
       "artifacts": {
-        "productSummary": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/product-result.json", "bytes": 2730, "sha256": "ac00cf7f6d1abb175ba1b5dc928b9a1bea25b5a22cc7ed760aee22eeeec697e5"},
-        "producer": {"path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/production-inert-control-production.json", "bytes": 61523591, "sha256": "9e6a4529a3d64d3a20a9a75d927cec43f06377368e3020c12b81aadad2dc0001"},
-        "producerManifest": {"path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/manifest.json", "bytes": 3163, "sha256": "e46c359ba44587da4ccadc56a9f3949d9cf9cf6ef8ddaab915671a07fcb4d3ef"},
-        "candidateFocusedUnitManifest": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-unit-manifest.json", "bytes": 2854, "sha256": "8284cf4a12dc0d47756ce82ac783b155ae95205e98f0a2d43eb1b52c09ab988e"},
-        "candidateBattleManifest": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-battle-manifest.json", "bytes": 4307, "sha256": "5e9b621595d5d422bde0aa4bb16e0b1c5eb7bffc201eb5353ec7b8d7fbdf59ba"},
-        "candidateApplicationManifest": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-application-manifest.json", "bytes": 3304, "sha256": "c3a24a8afa4c8846ceec2915660347729af2b3248a68eec61be17561326293b2"}
+        "productSummary": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/product-result.json",
+          "bytes": 2730,
+          "sha256": "ac00cf7f6d1abb175ba1b5dc928b9a1bea25b5a22cc7ed760aee22eeeec697e5"
+        },
+        "producer": {
+          "path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/production-inert-control-production.json",
+          "bytes": 61523591,
+          "sha256": "9e6a4529a3d64d3a20a9a75d927cec43f06377368e3020c12b81aadad2dc0001"
+        },
+        "producerManifest": {
+          "path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/manifest.json",
+          "bytes": 3163,
+          "sha256": "e46c359ba44587da4ccadc56a9f3949d9cf9cf6ef8ddaab915671a07fcb4d3ef"
+        },
+        "candidateFocusedUnitManifest": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-unit-manifest.json",
+          "bytes": 2854,
+          "sha256": "8284cf4a12dc0d47756ce82ac783b155ae95205e98f0a2d43eb1b52c09ab988e"
+        },
+        "candidateBattleManifest": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-battle-manifest.json",
+          "bytes": 4307,
+          "sha256": "5e9b621595d5d422bde0aa4bb16e0b1c5eb7bffc201eb5353ec7b8d7fbdf59ba"
+        },
+        "candidateApplicationManifest": {
+          "path": ".test-results/tsk-08-b2-magic-bullet-20260925/candidate-application-manifest.json",
+          "bytes": 3304,
+          "sha256": "c3a24a8afa4c8846ceec2915660347729af2b3248a68eec61be17561326293b2"
+        }
       },
       "verification": "Independent HEAD-plus-unit-diff candidate: root TypeScript project references and web Next typegen/tsc passed; target ESLint and Prettier, docs tests 6/6 and integrity passed; focused state/NP-input 24/24, battle-execution tests excluding architecture 307/307, and calculator/ranking application tests 40/40 passed. Architecture suite has two pre-existing line-count failures: unchanged HEAD engine.ts 133 > 80 and candidateExecution.ts HEAD 785 > 400 (candidate 801 > 400); its remaining seven tests passed. pnpm stopped before script on external SQLite store; installed tools and the same generic runCapturedTest runner used. Focused production producer retains 1590 expected/observed controls with six known out-of-scope failures; its 16,427 ms compares with saved prior 16,430 ms for the same test, with no candidate increase.",
       "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and existing digests; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
@@ -4173,10 +4300,26 @@
       "directSymbols": "npDamageCompilation.ts::noblePhantasmDamageCondition/noblePhantasmDamageDependency produces the quantity OR; activationCondition.ts::conditionAllowsEffectLocalDecision excludes quantity-only conditions; effectDecision.ts::applyEffectPresentationDecision therefore stores operation on/off without condition assertion; scenario.ts initializes targetRarity null; condition.ts evaluates null as unresolved; npDamageExecution.ts passes rarity and effect-local state to npDamageOperation.ts, which resolves null to neutral multiplier; rankingQuantityWorld.ts can materialize a concrete rarity fact; productionParityDiagnostics.ts requires NP-special input difference.",
       "unresolvedDecision": "Determine from requirements and current code who owns a user repairable target-rarity input or effect-local declaration for a quantity-only OR, how two eligible rarities remain non-arbitrary, and what typed outcome an enabled but unresolved control must return. This read-only unit does not approve changing quantity/effect-local semantics or treating unresolved as false.",
       "sources": {
-        "savedOn": {"path": ".test-results/tsk-08-preplan-control-followup-20260924/control-14-403400-on.json", "bytes": 1088071, "sha256": "c6cc5f31aeb3b567583455f7dd1b51d7cf6b740dafdd56911ca97dd557afb08a"},
-        "savedOff": {"path": ".test-results/tsk-08-preplan-control-followup-20260924/control-14-403400-off.json", "bytes": 1088079, "sha256": "0c7a48f8143dc190dfbc5cb6802a86fee8580a403b7158309ddbaf1eaf2bd775"},
-        "currentProducer": {"path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/production-inert-control-production.json", "bytes": 61523591, "sha256": "9e6a4529a3d64d3a20a9a75d927cec43f06377368e3020c12b81aadad2dc0001"},
-        "preplan": {"path": ".test-results/tsk-08-b3-rarity-20260925/preplan.json", "bytes": 4106, "sha256": "698cb7402407fe2b8d38f6f683f6e7240f61a77b0399f320f8436b27bf46cee0"}
+        "savedOn": {
+          "path": ".test-results/tsk-08-preplan-control-followup-20260924/control-14-403400-on.json",
+          "bytes": 1088071,
+          "sha256": "c6cc5f31aeb3b567583455f7dd1b51d7cf6b740dafdd56911ca97dd557afb08a"
+        },
+        "savedOff": {
+          "path": ".test-results/tsk-08-preplan-control-followup-20260924/control-14-403400-off.json",
+          "bytes": 1088079,
+          "sha256": "0c7a48f8143dc190dfbc5cb6802a86fee8580a403b7158309ddbaf1eaf2bd775"
+        },
+        "currentProducer": {
+          "path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/production-inert-control-production.json",
+          "bytes": 61523591,
+          "sha256": "9e6a4529a3d64d3a20a9a75d927cec43f06377368e3020c12b81aadad2dc0001"
+        },
+        "preplan": {
+          "path": ".test-results/tsk-08-b3-rarity-20260925/preplan.json",
+          "bytes": 4106,
+          "sha256": "698cb7402407fe2b8d38f6f683f6e7240f61a77b0399f320f8436b27bf46cee0"
+        }
       },
       "verification": "Saved four artifact bytes/SHA-256 and current symbols read; independent HEAD plus three-document candidate passed docs tests 6/6, docs integrity and target Prettier. No source test or producer rerun.",
       "protected": "TSK-06.5 outcomes/digests, candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
@@ -4565,7 +4708,19 @@
         "subjectId": "3300200",
         "phaseScale": "point",
         "phases": "0..10, 11 entries",
-        "thresholds": [-1, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90],
+        "thresholds": [
+          -1,
+          0,
+          10,
+          20,
+          30,
+          40,
+          50,
+          60,
+          70,
+          80,
+          90
+        ],
         "capacityDefault": null,
         "capacityMaximum": null,
         "scenarioPhaseDomain": "0..10 from schema/src/quantityFacts.ts",
@@ -4595,8 +4750,20 @@
           "operationReadPhase": "unobserved",
           "enemyDefenseBuff": 0.3,
           "plan": "skills 1,2,3 then attack NP on both sides",
-          "on": { "operation": "applied", "projection": "applied", "effective": true, "ignoreDefenseInput": true, "np1Average": 50121.67 },
-          "off": { "operation": "notApplied", "projection": "notApplied", "effective": false, "ignoreDefenseInput": false, "np1Average": 37626.165 },
+          "on": {
+            "operation": "applied",
+            "projection": "applied",
+            "effective": true,
+            "ignoreDefenseInput": true,
+            "np1Average": 50121.67
+          },
+          "off": {
+            "operation": "notApplied",
+            "projection": "notApplied",
+            "effective": false,
+            "ignoreDefenseInput": false,
+            "np1Average": 37626.165
+          },
           "candidatesEvaluated": 1,
           "caveat": "Current producer explicitly replays only off with selected initial point; on is the automatically selected point. Both must be explicitly replayed and read-traced before acceptance."
         }
@@ -4698,40 +4865,493 @@
       "sourcePath": "schema v41 and resolved enemy defense -> scenario command and neutral ranking -> portable request/result/version context -> workspace fingerprint and historical disposition -> repository/share/backup/startup -> Calculator/Home/DataPage; canonical master battlePointPhase condition -> operationCompiler -> condition evaluator audit callback -> candidateExecution ordered read -> productionMasterControlAudit expected leaves and same-plan on/off -> productionParityDiagnostics S4 gate.",
       "v40Protection": "Resolved and manual v40 request/result/fingerprint are retained under historicalOnly legacySnapshot, with original JSON preserved and fingerprint validated; current v41 requests require versionContext.schemaVersion 41. Old history cannot enter current finalize/edit path. ADR-002 migration uses prebackup, staging validation and atomic switch; explicit recalc creates a distinct v41 draft only for executed outcomes.",
       "verification": {
-        "focusedUnit": {"tests": 121, "passed": 121, "artifact": ".test-results/tsk-08-3300200-final-focused/2026-09-25T18-59-03-828Z-2-e08dd2/manifest.json", "bytes": 3916, "sha256": "8055410fc280799dbe33447a6190c1cbd7c6ff589ab9abbd350957d937224215"},
-        "independentCandidate": {"head": "8cf24e5bfb8e70b32716f718d17ab39f39db590b", "root": "/tmp/fgo-lab-tsk08-3300200-candidate", "tests": 127, "passed": 127, "artifact": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-candidate-unit/2026-09-25T19-02-23-281Z-2-702890/manifest.json", "bytes": 4086, "sha256": "20f615d67972b722e45cdd6025ba3477ccf05167e5a27b3ef1de2b95b52ed1a0", "packageTypecheck": "passed", "webTypecheck": "passed", "targetedLint": "passed"},
-        "s4Producer": {"tests": 3, "passed": 3, "gate": "passed", "identities": 1590, "durationMs": 35570, "priorDurationMs": 32820, "generatedPointWitnesses": 92, "evaluatedPointWitnesses": 1, "initialPoint": 60, "preparedPoint": 65, "preparedPhase": 7, "actualOperationRead": {"point": 65, "phase": 7, "comparison": "atLeast", "value": 7, "on": true, "off": true}, "enemyDefenseBuff": 0.3, "onNp1Average": 47344.965, "offNp1Average": 35543.595, "hpAndMoonSunRegression": "owner 1000100 and 2301100 included in passed 1590-identity gate", "manifest": {"path": ".test-results/tsk-08-3300200-s4-final/2026-09-25T18-58-09-589Z-2-48e596/manifest.json", "bytes": 3114, "sha256": "bc64e86521a89dbd15aea6ed2b45fc8b84d9cc822711a6113b0f41ead138fa1b"}, "proof": {"path": ".test-results/tsk-08-3300200-s4-final/2026-09-25T18-58-09-589Z-2-48e596/production-inert-control-production.json", "bytes": 65737850, "sha256": "f4f21471e51052297a7b9f31754edee792d78ae9fd24a66c6d57f4bbc872ad72"}},
+        "focusedUnit": {
+          "tests": 121,
+          "passed": 121,
+          "artifact": ".test-results/tsk-08-3300200-final-focused/2026-09-25T18-59-03-828Z-2-e08dd2/manifest.json",
+          "bytes": 3916,
+          "sha256": "8055410fc280799dbe33447a6190c1cbd7c6ff589ab9abbd350957d937224215"
+        },
+        "independentCandidate": {
+          "head": "8cf24e5bfb8e70b32716f718d17ab39f39db590b",
+          "root": "/tmp/fgo-lab-tsk08-3300200-candidate",
+          "tests": 127,
+          "passed": 127,
+          "artifact": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-candidate-unit/2026-09-25T19-02-23-281Z-2-702890/manifest.json",
+          "bytes": 4086,
+          "sha256": "20f615d67972b722e45cdd6025ba3477ccf05167e5a27b3ef1de2b95b52ed1a0",
+          "packageTypecheck": "passed",
+          "webTypecheck": "passed",
+          "targetedLint": "passed"
+        },
+        "s4Producer": {
+          "tests": 3,
+          "passed": 3,
+          "gate": "passed",
+          "identities": 1590,
+          "durationMs": 35570,
+          "priorDurationMs": 32820,
+          "generatedPointWitnesses": 92,
+          "evaluatedPointWitnesses": 1,
+          "initialPoint": 60,
+          "preparedPoint": 65,
+          "preparedPhase": 7,
+          "actualOperationRead": {
+            "point": 65,
+            "phase": 7,
+            "comparison": "atLeast",
+            "value": 7,
+            "on": true,
+            "off": true
+          },
+          "enemyDefenseBuff": 0.3,
+          "onNp1Average": 47344.965,
+          "offNp1Average": 35543.595,
+          "hpAndMoonSunRegression": "owner 1000100 and 2301100 included in passed 1590-identity gate",
+          "manifest": {
+            "path": ".test-results/tsk-08-3300200-s4-final/2026-09-25T18-58-09-589Z-2-48e596/manifest.json",
+            "bytes": 3114,
+            "sha256": "bc64e86521a89dbd15aea6ed2b45fc8b84d9cc822711a6113b0f41ead138fa1b"
+          },
+          "proof": {
+            "path": ".test-results/tsk-08-3300200-s4-final/2026-09-25T18-58-09-589Z-2-48e596/production-inert-control-production.json",
+            "bytes": 65737850,
+            "sha256": "f4f21471e51052297a7b9f31754edee792d78ae9fd24a66c6d57f4bbc872ad72"
+          }
+        },
         "phaseFixture": "phase 0 absent, 6 at point 50, 7 at point 60, 10 at point 91 after explicit initial 86 and preparation +5; focused 1/1 passed"
       },
       "matrixStop": {
-        "attemptedShards": [0, 1, 2, 3],
-        "failedShardManifests": [
-          {"shard": 0, "path": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-matrix/manifest-shard-0.json", "bytes": 85005, "sha256": "365bc3d09b2a64b275fb45a0dd8a93d3a7d8c6d477b676887ec61450da76704f"},
-          {"shard": 1, "path": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-matrix/manifest-shard-1.json", "bytes": 85003, "sha256": "76a929cdf5e3ca91a9a506efe10e5a8bec9777576a0837423959c2ed2f3391ce"},
-          {"shard": 2, "path": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-matrix/manifest-shard-2.json", "bytes": 85054, "sha256": "a32ff5fb3bba0e94a5f442c9af8d19d4ffc871428fd7d4255ef4f0d2b7b6bf77"},
-          {"shard": 3, "path": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-matrix/manifest-shard-3.json", "bytes": 85239, "sha256": "4f3f8fe00565a0c671de115c80bcfe3d2d3e400d3d486306dd51c8f4db516269"}
+        "attemptedShards": [
+          0,
+          1,
+          2,
+          3
         ],
-        "remainingShardsNotStarted": [4, 5, 6, 7],
+        "failedShardManifests": [
+          {
+            "shard": 0,
+            "path": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-matrix/manifest-shard-0.json",
+            "bytes": 85005,
+            "sha256": "365bc3d09b2a64b275fb45a0dd8a93d3a7d8c6d477b676887ec61450da76704f"
+          },
+          {
+            "shard": 1,
+            "path": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-matrix/manifest-shard-1.json",
+            "bytes": 85003,
+            "sha256": "76a929cdf5e3ca91a9a506efe10e5a8bec9777576a0837423959c2ed2f3391ce"
+          },
+          {
+            "shard": 2,
+            "path": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-matrix/manifest-shard-2.json",
+            "bytes": 85054,
+            "sha256": "a32ff5fb3bba0e94a5f442c9af8d19d4ffc871428fd7d4255ef4f0d2b7b6bf77"
+          },
+          {
+            "shard": 3,
+            "path": "/tmp/fgo-lab-tsk08-3300200-candidate/.test-results/tsk-08-3300200-matrix/manifest-shard-3.json",
+            "bytes": 85239,
+            "sha256": "4f3f8fe00565a0c671de115c80bcfe3d2d3e400d3d486306dd51c8f4db516269"
+          }
+        ],
+        "remainingShardsNotStarted": [
+          4,
+          5,
+          6,
+          7
+        ],
         "eachShardRecords": 4330,
         "eachShardGateFailure": "production_preparation_transaction_gate:tsk-08:preparation-transactions:resourceAfter.gauge",
         "firstDifference": "owner 106500, naturalLimit-excluded-baseline-np3-oc2, resourceAfter.gauge expected 0 actual 2000",
         "oldRecordComparison": "The old TSK-06.5 production condition record also has resourceBefore.gauge 20000 and resourceAfter.gauge 2000 for the same owner/condition; the current record has the same values. Its typed ocOutcomes include an npBeforeDamage resource mutation after NP gauge consumption and before damage; the fixed final-gauge-zero gate contradicts the saved production path.",
-        "fortyConditionComparison": {"conditions": 40, "records": 17320, "statusDifferences": 0, "canonicalInputDifferences": 12, "damageRowsDifferences": 12, "witnessDifferences": 12, "actionDifferences": 12, "affectedOwner": "705300", "example": "naturalLimit-included-satisfied-np1-oc1: npDamageBuff old 0.6, current 0.4; NP1 average old 72441.165, current 65541.965"},
-        "candidateInventoryDifference": {"shard": 0, "generatedOld": 105164, "generatedCurrent": 101140, "calculatedOld": 99336, "calculatedCurrent": 95312, "candidateDigestOld": "446bb1a34bdf95d579216ec0533027969881c9aeb2349813ce087a0b6fcfe266", "candidateDigestCurrent": "04d71677fd270b084d6269ae52dc4c149694780dad997618575e8e7ff398b1af", "staticSemanticsDigest": "a1dc814fb04c5ed67ea86606590bf317fb37639ccbe77efa028b6401f3a24f2d"},
+        "fortyConditionComparison": {
+          "conditions": 40,
+          "records": 17320,
+          "statusDifferences": 0,
+          "canonicalInputDifferences": 12,
+          "damageRowsDifferences": 12,
+          "witnessDifferences": 12,
+          "actionDifferences": 12,
+          "affectedOwner": "705300",
+          "example": "naturalLimit-included-satisfied-np1-oc1: npDamageBuff old 0.6, current 0.4; NP1 average old 72441.165, current 65541.965"
+        },
+        "candidateInventoryDifference": {
+          "shard": 0,
+          "generatedOld": 105164,
+          "generatedCurrent": 101140,
+          "calculatedOld": 99336,
+          "calculatedCurrent": 95312,
+          "candidateDigestOld": "446bb1a34bdf95d579216ec0533027969881c9aeb2349813ce087a0b6fcfe266",
+          "candidateDigestCurrent": "04d71677fd270b084d6269ae52dc4c149694780dad997618575e8e7ff398b1af",
+          "staticSemanticsDigest": "a1dc814fb04c5ed67ea86606590bf317fb37639ccbe77efa028b6401f3a24f2d"
+        },
         "headAttribution": {
           "sameCondition": "naturalLimit-included-satisfied-np1-oc1, owner 705300",
-          "historicalMatrixAndHead": {"schemaVersion": 40, "choice": "player-choice:0 candidate 2", "npDamageBuff": 0.6, "np1Average": 72441.165},
-          "candidateWithOldOperationCompilerOnly": {"schemaVersion": 41, "choice": "player-choice:0 candidate 2", "npDamageBuff": 0.6, "np1Average": 72441.165},
-          "candidateWithCanonicalSubjectRead": {"schemaVersion": 41, "choice": "player-choice:0 candidate 1", "npDamageBuff": 0.4, "np1Average": 65541.965},
+          "historicalMatrixAndHead": {
+            "schemaVersion": 40,
+            "choice": "player-choice:0 candidate 2",
+            "npDamageBuff": 0.6,
+            "np1Average": 72441.165
+          },
+          "candidateWithOldOperationCompilerOnly": {
+            "schemaVersion": 41,
+            "choice": "player-choice:0 candidate 2",
+            "npDamageBuff": 0.6,
+            "np1Average": 72441.165
+          },
+          "candidateWithCanonicalSubjectRead": {
+            "schemaVersion": 41,
+            "choice": "player-choice:0 candidate 1",
+            "npDamageBuff": 0.4,
+            "np1Average": 65541.965
+          },
           "directProducer": "operationCompiler.ts::compileEffectCondition preserves canonical battlePointPhase subjectId, then condition.ts::evaluateCondition reads live battle-point domain; rankingPolicy.ts uses the shared scenario/execution route.",
-          "headDiagnostic": {"path": "/tmp/tsk08-3300200-head-diagnostic.json", "bytes": 36214, "sha256": "4cc305b3e4c3e8b5e3cf6d19dc7b74aa24e30aa7c30365dbc9a7bcee9ae92c66"},
-          "oldCompilerIsolateDiagnostic": {"path": "/tmp/tsk08-3300200-opcompiler-isolate.json", "bytes": 36235, "sha256": "f6422bf963778be5c6f4c6243d0ef67a71ad7618553f7f900ed1474b0e49209b"}
+          "headDiagnostic": {
+            "path": "/tmp/tsk08-3300200-head-diagnostic.json",
+            "bytes": 36214,
+            "sha256": "4cc305b3e4c3e8b5e3cf6d19dc7b74aa24e30aa7c30365dbc9a7bcee9ae92c66"
+          },
+          "oldCompilerIsolateDiagnostic": {
+            "path": "/tmp/tsk08-3300200-opcompiler-isolate.json",
+            "bytes": 36235,
+            "sha256": "f6422bf963778be5c6f4c6243d0ef67a71ad7618553f7f900ed1474b0e49209b"
+          }
         },
-        "designResearch": {"sessionMode": "read-only design; no additional source/test edits or producer", "candidateCause": "rankingQuantityWorld.ts::leaves enumerates only subjectId-undefined conditions; prior operationCompiler.ts discarded the canonical battlePointPhase subject, creating an independent scalar phase candidate. Preserving subject routes the condition to scenario.ts battlePointWitnesses initial domain points and execution live reads. Candidate reduction is consistent with removing that scalar axis; old-world reachability and new winner correctness still require proof.", "candidateDesign": "Use a domain-keyed typed initial battle-point intent, separate finite witness generation and canonical live state, and keep ranking limited to legal initial-world selection. Fail closed for ambiguous domains and never reinstate an unscoped phase fallback. Prove 705300 choice, candidate status/eligibility, canonical input and damage before changing protected digests.", "resourceCause": "preparationTransaction.ts consumes NP gauge through applyNpResourceTransaction before executePreparationOc; preparationAttackNp.ts records the final resource state after npBeforeDamage operations. AppliedPreparationAction lacks an explicit post-consumption snapshot, while productionParityDiagnostics.ts assumes final gauge zero.", "resourceDesign": "Execution-owned ordered receipt: before, after consumption, typed operation outcomes and resource mutations, final; audit continuity, rollback and final-state identity without duplicating mutation semantics. Fixtures cover consume-only zero, consume plus gain 2000, condition/proc non-application, and rejected transaction rollback.", "verificationStatus": "Design inference from existing source and saved artifacts only; no new execution evidence; eight-shard ratchet remains stopped."},
+        "designResearch": {
+          "sessionMode": "read-only design; no additional source/test edits or producer",
+          "candidateCause": "rankingQuantityWorld.ts::leaves enumerates only subjectId-undefined conditions; prior operationCompiler.ts discarded the canonical battlePointPhase subject, creating an independent scalar phase candidate. Preserving subject routes the condition to scenario.ts battlePointWitnesses initial domain points and execution live reads. Candidate reduction is consistent with removing that scalar axis; old-world reachability and new winner correctness still require proof.",
+          "candidateDesign": "Use a domain-keyed typed initial battle-point intent, separate finite witness generation and canonical live state, and keep ranking limited to legal initial-world selection. Fail closed for ambiguous domains and never reinstate an unscoped phase fallback. Prove 705300 choice, candidate status/eligibility, canonical input and damage before changing protected digests.",
+          "resourceCause": "preparationTransaction.ts consumes NP gauge through applyNpResourceTransaction before executePreparationOc; preparationAttackNp.ts records the final resource state after npBeforeDamage operations. AppliedPreparationAction lacks an explicit post-consumption snapshot, while productionParityDiagnostics.ts assumes final gauge zero.",
+          "resourceDesign": "Execution-owned ordered receipt: before, after consumption, typed operation outcomes and resource mutations, final; audit continuity, rollback and final-state identity without duplicating mutation semantics. Fixtures cover consume-only zero, consume plus gain 2000, condition/proc non-application, and rejected transaction rollback.",
+          "verificationStatus": "Design inference from existing source and saved artifacts only; no new execution evidence; eight-shard ratchet remains stopped."
+        },
         "digest": "not accepted or updated; first merge and same-shard remerge were not run because two protected semantic identities failed before the intended schemaVersion digest comparison",
         "remaining": "Code-grounded plan confirmation, then proof and intentional revision of protected candidate-inventory and production-output ratchets for canonical owner 705300 live reads, plus a typed NP consumption and before-damage resource-mutation receipt gate correction. Resume eight-shard ratchet only after these contract conflicts are resolved. TSK-08 in_progress, TSK-09.1/09 blocked; no full quality or push."
       }
+    },
+    {
+      "name": "S4 owner 3300200 domain intent, execution receipt, and eight-shard identity revision",
+      "status": "s4_scope_verified_with_inherited_architecture_failures",
+      "baselineHead": "0d65127009ec0f6f033335d32c23b7163b8eef90",
+      "candidate": {
+        "root": "/tmp/fgo-lab-tsk08-s4-candidate-20260926",
+        "baseHead": "0d65127009ec0f6f033335d32c23b7163b8eef90",
+        "trackedPatchSha256": "a8777b3c96a95c2c2c07fdde0ce875be9fb3bf158352a8ce3c5c3d7a7274e954",
+        "note": "Eight producers ran from a frozen independent tree. The root later restored calculator default phase 0; ranking uses its own unchanged phase-0 base, so the matrix path and recorded 34,640 outcomes are unaffected. Final-source verification remains.",
+        "finalSourceRerun": "Final product source synchronized to independent tree before eight-shard rerun; E2E fixture and timing-only digest normalization followed. Raw outcome identity identical to prior run."
+      },
+      "contracts": {
+        "s4": "Canonical battlePointPhase subject ID and ordered live operation read; same AttackProfile, explicit starting point, prepared plan, scenario and enemy defense for on/off; 1590 identities plus 2301100 moon/day and 1000100 HP preserved.",
+        "point": "v41 resolved request carries an optional domain-keyed initial point; application validates domain/actor/capacity and rejects scalar conflict, ambiguous or unreachable phase. UI edits the start value; execution owns post-preparation point/phase. Ranking no longer creates the old unscoped scalar candidate.",
+        "owner705300": "The old choice-2 scalar phase candidate is not a legal domain state: canonical 705300 domain requires trait 10042 absent from the attacker. Shared ranking/execution selects choice 1; the alternative choice 2 stays at npDamageBuff 0.4 rather than old 0.6. No ID/effect/label runtime branch or ranking-only damage semantics.",
+        "owner106500": "Execution records NP consumption snapshot and ordered committed npBeforeDamage resource mutation with continuity, final state and rollback; actual initial 20000 -> after consumption 0 -> final 2000. Audit validates receipt and final commit without recomputing resource arithmetic.",
+        "v40": "Stored resolved/manual v40 request/result/fingerprint remain exact historical-only records through draft/history/share/backup/startup; explicit recalculation creates a distinct v41 request; ADR-002 prebackup/staging/single switch and Home/Calculator/DataPage paths preserved."
+      },
+      "verification": {
+        "focusedS4": {
+          "tests": 3,
+          "passed": 3,
+          "identities": 1590,
+          "durationMs": 29750,
+          "manifest": {
+            "path": "/home/ivgtr/pj/fgo-lab/fgo-lab/.test-results/2026-09-25T20-48-09-980Z-2-273ed0/manifest.json",
+            "bytes": 3108,
+            "sha256": "8cdb1176eae7dc2b0083271280efbc057cb3d6d986a36267965b484e74210eda"
+          },
+          "producer": {
+            "path": "/home/ivgtr/pj/fgo-lab/fgo-lab/.test-results/2026-09-25T20-48-09-980Z-2-273ed0/production-inert-control-production.json",
+            "bytes": 65737262,
+            "sha256": "6906cb39983fba4484d06031d5cea835b4160b771e4d29c3f22429e30504379b"
+          }
+        },
+        "owner106500": "Focused real production ranking receipt fixture and corrupt-receipt rejection passed; preparation transaction rollback and closure-audit fixtures passed.",
+        "owner705300": {
+          "choice": "player-choice:0 candidate 1",
+          "npDamageBuff": 0.4,
+          "np1Average": 65541.965,
+          "oldChoice": "player-choice:0 candidate 2",
+          "oldNpDamageBuff": 0.6,
+          "oldNp1Average": 72441.165,
+          "smallFixture": "rankingCandidateSpace.test.ts: shared ranking choice, alternate execution, domain eligibility rejection"
+        },
+        "tsk07": {
+          "workerProtocolAndRuntimeTests": 10,
+          "passed": 10,
+          "artifact": {
+            "path": "/home/ivgtr/pj/fgo-lab/fgo-lab/.test-results/2026-09-25T20-59-42-576Z-2-75e907/manifest.json",
+            "bytes": 2931,
+            "sha256": "abf7f954c70b05efa62d7cefa081f5eb5af51c0f14eece0512302d19878be7dd"
+          }
+        },
+        "portableSamples": {
+          "definition": "SHA-256 of canonicalized complete request using the preserved phase-0 default fixture",
+          "resolvedV40": "6a26406c67d1db3d0a66e553dfacd937a2144c9bff70bd623b62df4a5159834d",
+          "resolvedV41": "347e8dcb3aa9603491371e257cc2f2b3a22fed8663179cd7b81ead31f4a35d6a",
+          "manualV40": "3f438a0c206d8b1fcc3b12a0a121b215fa0932c493d22692ddd8ccfce514315f",
+          "manualV41": "4a5d35208663228fa1810175776d5e7445e18bc2cfc0c03f5583461d03171ea8"
+        },
+        "matrix": {
+          "conditionCount": 80,
+          "attackProfileCount": 433,
+          "outcomeCount": 34640,
+          "outcomes": {
+            "calculated": 34600,
+            "unavailableUnderPolicy": 40,
+            "inputRequired": 0,
+            "invalid": 0,
+            "unsupported": 0
+          },
+          "parityCount": 34600,
+          "parityFailures": 0,
+          "firstMerge": {
+            "status": "expected old digest mismatch",
+            "expected": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
+            "actual": "cb23821f72d614c9e7d2abe03c040d2473c39c25e30d5e7d86f8c32aaf02a7b9",
+            "artifact": {
+              "path": "/tmp/fgo-tsk08-s4-first-merge-manifest.json",
+              "bytes": 395826,
+              "sha256": "8a4b0ffe27853851dc268f2060a1ad3b60eb155b1c98f9d281f08a8745634e65"
+            }
+          },
+          "sameShardRemerge": {
+            "status": "passed",
+            "digest": "cb23821f72d614c9e7d2abe03c040d2473c39c25e30d5e7d86f8c32aaf02a7b9",
+            "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+            "artifact": {
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest.json",
+              "bytes": 397211,
+              "sha256": "9bf4fbc7d7913f178307bfd2043ddf3c4546d45ce3358193d4f47e4933d7fed6"
+            }
+          },
+          "shardManifests": [
+            {
+              "shard": 0,
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest-shard-0.json",
+              "bytes": 50818,
+              "sha256": "75b70721b08ea3b5b654703f2f3823a731a351e35531f8eb508b5adea9763445"
+            },
+            {
+              "shard": 1,
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest-shard-1.json",
+              "bytes": 50828,
+              "sha256": "6ed99b214dd39b3335a74db5cf456858a953cd49e19250628ee8c2162ae899d0"
+            },
+            {
+              "shard": 2,
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest-shard-2.json",
+              "bytes": 50870,
+              "sha256": "67dd489c28bb9fecf82d0754041a181b6aa5a13ee9e5088782560bc450bd0226"
+            },
+            {
+              "shard": 3,
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest-shard-3.json",
+              "bytes": 51053,
+              "sha256": "564f854a38bd1d5c93885e128a31c52af20fa5e239e6e12533a01c9f1983dd7e"
+            },
+            {
+              "shard": 4,
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest-shard-4.json",
+              "bytes": 56654,
+              "sha256": "d257f0bf70288f48312ff615e99b84edf2d542c4d3a3d190a75d854887e64e78"
+            },
+            {
+              "shard": 5,
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest-shard-5.json",
+              "bytes": 56852,
+              "sha256": "c7270126394fd077797caf4f78da7a93d383fb2206ec05b086d6e382a47292c6"
+            },
+            {
+              "shard": 6,
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest-shard-6.json",
+              "bytes": 62969,
+              "sha256": "53cd6f8f1c3bcc85b5c1f4f713c9b895ce6469729d8d425739b99a2224230b89"
+            },
+            {
+              "shard": 7,
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-matrix/manifest-shard-7.json",
+              "bytes": 63170,
+              "sha256": "32d7908abc6bed2cacf4409bca7700a3d09815203337390b764a37b43d88d7c6"
+            }
+          ],
+          "conditionArtifacts": {
+            "count": 80,
+            "allBytesAndSha256VerifiedByMerge": true
+          },
+          "candidateEligibility": {
+            "oldGenerated": 1028810,
+            "currentGenerated": 988570,
+            "oldCalculated": 967810,
+            "currentCalculated": 927570,
+            "oldDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+            "currentDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+            "unchangedUnreachable": 55090,
+            "unchangedUnsupported": 5910,
+            "maximumSingleProfileGenerated": 3435,
+            "cap": 4096
+          },
+          "separateIdentities": {
+            "definition": "SHA-256 of ordered condition/profile projections; productionOutput excludes schema-version trace and result version, scenario excludes added zero defense and empty point map",
+            "old": {
+              "status": "c4c8f72ffb3b18ea9d31e218a832b198ebf6f962b0e96dd9a8616b1d55a20510",
+              "canonicalInput": "bb88f571d61579d8683aa9fc747439e12195480f52a6d2e91e5aae9ccae5de6f",
+              "productionOutput": "19d62681751acad0d7df2ecd26413299126233505281a311f3bfe88172682f00",
+              "scenario": "334a1100d75aae7f83a48eb3df07a3dad367651d83bf618453d234d35847c748",
+              "candidateInventory": "da85537b2fb9ecb4ca96e952bf30f0c4a555ce444064a18e68ac86762525d94c"
+            },
+            "current": {
+              "status": "c4c8f72ffb3b18ea9d31e218a832b198ebf6f962b0e96dd9a8616b1d55a20510",
+              "canonicalInput": "b0b51d6fb3176353a625f3c4c4826bcde34545920c2c39aa200e83763c55a6d6",
+              "productionOutput": "40cb71b49e3cefa0fe761c072b44275f4eed58df4e74f143823f756dcf1dd3ce",
+              "scenario": "58e470b1ac4ed1153df7689f3ff2470d5d64f1086b3c46d03d943352379df494",
+              "candidateInventory": "f15f7cc6f63c50da1f12ff2a8e8850d4b299f162158e4a5e70d498b1d86be1b2"
+            },
+            "differences": {
+              "status": {
+                "count": 0,
+                "owners": []
+              },
+              "canonicalInput": {
+                "count": 20,
+                "owners": [
+                  "705300"
+                ]
+              },
+              "productionOutput": {
+                "count": 20,
+                "owners": [
+                  "705300"
+                ]
+              },
+              "scenario": {
+                "count": 20,
+                "owners": [
+                  "705300"
+                ]
+              },
+              "candidateInventory": {
+                "count": 40,
+                "owners": [
+                  null
+                ]
+              }
+            }
+          },
+          "performance": {
+            "oldConditionElapsedSumMs": 4265715,
+            "currentConditionElapsedSumMs": 2341757,
+            "oldGeneratedCandidates": 1028810,
+            "currentGeneratedCandidates": 988570,
+            "oldDamageRequests": 967810,
+            "currentDamageRequests": 927570,
+            "note": "Condition elapsed sums are not wall-clock timings or a controlled benchmark; candidate decrease is entirely the removed unscoped phase axis. First and final runs used different concurrent loads; measured elapsedMs is excluded from the stable matrix digest.",
+            "finalConditionElapsedSumMs": 2565138.7176639996
+          },
+          "comparisonArtifact": {
+            "path": "/tmp/fgo-tsk08-full-compare.json",
+            "bytes": 31158,
+            "sha256": "5eec818d59cb2e1fd232e433d83294cc46ed0c49cceaf35d8d55de107e8828c4"
+          },
+          "finalSourceRemerge": {
+            "status": "passed",
+            "digest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+            "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+            "artifact": {
+              "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest.json",
+              "bytes": 397786,
+              "sha256": "96f90642abc01d5f221f065a98825ee4a931e2cd8714a7af7b9abc36c4711204"
+            },
+            "shards": [
+              {
+                "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest-shard-0.json",
+                "bytes": 51396,
+                "sha256": "5f79173a64c3b8b7a31ca93f675ddb70b2532b6a0d9362d5df0f903fbc319edd"
+              },
+              {
+                "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest-shard-1.json",
+                "bytes": 51387,
+                "sha256": "9e882e9f374507cacc88c02db6d9a380f457a1613590bddd69e80bbdff0bbece"
+              },
+              {
+                "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest-shard-2.json",
+                "bytes": 51443,
+                "sha256": "088eff3b4fe1f4b6c56cf65c8db7872a93d43a04b14b9192e845d9e3ea6ce245"
+              },
+              {
+                "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest-shard-3.json",
+                "bytes": 51627,
+                "sha256": "ccf257d1d626305a0592e15fd8ba4f72445ef5ba7d6497e3acf3c412bbd4368e"
+              },
+              {
+                "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest-shard-4.json",
+                "bytes": 57234,
+                "sha256": "af334406d8592af2f78769c36937914ee896dfd97d88856f9c0cd18bbb3e64b3"
+              },
+              {
+                "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest-shard-5.json",
+                "bytes": 57421,
+                "sha256": "7c3991b30a5e74c10946f1a2095f69fa899011e50fb311967bcdabb9205433ca"
+              },
+              {
+                "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest-shard-6.json",
+                "bytes": 63555,
+                "sha256": "a8b0e770af20b32b24e02058b029a4fbf546999db0b8d5d274f55504f895976d"
+              },
+              {
+                "path": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest-shard-7.json",
+                "bytes": 63738,
+                "sha256": "1a24199b1cb3005d70b00a37daea6fe9fcec0ce1a36a66c462f63c8cf72a5b91"
+              }
+            ],
+            "recordCount": 34640,
+            "priorRunDifferences": {
+              "status": 0,
+              "canonicalInput": 0,
+              "productionOutput": 0,
+              "scenario": 0,
+              "candidateInventory": 0
+            },
+            "priorRunConditionSummaryDifference": "elapsedMs only across 80 conditions; all raw record digests, eligibility, unavailable and normalized identity streams identical",
+            "digestRule": "SHA-256 of merged audit excluding measured condition elapsedMs; timings remain in summaries"
+          }
+        },
+        "fullQuality": "Root and Web typecheck, production build, source ESLint, repo Prettier, docs 6/6 and integrity, runner contracts 59/59, master validate, production 155/155, audit 3/3 and full E2E 29/29 passed. Full unit 926/928: only inherited HEAD architecture line counts engine.ts 134>80 and candidateSelection.ts 181>180 fail. Updated four UI screenshots and reran E2E without update mode. pnpm stopped before scripts at external SQLite store; existing node_modules and direct generic runner were used.",
+        "qualityArtifacts": {
+          "unit": {
+            "path": "/home/ivgtr/pj/fgo-lab/fgo-lab/.test-results/2026-09-25T21-28-39-357Z-2-468b59/manifest.json",
+            "bytes": 4381,
+            "sha256": "382da6eb51eee920bea249f0f9ad8d14dc6282e95e7f017b9eaa159ffde9df5c"
+          },
+          "production": {
+            "path": "/home/ivgtr/pj/fgo-lab/fgo-lab/.test-results/2026-09-25T21-37-50-313Z-2-1eb18e/manifest.json",
+            "bytes": 6054,
+            "sha256": "5c631fe9cad3316f456631e9626d5a717d9af3afbf3b0d1f8e8538bc3e4d4ff4"
+          },
+          "audit": {
+            "path": "/home/ivgtr/pj/fgo-lab/fgo-lab/.test-results/2026-09-25T21-39-45-727Z-2-eddc65/manifest.json",
+            "bytes": 3025,
+            "sha256": "eaf9c226aef57ff602c4bbd3f358d105ff6a50e483876e3d0da4dd29a4dc34de"
+          },
+          "focusedE2E": {
+            "path": "/home/ivgtr/pj/fgo-lab/fgo-lab/.test-results/2026-09-25T21-37-45-203Z-2-65395f/manifest.json",
+            "bytes": 3403,
+            "sha256": "75a8889fd6d69391f1f5f670768a8c104bddbb3223d314d1138e87aec5258f4e"
+          },
+          "e2e": {
+            "path": "/home/ivgtr/pj/fgo-lab/fgo-lab/.test-results/2026-09-25T21-39-40-985Z-2-ca9588/manifest.json",
+            "bytes": 92410,
+            "sha256": "ab2b3cac396f4284e104c5198697cf76debde41ec0dc95aa16e6b0d3623b5128"
+          }
+        }
+      },
+      "revision": {
+        "source": "docs/evidence/tsk-06-5-production-closure.json",
+        "oldDigestRetainedInRevisionHistory": true,
+        "intendedCurrentMatrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "intendedCurrentEligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+        "intermediateRunMatrixDigest": "cb23821f72d614c9e7d2abe03c040d2473c39c25e30d5e7d86f8c32aaf02a7b9"
+      },
+      "remaining": "Scope S4 implementation and evidence are verified except the two inherited HEAD architecture ratchets outside this request. TSK-08 remains in_progress; TSK-09.1/09 blocked. Scoped local commit pending; no push."
     }
   ],
-  "currentBoundedUnit": "S4 owner 3300200 v41 user path and S4 gate verified; matrix ratchet stopped at independent preparation and production-output contract conflicts"
+  "currentBoundedUnit": "S4 owner 3300200 domain intent, execution receipt, and eight-shard identity revision"
 }

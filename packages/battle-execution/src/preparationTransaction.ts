@@ -12,6 +12,7 @@ import type {
 import { findNoblePhantasmVariant } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type {
+  AppliedPreparationAction,
   PreNoblePhantasmState,
   PreparationExecutionContext,
   PreparationFailureCode,
@@ -142,6 +143,7 @@ export type PreparationResourcePlanResult =
       uncertainContextWrites: PreNoblePhantasmState['uncertainContextWrites'];
       ocUse: NpOcUseReceipt | null;
       ocOutcomes: readonly OcActionOutcome[];
+      resourceTransaction: AppliedPreparationAction['resourceTransaction'];
     }
   | {
       status: 'rejected';
@@ -300,6 +302,10 @@ export function planPreparationResourceTransaction(args: {
   return {
     status: 'ready',
     resource: { ...resourceStart, state: oc.structuralState.npResource },
+    resourceTransaction: {
+      afterConsumption: resourceStart.state,
+      mutations: oc.resourceMutations,
+    },
     preparationEffects,
     activation,
     ocState: oc.result.state,

@@ -83,10 +83,23 @@ export type ConditionEvaluationState = Pick<
   resourceActor?: string;
 };
 
+export type ConditionReadAudit =
+  | { kind: 'inputQuantity'; inputKey: string; value: number | undefined }
+  | {
+      kind: 'battlePointPhase';
+      subjectId: string;
+      actor: string;
+      point: number | null;
+      phase: number | null;
+      comparison: Extract<ConditionExpression, { kind: 'quantity' }>['comparison'];
+      expectedValue: number;
+      evaluated: boolean | null;
+    };
+
 export function evaluateCondition(
   condition: ConditionExpression,
   state: ConditionEvaluationState,
-  onInputQuantityRead?: (inputKey: string, value: number | undefined) => void,
+  onConditionRead?: (read: ConditionReadAudit) => void,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
     const scopeSemantics = traitConditionScopeSemantics(scope);
@@ -222,16 +235,40 @@ export function evaluateCondition(
           : condition.subjectId !== undefined
             ? null
             : state.quantities[condition.quantity];
-      if (actual === null) return null;
-      if (condition.comparison === 'lessThan') return actual < condition.value;
-      if (condition.comparison === 'atMost') return actual <= condition.value;
-      if (condition.comparison === 'equal') return actual === condition.value;
-      if (condition.comparison === 'atLeast') return actual >= condition.value;
-      return actual > condition.value;
+      const evaluated =
+        actual === null
+          ? null
+          : condition.comparison === 'lessThan'
+            ? actual < condition.value
+            : condition.comparison === 'atMost'
+              ? actual <= condition.value
+              : condition.comparison === 'equal'
+                ? actual === condition.value
+                : condition.comparison === 'atLeast'
+                  ? actual >= condition.value
+                  : actual > condition.value;
+      if (condition.quantity === 'battlePointPhase' && condition.subjectId !== undefined) {
+        const value = readBattlePoint(
+          state.battlePoints,
+          state.resourceActor ?? 'attacker',
+          condition.subjectId,
+        );
+        onConditionRead?.({
+          kind: 'battlePointPhase',
+          subjectId: condition.subjectId,
+          actor: state.resourceActor ?? 'attacker',
+          point: value?.kind === 'present' ? value.point : null,
+          phase: actual,
+          comparison: condition.comparison,
+          expectedValue: condition.value,
+          evaluated,
+        });
+      }
+      return evaluated;
     }
     case 'inputQuantity': {
       const actual = liveInputQuantity(state, condition.inputKey);
-      onInputQuantityRead?.(condition.inputKey, actual);
+      onConditionRead?.({ kind: 'inputQuantity', inputKey: condition.inputKey, value: actual });
       if (actual === undefined) return null;
       if (condition.comparison === 'lessThan') return actual < condition.value;
       if (condition.comparison === 'atMost') return actual <= condition.value;
@@ -241,20 +278,20 @@ export function evaluateCondition(
     }
     case 'all': {
       const values = condition.expressions.map((value) =>
-        evaluateCondition(value, state, onInputQuantityRead),
+        evaluateCondition(value, state, onConditionRead),
       );
       const decisive = decisiveConditionGroup('all', values);
       return decisive ?? (values.includes(null) ? null : true);
     }
     case 'any': {
       const values = condition.expressions.map((value) =>
-        evaluateCondition(value, state, onInputQuantityRead),
+        evaluateCondition(value, state, onConditionRead),
       );
       const decisive = decisiveConditionGroup('any', values);
       return decisive ?? (values.includes(null) ? null : false);
     }
     case 'not': {
-      const value = evaluateCondition(condition.expression, state, onInputQuantityRead);
+      const value = evaluateCondition(condition.expression, state, onConditionRead);
       return value === null ? null : !value;
     }
   }

@@ -17,6 +17,10 @@ import type {
   PortableCalculationRequest,
   SupportTemplate,
 } from '@fgo-lab/schema';
+import {
+  parseCalculationShareSnapshotV40,
+  parseHistoricalCalculationSnapshotV40,
+} from '@fgo-lab/schema';
 import type { EffectProjection } from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
@@ -25,6 +29,7 @@ import {
   attemptPortableCalculationVersionUpgrade,
   createDefaultCalculatorPortableRequest,
   currentCalculationVersionContext,
+  createV41RequestFromHistoricalV40,
   executePortableCalculation,
   recoverPortableCalculation,
   attemptPortableCalculationScenarioChange,
@@ -206,6 +211,22 @@ export function CalculatorRoute({
     entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
   ) {
     const mutationToken = beginCalculationMutation();
+    if (entry.sourceSchemaVersion === 40) {
+      try {
+        const historical = parseHistoricalCalculationSnapshotV40(entry.legacySnapshot);
+        const request = createV41RequestFromHistoricalV40(historical.request, master);
+        const outcome = executePortableCalculation(request, master);
+        if (outcome.status === 'executed')
+          await startHistoryDraft(request, outcome.execution.result, 'history', mutationToken);
+        else
+          setResetError(
+            outcome.status === 'invalid' ? outcome.reason : '現在のエンジンでは実行できません',
+          );
+      } catch (cause) {
+        setResetError(cause instanceof Error ? cause.message : String(cause));
+      }
+      return;
+    }
     const request = regenerateHistoricalCalculatorRequest(entry, master, profile.servantBuilds);
     if (!request) return;
     const outcome = executePortableCalculation(request, master);
@@ -275,6 +296,57 @@ export function CalculatorRoute({
 
   return (
     <>
+      {calculation.historical && (
+        <section className="notice calculation-context-notice" aria-label="旧版の計算履歴">
+          <h2>履歴値・再計算されていません</h2>
+          {calculation.historical.result.status === 'calculated' && (
+            <ol>
+              {calculation.historical.result.rows.map((row) => (
+                <li key={row.npLevel}>
+                  NP{row.npLevel}: {row.average.toLocaleString('ja-JP')}
+                </li>
+              ))}
+            </ol>
+          )}
+          <p>旧版の計算結果です。元の記録は保持します。</p>
+          {resetError && <p role="alert">{resetError}</p>}
+          <button
+            type="button"
+            onClick={() =>
+              void (async () => {
+                const mutationToken = beginCalculationMutation();
+                try {
+                  const raw = calculation.historical?.legacySnapshot;
+                  const historical =
+                    typeof raw === 'object' && raw !== null && 'kind' in raw
+                      ? parseCalculationShareSnapshotV40(raw)
+                      : parseHistoricalCalculationSnapshotV40(raw);
+                  const request = createV41RequestFromHistoricalV40(historical.request, master);
+                  const outcome = executePortableCalculation(request, master);
+                  if (outcome.status !== 'executed') {
+                    setResetError(
+                      outcome.status === 'invalid'
+                        ? outcome.reason
+                        : '現在のエンジンでは実行できません',
+                    );
+                    return;
+                  }
+                  await startHistoryDraft(
+                    request,
+                    outcome.execution.result,
+                    'draft',
+                    mutationToken,
+                  );
+                } catch (cause) {
+                  setResetError(cause instanceof Error ? cause.message : String(cause));
+                }
+              })()
+            }
+          >
+            現在のバージョンで再計算
+          </button>
+        </section>
+      )}
       {resolvedCalculation?.status === 'rejected' && currentScenario.mode === 'resolved' && (
         <RejectedCalculator
           result={resolvedCalculation.result}
@@ -334,7 +406,8 @@ export function CalculatorRoute({
           resetError={resetError || undefined}
         />
       )}
-      {(portableOutcome.status === 'executed' || portableOutcome.status === 'unsupported') &&
+      {!calculation.historical &&
+        (portableOutcome.status === 'executed' || portableOutcome.status === 'unsupported') &&
         resolvedCalculation?.status === 'executable' &&
         result && (
           <Calculator

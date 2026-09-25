@@ -384,6 +384,13 @@ v40 requestのversion contextはmaster／engineの2 fieldのまま歴史的ident
 自動でv41へ書き換えない。v40からの明示再計算でのみ、元のscenario／execution intentを使ってv41 requestと新identityを生成する。
 この構造版fieldはdamage式の版ではないため、identity変更のためだけにengineVersionを上げない。
 
+v41 resolved scenarioの明示的な開始バトルポイントはcanonical domain IDをkeyとする
+`initialBattlePointPoints`に保持する。applicationはactor／domainの適格性、整数範囲、実capacityを準備前に検証し、
+不正な値をclampせずinvalidにする。旧`battleState.battlePointPhase`による段階指定と同時には使わない。
+段階指定を受ける既存経路は到達可能な開始pointを有限に列挙し、domainが曖昧または段階が到達不能ならinvalidにする。
+準備後の条件とdamageはexecutionが同じcanonical stateから導出したlive point／phaseを読む。
+rankingの条件付き候補はdomainに紐づかないscalar phaseを生成しない。
+
 - `standard`はcanonical executionで適用可能な寄与を通常どおり含める。
 - `excludeVoluntarySkillModifiers`は、任意skill由来のdamage modifierだけを反実仮想として除外する。
 - conditional effectの成立world、ordered command、choice、canonical inputはscenarioが保持する。

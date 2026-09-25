@@ -1,4 +1,9 @@
-import type { CalculationResult, LocalProfile, PortableCalculationRequest } from '@fgo-lab/schema';
+import type {
+  CalculationResult,
+  LocalProfile,
+  PortableCalculationRequest,
+  PortableCalculationRequestV40,
+} from '@fgo-lab/schema';
 
 export function canonicalize(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -9,7 +14,7 @@ export function canonicalize(value: unknown): string {
     .join(',')}}`;
 }
 export async function portableCalculationFingerprint(
-  request: PortableCalculationRequest,
+  request: PortableCalculationRequest | PortableCalculationRequestV40,
   digest: (data: Uint8Array) => Promise<ArrayBuffer>,
 ): Promise<string> {
   const bytes = new TextEncoder().encode(canonicalize(request));
@@ -30,11 +35,11 @@ export function finalizeHistory(
 ): LocalProfile {
   if (command.result.status !== 'calculated') return profile;
   const sessionIndex = profile.history.findIndex(
-    (entry) => 'request' in entry && entry.calculationSessionId === command.sessionId,
+    (entry) => !('disposition' in entry) && entry.calculationSessionId === command.sessionId,
   );
   if (sessionIndex >= 0) {
     const existing = profile.history[sessionIndex]!;
-    if (!('request' in existing)) throw new TypeError('historical_calculation_is_immutable');
+    if ('disposition' in existing) throw new TypeError('historical_calculation_is_immutable');
     const updated = {
       ...existing,
       request: command.request,
@@ -54,7 +59,11 @@ export function finalizeHistory(
     };
   }
   const previous = profile.history.at(-1);
-  if (previous && 'request' in previous && previous.requestFingerprint === command.fingerprint) {
+  if (
+    previous &&
+    !('disposition' in previous) &&
+    previous.requestFingerprint === command.fingerprint
+  ) {
     const history = [
       ...profile.history.slice(0, -1),
       {

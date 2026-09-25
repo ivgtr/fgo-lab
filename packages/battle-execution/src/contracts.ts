@@ -40,7 +40,7 @@ export type ConditionExpression =
   | { kind: 'always' }
   | {
       kind: 'unsupported';
-      reason: 'unresolvedRecipient' | 'unresolvedPreparationWrite';
+      reason: 'unresolvedRecipient' | 'unresolvedPreparationWrite' | 'unresolvedBattlePointDomain';
       readDependency?: ConditionExpression;
     }
   | {

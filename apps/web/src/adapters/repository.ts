@@ -6,7 +6,13 @@ import {
   validateMasterSnapshot,
 } from '@fgo-lab/master-data';
 import type { ProfileCollection } from '@fgo-lab/schema';
-import { parseStoredProfileCollection, profileCollectionSchema } from '@fgo-lab/schema';
+import {
+  migrateStoredProfileCollectionV40,
+  parseStoredProfileCollection,
+  profileCollectionSchema,
+  validateHistoricalV40Identities,
+} from '@fgo-lab/schema';
+import { portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
 import type { ProfileRepository } from '@fgo-lab/profile-domain';
 
 interface LabDb extends DBSchema {
@@ -31,16 +37,33 @@ export class IndexedDbProfileRepository implements ProfileRepository {
     const db = await database();
     const value = await db.get('user', 'profiles');
     if (value === undefined) return { state: 'empty' as const };
-    const stored = (() => {
+    const stored = await (async () => {
       try {
-        return parseStoredProfileCollection(value);
+        if (
+          typeof value === 'object' &&
+          value !== null &&
+          (value as Record<string, unknown>)['schemaVersion'] === 40
+        ) {
+          const collection = await migrateStoredProfileCollectionV40(value, (request) =>
+            portableCalculationFingerprint(request, async (data) =>
+              crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+            ),
+          );
+          return { collection, upgraded: true, discardedCalculationSnapshots: false };
+        }
+        const parsed = parseStoredProfileCollection(value);
+        await validateHistoricalV40Identities(parsed.collection, (request) =>
+          portableCalculationFingerprint(request, async (data) =>
+            crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+          ),
+        );
+        return parsed;
       } catch {
         return null;
       }
     })();
     if (!stored) return { state: 'invalid' as const, reason: 'profile_parse_failed' as const };
-    if (stored.upgraded)
-      await db.put('user', profileCollectionSchema.parse(stored.collection), 'profiles');
+    if (stored.upgraded) await this.replaceAtomicallyWithBackup(stored.collection);
     return {
       state: 'ready' as const,
       collection: stored.collection,
@@ -49,6 +72,19 @@ export class IndexedDbProfileRepository implements ProfileRepository {
   }
   async replace(collection: ProfileCollection) {
     await (await database()).put('user', profileCollectionSchema.parse(collection), 'profiles');
+  }
+  async replaceAtomicallyWithBackup(collection: ProfileCollection) {
+    const db = await database();
+    const parsed = profileCollectionSchema.parse(collection);
+    await db.put('staging', parsed, 'profiles-v41');
+    const staged = profileCollectionSchema.parse(await db.get('staging', 'profiles-v41'));
+    const transaction = db.transaction(['user', 'staging', 'meta'], 'readwrite');
+    const original = await transaction.objectStore('user').get('profiles');
+    if (original !== undefined)
+      await transaction.objectStore('meta').put(original, 'profiles-before-v41-switch');
+    await transaction.objectStore('user').put(staged, 'profiles');
+    await transaction.objectStore('staging').delete('profiles-v41');
+    await transaction.done;
   }
 }
 export interface ActiveMaster {

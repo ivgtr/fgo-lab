@@ -136,7 +136,11 @@ describe('calculation context recovery presentation', () => {
         state="historicalOnly"
         request={{
           ...rankingRequest,
-          versionContext: { masterDataVersion: 'old-master', engineVersion: 'old-engine' },
+          versionContext: {
+            schemaVersion: SCHEMA_VERSION,
+            masterDataVersion: 'old-master',
+            engineVersion: 'old-engine',
+          },
         }}
         result={historicalResult}
         onUpgrade={onUpgrade}
@@ -151,7 +155,11 @@ describe('calculation context recovery presentation', () => {
   it('keeps the historical result visible with a typed failed attempt and permits retry', () => {
     const retainedRequest = {
       ...rankingRequest,
-      versionContext: { masterDataVersion: 'old-master', engineVersion: 'old-engine' },
+      versionContext: {
+        schemaVersion: SCHEMA_VERSION,
+        masterDataVersion: 'old-master',
+        engineVersion: 'old-engine',
+      },
     };
     const attempt = attemptPortableCalculationVersionUpgrade(
       retainedRequest,

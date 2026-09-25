@@ -265,12 +265,21 @@ export function compileEffectCondition(
         : { kind: 'not', expression: { kind: 'always' } };
     }
     if (requirement.kind === 'quantity') {
+      if (requirement.quantity === 'battlePointPhase') {
+        if (requirement.subjectId === undefined)
+          return { kind: 'unsupported', reason: 'unresolvedBattlePointDomain' };
+        return {
+          kind: 'quantity',
+          quantity: requirement.quantity,
+          subjectId: requirement.subjectId,
+          comparison: requirement.comparison,
+          value: requirement.value,
+        };
+      }
       const currentAttackerSource =
         sourceActorIsCurrent ||
         ['attacker', 'passive', 'np', 'craftEssence'].includes(origin) ||
-        (requirement.quantity === 'attackerHpPermille' &&
-          requirement.subjectId === undefined &&
-          recipient === 'attacker');
+        (requirement.subjectId === undefined && recipient === 'attacker');
       const subjectId =
         currentAttackerSource &&
         (requirement.subjectId === undefined || requirement.subjectId === sourceId)

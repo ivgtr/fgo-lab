@@ -122,6 +122,28 @@ export function battlePointPhaseCandidates(
   return values;
 }
 
+/** Validate a concrete initial state before reconciliation can clamp or ignore it. */
+export function validateInitialBattlePointPoints(args: {
+  domains: readonly BattlePointDomain[];
+  actorId: string;
+  traits: ReadonlySet<string>;
+  points: Readonly<Record<string, number>>;
+}): { status: 'valid' } | { status: 'invalid'; domainId: string } {
+  for (const [domainId, point] of Object.entries(args.points)) {
+    const domain = definition(args.domains, domainId);
+    if (
+      !domain ||
+      !eligible(domain, args.actorId, args.traits) ||
+      !Number.isSafeInteger(point) ||
+      point < -1
+    )
+      return { status: 'invalid', domainId };
+    const capacity = effectiveCapacity(domain, args.traits, []);
+    if (capacity !== null && point > capacity) return { status: 'invalid', domainId };
+  }
+  return { status: 'valid' };
+}
+
 export function reconcileBattlePointActor(args: {
   state: BattlePointState;
   actor: string;

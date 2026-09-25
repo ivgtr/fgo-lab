@@ -82,6 +82,7 @@ describe('portable schema boundaries', () => {
       },
       attackerHpPermille: 1000,
       battleState: { battlePointPhase: null },
+      enemyDefenseBuff: 0,
       canonicalInputValues: {},
       craftEssence: null,
       preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
@@ -196,6 +197,7 @@ describe('portable schema boundaries', () => {
       },
       attackerHpPermille: 1000,
       battleState: { battlePointPhase: null },
+      enemyDefenseBuff: 0,
       canonicalInputValues: {},
       craftEssence: null,
       preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
@@ -240,6 +242,7 @@ describe('portable schema boundaries', () => {
       },
       attackerHpPermille: null,
       battleState: { battlePointPhase: null },
+      enemyDefenseBuff: 0,
       canonicalInputValues: {},
       craftEssence: null,
       preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
@@ -457,6 +460,7 @@ describe('portable schema boundaries', () => {
         },
         attackerHpPermille: 1000,
         battleState: { battlePointPhase: null },
+        enemyDefenseBuff: 0,
         canonicalInputValues: {},
         craftEssence: null,
         preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
@@ -469,9 +473,14 @@ describe('portable schema boundaries', () => {
       });
       if (currentScenario.mode !== 'resolved') throw new Error('resolved fixture required');
       const legacyFields = Object.fromEntries(
-        Object.entries(currentScenario).filter(([key]) => key !== 'initialOvercharge'),
+        Object.entries(currentScenario).filter(
+          ([key]) => key !== 'initialOvercharge' && key !== 'enemyDefenseBuff',
+        ),
       );
-      const scenario = sourceVersion === 38 ? currentScenario : { ...legacyFields, overcharge: 1 };
+      const scenario =
+        sourceVersion === 38
+          ? { ...legacyFields, initialOvercharge: 1 }
+          : { ...legacyFields, overcharge: 1 };
       const snapshot = {
         profileId: servantIdentityProfileId,
         calculationSessionId: '00000000-0000-4000-8000-000000000048',
@@ -805,6 +814,7 @@ describe('portable schema boundaries', () => {
       },
       attackerHpPermille: 1000,
       battleState: { battlePointPhase: null },
+      enemyDefenseBuff: 0,
       canonicalInputValues: {},
       craftEssence: null,
       preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
@@ -817,7 +827,9 @@ describe('portable schema boundaries', () => {
     });
     if (currentResolved.mode !== 'resolved') throw new Error('resolved fixture required');
     const legacyFields = Object.fromEntries(
-      Object.entries(currentResolved).filter(([key]) => key !== 'initialOvercharge'),
+      Object.entries(currentResolved).filter(
+        ([key]) => key !== 'initialOvercharge' && key !== 'enemyDefenseBuff',
+      ),
     );
     const resolved = { ...legacyFields, overcharge: 1 };
     const manual = calculationScenarioSchema.parse({

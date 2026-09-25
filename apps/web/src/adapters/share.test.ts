@@ -55,9 +55,15 @@ const requestFor = (
   context: Pick<typeof versions, 'masterDataVersion' | 'engineVersion'> = versions,
 ) =>
   createCalculatorPortableRequest(scenario, {
+    schemaVersion: SCHEMA_VERSION,
     masterDataVersion: context.masterDataVersion,
     engineVersion: context.engineVersion,
   });
+const readCurrentShare = (fragment: string): CalculationShareSnapshot => {
+  const value = readShareFragment(fragment);
+  if (!value || 'disposition' in value) throw new Error('current share required');
+  return value;
+};
 
 describe('portable input limits', () => {
   it('rejects oversized backups before schema use', () =>
@@ -115,7 +121,7 @@ describe('portable input limits', () => {
     ));
 
   it('round-trips only a reproducible current-master calculation', () => {
-    const scenario = createDefaultResolvedScenario(master, undefined);
+    const scenario = { ...createDefaultResolvedScenario(master, undefined), enemyDefenseBuff: 0.3 };
     const snapshot = {
       kind: 'fgo-lab-calculation-share',
       schemaVersion: SCHEMA_VERSION,
@@ -123,9 +129,9 @@ describe('portable input limits', () => {
       request: requestFor(scenario),
       result: calculateScenario(scenario, master, versions).result,
     } as unknown as CalculationShareSnapshot;
-    const restored = readShareFragment(`#${createShareFragment(snapshot)}`);
+    const restored = readCurrentShare(`#${createShareFragment(snapshot)}`);
 
-    expect(restored && validateCalculationShareSnapshot(restored, master)).toEqual(snapshot);
+    expect(validateCalculationShareSnapshot(restored, master)).toEqual(snapshot);
   });
 
   it('re-derives canonical count minima when a shared scenario omits explicit counts', () => {
@@ -145,7 +151,7 @@ describe('portable input limits', () => {
     } as unknown as CalculationShareSnapshot;
 
     expect(scenario.canonicalInputValues).toEqual({});
-    const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
+    const restored = readCurrentShare(`#${createShareFragment(snapshot)}`);
     expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
     const recalculated = calculateScenario(
       restored.request.scenario,
@@ -186,7 +192,7 @@ describe('portable input limits', () => {
         result: calculation.result,
       };
 
-      const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
+      const restored = readCurrentShare(`#${createShareFragment(snapshot)}`);
       expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
       expect(restored.request.scenario.mode).toBe('resolved');
       if (restored.request.scenario.mode !== 'resolved') throw new Error('resolved share required');
@@ -481,7 +487,7 @@ describe('portable input limits', () => {
       request: requestFor(invalidContextScenario, craftedVersions),
       result: compatibleResult,
     };
-    const decoded = readShareFragment(`#${createShareFragment(invalidSnapshot)}`)!;
+    const decoded = readCurrentShare(`#${createShareFragment(invalidSnapshot)}`);
     if (decoded.request.scenario.mode !== 'resolved') throw new Error('resolved share required');
     expect(decoded.request.scenario.canonicalInputValues).toEqual({
       'field:enemyCount': { kind: 'integer', value: 0 },

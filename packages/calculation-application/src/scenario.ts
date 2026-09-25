@@ -7,6 +7,7 @@ import {
   resolveAttackerFormExecution,
   battlePointPhase,
   battlePointPhaseCandidates,
+  validateInitialBattlePointPoints,
   readBattlePoint,
   type BattlePointState,
   type ActivationRequirementOwner,
@@ -116,7 +117,7 @@ export type ResolvedCalculationInput =
     })
   | (ResolvedCalculationInputCommon & {
       status: 'invalid';
-      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue;
+      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue | BattlePointIntentIssue;
       preparationRejection: null;
     });
 
@@ -126,11 +127,18 @@ export interface AttackerLevelStatUnavailableIssue {
   level: number;
 }
 
+export interface BattlePointIntentIssue {
+  kind: 'invalidBattlePointIntent';
+  servantId: string;
+  level: number;
+  detail: 'ambiguousDomain' | 'unresolvedDomain' | 'unreachablePhase' | 'invalidInitialPoint';
+}
+
 export type CalculationApplicationResult =
   | CalculationResult
   | {
       status: 'invalid';
-      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue;
+      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue | BattlePointIntentIssue;
       issues: { code: string; detail: string }[];
     };
 
@@ -209,8 +217,10 @@ export function createDefaultResolvedScenario(
     },
     initialOvercharge: 1,
     targetContext: createDefaultTargetContext(servant.classId),
+    enemyDefenseBuff: 0,
     attackerHpPermille: 1_000,
     battleState: { battlePointPhase: 0 },
+    initialBattlePointPoints: {},
     canonicalInputValues: {},
     craftEssence: null,
     preNoblePhantasmPlan: candidate.commands.map((command) =>
@@ -337,7 +347,7 @@ export type ScenarioPreparationOutcome =
     }
   | {
       status: 'invalid';
-      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue;
+      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue | BattlePointIntentIssue;
     };
 
 export interface CalculationPreparationOptions {
@@ -391,7 +401,7 @@ function damageResolutionInputForNoblePhantasm(
       scenario.targetContext.attribute,
     ),
     attackBuff: 0,
-    defenseBuff: 0,
+    defenseBuff: scenario.enemyDefenseBuff,
     cardBuff: 0,
     cardResistance: 0,
     npDamageBuff: 0,
@@ -830,31 +840,8 @@ export function resolveScenario(
   master: MasterDataSnapshot,
   preparation: CalculationPreparationOptions = {},
 ): ResolvedCalculationInput {
-  if (scenario.mode === 'manual') return manualResolvedInput(scenario);
-  const base = resolveScenarioPreparationOutcome(scenario, master, preparation);
-  if (base.status === 'invalid') return invalidResolvedInput(base);
-  if (base.status === 'rejected') return rejectedPreparationResolvedInput(base);
-  const baseInput = base.input;
-  const prepared = prepareOrderedScenario(baseInput, scenario, master, base.formExecution);
-  const canonicalInputs = resolveCanonicalInputValues(
-    prepared.inputDefinitions,
-    scenario.canonicalInputValues,
-  );
-  const execution = executeOrderedScenario(prepared, canonicalInputs);
-  return resolvePreparedOrderedScenario(
-    scenario,
-    prepared,
-    canonicalInputs,
-    execution,
-    base.formExecution.state.currentFormId,
-    resolveAttackProfileContinuity(
-      master.servants.find(({ id }) => id === scenario.attacker.servantId)!,
-      base.formExecution,
-      scenario,
-      prepared,
-      execution,
-    ),
-  );
+  return prepareCalculationScenarioWithPolicy(scenario, master, { kind: 'calculator' }, preparation)
+    .resolved;
 }
 
 function requiredInputsForResult(inputs: ResolvedCalculationInputCommon['requiredInputs']) {
@@ -1253,12 +1240,26 @@ function prepareConcreteCalculationScenarioWithPolicy(
 function battlePointWitnesses(
   scenario: ResolvedCalculationScenario,
   master: MasterDataSnapshot,
-): Readonly<Record<string, number>>[] {
+):
+  | { status: 'ready'; witnesses: Readonly<Record<string, number>>[] }
+  | {
+      status: 'invalid';
+      issue: BattlePointIntentIssue;
+    } {
   const phase = scenario.battleState.battlePointPhase;
-  if (phase === null) return [{}];
+  if (phase === null) return { status: 'ready', witnesses: [{}] };
   const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
-  if (!servant) return [{}];
-  if (!(servant.battlePointDomains?.length ?? 0)) return [{}];
+  if (!servant || !(servant.battlePointDomains?.length ?? 0))
+    return { status: 'ready', witnesses: [{}] };
+  const invalid = (detail: BattlePointIntentIssue['detail']) => ({
+    status: 'invalid' as const,
+    issue: {
+      kind: 'invalidBattlePointIntent' as const,
+      servantId: scenario.attacker.servantId,
+      level: scenario.attacker.level,
+      detail,
+    },
+  });
   const referenced = new Set<string>();
   const collectRequirementDomains = (
     effect: MasterDataSnapshot['servants'][number]['skills'][number]['effects'][number],
@@ -1296,6 +1297,9 @@ function battlePointWitnesses(
       )
         if (operation.subjectId !== null) referenced.add(operation.subjectId);
   }
+  if (referenced.size > 1) return invalid('ambiguousDomain');
+  if ([...referenced].some((id) => !master.battlePointDomains.some((domain) => domain.id === id)))
+    return invalid('unresolvedDomain');
   const traits = new Set(
     findActorForm(servant, scenario.attacker.initialActorFormId)?.traits ?? servant.traits,
   );
@@ -1307,12 +1311,37 @@ function battlePointWitnesses(
       domain.capacity.traitOverrides.find((entry) => entry.all.every((trait) => traits.has(trait)))
         ?.value ?? domain.capacity.default;
     const points = phase === 0 ? [-1] : battlePointPhaseCandidates(domain, phase, capacity);
-    if (!points.length) continue;
+    if (!points.length) return invalid('unreachablePhase');
     witnesses = witnesses.flatMap((prior) =>
       points.map((point) => ({ ...prior, [domain.id]: point })),
     );
   }
-  return witnesses;
+  return { status: 'ready', witnesses };
+}
+
+function invalidBattlePointPreparation(
+  scenario: ResolvedCalculationScenario,
+  master: MasterDataSnapshot,
+  contributionPolicy: ContributionApplicationPolicy,
+  preparation: CalculationPreparationOptions,
+  detail: BattlePointIntentIssue['detail'],
+): PreparedCalculationScenario {
+  const issue: BattlePointIntentIssue = {
+    kind: 'invalidBattlePointIntent',
+    servantId: scenario.attacker.servantId,
+    level: scenario.attacker.level,
+    detail,
+  };
+  return {
+    status: 'invalid',
+    master,
+    scenario,
+    resolved: invalidResolvedInput({ status: 'invalid', issue }),
+    orderedScenario: null,
+    canonicalInputs: null,
+    contributionPolicy,
+    preparation,
+  };
 }
 
 export function prepareCalculationScenarioWithPolicy(
@@ -1322,22 +1351,75 @@ export function prepareCalculationScenarioWithPolicy(
   preparation: CalculationPreparationOptions = {},
   captureExecutionObservation = false,
 ): PreparedCalculationScenario {
-  if (scenario.mode === 'manual' || preparation.initialBattlePointPoints)
-    return prepareConcreteCalculationScenarioWithPolicy(
+  const scenarioPoints =
+    scenario.mode === 'resolved' ? scenario.initialBattlePointPoints : undefined;
+  const explicitScenarioPoints =
+    scenarioPoints && Object.keys(scenarioPoints).length > 0 ? scenarioPoints : undefined;
+  if (
+    scenario.mode === 'resolved' &&
+    explicitScenarioPoints &&
+    (scenario.battleState.battlePointPhase !== null ||
+      (preparation.initialBattlePointPoints &&
+        JSON.stringify(preparation.initialBattlePointPoints) !==
+          JSON.stringify(explicitScenarioPoints)))
+  )
+    return invalidBattlePointPreparation(
       scenario,
       master,
       contributionPolicy,
       preparation,
+      'invalidInitialPoint',
+    );
+  const effectivePreparation = explicitScenarioPoints
+    ? { ...preparation, initialBattlePointPoints: explicitScenarioPoints }
+    : preparation;
+  if (scenario.mode === 'resolved' && effectivePreparation.initialBattlePointPoints) {
+    const servant = master.servants.find(({ id }) => id === scenario.attacker.servantId);
+    if (servant) {
+      const traits = new Set(
+        findActorForm(servant, scenario.attacker.initialActorFormId)?.traits ?? servant.traits,
+      );
+      const valid = validateInitialBattlePointPoints({
+        domains: servant.battlePointDomains ?? [],
+        actorId: scenario.attacker.initialActorFormId.actorId,
+        traits,
+        points: effectivePreparation.initialBattlePointPoints,
+      });
+      if (valid.status === 'invalid')
+        return invalidBattlePointPreparation(
+          scenario,
+          master,
+          contributionPolicy,
+          effectivePreparation,
+          'invalidInitialPoint',
+        );
+    }
+  }
+  if (scenario.mode === 'manual' || effectivePreparation.initialBattlePointPoints)
+    return prepareConcreteCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      contributionPolicy,
+      effectivePreparation,
       captureExecutionObservation,
     );
-  const witnesses = battlePointWitnesses(scenario, master);
+  const witnessResult = battlePointWitnesses(scenario, master);
+  if (witnessResult.status === 'invalid')
+    return invalidBattlePointPreparation(
+      scenario,
+      master,
+      contributionPolicy,
+      effectivePreparation,
+      witnessResult.issue.detail,
+    );
+  const witnesses = witnessResult.witnesses;
   if (witnesses.length === 1)
     return prepareConcreteCalculationScenarioWithPolicy(
       scenario,
       master,
       contributionPolicy,
       {
-        ...preparation,
+        ...effectivePreparation,
         initialBattlePointPoints: witnesses[0]!,
       },
       captureExecutionObservation,
@@ -1348,7 +1430,7 @@ export function prepareCalculationScenarioWithPolicy(
       master,
       contributionPolicy,
       {
-        ...preparation,
+        ...effectivePreparation,
         initialBattlePointPoints,
       },
       captureExecutionObservation,
@@ -1359,8 +1441,8 @@ export function prepareCalculationScenarioWithPolicy(
       candidate.status === 'executable',
   );
   const unresolved = candidates.find((candidate) => candidate.status !== 'executable');
-  if (unresolved) return { ...unresolved, scenario, preparation };
-  if (!executable.length) return { ...candidates[0]!, scenario, preparation };
+  if (unresolved) return { ...unresolved, scenario, preparation: effectivePreparation };
+  if (!executable.length) return { ...candidates[0]!, scenario, preparation: effectivePreparation };
   const selected = executable
     .map((candidate) => {
       const result = calculateDamageResolution(candidate.resolved.input, {
@@ -1378,7 +1460,7 @@ export function prepareCalculationScenarioWithPolicy(
       };
     })
     .sort((left, right) => right.maximum - left.maximum)[0]!.candidate;
-  return { ...selected, scenario, preparation };
+  return { ...selected, scenario, preparation: effectivePreparation };
 }
 
 export function rematerializePreparedCalculationInputs(

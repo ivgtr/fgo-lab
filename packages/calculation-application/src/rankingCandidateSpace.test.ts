@@ -15,6 +15,7 @@ import { calculateRankingPolicy, calculateRankingPolicyDetail } from './rankingP
 import { compileRankingExecutionPlan, executeRankingScenarios } from './rankingPolicyScenario';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileCandidateLocalActionAdmissionDispositions } from './rankingActionAdmission';
+import { calculateScenarioWithPolicy } from './scenario';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -36,6 +37,66 @@ describe('static ranking candidate space', () => {
     appVersion: APP_VERSION,
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
+  });
+
+  it('selects a reachable battle-point choice after the ordered preparation mutations', () => {
+    const servant = master.servants.find(({ id }) => id === '705300')!;
+    const result = calculateRankingPolicyDetail(
+      servant,
+      master,
+      profile,
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        selfBuffs: 'included',
+        conditionalEffects: 'satisfied',
+      },
+      versions(),
+    );
+    expect(result.status, JSON.stringify(result)).toBe('calculated');
+    if (result.status !== 'calculated') return;
+    expect(result.detail.scenario.preNoblePhantasmPlan[0]).toMatchObject({
+      choice: { groupKey: 'player-choice:0', candidateKey: '1' },
+    });
+    expect(result.detail.input.npDamageBuff).toBe(0.4);
+    expect(result.detail.result.rows[0].average).toBe(65_541.965);
+    expect(result.detail.candidateEvidence.quantityCandidateKey).toBe('quantity:baseline');
+    const scenario = {
+      ...result.detail.scenario,
+      preNoblePhantasmPlan: result.detail.scenario.preNoblePhantasmPlan.map((command, index) =>
+        index === 0 && command.kind === 'useSkillSlot'
+          ? { ...command, choice: { groupKey: 'player-choice:0', candidateKey: '2' } }
+          : command,
+      ),
+    };
+    const domain = servant.battlePointDomains![0]!;
+    const alternate = calculateScenarioWithPolicy(
+      scenario,
+      master,
+      versions(),
+      result.detail.contributionPolicy,
+    );
+    expect(alternate.status).toBe('executable');
+    expect(alternate.result.status).toBe('calculated');
+    if (alternate.status === 'executable' && alternate.result.status === 'calculated') {
+      expect(alternate.appliedPreparationActions[0]?.command).toMatchObject({
+        choice: { groupKey: 'player-choice:0', candidateKey: '2' },
+      });
+      expect(alternate.input.npDamageBuff).toBe(0.4);
+      expect(alternate.result.rows[0].average).toBeLessThan(72_441.165);
+    }
+    for (const point of [-1, 0, 1, 2, 3, 4])
+      expect(
+        calculateScenarioWithPolicy(
+          scenario,
+          master,
+          versions(),
+          result.detail.contributionPolicy,
+          { initialBattlePointPoints: { [domain.id]: point } },
+        ),
+      ).toMatchObject({
+        status: 'invalid',
+        result: { issue: { kind: 'invalidBattlePointIntent', detail: 'invalidInitialPoint' } },
+      });
   });
 
   it.each([

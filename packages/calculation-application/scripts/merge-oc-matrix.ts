@@ -11,6 +11,7 @@ import {
 import {
   productionClosureConditionKey,
   productionClosureConditions,
+  productionClosureMatrixDigest,
   type ProductionClosureAudit,
 } from '../src/productionClosureAudit';
 import {
@@ -313,7 +314,7 @@ async function merge(): Promise<void> {
   };
   const audit = {
     ...result,
-    digest: createHash('sha256').update(JSON.stringify(result)).digest('hex'),
+    digest: productionClosureMatrixDigest(result),
   };
   const source = createTsk065ProductionAuditSource(
     JSON.parse(

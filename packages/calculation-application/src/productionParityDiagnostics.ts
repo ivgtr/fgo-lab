@@ -15,7 +15,11 @@ import {
   type OrderedExecutionAuditEvent,
 } from '@fgo-lab/battle-execution';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
-import type { DamageResolutionInput, PreNoblePhantasmCommand } from '@fgo-lab/schema';
+import type {
+  CalculationScenario,
+  DamageResolutionInput,
+  PreNoblePhantasmCommand,
+} from '@fgo-lab/schema';
 import type {
   AttackProfileContinuity,
   CalculationApplicationResult,
@@ -263,7 +267,14 @@ export interface ProductionPreparationTransactionObservation {
 
 export type ProductionPreparationTransactionAction = Pick<
   AppliedPreparationAction,
-  'command' | 'sourceKind' | 'baseOvercharge' | 'ocUse' | 'resourceBefore' | 'resourceAfter'
+  | 'command'
+  | 'sourceKind'
+  | 'baseOvercharge'
+  | 'ocUse'
+  | 'ocOutcomes'
+  | 'resourceBefore'
+  | 'resourceAfter'
+  | 'resourceTransaction'
 >;
 
 export interface ProductionPreparationTransactionSummary {
@@ -382,6 +393,7 @@ export interface ProductionUserControlSideObservation {
   operationEvents: readonly ProductionUserControlOperationEvent[];
   projections: readonly ProductionUserControlProjectionObservation[];
   inputBinding: ProductionUserControlInputBinding;
+  damageInputDefenseBuff?: number;
   effectiveContributions: readonly ProductionUserControlEffectiveContribution[];
   damageResult: {
     status: CalculationApplicationResult['status'];
@@ -406,6 +418,18 @@ export interface ProductionUserControlObservation {
     maximumHp: number;
     evaluatedCandidates: number;
   };
+  battlePointWitness?: {
+    domainId: string;
+    initialPoint: number;
+    preparedPoint: number;
+    preparedPhase: number;
+    initialPhase: number;
+    generatedCandidates: number;
+    evaluatedCandidates: number;
+    enemyDefenseBuff: number;
+    enabledScenario: Extract<CalculationScenario, { mode: 'resolved' }>;
+    excludedScenario: Extract<CalculationScenario, { mode: 'resolved' }>;
+  };
   conflictCounterexample?: {
     plan: readonly PreNoblePhantasmCommand[];
     profileKey: string | null;
@@ -429,7 +453,8 @@ export type ProductionUserControlFailureReason =
   | 'userControlSelectedProfileProofMissing'
   | 'userControlConflictCounterexampleInvalid'
   | 'userControlNpSpecialInputNotChanged'
-  | 'userControlDidNotReachOperationOrDamage';
+  | 'userControlDidNotReachOperationOrDamage'
+  | 'userControlBattlePointReadProofMissing';
 
 export interface ProductionUserControlFailure {
   reason: ProductionUserControlFailureReason;
@@ -474,6 +499,16 @@ export type ProductionUserControlGate =
 export interface ProductionUserControlGateInput {
   expectedProjectionCount: number;
   expectedIdentities: readonly ProductionUserControlIdentity[];
+  expectedBattlePointReads?: readonly {
+    ownerId: string;
+    projectionKey: string;
+    operationId: string;
+    leaves: readonly {
+      subjectId: string;
+      comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
+      value: number;
+    }[];
+  }[];
   observations: readonly ProductionUserControlObservation[];
 }
 
@@ -762,6 +797,137 @@ export function auditProductionUserControlObservations(
       continue;
     }
     const profileIdentity = productionUserControlIdentity(identity);
+    const battlePointContracts =
+      input.expectedBattlePointReads?.filter(
+        (expected) =>
+          expected.ownerId === identity.ownerId &&
+          expected.projectionKey === identity.projectionKey &&
+          expected.operationId === identity.operationId,
+      ) ?? [];
+    if (battlePointContracts.length > 0) {
+      const witness = observation.battlePointWitness;
+      const targetOn = enabled.executionObservation.targetExecution;
+      const targetOff = excluded.executionObservation.targetExecution;
+      const selectedOn = targetOn?.selection === 'selected' ? targetOn : null;
+      const selectedOff = targetOff?.selection === 'selected' ? targetOff : null;
+      const readsOn = selectedOn?.candidateState?.battlePointPhaseReads ?? [];
+      const readsOff = selectedOff?.candidateState?.battlePointPhaseReads ?? [];
+      const expected = battlePointContracts[0]!;
+      const requiresDefenseProof = identity.modifier === 'ignoreDefense';
+      const matchingReads = (reads: typeof readsOn, leaf: (typeof expected.leaves)[number]) =>
+        reads.filter(
+          (read) =>
+            read.operationId === identity.operationId &&
+            read.subjectId === leaf.subjectId &&
+            read.comparison === leaf.comparison &&
+            read.expectedValue === leaf.value,
+        );
+      const onReadsValid =
+        expected.leaves.length > 0 &&
+        expected.leaves.every((leaf) => {
+          const matches = matchingReads(readsOn, leaf);
+          return (
+            matches.length === 1 &&
+            matches[0]!.actor === 'attacker' &&
+            (requiresDefenseProof
+              ? witness !== undefined &&
+                matches[0]!.point === witness.preparedPoint &&
+                matches[0]!.phase === witness.preparedPhase &&
+                matches[0]!.evaluated === true
+              : matches[0]!.phase !== null && matches[0]!.evaluated !== null)
+          );
+        });
+      const offReadsValid =
+        expected.leaves.length > 0 &&
+        expected.leaves.every((leaf) => {
+          const matches = matchingReads(readsOff, leaf);
+          return (
+            matches.length === 1 &&
+            matches[0]!.actor === 'attacker' &&
+            (requiresDefenseProof
+              ? witness !== undefined &&
+                matches[0]!.point === witness.preparedPoint &&
+                matches[0]!.phase === witness.preparedPhase &&
+                matches[0]!.evaluated === true
+              : matches[0]!.phase !== null && matches[0]!.evaluated !== null)
+          );
+        });
+      const shape = {
+        uniqueCanonicalCondition:
+          battlePointContracts.length === 1 &&
+          expected.leaves.every((leaf) => leaf.subjectId !== ''),
+        selectedSameCandidate:
+          selectedOn !== null &&
+          selectedOff !== null &&
+          selectedOn.candidateIndex === selectedOff.candidateIndex &&
+          JSON.stringify(selectedOn.targetCandidate) ===
+            JSON.stringify(selectedOff.targetCandidate),
+        sameExplicitInitialPoint:
+          !requiresDefenseProof ||
+          (witness !== undefined &&
+            Number.isInteger(witness.initialPoint) &&
+            enabled.executionObservation.battlePointWitness?.[witness.domainId] ===
+              witness.initialPoint &&
+            excluded.executionObservation.battlePointWitness?.[witness.domainId] ===
+              witness.initialPoint),
+        sameScenarioAndPlan:
+          !requiresDefenseProof ||
+          (witness !== undefined &&
+            JSON.stringify({ ...witness.enabledScenario, effectDecisions: [] }) ===
+              JSON.stringify({ ...witness.excludedScenario, effectDecisions: [] }) &&
+            JSON.stringify(witness.enabledScenario.preNoblePhantasmPlan) ===
+              JSON.stringify(observation.preparationSelection?.plan) &&
+            witness.enabledScenario.enemyDefenseBuff === witness.enemyDefenseBuff &&
+            witness.excludedScenario.enemyDefenseBuff === witness.enemyDefenseBuff),
+        actualDefenseInput:
+          !requiresDefenseProof ||
+          (witness !== undefined &&
+            witness.enemyDefenseBuff !== 0 &&
+            enabled.damageInputDefenseBuff === witness.enemyDefenseBuff &&
+            excluded.damageInputDefenseBuff === witness.enemyDefenseBuff),
+        operationReads: onReadsValid && offReadsValid,
+        orderedOutcomeAndProjection:
+          enabled.operationEvents.some(
+            (event) =>
+              event.operationId === identity.operationId &&
+              event.operationOutcome === 'applied' &&
+              event.projectionOutcome === 'applied',
+          ) &&
+          excluded.operationEvents.some(
+            (event) =>
+              event.operationId === identity.operationId &&
+              event.operationOutcome === 'notApplied' &&
+              event.projectionOutcome === 'notApplied',
+          ),
+        effectiveAndDamage:
+          !requiresDefenseProof ||
+          (enabled.effectiveContributions.some(
+            (contribution) =>
+              contribution.operationId === identity.operationId && contribution.effective,
+          ) &&
+            excluded.effectiveContributions.some(
+              (contribution) =>
+                contribution.operationId === identity.operationId && !contribution.effective,
+            ) &&
+            enabled.inputBinding.kind === 'bound' &&
+            enabled.inputBinding.address === 'damageFunction.ignoreDefense' &&
+            enabled.inputBinding.value === true &&
+            excluded.inputBinding.kind === 'bound' &&
+            excluded.inputBinding.address === 'damageFunction.ignoreDefense' &&
+            excluded.inputBinding.value === false &&
+            enabled.damageResult.status === 'calculated' &&
+            excluded.damageResult.status === 'calculated' &&
+            JSON.stringify(enabled.damageResult.rows) !==
+              JSON.stringify(excluded.damageResult.rows)),
+      };
+      const failure = productionUserControlFailure(
+        'userControlBattlePointReadProofMissing',
+        `${profileIdentity}:battle-point-read-proof`,
+        Object.fromEntries(Object.keys(shape).map((key) => [key, true])),
+        shape,
+      );
+      if (failure) failures.push(failure);
+    }
     const enabledProfileKey =
       enabled.profileContinuity && enabled.profileContinuity.kind !== 'unresolved'
         ? enabled.profileContinuity.intendedProfileKey
@@ -1633,6 +1799,47 @@ export function auditProductionPreparationTransactionObservations(
       );
       if (commandFailure) failures.push(commandFailure);
 
+      const transaction = (action as Partial<ProductionPreparationTransactionAction>)
+        .resourceTransaction;
+      const mutationSteps = transaction?.mutations ?? [];
+      const orderedMutations = mutationSteps.every(
+        (mutation, index) =>
+          mutation.step >= 0 &&
+          (index === 0 || mutationSteps[index - 1]!.step < mutation.step) &&
+          mutation.occurrenceId.length > 0 &&
+          action.ocOutcomes.some(
+            (outcome) => outcome.step === mutation.step && outcome.outcome === 'notApplicable',
+          ),
+      );
+      const continuousMutations = mutationSteps.every(
+        (mutation, index) =>
+          JSON.stringify(mutation.before) ===
+          JSON.stringify(
+            index === 0 ? transaction?.afterConsumption : mutationSteps[index - 1]!.after,
+          ),
+      );
+      const finalResource = mutationSteps.at(-1)?.after ?? transaction?.afterConsumption;
+      const transactionFailure = preparationFailure(
+        'preparationResourceCommitMismatch',
+        canonicalIdentity,
+        { valid: true },
+        {
+          valid:
+            transaction !== undefined &&
+            orderedMutations &&
+            continuousMutations &&
+            JSON.stringify(finalResource) === JSON.stringify(action.resourceAfter) &&
+            (command?.kind === 'useSkillSlot'
+              ? JSON.stringify(transaction.afterConsumption) ===
+                JSON.stringify(action.resourceBefore)
+              : transaction.afterConsumption.gauge === 0 &&
+                transaction.afterConsumption.npLevel === action.resourceBefore.npLevel &&
+                transaction.afterConsumption.capacity === action.resourceBefore.capacity),
+        },
+        actionContext,
+      );
+      if (transactionFailure) failures.push(transactionFailure);
+
       if (actionIndex > 0) {
         const previousAction = observation.actions[actionIndex - 1]!;
         const sequenceFailure = preparationFailure(
@@ -1709,17 +1916,6 @@ export function auditProductionPreparationTransactionObservations(
           actionContext,
         );
         if (receiptContentFailure) failures.push(receiptContentFailure);
-      }
-
-      if (action.resourceAfter.gauge !== 0) {
-        const resourceCommitFailure = preparationFailure(
-          'preparationResourceCommitMismatch',
-          canonicalIdentity,
-          { resourceAfter: { gauge: 0 } },
-          { resourceAfter: { gauge: action.resourceAfter.gauge } },
-          actionContext,
-        );
-        if (resourceCommitFailure) failures.push(resourceCommitFailure);
       }
     }
   }

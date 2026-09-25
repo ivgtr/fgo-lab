@@ -45,6 +45,7 @@ async function pinStoredDraftToHistorical(page: Page, unsupported: boolean) {
             };
             const draft = collection.profiles[0]!.draft;
             draft.request.versionContext = {
+              ...draft.request.versionContext,
               masterDataVersion: 'historical-master',
               engineVersion: 'historical-engine',
             };
@@ -85,7 +86,9 @@ async function storedDraftVersionContext(page: Page) {
                 };
               }>;
             };
-            resolve(collection.profiles[0]!.draft.request.versionContext);
+            const { masterDataVersion, engineVersion } =
+              collection.profiles[0]!.draft.request.versionContext;
+            resolve({ masterDataVersion, engineVersion });
             db.close();
           };
         };
