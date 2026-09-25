@@ -3823,7 +3823,86 @@
       "verification": "Read-only symbol and saved-artifact inspection only; no source tests run. HEAD archive plus the two changed documents passed docs-integrity tests 6/6, docs integrity, JSON bounded-unit/status check, and git diff --check; candidate document hashes matched the worktree.",
       "remaining": "9 saved S4 failures remain Blocking, including 7 outside this family and B2/B3. TSK-08 in_progress; TSK-09.1/09 blocked.",
       "nextOperation": "After approval of revised diagnostic plan, run one small schema-legal alternate-variant fixture and sequential on/off/on trace. Determine typed profile intent from existing plan/receipt or document necessary request identity change and fingerprint impact. Do not reclassify arbitrary nonAttackDamage or weaken S4 gate."
+    },
+    {
+      "name": "S4 505600 structural control read-only derived-intent and alternate-path investigation",
+      "baselineHead": "6cbc4b40c06428fc725e5e8cec169170c5f16da3",
+      "scope": {
+        "ownerId": "505600",
+        "effectOccurrenceId": "2619550:532:0",
+        "controlCount": 2
+      },
+      "finding": "For a concrete valid plan, the singular preparation terminal state plus attackProfileForTerminalState derives typed intended AttackProfile without a persisted request field; this is verified for production owner and schema-legal alternate choice. A full schema-legal two-action path shows that off can leave an earlier attack variant active and return calculated damage for a different profile while preparation intent remains unchanged. The product/gate proof must compare intended preparation profile with ordered actual variant and distinguish no-attack reachability from wrong-profile execution; issue-string classification and both-calculated status are insufficient.",
+      "actual": {
+        "productionOwner": {
+          "planChoice": "player-choice:1/1",
+          "preparedVariantAllSteps": "505700/505701",
+          "orderedVariants": [
+            "505700/505701",
+            "505600/505601",
+            "505700/505701"
+          ],
+          "results": [
+            "calculated",
+            "unsupported",
+            "calculated"
+          ],
+          "np1AverageOn": 63235.92,
+          "portableOff": "committed unsupported",
+          "portableRecovery": "committed calculated"
+        },
+        "fullSchemaLegalAlternate": {
+          "masterSnapshotSchemaParsed": true,
+          "preparedProfileKeySameForOnOffRecovery": true,
+          "alternateChoiceDistinctProfileKey": true,
+          "alternateChoiceResult": "calculated"
+        },
+        "variantOwnerProbe": {
+          "offLastSelectionWithEarlierActive": "earlier attack variant selected",
+          "offAllSelections": "nonAttack base rejected",
+          "reenable": "last attack variant selected",
+          "scope": "variant schemas and mocked typed operations; not a full scenario"
+        },
+        "fullSchemaLegalAlternatePath": {
+          "masterSnapshotSchemaParsed": true,
+          "plan": "first structural skill, then second structural skill, then attack NP",
+          "preparedProfileUnchanged": true,
+          "enabled": {
+            "preparedVariant": "probe:path-alt-np",
+            "orderedVariant": "probe:path-alt-np",
+            "status": "calculated",
+            "np1Average": 32474.71
+          },
+          "excludedLastControl": {
+            "preparedVariant": "probe:path-alt-np",
+            "orderedVariant": "505701",
+            "status": "calculated",
+            "np1Average": 48664.825,
+            "controlledOperations": "both notApplied"
+          },
+          "finding": "A different attack profile is calculated after off; both-calculated S4 gate alone cannot prove selected-profile continuity."
+        }
+      },
+      "artifact": {
+        "path": ".test-results/tsk-08-s4-structural-control-20260925/structural-control-research.json",
+        "bytes": 5885,
+        "sha256": "6b7df7136bd00d61b297a757ca334407af8089d96aed4a86dda616fc8ea555ce"
+      },
+      "codeSymbols": {
+        "intendedProfile": "sourceCollection.ts::resolveAttackerFormExecution yields singular terminal state; attackProfile.ts::attackProfileForTerminalState maps it to typed AttackProfile or rejects ambiguous/missing form",
+        "actualOrderedVariant": "candidateSelection.ts::resolveCandidateSelections and variantSelection.ts::resolveActiveVariantTransactions choose the last enabled structural transaction or base variant",
+        "outcome": "candidateResult.ts::assembleCandidateResult folds nonAttackDamage into unsupported; scenario.ts::resolvedCalculationResult projects status; portableCalculation.ts::attemptPortableCalculationScenarioChange commits non-invalid results"
+      },
+      "limitations": [
+        "Specify typed execution/application outcome for an ordered attack variant different from the prepared AttackProfile, including whether calculator should show unavailable and how same-profile alternate paths are handled.",
+        "Trace missing/ambiguous preparation profile, explicit invalid variant, target ambiguity and required input through the same proof without issue-string classification.",
+        "Specify S4 gate proof payload from preparation receipt plus ordered selection, and check calculator/ranking and portable recovery paths before product implementation."
+      ],
+      "sourceDiffIdentity": "empty; source/test files match HEAD",
+      "verification": "Four ignored diagnostic probes completed: published-master on/off/on and portable recovery; full masterSnapshotSchema alternate choice and two-action alternate path; variant-level fallback selection. No source test or production producer rerun.",
+      "remaining": "Saved 9 S4 failures, B2/B3 and other ratchets remain Blocking; TSK-08 in_progress, TSK-09.1/09 blocked.",
+      "nextOperation": "In a future implementation session, define typed selected-profile continuity at execution/application and S4 proof using preparation terminal profile and ordered actual selection. Include no-attack and different-attack outcomes, explicit invalid/unresolved counterexamples, and portable recovery. Do not implement in this research session or reclassify by issue text."
     }
   ],
-  "currentBoundedUnit": "S4 505600 implementation stopped at unplanned AttackProfile intent boundary; 9 gate failures remain Blocking"
+  "currentBoundedUnit": "S4 505600 derived-intent and alternate-path research; no product change and 9 gate failures remain Blocking"
 }
