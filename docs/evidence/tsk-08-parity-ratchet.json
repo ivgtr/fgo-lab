@@ -3793,7 +3793,37 @@
       "preserved": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0, existing digest, candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "nextOperation": "Set the governing calculator structural-control-off contract and typed proof boundary; then propose one bounded implementation plan and focused recovery/alternate fixtures. No push.",
       "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
+    },
+    {
+      "name": "S4 505600 structural control implementation boundary stopped before product edits",
+      "baselineHead": "d9ae3e239a1f8e84c5e87568d923e22314aec4f8",
+      "scope": {
+        "ownerId": "505600",
+        "effectOccurrenceId": "2619550:532:0",
+        "operationKinds": [
+          "transformActorForm",
+          "selectNoblePhantasmVariant"
+        ]
+      },
+      "finding": "Calculator scenario has no selected AttackProfile identity; preparation selects an attack variant before ordered inclusion, while ordered execution can fall back to nonAttack base on off. Existing unsupported conflates reachability and invalid selection. The approved typed proof boundary cannot be implemented safely without deciding whether existing plan/receipt identifies the intended profile.",
+      "codeSymbols": [
+        "schema/src/index.ts::resolvedScenarioSchema",
+        "scenario.ts::resolveScenarioPreparationOutcome",
+        "executionPlan.ts::compileExecutionPlan",
+        "candidateSelection.ts::validateCandidateSelections",
+        "candidateResult.ts::assembleCandidateResult",
+        "productionParityDiagnostics.ts::auditProductionUserControlObservations"
+      ],
+      "diagnosticArtifact": {
+        "path": ".test-results/tsk-08-s4-structural-control-20260925/structural-boundary-diagnostic.json",
+        "bytes": 3143,
+        "sha256": "222d79641401de7d2f28039e0d6a69234dd76e613cb159787eb476b55a7c9da3"
+      },
+      "sourceDiffIdentity": "empty; HEAD source/test unchanged",
+      "verification": "Read-only symbol and saved-artifact inspection only; no source tests run. HEAD archive plus the two changed documents passed docs-integrity tests 6/6, docs integrity, JSON bounded-unit/status check, and git diff --check; candidate document hashes matched the worktree.",
+      "remaining": "9 saved S4 failures remain Blocking, including 7 outside this family and B2/B3. TSK-08 in_progress; TSK-09.1/09 blocked.",
+      "nextOperation": "After approval of revised diagnostic plan, run one small schema-legal alternate-variant fixture and sequential on/off/on trace. Determine typed profile intent from existing plan/receipt or document necessary request identity change and fingerprint impact. Do not reclassify arbitrary nonAttackDamage or weaken S4 gate."
     }
   ],
-  "currentBoundedUnit": "S4 505600 structural control exclusion diagnosed without product or gate change; 9 gate failures remain Blocking"
+  "currentBoundedUnit": "S4 505600 implementation stopped at unplanned AttackProfile intent boundary; 9 gate failures remain Blocking"
 }
