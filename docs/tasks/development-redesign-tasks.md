@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.52"
+document_version: "1.7.53"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2856,3 +2856,11 @@ Current bounded-unit handoff（2026-09-25、S4 owner `2301100` 3 controlの到�
 独立HEAD archive＋今回source／test差分candidateでroot／Web typecheck、対象ESLint／Prettier、focused unit 14/14成功。小fixtureは固定traitの月下true・日輪false・未固定での明示成立宣言、active-only provenance、非Arts cardの`impossible`と実入力非寄与、競合fact／choice、off→再on、JSON保存復元、calculatorとrankingの別経路を確認した。UIは月下choice 0の候補→選択中の表示と、準備choice専用commandを確認した。実producerの1,590 expected／observedは不変。対象3件はslot 1→slot 2 choice 0→slot 3、宝具variant `2301198`でon/offが両側`calculated`、event／projection・effective contribution・実damage input・NP1平均が対応して変わった。日輪variant `2301101`の型付き衝突も保持。S4 failureは5→2で除去は対象3件のみ、新規0。準備候補は対象ownerで22生成／14終端、最終監査所要時間は30,494→32,522 ms（+2,028 ms、+6.7%）。先行candidateの36,009／37,213 msも記録し、実行時間のばらつきを区別する。`pnpm`は外部SQLite storeでscript前に失敗し、既存node_modules＋同じgeneric runnerへ切り替えた。architecture行数テストは7/9、HEADから無変更の`engine.ts`と`candidateSelection.ts`の2件が失敗し、以前の`candidateExecution.ts`という箇所名とは現HEADで異なる。artifactのbytes・SHA-256、対象identity・値、検証manifestは[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitとignored `.test-results/tsk-08-2301100-final-20260925/final-evidence.json`を参照する。
 
 残るowner `1000100`／`3300200`の2件、他ratchet、TSK-08全体の収束は今回の対象外Blocking。TSK-06.5の34,640 outcomes・34,600 calculated／parity・40 unavailable・final unsupported／invalid／inputRequired各0と既存digest、candidate status／eligibility、production output／canonical input／fingerprint、TSK-07 cache／stale-response evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。全件production／audit／qualityとpushは行わない。次は残る2 identityを別bounded unitとして扱う。
+
+Current bounded-unit handoff（2026-09-25、S4 owner `1000100` HP live-readの限定診断）:
+
+開始HEAD `f289a0d5cf8c546e6da25f2b3240df6e6dcba812`、tracked worktree／index空。最新producerの1,590 identityと2 failures、および記載されたproducer／関連4 artifactのbytes・SHA-256を照合した。今回の承認範囲は診断と資料commitだけで、製品source／test、S4 producer／gateは変更していない。ignored診断Vitestは最終1/1、warning 0。`pnpm test:docs`は外部SQLite storeでscript前に停止したため、同じdocs検証本体を直接実行して6/6とintegrity、対象Prettierに成功した。実identity、on/off実値、artifactとrunner manifestのbytes・SHA-256は[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを参照する。
+
+対象attackBuffのcanonical条件は攻撃役HP `0〜500‰`で、projectionは`attackerHpPermille`を要求する。S4 producerは初期入力を`500‰`へ設定するが、既定の準備planにある宝具前HP回復 `3,000`（occurrence `446:0`）の後、実readは`8,950/11,901 = 752‰`となる。このためon/offともoperation／projectionが`notApplied`、実attackBuff入力`0.3`、NP1平均`48,824.155`で同値になる。初期`249‰`も回復後`501‰`で不成立。初期`240‰`は回復後`5,856/11,901 = 492‰`となり、同一scenarioのon/offでoperation／projectionが`applied`／`notApplied`、effective true／false、attackBuff入力`0.604`／`0.3`、NP1平均`60,194.84`／`48,824.155`に分かれた。初期`200‰`でも成立を確認した。effect chip commandはHP事実を生成していない。観測経路の原因はS4監査の**初期HP witnessとordered read時点の混同**であり、executor修正の根拠ではない。
+
+次の承認待ち実装計画は、このcontrolのcanonical HP条件から有限な初期witness候補を選び、準備後のlive readと同一AttackProfileのon/offで成立を検証してS4 producerへ接続すること。既存`rankingHpInitialBoundaries`の候補責務を評価し、候補数・時間・1,590 identityへの影響を測ってから採用する。`240`の固定規則、ID／effect ID／label分岐、chipによるHP生成、数値fallback、部分適用、gate除外は使わない。`2301100`の月下到達候補と日輪型付き衝突を回帰条件に残す。`3300200`のbattle point phase条件は別原因・別bounded unitとして扱う。他ratchetもBlockingのため、TSK-08は`in_progress`、TSK-09.1／09は`blocked`。全件production／audit／qualityとpushは未実施。次操作は`1000100`の実装境界について利用者確認を得ること。
