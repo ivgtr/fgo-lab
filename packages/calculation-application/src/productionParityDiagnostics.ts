@@ -399,6 +399,13 @@ export interface ProductionUserControlObservation {
     kind: 'default' | 'reachableAlternate';
     plan: readonly PreNoblePhantasmCommand[];
   };
+  hpWitness?: {
+    initialPermille: number;
+    livePermille: number;
+    currentHp: number;
+    maximumHp: number;
+    evaluatedCandidates: number;
+  };
   conflictCounterexample?: {
     plan: readonly PreNoblePhantasmCommand[];
     profileKey: string | null;

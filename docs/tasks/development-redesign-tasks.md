@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.53"
+document_version: "1.7.54"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2864,3 +2864,11 @@ Current bounded-unit handoff（2026-09-25、S4 owner `1000100` HP live-readの�
 対象attackBuffのcanonical条件は攻撃役HP `0〜500‰`で、projectionは`attackerHpPermille`を要求する。S4 producerは初期入力を`500‰`へ設定するが、既定の準備planにある宝具前HP回復 `3,000`（occurrence `446:0`）の後、実readは`8,950/11,901 = 752‰`となる。このためon/offともoperation／projectionが`notApplied`、実attackBuff入力`0.3`、NP1平均`48,824.155`で同値になる。初期`249‰`も回復後`501‰`で不成立。初期`240‰`は回復後`5,856/11,901 = 492‰`となり、同一scenarioのon/offでoperation／projectionが`applied`／`notApplied`、effective true／false、attackBuff入力`0.604`／`0.3`、NP1平均`60,194.84`／`48,824.155`に分かれた。初期`200‰`でも成立を確認した。effect chip commandはHP事実を生成していない。観測経路の原因はS4監査の**初期HP witnessとordered read時点の混同**であり、executor修正の根拠ではない。
 
 次の承認待ち実装計画は、このcontrolのcanonical HP条件から有限な初期witness候補を選び、準備後のlive readと同一AttackProfileのon/offで成立を検証してS4 producerへ接続すること。既存`rankingHpInitialBoundaries`の候補責務を評価し、候補数・時間・1,590 identityへの影響を測ってから採用する。`240`の固定規則、ID／effect ID／label分岐、chipによるHP生成、数値fallback、部分適用、gate除外は使わない。`2301100`の月下到達候補と日輪型付き衝突を回帰条件に残す。`3300200`のbattle point phase条件は別原因・別bounded unitとして扱う。他ratchetもBlockingのため、TSK-08は`in_progress`、TSK-09.1／09は`blocked`。全件production／audit／qualityとpushは未実施。次操作は`1000100`の実装境界について利用者確認を得ること。
+
+Current bounded-unit handoff（2026-09-25、S4 owner `1000100` HP witness監査実装）:
+
+開始HEADは`82246cb43687d4878d2c4d2db69fdfe1e1d6afdc`、tracked worktree／indexは空。承認された範囲でS4 producerだけがcanonical HP条件を持つcontrolに有限な初期HP候補を作り、既存の準備・ordered executionでlive read、同一AttackProfile、同一scenarioのon/off、operation／projection／effective contribution、damage input・最終resultを検証して採用する。既存`rankingHpInitialBoundaries`はrankingの静的source列とworld候補を所有するため監査の選択済み準備planへ直接流用せず、初期1〜1000‰の有限域で境界候補を優先し、必要時は全域を検証する。候補の状態・条件・結果を推測せず、未成立はS4 gate failureとして残す。製品executor・calculator／ranking semantics・UI・保存schema・S4 gate判定は変更していない。
+
+独立HEAD archive＋今回差分candidateでfocused unit 39/39、root／Web typecheck、対象ESLint／Prettierが成功。小fixtureは初期500→live752、249→501の条件不成立、240→492の成立、on/offのevent／projection／effective contribution／damage input／最終damage、JSON保存復元とoff→再onを確認した。対象producerは1,590 expected／observedを維持し、HP controlは初期1‰・準備後3,011/11,901＝253‰を3候補評価で採用。on/offのoperation・projectionは`applied`／`notApplied`、effectiveはtrue／false、attackBuff入力0.699／0.3、NP1平均63,748.185／48,824.155。`2301100`の月下3件と日輪の型付き衝突も残る。S4 failureは2→1で、残る1件はowner `3300200`の`userControlDidNotReachOperationOrDamage`。producer全file所要時間は先行32,522 msから32,820 msへ変化（+298 ms、+0.9%）し、実行時間のばらつきの範囲。候補生成は最大1,000初期値／対象HP control、実評価は3件。`pnpm`は外部SQLite storeでscript前に停止したため、既存node_modulesと同じgeneric runnerを使用した。artifactとbytes／SHA-256は[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitとignored `.test-results/tsk-08-1000100-final-20260925/producer-verified/`を参照する。
+
+owner `3300200`のphase条件と他ratchetは別原因のBlockingとして残す。TSK-06.5の34,640 outcomes、既存digest・candidate status／eligibility・production output／canonical input／fingerprint、TSK-07 cache／stale-response evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。全件production／audit／qualityとpushは行わない。次は`3300200`を別bounded unitとして診断し、その後に他ratchetと最終ゲートへ進む。今回差分と資料だけをlocal commitする。

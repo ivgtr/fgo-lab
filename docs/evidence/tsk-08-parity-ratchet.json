@@ -4469,7 +4469,60 @@
       "implementationBoundary": "Future approval required: S4 producer selects a canonical initial-HP witness validated against ordered terminal HP read, keeps same AttackProfile and on/off scenario. Reuse or assess rankingHpInitialBoundaries as existing finite candidate owner; measure candidate count and duration before adoption. Retain 1590 identity set, owner 2301100 moon reachable profile and day typed conflict, explicit invalid/inputRequired/unsupported outcomes and fail-closed gate. No ID/effect-ID/label branch, fixed 240 product rule, numeric fallback, partial application or gate exclusion. Calculator/ranking/UI/save/recovery require regression checks if common semantics change.",
       "remaining": "Owner 1000100 and 3300200 S4 failures remain in saved production artifact; this diagnostic does not close either. Other ratchets remain Blocking. TSK-08 in_progress; TSK-09.1/09 blocked.",
       "nextOperation": "Present the bounded 1000100 audit witness implementation plan for confirmation. Independently diagnose owner 3300200 in a later unit. Do not implement in this diagnostic session."
+    },
+    {
+      "name": "S4 owner 1000100 HP live-read audit witness implementation",
+      "baselineHead": "82246cb43687d4878d2c4d2db69fdfe1e1d6afdc",
+      "scope": "S4 audit producer HP initial witness selection and focused semantic fixture only. No product execution, calculator/ranking policy, UI, persistence schema, S4 gate relaxation, battle point control, other ratchet or protected evidence change.",
+      "selection": "The producer uses canonical ConditionExpression attackerHpPermille leaves to prioritize legal initial boundary values, with the finite 1..1000 domain as a complete fallback. A candidate is adopted only after ordered preparation returns an absolute live HP read, both sides calculate with the same matched AttackProfile, the selected operation/projection/effective contribution apply only on, and bound damage input and rows differ. The effect command changes only the decision; HP remains an independent scenario input. No candidate means the existing gate fails closed.",
+      "rankingBoundaryAssessment": "rankingHpInitialBoundaries partitions ranking static source/world candidates. The S4 producer has a selected calculator preparation plan and must validate its actual ordered live read; direct use of ranking static sources would substitute a different source/order owner. The bounded audit search evaluates canonical initial values with the existing application/executor and stops at a proven candidate.",
+      "identity": {
+        "ownerId": "1000100",
+        "projectionKey": "attacker:attacker:1000100:355551:2465:0",
+        "operationId": "attacker:attacker:1000100:355551:2465:0:modifier:attackBuff",
+        "condition": "attackerHpPermille atLeast 0 AND atMost 500",
+        "candidateInitialPermille": 1,
+        "evaluatedCandidates": 3,
+        "liveHp": "3011/11901",
+        "livePermille": 253,
+        "profileContinuity": "matched/matched on and off, identical selected AttackProfile",
+        "operationAndProjection": "applied/notApplied",
+        "effectiveContribution": "true/false",
+        "damageInputAttackBuff": "0.699/0.3",
+        "np1Average": "63748.185/48824.155"
+      },
+      "producer": {
+        "expectedObservedControls": 1590,
+        "failureCountBeforeAfter": "2/1",
+        "remainingFailure": "owner 3300200 ignore-defense userControlDidNotReachOperationOrDamage; separate battle point phase condition",
+        "priorDurationMs": 32522,
+        "candidateDurationMs": 32820,
+        "candidateCountBound": 1000,
+        "candidateCountEvaluatedForTarget": 3,
+        "regression": "owner 2301100 moon reachable control pairs and three original day-side selected-form typed conflicts retained"
+      },
+      "artifacts": {
+        "producer": {
+          "path": ".test-results/tsk-08-1000100-final-20260925/producer-verified/production-inert-control-production.json",
+          "bytes": 65443217,
+          "sha256": "aaff5eaf4bad9c631d99f9e61643d042c124dc9b1dc4217be22613d49cab2f5e"
+        },
+        "producerManifest": {
+          "path": ".test-results/tsk-08-1000100-final-20260925/producer-verified/manifest.json",
+          "bytes": 3043,
+          "sha256": "23dbf96f2fc567bcda18501278c8d9f2dc33cd6abfac81b90bed07047d933562"
+        },
+        "unitManifest": {
+          "path": ".test-results/tsk-08-1000100-final-20260925/unit-final/manifest.json",
+          "bytes": 3172,
+          "sha256": "1240ad08b2ac1e70847ed8c6fe0651c85fecef0e98f5d3ddb002f69875320541"
+        }
+      },
+      "verification": "Independent HEAD archive plus only this unit's source/test diff: focused unit 39/39 (HP condition boundaries, off/re-on, JSON restore, 2301100 reachable profile, calculator UI, HP execution and portable path), root/Web typecheck, targeted ESLint/Prettier passed. Focused S4 producer retained 1590 identities and failed only on out-of-scope 3300200. pnpm stopped before scripts on external SQLite store; existing node_modules and same generic runCapturedTest were used. Unchanged HEAD architecture line-count failures in engine.ts and candidateSelection.ts were not rerun. Artifact bytes/SHA-256 and docs checks are recorded with this unit.",
+      "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, existing digests, candidate status/eligibility, production output/canonical input/fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "remaining": "Owner 3300200 and other ratchets remain Blocking. TSK-08 in_progress; TSK-09.1/09 blocked. No full production/audit/quality or push.",
+      "nextOperation": "Diagnose owner 3300200 battle point phase in a separate bounded unit, then resolve other ratchets and run final gates only after Blocking is zero."
     }
   ],
-  "currentBoundedUnit": "S4 owner 1000100 HP live-read diagnostic completed; implementation awaits separate confirmation"
+  "currentBoundedUnit": "S4 owner 1000100 HP live-read audit witness implemented; owner 3300200 and other ratchets remain Blocking"
 }

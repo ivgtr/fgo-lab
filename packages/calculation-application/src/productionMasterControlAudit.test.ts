@@ -10,6 +10,7 @@ import {
   canNormalizeDamageEffect,
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
+  hpPermille,
   type ConditionExpression,
   type EffectProjection,
   type TraitScope,
@@ -130,7 +131,40 @@ function evaluateWithOrderedOperationEvents(
   );
   if (calculation.executionObservation !== prepared.executionObservation)
     throw new TypeError(`production_control_observation_mismatch:${scenario.attacker.servantId}`);
-  return { calculation, observation: prepared.executionObservation };
+  return { calculation, observation: prepared.executionObservation, prepared };
+}
+
+function hpControlInitialCandidates(condition: ConditionExpression): readonly number[] {
+  const thresholds = new Set<number>();
+  const neighbors = new Set<number>();
+  const visit = (expression: ConditionExpression): void => {
+    if (expression.kind === 'quantity' && expression.quantity === 'attackerHpPermille') {
+      if (expression.value >= 1 && expression.value <= 1000) thresholds.add(expression.value);
+      for (const value of [expression.value - 1, expression.value + 1])
+        if (value >= 1 && value <= 1000) neighbors.add(value);
+    } else if (expression.kind === 'all' || expression.kind === 'any') {
+      expression.expressions.forEach(visit);
+    } else if (expression.kind === 'not') {
+      visit(expression.expression);
+    }
+  };
+  visit(condition);
+  // The ordered preparation can move a live read away from every initial threshold.
+  // The complete legal initial domain is finite; evaluate only until a proven witness is found.
+  return [
+    ...[...thresholds].sort((left, right) => right - left),
+    ...[...neighbors].sort((left, right) => right - left),
+    1,
+    1000,
+    ...Array.from({ length: 1000 }, (_, index) => index + 1),
+  ].filter((value, index, values) => values.indexOf(value) === index);
+}
+
+function hasAttackerHpCondition(condition: ConditionExpression): boolean {
+  if (condition.kind === 'quantity') return condition.quantity === 'attackerHpPermille';
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some(hasAttackerHpCondition);
+  return condition.kind === 'not' && hasAttackerHpCondition(condition.expression);
 }
 
 function controlDamageInputBinding(
@@ -521,10 +555,16 @@ describe('production master inventory ratchet', () => {
         }
         for (const effect of userEffects) {
           const control = userControls.find((candidate) => candidate.key === effect.projectionKey)!;
-          const decisionScenario =
-            effect.requiredQuantity === 'attackerHpPermille' &&
+          const hpCondition = effect.explanation.condition;
+          const hpInitialCandidates =
+            hpCondition !== null &&
+            hasAttackerHpCondition(hpCondition) &&
             effect.requiredQuantityOwner === 'attacker'
-              ? { ...scenario, attackerHpPermille: 500 }
+              ? hpControlInitialCandidates(hpCondition)
+              : [];
+          const decisionScenario =
+            hpInitialCandidates.length > 0
+              ? { ...scenario, attackerHpPermille: hpInitialCandidates[0]! }
               : scenario;
           let selectedScenario = applyEffectControlPresentationDecision(
             decisionScenario,
@@ -541,6 +581,15 @@ describe('production master inventory ratchet', () => {
               candidate.projectionKey === effect.projectionKey &&
               candidate.controllability === 'user',
           );
+          let hpWitness:
+            | {
+                initialPermille: number;
+                livePermille: number;
+                currentHp: number;
+                maximumHp: number;
+                evaluatedCandidates: number;
+              }
+            | undefined;
           let conflictCounterexample:
             | {
                 plan: ResolvedScenario['preNoblePhantasmPlan'];
@@ -675,6 +724,110 @@ describe('production master inventory ratchet', () => {
               selectedControlMembers = chosen.members;
             }
           }
+          if (
+            hpInitialCandidates.length > 0 &&
+            active.effects.find(
+              (candidate) =>
+                candidate.projectionKey === effect.projectionKey &&
+                candidate.operationId === effect.operationId,
+            )?.outcome !== 'applied'
+          ) {
+            let evaluatedCandidates = 0;
+            for (const initialPermille of hpInitialCandidates) {
+              if (initialPermille === selectedScenario.attackerHpPermille) continue;
+              evaluatedCandidates += 1;
+              const candidateScenario = {
+                ...selectedScenario,
+                attackerHpPermille: initialPermille,
+              };
+              const candidate = evaluateWithOrderedOperationEvents(
+                candidateScenario,
+                master,
+                versions,
+              );
+              const liveHp = candidate.prepared.orderedScenario?.hp?.actors.attacker;
+              const livePermille = hpPermille(liveHp);
+              const candidateEffect = candidate.calculation.effects.find(
+                (projection) =>
+                  projection.projectionKey === effect.projectionKey &&
+                  projection.operationId === effect.operationId,
+              );
+              if (
+                livePermille === null ||
+                liveHp?.kind !== 'absolute' ||
+                candidate.calculation.result.status !== 'calculated' ||
+                candidate.calculation.profileContinuity?.kind !== 'matched' ||
+                intendedProfileKey(candidate.calculation.profileContinuity) !==
+                  intendedProfileKey(active.profileContinuity) ||
+                candidateEffect?.outcome !== 'applied'
+              )
+                continue;
+              const candidateControl = candidate.calculation.effectControls.find(
+                ({ key }) => key === effect.projectionKey,
+              );
+              if (!candidateControl) continue;
+              const offScenario = applyEffectControlPresentationDecision(
+                candidateScenario,
+                candidateControl,
+                false,
+                candidate.calculation.activationRequirements,
+                candidate.calculation.effects,
+                candidate.calculation.effectInputs,
+              );
+              const off = evaluateWithOrderedOperationEvents(offScenario, master, versions);
+              const offLiveHp = off.prepared.orderedScenario?.hp?.actors.attacker;
+              const onSide = userControlSideObservation(
+                candidateEffect,
+                candidate.calculation,
+                candidate.observation,
+              );
+              const offSide = userControlSideObservation(
+                candidateEffect,
+                off.calculation,
+                off.observation,
+              );
+              if (
+                off.calculation.result.status !== 'calculated' ||
+                offLiveHp?.kind !== 'absolute' ||
+                offLiveHp.current !== liveHp.current ||
+                offLiveHp.maximum !== liveHp.maximum ||
+                off.calculation.profileContinuity?.kind !== 'matched' ||
+                off.calculation.profileContinuity.intendedProfileKey !==
+                  candidate.calculation.profileContinuity.intendedProfileKey ||
+                !onSide.operationEvents.some(
+                  ({ operationOutcome }) => operationOutcome === 'applied',
+                ) ||
+                !offSide.operationEvents.some(
+                  ({ operationOutcome }) => operationOutcome === 'notApplied',
+                ) ||
+                !onSide.effectiveContributions.some(({ effective }) => effective) ||
+                !offSide.effectiveContributions.some(({ effective }) => !effective) ||
+                onSide.inputBinding.kind !== 'bound' ||
+                offSide.inputBinding.kind !== 'bound' ||
+                JSON.stringify(onSide.inputBinding.value) ===
+                  JSON.stringify(offSide.inputBinding.value) ||
+                JSON.stringify(onSide.damageResult.rows) ===
+                  JSON.stringify(offSide.damageResult.rows)
+              )
+                continue;
+              selectedScenario = candidateScenario;
+              active = candidate.calculation;
+              activeObservation = candidate.observation;
+              selectedControlMembers = active.effects.filter(
+                (projection) =>
+                  projection.projectionKey === effect.projectionKey &&
+                  projection.controllability === 'user',
+              );
+              hpWitness = {
+                initialPermille,
+                livePermille,
+                currentHp: liveHp.current,
+                maximumHp: liveHp.maximum,
+                evaluatedCandidates,
+              };
+              break;
+            }
+          }
           selectedCalculations.set(effect.projectionKey, active);
           const activeEffect = active.effects.find(
             (candidate) => candidate.projectionKey === effect.projectionKey,
@@ -727,6 +880,7 @@ describe('production master inventory ratchet', () => {
                 kind: conflictCounterexample ? 'reachableAlternate' : 'default',
                 plan: selectedScenario.preNoblePhantasmPlan,
               },
+              ...(hpWitness ? { hpWitness } : {}),
               ...(conflictCounterexample
                 ? {
                     conflictCounterexample: {
