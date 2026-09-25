@@ -4090,7 +4090,39 @@
       "verification": "Saved on/off artifacts and source symbols read; no new producer, source test, product change, or full gate executed.",
       "remaining": "Seven S4 failures remain Blocking in total: B2, B3 and five others. TSK-08 in_progress; TSK-09.1/09 blocked. TSK-06.5 and TSK-07 protected evidence unchanged; no push.",
       "nextOperation": "Run only the bounded semantic fixture/diagnostic matrix in the ignored artifact, inspect typed fixed-fact and pre-group state results, then present a code-derived implementation plan for confirmation before editing product source."
+    },
+    {
+      "name": "S4 B2 2501400 attacker magicBullet transition and mutation boundary deep diagnostic",
+      "baselineHead": "f104e4776291575cf53976fa99a569427a5f2e12",
+      "scope": "Read-only bounded diagnostic after user confirmation; no product source/test edit, producer rerun, or S4 gate relaxation.",
+      "savedProduction": "On alone asserts attacker:magicBullet=true. Both select 2501500/2501501, end with attacker count 0 and attackerState count 3, calculated NP1 average 48109.855, npSpecialMultipliers [1.3,1.3,1.3,1.3,1.3], and applied projection. Gate remains userControlNpSpecialInputNotChanged.",
+      "governing": "ADR 024 form trait replacement and prior effect retention; ADR 009 E3.3 external actor world assertion as initial-layer fact; damage-effect-execution 8.6, 8.8, 8.12.6 fixed-fact and committed-mutation conflicts, atomic state, and damage-input reachability.",
+      "directSymbols": "projection.ts::traitCountProjections -> effectDecision.ts::applyEffectDecisionCommand -> candidatePreparation.ts::prepareExecutableCandidate -> candidateSelection.ts::validateCandidateSelections -> variantSelection.ts::applySelectedNoblePhantasmContext -> state.ts::applyActorFormTransition -> candidateExecution.ts::executeOrderedScenarioCandidateInternal -> candidateResult.ts::assembleCandidateResult -> projection.ts::projectWorldAssumptionAtDamageEvaluation / effectiveContributions.ts::effectiveContributionsForOperation -> npDamageExecution.ts::applyNoblePhantasmDamage -> productionParityDiagnostics.ts NP-special input gate.",
+      "probe": {
+        "cases": 14,
+        "mode": "Published owner-only master snapshot passed masterSnapshotSchema; compiler emitted terminal intrinsic traits and schema-legal add/remove to attackerState and suppress to attacker. A same-form select plus remove/suppress action also passed master schema, compiled, and reached candidate selection. Saved NP damage operation supplied diagnostic input only.",
+        "positiveTransition": "External attacker assertion writes count 1 on initial form, form transition resets 0; synthetic post-skill attackerState count 3 yields NP-special input 1.3 across levels, same as off.",
+        "terminalTrueVsNegative": "Connected master-schema -> compiler -> candidate fixture: initial validation satisfied; terminal fixed-fact validation conflict, but candidate has no typed issue and diagnostic NP-special input 1.1 across levels.",
+        "initialOnlyTrueVsNegative": "Initial validation conflict with typed constraintConflict; no NP input accepted.",
+        "legalMutationScopes": "Compiler maps contextMutation addTrait/removeTrait to attackerState and suppressInitialTrait to attacker initial-layer suppression. The first synthetic attacker-scope add/remove collision was unreachable and is discarded. Attacker initial negative plus attackerState add is satisfiable combined-OR semantics, not a same-scope conflict.",
+        "sameFormRemove": "Connected schema-legal same-form selection: preapplied remove sets attackerState map false but leaves its count 1, unlike ordered remove which clears count. Terminal facts are satisfiable; diagnostic NP-special input 1.2 with attacker count 1 and state count 1.",
+        "sameFormSuppress": "Connected schema-legal same-form selection: suppression makes attacker initial-layer condition false while attacker count remains 1; trait-count NP input is 1.1. Predicate/count mismatch needs one canonical rule.",
+        "alternate": "Schema-parsed alternate selected NP variant reaches another form; external positive count is again lost through form transition.",
+        "rollbackAndRecovery": "Invalid selected variant and failed preapplied form transaction return typed invalidNoblePhantasmVariant without NP input. Application off removes and re-on restores assertion identity, but unchanged B2 transition still loses it."
+      },
+      "artifacts": {
+        "summary": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/deep-diagnostic.json", "bytes": 18877, "sha256": "f140911146d09103db4cf58629d70ce08838d55c24f74d63b4c376041626a51c"},
+        "masterSlice": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-b2-fixture.json", "bytes": 140333, "sha256": "fdedfc93a5b32089997890ab7fd44daa02c4ee7bb58847276f006c4083e2d8a7"},
+        "masterProbeSource": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-boundary.test.ts", "bytes": 12059, "sha256": "818fd78860ac3f53b9b62c29321c14b9de22fd4a382bac12b0e8e510427b1c48"},
+        "masterProbeResult": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/master-boundary.json", "bytes": 7805, "sha256": "5c37cd57bbe1799b6a6ea7c71bacbe384538f6d32e7440893e2ac42e2b45d3c2"},
+        "probeResult": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.json", "bytes": 35227, "sha256": "5680f0c632d396310a5fd6ba9f5247e5e2bc0b6d7c55cb16f97f095a2d0b90f8"},
+        "probeSource": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.test.ts", "bytes": 10930, "sha256": "1fc9f25e42e2ef8cd2987d822b00bd62ea79e5f2e3cec8c0a86e884dc7f8516d"},
+        "probeConfig": {"path": ".test-results/tsk-08-b2-magic-bullet-20260925/boundary-probe.config.ts", "bytes": 602, "sha256": "19c574f420d0a8e0535823737caefe93060b1ca8a5e6316983d9d9842cd7890a"}
+      },
+      "verification": "Ignored focused Vitest diagnostic 2/2 passed. Independent HEAD plus two document files candidate: docs tests 6/6 and docs integrity passed; target Prettier, JSON parse, artifact bytes/SHA-256 passed. No product source test, production producer, full audit, or quality was run.",
+      "decision": "Implementation boundary is now grounded in connected master-schema/compiler/candidate counterexamples. Keep external attacker assertion provenance separate from replaceable form intrinsic traits, validate terminal fixed facts before selected transaction commit, and unify preapply/ordered mutation predicate-count rules and typed rollback. Do not use a simple fact overlay or projection-only gate.",
+      "nextOperation": "Present this bounded B2 product implementation plan for user confirmation; then implement only B2 and same-cause direct paths with focused semantic and producer on/off proof. B2/B3 and five other S4 failures remain Blocking; TSK-08 in_progress, TSK-09.1/09 blocked. Do not change TSK-06.5/TSK-07 protected evidence, run full gates, or push in the research unit."
     }
   ],
-  "currentBoundedUnit": "S4 B2 2501400 read-only transition-boundary research; implementation remains Blocking"
+  "currentBoundedUnit": "S4 B2 2501400 transition/mutation deep diagnostic; product implementation remains Blocking"
 }
