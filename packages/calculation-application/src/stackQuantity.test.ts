@@ -3,7 +3,9 @@ import {
   servant,
   source,
   createStackMaster,
+  createSharedStackConditionMaster,
   stackEffectTemplate,
+  targetPoisonStack,
 } from './stackQuantityFixture';
 import { describe, expect, it } from 'vitest';
 import { masterSnapshotSchema, stackInputSchema, npDamageSpecSchema } from '@fgo-lab/master-data';
@@ -42,6 +44,166 @@ const versions = {
 };
 
 describe('canonical stack quantity', () => {
+  it('uses a shared physical stack for exact positive state conditions', () => {
+    const data = createSharedStackConditionMaster();
+    const attacker = data.servants[0]!;
+    const base = createDefaultResolvedScenario(data, undefined, attacker);
+    const initial = calculateScenario(base, data, versions);
+    for (const effectId of ['fixture-no-input', 'fixture-stack-input']) {
+      const control = initial.effectControls.find(
+        ({ projection }) => projection.source.effectId === effectId,
+      );
+      expect(control).toBeDefined();
+      if (!control) throw new Error('shared stack condition control');
+      if (control.projection.decision.state === 'none') throw new Error('uncontrolled fixture');
+      const decisionKey = control.projection.decision.decisionKey;
+      const enabled = applyEffectControlPresentationDecision(
+        base,
+        control,
+        true,
+        initial.activationRequirements,
+        initial.effects,
+        initial.effectInputs,
+      );
+      expect(enabled.canonicalInputValues[targetPoisonStack.key]).toEqual({
+        kind: 'integer',
+        value: 1,
+      });
+      expect(
+        enabled.effectDecisions.find((decision) => decision.decisionKey === decisionKey)
+          ?.conditionSatisfaction,
+      ).toBe('assumeSatisfied');
+      const active = calculateScenario(enabled, data, versions);
+      expect(active.result.status).toBe('calculated');
+      if (active.status !== 'executable') throw new Error('shared stack execution');
+      expect(active.input.stackStateCounts?.targetState['fixture-poison']).toBe(1);
+      expect(
+        active.effects.find((effect) => effect.operationId === control.projection.operationId)
+          ?.outcome,
+      ).toBe('applied');
+      expect(
+        calculateScenario(
+          {
+            ...enabled,
+            worldFactAssertions: [
+              {
+                decisionKey: 'contradictory-poison',
+                fact: {
+                  kind: 'trait',
+                  scope: 'targetState',
+                  trait: 'fixture-poison',
+                  present: false,
+                },
+              },
+            ],
+          },
+          data,
+          versions,
+        ).result.status,
+      ).toBe('unsupported');
+      const excluded = applyEffectControlPresentationDecision(
+        enabled,
+        control,
+        false,
+        active.activationRequirements,
+        active.effects,
+        active.effectInputs,
+      );
+      expect(excluded.canonicalInputValues[targetPoisonStack.key]).toEqual({
+        kind: 'integer',
+        value: 1,
+      });
+      const inactive = calculateScenario(excluded, data, versions);
+      expect(inactive.result.status).toBe('calculated');
+      expect(
+        inactive.effects.find((effect) => effect.operationId === control.projection.operationId)
+          ?.outcome,
+      ).toBe('notApplied');
+
+      const twoStacks = applyCanonicalInputCommand(base, {
+        kind: 'setCanonicalIntegerInput',
+        key: targetPoisonStack.key,
+        value: 2,
+      });
+      expect(
+        applyEffectControlPresentationDecision(
+          twoStacks,
+          control,
+          true,
+          initial.activationRequirements,
+          initial.effects,
+          initial.effectInputs,
+        ).canonicalInputValues[targetPoisonStack.key],
+      ).toEqual({ kind: 'integer', value: 2 });
+      const invalid = applyCanonicalInputCommand(base, {
+        kind: 'setCanonicalIntegerInput',
+        key: targetPoisonStack.key,
+        value: targetPoisonStack.maximum + 1,
+      });
+      expect(() =>
+        applyEffectControlPresentationDecision(
+          invalid,
+          control,
+          true,
+          initial.activationRequirements,
+          initial.effects,
+          initial.effectInputs,
+        ),
+      ).toThrow('invalid_stack_condition_input');
+    }
+
+    const control = initial.effectControls.find(
+      ({ projection }) => projection.source.effectId === 'fixture-no-input',
+    )!;
+    const condition = control.projection.explanation.condition;
+    if (condition?.kind !== 'all') throw new Error('fixture condition');
+    const impossibleInference = {
+      ...control.projection,
+      explanation: {
+        ...control.projection.explanation,
+        condition: {
+          ...condition,
+          expressions: [
+            ...condition.expressions,
+            {
+              kind: 'trait' as const,
+              scope: 'targetState' as const,
+              trait: 'other',
+              present: true,
+            },
+          ],
+        },
+      },
+    };
+    expect(
+      applyEffectPresentationDecision(base, impossibleInference, true, [], initial.effects)
+        .canonicalInputValues[targetPoisonStack.key],
+    ).toBeUndefined();
+    const negative = {
+      ...control.projection,
+      explanation: {
+        ...control.projection.explanation,
+        condition: {
+          kind: 'not' as const,
+          expression: condition.expressions[0]!,
+        },
+      },
+    };
+    expect(
+      applyEffectPresentationDecision(base, negative, true, [], initial.effects)
+        .canonicalInputValues[targetPoisonStack.key],
+    ).toBeUndefined();
+    const ambiguousInput = { ...targetPoisonStack, key: 'second:poison-stack' };
+    expect(() =>
+      applyEffectPresentationDecision(
+        base,
+        control.projection,
+        true,
+        [],
+        [...initial.effects, { ...control.projection, requiredInputs: [ambiguousInput] }],
+      ),
+    ).toThrow('ambiguous_stack_condition_input');
+  });
   it('routes a stack-owned NP trait control through its physical count', () => {
     const data = createStackMaster(source, 250, ['fixture-stack']);
     const attacker = data.servants[0]!;

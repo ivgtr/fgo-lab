@@ -1,7 +1,9 @@
 import {
   conditionAllowsEffectLocalDecision,
   conditionHasNonActivationDecision,
+  mergeInputDefinitions,
   type ActivationRequirementOwner,
+  type ConditionExpression,
   type EffectProjection,
 } from '@fgo-lab/battle-execution';
 import type { CalculationScenario } from '@fgo-lab/schema';
@@ -293,6 +295,96 @@ function applyStackOwnedWorldFactPresentationDecision(
   );
 }
 
+function exactPositiveStateTrait(
+  condition: ConditionExpression | null,
+): { scope: 'attackerState' | 'targetState' | 'field'; trait: string } | null {
+  if (condition === null) return null;
+  if (condition.kind === 'all') {
+    const meaningful = condition.expressions.filter(
+      (expression) => expression.kind !== 'noblePhantasmVariant',
+    );
+    return meaningful.length === 1 ? exactPositiveStateTrait(meaningful[0]!) : null;
+  }
+  if (condition.kind === 'any' && condition.expressions.length === 1)
+    return exactPositiveStateTrait(condition.expressions[0]!);
+  if (
+    condition.kind !== 'trait' ||
+    !condition.present ||
+    !['attackerState', 'targetState', 'field'].includes(condition.scope)
+  )
+    return null;
+  return {
+    scope: condition.scope as 'attackerState' | 'targetState' | 'field',
+    trait: condition.trait,
+  };
+}
+
+function applyStackOwnedEffectConditionDecision(
+  scenario: ResolvedScenario,
+  projection: EffectProjection,
+  enabled: boolean,
+  peers: readonly EffectProjection[],
+): ResolvedScenario | null {
+  const decision = projection.decision;
+  if (
+    decision.state === 'none' ||
+    decision.kind !== 'effect' ||
+    decision.plan.condition !== 'userMayAssume'
+  )
+    return null;
+  const trait = exactPositiveStateTrait(projection.explanation.condition);
+  if (!trait) return null;
+  const matches = mergeInputDefinitions(
+    peers.flatMap((peer) =>
+      peer.requiredInputs.filter(
+        (input) =>
+          input.kind === 'effectStackCount' &&
+          input.quantitySource.scope === trait.scope &&
+          input.quantitySource.trait === trait.trait,
+      ),
+    ),
+  );
+  if (matches.length === 0) return null;
+  if (matches.length !== 1)
+    throw new TypeError(`ambiguous_stack_condition_input:${projection.projectionKey}`);
+  const input = matches[0]!;
+  if (input.kind !== 'effectStackCount') throw new TypeError('expected_stack_condition_input');
+  const positive = Math.max(
+    1,
+    input.minimum + Math.ceil((1 - input.minimum) / input.step) * input.step,
+  );
+  if (input.maximum < positive)
+    throw new TypeError(`unrepresentable_stack_condition_input:${input.key}`);
+  const decided = applyEffectDecisionCommand(scenario, {
+    kind: 'setEffectDecision',
+    decisionKey: decision.decisionKey,
+    operationEnabled: enabled,
+    conditionSatisfaction: enabled ? 'assumeSatisfied' : 'evaluate',
+  });
+  if (!enabled) return decided;
+  const explicit = scenario.canonicalInputValues[input.key];
+  if (
+    explicit &&
+    (!Number.isInteger(explicit.value) ||
+      explicit.value < input.minimum ||
+      explicit.value > input.maximum ||
+      (explicit.value - input.minimum) % input.step !== 0)
+  )
+    throw new TypeError(`invalid_stack_condition_input:${input.key}`);
+  const existing = explicit?.value ?? input.defaultValue;
+  const value =
+    existing >= positive &&
+    existing <= input.maximum &&
+    (existing - input.minimum) % input.step === 0
+      ? existing
+      : positive;
+  return applyCanonicalInputCommand(decided, {
+    kind: 'setCanonicalIntegerInput',
+    key: input.key,
+    value,
+  });
+}
+
 /**
  * Maps one visible effect-chip interaction to the independent scenario contracts it needs.
  * Deterministic quantity conditions remain evaluator-owned and are never asserted here.
@@ -307,6 +399,13 @@ export function applyEffectPresentationDecision(
   if (projection.proc.kind === 'chainedRolls')
     throw new TypeError(`chained_proc_requires_control_command:${projection.projectionKey}`);
   const sourceResolved = applyPresentationSourceDependencies(scenario, projection, enabled);
+  const stackConditionResolved = applyStackOwnedEffectConditionDecision(
+    sourceResolved,
+    projection,
+    enabled,
+    peers,
+  );
+  if (stackConditionResolved) return stackConditionResolved;
   const inclusionResolved =
     applyStackOwnedWorldFactPresentationDecision(sourceResolved, projection, enabled) ??
     applyEffectProjectionDecision(sourceResolved, projection, enabled);

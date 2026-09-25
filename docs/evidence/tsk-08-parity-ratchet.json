@@ -3649,7 +3649,79 @@
       "preserved": "TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digest; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "nextOperation": "Select one semantic family from the remaining 11 typed failures and propose a new bounded plan. Keep the current 11 Blocking; no push.",
       "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
+    },
+    {
+      "name": "S4 shared targetState stack condition control",
+      "date": "2026-09-25",
+      "status": "2 poison-state control conflicts corrected and independently verified; 9 other observed failures remain Blocking",
+      "authorization": "User approved the read-only plan for the 506000 shared-stack condition family, focused verification, records and local commit.",
+      "baselineHead": "064385c85e7462c23b8d750df67a4cc0c27ee431",
+      "initialState": {
+        "trackedWorktreeEmpty": true,
+        "indexEmpty": true,
+        "ignoredNextEnvPreserved": true,
+        "productionArtifactBytes": 55684557,
+        "productionArtifactSha256": "cdb23b0f04d9ad204a0d0ed5213744b82fe0f35617e1bf467e1b6c78646b729d",
+        "manifestSha256": "712c26d4c7a2c46c51a0f61d1ad5e90641156381871eb432df6b818bd001f9a9",
+        "stackOwnedEvidenceSha256": "c6e47e4ddf3f34637e95701385ab4dfa1674cd5439c1a34ed5d227927d9991ab"
+      },
+      "classification": {
+        "before": {
+          "userControlDamageOutcomeNotCalculated": 7,
+          "userControlNpSpecialInputNotChanged": 2,
+          "userControlDidNotReachOperationOrDamage": 2
+        },
+        "selectedFamily": "exact positive targetState:buffPoison effect conditions sharing a physical stack input",
+        "ownerId": "506000",
+        "operationIds": [
+          "attacker:attacker:506000:2673550:23549:0:modifier:powerMod",
+          "attacker:attacker:506000:2674650:23547:0:modifier:powerMod"
+        ],
+        "firstDifference": {
+          "path": "enabled.damageResult.status",
+          "expected": "calculated",
+          "actual": "unsupported",
+          "issue": "constraintConflict:initial:trait:targetState:buffPoison,...:traitPolarity:targetState:buffPoison"
+        },
+        "removedIdentities": 2,
+        "addedIdentities": 0,
+        "fullCanonicalFailures": ".test-results/tsk-08-s4-shared-poison-20260925/shared-poison-evidence.json"
+      },
+      "flow": {
+        "producer": "productionMasterControlAudit.test.ts exercises each user control through applyEffectControlPresentationDecision; the 23547 value expression declares stack:targetState:buffPoison and 23549 shares its exact positive state condition.",
+        "semanticOwner": "effectDecision.ts resolves only a uniquely merged typed state-trait stack input from peer projections. It raises the physical count on enable, retains valid positive counts, rejects invalid explicit counts, and leaves shared count intact when disabling one effect. The selected effect-local condition remains explicit because provenance can be unresolved from count alone.",
+        "consumer": "seedStackQuantities and ordered constraint/execution evaluate the canonical count and condition; calculator and ranking retain shared application/execution semantics. productionParityDiagnostics.ts remains strict.",
+        "governingRule": "damage-effect-execution section 8.8 fixed literals, constraint polarity and ordered state; section 8.12 input reachability; ADR 013 shared canonical input ownership. Multi-branch/negative/ambiguous inference is not converted to a physical count.",
+        "representative": "23549 enabled powerMod 0 -> 0.3 and 23547 enabled powerMod 0 -> 0.2; both enabled damage statuses unsupported -> calculated. Both excluded statuses remain calculated and their powerMod input remains 0."
+      },
+      "verification": {
+        "independentCandidate": "HEAD archive with only effectDecision.ts, stackQuantityFixture.ts and stackQuantity.test.ts copied from the worktree; all three source hashes matched during final verification.",
+        "sourceDiffSha256": "93b149071b73e58d62620f66a8b7f2cce704902ad9a6243dbd4db383fe47ce17",
+        "unit": "same generic runner and installed Vitest: stackQuantity 13/13; effectDecision 3/3; skip/todo 0",
+        "typecheckLintFormat": "candidate tsc -b, target ESLint --max-warnings=0 and Prettier check passed",
+        "producer": "focused real producer gate fails for other families: 11 -> 9; exactly the two selected identities removed, no additions; fresh expected and observed sets remain 1590 each; changed observations only the selected two",
+        "artifact": ".test-results/tsk-08-s4-shared-poison-20260925/producer-final/production-inert-control-production.json",
+        "artifactBytes": 55653544,
+        "artifactSha256": "e81df02a156005183f280548b8b8b0fffe7f437802d41d6b2c460e98c3d4603d",
+        "manifestSha256": "c4eab685dc6985246895b1c6c7724646d99a797a79eb00411c1d2448c738a932",
+        "artifactVerificationErrors": 0,
+        "machineEvidence": ".test-results/tsk-08-s4-shared-poison-20260925/shared-poison-evidence.json",
+        "machineEvidenceSha256": "995b889341caa6d8784f67f8c618712422c91d59fb516b170233f818a7531792",
+        "pnpm": "external SQLite store failure before script; used installed Vitest under the same generic runCapturedTest"
+      },
+      "remaining": {
+        "after": {
+          "userControlDamageOutcomeNotCalculated": 5,
+          "userControlNpSpecialInputNotChanged": 2,
+          "userControlDidNotReachOperationOrDamage": 2
+        },
+        "B2B3": "Blocking: 2501400 magicBullet and 403400 targetRarity",
+        "other": "without-area alternate, stale-mutation consumer, other ratchets, full production/audit/quality and TSK-08 overall closure remain unmet"
+      },
+      "preserved": "TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digest; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "nextOperation": "Select one semantic family from the remaining 9 typed failures using actual identities and values; propose a new bounded plan. Keep the 9 Blocking; no push.",
+      "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
     }
   ],
-  "currentBoundedUnit": "S4 stack-owned state trait presentation corrected; 11 gate failures remain Blocking"
+  "currentBoundedUnit": "S4 shared targetState poison stack condition corrected; 9 gate failures remain Blocking"
 }

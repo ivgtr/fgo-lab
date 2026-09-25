@@ -100,3 +100,97 @@ export const stackEffectTemplate = {
     buffConditionKeys: [],
   },
 };
+
+export const targetPoisonStack = stackInputSchema.parse({
+  ...source,
+  key: 'stack:targetState:fixture-poison',
+  owner: 'target',
+  quantitySource: { scope: 'targetState', trait: 'fixture-poison' },
+});
+
+export function createSharedStackConditionMaster() {
+  const base = createStackMaster();
+  const attacker = base.servants[0]!;
+  const condition = {
+    recipient: 'sourceSelf' as const,
+    expression: {
+      kind: 'any' as const,
+      requirements: [
+        {
+          kind: 'trait' as const,
+          scope: 'opponentState' as const,
+          trait: 'fixture-poison',
+          present: true,
+          provenance: {
+            stateSources: 'activeOnly',
+            ignoredStateTraits: 'include',
+            unremovableStateTraits: 'include',
+          },
+        },
+      ],
+    },
+  };
+  const route = {
+    target: 'sourceSelf' as const,
+    contributionScope: 'personal' as const,
+    eligibility: {
+      kind: 'requiredRecipient' as const,
+      recipient: 'attacker' as const,
+      onMissing: 'ignore' as const,
+      onMismatch: 'ignore' as const,
+    },
+  };
+  const effect = (id: string, withInput: boolean) => ({
+    ...stackEffectTemplate,
+    id,
+    occurrenceId: `${id}:0`,
+    gameActivation: 'npBeforeDamage',
+    timing: 'beforeDamage',
+    proc: { kind: 'guaranteed' },
+    selection: null,
+    inputDefinitions: withInput ? [targetPoisonStack] : [],
+    requirement: condition,
+    execution: [
+      {
+        kind: 'damageModifier',
+        modifier: 'powerMod',
+        sign: 1,
+        card: null,
+        route,
+        values: Array.from({ length: 5 }, () =>
+          Array.from({ length: 10 }, () => (withInput ? 0 : 300)),
+        ),
+        valueExpressions: Array.from({ length: 5 }, () =>
+          Array.from({ length: 10 }, () =>
+            withInput
+              ? {
+                  kind: 'stackLinear',
+                  sources: [targetPoisonStack],
+                  basePermille: 0,
+                  perUnitPermille: 100,
+                  maximumUnits: 4,
+                  maximumValuePermille: 400,
+                }
+              : null,
+          ),
+        ),
+        semanticSupport: 'supported',
+      },
+    ],
+  });
+  return masterSnapshotSchema.parse({
+    ...base,
+    servants: [
+      {
+        ...attacker,
+        noblePhantasmVariantGroups: attacker.noblePhantasmVariantGroups.map((group) => ({
+          ...group,
+          variants: group.variants.map((variant) => ({
+            ...variant,
+            effects: [effect('fixture-no-input', false), effect('fixture-stack-input', true)],
+          })),
+        })),
+      },
+    ],
+  });
+}
