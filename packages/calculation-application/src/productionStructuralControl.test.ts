@@ -22,7 +22,7 @@ import {
 
 const identity: ProductionUserControlObservation['identity'] = {
   ownerId: 'fixture-owner',
-  profileKey: 'fixture-profile',
+  profileKey: 'selected',
   path: 'selectedProfile',
   projectionKey: 'fixture:structural-control',
   operationId: 'fixture:variant-selection',

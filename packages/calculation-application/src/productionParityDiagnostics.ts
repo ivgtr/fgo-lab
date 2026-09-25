@@ -395,6 +395,17 @@ export interface ProductionUserControlObservation {
   identity: ProductionUserControlIdentity;
   enabled: ProductionUserControlSideObservation;
   excluded: ProductionUserControlSideObservation;
+  preparationSelection?: {
+    kind: 'default' | 'reachableAlternate';
+    plan: readonly PreNoblePhantasmCommand[];
+  };
+  conflictCounterexample?: {
+    plan: readonly PreNoblePhantasmCommand[];
+    profileKey: string | null;
+    issues: readonly string[];
+    enabled: ProductionUserControlSideObservation;
+    excluded: ProductionUserControlSideObservation;
+  };
 }
 
 export type ProductionUserControlFailureReason =
@@ -409,6 +420,7 @@ export type ProductionUserControlFailureReason =
   | 'userControlObservationInconsistent'
   | 'userControlDamageOutcomeNotCalculated'
   | 'userControlSelectedProfileProofMissing'
+  | 'userControlConflictCounterexampleInvalid'
   | 'userControlNpSpecialInputNotChanged'
   | 'userControlDidNotReachOperationOrDamage';
 
@@ -743,6 +755,85 @@ export function auditProductionUserControlObservations(
       continue;
     }
     const profileIdentity = productionUserControlIdentity(identity);
+    const enabledProfileKey =
+      enabled.profileContinuity && enabled.profileContinuity.kind !== 'unresolved'
+        ? enabled.profileContinuity.intendedProfileKey
+        : null;
+    const excludedProfileKey =
+      excluded.profileContinuity && excluded.profileContinuity.kind !== 'unresolved'
+        ? excluded.profileContinuity.intendedProfileKey
+        : null;
+    if (
+      enabled.profileContinuity &&
+      excluded.profileContinuity &&
+      enabled.profileContinuity.kind !== 'unresolved' &&
+      excluded.profileContinuity.kind !== 'unresolved' &&
+      (identity.profileKey !== enabledProfileKey || identity.profileKey !== excludedProfileKey)
+    ) {
+      const profileFailure = productionUserControlFailure(
+        'userControlSelectedProfileProofMissing',
+        `${profileIdentity}:profile-identity`,
+        { enabled: identity.profileKey, excluded: identity.profileKey },
+        { enabled: enabledProfileKey ?? null, excluded: excludedProfileKey ?? null },
+      );
+      if (profileFailure) failures.push(profileFailure);
+    }
+    if (observation.conflictCounterexample) {
+      const counterexample = observation.conflictCounterexample;
+      const valid =
+        counterexample.enabled.damageResult.status === 'unsupported' &&
+        counterexample.excluded.damageResult.status === 'calculated' &&
+        Array.isArray(counterexample.enabled.damageResult.rows) &&
+        counterexample.enabled.damageResult.rows.length === 0 &&
+        counterexample.issues.length > 0 &&
+        counterexample.issues.every(
+          (issue) =>
+            issue.startsWith('constraintConflict:selected-form:') &&
+            issue.includes(':exclusiveTrait:'),
+        ) &&
+        counterexample.enabled.projections.length > 0 &&
+        counterexample.excluded.projections.length > 0 &&
+        counterexample.enabled.operationEvents.length > 0 &&
+        counterexample.excluded.operationEvents.length > 0 &&
+        counterexample.enabled.projections.every(
+          (projection) => projection.outcome === 'notApplied',
+        ) &&
+        counterexample.excluded.projections.every(
+          (projection) => projection.outcome === 'notApplied',
+        ) &&
+        counterexample.enabled.operationEvents.every(
+          (event) => event.operationOutcome === 'notApplied',
+        ) &&
+        counterexample.excluded.operationEvents.every(
+          (event) => event.operationOutcome === 'notApplied',
+        ) &&
+        JSON.stringify(userControlAuditValue(counterexample.enabled.inputBinding)) ===
+          JSON.stringify(userControlAuditValue(counterexample.excluded.inputBinding)) &&
+        counterexample.profileKey !== null &&
+        counterexample.profileKey !== identity.profileKey &&
+        counterexample.plan.some((command) => command.kind === 'executeAttackNoblePhantasm');
+      if (!valid) {
+        const conflictFailure = productionUserControlFailure(
+          'userControlConflictCounterexampleInvalid',
+          `${profileIdentity}:conflict-counterexample`,
+          { valid: true },
+          { valid: false, counterexample },
+        );
+        if (conflictFailure) failures.push(conflictFailure);
+      }
+    }
+    if (
+      observation.preparationSelection?.kind === 'reachableAlternate' &&
+      !observation.conflictCounterexample
+    ) {
+      const missingConflict = productionUserControlFailure(
+        'userControlConflictCounterexampleInvalid',
+        `${profileIdentity}:alternate-conflict-proof`,
+        { conflictCounterexamplePresent: true },
+        { conflictCounterexamplePresent: false },
+      );
+      if (missingConflict) failures.push(missingConflict);
+    }
     if (identity.path === 'selectedProfile') summary.selectedProfileCount += 1;
     else summary.withoutAreaAlternateCount += 1;
 

@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Owner 2301100 three-control reachable-profile S4 audit correction: present a bounded implementation plan for confirmation before product edits. Owner 1000100 and 3300200, other ratchets, and TSK-08 closure remain outside the unit. No push.",
+  "nextBoundedUnit": "Owner 1000100 and 3300200 remain separate S4 Blocking units. Other ratchets and TSK-08 closure remain outside this unit. No full production/audit/quality or push while Blocking remains.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -4337,7 +4337,45 @@
       "protected": "TSK-06.5 34640 outcomes (34600 calculated/parity, 40 unavailable), digests, candidate status/eligibility, production output/canonical input/fingerprint, TSK-07 cache/stale-response evidence unchanged.",
       "remaining": "Owner 1000100 and 3300200 failures and other ratchets remain outside this unit. TSK-08 in_progress; TSK-09.1/09 blocked. No push.",
       "nextOperation": "Present the reachable-profile S4 audit correction and typed-conflict guardrail as a bounded implementation plan for confirmation. Before approval, make no product source/test/gate changes."
+    },
+    {
+      "name": "S4 owner 2301100 three-control reachable-profile audit implementation",
+      "baselineHead": "6a03aa1ba8980ca96ebe55a800b64162639339ce",
+      "scope": "Approved skill 2536550 attackBuff 22883 / npDamageBuff 22888 and passive 2534650 cardBuff 22874 only. Production user-control audit selects a reachable canonical preparation witness after a typed selected-form conflict, preserves the actual AttackProfile key, and retains the original conflict as a checked counterexample. No calculator, ranking, UI, data-pipeline, or executor semantics changed.",
+      "implementation": "planPreNoblePhantasmCandidates supplies canonical terminal states; attackProfileForTerminalState independently derives the expected profile key. The producer evaluates active controls on reachable plans, requires a single viable profile, chooses the plan retaining the most default commands, then compares on/off on that same scenario. The gate checks profile identity and the retained original-plan unsupported/calculated conflict, notApplied event/projection, equal damage binding, and no numeric enabled row. An alternate witness without its counterexample fails. Effect commands never synthesize a choice or trait fact.",
+      "productionObservation": "All 1,590 expected/observed control identities remain present. Owner 2301100 uses slots 1, 2 choice 0, 3 and attack NP variant 2301198 for the three controls. Each enabled/excluded pair is calculated with applied/notApplied projection and event. AttackBuff input 0.3/0 and NP1 average 66667.47/51282.565; npDamageBuff input 0.6/0.3 and average 66667.47/54167.225; cardBuff input 0.36/0.3 and average 66667.47/63726.225. Day-side variant 2301101 remains unsupported/calculated with selected-form exclusiveTrait conflict and no enabled damage row. The 14 canonical terminal plans for this owner came from 22 generated, 14 deduplicated states; no other owner triggered alternate planning. S4 failures changed from 5 to 2, removing only these three identities; the two remaining owners are 1000100 and 3300200. No new failure.",
+      "verification": "Independent HEAD archive plus only this unit's source/test/doc diff: root and Web typecheck, targeted ESLint/Prettier, focused unit including calculator UI 14/14, docs tests 6/6, docs integrity, JSON historical-value preservation and artifact bytes/SHA-256 passed. UI showed moon choice 0 as a candidate, then selected after its own preparation command; attacker effect decisions remained explicitly excluded. Final focused audit producer retained the two out-of-scope Blocking failures. Its duration changed from 30494 ms to 32522 ms (+2028 ms, +6.7%); earlier candidate runs took 36009 and 37213 ms, so timing varies. Audit controls stayed 1590. pnpm stopped before the script on its external SQLite store, so the same existing node_modules Vitest was run through generic runCapturedTest. Architecture test 7/9, with two line-count failures in unchanged HEAD engine.ts (134 > 80) and candidateSelection.ts (181 > 180); the earlier candidateExecution.ts attribution does not match this HEAD. No full production/audit/quality or push.",
+      "artifacts": {
+        "producer": {
+          "path": ".test-results/tsk-08-2301100-final-20260925/production-inert-control-production.json",
+          "bytes": 65447514,
+          "sha256": "366f68642633e1332896d8475a32ddfd23e603361a54c072264f0cfc0c498ad6"
+        },
+        "producerManifest": {
+          "path": ".test-results/tsk-08-2301100-final-20260925/producer-manifest.json",
+          "bytes": 3066,
+          "sha256": "77accb0a0ade8e255c77b1c2e5cb8ff9e42bc55b8f94f25be3c24667a9bc2c76"
+        },
+        "unitManifest": {
+          "path": ".test-results/tsk-08-2301100-final-20260925/unit-manifest.json",
+          "bytes": 3979,
+          "sha256": "7eedc9e51b38b26dbb08a882f36b0d802c8bcb3b9c000a2a464cc991631cef8a"
+        },
+        "architectureManifest": {
+          "path": ".test-results/tsk-08-2301100-final-20260925/architecture-manifest.json",
+          "bytes": 2808,
+          "sha256": "46074d88346c6ba66ef2b4a9b804b6b23b55628a25c098b3d577009d7a8ab5e5"
+        },
+        "boundedEvidence": {
+          "path": ".test-results/tsk-08-2301100-final-20260925/final-evidence.json",
+          "bytes": 14342,
+          "sha256": "f3307b4bb34b51b8d82b3e3d554a6ba7f1a24c975bdfce50fb3c59d3a401da0e"
+        }
+      },
+      "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and existing digests, candidate status/eligibility, production output/canonical input/fingerprint unchanged; TSK-07 cache/stale-response evidence unchanged.",
+      "remaining": "Owner 1000100 and 3300200, other ratchets, and TSK-08 closure remain Blocking/out of scope. TSK-08 in_progress; TSK-09.1/09 blocked.",
+      "nextOperation": "Handle the remaining two S4 identities as separate bounded units. Keep the selected profile identity and the day-side typed conflict proof; do not infer choice or world facts from an effect chip."
     }
   ],
-  "currentBoundedUnit": "S4 owner 2301100 read-only diagnostic complete; reachable-profile audit plan awaits confirmation; five S4 failures remain Blocking"
+  "currentBoundedUnit": "S4 owner 2301100 three-control reachable-profile audit implemented; two unrelated S4 failures remain Blocking"
 }

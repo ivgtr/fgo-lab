@@ -1216,6 +1216,24 @@ it(
     });
     expect(observation.excluded.effectiveContributions[0]?.resolvedValue).toBeNull();
     expect(passing.firstDifference).toBeNull();
+    expect(
+      auditProductionUserControlObservations({
+        expectedProjectionCount: 1,
+        expectedIdentities: [identity],
+        observations: [
+          {
+            ...observation,
+            preparationSelection: {
+              kind: 'reachableAlternate',
+              plan: [{ kind: 'executeAttackNoblePhantasm' }],
+            },
+          },
+        ],
+      }),
+    ).toMatchObject({
+      status: 'failed',
+      failures: [{ reason: 'userControlConflictCounterexampleInvalid' }],
+    });
     expect(inertNpSpecial).toMatchObject({
       status: 'failed',
       failures: [

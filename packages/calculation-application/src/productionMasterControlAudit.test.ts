@@ -34,10 +34,20 @@ import {
   createDefaultResolvedScenario,
   requireExecutableCalculation,
   type CalculationExecutionObservation,
+  type AttackProfileContinuity,
 } from './scenario';
 const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
   requireExecutableCalculation(calculateScenarioOutcome(...args));
 import { setEffectSourceEnabled } from './scenarioCommands';
+import {
+  attackProfileForTerminalState,
+  attackProfileKey,
+  createStaticActorFormProfiles,
+} from './attackProfile';
+import {
+  materializePreNoblePhantasmPlan,
+  planPreNoblePhantasmCandidates,
+} from './preNoblePhantasmPlanner';
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
@@ -56,6 +66,10 @@ import {
 const root = resolve(import.meta.dirname, '../../..');
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
+
+function intendedProfileKey(continuity: AttackProfileContinuity | undefined): string | null {
+  return continuity && continuity.kind !== 'unresolved' ? continuity.intendedProfileKey : null;
+}
 
 function assumeProjectedCondition(
   scenario: Parameters<typeof applyEffectProjectionDecision>[0],
@@ -240,10 +254,11 @@ function userControlSideObservation(
 function selectedProfileControlIdentity(
   ownerId: string,
   projection: EffectProjection,
+  profileKey: string,
 ): ProductionUserControlIdentity {
   return {
     ownerId,
-    profileKey: 'default',
+    profileKey,
     path: 'selectedProfile',
     projectionKey: projection.projectionKey,
     operationId: projection.operationId,
@@ -461,10 +476,19 @@ describe('production master inventory ratchet', () => {
                 (projection) =>
                   projection.projectionKey === control.key && projection.controllability === 'user',
               )
-              .map((projection) => selectedProfileControlIdentity(servant.id, projection)),
+              .map((projection) => {
+                const profileKey = intendedProfileKey(calculation.profileContinuity);
+                if (!profileKey) throw new TypeError('production_control_profile_key_missing');
+                return selectedProfileControlIdentity(servant.id, projection, profileKey);
+              }),
           ),
       );
       const userControlObservations: ProductionUserControlObservation[] = [];
+      const selectedProfileKeys = new Map<string, string>();
+      const preparationInventories = new Map<
+        string,
+        ReturnType<typeof planPreNoblePhantasmCandidates>['inventory']
+      >();
       const selectedUnsupportedProjections: string[] = [];
       const targetContextRequiredProjections: string[] = [];
       const invalidAutomaticConditions: string[] = [];
@@ -502,7 +526,7 @@ describe('production master inventory ratchet', () => {
             effect.requiredQuantityOwner === 'attacker'
               ? { ...scenario, attackerHpPermille: 500 }
               : scenario;
-          const selectedScenario = applyEffectControlPresentationDecision(
+          let selectedScenario = applyEffectControlPresentationDecision(
             decisionScenario,
             control,
             true,
@@ -510,8 +534,147 @@ describe('production master inventory ratchet', () => {
             userEffects,
             calculation.effectInputs,
           );
-          const { calculation: active, observation: activeObservation } =
+          let { calculation: active, observation: activeObservation } =
             evaluateWithOrderedOperationEvents(selectedScenario, master, versions);
+          let selectedControlMembers = calculation.effects.filter(
+            (candidate) =>
+              candidate.projectionKey === effect.projectionKey &&
+              candidate.controllability === 'user',
+          );
+          let conflictCounterexample:
+            | {
+                plan: ResolvedScenario['preNoblePhantasmPlan'];
+                profileKey: string | null;
+                issues: readonly string[];
+                enabled: ReturnType<typeof calculateScenario>;
+                enabledObservation: CalculationExecutionObservation;
+                excluded: ReturnType<typeof calculateScenario>;
+                excludedObservation: CalculationExecutionObservation;
+              }
+            | undefined;
+          if (
+            active.result.status === 'unsupported' &&
+            active.result.missingEvidence.length > 0 &&
+            active.result.missingEvidence.every(
+              (reason) =>
+                reason.startsWith('constraintConflict:selected-form:') &&
+                reason.includes(':exclusiveTrait:'),
+            )
+          ) {
+            const planned = planPreNoblePhantasmCandidates(
+              servant,
+              master.npResourceSemantics,
+              1,
+              1,
+            );
+            preparationInventories.set(servant.id, planned.inventory);
+            const reachable = [] as Array<{
+              scenario: ResolvedScenario;
+              active: ReturnType<typeof calculateScenario>;
+              observation: CalculationExecutionObservation;
+              members: typeof selectedControlMembers;
+              planKey: string;
+              profileKey: string;
+              retainedCommandCount: number;
+            }>;
+            const actorFormProfiles = createStaticActorFormProfiles(servant);
+            const defaultCommands = new Set(
+              decisionScenario.preNoblePhantasmPlan.map((command) => JSON.stringify(command)),
+            );
+            for (const candidate of planned.candidates) {
+              const candidateScenario = materializePreNoblePhantasmPlan(
+                decisionScenario,
+                candidate,
+              );
+              const candidateBase = calculateScenario(candidateScenario, master, versions);
+              const candidateControl = candidateBase.effectControls.find(
+                ({ key, projection }) =>
+                  key === control.key &&
+                  projection.sourceActive &&
+                  projection.controllability === 'user',
+              );
+              if (!candidateControl) continue;
+              const candidateSelected = applyEffectControlPresentationDecision(
+                candidateScenario,
+                candidateControl,
+                true,
+                candidateBase.activationRequirements,
+                candidateBase.effects,
+                candidateBase.effectInputs,
+              );
+              const evaluated = evaluateWithOrderedOperationEvents(
+                candidateSelected,
+                master,
+                versions,
+              );
+              if (evaluated.calculation.result.status !== 'calculated') continue;
+              const members = evaluated.calculation.effects.filter(
+                (projection) =>
+                  projection.projectionKey === effect.projectionKey &&
+                  projection.controllability === 'user',
+              );
+              if (
+                members.length !== selectedControlMembers.length ||
+                members.some((member) => member.outcome !== 'applied') ||
+                evaluated.calculation.profileContinuity?.kind !== 'matched'
+              )
+                continue;
+              const profileKey = attackProfileKey(
+                attackProfileForTerminalState(servant, actorFormProfiles, candidate.terminalState),
+              );
+              if (profileKey !== intendedProfileKey(evaluated.calculation.profileContinuity))
+                throw new TypeError('production_control_candidate_profile_mismatch');
+              reachable.push({
+                scenario: candidateSelected,
+                active: evaluated.calculation,
+                observation: evaluated.observation,
+                members,
+                planKey: JSON.stringify(candidate.commands),
+                profileKey,
+                retainedCommandCount: candidate.commands.filter((command) =>
+                  defaultCommands.has(JSON.stringify(command)),
+                ).length,
+              });
+            }
+            const profileKeys = new Set(reachable.map(({ profileKey }) => profileKey));
+            if (profileKeys.size === 1 && reachable.length > 0) {
+              reachable.sort(
+                (left, right) =>
+                  right.retainedCommandCount - left.retainedCommandCount ||
+                  left.planKey.length - right.planKey.length ||
+                  left.planKey.localeCompare(right.planKey),
+              );
+              const chosen = reachable[0]!;
+              const originalControl =
+                active.effectControls.find(({ key }) => key === control.key) ?? control;
+              const originalExcludedScenario = applyEffectControlPresentationDecision(
+                selectedScenario,
+                originalControl,
+                false,
+                active.activationRequirements,
+                active.effects,
+                active.effectInputs,
+              );
+              const originalExcluded = evaluateWithOrderedOperationEvents(
+                originalExcludedScenario,
+                master,
+                versions,
+              );
+              conflictCounterexample = {
+                plan: decisionScenario.preNoblePhantasmPlan,
+                profileKey: intendedProfileKey(active.profileContinuity),
+                issues: active.result.missingEvidence,
+                enabled: active,
+                enabledObservation: activeObservation,
+                excluded: originalExcluded.calculation,
+                excludedObservation: originalExcluded.observation,
+              };
+              selectedScenario = chosen.scenario;
+              active = chosen.active;
+              activeObservation = chosen.observation;
+              selectedControlMembers = chosen.members;
+            }
+          }
           selectedCalculations.set(effect.projectionKey, active);
           const activeEffect = active.effects.find(
             (candidate) => candidate.projectionKey === effect.projectionKey,
@@ -552,17 +715,39 @@ describe('production master inventory ratchet', () => {
           );
           const { calculation: excluded, observation: excludedObservation } =
             evaluateWithOrderedOperationEvents(excludedScenario, master, versions);
-          const controlMembers = calculation.effects.filter(
-            (candidate) =>
-              candidate.projectionKey === effect.projectionKey &&
-              candidate.controllability === 'user',
-          );
-          for (const member of controlMembers)
+          for (const member of selectedControlMembers) {
+            const profileKey = intendedProfileKey(active.profileContinuity);
+            if (!profileKey) throw new TypeError('production_control_profile_key_missing');
+            selectedProfileKeys.set(`${servant.id}:${member.projectionKey}`, profileKey);
             userControlObservations.push({
-              identity: selectedProfileControlIdentity(servant.id, member),
+              identity: selectedProfileControlIdentity(servant.id, member, profileKey),
               enabled: userControlSideObservation(member, active, activeObservation),
               excluded: userControlSideObservation(member, excluded, excludedObservation),
+              preparationSelection: {
+                kind: conflictCounterexample ? 'reachableAlternate' : 'default',
+                plan: selectedScenario.preNoblePhantasmPlan,
+              },
+              ...(conflictCounterexample
+                ? {
+                    conflictCounterexample: {
+                      plan: conflictCounterexample.plan,
+                      profileKey: conflictCounterexample.profileKey,
+                      issues: conflictCounterexample.issues,
+                      enabled: userControlSideObservation(
+                        member,
+                        conflictCounterexample.enabled,
+                        conflictCounterexample.enabledObservation,
+                      ),
+                      excluded: userControlSideObservation(
+                        member,
+                        conflictCounterexample.excluded,
+                        conflictCounterexample.excludedObservation,
+                      ),
+                    },
+                  }
+                : {}),
             });
+          }
         }
 
         const exclusiveCandidates = userEffects;
@@ -733,9 +918,15 @@ describe('production master inventory ratchet', () => {
         }
       }
 
+      const selectedExpectedIdentities = expectedUserControlIdentities.map((identity) => ({
+        ...identity,
+        profileKey:
+          selectedProfileKeys.get(`${identity.ownerId}:${identity.projectionKey}`) ??
+          identity.profileKey,
+      }));
       const userControlGate = auditProductionUserControlObservations({
         expectedProjectionCount: expectedUserControlIdentities.length,
-        expectedIdentities: expectedUserControlIdentities,
+        expectedIdentities: selectedExpectedIdentities,
         observations: userControlObservations,
       });
       await writeProductionAuditArtifact(task.meta, 'production-inert-control-production.json', {
@@ -743,7 +934,8 @@ describe('production master inventory ratchet', () => {
         boundary: 'calculation-application-production-inert-controls',
         source: 'productionMasterControlAudit.test.ts',
         canonicalIdentity: userControlGate.canonicalIdentity,
-        expectedIdentities: expectedUserControlIdentities,
+        expectedIdentities: selectedExpectedIdentities,
+        preparationInventories: Object.fromEntries(preparationInventories),
         gate: userControlGate,
         observations: userControlObservations,
       });
