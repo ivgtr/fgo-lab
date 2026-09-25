@@ -19,6 +19,10 @@ import {
   createDefaultResolvedScenario,
 } from './scenario';
 import { applyCanonicalInputCommand } from './canonicalInputs';
+import {
+  applyEffectControlPresentationDecision,
+  applyEffectPresentationDecision,
+} from './effectDecision';
 import { createCanonicalInputValueDomains } from './rankingCanonicalInputs';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
@@ -38,6 +42,111 @@ const versions = {
 };
 
 describe('canonical stack quantity', () => {
+  it('routes a stack-owned NP trait control through its physical count', () => {
+    const data = createStackMaster(source, 250, ['fixture-stack']);
+    const attacker = data.servants[0]!;
+    const base = createDefaultResolvedScenario(data, undefined, attacker);
+    const initial = calculateScenario(base, data, versions);
+    const control = initial.effectControls.find(
+      ({ projection }) =>
+        projection.decision.state !== 'none' &&
+        projection.decision.kind === 'worldFact' &&
+        projection.decision.fact.kind === 'trait' &&
+        projection.decision.fact.scope === 'attackerState' &&
+        projection.decision.fact.trait === 'fixture-stack',
+    );
+    expect(control).toBeDefined();
+    if (!control) throw new Error('stack control fixture');
+    const enabled = applyEffectControlPresentationDecision(
+      base,
+      control,
+      true,
+      initial.activationRequirements,
+      initial.effects,
+      initial.effectInputs,
+    );
+    expect(enabled.canonicalInputValues[source.key]).toEqual({ kind: 'integer', value: 1 });
+    expect(enabled.worldFactAssertions).toEqual([]);
+    const active = calculateScenario(enabled, data, versions);
+    expect(active.result.status).toBe('calculated');
+    if (active.status !== 'executable') throw new Error('stack execution');
+    expect(active.effectControls.find(({ key }) => key === control.key)?.active).toBe(true);
+    expect(active.input.npSpecialMultipliers).toEqual(Array(5).fill(1.25));
+    const excluded = applyEffectControlPresentationDecision(
+      enabled,
+      control,
+      false,
+      active.activationRequirements,
+      active.effects,
+      active.effectInputs,
+    );
+    expect(excluded.canonicalInputValues[source.key]).toEqual({ kind: 'integer', value: 0 });
+    expect(excluded.worldFactAssertions).toEqual([]);
+    const inactive = calculateScenario(excluded, data, versions);
+    expect(inactive.result.status).toBe('calculated');
+    if (inactive.status !== 'executable') throw new Error('stack execution');
+    expect(inactive.effectControls.find(({ key }) => key === control.key)?.active).toBe(false);
+    expect(inactive.input.npSpecialMultipliers).toEqual(Array(5).fill(1));
+
+    const twoStacks = applyCanonicalInputCommand(base, {
+      kind: 'setCanonicalIntegerInput',
+      key: source.key,
+      value: 2,
+    });
+    expect(
+      applyEffectControlPresentationDecision(
+        twoStacks,
+        control,
+        true,
+        initial.activationRequirements,
+        initial.effects,
+        initial.effectInputs,
+      ).canonicalInputValues[source.key],
+    ).toEqual({ kind: 'integer', value: 2 });
+
+    if (
+      control.projection.decision.state === 'none' ||
+      control.projection.decision.kind !== 'worldFact' ||
+      control.projection.decision.fact.kind !== 'trait'
+    )
+      throw new Error('world fact fixture');
+    const mismatched = {
+      ...control.projection,
+      decision: {
+        ...control.projection.decision,
+        fact: { ...control.projection.decision.fact, scope: 'targetState' as const },
+      },
+    };
+    const otherScope = applyEffectPresentationDecision(base, mismatched, true, []);
+    expect(otherScope.canonicalInputValues[source.key]).toBeUndefined();
+    expect(otherScope.worldFactAssertions).toEqual([
+      { decisionKey: mismatched.decision.decisionKey, fact: mismatched.decision.fact },
+    ]);
+    expect(() =>
+      applyEffectPresentationDecision(
+        base,
+        { ...control.projection, requiredInputs: [source, source] },
+        true,
+        [],
+      ),
+    ).toThrow('ambiguous_stack_presence_input');
+
+    const contradiction = {
+      ...base,
+      worldFactAssertions: [
+        {
+          decisionKey: 'external:contradiction',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'attackerState' as const,
+            trait: 'fixture-stack',
+            present: true,
+          },
+        },
+      ],
+    };
+    expect(calculateScenario(contradiction, data, versions).result.status).toBe('unsupported');
+  });
   it('preserves a non-minimum baseline and enumerates the complete finite integer domain', () => {
     const input = { ...source, defaultValue: 2 };
     expect(createCanonicalInputValueDomains([input], [], 'baseline')[0]?.values).toEqual([2]);

@@ -246,6 +246,53 @@ export function applyEffectProjectionDecisions(
   );
 }
 
+function applyStackOwnedWorldFactPresentationDecision(
+  scenario: ResolvedScenario,
+  projection: EffectProjection,
+  enabled: boolean,
+): ResolvedScenario | null {
+  const decision = projection.decision;
+  if (decision.state === 'none' || decision.kind !== 'worldFact' || decision.fact.kind !== 'trait')
+    return null;
+  const fact = decision.fact;
+  const matches = projection.requiredInputs.filter(
+    (input) =>
+      input.kind === 'effectStackCount' &&
+      input.quantitySource.scope === fact.scope &&
+      input.quantitySource.trait === fact.trait,
+  );
+  if (matches.length === 0) return null;
+  if (matches.length !== 1)
+    throw new TypeError(`ambiguous_stack_presence_input:${projection.projectionKey}`);
+  const input = matches[0]!;
+  const positive = Math.max(
+    1,
+    input.minimum + Math.ceil((1 - input.minimum) / input.step) * input.step,
+  );
+  if (input.minimum > 0 || input.maximum < positive)
+    throw new TypeError(`unrepresentable_stack_presence_input:${input.key}`);
+  const existing = scenario.canonicalInputValues[input.key]?.value ?? input.defaultValue;
+  const value =
+    enabled &&
+    existing !== null &&
+    existing >= positive &&
+    existing <= input.maximum &&
+    (existing - input.minimum) % input.step === 0
+      ? existing
+      : enabled
+        ? positive
+        : 0;
+  return applyCanonicalInputCommand(
+    {
+      ...scenario,
+      worldFactAssertions: scenario.worldFactAssertions.filter(
+        (assertion) => assertion.decisionKey !== decision.decisionKey,
+      ),
+    },
+    { kind: 'setCanonicalIntegerInput', key: input.key, value },
+  );
+}
+
 /**
  * Maps one visible effect-chip interaction to the independent scenario contracts it needs.
  * Deterministic quantity conditions remain evaluator-owned and are never asserted here.
@@ -260,7 +307,9 @@ export function applyEffectPresentationDecision(
   if (projection.proc.kind === 'chainedRolls')
     throw new TypeError(`chained_proc_requires_control_command:${projection.projectionKey}`);
   const sourceResolved = applyPresentationSourceDependencies(scenario, projection, enabled);
-  const inclusionResolved = applyEffectProjectionDecision(sourceResolved, projection, enabled);
+  const inclusionResolved =
+    applyStackOwnedWorldFactPresentationDecision(sourceResolved, projection, enabled) ??
+    applyEffectProjectionDecision(sourceResolved, projection, enabled);
   if (
     projection.decision.state === 'none' ||
     projection.decision.kind !== 'effect' ||

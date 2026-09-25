@@ -20,6 +20,7 @@ export const source: StackInputDefinition = stackInputSchema.parse({
 export function createStackMaster(
   stackInput: StackInputDefinition = source,
   correctionPermille = 250,
+  stateTraitNames: readonly string[] = [],
 ) {
   const original = masterSnapshotSchema.parse(fixture);
   const servant = original.servants[0]!;
@@ -44,7 +45,7 @@ export function createStackMaster(
                       kind: 'traitCount',
                       rawFunctionType: 'damageNpIndividualSum',
                       quantity: { kind: 'stacks', inputs: [stackInput] },
-                      stateTraitNames: [],
+                      stateTraitNames,
                       parametersByOvercharge: Array.from({ length: 5 }, () =>
                         Array.from({ length: 5 }, () => ({
                           ratePermille: 1000,

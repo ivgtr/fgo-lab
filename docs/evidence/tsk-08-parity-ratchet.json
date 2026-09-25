@@ -3572,7 +3572,84 @@
         "TSK-09.1": "blocked",
         "TSK-09": "blocked"
       }
+    },
+    {
+      "name": "S4 stack-owned state trait presentation command",
+      "date": "2026-09-25",
+      "status": "7 stack-owned trait polarity conflicts corrected and independently verified; 11 other observed failures remain Blocking",
+      "authorization": "User confirmed the read-only bounded plan for this semantic family, focused verification, records and local commit.",
+      "baselineHead": "94a15a61aac9226229c3df7474017578ef2e50f5",
+      "initialState": {
+        "trackedWorktreeEmpty": true,
+        "indexEmpty": true,
+        "ignoredNextEnvPreserved": true,
+        "productionArtifactSha256": "5d88217bc7d157f93353c120f14f41603e79a26e50f298d3cd98825a8e848c3b",
+        "manifestSha256": "c7363734f81cb077eefefbdbb5a0cc9c9d9fd4686d4562aacd7d891cc4e26d72",
+        "traitcountEvidenceSha256": "32fb2af696b85eb64f245433b95a7fe6e6b23e1dbc3f009cd15bb1b77e412976"
+      },
+      "classification": {
+        "before": {
+          "userControlDamageOutcomeNotCalculated": 14,
+          "userControlNpSpecialInputNotChanged": 2,
+          "userControlDidNotReachOperationOrDamage": 2
+        },
+        "selectedFamily": "exact state-trait world-fact control conflicts with its canonical zero stack count",
+        "owners": ["106600", "204300", "305700", "604800", "1101700", "2300400", "2801100"],
+        "firstDifference": {
+          "ownerId": "106600",
+          "side": "enabled",
+          "path": "damageResult.status",
+          "expected": "calculated",
+          "actual": "unsupported",
+          "issue": "constraintConflict:initial:trait:targetState:buffBurn,np:[\"106600\",0,\"106601\"]:5337:trait:buffBurn:traitPolarity:targetState:buffBurn"
+        },
+        "removedIdentities": 7,
+        "addedIdentities": 0,
+        "fullCanonicalFailures": ".test-results/tsk-08-s4-stack-owned-20260925/stack-owned-evidence.json"
+      },
+      "flow": {
+        "producer": "npDamageCompilation.ts::traitCountProjections emits a world-fact projection with stack input definitions; productionMasterControlAudit.test.ts exercises the application presentation command for each user control.",
+        "semanticOwner": "effectDecision.ts::applyEffectPresentationDecision routes an exact typed state-trait/stack-input match to the canonical input command; seedStackQuantities and constraint validation keep physical state and conflicts authoritative.",
+        "consumer": "calculator uses the same presentation command; ordered execution folds the resulting count into NP special input; productionParityDiagnostics.ts retains the strict typed gate.",
+        "governingRule": "damage-effect-execution section 8.8 fixed literals, trait polarity and combined/state scope; ADR 012 keeps concrete count with its canonical input owner. Ranking's stackOwnedWitnessCondition already treats exact stack-owned presence as input quantity.",
+        "representative": "106600 enabled previously asserted targetState:buffBurn true over stack count 0 and was unsupported; candidate uses count 1, calculated, with NP special [1.2,1.2,1.2,1.2,1.2] versus excluded [1.1,1.1,1.1,1.1,1.1]."
+      },
+      "verification": {
+        "independentCandidate": "HEAD archive with only effectDecision.ts, stackQuantityFixture.ts and stackQuantity.test.ts copied from the diff; source hashes matched before verification.",
+        "unit": "generic runner stackQuantity and effectDecision: 15/15, skip/todo 0",
+        "unitManifestSha256": "768f056939f3b45dc95cdac6a6b7ad5d743d576d501fccb8d46ec3a7959b22cd",
+        "typecheckLintFormat": "candidate tsc -b, target ESLint --max-warnings=0 and Prettier check passed",
+        "producer": "focused actual producer gate failed only for other families: 18 -> 11, exactly 7 selected identities removed, no additions; expected and observed sets remain 1590 each, changed observations only the selected 7",
+        "artifact": ".test-results/tsk-08-s4-stack-owned-20260925/producer-final/production-inert-control-production.json",
+        "artifactBytes": 55684557,
+        "artifactSha256": "cdb23b0f04d9ad204a0d0ed5213744b82fe0f35617e1bf467e1b6c78646b729d",
+        "manifestSha256": "712c26d4c7a2c46c51a0f61d1ad5e90641156381871eb432df6b818bd001f9a9",
+        "artifactVerificationErrors": 0,
+        "machineEvidence": ".test-results/tsk-08-s4-stack-owned-20260925/stack-owned-evidence.json",
+        "machineEvidenceSha256": "c6e47e4ddf3f34637e95701385ab4dfa1674cd5439c1a34ed5d227927d9991ab",
+        "observedChanges": {
+          "enabledInputBinding": 7,
+          "enabledDamageResult": 7,
+          "enabledProjections": 2,
+          "enabledEffectiveContributions": 2,
+          "operationEvents": 0
+        },
+        "producerDurationMs": 16512,
+        "pnpm": "external SQLite store failure before script; used installed Vitest under the same generic runCapturedTest"
+      },
+      "remaining": {
+        "after": {
+          "userControlDamageOutcomeNotCalculated": 7,
+          "userControlNpSpecialInputNotChanged": 2,
+          "userControlDidNotReachOperationOrDamage": 2
+        },
+        "B2B3": "Blocking: 2501400 magicBullet and 403400 targetRarity",
+        "other": "without-area alternate, stale-mutation consumer, other ratchets, full production/audit/quality and TSK-08 overall closure remain unmet"
+      },
+      "preserved": "TSK-06.5 80 x 433 = 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired each 0 and existing digest; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "nextOperation": "Select one semantic family from the remaining 11 typed failures and propose a new bounded plan. Keep the current 11 Blocking; no push.",
+      "taskStatus": { "TSK-08": "in_progress", "TSK-09.1": "blocked", "TSK-09": "blocked" }
     }
   ],
-  "currentBoundedUnit": "S4 traitCount NP special effective contribution corrected; 18 gate failures remain Blocking"
+  "currentBoundedUnit": "S4 stack-owned state trait presentation corrected; 11 gate failures remain Blocking"
 }
