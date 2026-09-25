@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.49"
+document_version: "1.7.50"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2821,3 +2821,11 @@ Current bounded-unit handoff（2026-09-25、S4 B2 `2501400` magicBullet製品修
 focused semantic fixtureは肯定fact＋形態変更、終端固有true対negative、初期だけのtrait対negative、同一形態のremove／suppress、選択transaction失敗、off→再onを確認した。保存済みcompiler診断で合法scopeはadd／removeが`attackerState`、suppressが`attacker`初期layerであることを再利用し、attacker直接add／removeは根拠にしていない。実producerは対象B2のonで選択形態`2501500/0`・NP `2501500/2501501`、NP特殊倍率全level `1.4`、NP1平均`51810.655`、offで`1.3`／`48109.855`、両側`calculated`を観測した。S4 failureは7件から6件へ減り、B2は消えた。残るB3と他5件はBlockingで、全件production／audit／qualityは実行しない。
 
 検証artifactのpath・bytes・SHA-256、独立candidateのtypecheck／対象lint・format／文書検証、既存architecture ratchetのHEAD由来失敗と今回差分の境界は[evidence](../evidence/tsk-08-parity-ratchet.json)に記録する。TSK-06.5の34,640 outcomes、34,600 calculated／parity、40 unavailable、final unsupported／invalid／inputRequired各0と既存digest、candidate status／eligibility、production output、canonical input、fingerprint、TSK-07 cache／stale-response evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、pushしない。次は残る6件を別のbounded unitで計画する。
+
+Current bounded-unit handoff（2026-09-25、S4 B3 `403400` targetRarityの事前読取調査）:
+
+開始HEAD `66e006690ed224d64194f6953df9496906f62f8f`、tracked worktree／index空。B3一件だけを次の計画対象として、保存済みproducerとon/off観測、現行の直接生成・利用symbolを読み直した。製品source／testは編集せず、source test・producerは再実行していない。対象は`np:["403400",0,"403401"]:3854:damage`のNP特殊入力control。onのeffect decisionは`operationEnabled=true`／`conditionSatisfaction=evaluate`、offはfalse／evaluateで、両側ともworld factなし、`baseInput.targetRarity=null`。NP条件は`targetRarity==1 OR ==2`、倍率パラメータは`correctionPermille=1500`。保存済み実producerは両側`calculated`、NP特殊倍率全level `1`、NP1平均`24202.825`、onの表示controlはactiveだがprojectionは`notApplied`／`unresolved`であり、S4 reasonは`userControlNpSpecialInputNotChanged`である。
+
+現行コードではquantity-only条件は`conditionAllowsEffectLocalDecision`の対象外なので、`applyEffectPresentationDecision`は成立宣言を作らずoperationのon/offだけを保存する。calculatorの基底入力はtarget rarityをnullに置き、NP evaluatorはnullを中立倍率へ解決する。一方rankingには具体的なrarity world factをmaterializeする経路がある。この差の製品上の扱い、2つの適格rarityでの入力所有権、onかつ未解決時のtyped outcomeはまだ決めていない。数値を捏造せず、既存のquantity／effect-local／canonical input契約とUIの実操作を照合した**コード起点の実装計画を先に提示し、確認を待つ**。安全な変更境界が決まらなければ、必要最小の診断計画に切り替える。根拠symbol、artifact identity・checksum、未決事項は[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitとignored `.test-results/tsk-08-b3-rarity-20260925/preplan.json`を参照する。
+
+B3と他5件はBlockingのまま。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。TSK-06.5／TSK-07の保護対象は変更せず、全件production／audit／qualityとpushは行わない。次の作業者はこのB3一件と同じ原因の直接経路だけを1セッションの対象とする。

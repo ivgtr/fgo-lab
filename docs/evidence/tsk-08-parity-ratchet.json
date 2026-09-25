@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Select one family from the six residual S4 typed failures using current code and saved producer values; provide a new bounded plan before implementation. No push.",
+  "nextBoundedUnit": "B3 403400 targetRarity: present a code-derived one-session implementation plan for confirmation before product edits. If ownership cannot be fixed safely, plan only the minimum diagnostic. Five other S4 failures remain outside the unit. No push.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -4158,7 +4158,31 @@
       "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and existing digests; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "remaining": "Six other S4 failures remain Blocking. No full production/audit/quality or push. TSK-08 in_progress; TSK-09.1/09 blocked.",
       "nextOperation": "Treat B3 and the five other S4 failures as separately bounded families; preserve the B2 form/world-fact and count semantics."
+    },
+    {
+      "name": "S4 B3 403400 targetRarity read-only preplan",
+      "baselineHead": "66e006690ed224d64194f6953df9496906f62f8f",
+      "scope": "Read saved B3 on/off producer and direct current-code symbols only; no source/test edit, source test, producer rerun or product-semantic decision.",
+      "identity": "np:[\"403400\",0,\"403401\"]:3854:damage:npSpecial",
+      "savedObservation": {
+        "on": "effect decision operationEnabled=true, conditionSatisfaction=evaluate; world facts empty; targetRarity null; control active=true but projection notApplied/unresolved; calculated NP1 average 24202.825; npSpecialMultipliers [1,1,1,1,1]",
+        "off": "effect decision operationEnabled=false, conditionSatisfaction=evaluate; world facts empty; targetRarity null; control active=false, projection notApplied/disabled; calculated NP1 average 24202.825; npSpecialMultipliers [1,1,1,1,1]",
+        "condition": "any(targetRarity equal 1, targetRarity equal 2), correctionPermille 1500, no requiredInputs",
+        "gate": "userControlNpSpecialInputNotChanged; six S4 failures total including B3 and five others"
+      },
+      "directSymbols": "npDamageCompilation.ts::noblePhantasmDamageCondition/noblePhantasmDamageDependency produces the quantity OR; activationCondition.ts::conditionAllowsEffectLocalDecision excludes quantity-only conditions; effectDecision.ts::applyEffectPresentationDecision therefore stores operation on/off without condition assertion; scenario.ts initializes targetRarity null; condition.ts evaluates null as unresolved; npDamageExecution.ts passes rarity and effect-local state to npDamageOperation.ts, which resolves null to neutral multiplier; rankingQuantityWorld.ts can materialize a concrete rarity fact; productionParityDiagnostics.ts requires NP-special input difference.",
+      "unresolvedDecision": "Determine from requirements and current code who owns a user repairable target-rarity input or effect-local declaration for a quantity-only OR, how two eligible rarities remain non-arbitrary, and what typed outcome an enabled but unresolved control must return. This read-only unit does not approve changing quantity/effect-local semantics or treating unresolved as false.",
+      "sources": {
+        "savedOn": {"path": ".test-results/tsk-08-preplan-control-followup-20260924/control-14-403400-on.json", "bytes": 1088071, "sha256": "c6cc5f31aeb3b567583455f7dd1b51d7cf6b740dafdd56911ca97dd557afb08a"},
+        "savedOff": {"path": ".test-results/tsk-08-preplan-control-followup-20260924/control-14-403400-off.json", "bytes": 1088079, "sha256": "0c7a48f8143dc190dfbc5cb6802a86fee8580a403b7158309ddbaf1eaf2bd775"},
+        "currentProducer": {"path": ".test-results/2026-09-25T05-56-22-569Z-2-f69df9/production-inert-control-production.json", "bytes": 61523591, "sha256": "9e6a4529a3d64d3a20a9a75d927cec43f06377368e3020c12b81aadad2dc0001"},
+        "preplan": {"path": ".test-results/tsk-08-b3-rarity-20260925/preplan.json", "bytes": 4106, "sha256": "698cb7402407fe2b8d38f6f683f6e7240f61a77b0399f320f8436b27bf46cee0"}
+      },
+      "verification": "Saved four artifact bytes/SHA-256 and current symbols read; independent HEAD plus three-document candidate passed docs tests 6/6, docs integrity and target Prettier. No source test or producer rerun.",
+      "protected": "TSK-06.5 outcomes/digests, candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
+      "remaining": "B3 and five other S4 failures Blocking; TSK-08 in_progress, TSK-09.1/09 blocked. No full production/audit/quality or push.",
+      "nextOperation": "Present a B3-only code-derived implementation plan and counterexample matrix; wait for user confirmation before source/test edits, tests, producer, stage or product commit. If no safe ownership boundary emerges, propose the minimum additional diagnostic instead."
     }
   ],
-  "currentBoundedUnit": "S4 B2 2501400 magicBullet product correction; six other S4 failures remain Blocking"
+  "currentBoundedUnit": "S4 B3 403400 targetRarity read-only preplan; product correction awaits code-derived plan and confirmation"
 }
