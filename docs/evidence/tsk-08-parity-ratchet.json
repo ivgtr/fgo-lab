@@ -3902,7 +3902,64 @@
       "verification": "Four ignored diagnostic probes completed: published-master on/off/on and portable recovery; full masterSnapshotSchema alternate choice and two-action alternate path; variant-level fallback selection. No source test or production producer rerun.",
       "remaining": "Saved 9 S4 failures, B2/B3 and other ratchets remain Blocking; TSK-08 in_progress, TSK-09.1/09 blocked.",
       "nextOperation": "In a future implementation session, define typed selected-profile continuity at execution/application and S4 proof using preparation terminal profile and ordered actual selection. Include no-attack and different-attack outcomes, explicit invalid/unresolved counterexamples, and portable recovery. Do not implement in this research session or reclassify by issue text."
+    },
+    {
+      "name": "S4 owner 505600 structural control implementation stopped at newly affected 205000 family",
+      "baselineHead": "332e8c92fa19843df546903a03ecc2706d261ef5",
+      "scope": {
+        "approvedOwnerId": "505600",
+        "approvedEffectOccurrenceId": "2619550:532:0",
+        "approvedControlCount": 2,
+        "unplannedOwnerId": "205000",
+        "unplannedEffectOccurrenceId": "2281675:532:0",
+        "unplannedControlCount": 2
+      },
+      "decision": "The approved general AttackProfile-continuity rule cannot be limited to owner 505600 without an identity-based runtime exception. It also changes two owner 205000 structural controls. Product source/test changes remain uncommitted pending an explicit scope decision; the documentation and machine evidence form this completed record-only unit.",
+      "directFlow": {
+        "producer": "operationCompiler.ts compiles the two source-effect mutations; effectDecision.ts::applyEffectControlPresentationDecision sends off through the scenario command; sourceCollection.ts::resolveAttackerFormExecution yields the preparation terminal state.",
+        "semanticOwner": "attackProfile.ts::attackProfileForSelection maps typed form and variant to AttackProfile; scenario.ts::resolveAttackProfileContinuity compares preparation intent with ordered execution.state; variantSelection.ts retains the last enabled selection or base variant.",
+        "consumer": "scenario.ts::resolvedCalculationResult returns no rows on typed profile unavailability; portableCalculation.ts commits off and recovery; rankingExecution.ts skips the wrong-profile damage cache; productionParityDiagnostics.ts checks operation, proof, result and input observations; web maps typed reason to text.",
+        "recovery": "The small schema-legal fixture verifies on, off to non-attack base, off to a different attack variant, explicit invalid canonical input, portable off commit, and re-on calculated recovery. Missing or contradictory profile proof remains fail closed; it is not inferred from an issue string."
+      },
+      "counterexample": {
+        "owner205000": "For 2281675:532:0 actor-form and np-variant, on is calculated at NP1 average 88414.945 with 205000/205001; off formerly calculated at 48259.59 with 205000/205002. The general continuity rule changes off to unavailable:selectedAttackProfileChanged with zero rows. These two identities were not in the approved scope.",
+        "schemaLegalAlternate": "The earlier full-schema-legal two-action fixture has 32474.71 versus 48664.825 for different AttackProfiles while both raw executions are calculated. It is covered by the small two-action fixture and typed gate proof.",
+        "sameProfileAlternate": "A structural off that retains the same profile remains calculated and passes the typed gate fixture."
+      },
+      "flowClosure": {
+        "forward": "Verified in focused fixture and real producer: command, preparation receipt, ordered selection, projection, effective contribution, damage input and typed result.",
+        "recovery": "Verified in focused fixture: unavailable off is committed and re-on returns calculated; explicit invalid canonical input remains unsupported instead of unavailable.",
+        "alternatePath": "Verified in schema-legal two-action fixture and gate fixture; owner 205000 is Blocking for the approved two-control scope.",
+        "productionAbsentSchemaLegalState": "Verified by the small two-action fixture. No battle-simulator state was added.",
+        "remaining": "Blocking: owner 205000 scope decision; B2 2501400, B3 403400 and five other S4 failures remain outside this unit."
+      },
+      "focusedVerification": {
+        "genericRunnerUnit": "76 passed, 0 failed, 0 skipped; artifact verification errors 0",
+        "genericRunnerProducer": "Expected failure outside the approved family: 1590 expected/observed, failure count 9 to 7, exactly the two 505600 identities removed, no new failures; artifact verification errors 0",
+        "nonTargetSemanticObservationChangeCount": 2,
+        "nonTargetSemanticObservationChanges": ["205000:2281675:532:0:actor-form", "205000:2281675:532:0:np-variant"],
+        "producerDurationMs": { "baseline": 16698, "candidate": 16453 },
+        "pnpm": "pnpm typecheck failed before its script while opening the external SQLite store; the installed TypeScript and Vitest runners were used with the existing runCapturedTest generic runner."
+      },
+      "artifact": {
+        "machineEvidencePath": ".test-results/tsk-08-s4-structural-control-20260925/structural-control-implementation-evidence.json",
+        "machineEvidenceBytes": 3503,
+        "machineEvidenceSha256": "423771afa17262fdaa29712370c5d9f446519d82cb03b7b9dc482673e22df59b",
+        "producerBytes": 61527967,
+        "producerSha256": "5fd4e7f00f7c6f39ba3ea0a6f6134704a7a274ae10f48de1536ab8a77e8130d7",
+        "producerManifestSha256": "919a430d4f4a22f2c55303711bfdbde0ba01c74bd346665b7fae05af4dc5c713",
+        "unitManifestSha256": "a33a29d5baf82011e7832c7878cd83839b9812c3059f4f2ef9be45f3ccd9007d"
+      },
+      "uncommittedSourceDiffIdentity": {
+        "trackedBinaryDiffSha256": "9167825aed66a689e6ee80598808c6bb1a0f95fbfe06c8696d2ca15fa88ef8b4",
+        "newTestPath": "packages/calculation-application/src/productionStructuralControl.test.ts",
+        "newTestBytes": 4762,
+        "newTestSha256": "1d68e699dd8854063ee4227252e9389ce8a7ec9f01d4ab507ca4de9dc35312f0",
+        "productStageOrCommit": "none"
+      },
+      "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and existing digests were not recomputed or edited. Candidate status, eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence were not edited. No full production/audit/quality or push.",
+      "nextOperation": "Decide whether the general selected AttackProfile-continuity correction may cover the two 205000 controls as a direct semantic consequence. If approved, retain the existing product diff, add the 205000 pair to focused acceptance and rerun the independent HEAD-plus-diff candidate gates. If limited strictly to 505600, revise the product approach without owner-ID or issue-name branching and prove the schema-legal different-attack case remains fail closed. Do not commit the current product diff before this decision."
     }
   ],
-  "currentBoundedUnit": "S4 505600 derived-intent and alternate-path research; no product change and 9 gate failures remain Blocking"
+  "currentBoundedUnit": "S4 505600 structural control product diff stopped at unplanned 205000 effect; HEAD product still has 9 S4 failures; uncommitted candidate has 7"
 }

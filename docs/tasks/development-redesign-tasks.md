@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.44"
+document_version: "1.7.45"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2767,3 +2767,13 @@ published masterに別の攻撃形態・variantとchoiceを追加したignored�
 前handoffの「明示AttackProfile fieldがないため新request identityが必要」という懸念は、具体的な合法planについては解消した。`resolveAttackerFormExecution`の単一terminal stateと`attackProfileForTerminalState`から意図したprofileを導ける。一方、実行側が別攻撃variantへ移った場合のtyped outcomeとgate proof、未解決／曖昧／明示不正を混同しない境界は未決である。別profileを数値成功として表示し続ける修正も、issue文字列による`unavailable`例外も採用しない。
 
 ignored機械資料は`.test-results/tsk-08-s4-structural-control-20260925/structural-control-research.json`（5885 bytes、SHA-256 `6b7df7136bd00d61b297a757ca334407af8089d96aed4a86dda616fc8ea555ce`）。各診断script／結果のbytesとSHA-256、symbol、反例の範囲は同資料に記録した。製品／test／gate／outcome分類は変更せず、source testとproduction producerも再実行していない。次の実装sessionでは、準備terminal profileとordered actual selectionを比較するtyped proofを設計し、非攻撃基底、別攻撃variant、明示不正／未解決、portable recoveryを小fixtureと実producerで検証する。今回のsessionでは実装しない。保存済み9件とB2／B3はBlocking、TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。TSK-06.5とTSK-07の保護対象に変更はなく、全件production／audit／quality、pushは行わない。詳細は[parity ratchet evidence](../evidence/tsk-08-parity-ratchet.json)の最新bounded unitを参照する。
+
+Current bounded-unit handoff（2026-09-25、S4 505600構造controlの製品差分停止）:
+
+開始HEAD `332e8c92fa19843df546903a03ecc2706d261ef5`、tracked worktree／index空、指定2 artifactのbytes・SHA-256一致を確認した。承認されたowner `505600`の同一効果`2619550:532:0`の2 controlについて、準備terminal AttackProfileとordered executionの実profileを型付きで照合する差分を作った。小さい合法fixtureではon `calculated`、非攻撃基底へのoffは`unavailable:selectedAttackProfileHasNoAttack`、前段の別攻撃variantへのoffは`unavailable:selectedAttackProfileChanged`で数値行なし、portable off／再onはcommitted／`calculated`へ回復した。明示不正canonical inputは`unsupported`のまま。UIは結果型を文章に写し、rankingは逸脱したdamageをcacheしない。S4 gateは両側`calculated`ではなく、準備profile・実行profile・transaction非適用・非数値理由のtyped proofを要求する。
+
+最終focused producerでは1,590 expected／observed、failureは保存済み9→7、対象2 identityだけ除去、新規failure 0だった。一方、**対象外のowner `205000`、効果`2281675:532:0`の形態／NP選択control 2件も同じ一般則で変わる**。onはNP1平均`88414.945`の`calculated`（`205000/205001`）、offは従来`48259.59`の`calculated`（`205000/205002`）だが、候補差分では別profileへの逸脱として`unavailable:selectedAttackProfileChanged`、数値行なしになる。今回の2 controlだけへID・issue名で限定することは不変条件に反するため、承認範囲外の製品挙動変更として製品差分のstage／commitを停止した。候補で変わった対象外semantic observationはこの2件だけであり、他の7 gate failureは残る。
+
+source／test差分は未stage・未commitで残す。tracked binary diff SHA-256 `9167825aed66a689e6ee80598808c6bb1a0f95fbfe06c8696d2ca15fa88ef8b4`、新test `productionStructuralControl.test.ts`は4,762 bytes／SHA-256 `1d68e699dd8854063ee4227252e9389ce8a7ec9f01d4ab507ca4de9dc35312f0`。focused unitはgeneric runnerで76/76、producerは対象外7件で予定どおりfailed、両manifestのartifact error 0。`pnpm typecheck`はscript前にexternal SQLite storeで失敗し、既存node_modulesのtsc／ESLintでpackage／webの型検査と対象lintを実行した。機械証跡は`.test-results/tsk-08-s4-structural-control-20260925/structural-control-implementation-evidence.json`（3,503 bytes、SHA-256 `423771afa17262fdaa29712370c5d9f446519d82cb03b7b9dc482673e22df59b`）。forward／recovery、別経路、schema-legal反例と未達の詳細は[parity ratchet evidence](../evidence/tsk-08-parity-ratchet.json)の最新bounded unitを正本とする。
+
+次の操作は、同じAttackProfile連続性規則をowner `205000`の2件にも適用する範囲拡張を確認すること。承認されれば現在の製品差分を保持し、205000をfocused受入へ追加してHEAD＋差分の独立candidateで最終ゲートを行う。2件への厳密限定を維持するなら、ID分岐なしで別攻撃variantへの誤った数値を防ぐ改訂設計が必要である。HEADの製品実装は未変更でS4 9件がBlocking、候補のみ7件。B2／B3、他ratchet、TSK-08全体は未達。TSK-06.5の34,640 outcomes・34,600 calculated／parity・40 unavailable・final unsupported／invalid／inputRequired各0とdigest等、TSK-07 evidenceを変更していない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、全件production／audit／qualityとpushは行わない。
