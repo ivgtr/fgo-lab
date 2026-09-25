@@ -4067,7 +4067,30 @@
       "protected": "TSK-06.5 34640 outcomes, 34600 calculated/parity, 40 unavailable, final unsupported/invalid/inputRequired zero and digests; candidate status/eligibility, production output, canonical input, fingerprint and TSK-07 cache/stale-response evidence unchanged.",
       "remaining": "Seven other S4 failures and B2/B3 remain Blocking. No full production/audit/quality or push. TSK-08 in_progress; TSK-09.1/09 blocked.",
       "nextOperation": "Address the remaining seven identities in a separately bounded unit; keep the four-control selected-profile rule and typed gate intact."
+    },
+    {
+      "name": "S4 B2 2501400 attacker magicBullet world-fact transition research",
+      "baselineHead": "7b97e220a0d0eeb3b73907f9e5b53b28c0e995c8",
+      "scope": "Read-only investigation of the one B2 NP-special input invariant control; no product implementation or source tests in this session.",
+      "savedObservation": {
+        "projection": "np:[\"2501500\",0,\"2501501\"]:5337:trait:magicBullet",
+        "onAssertion": "attacker:magicBullet=true; initial attacker count 1, count after selected form transition 0",
+        "offAssertion": "absent; attacker count after selected form transition 0",
+        "both": "selected 2501500/2501501 attack NP; final attackerState count 3; calculated NP1 average 48109.855; npSpecialMultipliers [1.3,1.3,1.3,1.3,1.3]",
+        "gateReason": "userControlNpSpecialInputNotChanged"
+      },
+      "mechanism": "traitCountProjections emits an attacker world fact; applyEffectDecisionCommand writes it. validateCandidateSelections validates and applies world assertions to initialState, then applySelectedNoblePhantasmContext calls applyActorFormTransition, which replaces intrinsic attacker trait facts and counts. Runtime skips preapplied mutation IDs, so the lost fact does not reach applyNoblePhantasmDamage. projectWorldAssumptionAtDamageEvaluation can still report applied from the three attackerState counts; that projection is not a proof of NP-special input change.",
+      "governingRule": "ADR 024 form-transition/effect retention; damage-effect-execution sections 8.6, 8.8 fixed-fact and committed-mutation fail-closed semantics and section 8.12.6 control reachability.",
+      "boundary": "A possible repair belongs to battle-execution candidate construction/constraint validation, but overlay-after-transition alone is unsafe: terminal form intrinsic true versus explicit negative, initial-only form traits, selected transaction add/remove/suppress, same-form and alternate paths, rollback and retry require a small schema-legal counterexample matrix before choosing ordering and conflict provenance. Keep application command, projection, ranking and gate as consumers of typed execution facts; do not add owner-ID exceptions or numeric fallback.",
+      "ignoredDiagnostic": {
+        "path": ".test-results/tsk-08-b2-magic-bullet-20260925/read-only-boundary.json",
+        "bytes": 5407,
+        "sha256": "8ba3fc957ff9b83e238815ac006e366160d667d26fa40a87561af773e23c6b60"
+      },
+      "verification": "Saved on/off artifacts and source symbols read; no new producer, source test, product change, or full gate executed.",
+      "remaining": "Seven S4 failures remain Blocking in total: B2, B3 and five others. TSK-08 in_progress; TSK-09.1/09 blocked. TSK-06.5 and TSK-07 protected evidence unchanged; no push.",
+      "nextOperation": "Run only the bounded semantic fixture/diagnostic matrix in the ignored artifact, inspect typed fixed-fact and pre-group state results, then present a code-derived implementation plan for confirmation before editing product source."
     }
   ],
-  "currentBoundedUnit": "S4 four structural controls closed; seven other S4 failures remain Blocking"
+  "currentBoundedUnit": "S4 B2 2501400 read-only transition-boundary research; implementation remains Blocking"
 }

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.47"
+document_version: "1.7.48"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-25"
@@ -2795,3 +2795,11 @@ Current bounded-unit handoff（2026-09-25、S4 505600／205000の構造control 4
 独立candidateはHEAD archiveに今回のtracked source／test差分と新testだけを載せた。focused unitは46/46、workspace `tsc -b`とWeb `tsc --noEmit`、対象11 source／test fileのESLint／Prettierが成功した。focused producerは1,590 expected／observed、保存済み候補と同一artifact SHA-256 `5fd4e7f00f7c6f39ba3ea0a6f6134704a7a274ae10f48de1536ab8a77e8130d7`、failure 7件は既知の対象外identityのみで新規0。`pnpm test:diagnostic`はscript前にexternal SQLite storeで失敗したため、既存Vitestを同じgeneric runnerで実行した。artifactのbytes・SHA-256、4 identityのtyped値、forward／recovery／alternate／production外schema-legal反例は[parity ratchet evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitとignored `.test-results/tsk-08-s4-structural-control-20260925/four-control-final-evidence.json`（4,644 bytes、SHA-256 `7590f3106e1814516cb6840b216eb6c65c1d63111252ca176f06952eaa6fc63c`）を参照する。
 
 今回の4件は閉じたが、残るS4 7件、B2／B3、他ratchetはBlockingのまま。TSK-06.5の34,640 outcomes・34,600 calculated／parity・40 unavailable・final unsupported／invalid／inputRequired各0と既存digest、candidate status／eligibility、production output、canonical input、fingerprint、TSK-07 cache／stale-response evidenceは変更しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。全件production／audit／qualityとpushは行わない。次は残存7 identityを既存Taskの別bounded unitとして扱う。
+
+Current bounded-unit handoff（2026-09-25、S4 B2 `2501400` magicBullet読取調査）:
+
+開始HEAD `7b97e220a0d0eeb3b73907f9e5b53b28c0e995c8`、tracked worktree／index空。利用者指定により今回は製品実装・source test・producer再実行を行わない。保存済みon/off artifactの対象は`np:["2501500",0,"2501501"]:5337:trait:magicBullet`のworld assumption controlで、onだけ`attacker:magicBullet=true`を持つ。準備planはskill 1→3→変身NP→skill 2→攻撃NP。onの初期形態`2501400/0`ではattacker count 1だが、選択形態`2501500/0`への遷移後は0になる。offも0。終端attackerState countは両方3で、選択NP `2501500/2501501`、両方`calculated`／NP1平均`48109.855`、`npSpecialMultipliers`は全level `1.3`のまま。gate reasonは`userControlNpSpecialInputNotChanged`で、投影が`applied`でもdamage inputへの到達は証明しない。
+
+直接原因は`traitCountProjections`がattacker world factを生成し、`effectDecision.applyEffectDecisionCommand`がscenarioへ保存する一方、`candidateSelection.validateCandidateSelections`が初期stateの固定事実と照合してfactを適用した**後**、`variantSelection.applySelectedNoblePhantasmContext`が`state.applyActorFormTransition`でattacker固有trait／countを置換する順序にある。`candidateExecution`は事前適用済みoperationを再適用せず、`npDamageExecution`は消失後のattacker＋attackerState countを読む。ADR 024、damage-effect-execution §8.6／§8.8／§8.12.6に照らし、選択終端形態の固定事実、明示negative、同transactionのadd／remove／suppress、same-form／alternate path、rollback／再onの矛盾と順序を確かめるまで、world factの単純な再適用は採用しない。今回の5,407 bytesのignored診断資料とSHA-256、source symbol、観測値、最小fixture matrixは[parity ratchet evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを参照する。
+
+次の操作は、このmatrixだけのschema-legal小fixtureでpre-group state、fixed facts、typed outcome、projection、NP特殊入力を照合し、execution候補構築／制約検証の順序を決めてから実装計画を提示すること。S4の残りはB2／B3と他5件の計7件でBlocking、TSK-08は`in_progress`、TSK-09.1／09は`blocked`。TSK-06.5のoutcome／digest等とTSK-07 evidenceは変更せず、全件production／audit／qualityとpushは行わない。
