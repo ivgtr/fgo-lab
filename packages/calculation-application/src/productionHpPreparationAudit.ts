@@ -63,7 +63,7 @@ type HpAction = {
   skillId: string | null;
   effects: MasterEffect[];
 };
-export interface HpCanonical {
+export interface HpCanonical<W extends MasterEffect['execution'][number] = Writer> {
   scenario: ResolvedScenario;
   masterVersion: string;
   servantId: string;
@@ -79,7 +79,7 @@ export interface HpCanonical {
     origin: 'attacker';
     skillId: string;
     effect: MasterEffect;
-    operation: Writer;
+    operation: W;
     operationIndex: number;
     valueSetIndex: number;
     valueIndex: number;
@@ -105,6 +105,18 @@ export interface HpCanonical {
 }
 /** Selected canonical commands, before activation/native success/receipt filtering. */
 export function hpPreparationCanonical(prepared: PreparedCalculationScenario): HpCanonical | null {
+  return hpPreparationCanonicalFor(
+    prepared,
+    isFixedSelfHpWriter,
+    (operation) => operation.kind === 'hpModifier' || operation.kind === 'removeHpModifiers',
+  );
+}
+/** Shared command/source generation; each audit scope supplies its own writer population. */
+export function hpPreparationCanonicalFor<W extends MasterEffect['execution'][number]>(
+  prepared: PreparedCalculationScenario,
+  writer: (operation: MasterEffect['execution'][number]) => operation is W,
+  environmentBoundary: (operation: MasterEffect['execution'][number]) => boolean,
+): HpCanonical<W> | null {
   const scenario = prepared.scenario;
   if (scenario.mode !== 'resolved') return null;
   const servant = prepared.master.servants.find(({ id }) => id === scenario.attacker.servantId);
@@ -137,7 +149,7 @@ export function hpPreparationCanonical(prepared: PreparedCalculationScenario): H
   const writers = actions.flatMap((action) =>
     action.effects.flatMap((effect) =>
       effect.execution.flatMap((operation, operationIndex) =>
-        isFixedSelfHpWriter(operation)
+        writer(operation)
           ? [
               {
                 actionIndex: action.index,
@@ -193,9 +205,7 @@ export function hpPreparationCanonical(prepared: PreparedCalculationScenario): H
   const scopeBoundaries: string[] = [];
   if (
     [...actions.flatMap(({ effects }) => effects), ...(variant?.effects ?? [])].some((effect) =>
-      effect.execution.some(
-        (operation) => operation.kind === 'hpModifier' || operation.kind === 'removeHpModifiers',
-      ),
+      effect.execution.some(environmentBoundary),
     )
   )
     scopeBoundaries.push('hpEnvironmentMutation');
@@ -215,7 +225,9 @@ export function hpPreparationCanonical(prepared: PreparedCalculationScenario): H
   if (
     variant?.effects.some((effect) =>
       effect.execution.some(
-        (operation) => operation.kind === 'resourceMutation' && operation.resource === 'hp',
+        (operation) =>
+          (operation.kind === 'resourceMutation' && operation.resource === 'hp') ||
+          writer(operation),
       ),
     )
   )
@@ -236,12 +248,12 @@ export function hpPreparationCanonical(prepared: PreparedCalculationScenario): H
     nps,
   };
 }
-export interface HpPreparationSelection {
+export interface HpPreparationSelection<W extends MasterEffect['execution'][number] = Writer> {
   index: number;
   identity: string;
   prepared: PreparedCalculationScenario;
   calculation: CalculationExecution;
-  canonical: NonNullable<ReturnType<typeof hpPreparationCanonical>>;
+  canonical: HpCanonical<W>;
 }
 export function hpPreparationSelection(
   prepared: PreparedCalculationScenario,
@@ -259,7 +271,9 @@ export function hpPreparationSelection(
       }
     : null;
 }
-export function hpPreparationSource(selection: HpPreparationSelection) {
+export function hpPreparationSource<W extends MasterEffect['execution'][number]>(
+  selection: HpPreparationSelection<W>,
+) {
   const { prepared, calculation } = selection;
   const transport = battlePointPreparationRejectionObservationFor(prepared);
   const target =
@@ -307,7 +321,7 @@ export function hpPreparationSource(selection: HpPreparationSelection) {
     })),
   };
 }
-export type HpPreparationSource = ReturnType<typeof hpPreparationSource>;
+export type HpPreparationSource = ReturnType<typeof hpPreparationSource<Writer>>;
 export type HpPreparationFailureReason =
   | 'hpPopulationMismatch'
   | 'hpCanonicalMismatch'

@@ -1,4 +1,15 @@
 import {
+  maximumFixedCanonical,
+  maximumFixedSelection,
+  maximumFixedProgram,
+  maximumFixedSource,
+  maximumFixedDiagnostic,
+  auditPublishedMaximumFixed,
+  type MaximumFixedSelection,
+  type MaximumFixedProgram,
+  type MaximumFixedSource,
+} from './productionHpMaximumFixedPreparationAudit';
+import {
   hpPreparationAttemptSelection,
   hpPreparationAttemptProgram,
   hpPreparationAttemptSource,
@@ -182,6 +193,14 @@ const hpRequests: {
 const hpAttemptSelections: HpPreparationSelection[] = [];
 const hpAttemptPrograms: HpPreparationAttemptProgram[] = [];
 const hpAttemptObservations: HpPreparationAttemptSource[] = [];
+const maximumFixedRequests: {
+  prepared: ReturnType<typeof prepareCalculationScenarioWithPolicy>;
+  calculation: ReturnType<typeof evaluatePreparedCalculationScenario>;
+}[] = [];
+const maximumFixedSelections: MaximumFixedSelection[] = [];
+const maximumFixedPrograms: MaximumFixedProgram[] = [];
+const maximumFixedObservations: MaximumFixedSource[] = [];
+let maximumFixedPopulationComplete = false;
 const hpSelections: HpPreparationSelection[] = [];
 const hpPrograms: HpPreparationProgram[] = [];
 const hpObservations: HpPreparationSource[] = [];
@@ -214,6 +233,15 @@ function evaluateWithOrderedOperationEvents(
     true,
   );
   const evaluated = evaluatePreparedCalculationScenario(prepared, versions);
+  // Request population is collected before any executable/native/activation filter.
+  if (maximumFixedCanonical(prepared))
+    maximumFixedRequests.push({ prepared, calculation: evaluated });
+  const maximum = maximumFixedSelection(prepared, evaluated, maximumFixedSelections.length);
+  if (maximum) {
+    maximumFixedSelections.push(maximum);
+    maximumFixedPrograms.push(maximumFixedProgram(maximum));
+    maximumFixedObservations.push(maximumFixedSource(maximum));
+  }
   if (hpPreparationCanonical(prepared)) hpRequests.push({ prepared, calculation: evaluated });
   const hpAttemptSelection = hpPreparationAttemptSelection(
     prepared,
@@ -522,6 +550,11 @@ describe('production master inventory ratchet', () => {
         masterDataLocale: 'ja-JP',
         masterDataVersion: master.version,
       };
+      maximumFixedPopulationComplete = false;
+      maximumFixedRequests.length = 0;
+      maximumFixedSelections.length = 0;
+      maximumFixedPrograms.length = 0;
+      maximumFixedObservations.length = 0;
       scalarQuantityObservations.length = 0;
       attemptPrograms.length = 0;
       attemptObservations.length = 0;
@@ -1398,6 +1431,7 @@ describe('production master inventory ratchet', () => {
         }
       }
 
+      maximumFixedPopulationComplete = true;
       const selectedExpectedIdentities = expectedUserControlIdentities.map((identity) => ({
         ...identity,
         profileKey:
@@ -1700,6 +1734,51 @@ describe('production master inventory ratchet', () => {
           outcome: 'notApplied',
           explanation: { code: 'unresolved' },
         },
+      );
+    },
+  );
+
+  it(
+    'connects original maximumFixed controls through the shared consumer with complete diagnostics',
+    {
+      timeout: 60_000,
+      ...productionAuditTestOptions(['production-preparation-hp-maximum-fixed.json']),
+    },
+    async ({ task }) => {
+      // Reuse the original selected controls, owner captures and one parsed master; never reexecute.
+      const master = await loadProductionMaster();
+      const maximumFixedGate = auditPublishedMaximumFixed(
+        master,
+        maximumFixedRequests,
+        maximumFixedSelections,
+        maximumFixedPrograms,
+        maximumFixedObservations,
+      );
+      const maximumFixedProof = {
+        originalControlPopulation: { expected: true, actual: maximumFixedPopulationComplete },
+        gate: maximumFixedGate,
+        proofs: maximumFixedObservations.map(maximumFixedDiagnostic),
+      };
+      await writeProductionAuditArtifact(
+        task.meta,
+        'production-preparation-hp-maximum-fixed.json',
+        encodeProductionAuditDiagnostic(maximumFixedProof),
+      );
+      const savedMaximumFixed = decodeProductionAuditArtifact(
+        await readFile(
+          resolve(
+            process.env['FGO_TEST_ARTIFACT_DIR']!,
+            'production-preparation-hp-maximum-fixed.json',
+          ),
+        ),
+      ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
+      expect(
+        isDeepStrictEqual(decodeProductionAuditDiagnostic(savedMaximumFixed), maximumFixedProof),
+      ).toBe(true);
+
+      expect(maximumFixedPopulationComplete).toBe(true);
+      expect(maximumFixedGate.status, JSON.stringify(maximumFixedGate.firstDifference)).toBe(
+        'passed',
       );
     },
   );

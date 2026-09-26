@@ -6,7 +6,7 @@ import { applyNoblePhantasmDamage } from './npDamageExecution';
 import type { EffectDecision, BattleOperation } from './contracts';
 import type { ContributionApplicationPolicy } from './executionTypes';
 import type { SourceEffect } from './sourceCollection';
-import type { HpState } from './hpResource';
+import type { HpState, HpModifierInstance } from './hpResource';
 import type {
   PreNoblePhantasmState,
   PreparationExecutionContext,
@@ -27,6 +27,17 @@ export interface PreparationHpAction {
     operationIndex: number;
     before: HpState;
     after: HpState;
+    receipts: HpState['receipts'];
+  }[];
+  modifierWrites?: {
+    source: SourceEffect;
+    operationIndex: number;
+    operation: HpModifierInstance['operation'];
+    valueSetIndex: number;
+    valueIndex: number;
+    before: HpState;
+    after: HpState;
+    modifiers: readonly HpModifierInstance[];
     receipts: HpState['receipts'];
   }[];
   sourceEnds: {

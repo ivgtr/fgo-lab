@@ -855,6 +855,29 @@ export function executePreparationOc(args: {
               after: result.state,
               receipts: result.state.receipts.slice(hpBefore.receipts.length),
             });
+          if (
+            hpAction &&
+            source.origin === 'attacker' &&
+            operation.kind === 'hpModifier' &&
+            operation.action === 'maximumFixed' &&
+            operation.lifetime === 'active' &&
+            operation.route.target === 'sourceSelf' &&
+            (operation.selection === undefined || operation.selection === 'direct') &&
+            operation.bounds.minimum === null &&
+            operation.bounds.maximum === null &&
+            (operation.useCondition === undefined || operation.useCondition.kind === 'always')
+          )
+            (hpAction.modifierWrites ??= []).push({
+              source,
+              operationIndex,
+              operation,
+              valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+              valueIndex: source.valueIndex,
+              before: hpBefore,
+              after: result.state,
+              modifiers: (result.state.modifiers ?? []).slice(hpBefore.modifiers?.length ?? 0),
+              receipts: result.state.receipts.slice(hpBefore.receipts.length),
+            });
           current = { ...current, hp: result.state };
           return { kind: 'skip', outcome: 'notApplicable' };
         });

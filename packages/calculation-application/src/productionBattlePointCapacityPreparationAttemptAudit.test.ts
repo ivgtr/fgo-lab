@@ -687,7 +687,11 @@ const groups = [
   'result',
 ] as const;
 for (const spec of specs)
-  for (const group of groups)
+  for (const group of groups.flatMap((group) =>
+    spec.name === 'prior-capacity-fixed-commit' && group === 'commit-downstream'
+      ? ([group, 'commit-downstream-fabricated'] as const)
+      : [group],
+  ))
     it(
       `isolates capacity attempt ${spec.name} ${group}`,
       productionAuditTestOptions([`tsk-08-bp-capacity-attempt-${spec.name}-${group}.json`]),
@@ -701,6 +705,10 @@ for (const spec of specs)
               ? 'state'
               : group;
         const accepts = (name: string) => {
+          if (spec.name === 'prior-capacity-fixed-commit' && group.startsWith('commit-downstream'))
+            return group === 'commit-downstream-fabricated'
+              ? name.startsWith('fabricated-')
+              : !name.startsWith('fabricated-');
           if (family === 'missing') {
             if (group === 'missing-write') return name.startsWith('missing-write-');
             if (group === 'missing-receipt') return name.startsWith('missing-receipt-');
@@ -1174,7 +1182,7 @@ for (const spec of specs)
                 );
               }
         }
-        if (group === 'commit-downstream') {
+        if (group.startsWith('commit-downstream')) {
           add('fake-native-commit', 'attemptNativeMismatch', 'native.nonCommit', (s) =>
             Reflect.set(attempt(s).native!, 'status', 'committed'),
           );
