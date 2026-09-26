@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.66"
+document_version: "1.7.67"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3116,3 +3116,20 @@ Scalar addQuantity rollback／group-start復元／ordered実NP消費 bounded-uni
 対象内Blockingと必要な製品gateは残らない。quality後は4既存文書の結果記録だけを更新し、文書検証・最終差分照合後、この9対象fileだけlocal commitして当該commitを参照identityとする。60分前にcheckpointと製品gateを完了。別family、failure意味論修正、legacy cleanup、一般retry／UI recoveryは対象外で、stale-mutation全体やTSK-08全体のclosureとは呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、pushなし。次は別途依頼された未達unitの限定計画から始め、完了済みunitを再開しない。
 
 記録更新後のdocs6/6・integrity・diff whitespaceが成功した。最終対象format／参照照合後に9対象fileだけlocal commitし、そのcommitを今回の参照identityとする。quality後の変更は結果記録だけで、全13固定入力は不変。pushなし。
+
+
+Step再確認と次sessionの限定handoff（2026-09-26、製品参照commit `dd7b396b4090be0b72d0044c263eac816829330a`）:
+
+旧4段階の契約待ちは履歴。V41／V40保持と明示再計算、S4、matrix改訂は検証済み。criticalStars forward／rollback recovery、scalar addQuantity committed forward／rollback復元→実NP消費も完了し、直前unitの9file local commitとclean worktreeを確認した。最新quality938/155/29（retry0）・audit3、warning／unexpected console0を保持する。TSK-08には他mutation consumerとlegacy整理が残り`in_progress`、TSK-09.1／09は`blocked`のまま。
+
+次の1セッションは**攻撃役skill preparationのcommit済みfixed domain battlePoint gain／loss→元actor／domain receipt→終端の同domain live condition read／実NP消費→同じselected executionの利用側証拠・calculated result→共有consumer／gate／宣言artifact**だけに限定する。domain rollback／復元consumer、capacity変更、form／eligibility切替、補助actor writer、HP／trait／form、failure意味論修正、legacy cleanup、一般retry／UI recovery、TSK-08全体とTSK-09.1／09は対象外。完了済みunitやS4／architectureを再開しない。
+
+読み取りでは`applyBattlePointOperation`の元point receipt、`executePreparationOc`のaction／source occurrence／operationIndex identity、`PreparedOrderedScenario.battlePoints`と`appliedPreparationActions`の元参照、`damageResolutionInputForNoblePhantasm`のdomain phase→scalar変換、captureのdomain live readと実NP receiptを確認した。preparationがwriterを適用し、compilerはcommit済みeffectを証拠として保持するため、damage loopのwriter applied eventを要求して二重適用させない。`preparationEffects`は成立結果でfilterされるので、その成功集合やreceiptだけを期待writer母集団にしない。command／master／canonical sourceから値と独立に導出する。NP gaugeのresourceTransaction、criticalStars／scalar mutation receiptをdomain BPの証拠へ読み替えない。
+
+domain point／phase／base scalar／NP consumedは別の観測責務で、phase計算・加算・clamp・condition・damageを監査へ複製しない。既存元参照・snapshotだけで変換のcontinuityを閉じられるか、capture専用の最小観測が必要かは次担当者が直接symbolから判断する。module／hook／fixture数値は固定しない。本準備では新fixtureやproducerを実行せず、具体的な新consumer成立を検証済みとはしない。既存96固有artifact receiptはpath／bytes／SHA-256一致、既存domain transport3artifactも照合したが、新domain mutation coverageにはしない。詳細・未確認点とreceiptは既存[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.nextSession`を正本とする。
+
+最初の成果物は段階的実装計画。責務・候補file、通常／captureの実生成・preparation・実行・利用経路、期待identity／母集団、元receipt／conversion／read／NP消費のowner、必要代表と検査別否定、不変条件・artifact通過条件、停止点・証拠再利用・最終検証を提示し利用者確認を待つ。確認前は読み取り・checksumだけ、source／test／文書編集・source test／producer・stage／commitなし。確認後は同じunitの実装・局所検証・Blocking解消・必要な最終audit／README quality・既存Task／evidence更新・範囲限定local commitまで続ける。通常判断で再承認せず、未規定製品意味論／実質契約衝突だけ根拠symbolと改訂計画を示す。
+
+今回の変更は既存4文書の整理だけ。8 shardは具体的identity疑義時のみ。60分checkpoint、90分以降新familyなし、pushなし。資料のdocs／integrity／書式・差分検証後にdocumentation-only local commitし、そのcommitを次担当者の参照identityとする。
+
+本資料整理のdocs6/6・integrity・対象書式・diff whitespaceが成功した。製品source／test／設定は`dd7b396`から不変。この4文書だけlocal commitし、依頼プロンプトから当該commitを参照する。

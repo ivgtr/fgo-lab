@@ -228,8 +228,9 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "Other mutation families remain separate TSK-08 bounded units. Both committed criticalStars forward and rolledBack/restored-value/ordered-recovery-read consumers are verified; without-area/S4/architecture remain preserved.",
-    "Deferred legacy loader/scan/candidate-list/duplicate-fixture cleanup belongs to a later bounded unit; TSK-09.1/09 remain blocked."
+    "Committed attacker-skill fixed domain battlePoint preparation gain/loss -> terminal same-domain read/actual NP consumption shared consumer is next independently bounded unit. Verified scalar/criticalStars forward/recovery, without-area/S4/architecture are preserved.",
+    "Domain rollback/capacity/alternate actor/form-eligibility and other mutation-family consumer work remain separately scoped; no whole stale-mutation closure claim.",
+    "Deferred legacy loader/scan/candidate-list/duplicate-fixture cleanup remains later work; TSK-08 in_progress, TSK-09.1/09 blocked."
   ],
   "statusInvariants": {
     "TSK-06.5": "done",
@@ -240,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Start only a separately requested remaining TSK-08 bounded unit with a fresh scoped plan. Do not reopen completed scalar forward/recovery, criticalStars forward/recovery, without-area, S4 or architecture. TSK-08 in_progress; TSK-09.1/09 blocked.",
+  "nextBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -7274,7 +7275,7 @@
             }
           ]
         },
-        "remaining": "None: final product gates and documentation6/6/integrity passed. Final target format/whitespace and scoped commit close this record.",
+        "remaining": "None: final product gates/documentation validation and scoped local commit completed.",
         "localStatic": {
           "typecheck": "passed",
           "lint": "passed",
@@ -7381,7 +7382,7 @@
         "finalDocumentation": {
           "docsTests": "6/6",
           "integrity": "passed",
-          "format": "final target check",
+          "format": "passed",
           "diffWhitespace": "passed",
           "logs": [
             {
@@ -7395,7 +7396,7 @@
               "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
             }
           ],
-          "condition": "Only existing four documentation result records after successful quality. Source/test/config/protected evidence/frozen input unchanged. Final target format/integrity and scoped commit follow this metadata recording."
+          "condition": "Only four existing documentation result records followed quality; final target format/integrity/whitespace passed and nine scoped files committed atdd7b396. No source/test/config/protected evidence/frozen input changed."
         }
       },
       "evidenceReuse": {
@@ -7572,7 +7573,7 @@
           "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
         }
       ],
-      "remaining": "No scoped Blocking or required product/documentation gate remains. Commit only the listed9files; the local commit containing this final record is the bounded unit reference identity. TSK-08 in_progress; TSK-09.1/09 blocked; no push.",
+      "remaining": "None within scalar rollback/restored-value/ordered NP consumption bounded unit: final product/documentation gates and scoped9-file local commit completed; worktree clean at next handoff start. TSK-08 in_progress; TSK-09.1/09 blocked; no push.",
       "sessionBoundary": "Checkpoint and final product gates completed before60min; no additional family begun. Only documentation result recording after final quality; no push.",
       "review": "No public API/normal observation allocation/replay/candidate selection/order/input/damage/outcome change. Source schema/compiler/relevance/scalar owner/rollback/proof/NP evaluator/production collector byte-identical to prior product commit. Expectations are canonical and value-independent; failed writer precedes the canonical failure, actual changed receipt differs from restored value, proofs/receipt snapshots reject coherent tampering, sequential attempts and intervening commit control actual NP receipt continuity. NP clamp/evaluation/emitted input are original receipts, not recomputed. Failed group projections/contributions cannot revive; unsupported remains product result even when recovery gate passed. Existing forward calculated/commit and user-control contracts preserved. Shared fixture extraction byte-equivalent. Published writer0, S4 and historical successes never counted as recovery coverage.",
       "commitPaths": [
@@ -7585,7 +7586,8 @@
         "docs/evidence/tsk-08-parity-ratchet.json",
         "docs/evidence/README.md",
         "docs/README.md"
-      ]
+      ],
+      "localCommit": "dd7b396b4090be0b72d0044c263eac816829330a"
     }
   ],
   "currentBoundedUnit": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
@@ -7829,12 +7831,12 @@
       }
     },
     "currentStageReconciliation": {
-      "asOfProductCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3",
+      "asOfProductCommit": "dd7b396b4090be0b72d0044c263eac816829330a",
       "historicalTable": "Task historical four-stage self-check remains historical; its contract-wait statements are superseded by later approved requirement/ADR and implemented units.",
       "stages": [
         {
           "stage": 0,
-          "current": "Contract and baseline established. Committed scalar addQuantity unit verified at9f460567; subsequent user-approved scalar rollback/restored-value/ordered actual NP consumption unit now passed scoped fixtures, shared gate, affected audit and mandatory quality. No whole TSK-08 closure."
+          "current": "Contracts and baseline established. Scalar committed forward and rollback/restored-value/ordered NP consumption units are verified and locally committed. Next unit is committed fixed domain battlePoint preparation gain/loss -> terminal same-domain live read/actual NP consumption shared diagnostic connection; start with fresh code-based staged plan and user confirmation."
         },
         {
           "stage": 1,
@@ -7847,7 +7849,7 @@
         },
         {
           "stage": 2,
-          "current": "S4 domain live reads and protected witnesses remain verified. Separate criticalStars recovery and committed scalar addQuantity consumers are verified. None proves scalar addQuantity rollback/restored-value/actual NP consumption."
+          "current": "S4 domain live-read controls and protected witnesses verified. criticalStars forward/recovery and scalar addQuantity forward/recovery shared consumers verified. Existing domain transport/S4 evidence does not prove shared committed domain preparation mutation receipt -> live read/NP consumption consumer closure."
         },
         {
           "stage": 3,
@@ -7910,6 +7912,178 @@
       "implementationReference": "boundedUnits: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
+      "name": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
+      "productBaselineCommit": "dd7b396b4090be0b72d0044c263eac816829330a",
+      "status": "Read-only preparation; no new source/test/producer execution and no new domain shared-consumer success claim. Present current-code staged plan and await user confirmation.",
+      "scope": "One session: committed fixed resourceMutation/battlePoint gain/loss in selected attacker skill preparation -> original actor/domain point receipt and action/source identity -> terminal same-domain live condition read -> original domain-to-scalar NP input and actual executeNpDamage receipt -> same selected event/projection/effective contribution/canonical input/calculated result -> shared audit consumer/gate, schema-legal representatives/negative fixtures, declared complete artifact. Canonical domain is the address; no scalar addQuantity writer in this unit.",
+      "excluded": "Domain rollback/restored/recovery consumer, capacity modifier mutation, form/eligibility transitions or auxiliary actor write paths; HP/trait/form and other families; failure semantics repair; legacy cleanup; general retry/UI recovery; whole stale-mutation/TSK-08 closure; TSK-09.1/09. Do not reopen verified criticalStars/scalar forward/recovery, without-area, S4 or architecture. No mandatory8-shard regeneration.",
+      "sourceFindings": [
+        {
+          "path": "packages/battle-execution/src/battlePointResource.ts",
+          "symbols": [
+            "BattlePointState",
+            "applyBattlePointOperation",
+            "readBattlePoint",
+            "battlePointPhase",
+            "battlePointEffectKey"
+          ],
+          "finding": "Owner stores original receipt identity/actor/domainId/before/after and executedEffects. Point gain/loss and capacity clamp occur here. Domain phase can use point or permille thresholds and differs from raw point/scalar consumed value; audit must not recompute phase/clamp/arithmetic."
+        },
+        {
+          "path": "packages/battle-execution/src/preparationOc.ts",
+          "symbols": [
+            "executePreparationOc",
+            "applyBattlePointOperation invocation",
+            "committed executedEffects assembly"
+          ],
+          "finding": "Canonical source operation index supplies receipt identity JSON[actionId, sourceInstanceId, effectOccurrenceId, operationIndex]; transaction applies actual BP operation in source order and marks effects executed only when committed. Read prior body rather than synthesize identity from passing receipts."
+        },
+        {
+          "path": "packages/battle-execution/src/preparationTransaction.ts",
+          "symbols": [
+            "effectRequiresPreparationDecision",
+            "planPreparationResourceTransaction",
+            "actionId construction",
+            "preparationEffects selection"
+          ],
+          "finding": "actionId uses original appliedActions.length and command.kind. BP mutations require preparation execution. preparationEffects filters proc/condition outcomes; using only these successful effects as expected writer population can miss an omitted canonical writer. Derive expectation from command/master/source identity before successful trace filtering."
+        },
+        {
+          "path": "packages/battle-execution/src/sourceCollection.ts",
+          "symbols": [
+            "resolveAttackerFormExecution",
+            "collectOperationSources",
+            "battlePointExecutionCommitted"
+          ],
+          "finding": "Original formExecution carries preparation BP state/actions. Canonical committed-effect identity determines battlePointExecutionCommitted; ordered compilation must not apply the same writer again."
+        },
+        {
+          "path": "packages/battle-execution/src/executionPlan.ts / executionTypes.ts",
+          "symbols": [
+            "prepareOrderedScenario",
+            "PreparedOrderedScenario.battlePoints",
+            "PreparedOrderedScenario.appliedPreparationActions"
+          ],
+          "finding": "Original prepared program retains final committed BP state (including original receipts), domains and preparation actions. This is the existing audit producer connection candidate; exact adapter/capture design remains open. AppliedPreparationAction resourceTransaction is NP gauge evidence, not BP receipts."
+        },
+        {
+          "path": "packages/battle-execution/src/operationCompiler.ts",
+          "symbols": [
+            "compileEffect retained BP semantics",
+            "sourceIdentity"
+          ],
+          "finding": "Committed BP resource effects are retained evidence/projection/preserveSemanticEffect rather than addQuantity or a second runtime BP mutation. Their event/projection notRelevant stateMutationOnly can be valid; do not require writer applied solely to prove preparation commit."
+        },
+        {
+          "path": "packages/calculation-application/src/scenario.ts",
+          "symbols": [
+            "resolveScenarioPreparationOutcome",
+            "damageResolutionInputForNoblePhantasm",
+            "prepareConcreteCalculationScenarioWithPolicy"
+          ],
+          "finding": "Original preparation BP state supplies domain phase for NP target parameter into base scalar battlePointPhase. The prepared program/captured selected execution is then used for original resolved input/result; no second audit execution needed. Existing conversion evaluation has no dedicated conversion receipt; decide whether reference/snapshot binding suffices or minimal capture-only authoritative observation is necessary."
+        },
+        {
+          "path": "packages/battle-execution/src/candidateStateAudit.ts / condition.ts / npDamageOperation.ts",
+          "symbols": [
+            "appendConditionReadAudit",
+            "mutationAuditAddress",
+            "scalarNpConsumptions",
+            "evaluateNpDamageOperationInternal"
+          ],
+          "finding": "battlePointPhaseReads contain subjectId/actor/point/phase/comparison/evaluated for domain reads. mutationAuditAddress covers stars/scalar only, not preparation BP. Existing scalarNpConsumptions is actual NP raw/clamped consumption/evaluation/input; use it without treating it as a domain write receipt."
+        },
+        {
+          "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts / productionParityDiagnostics.ts",
+          "symbols": [
+            "controlPreparations",
+            "evaluateWithOrderedOperationEvents",
+            "auditProductionUserControlObservations battlePoint contracts"
+          ],
+          "finding": "Existing collector retains original prepared/execution and S4 on/off domain live reads. Current S4 checks prove read/control reachability and protected witnesses, not canonical BP receipt writer population and changed commit continuity. Extend appropriate audit responsibility without extra capture executions or weakening S4."
+        },
+        {
+          "path": "packages/calculation-application/src/productionBattlePointPaths.test.ts / productionScalarQuantityAudit.ts / productionScalarQuantityRecoveryAudit.ts",
+          "symbols": [
+            "published domain transport fixtures",
+            "scalarQuantityProgram",
+            "auditScalarQuantityObservations",
+            "auditScalarQuantityRecoveryObservations"
+          ],
+          "finding": "Existing transports and reference/snapshot/NP use checks are materials, not a fixed design. Domain writer expectation derives from preparation commands and canonical effects, not scalar operations. Reuse matching responsibilities; avoid copying the entire scalar gate or broad outcome union widening."
+        }
+      ],
+      "planningQuestions": [
+        "Define changed committed attacker-skill fixed-point population from canonical commands/master/program, including actionId/source instance/effect occurrence/operation index and actor/domain binding; original successful effects/receipts alone cannot define expected membership.",
+        "Prove preparation ordering and no double application in ordered damage loop; distinguish preparation transaction/source evidence from downstream event outcome.",
+        "Define terminal last committed receipt for same actor/domain after multiple writes, unchanged input for other domain/actor, original domain phase conversion into scalar and actual NP clamp consumption. Compare owner receipts/read values rather than reproduce phase/arithmetic/damage.",
+        "Determine whether existing prepared state/actions/domain live read/base scalar/actual NP receipt references and immutable snapshots suffice for authoritative conversion continuity. If observation needed, preserve capture-only allocation and no recomputation or extra execution.",
+        "Published expected population must use existing inventory/source programs/selected command provenance. Keep schema-legal representatives independent; saved S4/read witnesses and published counts are not automatic changed-mutation coverage."
+      ],
+      "fixturePlanning": "Combine actual changed fixed gain and loss; same actor/domain multiple writes in one skill and separate committed skills; execution-owned point/capacity clamp; nontrivial phaseScale/thresholds with point != phase; scalar NP raw != actual consumed under NP clamp; wrong-domain/actor transport and omitted/double-applied writer negatives. Use natural canonical condition/NP readers. This preparation did not execute a new fixture or verify exact representative numbers. Capacity-modifier writes/domain rollback/form/eligibility transitions are excluded.",
+      "negativeGroups": [
+        "missing preparation/source/command/action/receipt/state/domain/read/NP/use and canonical expectation",
+        "wrong source/candidate/reference/action/occurrence/operation index/actor/domain/sequence/transaction, duplicates/order reversal and double application",
+        "initial/stale/intermediate/wrong-domain point or phase/scalar consumption, coherent receipt/read/input tampering",
+        "writer evidence confused with damage contribution; event/projection/effective contribution/canonical input conflicts",
+        "forged commit/executedEffects/typed outcome; calculated success accepted from incomplete domain proof"
+      ],
+      "planRequired": "Responsibilities and candidate files; actual ordinary/capture generation-preparation-execution-use flow; canonical writer/action/transaction/reader population; receipt/phase conversion/actual consumption owner; real representative and grouped negative matrix with reason/checkPath; unchanged gates/artifact contracts; stopping points/evidence reuse/final validation. Present staged plan and wait. Before confirmation no product/test/docs edits, source tests/producers, stage/commit; read/checksum allowed. After approval continue same unit through implementation/focused/final verification/records/scoped local commit without routine reapproval; no push.",
+      "evidenceReuse": {
+        "latestBoundedUnit": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
+        "productCommit": "dd7b396b4090be0b72d0044c263eac816829330a",
+        "baseline": "quality unit938/production155/E2E29 retry0, audit3; warning/unexpected console0; scalar recovery5/440. Valid historical evidence only, not new domain consumer coverage.",
+        "receiptVerification": {
+          "path": ".test-results/tsk-08-domain-bp-forward-handoff-20260926/reused-artifacts.json",
+          "bytes": 22886,
+          "sha256": "50b17c7da5207dea04b91535a174af5ad4bf56e4c36a746cd6421b749d1062e1"
+        },
+        "matchedUniqueReceipts": 96,
+        "domainTransportArtifacts": [
+          {
+            "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/production/selected-execution-observation.json",
+            "bytes": 424238,
+            "sha256": "51dbe622e5d26b048dcfcdaa9da064484f14f62b533b6faf1147c3c3f44bc728"
+          },
+          {
+            "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/production/battle-point-3300200-calculator.json",
+            "bytes": 1140618,
+            "sha256": "de730a792b81d044630aee407c2ac4a4deaa2b3ec4deee56c22ca52d2ab75fcb"
+          },
+          {
+            "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/production/battle-point-705300.json",
+            "bytes": 4138864,
+            "sha256": "798d31727a008b323937e7b667b811319fb214587421ab2793d6c593f4aed4d1"
+          }
+        ],
+        "condition": "Recheck dynamic declarations/path/bytes/SHA-256 and semantic/source conditions. Preserve existing S4 moon/sun, HP witness, domain live reads, committed/recovery/without-area envelopes, production counters and revised matrix/eligibility digests. No8-shard regeneration without concrete identity concern."
+      },
+      "verificationPolicy": "Scoped Blocking resolved by local schema-legal fixtures and difference review before full production/audit/README quality. Complete diagnostic saved before assertions with canonical identity/typed reason/expected-actual/checkPath/first difference; unchanged runner checks declared path/bytes/SHA-256. No threshold/timeouts/exclusions. If pre-plan execution diagnosis indispensable, propose minimum diagnosis/decision/stop boundary and wait for specific approval; diagnosis-only approval does not authorize implementation.",
+      "sessionBoundary": "Checkpoint at60min to existing Task/evidence; no new family at90min. Record difference/valid evidence/unmet gates/minimum next operation. TSK-08 in_progress; TSK-09.1/09 blocked; scoped local commit only, no push.",
+      "preparationValidation": {
+        "scope": "Read-only code and saved artifact inspection plus existing documentation update. No product source/test edits or source test/producer/audit/quality run.",
+        "documentation": {
+          "docsTests": "6/6",
+          "integrity": "passed",
+          "format": "passed",
+          "diffWhitespace": "passed",
+          "artifacts": [
+            {
+              "path": ".test-results/tsk-08-domain-bp-forward-handoff-20260926/docs-tests.log",
+              "bytes": 505,
+              "sha256": "ee08b1e2ec1b6691dce7bb3a33b686b2641721a39d360b9b0dac536f7c01fbb1"
+            },
+            {
+              "path": ".test-results/tsk-08-domain-bp-forward-handoff-20260926/docs-integrity.log",
+              "bytes": 22,
+              "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+            }
+          ],
+          "condition": "Read-only preparation plus four existing documentation records only; final metadata/refs check and documentation-only local commit follow. No source tests/producers/audit/quality."
+        }
+      }
+    },
+    "completedScalarRecoveryPreparation": {
       "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
       "productBaselineCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3",
       "status": "Preparation fulfilled by user-approved scalar rollback/restored-value/ordered NP consumption bounded unit. Read latest boundedUnits entry for final gates and preserved evidence; no reopening completed families.",
