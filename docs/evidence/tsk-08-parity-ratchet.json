@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Not selected; derive the next bounded unit from remainingWorkSummary and current canonical inventory.",
+  "nextBoundedUnit": "Committed attacker-skill sourceSelf direct active receive HP modifier followed by same-skill fixed HP gain consumption",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -15603,7 +15603,13 @@
           ],
           "finding": "Committed maximumFixed inspector treats native/reducer noncommit as outside its boundary; fixed HP attempt consumer excludes hpModifier. They remain independent evidence only. Production expected requests are collected before success filtering. Existing typed diagnostic/receipt contract and committed-forward gates remain intact."
         }
-      ]
+      ],
+      "precedingPlanRead": {
+        "path": ".test-results/tsk-08-hp-maximum-fixed-attempt-handoff-20260927/preplan.json",
+        "bytes": 546866,
+        "sha256": "d263ae0f1753918d5abffc32e731a42826dc999d6811414e8a000a51d7ccea63",
+        "qualification": "Historical plan diagnostic for the completed maximumFixed attempt-isolation unit; it is not evidence or preparation for the newly selected receive committed-forward unit."
+      }
     }
   ],
   "currentBoundedUnit": "Attacker-skill sourceSelf active maximumFixed HP modifier changed-attempt native-noncommit isolation",
@@ -15866,8 +15872,8 @@
         {
           "stage": 2,
           "current": "S4/stars/scalar/fixed-domain committed forward and original fixed BP noncommit isolation retained. Committed capacity forward retained. Attacker-skill capacity changed attempt -> native noncommit -> original action-start/modifier/committed-prefix retention -> original reducer refusal -> same selected scenario actual prepared/application typed refusal now verified by shared consumer/gate. Domain recovery and other families/legacy remain outside this unit; TSK-08 in_progress. Committed attacker-skill fixed HP original apply/native commit/reducer retained -> same selected actual HP read/projection/contribution and continuous hpRatioLow evaluation/input/result now verified by shared consumer/gate,6 changed connected representatives/7 boundaries/1606 negatives/104 complete diagnostics; no HP recovery or whole TSK-08 closure. Scoped attacker-skill fixed HP actual changed attempt -> original native noncommit -> original action-start HP/prior committed prefix retention -> original reducer/same selected prepared/application typed refusal and no downstream now verified;7 changed representatives/7 boundaries/891 negatives/64 complete diagnostics. No HP recovery/whole closure. Scoped attacker-skill active sourceSelf maximumFixed committed modifier/maximum/current change -> original native/reducer/prefix retained -> same selected actual HP read/projection/contribution,continuous hpRatioLow NP/canonical input/calculated result now verified;local84 complete diagnostics and impact audit4,final quality success. Published50 changed selected executions have no real HP reader/continuous NP; those remain explicit boundaries. No HP recovery/whole closure. Scoped attacker-skill sourceSelf active maximumFixed real changed attempt -> original native noncommit -> action-start HP/modifier/receipt and prior committed prefix retained -> original reducer and same selected prepared/application/direct typed refusal/no downstream is now verified; 8 changed representatives/5 boundaries/36 negatives/3 complete diagnostics, final quality1444/155/29 retry0, warnings/console0. This does not close other Step2 families or TSK-08.",
-          "nextBoundedScope": "Not selected; next planning session derives one evidenced gap from remainingWorkSummary/current canonical inventory.",
-          "nextScopeQualification": "boundedUnits[49] is complete with committed-forward and fixed-HP noncommit evidence kept distinct. TSK-08 remains in_progress; do not infer recovery or whole-task closure."
+          "nextBoundedScope": "One session: attacker-skill hpModifier/action receive/sign +1/lifetime active/route.target sourceSelf/selection direct/bounds minimum 0 maximum 50000/useCondition omitted -> original modifier append and native commit -> separate later-effect fixed HP gain in the same skill consumes the original receive modifier -> original HP owner receipt/state -> same selected prepared/application/direct result through shared audit consumer/gate. The fixed HP gain is a downstream consumer, not part of the new writer population.",
+          "nextScopeQualification": "One current published schema-legal attacker-skill receive candidate includes a later same-skill fixed HP gain consumer. Inventory count is not a fixed expected population; committed forward only, plan and user approval pending."
         },
         {
           "stage": 3,
@@ -15876,9 +15882,9 @@
       ],
       "latestBoundedUnit": 49,
       "latestEvidence": "MaximumFixed actual changed attempt -> original native noncommit -> action-start HP/modifier/receipt and committed prefix retained -> original reducer and same selected prepared/application/direct typed refusal with downstream absent: 8 changed representatives, 5 boundaries, 36 negative fixtures, 3 complete losslessly restored diagnostics. Final quality unit1444/1444, production155/155, Playwright29/29 retry0, warnings/console0; application/data-pipeline production counters unchanged from boundedUnits[48]. Published saved forward population remains separate and is not new noncommit success evidence.",
-      "nextBoundedUnit": "Not selected; derive from remainingWorkSummary and current canonical inventory after boundedUnits[49].",
-      "priorRecordCommit": "a8fedf6934d695d6cce2218c44a5d1c79cfc80aa",
-      "recordCommitPolicy": "This next-unit preparation is documentation/read-only identity evidence only; resolve its documentation commit from Git history. Completed Step0/1/3 and latest Step2 product evidence remain authoritative."
+      "nextBoundedUnit": "Committed attacker-skill sourceSelf direct active receive HP modifier followed by same-skill fixed HP gain consumption",
+      "priorRecordCommit": "6388b7f2fada54934fa8ac7d11131387190aabaa",
+      "recordCommitPolicy": "This selected next-unit handoff records read-only published-master inventory/direct source findings only; resolve this documentation commit from Git history. No source test, producer, audit, or quality result is claimed for selection."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -15930,54 +15936,106 @@
         "previousReceiptCheck": "All 22 latest completed bounded-unit artifact receipts matched path/bytes/SHA-256 during read-only preparation. This proves existing evidence integrity, not addQuantity coverage.",
         "authority": "Latest completed criticalStars recovery boundedUnits entry owns final quality/audit/declared fixture receipts; prior committed-forward and without-area entries retain their contracts. Reuse only unchanged semantic/source conditions and matching bytes/SHA-256. Published master and schema-legal fixture populations derive independently from canonical generators; do not fix historical counts as future expected coverage. No unconditional eight-shard regeneration."
       },
-      "status": "Preparation fulfilled by user-approved current scalar bounded unit; read currentBoundedUnit for current verification and remaining gates.",
-      "implementationReference": "boundedUnits: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
+      "status": "Historical preparation fulfilled by boundedUnits[40] (product local commit 9f4605675b24472eb15a8772f6444cc82e71f5d3); not a current next-unit selection.",
+      "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "name": "TSK-08 next bounded-unit selection (unselected after maximumFixed attempt isolation)",
-      "status": "The maximumFixed actual-changed native-noncommit bounded unit is complete and committed. TSK-08 remains in_progress; no next semantic family has been selected.",
+      "name": "Committed attacker-skill sourceSelf direct active receive HP modifier followed by same-skill fixed HP gain consumption",
+      "status": "Read-only Step reconciliation and canonical inventory are complete; this one-session scope is selected. First deliverable is the implementation plan from current code, then wait for user confirmation. No implementation/execution was started for the selected unit.",
       "productBaselineCommit": "4655e72c6f80b04aefb3318ed2730ae5d48466ec",
-      "recordBaselineCommit": "10d180b327c6402b1efb0d4bf4e968a35d27a75f",
-      "scope": "Read-only reconciliation of remaining canonical populations against completed boundedUnits to identify one actual audit-connection gap. Do not preselect a semantic family or treat exclusions as authorization.",
+      "recordBaselineCommit": "6388b7f2fada54934fa8ac7d11131387190aabaa",
+      "scope": "One session: attacker-skill hpModifier/action receive/sign +1/lifetime active/route.target sourceSelf/selection direct/bounds minimum 0 maximum 50000/useCondition omitted -> original modifier append and native commit -> separate later-effect fixed HP gain in the same skill consumes the original receive modifier -> original HP owner receipt/state -> same selected prepared/application/direct result through shared audit consumer/gate. The fixed HP gain is a downstream consumer, not part of the new writer population.",
       "excluded": [
-        "HP recovery, successful resend/general retry/UI recovery, standalone rollback, and candidate damage-loop rollback.",
-        "Any new writer/recipient/lifecycle/selection/value-expression/family or failure-code/outcome classification change without a separately bounded request.",
-        "Legacy cleanup, stale-mutation overall closure, whole TSK-08 closure, and TSK-09.1/09 work."
+        "MaximumFixed committed forward/noncommit [48]/[49], fixed HP forward/noncommit [46]/[47], and other completed units; do not reopen them.",
+        "Native noncommit, rollback, recovery/resend/retry/UI, damage-loop rollback, and failure-code/outcome reclassification.",
+        "The later fixed HP gain is a separate original consumer, not a new writer. No other HP gain/loss writer, receive/give/noHealing mixture, other recipient/selection, maximum/base action, removal/expiry/constant/new lifetime, passive/NP writer, actor form/trait/eligibility switching, or value-expression change.",
+        "Legacy cleanup, stale-mutation overall closure, whole TSK-08 closure, TSK-09.1/09, and push."
       ],
       "sourceFindingsAsOfCommit": "4655e72c6f80b04aefb3318ed2730ae5d48466ec",
       "sourceFindings": [
         {
-          "owner": "Completed bounded unit direct owner/source findings",
+          "owner": "canonical schema and source",
           "symbols": [
-            "boundedUnits[49].directSymbolsAndFindings"
+            "packages/master-data/src/index.ts:effectExecutionOperationSchema",
+            "packages/data-pipeline/src/snapshotNormalization.ts:normalizeAtlasSnapshot",
+            "packages/data-pipeline/src/executionSemantics.ts:normalizeExecutionSemantics"
           ],
-          "finding": "Use the completed unit record for canonical generation, original writer/capture, native/reducer, same selected refusal transport, and protected gate/artifact symbols. Next bounded gap remains unselected until current inventory reconciliation."
+          "finding": "The published master has the bounded receive declaration and a later distinct HP gain effect in one skill; preserve canonical skill/effect/operation order and valueSetIndex/valueIndex. Inventory counts are not runtime keys or gate expectations."
+        },
+        {
+          "owner": "original writer and consumer",
+          "symbols": [
+            "packages/battle-execution/src/preparationHp.ts:executeHpOperation",
+            "packages/battle-execution/src/hpResource.ts:changeHpModifiers",
+            "packages/battle-execution/src/hpResource.ts:hpModifierValue",
+            "packages/battle-execution/src/hpResource.ts:transitionHp",
+            "packages/battle-execution/src/preparationOc.ts:executePreparationOc",
+            "packages/battle-execution/src/preparationOc.ts:completeSource"
+          ],
+          "finding": "Original receive appends its modifier; the later fixed gain independently reads receive at the original transitionHp call and owns the actual receipt/state. Audit must not calculate the multiplier, clone transitionHp arithmetic, or replay writers."
+        },
+        {
+          "owner": "capture sufficiency",
+          "symbols": [
+            "packages/battle-execution/src/hpExecutionObservation.ts:PreparationHpAction",
+            "packages/battle-execution/src/hpExecutionObservation.ts:preparationHpActionsFor"
+          ],
+          "finding": "Capture already has modifierWrites, HP writes, source/attempt/native/returned observations and receipt slices. Plan whether original receive-consumption input is observable; add only minimal capture-only evidence if needed, preserving ordinary allocation/public serialized shape."
+        },
+        {
+          "owner": "commit/reducer and selected result",
+          "symbols": [
+            "packages/battle-execution/src/ocState.ts:executeOcAction",
+            "packages/battle-execution/src/preparationTransaction.ts:planPreparationResourceTransaction",
+            "packages/battle-execution/src/preparationSkillReducer.ts:reducePreparationSkillAction",
+            "packages/calculation-application/src/scenario.ts:prepareCalculationScenarioWithPolicy",
+            "packages/calculation-application/src/scenario.ts:evaluatePreparedCalculationScenario",
+            "packages/calculation-application/src/scenario.ts:evaluatePreparedCalculationResult"
+          ],
+          "finding": "Original native commit/reducer retain the modifier and gain in one action; same selected prepared/application/direct result transport must be checked without synthesizing downstream outputs."
+        },
+        {
+          "owner": "existing gate/artifact boundaries",
+          "symbols": [
+            "packages/calculation-application/src/productionHpPreparationAudit.ts:hpPreparationCanonicalFor",
+            "packages/calculation-application/src/productionHpPreparationAudit.ts:hpPreparationSource",
+            "packages/calculation-application/src/productionHpPreparationAttemptAudit.ts:hpPreparationAttemptSelection",
+            "packages/calculation-application/src/productionHpMaximumFixedPreparationAudit.ts:maximumFixedCanonical",
+            "packages/calculation-application/src/productionMasterControlAudit.test.ts:evaluateWithOrderedOperationEvents",
+            "packages/calculation-application/src/productionAuditArtifacts.ts:writeProductionAuditArtifact"
+          ],
+          "finding": "Existing HP attempt selection excludes hpModifier and maximumFixed audit is action-specific. Choose a focused consumer or narrow extension from definitions/use sites; preserve expected population before success filtering and existing declared lossless artifact gates."
         }
       ],
       "firstDeliverable": {
-        "kind": "Read-only bounded-unit selection and evidence-based implementation plan",
+        "kind": "Code-based staged implementation plan; wait for user confirmation before implementation.",
         "mustCover": [
-          "Reconcile current canonical populations, direct owners, completed bounded units, and explicit residual work; select only one evidenced audit gap.",
-          "State scope/exclusions, shared consumer and owner evidence, reuse conditions, local/production gates, performance or counter impact, and stop boundary.",
-          "Wait for user confirmation before edits or new test/producer/audit/quality execution for that future unit."
+          "Choose the shared consumer/gate responsibility from direct definitions/use sites; justify extending an existing consumer versus a focused one.",
+          "Trace normal/capture canonical generation -> original receive apply/modifier append -> separately ordered later fixed gain consumer -> native commit/reducer retention -> same selected prepared/application/direct result.",
+          "Correlate command/master/form-qualified skill source/effect occurrence/choice/action/operation/valueSetIndex/valueIndex, route/sign/bounds/lifetime/traits/eligibility, modifier instance/receipt slices, and write order; do not use IDs/labels/raw keys for runtime branching.",
+          "Prove actual receive consumption only through the original transition/receipt/state. Do not reproduce HP arithmetic or replay writers; add only capture-only owner observation if required.",
+          "Define expected population before activation/receipt/native-success filters, schema-legal representatives and explicit boundaries, responsibility-grouped negatives with typed reason/checkPath/first difference, and declared complete lossless diagnostics.",
+          "Verify original native commit/reducer/prefix and same selected result; calculator/ranking parity where applicable. Do not invent HP reads/NP/damage inputs/results absent from that execution.",
+          "Reuse [46]-[49] as separate evidence. State local validation, required final gates, relevant hot-path/counter before/after, record updates, review and stop conditions."
         ]
       },
-      "approvalBoundary": "For the next unit, present the code-based plan first and wait for user confirmation before edits or execution. If a new diagnostic is indispensable to choose the unit, first state the minimum diagnostic, decision it will inform, and stop boundary; diagnostic approval alone does not authorize implementation.",
-      "afterApproval": "After confirmation, continue that same bounded unit through implementation, local verification, diff review, required final gates, Task/evidence update, and scoped local commit using normal technical judgment; no push. Stop only for unprovided product semantics or substantive contract conflict.",
-      "representativePolicy": "The current unit counts are observed proof counts, not frozen future expectations. Preserve its successful-forward/native-noncommit separation and do not create synthetic population entries or downstream results.",
+      "approvalBoundary": "Present the plan first and wait for the user confirmation before product source/test edits or source test/producer/audit/quality execution. After confirmation, use ordinary technical judgment without asking again. Stop affected work only for unspecified product semantics or substantive contract conflict, with direct symbols/difference/revised plan.",
+      "afterApproval": "Continue the same bounded receive committed-forward unit through implementation, local validation, diff review, necessary final gates, Task/evidence update, and scoped local commit; no push.",
+      "representativePolicy": "Counts are read-only inventory facts, not fixed test/gate expectations. Choose an actually schema-legal source and eligible actor/form/traits. The original fixed HP gain is a separately identified consumer, never another writer in this population.",
       "negativeResponsibilities": [
-        "Canonical/command/master/form/source/choice/action/operation/value cells/route/sign/bounds/lifetime/traits/modifier/receipt/action-start/source-end/attempt-end/native/returned/reducer/retained/prefix/transport/typed refusal/population missing.",
-        "Wrong actor/source/occurrence/operationIndex/cell/value/route/order/ref;duplicate or reversed writes/modifiers/receipts/source ends;coherently changed before/after/full state/modifier/receipt/native commit/prefix/refusal.",
-        "Initial/stale/foreign/intermediate HP retention;maximum/baseMaximum/current confusion;receipt actual0 false unchanged;last-write substituted for source-reset/attempt end;prior committed prefix lost;native noncommit evidence fabricated.",
-        "Counterfeit effect/applied action/ordered scenario/HP seed/read/NP/input/calculated result after real refusal;writer replay or audit arithmetic;published/program/selection/request omissions or success filtering.",
-        "Incomplete diagnostics or declared receipts,wrong path/bytes/SHA,non-lossless saved restoration,missing typed reason/checkPath/expected-actual/canonical first difference accepted as success."
+        "Canonical/command/master/form/source/effect/choice/action/operation/cell/valueSetIndex/valueIndex/route/sign/bounds/lifetime/traits/eligibility mismatch, omission, duplication, or order reversal.",
+        "Wrong modifier instance/source/reference or receipt slice; stale/foreign/intermediate/coherently altered action-start HP/modifier/receipt/source/attempt/native/returned state.",
+        "Receive not consumed by the later HP gain, wrong consumer occurrence/order/cells, fabricated receipt, actual0 treated as change, or audit-side receive/HP arithmetic.",
+        "Missing/altered native commit/reducer/prefix, different actor/execution/selected result transport, fabricated downstream read/NP/damage/result.",
+        "Population omitted after activation/receipt/success filter; inventory count frozen as expected; incomplete/unrestorable diagnostic accepted."
       ],
       "evidenceReuse": {
         "latestCompletedUnits": [
-          "boundedUnits[49] maximumFixed changed-attempt original native noncommit isolation",
-          "boundedUnits[48] maximumFixed committed forward/live-read/NP",
-          "boundedUnits[47] fixed HP original native noncommit isolation",
-          "boundedUnits[46] fixed HP committed forward and earlier protected units"
+          "boundedUnits[49] maximumFixed changed-attempt noncommit",
+          "boundedUnits[48] maximumFixed committed forward",
+          "boundedUnits[47] fixed HP noncommit",
+          "boundedUnits[46] fixed HP committed forward",
+          "boundedUnits[40]/[41] scalar forward/recovery completed; not reopened"
         ],
         "completedReconciliation": {
           "path": ".test-results/tsk-08-hp-maximum-fixed-20260927/final-reconciliation.json",
@@ -16047,12 +16105,30 @@
           "bytes": 730,
           "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6",
           "use": "If pnpm fails externally at SQLite before script,record failure,verify existing runner bytes/SHA/content and use same generic runner with existing node_modules,8CPU affinity,production50%/4 workers,unchanged timeout. Follow efficiency command/poll/session limits."
-        }
+        },
+        "selectionMaster": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+          "version": "20260920.3",
+          "schemaVersion": 56,
+          "manifest": {
+            "path": "apps/web/public/master/manifest.json",
+            "bytes": 547,
+            "sha256": "064bf6200cb8d80cb411f8dd9638ac992f0becca57a75e215439f3c00374cc15"
+          }
+        },
+        "selectionQualification": "Published inventory selected a legal candidate but is not proof of execution/commit/consumption. Generate the original owner path after confirmation. Do not regenerate prior eight shards absent concrete identity doubt."
       },
       "preparationVerification": {
-        "path": ".test-results/tsk-08-hp-maximum-fixed-attempt-handoff-20260927/preplan.json",
-        "bytes": 546866,
-        "sha256": "d263ae0f1753918d5abffc32e731a42826dc999d6811414e8a000a51d7ccea63"
+        "mode": "read-only inventory and direct-symbol reconciliation recorded inline in selectionEvidence/sourceFindings; no new diagnostic artifact was created",
+        "sourceTestsProducersAuditsQualityRun": false,
+        "publishedMasterPath": "apps/web/public/master/master.json",
+        "publishedMasterBytes": 32953998,
+        "publishedMasterSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+        "publishedManifestPath": "apps/web/public/master/manifest.json",
+        "publishedManifestBytes": 547,
+        "publishedManifestSha256": "064bf6200cb8d80cb411f8dd9638ac992f0becca57a75e215439f3c00374cc15"
       },
       "activeCheckpoint": {
         "time": "2026-09-27 06:10 JST",
@@ -16088,21 +16164,53 @@
         "resolution": "The 90-minute checkpoint remains historically incomplete. Its nativeRejectReached and no-op writeOrder failures were fixed within the same unit; focused audit, final quality, record reconciliation, and scoped product commit then passed.",
         "resolutionRecordedAt": "2026-09-27 07:18 JST"
       },
-      "nextMinimalOperation": "Read-only reconcile remainingWorkSummary/current canonical inventory against completed bounded units and select one evidenced gap; present its bounded plan before implementation. Do not infer a next semantic family from this completed unit.",
-      "sessionBoundary": "The current unit completed after90min while continuing its authorized family; no new family was started. Preserve the old checkpoint as history. Next unit is unselected; push prohibited.",
-      "completionCondition": "boundedUnits[49] completed: real maximumFixed changed attempt -> original native noncommit -> action-start HP/modifier/receipt and prior committed prefix retained -> original reducer and same selected prepared/application/direct typed refusal/no downstream; representative/boundary/negative and declared lossless diagnostics passed, final quality passed, records follow scoped product commit. TSK-08 remains in_progress; not HP recovery, stale-mutation overall, or whole-task closure.",
+      "nextMinimalOperation": "Present the code-based receive committed-forward plan using this committed handoff; wait for user confirmation.",
+      "sessionBoundary": "One bounded receive committed-forward unit. Save a 60-minute checkpoint; after90 minutes start no new semantic family. An incomplete checkpoint is not completion.",
+      "completionCondition": "Canonical attacker-skill receive is actually appended and committed by the original native/reducer owner; a separate later fixed HP gain in the same skill consumes receive through original transition/receipt/state; same selected application/direct result and applicable calculator/ranking parity are verified without fabricated outputs; grouped negatives and declared lossless artifacts pass; required final gates and record/diff reconciliation pass; scoped local commit. Not native noncommit/recovery or TSK-08 closure.",
       "preparationDocumentationGate": {
-        "formatCheck": "passed for the two updated documents",
-        "docsTests": 6,
-        "referenceIntegrity": "passed",
-        "diffCheck": "passed",
-        "boundedUnitsAppended": 49,
+        "formatCheck": "passed: Prettier check for the two updated documents",
+        "docsTests": "6/6 passed",
+        "referenceIntegrity": "passed: pnpm test:docs integrity check",
+        "diffCheck": "passed: git diff --check",
+        "boundedUnitsUnchanged": true,
         "taskStatuses": {
           "TSK-08": "in_progress",
           "TSK-09.1": "blocked",
           "TSK-09": "blocked"
         },
-        "changes": "Result-only update to the existing Task and evidence documents; no product source/test changes."
+        "changes": "Read-only scope selection from published master/direct source symbols; only existing Task/evidence documents are updated; no product source/test/producer/audit/quality execution."
+      },
+      "selectionEvidence": {
+        "readOnly": true,
+        "noSourceTestProducerAuditOrQualityRun": true,
+        "publishedMaster": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+          "version": "20260920.3",
+          "schemaVersion": 56,
+          "manifest": {
+            "path": "apps/web/public/master/manifest.json",
+            "bytes": 547,
+            "sha256": "064bf6200cb8d80cb411f8dd9638ac992f0becca57a75e215439f3c00374cc15"
+          }
+        },
+        "inventoryObserved": {
+          "allHpModifierDeclarations": 109,
+          "actions": {
+            "give": 5,
+            "maximumFixed": 39,
+            "noHealing": 1,
+            "receive": 64
+          },
+          "source": "servants[].skills[].effects[].execution[]",
+          "attackerSkillReceiveSourceSelfActive": 6,
+          "matchingShape": "All six have sign +1, selection direct, bounds 0..50000, omitted useCondition, sourceSelf route, active lifetime; canonical route eligibility is anyRecipient/onMissing unsupported, so resolve the eligible actor/form/traits in the fixture.",
+          "sameSkillLaterGain": 1,
+          "sameSkillLaterGainOrder": "One matching skill has a separate later effect with resourceMutation hp gain/fixed after receive; it is the downstream consumer, not another writer.",
+          "qualification": "Read-only published declaration counts, not selected/executable/committed counts, fixed expectations, or proof of receive consumption."
+        },
+        "selectionReason": "This is one schema-legal attack-skill receive path with an existing ordered HP consumer. It closes an evidenced Step2 gap without reopening maximumFixed or combining receive/give/noHealing."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -16362,7 +16470,7 @@
         }
       }
     },
-    "currentPreparationRecord": "Read-only next-unit preparation after maximumFixed committed forward product3d0f787 and record10d180b;maximumFixed changed attempt/native-noncommit isolation selected. Implementation plan/confirmation still pending;no new source/test/producer/audit/quality execution.",
+    "currentPreparationRecord": "Read-only next-unit selection after maximumFixed attempt isolation product 4655e72c6f80b04aefb3318ed2730ae5d48466ec and record baseline 6388b7f2fada54934fa8ac7d11131387190aabaa; published master inventory selected the sourceSelf active receive committed-forward consumer slice. First deliverable is a code-based implementation plan; no source test/producer/audit/quality execution was run for this selection.",
     "completedPreparationAttemptPreparation": {
       "name": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
       "productBaselineCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
@@ -16789,14 +16897,14 @@
     }
   },
   "remainingWorkSummary": {
-    "asOfPreparationCommit": "9cf15d0c85160646ce29593feafb0aeadbf4c7ff",
+    "asOfPreparationCommit": "6388b7f2fada54934fa8ac7d11131387190aabaa",
     "establishedSteps": [
       0,
       1,
       3
     ],
     "openStep": 2,
-    "nextSession": "No next semantic family is preselected. Reconcile remaining canonical populations against completed bounded units, select only an evidenced gap, and prepare a bounded plan before implementation.",
+    "nextSession": "One bounded attacker-skill sourceSelf active receive modifier committed-forward unit with its separate later same-skill fixed HP gain consumer; first deliverable is a code-based plan and user confirmation.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -16829,7 +16937,7 @@
         "work": "Comparable3-run performance medians and counters/output;canonical contributor workflow;remaining old runner/CI/ranking/compatibility path cleanup;final UI/production/performance/restart acceptance."
       }
     ],
-    "qualification": "Residual audit/closure inventory is not authorization to implement excluded paths. This maximumFixed changed-attempt unit is completed; TSK-08 remains in_progress and the next bounded unit is not selected.",
+    "qualification": "This is one Step2 consumer connection selected from read-only current published inventory; counts are not frozen expected values. It does not authorize other modifier paths, recovery, legacy cleanup, or TSK-08 closure. TSK-08 remains in_progress.",
     "asOfProductCommit": "4655e72c6f80b04aefb3318ed2730ae5d48466ec",
     "asOfPreparationBaseline": "10d180b327c6402b1efb0d4bf4e968a35d27a75f"
   }

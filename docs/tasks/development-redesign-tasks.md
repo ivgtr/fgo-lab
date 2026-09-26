@@ -3432,4 +3432,16 @@ Focused auditは1 file／3 tests pass、warning 0。完全diagnostic 3点はasse
 
 `productionMasterControlAudit`と既存maximumFixed committed-forward 8 shardは再実行していない。期待母集団・既存producer／gateの製品sourceは不変で、`boundedUnits[48]` committed forward、`[47]` fixed HP native noncommit、`[46]` fixed HP committed forwardの独立証拠を再利用した。保存published forward population（宣言11／selected 62／changed 50、native committed transition 238）は新changed native-noncommit成功の根拠や将来の固定件数に使わない。
 
-対象製品9 fileをlocal commit `4655e72`（full SHAはevidence `boundedUnits[49].implementationCommit`）へ記録した。Task／evidence文書gateもPrettier、`test:docs` 6/6とintegrity、`git diff --check`が成功し、`boundedUnits[49]`とcurrent-stage／next-session handoffを更新した。今回の限定unitは完了したが、TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま。HP recovery、stale-mutation全体、TSK-08全体closureではなく、pushなし。次のbounded unitは未選定で、既存remaining-work summaryとcanonical inventoryから改めて限定する。
+対象製品9 fileをlocal commit `4655e72`（full SHAはevidence `boundedUnits[49].implementationCommit`）へ記録した。Task／evidence文書gateもPrettier、`test:docs` 6/6とintegrity、`git diff --check`が成功し、`boundedUnits[49]`とcurrent-stage／next-session handoffを更新した。今回の限定unitは完了したが、TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま。HP recovery、stale-mutation全体、TSK-08全体closureではなく、pushなし。
+
+### Step 2 次bounded unitの選定と計画handoff（read-only inventory）
+
+Step 0（baseline／contracts）、Step 1（V41 request versionContextとV40保存・明示V41再計算）、Step 3（改訂matrix／eligibility digest）は成立済みを維持する。Step 2は複数のbounded unitを積み上げ中で、Unit[49]のmaximumFixed attempt隔離は完了したが、TSK-08 closureではない。前回handoffの「次unit未選定」を、同一canonical masterのread-only inventoryで更新した。
+
+`apps/web/public/master/master.json`（version `20260920.3`、32,953,998 bytes、SHA-256 `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`）とmanifest（547 bytes、SHA-256 `064bf6200cb8d80cb411f8dd9638ac992f0becca57a75e215439f3c00374cc15`）を照合した。現ファイルには全体109件の`hpModifier` declarationがあり、そのうち`servants.skills`には`action:receive/sign:+1/lifetime:active/route.target:sourceSelf/selection:direct/bounds:0..50000/useCondition省略`が6件ある。6件中1 skillには、receive modifierの後続effectに別operationとして固定HP gainがある。他5件には同skill内の後続HP gainがない。これは現masterの読取inventoryであり、production selected／execution／commitの成功証拠でも、将来gateの固定期待件数でもない。
+
+次の一sessionは、このschema-legal attacker-skill `receive` modifierのcommitted forwardを共有audit consumer／gateへ接続し、同一skill内の後続fixed HP gainを元HP ownerの実consumerとして観測する範囲に限定する。receive modifierだけを新writerとして数え、後続HP gainは別operationのreader／consumerとして扱う。元apply、modifiers／receiptとfull HP state、native commit／reducer保持、同じselected preparation/application/direct resultを確認する。actor form／traits／eligibility、初期HPと他modifier環境を固定する。HP倍率・floor/clamp・damage意味論をauditへ複製せず、実owner観測が足りなければcapture専用の最小観測を検討する。成功recovery／retry、native noncommit、他modifier action／recipient／lifetime、後続HP gain/loss writer、passive／NP writer、別family、failure分類変更、legacy cleanup、TSK-08全体closureは対象外。
+
+最初の成果は現code symbolとpublished inventoryに基づく段階的実装計画で、consumer／owner観測／fixture責務、通常／capture経路、canonical identityとoperation order、actual receive consumption、native/reducer commit、same-selected result、expected population、検査別否定、declared lossless artifact、既存evidence再利用、counter／hot-path影響、gateと停止境界を示す。利用者確認前は次unitの製品source／test／文書編集、source test／producer／audit／quality、stage／commitを行わない。確認後は同じbounded unitを実装から必須gate・既存Task／evidence更新・範囲限定local commitまで継続し、通常の技術判断で再承認を求めない。
+
+Step選定のread-only root cause／direct symbols／checksumはevidence `handoffPreparation.nextSession.selectionEvidence`を正本とする。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。このhandoffはHP recovery、maximumFixedの再開、またはTSK-08全体closureを許可しない。pushなし。
