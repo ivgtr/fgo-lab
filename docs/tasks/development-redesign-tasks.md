@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.58"
+document_version: "1.7.59"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -2993,3 +2993,16 @@ Without-area bounded-unit completion（2026-09-26）:
 production counterは先行qualityと一致し、candidate 6,673／deduplicated 4,194、damage request 2,596／distinct 1,489、master read／parse／compile各1。所要時間86,849→90,784ms（同じ4 worker条件）だが非制御の観測であり、candidate／request増加はない。8 shardと80 condition artifactはchecksumを照合して再利用し、再生成していない。最終quality後に固定17ファイルすべてのbytes／SHA-256一致を確認し、以後は3文書の結果記録だけを更新する。command・receipt・flow closureは既存[evidence](../evidence/tsk-08-parity-ratchet.json)の最新bounded unitを参照する。
 
 次の最小操作は、このbounded unitを再実装せず、別sessionでstale-mutation実値・後続read・rollback／recovery consumer closureまたはlegacy cleanupの限定計画を作ること。今回の結果をTSK-08全体のclosureとは呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。この検証済み範囲だけをlocal commitし、pushしない。
+
+
+次sessionの限定handoff（2026-09-26、参照製品commit `4ca8caccf25da352be5c94ede0eed589f4fa2f9b`）:
+
+次の1セッションは**criticalStarsのcommit済みmutationから順序付き後続inputQuantity readへ実値が届く共有監査consumer closure**だけを扱う。stale-mutation全体を一括で閉じず、rollback／復元値／recovery read、addQuantity／HP／battle-point／trait／formの別mutation family、legacy cleanupは別sessionへ残す。rollback済みgroupをcommit成功の証拠として受け入れない境界は今回確認するが、rollback／recovery consumerの完成とは呼ばない。
+
+`resourceSemantics.ts::applyOrderedCriticalStarsMutation`がgain／lossと0..99へのclampを所有し、`candidateExecution.ts::executeOrderedScenarioCandidateInternal`が実mutationのbefore／attemptedAfterとcondition readを観測する。`candidateStateAudit.ts`がcommit／rollback境界のafterTransactionとgroup／read identityを記録する。既存`scenario.test.ts`の69→99→read 99はsnapshot transportであり、共有gateを通ったstale-mutation証拠ではない。現行user-control gateはcriticalStarsのexecutionGroups／mutations／inputQuantityReadsを検証していない。NP preparation resourceTransaction gateとも区別する。直接symbol、保存観測のreceipt、未達条件は[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.nextSession`を正本とする。
+
+保存済みS4 artifactの読み取りでは1,590 observations／candidateState付き3,180 sides、criticalStars read 410 occurrence、mutation 122 occurrence（すべてcommitted・後続readあり）を確認した。mutation identityはowner／profile／operationの組で8、対象ownerは3。各mutationのafterTransactionと最初の後続readが等しいのは48 occurrenceだけで、間に同じaddressへの書込みが続く。したがって最初のmutation値を任意の後続readへ直接比較せず、同じcandidate・state address・operation／group順序からread直前の有効値を辿る契約を計画する。122等は保存観測数であり、将来期待件数にしない。owner ID分岐や、成功する観測だけを選ぶfilterで母集団を作らない。
+
+最初の成果物は段階的実装計画とし、責務、候補file、通常／監査の実経路、canonical生成元から導出する期待identity、代表・否定fixture、保持する不変条件、通過条件、停止点、証拠再利用条件を示して確認を待つ。解法やmodule分割は本handoffで固定しない。確認前はsource／test／文書を編集せずsource test／producer・stage／commitを行わない。確認後は同じbounded unitの実装・局所検証・必要なquality／audit・既存Task／evidence更新・依頼範囲local commitまで続け、通常の技術判断で再承認を求めない。未規定の製品意味論・実質的な契約衝突だけ影響作業を止めて改訂計画を示す。
+
+先行without-areaのquality unit936／production155／E2E29、audit3、14 source checkと45否定ケース、S4 artifact byte一致、matrix／eligibility digestを保持する。解消済みwithout-area／S4／architectureは再開せず、同条件の証拠はreceiptを照合して再利用し、8 shardを必須再生成工程にしない。この準備はコードと保存artifactの読み取り・資料更新だけで、製品編集・source test／producer・full gateは実行していない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。

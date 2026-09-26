@@ -240,7 +240,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Plan a separate bounded TSK-08 stale-mutation actual-value/read/rollback/recovery consumer unit or legacy cleanup from current requirements and direct symbols. Without-area consumer closure, S4 and architecture are completed; do not reopen without new evidence. TSK-08 remains in_progress; TSK-09.1/09 blocked.",
+  "nextBoundedUnit": "Committed criticalStars forward mutation/read shared consumer closure only: plan from current code, obtain user confirmation, then implement/verify/record/commit the bounded path. Rollback/recovery, other mutation families and legacy cleanup remain separate; TSK-08 in_progress, TSK-09.1/09 blocked.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -5856,6 +5856,93 @@
     "evidenceReuse": "Latest bounded unit production 155/155, audit 3/3, E2E 29/29, S4 1590 identities and eight-shard 34640 outcomes remain valid only if the structural change preserves the observed semantic paths; do not rerun eight shards without a concrete identity concern.",
     "followup": "Architecture planning handoff above is historical and fulfilled by the latest bounded unit; do not reopen S4 or regenerate eight shards without a new identity concern.",
     "nextSession": {
+      "baselineHead": "4ca8caccf25da352be5c94ede0eed589f4fa2f9b",
+      "scope": "Read-only preparation for one session of committed criticalStars mutation -> ordered later inputQuantity read -> shared production audit consumer/gate -> representative/negative fixture and declared artifact closure. No product source/test edits, source tests, producer or new implementation success claim.",
+      "codeFindings": [
+        {
+          "path": "packages/battle-execution/src/resourceSemantics.ts",
+          "symbol": "applyOrderedCriticalStarsMutation",
+          "evidence": "Execution owns orderedCriticalStars gain/loss and clamps the actual state to 0..99. Audit must consume authoritative values/receipts and not duplicate this arithmetic."
+        },
+        {
+          "path": "packages/battle-execution/src/candidateExecution.ts",
+          "symbol": "executeOrderedScenarioCandidateInternal",
+          "evidence": "The existing audit branch records before/attemptedAfter around the actual mutation and appends inputQuantity condition reads with operationSequence/groupIndex. It invokes appendExecutionGroupAudit at the existing commit/rollback boundary; ordinary path uses no audit allocation."
+        },
+        {
+          "path": "packages/battle-execution/src/candidateStateAudit.ts",
+          "symbols": [
+            "mutationAuditAddress",
+            "appendConditionReadAudit",
+            "appendExecutionGroupAudit"
+          ],
+          "evidence": "Critical star address is battle:criticalStars. Committed afterTransaction is each mutation attemptedAfter, not necessarily the final value at a later read after intervening writes. Rolled-back afterTransaction reads the restored state; rollbackProof is separate."
+        },
+        {
+          "path": "packages/calculation-application/src/scenario.test.ts",
+          "symbol": "observes the selected candidate star mutation and the later read of its capped value",
+          "evidence": "Existing real execution fixture transports 69 -> capped 99 -> read 99, but saves firstDifference:null snapshot and does not invoke a shared stale-mutation consumer/gate. Its later read search filters by value 99; future proof must identify the reader independently of the value so a stale/missing/duplicate read is rejected."
+        },
+        {
+          "path": "packages/calculation-application/src/productionParityDiagnostics.ts",
+          "symbols": [
+            "hasExecutionObservation",
+            "auditProductionUserControlObservations"
+          ],
+          "evidence": "The current user-control gate validates selection/control source/reachability and battle-point witnesses. It does not consume executionGroups mutations, criticalStars inputQuantityReads or rollbackProof. NP preparation resourceTransaction validation is a distinct contract, not critical-star read closure."
+        },
+        {
+          "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+          "symbol": "userControlObservations -> auditProductionUserControlObservations",
+          "evidence": "Existing selected-profile on/off executions already carry same-candidate candidateState. Reuse actual captured executions and shared inventory rather than rerun solely for audit. Expected forward identities must derive from canonical operations/read requirements and the actual scenario/candidate path, not from the observed saved count or by retaining only passing traces."
+        }
+      ],
+      "savedPopulation": {
+        "source": {
+          "path": ".test-results/2026-09-26T04-47-52-232Z-2-b997a4/production-inert-control-production.json",
+          "bytes": 65737938,
+          "sha256": "09356db3215896ab70ac985ed4f64f4030c9f7a92df1383676ec7e11a953bb1a"
+        },
+        "artifact": {
+          "path": ".test-results/tsk-08-stale-forward-handoff-20260926/saved-population.json",
+          "bytes": 385055,
+          "sha256": "f1a98e533eaf1b379fd5bc919f03e4b699fc28b5941081a40894b7c4fa918a94"
+        },
+        "observations": 1590,
+        "selectedSidesWithCandidateState": 3180,
+        "criticalStarsReadOccurrences": 410,
+        "criticalStarsMutationOccurrences": 122,
+        "committedOccurrences": 122,
+        "withLaterReadOccurrences": 122,
+        "distinctMutationIdentities": 8,
+        "distinctOwners": [
+          "203700",
+          "2801300",
+          "305600"
+        ],
+        "firstLaterReadEqualsMutationAfterTransaction": 48,
+        "meaning": "Observed saved S4 selected-profile trace occurrences only. Multiple writes explain why naive first-mutation -> first-read equality is not a valid gate design. Do not turn 122, 410, 8 or owner IDs into runtime branches/fixed future expectations."
+      },
+      "proposedBoundary": "Close committed criticalStars forward value/read continuity in the existing shared audit consumer/gate, covering same-address intervening writes and at least the actual capped 69->99->99 fixture plus necessary negative cases. Published expected population and schema-legal fixture population remain separate and source-derived. Reject rolledBack groups as successful committed-forward proof; do not claim rollback/recovery closure.",
+      "planningBoundary": "First reconcile HEAD/index/tracked/untracked; read current requirements and direct producer/consumer symbols. Present responsibilities, candidate files, actual normal/audit paths, source-derived expected identities, positive/negative cases, gates, stops and evidence reuse; wait for user confirmation before source/test/docs edits, source tests/producers, stage/commit. Exact module/gate design remains open.",
+      "excluded": "Rollback/restored-value/subsequent recovery-read consumer closure, addQuantity/HP/battle-point/trait/form mutation families, legacy cleanup, whole TSK-08 closure, TSK-09.1/09, already closed S4/architecture/without-area work, unconditional eight-shard regeneration.",
+      "preservedEvidence": "Without-area bounded unit at 4ca8caccf25da352be5c94ede0eed589f4fa2f9b: quality unit936/production155/E2E29 (0 retries), audit3, warning/console0. Real without-area fixture14 source checks +45 negative cases; published S4 artifact65,737,938 bytes SHA-25609356db3215896ab70ac985ed4f64f4030c9f7a92df1383676ec7e11a953bb1a. Matrix04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4, eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759. Reuse only with matching conditions and verified receipts.",
+      "verification": "Read-only source/direct-reference and saved-artifact inspection only. No product source/test edits, source tests, producer, audit or quality executed. Documentation tests 6/6, docs integrity and diff whitespace passed after handoff recording; final target format/docs checks follow receipt metadata update. Documentation-only local commit; no push.",
+      "status": "Preparation only; TSK-08 in_progress, TSK-09.1/09 blocked. Forward unit is not stale-mutation or whole-task closure.",
+      "documentationArtifacts": [
+        {
+          "path": ".test-results/tsk-08-stale-forward-handoff-20260926/docs-tests.log",
+          "bytes": 506,
+          "sha256": "021dda61fc967c16dc1dee4868148497fa684791130041ca49bdcca91242e31a"
+        },
+        {
+          "path": ".test-results/tsk-08-stale-forward-handoff-20260926/docs-integrity.log",
+          "bytes": 22,
+          "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+        }
+      ]
+    },
+    "completedWithoutAreaPreparation": {
       "baselineHead": "a9364893e6edde4b6c2816b89d03e03da111845d",
       "scope": "Read-only preparation for a one-session without-area production consumer closure prompt. No product source/test edits or source test/producer execution; no new implementation success claim.",
       "codeFindings": [
