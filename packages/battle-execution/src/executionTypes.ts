@@ -1,3 +1,4 @@
+import type { ScalarNpDamageConsumption } from './npDamageOperation';
 import type { HpState } from './hpResource';
 import type { BattlePointState } from './battlePointResource';
 import type {
@@ -110,6 +111,11 @@ export interface OrderedCandidateStateAudit {
   executionGroups: readonly OrderedExecutionGroupAuditEvent[];
   inputQuantityReads: readonly OrderedInputQuantityReadAuditEvent[];
   battlePointPhaseReads: readonly OrderedBattlePointPhaseReadAuditEvent[];
+  scalarNpConsumptions: readonly (ScalarNpDamageConsumption & {
+    operationSequence: number;
+    operationGroupIndex: number;
+    operationId: string;
+  })[];
 }
 
 export type OrderedExecutionAuditObservation =

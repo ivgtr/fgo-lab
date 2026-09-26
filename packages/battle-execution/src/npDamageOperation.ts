@@ -27,6 +27,17 @@ export type NpDamageOperationResult =
     }
   | { status: 'unsupported'; missingEvidence: string };
 
+export interface ScalarNpDamageConsumption {
+  stateAddress: 'quantity:battlePointPhase';
+  value: number | null;
+  consumedValue: number | null;
+  disposition: 'consumed' | 'missing' | 'excluded';
+  evaluation: NpDamageOperationResult;
+  input: DamageResolutionInput;
+}
+type ScalarEvaluation = Omit<ScalarNpDamageConsumption, 'input'>;
+type ScalarObserver = (consumption: ScalarNpDamageConsumption) => void;
+
 const one = (): [number, number, number, number, number] => [1, 1, 1, 1, 1];
 
 function countTraits(
@@ -73,6 +84,14 @@ export function evaluateNpDamageOperation(
   damage: NpDamageSpec,
   context: NpDamageOperationContext,
 ): NpDamageOperationResult {
+  return evaluateNpDamageOperationInternal(damage, context);
+}
+
+function evaluateNpDamageOperationInternal(
+  damage: NpDamageSpec,
+  context: NpDamageOperationContext,
+  observe?: (evaluation: ScalarEvaluation) => void,
+): NpDamageOperationResult {
   const parameters = damage.parametersByOvercharge[context.overcharge - 1];
   if (!parameters) return { status: 'unsupported', missingEvidence: 'invalid_overcharge' };
   const baseMultipliers = parameters.map((parameter) => parameter.valuePermille / 10) as [
@@ -94,7 +113,18 @@ export function evaluateNpDamageOperation(
 
   if (damage.kind === 'traitCount' && damage.quantity.kind === 'unsupported')
     return { status: 'unsupported', missingEvidence: damage.quantity.reason };
-  if (context.includeSpecialContribution === false) return resolved(baseMultipliers, one());
+  if (context.includeSpecialContribution === false) {
+    const result = resolved(baseMultipliers, one());
+    if (observe && damage.kind === 'battlePointPhase')
+      observe({
+        stateAddress: 'quantity:battlePointPhase',
+        value: context.battlePointPhase,
+        consumedValue: null,
+        disposition: 'excluded',
+        evaluation: result,
+      });
+    return result;
+  }
 
   if (damage.kind === 'standard' || damage.kind === 'defensePiercing') return resolved();
   if (damage.kind === 'hpRatioLow') {
@@ -113,13 +143,25 @@ export function evaluateNpDamageOperation(
     );
   }
   if (damage.kind === 'battlePointPhase') {
-    if (context.battlePointPhase === null)
-      return { status: 'unsupported', missingEvidence: 'missing_battle_point_phase' };
+    if (context.battlePointPhase === null) {
+      const result = {
+        status: 'unsupported' as const,
+        missingEvidence: 'missing_battle_point_phase',
+      };
+      observe?.({
+        stateAddress: 'quantity:battlePointPhase',
+        value: null,
+        consumedValue: null,
+        disposition: 'missing',
+        evaluation: result,
+      });
+      return result;
+    }
     const battlePointPhase = Math.min(
       Math.max(context.battlePointPhase, 0),
       damage.maximumBattlePointPhase,
     );
-    return resolved(
+    const result = resolved(
       baseMultipliers,
       parameters.map(
         (parameter) =>
@@ -128,6 +170,14 @@ export function evaluateNpDamageOperation(
           1_000,
       ) as [number, number, number, number, number],
     );
+    observe?.({
+      stateAddress: 'quantity:battlePointPhase',
+      value: context.battlePointPhase,
+      consumedValue: battlePointPhase,
+      disposition: 'consumed',
+      evaluation: result,
+    });
+    return result;
   }
   if (damage.kind === 'targetRarity') {
     if (context.effectLocalConditionSatisfied && context.targetRarity === null) {
@@ -224,24 +274,60 @@ export function applyNpDamageOperation(
   damage: NpDamageSpec,
   context: NpDamageOperationContext,
 ): DamageResolutionInput {
-  const result = evaluateNpDamageOperation(damage, context);
-  if (result.status === 'unsupported')
-    return {
-      ...input,
-      damageFunction: {
-        status: 'unsupported',
-        kind: damage.kind,
-        missingEvidence: result.missingEvidence,
-      },
-    };
-  return {
-    ...input,
-    npMultipliers: result.npMultipliers,
-    npSpecialMultipliers: result.npSpecialMultipliers,
-    damageFunction: {
-      status: 'resolved',
-      kind: damage.kind,
-      ignoreDefense: result.ignoreDefense,
-    },
-  };
+  return npDamageInput(input, damage, evaluateNpDamageOperationInternal(damage, context));
+}
+
+/** Internal capture entry; evaluation and input construction execute exactly once. */
+export function applyNpDamageOperationWithAudit(
+  input: DamageResolutionInput,
+  damage: NpDamageSpec,
+  context: NpDamageOperationContext,
+  observe?: ScalarObserver,
+): DamageResolutionInput {
+  return observe
+    ? captureNpDamageOperation(input, damage, context, observe)
+    : applyNpDamageOperation(input, damage, context);
+}
+
+function captureNpDamageOperation(
+  input: DamageResolutionInput,
+  damage: NpDamageSpec,
+  context: NpDamageOperationContext,
+  observe: ScalarObserver,
+): DamageResolutionInput {
+  let scalar: ScalarEvaluation | undefined;
+  const result = evaluateNpDamageOperationInternal(damage, context, (value) => {
+    scalar = value;
+  });
+  const output = npDamageInput(input, damage, result);
+  if (scalar) observe({ ...scalar, input: output });
+  return output;
+}
+
+function npDamageInput(
+  input: DamageResolutionInput,
+  damage: NpDamageSpec,
+  result: NpDamageOperationResult,
+): DamageResolutionInput {
+  const output: DamageResolutionInput =
+    result.status === 'unsupported'
+      ? {
+          ...input,
+          damageFunction: {
+            status: 'unsupported',
+            kind: damage.kind,
+            missingEvidence: result.missingEvidence,
+          },
+        }
+      : {
+          ...input,
+          npMultipliers: result.npMultipliers,
+          npSpecialMultipliers: result.npSpecialMultipliers,
+          damageFunction: {
+            status: 'resolved',
+            kind: damage.kind,
+            ignoreDefense: result.ignoreDefense,
+          },
+        };
+  return output;
 }

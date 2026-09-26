@@ -1,3 +1,10 @@
+import {
+  scalarQuantityProgram,
+  scalarQuantitySource,
+  scalarQuantityCanonicalInventory,
+  auditPublishedScalarQuantityObservations,
+  type ScalarQuantitySource,
+} from './productionScalarQuantityAudit';
 import { applyCanonicalInputCommand } from './canonicalInputs';
 import {
   criticalStarsForwardProgram,
@@ -111,6 +118,7 @@ function loadProductionMaster() {
   return productionMaster;
 }
 
+const scalarQuantityObservations: ScalarQuantitySource[] = [];
 const controlPreparations = new WeakMap<
   ReturnType<typeof requireExecutableCalculation>,
   ReturnType<typeof prepareCalculationScenarioWithPolicy>
@@ -145,6 +153,8 @@ function evaluateWithOrderedOperationEvents(
   if (calculation.executionObservation !== prepared.executionObservation)
     throw new TypeError(`production_control_observation_mismatch:${scenario.attacker.servantId}`);
   controlPreparations.set(calculation, prepared);
+  const scalar = scalarQuantityProgram(prepared, calculation);
+  if (scalar) scalarQuantityObservations.push(scalarQuantitySource(scalar));
   return { calculation, observation: prepared.executionObservation, prepared };
 }
 
@@ -359,7 +369,10 @@ describe('production master inventory ratchet', () => {
     'keeps known candidate values and bounds fail-closed servants',
     {
       timeout: 60_000,
-      ...productionAuditTestOptions(['production-inert-control-production.json']),
+      ...productionAuditTestOptions([
+        'production-inert-control-production.json',
+        'production-scalar-quantity.json',
+      ]),
     },
     async ({ task }) => {
       const master = await loadProductionMaster();
@@ -371,6 +384,8 @@ describe('production master inventory ratchet', () => {
         masterDataLocale: 'ja-JP',
         masterDataVersion: master.version,
       };
+      scalarQuantityObservations.length = 0;
+      const scalarInventory = scalarQuantityCanonicalInventory(master);
       const calculations = master.servants.flatMap((servant) => {
         try {
           const scenario = createDefaultResolvedScenario(master, undefined, servant);
@@ -1262,6 +1277,11 @@ describe('production master inventory ratchet', () => {
             : [];
         }),
       );
+      const scalarGate = auditPublishedScalarQuantityObservations(
+        scalarInventory,
+        scalarQuantityObservations,
+      );
+      await writeProductionAuditArtifact(task.meta, 'production-scalar-quantity.json', scalarGate);
       const userControlGate = auditProductionUserControlObservations({
         expectedProjectionCount: expectedUserControlIdentities.length,
         expectedIdentities: selectedExpectedIdentities,
@@ -1281,6 +1301,7 @@ describe('production master inventory ratchet', () => {
         gate: userControlGate,
         observations: userControlObservations,
       });
+      expect(scalarGate.status, JSON.stringify(scalarGate.firstDifference)).toBe('passed');
       if (userControlGate.status !== 'passed')
         throw new Error(
           `production_user_control_ratchet_failed:${JSON.stringify({

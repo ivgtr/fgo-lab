@@ -1,3 +1,4 @@
+import type { ScalarNpDamageConsumption } from './npDamageOperation';
 import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
@@ -21,6 +22,7 @@ export interface MutableCandidateStateAudit {
   executionGroups: OrderedExecutionGroupAuditEvent[];
   inputQuantityReads: OrderedInputQuantityReadAuditEvent[];
   battlePointPhaseReads: OrderedBattlePointPhaseReadAuditEvent[];
+  scalarNpConsumptions: OrderedCandidateStateAudit['scalarNpConsumptions'][number][];
 }
 
 export function appendConditionReadAudit(
@@ -66,6 +68,7 @@ export function createMutableCandidateStateAudit(): MutableCandidateStateAudit {
     executionGroups: [],
     inputQuantityReads: [],
     battlePointPhaseReads: [],
+    scalarNpConsumptions: [],
   };
 }
 
@@ -209,4 +212,20 @@ export function recordPreGroupContextResolution(
     before: contextSnapshot(candidate.selectionBaseState),
     resolved: contextSnapshot(candidate.state),
   };
+}
+
+/** The callback and receipt exist only for the original capture execution. */
+export function observeScalarNp(
+  audit: MutableCandidateStateAudit,
+  operation: BattleOperation,
+  operationSequence: number,
+  operationGroupIndex: number,
+): (consumption: ScalarNpDamageConsumption) => void {
+  return (consumption) =>
+    audit.scalarNpConsumptions.push({
+      ...consumption,
+      operationSequence,
+      operationGroupIndex,
+      operationId: operation.operationId,
+    });
 }

@@ -39,6 +39,7 @@ import {
 } from './candidateOperationContext';
 import { createOperationResult } from './operationResult';
 import {
+  observeScalarNp,
   appendConditionReadAudit,
   createMutableCandidateStateAudit,
   mutationAuditAddress,
@@ -294,6 +295,7 @@ function executeOrderedScenarioCandidateInternal(
               state,
               decisions,
               contributionPolicy,
+              audit && observeScalarNp(audit, operation, operationSequence, groupIndex),
             );
         }
         const mutationValidation = needsMutationValidation(operation)

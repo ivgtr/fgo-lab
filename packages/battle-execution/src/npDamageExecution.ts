@@ -4,7 +4,10 @@ import type { BattleOperation, EffectDecision, ExecutableBattleState } from './c
 import type { ContributionApplicationPolicy } from './executionTypes';
 import { contributionIsIncluded } from './effectiveContributions';
 import { evaluateCondition } from './condition';
-import { applyNpDamageOperation } from './npDamageOperation';
+import {
+  applyNpDamageOperationWithAudit,
+  type ScalarNpDamageConsumption,
+} from './npDamageOperation';
 import { combinedTraitCounts } from './state';
 
 export function applyNoblePhantasmDamage(
@@ -13,6 +16,7 @@ export function applyNoblePhantasmDamage(
   state: ExecutableBattleState,
   decisions: ReadonlyMap<string, EffectDecision>,
   contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
+  observe?: (consumption: ScalarNpDamageConsumption) => void,
 ): DamageResolutionInput {
   const specialCondition = evaluateCondition(operation.specialAttackCondition, state);
   const specialDecision = operation.specialAttackDecisionKey
@@ -37,24 +41,32 @@ export function applyNoblePhantasmDamage(
     (operation.damage.kind !== 'targetRarity' ||
       specialDecision !== undefined ||
       state.quantities.targetRarity !== null);
-  return applyNpDamageOperation(input, operation.damage, {
-    overcharge: operation.overcharge,
-    selectedNpLevel: operation.selectedNpLevel,
-    attackerTraitCounts: combinedTraitCounts(state.traitCounts.attacker, attackerStateTraitCounts),
-    attackerStateTraitCounts,
-    targetTraitCounts: state.traitCounts.target,
-    targetCombinedTraitCounts: combinedTraitCounts(
-      state.traitCounts.target,
+  return applyNpDamageOperationWithAudit(
+    input,
+    operation.damage,
+    {
+      overcharge: operation.overcharge,
+      selectedNpLevel: operation.selectedNpLevel,
+      attackerTraitCounts: combinedTraitCounts(
+        state.traitCounts.attacker,
+        attackerStateTraitCounts,
+      ),
+      attackerStateTraitCounts,
+      targetTraitCounts: state.traitCounts.target,
+      targetCombinedTraitCounts: combinedTraitCounts(
+        state.traitCounts.target,
+        targetStateTraitCounts,
+      ),
       targetStateTraitCounts,
-    ),
-    targetStateTraitCounts,
-    targetPredicateValues: new Map(
-      [...state.actorPredicates.target].map(([key, value]) => [key, value.present]),
-    ),
-    attackerHpRatio: state.hp ? hpRatio(state.hp.actors.attacker) : null,
-    targetRarity: state.quantities.targetRarity,
-    battlePointPhase: state.quantities.battlePointPhase,
-    effectLocalConditionSatisfied: specialContributionEnabled && effectLocalConditionSatisfied,
-    includeSpecialContribution: specialContributionEnabled,
-  });
+      targetPredicateValues: new Map(
+        [...state.actorPredicates.target].map(([key, value]) => [key, value.present]),
+      ),
+      attackerHpRatio: state.hp ? hpRatio(state.hp.actors.attacker) : null,
+      targetRarity: state.quantities.targetRarity,
+      battlePointPhase: state.quantities.battlePointPhase,
+      effectLocalConditionSatisfied: specialContributionEnabled && effectLocalConditionSatisfied,
+      includeSpecialContribution: specialContributionEnabled,
+    },
+    observe,
+  );
 }

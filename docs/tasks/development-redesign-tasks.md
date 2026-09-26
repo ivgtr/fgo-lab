@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.63"
+document_version: "1.7.64"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3067,3 +3067,19 @@ S4 artifact全体が先行forward版とbyte単位で一致し、月下／日輪�
 最初の成果物は段階的実装計画。変更責務・候補file、通常／監査の実経路、canonical writerと実readerの期待identity母集団、実receipt／消費値の生成元、代表とまとめた否定fixture、不変条件、gate／artifact通過条件、停止点、既存証拠再利用条件を示して利用者確認を待つ。確認前はsource／test／文書を編集せず、source test／producer・stage／commitを行わない。確認後は同じunitの実装・局所検証・必要な最終quality／監査・既存Task／evidence更新・依頼範囲local commitまで続け、通常の技術判断で再承認しない。未規定の製品意味論や実質的契約衝突だけ影響作業を止め、改訂計画を示す。
 
 この整理は資料変更のみ。新しい実行診断・source test／producerは実行していない。直前unitの22 artifact receiptをpath／bytes／SHA-256照合し一致したが、新unit成功証拠にはしない。対象内Blocking解消前に全件production／audit／qualityを先行せず、局所fixtureと差分レビューの後でREADME必須qualityと影響監査を閉じる。8 shardは具体的identity疑義がある場合だけ追加検証を判断する。60分でcheckpoint、90分以降は新familyを始めず、pushは禁止。直接symbol・fixture matrix・証拠条件は同evidenceの`handoffPreparation.nextSession`を正本とする。
+
+
+Current bounded-unit checkpoint（committed addQuantity scalar→ordered実NP consumption、計画承認後）:
+
+HEAD `4ef4572d09df52f9f4cff3ed299db28c94d8c3e2`、index／tracked／untrackedは開始時に空。利用者が段階計画を承認した。同じcanonical生成・selected executionにcapture専用の実scalar消費receiptを追加し、共有scalar consumer／gateへevent／projection／effective contribution／canonical input／typed resultを接続した。加算・scalar clamp・NP clamp・condition・damageの意味論はexecution ownerに残し、通常経路へ観測allocationや追加再実行を入れていない。
+
+局所fixtureは6 committed成功と5非適用／null境界、352検査別否定が通過。先行関係局所5 file／62 testも通過した。schema-legal masterから、同group／別skill transactionの複数write、変更後の実NP消費、上下限clampとNP側clampを生成する。published canonical addQuantityは独立inventoryで0件を記録し、S4 domain live readをscalar coverageへ読み替えない。既存22 artifact receiptはbytes／SHA-256一致。新artifactと全詳細は[evidence](../evidence/tsk-08-parity-ratchet.json)のcurrentBoundedUnitを正本とする。
+
+対象内Blockingは0。最終局所62 test・type／lint・差分レビュー、影響audit3/3、README必須quality unit937／production155／E2E29（retry0）が成功した。warning／unexpected console0、必須gate全exit0。最終140 artifact receiptのpath／bytes／SHA-256が一致し、新scalar診断は局所版とquality版でbyte単位一致。既存forward／recovery／without-area／S4は新scalar観測collectionだけを除いた全envelopeが一致し、月下／日輪・HP witness・domain live read・production counterを保持した。最終8 source／test checksumは固定入力と一致した。以後は既存4文書の結果記録だけを更新し、文書検証と依頼範囲local commitで閉じる。addQuantity rollback／recovery、domain resource mutation、他mutation family、legacy cleanup、一般retry／UI recoveryは対象外。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+
+Committed scalar addQuantity bounded-unit completion（2026-09-26）:
+
+共有consumer／gateが6 committed実変化・実NP消費、5非適用／null境界、352検査別否定を通過した。監査成功とcalculated成功を区別し、null scalarはunsupportedを維持する。published canonical writer母集団0とschema-legal fixtureを独立に記録した。診断はassertion前保存し、宣言／bytes／SHA-256検証を閉じた。加算／clamp／condition／damageの再実装、通常観測allocation、監査専用再実行はない。性能は限定kernelでscalar中央値+4.4%／standard+7.5%、全scenarioの速度評価ではない。通常経路・candidate／request数・閾値・timeoutを維持した。
+
+必要な製品gateは残らない。最終quality後は結果記録だけを更新し、文書検証・差分照合後に12対象ファイルだけlocal commitする。当該commitを参照identityとする。60分境界前にcheckpointと製品gateを閉じ、新familyを開始していない。今回をstale-mutation全体やTSK-08全体のclosureとは呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。詳細は既存evidence最新bounded unitが正本。
