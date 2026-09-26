@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.72"
+document_version: "1.7.73"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3235,3 +3235,20 @@ Current bounded-unit final gate（committed attacker-skill capacity）:
 source/test10件の製品local commitは`5ce926a8498139534b82e0f5b570260b2025cf09`。以後は結果4文書の検証・範囲限定local記録commitだけで閉じる。容量noncommit／rollback／recovery、失効・除去、新lifetime、form／trait／eligibility切替、補助actor／passive／NP容量writer、別family・legacyは対象外。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、TSK-08全体／stale-mutation全体のclosureではない。pushなし。
 
 結果4文書のdocs6/6・integrity・対象書式・差分whitespaceが成功した。製品commit `5ce926a`の10 blobと固定入力を照合一致、対象内Blocking0、必須gateと記録が一致。4記録だけlocal commitして今回のcommitted容量unitを閉じる。次semantic unitは未選択。TSK-08 `in_progress`／TSK-09.1・09 `blocked`を維持し、pushなし。
+
+
+Step再確認と次sessionの限定handoff（2026-09-26、製品参照commit `5ce926a8498139534b82e0f5b570260b2025cf09`、完了記録 `677f7d9`）:
+
+committed攻撃役skill容量modifier unitはlocal製品／記録commit済み。開始HEAD／index／tracked／untrackedはclean。Step0は基線／契約成立、Step1はV41 requestのschemaVersionとV40保存・明示V41再計算実装検証済み。Step2はS4・stars／scalar forward／recovery・fixed BP forward／元非commit隔離に加え、容量modifier commit→元reconcile保持→同domain fixed実clamp／live read・phase・scalar／ordered NP消費・damage利用の共有consumerが完了した。Step3は改訂matrix／eligibility digest照合済み。旧4段階の契約待ちは履歴で再開しない。他mutation consumer／後段legacyは残り、TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+次の1セッションは**攻撃役skill canonical battlePointCapacityModifierの実changed attempt→同action元noncommit→action-start capacity／point／modifier list／receipt／executedEffects保持→元reducer拒否→同じselected scenarioの実prepared／application typed拒否**の共有consumer／gate、schema-legal代表・検査別否定、宣言完全artifactへ限定する。同domain fixed gain／lossは失敗prefix内の実容量consumer、先行committed skillは元action-startを作る前提として扱う。成功する再実行／domain recovery・一般retry／UI、候補damage loop rollback、失効／除去、新lifetime、form／trait／eligibility切替、別actor／passive／NP容量writer、初期／終端passive失敗、OC ready後structural拒否、別family・failure分類修正・legacyとTSK-08全体は対象外。完了済みのforward／fixed非commit／scalar／stars／S4／without-area／architectureを再開しない。
+
+元captureは容量writeのbefore／after／receipt・operation/source・status、到達prefix、native非commit、attempted／returnedを取得し、別capture-only timelineは実sourceEnd／reconcile／commitを保持する。既存fixed非commit consumerのcanonical期待writerはfixedだけで、capacity-clampという既存fixture名もfixed writeのclampである。committed容量programはexecutable専用、canonical capacity selectionは独立に生成可能。published gateのmissing-selection拒否と元production-controlのexecutable契約を緩めず、次consumerのcanonical母集団とproducer／gate接続を計画する。拒否経路には実phase変換／NP／damageが生成されないため、必要なのは不在／漏出防止と同scenario typed拒否であり、架空writer event／NP利用や成功recoveryを作らない。
+
+本資料準備は読み取り・checksumだけ。保存artifact575固有path、historical6の宣言commit blob、直前固定source/test10の`5ce926a` blobとcurrent一致、今回必要なcurrent source/config/test19を照合しerror0。canonical published JSONは攻撃役skill容量operation0、対象外NP1で、これを新consumer成功や将来期待件数へ変換しない。品質基線はquality1015/155/29（retry0）、audit3、warning／unexpected console0、容量5 changed／4境界／1491否定／63診断、先行fixed5／426と非commit6 changed／3境界／807否定。詳細・現行counter・matrix／eligibility digest・path／bytes／SHA-256・symbol・未検証点と再利用条件は既存[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.currentStageReconciliation`／`nextSession`を正本とする。新source test／producer／audit／qualityは実行していない。
+
+最初の成果物は現コードに基づく段階的実装計画。責務／候補file、通常・captureのcanonical生成→元apply／reconcile→native非commit→action-start保持→reducer／実typed result、command/master/source/choice/action/transaction/actor/domainのreceipt非依存の母集団・identity、valueSetIndex／valueIndexとmodifier identity／amount／lifetime／traits、初期値と先行commit後action-start・中間／最終保持state、到達prefixとdownstream不在、schema-legal代表／検査群、既存gate／lossless宣言artifact／証拠再利用・停止点／最終検証を示し、利用者確認を待つ。既存consumerやhook／module／具体値を最善解に固定しない。確認前はread-onlyだけで製品source／test／文書編集・source実行・stage／commitなし。確認後は同unitの実装・局所／最終quality・影響audit・既存記録更新・範囲限定local commitまで通常判断で再承認せず続ける。未規定製品意味論／実質契約衝突だけ根拠symbol・差分・改訂計画で影響作業を止める。
+
+本整理は既存4文書の検証・local commitだけで参照文書identityを作る。診断実行が計画決定に不可欠なら、最小診断／得る判断／停止境界を先に示して承認を待ち、診断だけの承認から製品実装へ進まない。60分checkpoint／90分以降新familyなし。8 shard再生成は具体的identity疑義時のみ。pushなし。
+
+本整理のdocs6/6・integrity・対象書式・差分whitespaceが成功。保存575path／historical6 blob／直前10固定blob・current／今回19入力の照合error0。製品source／test／設定は`5ce926a`から不変。既存4文書だけをlocal commitし、そのcommitを次作業者の参照文書identityとして依頼する。
