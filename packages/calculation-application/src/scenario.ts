@@ -1299,7 +1299,14 @@ function prepareConcreteCalculationScenarioWithPolicy(
   if (
     executionObservation &&
     battlePointPreparation &&
-    orderedScenario.battlePoints?.receipts.length
+    (orderedScenario.battlePoints?.receipts.length ||
+      preparationCapture?.transitions.some((t) =>
+        t.attempts?.some((a) =>
+          a.sources.some((s) =>
+            s.effect.execution.some((o) => o.kind === 'battlePointCapacityModifier'),
+          ),
+        ),
+      ))
   )
     attachBattlePointPreparationObservation(executionObservation, battlePointPreparation);
   const prepared: PreparedCalculationScenario = {

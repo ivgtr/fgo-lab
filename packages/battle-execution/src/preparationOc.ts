@@ -1,5 +1,6 @@
 import {
   preparationAttemptScope,
+  preparationBattlePointScope,
   type PreparationOcAttempt,
 } from './preparationAttemptObservation';
 import { projectPlanningHpCondition, UnresolvedPreparationPlanningRead } from './hpPlanning';
@@ -138,6 +139,7 @@ export function executePreparationOc(args: {
       input.instanceTraits.some((trait) => operation.traits.includes(trait)),
     );
   const scope = preparationAttemptScope(args.context);
+  const battlePointCapture = preparationBattlePointScope(args.context);
   const attempt: PreparationOcAttempt | undefined = scope
     ? {
         actionId: args.actionId,
@@ -626,7 +628,18 @@ export function executePreparationOc(args: {
             },
             buffInputs,
           );
+          const beforeReconciliation = current;
           current = reconcilePreparationBattlePoints(args.servant, current, args.context);
+          if (battlePointCapture)
+            battlePointCapture.push({
+              kind: 'reconcile',
+              owner: 'operation',
+              actionId: args.actionId,
+              source,
+              before: beforeReconciliation,
+              after: current,
+              domains: args.context.battlePointDomains,
+            });
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -647,7 +660,10 @@ export function executePreparationOc(args: {
                 receipts: [],
               }
             : undefined;
-          if (write) attempt!.writes.push(write);
+          if (write) {
+            attempt!.writes.push(write);
+            battlePointCapture?.push({ kind: 'write', actionId: args.actionId, write });
+          }
           if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
           if (activation.get(source.effect)?.conditionOutcome !== true) {
             if (
@@ -1038,7 +1054,7 @@ export function executePreparationOc(args: {
     if (program.operations.length > 0)
       steps.push({ kind: 'recordSource', sourceKey: ocSourceOperationKey(program, 0) });
     // Earlier canonical trait writes are visible to later OC/rate conditions in this command.
-    steps.push((_, outcomes) => {
+    const completeSource: (typeof steps)[number] = (_, outcomes) => {
       if (
         outcomes.some(
           (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
@@ -1099,9 +1115,34 @@ export function executePreparationOc(args: {
         initialTraitSuppressions: structural.initialTraitSuppressions,
       };
       current = projectBuffInstanceCounts(current, buffInputs);
+      const beforeReconciliation = current;
       current = reconcilePreparationBattlePoints(args.servant, current, args.context);
+      if (battlePointCapture)
+        battlePointCapture.push({
+          kind: 'reconcile',
+          owner: 'source',
+          actionId: args.actionId,
+          source,
+          before: beforeReconciliation,
+          after: current,
+          domains: args.context.battlePointDomains,
+        });
       return { kind: 'skip', outcome: 'notApplicable' };
-    });
+    };
+    steps.push(
+      battlePointCapture
+        ? (state, outcomes) => {
+            const step = completeSource(state, outcomes);
+            battlePointCapture.push({
+              kind: 'sourceEnd',
+              actionId: args.actionId,
+              source,
+              state: current.battlePoints,
+            });
+            return step;
+          }
+        : completeSource,
+    );
     if (attempt && origins)
       for (let index = sourceFirstStep; index < steps.length; index++) {
         const origin = [...origins].reverse().find((item) => item.index <= index)!;
@@ -1178,6 +1219,7 @@ export function executePreparationOc(args: {
     }
   }
   if (result.status === 'committed') {
+    const beforeCommit = current.battlePoints;
     current = {
       ...current,
       battlePoints: {
@@ -1213,6 +1255,13 @@ export function executePreparationOc(args: {
           ],
         },
       };
+    if (battlePointCapture)
+      battlePointCapture.push({
+        kind: 'commit',
+        actionId: args.actionId,
+        before: beforeCommit,
+        after: current.battlePoints,
+      });
     const sourceOutcomes = new Map(result.state.sourceOutcomes);
     for (const source of sources) {
       const outcome = activation.get(source.effect)?.procOutcome;

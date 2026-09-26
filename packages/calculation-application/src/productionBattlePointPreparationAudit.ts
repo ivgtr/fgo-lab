@@ -34,6 +34,8 @@ const equal = (a: unknown, b: unknown) =>
     [{ identity: 'domain-comparison', value: snapshot(b) }],
   ) === null;
 type FixedWriter = Extract<MasterEffect['execution'][number], { kind: 'resourceMutation' }>;
+type BattlePointWriter =
+  FixedWriter | Extract<MasterEffect['execution'][number], { kind: 'battlePointCapacityModifier' }>;
 function isWriter(operation: MasterEffect['execution'][number]): operation is FixedWriter {
   return (
     operation.kind === 'resourceMutation' &&
@@ -55,7 +57,7 @@ function domainLeaves(
   return condition.kind === 'not' ? domainLeaves(condition.expression) : [];
 }
 
-interface CanonicalProgram {
+export interface CanonicalProgram<Writer extends BattlePointWriter = FixedWriter> {
   scenario: Extract<Prepared['scenario'], { mode: 'resolved' }>;
   canonicalInputs: Prepared['canonicalInputs'];
   domains: MasterDataSnapshot['battlePointDomains'];
@@ -73,7 +75,7 @@ interface CanonicalProgram {
     sourceId: string;
     skillId: string;
     effect: MasterEffect;
-    operation: FixedWriter;
+    operation: Writer;
     operationIndex: number;
     identity: string;
     actor: string;
@@ -104,10 +106,30 @@ interface CanonicalProgram {
 }
 
 /** The command/master population precedes all activation, receipt and value observations. */
-function canonical(prepared: Prepared): CanonicalProgram | null {
-  if (prepared.scenario.mode !== 'resolved') return null;
-  const scenario = prepared.scenario;
-  const servant = prepared.master.servants.find(({ id }) => id === scenario.attacker.servantId);
+export function battlePointPreparationCanonical(
+  prepared: PreparedCalculationScenario,
+): CanonicalProgram | null;
+export function battlePointPreparationCanonical<Writer extends BattlePointWriter>(
+  prepared: PreparedCalculationScenario,
+  selectWriter: (operation: MasterEffect['execution'][number]) => operation is Writer,
+): CanonicalProgram<Writer> | null;
+export function battlePointPreparationCanonical(
+  prepared: PreparedCalculationScenario,
+  selectWriter: (operation: MasterEffect['execution'][number]) => boolean = isWriter,
+): CanonicalProgram<BattlePointWriter> | null {
+  const owner: Partial<PreparedCalculationScenario> = prepared;
+  if (
+    !owner.scenario ||
+    owner.scenario.mode !== 'resolved' ||
+    !owner.master ||
+    !Array.isArray(owner.scenario.preNoblePhantasmPlan) ||
+    (owner.scenario.preNoblePhantasmPlan as readonly unknown[]).some(
+      (command) => command === null || typeof command !== 'object',
+    )
+  )
+    return null;
+  const scenario = owner.scenario;
+  const servant = owner.master.servants.find(({ id }) => id === scenario.attacker.servantId);
   if (!servant) return null;
   const actions = scenario.preNoblePhantasmPlan.map((command, index) => {
     const skill =
@@ -136,7 +158,7 @@ function canonical(prepared: Prepared): CanonicalProgram | null {
   const writers = actions.flatMap((action) =>
     action.effects.flatMap((effect) =>
       effect.execution.flatMap((operation, operationIndex) =>
-        isWriter(operation)
+        selectWriter(operation)
           ? [
               {
                 actionIndex: action.index,
@@ -145,7 +167,7 @@ function canonical(prepared: Prepared): CanonicalProgram | null {
                 sourceId: servant.id,
                 skillId: action.skillId!,
                 effect,
-                operation,
+                operation: operation as BattlePointWriter,
                 operationIndex,
                 identity: JSON.stringify([
                   action.actionId,
@@ -154,7 +176,7 @@ function canonical(prepared: Prepared): CanonicalProgram | null {
                   operationIndex,
                 ]),
                 actor: 'attacker',
-                domainId: operation.subjectId,
+                domainId: (operation as BattlePointWriter).subjectId,
               },
             ]
           : [],
@@ -250,11 +272,11 @@ function canonical(prepared: Prepared): CanonicalProgram | null {
   };
 }
 
-export interface BattlePointPreparationProgram {
+export interface BattlePointPreparationProgram<Writer extends BattlePointWriter = FixedWriter> {
   canonicalIdentity: string;
   prepared: Prepared;
   calculation: Calculation;
-  expected: CanonicalProgram;
+  expected: CanonicalProgram<Writer>;
   contract: CanonicalAuditValue;
   owner: CanonicalAuditValue;
   npReceipts: CanonicalAuditValue;
@@ -267,8 +289,8 @@ export interface BattlePointPreparationProgram {
     state: Prepared['orderedScenario'];
   };
 }
-export interface BattlePointPreparationSource {
-  program: BattlePointPreparationProgram;
+export interface BattlePointPreparationSource<Writer extends BattlePointWriter = FixedWriter> {
+  program: BattlePointPreparationProgram<Writer>;
   calculation: Calculation;
   observation: Calculation['executionObservation'];
   preparation: BattlePointPreparationObservation | undefined;
@@ -283,7 +305,9 @@ export interface BattlePointPreparationSource {
     contributions: readonly unknown[];
   }[];
 }
-function owner(source: Omit<BattlePointPreparationSource, 'program' | 'readerUses'>) {
+function owner(
+  source: Omit<BattlePointPreparationSource<BattlePointWriter>, 'program' | 'readerUses'>,
+) {
   return {
     observation: source.observation,
     preparation: source.preparation,
@@ -293,9 +317,9 @@ function owner(source: Omit<BattlePointPreparationSource, 'program' | 'readerUse
     result: source.result,
   };
 }
-export function battlePointPreparationSource(
-  program: BattlePointPreparationProgram,
-): BattlePointPreparationSource {
+export function battlePointPreparationSource<Writer extends BattlePointWriter>(
+  program: BattlePointPreparationProgram<Writer>,
+): BattlePointPreparationSource<Writer> {
   const calculation = program.calculation;
   const target = calculation.executionObservation?.targetExecution;
   const ids = [
@@ -331,10 +355,17 @@ export function battlePointPreparationProgram(
   calculation: Calculation,
 ): BattlePointPreparationProgram | null {
   if (prepared.status !== 'executable' || !prepared.orderedScenario) return null;
-  const expected = canonical(prepared);
+  const expected = battlePointPreparationCanonical(prepared);
   if (!expected?.writers.length || !expected.nps.length) return null;
+  return battlePointPreparationProgramFromCanonical(prepared, calculation, expected);
+}
+export function battlePointPreparationProgramFromCanonical<Writer extends BattlePointWriter>(
+  prepared: Prepared,
+  calculation: Calculation,
+  expected: CanonicalProgram<Writer>,
+): BattlePointPreparationProgram<Writer> {
   const canonicalIdentity = `tsk-08:preparation-battle-point:${JSON.stringify(expected.writers.map(({ identity }) => identity))}`;
-  const program: BattlePointPreparationProgram = {
+  const program: BattlePointPreparationProgram<Writer> = {
     canonicalIdentity,
     prepared,
     calculation,
@@ -444,7 +475,12 @@ export function auditBattlePointPreparationObservations(input: {
       source.program === program && source.calculation === program.calculation,
     );
     c('domainSourceMismatch', 'canonical.contract', program.contract, program.expected);
-    c('domainSourceMismatch', 'canonical.owner', program.contract, canonical(program.prepared));
+    c(
+      'domainSourceMismatch',
+      'canonical.owner',
+      program.contract,
+      battlePointPreparationCanonical(program.prepared),
+    );
     const { expected, prepared, references: refs } = program;
     c(
       'domainPopulationMismatch',
@@ -510,8 +546,6 @@ export function auditBattlePointPreparationObservations(input: {
         rollbackProof,
       ]),
     );
-    const groupIndex = (operationId: string) =>
-      expected.groups.find((group) => group.operationIds.includes(operationId))?.groupIndex;
     c(
       'domainSourceMismatch',
       'preparation.commands',
@@ -685,283 +719,7 @@ export function auditBattlePointPreparationObservations(input: {
         );
       }
     }
-    c(
-      'domainCommitMismatch',
-      'preparation.terminal',
-      preparation.transitions.at(-1)?.result.state.battlePoints,
-      ordered.battlePoints,
-    );
-    const conversion = preparation.conversion;
-    c('domainTraceMissing', 'conversion.present', true, !!conversion);
-    if (!conversion) continue;
-    c(
-      'domainIdentityMismatch',
-      'conversion.references',
-      true,
-      conversion.state === ordered.battlePoints &&
-        conversion.input === ordered.baseInput &&
-        conversion.input === prepared.scenarioInput,
-    );
-    c(
-      'domainSourceMismatch',
-      'conversion.domain',
-      true,
-      !!conversion.domain && ordered.battlePointDomains.includes(conversion.domain),
-    );
-    if (!conversion.domain) continue;
-    c(
-      'domainIdentityMismatch',
-      'conversion.parameterDomain',
-      conversion.domain.id,
-      String(conversion.parameter.targetId),
-    );
-    c(
-      'domainValueMismatch',
-      'conversion.value',
-      ordered.battlePoints.actors.attacker?.domains[conversion.domain.id],
-      conversion.value,
-    );
-    c(
-      'domainValueMismatch',
-      'conversion.scalar',
-      conversion.phase,
-      ordered.baseInput.battlePointPhase,
-    );
-    c(
-      'domainPopulationMismatch',
-      'conversion.writerDomain',
-      true,
-      expected.writers.some(({ domainId }) => domainId === conversion.domain?.id),
-    );
-    c(
-      'domainPopulationMismatch',
-      'canonical.npDomain',
-      true,
-      expected.naturalNpDomainIds.includes(conversion.domain.id),
-    );
-    for (const [index, natural] of expected.naturalReaders.entries()) {
-      c(
-        'domainPopulationMismatch',
-        `canonical.reader.${index}`,
-        true,
-        expected.readers.some(
-          ({ operation, leaf }) =>
-            operation.source.origin === natural.origin &&
-            operation.source.skillId === natural.skillId &&
-            operation.source.effectOccurrenceId === natural.occurrenceId &&
-            leaf.subjectId === natural.subjectId &&
-            leaf.comparison === natural.comparison &&
-            leaf.value === natural.value,
-        ),
-      );
-    }
-    c(
-      'domainPopulationMismatch',
-      'canonical.naturalReaders',
-      true,
-      expected.naturalReaders.length > 0,
-    );
-    const expectedReads = expected.readers.filter(
-      ({ leaf }) => leaf.subjectId === conversion.domain?.id,
-    );
-    c('domainPopulationMismatch', 'terminal.readers', true, expectedReads.length > 0);
-    const reads = state.battlePointPhaseReads.filter(
-      ({ subjectId }) => subjectId === conversion.domain?.id,
-    );
-    c(
-      'domainPopulationMismatch',
-      'terminal.readPopulation',
-      expectedReads.map(({ operation, sequence, leaf }) => [
-        operation.operationId,
-        sequence,
-        leaf.subjectId,
-        leaf.comparison,
-        leaf.value,
-      ]),
-      reads.map((read) => [
-        read.operationId,
-        read.operationSequence,
-        read.subjectId,
-        read.comparison,
-        read.expectedValue,
-      ]),
-    );
-    for (const [index, read] of reads.entries()) {
-      c(
-        'domainIdentityMismatch',
-        `read.${index}.group`,
-        groupIndex(read.operationId),
-        read.operationGroupIndex,
-      );
-      c('domainIdentityMismatch', `read.${index}.actor`, 'attacker', read.actor);
-      c(
-        'domainValueMismatch',
-        `read.${index}.pointPhase`,
-        [conversion.value?.kind === 'present' ? conversion.value.point : null, conversion.phase],
-        [read.point, read.phase],
-      );
-      c('domainUseMismatch', `read.${index}.evaluation`, true, read.evaluated);
-    }
-    c(
-      'domainPopulationMismatch',
-      'np.population',
-      expected.nps.map(({ operation, sequence }) => [operation.operationId, sequence]),
-      state.scalarNpConsumptions.map((read) => [read.operationId, read.operationSequence]),
-    );
-    for (const [index, np] of expected.nps.entries()) {
-      const read = state.scalarNpConsumptions[index];
-      c('domainTraceMissing', `np.${index}.receipt`, true, !!read);
-      if (!read) continue;
-      c(
-        'domainIdentityMismatch',
-        `np.${index}.group`,
-        groupIndex(read.operationId),
-        read.operationGroupIndex,
-      );
-      c(
-        'domainIdentityMismatch',
-        `np.${index}.parameter`,
-        true,
-        np.operation.damage.kind === 'battlePointPhase' &&
-          np.operation.damage.parametersByOvercharge[ordered.baseInput.overcharge - 1]?.[
-            ordered.baseInput.npLevel - 1
-          ] === conversion.parameter,
-      );
-      c('domainValueMismatch', `np.${index}.raw`, conversion.phase, read.value);
-      c('domainUseMismatch', `np.${index}.disposition`, 'consumed', read.disposition);
-      c('domainUseMismatch', `np.${index}.evaluation`, 'resolved', read.evaluation.status);
-      c(
-        'domainValueMismatch',
-        `np.${index}.consumed`,
-        (program.npReceipts as Record<string, CanonicalAuditValue>[])[index]?.consumedValue,
-        read.consumedValue,
-      );
-      c('domainValueMismatch', `np.${index}.inputScalar`, read.value, read.input.battlePointPhase);
-      const npFields = (input: Calculation['input']) => ({
-        battlePointPhase: input.battlePointPhase,
-        npMultipliers: input.npMultipliers,
-        npSpecialMultipliers: input.npSpecialMultipliers,
-        damageFunction: input.damageFunction,
-      });
-      c('domainUseMismatch', `np.${index}.input`, npFields(read.input), npFields(source.input));
-      if (read.evaluation.status === 'resolved') {
-        c(
-          'domainUseMismatch',
-          `np.${index}.multipliers`,
-          read.evaluation.npSpecialMultipliers,
-          source.input.npSpecialMultipliers,
-        );
-      }
-      npConsumptions++;
-    }
-    const wantedUses = battlePointPreparationSource(program).readerUses;
-    c(
-      'domainPopulationMismatch',
-      'use.population',
-      wantedUses.map(({ operationId }) => operationId),
-      source.readerUses.map(({ operationId }) => operationId),
-    );
-    for (const [index, wanted] of wantedUses.entries()) {
-      const actual = source.readerUses[index];
-      c('domainUseMismatch', `use.${index}.evidence`, wanted, actual);
-      const operation = expected.operations.find(
-        (operation) => operation.operationId === wanted.operationId,
-      );
-      c('domainTraceMissing', `use.${index}.operation`, true, !!operation);
-      if (!operation) continue;
-      const events = target.operationEvents.filter(
-        (event) => event.operationId === wanted.operationId,
-      );
-      const projections = source.effects.filter(
-        (projection) => projection.operationId === wanted.operationId,
-      );
-      const contributions = source.contributions.contributions.filter(
-        (contribution) => contribution.operationId === wanted.operationId,
-      );
-      c(
-        'domainUseMismatch',
-        `use.${index}.binding`,
-        {
-          count: 1,
-          sequence: expected.operations.indexOf(operation),
-          kind: operation.kind,
-          projectionKey: projections[0]?.projectionKey,
-          contributionId: projections[0]?.contributionId,
-          outcome: projections[0]?.outcome,
-          value: projections[0]?.valuePermille,
-        },
-        {
-          count: events.length,
-          sequence: events[0]?.sequence,
-          kind: events[0]?.operationKind,
-          projectionKey: events[0]?.projectionKey,
-          contributionId: events[0]?.contributionId,
-          outcome: events[0]?.projectionOutcome,
-          value: events[0]?.projectionValuePermille,
-        },
-      );
-      c('domainUseMismatch', `use.${index}.projectionCount`, 1, projections.length);
-      c('domainUseMismatch', `use.${index}.applied`, 'applied', events[0]?.operationOutcome);
-      c(
-        'domainIdentityMismatch',
-        `use.${index}.contributionSources`,
-        contributions.map(() => operation.source),
-        contributions.map(({ source }) => source),
-      );
-      c(
-        'domainUseMismatch',
-        `use.${index}.contributionEffective`,
-        contributions.map(() => true),
-        contributions.map(({ effective }) => effective),
-      );
-      c(
-        'domainUseMismatch',
-        `use.${index}.components`,
-        operation.kind === 'executeNpDamage' ? ['npBase', 'npSpecial'] : ['modifier'],
-        contributions.map(({ component }) => component),
-      );
-
-      c('domainUseMismatch', `use.${index}.eventPresent`, true, wanted.events.length > 0);
-      c('domainUseMismatch', `use.${index}.projectionPresent`, true, wanted.projections.length > 0);
-      c(
-        'domainUseMismatch',
-        `use.${index}.contributionPresent`,
-        true,
-        wanted.contributions.length > 0,
-      );
-    }
-    c(
-      'domainIdentityMismatch',
-      'use.canonicalInput',
-      true,
-      source.input === prepared.resolved.input &&
-        source.effects === prepared.resolved.effects &&
-        source.contributions === prepared.resolved.effectiveContributions,
-    );
-    c(
-      'domainIdentityMismatch',
-      'use.references',
-      true,
-      source.input === refs.input &&
-        source.effects === refs.effects &&
-        source.contributions === refs.contributions &&
-        source.result === refs.result,
-    );
-    for (const key of [
-      'observation',
-      'preparation',
-      'input',
-      'effects',
-      'contributions',
-      'result',
-    ] as const)
-      c(
-        key === 'result' ? 'domainOutcomeMismatch' : 'domainUseMismatch',
-        `owner.${key}`,
-        (program.owner as Record<string, CanonicalAuditValue>)[key],
-        owner(source)[key],
-      );
-    c('domainOutcomeMismatch', 'result.status', 'calculated', source.result.status);
+    npConsumptions += auditBattlePointPreparationUse(program, source, c);
   }
   return {
     canonicalIdentity: 'tsk-08:preparation-battle-point',
@@ -973,6 +731,311 @@ export function auditBattlePointPreparationObservations(input: {
     changedWrites,
     npConsumptions,
   };
+}
+
+export function auditBattlePointPreparationUse(
+  program: BattlePointPreparationProgram<BattlePointWriter>,
+  source: BattlePointPreparationSource<BattlePointWriter>,
+  c: (
+    reason: BattlePointPreparationFailureReason,
+    path: string,
+    expected: unknown,
+    actual: unknown,
+  ) => void,
+): number {
+  const { expected, prepared, references: refs } = program;
+  const ordered = prepared.orderedScenario;
+  const preparation = source.preparation;
+  const target = source.observation?.targetExecution;
+  if (
+    !preparation ||
+    target?.selection !== 'selected' ||
+    !ordered?.battlePoints ||
+    !target.candidateState
+  )
+    return 0;
+  const state = target.candidateState;
+  const groupIndex = (operationId: string) =>
+    expected.groups.find((group) => group.operationIds.includes(operationId))?.groupIndex;
+  let npConsumptions = 0;
+  c(
+    'domainCommitMismatch',
+    'preparation.terminal',
+    preparation.transitions.at(-1)?.result.state.battlePoints,
+    ordered.battlePoints,
+  );
+  const conversion = preparation.conversion;
+  c('domainTraceMissing', 'conversion.present', true, !!conversion);
+  if (!conversion) return 0;
+  c(
+    'domainIdentityMismatch',
+    'conversion.references',
+    true,
+    conversion.state === ordered.battlePoints &&
+      conversion.input === ordered.baseInput &&
+      conversion.input === prepared.scenarioInput,
+  );
+  c(
+    'domainSourceMismatch',
+    'conversion.domain',
+    true,
+    !!conversion.domain && ordered.battlePointDomains.includes(conversion.domain),
+  );
+  if (!conversion.domain) return 0;
+  c(
+    'domainIdentityMismatch',
+    'conversion.parameterDomain',
+    conversion.domain.id,
+    String(conversion.parameter.targetId),
+  );
+  c(
+    'domainValueMismatch',
+    'conversion.value',
+    ordered.battlePoints.actors.attacker?.domains[conversion.domain.id],
+    conversion.value,
+  );
+  c(
+    'domainValueMismatch',
+    'conversion.scalar',
+    conversion.phase,
+    ordered.baseInput.battlePointPhase,
+  );
+  c(
+    'domainPopulationMismatch',
+    'conversion.writerDomain',
+    true,
+    expected.writers.some(({ domainId }) => domainId === conversion.domain?.id),
+  );
+  c(
+    'domainPopulationMismatch',
+    'canonical.npDomain',
+    true,
+    expected.naturalNpDomainIds.includes(conversion.domain.id),
+  );
+  for (const [index, natural] of expected.naturalReaders.entries()) {
+    c(
+      'domainPopulationMismatch',
+      `canonical.reader.${index}`,
+      true,
+      expected.readers.some(
+        ({ operation, leaf }) =>
+          operation.source.origin === natural.origin &&
+          operation.source.skillId === natural.skillId &&
+          operation.source.effectOccurrenceId === natural.occurrenceId &&
+          leaf.subjectId === natural.subjectId &&
+          leaf.comparison === natural.comparison &&
+          leaf.value === natural.value,
+      ),
+    );
+  }
+  c(
+    'domainPopulationMismatch',
+    'canonical.naturalReaders',
+    true,
+    expected.naturalReaders.length > 0,
+  );
+  const expectedReads = expected.readers.filter(
+    ({ leaf }) => leaf.subjectId === conversion.domain?.id,
+  );
+  c('domainPopulationMismatch', 'terminal.readers', true, expectedReads.length > 0);
+  const reads = state.battlePointPhaseReads.filter(
+    ({ subjectId }) => subjectId === conversion.domain?.id,
+  );
+  c(
+    'domainPopulationMismatch',
+    'terminal.readPopulation',
+    expectedReads.map(({ operation, sequence, leaf }) => [
+      operation.operationId,
+      sequence,
+      leaf.subjectId,
+      leaf.comparison,
+      leaf.value,
+    ]),
+    reads.map((read) => [
+      read.operationId,
+      read.operationSequence,
+      read.subjectId,
+      read.comparison,
+      read.expectedValue,
+    ]),
+  );
+  for (const [index, read] of reads.entries()) {
+    c(
+      'domainIdentityMismatch',
+      `read.${index}.group`,
+      groupIndex(read.operationId),
+      read.operationGroupIndex,
+    );
+    c('domainIdentityMismatch', `read.${index}.actor`, 'attacker', read.actor);
+    c(
+      'domainValueMismatch',
+      `read.${index}.pointPhase`,
+      [conversion.value?.kind === 'present' ? conversion.value.point : null, conversion.phase],
+      [read.point, read.phase],
+    );
+    c('domainUseMismatch', `read.${index}.evaluation`, true, read.evaluated);
+  }
+  c(
+    'domainPopulationMismatch',
+    'np.population',
+    expected.nps.map(({ operation, sequence }) => [operation.operationId, sequence]),
+    state.scalarNpConsumptions.map((read) => [read.operationId, read.operationSequence]),
+  );
+  for (const [index, np] of expected.nps.entries()) {
+    const read = state.scalarNpConsumptions[index];
+    c('domainTraceMissing', `np.${index}.receipt`, true, !!read);
+    if (!read) continue;
+    c(
+      'domainIdentityMismatch',
+      `np.${index}.group`,
+      groupIndex(read.operationId),
+      read.operationGroupIndex,
+    );
+    c(
+      'domainIdentityMismatch',
+      `np.${index}.parameter`,
+      true,
+      np.operation.damage.kind === 'battlePointPhase' &&
+        np.operation.damage.parametersByOvercharge[ordered.baseInput.overcharge - 1]?.[
+          ordered.baseInput.npLevel - 1
+        ] === conversion.parameter,
+    );
+    c('domainValueMismatch', `np.${index}.raw`, conversion.phase, read.value);
+    c('domainUseMismatch', `np.${index}.disposition`, 'consumed', read.disposition);
+    c('domainUseMismatch', `np.${index}.evaluation`, 'resolved', read.evaluation.status);
+    c(
+      'domainValueMismatch',
+      `np.${index}.consumed`,
+      (program.npReceipts as Record<string, CanonicalAuditValue>[])[index]?.consumedValue,
+      read.consumedValue,
+    );
+    c('domainValueMismatch', `np.${index}.inputScalar`, read.value, read.input.battlePointPhase);
+    const npFields = (input: Calculation['input']) => ({
+      battlePointPhase: input.battlePointPhase,
+      npMultipliers: input.npMultipliers,
+      npSpecialMultipliers: input.npSpecialMultipliers,
+      damageFunction: input.damageFunction,
+    });
+    c('domainUseMismatch', `np.${index}.input`, npFields(read.input), npFields(source.input));
+    if (read.evaluation.status === 'resolved') {
+      c(
+        'domainUseMismatch',
+        `np.${index}.multipliers`,
+        read.evaluation.npSpecialMultipliers,
+        source.input.npSpecialMultipliers,
+      );
+    }
+    npConsumptions++;
+  }
+  const wantedUses = battlePointPreparationSource(program).readerUses;
+  c(
+    'domainPopulationMismatch',
+    'use.population',
+    wantedUses.map(({ operationId }) => operationId),
+    source.readerUses.map(({ operationId }) => operationId),
+  );
+  for (const [index, wanted] of wantedUses.entries()) {
+    const actual = source.readerUses[index];
+    c('domainUseMismatch', `use.${index}.evidence`, wanted, actual);
+    const operation = expected.operations.find(
+      (operation) => operation.operationId === wanted.operationId,
+    );
+    c('domainTraceMissing', `use.${index}.operation`, true, !!operation);
+    if (!operation) continue;
+    const events = target.operationEvents.filter(
+      (event) => event.operationId === wanted.operationId,
+    );
+    const projections = source.effects.filter(
+      (projection) => projection.operationId === wanted.operationId,
+    );
+    const contributions = source.contributions.contributions.filter(
+      (contribution) => contribution.operationId === wanted.operationId,
+    );
+    c(
+      'domainUseMismatch',
+      `use.${index}.binding`,
+      {
+        count: 1,
+        sequence: expected.operations.indexOf(operation),
+        kind: operation.kind,
+        projectionKey: projections[0]?.projectionKey,
+        contributionId: projections[0]?.contributionId,
+        outcome: projections[0]?.outcome,
+        value: projections[0]?.valuePermille,
+      },
+      {
+        count: events.length,
+        sequence: events[0]?.sequence,
+        kind: events[0]?.operationKind,
+        projectionKey: events[0]?.projectionKey,
+        contributionId: events[0]?.contributionId,
+        outcome: events[0]?.projectionOutcome,
+        value: events[0]?.projectionValuePermille,
+      },
+    );
+    c('domainUseMismatch', `use.${index}.projectionCount`, 1, projections.length);
+    c('domainUseMismatch', `use.${index}.applied`, 'applied', events[0]?.operationOutcome);
+    c(
+      'domainIdentityMismatch',
+      `use.${index}.contributionSources`,
+      contributions.map(() => operation.source),
+      contributions.map(({ source }) => source),
+    );
+    c(
+      'domainUseMismatch',
+      `use.${index}.contributionEffective`,
+      contributions.map(() => true),
+      contributions.map(({ effective }) => effective),
+    );
+    c(
+      'domainUseMismatch',
+      `use.${index}.components`,
+      operation.kind === 'executeNpDamage' ? ['npBase', 'npSpecial'] : ['modifier'],
+      contributions.map(({ component }) => component),
+    );
+
+    c('domainUseMismatch', `use.${index}.eventPresent`, true, wanted.events.length > 0);
+    c('domainUseMismatch', `use.${index}.projectionPresent`, true, wanted.projections.length > 0);
+    c(
+      'domainUseMismatch',
+      `use.${index}.contributionPresent`,
+      true,
+      wanted.contributions.length > 0,
+    );
+  }
+  c(
+    'domainIdentityMismatch',
+    'use.canonicalInput',
+    true,
+    source.input === prepared.resolved.input &&
+      source.effects === prepared.resolved.effects &&
+      source.contributions === prepared.resolved.effectiveContributions,
+  );
+  c(
+    'domainIdentityMismatch',
+    'use.references',
+    true,
+    source.input === refs.input &&
+      source.effects === refs.effects &&
+      source.contributions === refs.contributions &&
+      source.result === refs.result,
+  );
+  for (const key of [
+    'observation',
+    'preparation',
+    'input',
+    'effects',
+    'contributions',
+    'result',
+  ] as const)
+    c(
+      key === 'result' ? 'domainOutcomeMismatch' : 'domainUseMismatch',
+      `owner.${key}`,
+      (program.owner as Record<string, CanonicalAuditValue>)[key],
+      owner(source)[key],
+    );
+  c('domainOutcomeMismatch', 'result.status', 'calculated', source.result.status);
+  return npConsumptions;
 }
 
 /** All published declarations and natural NP reader contracts are separate populations. */
@@ -988,7 +1051,7 @@ export function battlePointPreparationCanonicalInventory(master: MasterDataSnaps
                   skillId: skill.id,
                   occurrenceId: effect.occurrenceId,
                   operationIndex,
-                  domainId: operation.subjectId,
+                  domainId: (operation as BattlePointWriter).subjectId,
                   operation,
                 },
               ]

@@ -12,6 +12,8 @@ import {
 } from './scenario';
 import {
   productionAuditTestOptions,
+  encodeProductionAuditDiagnostic as encodeDiagnostic,
+  decodeProductionAuditDiagnostic as decodeDiagnostic,
   writeProductionAuditArtifact,
 } from './productionAuditArtifacts';
 import {
@@ -459,108 +461,6 @@ type Mutable<T> = T extends
         ? { -readonly [K in keyof T]: Mutable<T[K]> }
         : T;
 type Source = Mutable<BattlePointPreparationAttemptSource>;
-type DiagnosticValue =
-  | { kind: 'literal'; value: string | number | boolean | null | undefined }
-  | { kind: 'reference'; index: number };
-type DiagnosticNode =
-  | { kind: 'object' | 'nullObject'; entries: [string, DiagnosticValue][] }
-  | { kind: 'array'; items: DiagnosticValue[] }
-  | { kind: 'set'; items: DiagnosticValue[] }
-  | { kind: 'map'; entries: [DiagnosticValue, DiagnosticValue][] };
-/** Complete test diagnostic values, interned without changing gate/assertion/runner contracts. */
-function encodeDiagnostic(payload: unknown) {
-  const nodes: DiagnosticNode[] = [];
-  const identities = new WeakMap<object, number>();
-  const contents = new Map<string, number>();
-  const ancestors = new Set<object>();
-  const visit = (value: unknown): DiagnosticValue => {
-    if (
-      value === null ||
-      value === undefined ||
-      typeof value === 'string' ||
-      typeof value === 'boolean'
-    )
-      return { kind: 'literal', value };
-    if (typeof value === 'number') {
-      if (!Number.isFinite(value) || Object.is(value, -0))
-        throw new TypeError('invalid_diagnostic_number');
-      return { kind: 'literal', value };
-    }
-    if (typeof value !== 'object') throw new TypeError('unsupported_diagnostic_value');
-    if (ancestors.has(value)) throw new TypeError('diagnostic_cycle');
-    const prior = identities.get(value);
-    if (prior !== undefined) return { kind: 'reference', index: prior };
-    ancestors.add(value);
-    let node: DiagnosticNode;
-    const prototype: unknown = Object.getPrototypeOf(value);
-    if (prototype === Set.prototype)
-      node = { kind: 'set', items: [...(value as Set<unknown>)].map(visit) };
-    else if (prototype === Map.prototype)
-      node = {
-        kind: 'map',
-        entries: [...(value as Map<unknown, unknown>)].map(([key, item]) => [
-          visit(key),
-          visit(item),
-        ]),
-      };
-    else if (Array.isArray(value)) {
-      if (Reflect.ownKeys(value).length !== value.length + 1)
-        throw new TypeError('invalid_diagnostic_array');
-      node = { kind: 'array', items: value.map(visit) };
-    } else {
-      if (prototype !== Object.prototype && prototype !== null)
-        throw new TypeError('unsupported_diagnostic_prototype');
-      const entries: [string, DiagnosticValue][] = Reflect.ownKeys(value).map((key) => {
-        if (typeof key !== 'string') throw new TypeError('unsupported_diagnostic_key');
-        const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
-        if (!descriptor.enumerable || !('value' in descriptor))
-          throw new TypeError('unsupported_diagnostic_property');
-        return [key, visit(descriptor.value)];
-      });
-      node = { kind: prototype === null ? 'nullObject' : 'object', entries };
-    }
-    ancestors.delete(value);
-    const key = JSON.stringify(node);
-    let index = contents.get(key);
-    if (index === undefined) {
-      index = nodes.length;
-      nodes.push(node);
-      contents.set(key, index);
-    }
-    identities.set(value, index);
-    return { kind: 'reference', index };
-  };
-  const root = visit(payload);
-  return { version: 1 as const, root, nodes };
-}
-function decodeDiagnostic(encoded: ReturnType<typeof encodeDiagnostic>): unknown {
-  const values: unknown[] = [];
-  const read = (value: DiagnosticValue): unknown => {
-    if (value.kind === 'literal') return value.value;
-    if (!Number.isSafeInteger(value.index) || value.index < 0 || value.index >= values.length)
-      throw new TypeError('invalid_diagnostic_reference');
-    return values[value.index];
-  };
-  for (const node of encoded.nodes) {
-    if (node.kind === 'array') values.push(node.items.map(read));
-    else if (node.kind === 'set') values.push(new Set(node.items.map(read)));
-    else if (node.kind === 'map')
-      values.push(new Map(node.entries.map(([key, item]) => [read(key), read(item)])));
-    else {
-      const value =
-        node.kind === 'nullObject' ? (Object.create(null) as Record<string, unknown>) : {};
-      for (const [key, item] of node.entries)
-        Object.defineProperty(value, key, {
-          value: read(item),
-          enumerable: true,
-          writable: true,
-          configurable: true,
-        });
-      values.push(value);
-    }
-  }
-  return read(encoded.root);
-}
 
 for (const spec of specs)
   it(

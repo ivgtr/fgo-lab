@@ -1,3 +1,4 @@
+import { preparationBattlePointScope } from './preparationAttemptObservation';
 import { activatePreparationForm, executePreparationPhase } from './preparationPhases';
 import {
   getPassivesForActorForm,
@@ -93,9 +94,20 @@ export function reducePreNoblePhantasmAction(
   const result = reduce();
   if (result.status === 'rejected' || result.state.terminated) return result;
   const form = activatePreparationForm(servant, result.state, context);
-  return form.status === 'rejected'
-    ? { ...form, state }
-    : { ...form, state: reconcilePreparationBattlePoints(servant, form.state, context) };
+  if (form.status === 'rejected') return { ...form, state };
+  const reconciled = reconcilePreparationBattlePoints(servant, form.state, context);
+  const capture = preparationBattlePointScope(context);
+  if (capture)
+    capture.push({
+      kind: 'reconcile',
+      owner: 'reducer',
+      actionId: null,
+      source: null,
+      before: form.state,
+      after: reconciled,
+      domains: context.battlePointDomains,
+    });
+  return { ...form, state: reconciled };
 }
 
 export function availableTransformNoblePhantasmCommand(
