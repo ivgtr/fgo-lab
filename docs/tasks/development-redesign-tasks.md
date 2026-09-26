@@ -3401,3 +3401,35 @@ maximumFixed forward consumerはnative非commitを境界にし、fixed HP attemp
 残る中心はStep2。今回の限定隔離の後も、canonical inventoryと完了済みbounded unitの対応から実際の監査未接続と境界を確認し、次の1unitを改めて限定する。対象外を一括の製品意味論追加TODOへ読み替えず、元owner実装済み／監査未接続／宣言境界／製品対象外を区別する。後続unitの数・順序は未確定。TSK-08全体のratchet／artifact／legacy／最終受入、TSK-09.1／09の未達は`remainingWorkSummary`を参照し、既存成功やidentity疑義のない8 shardを再開しない。
 
 この資料整理の文書gateは対象4文書の書式check、`test:docs`6件／参照整合、`git diff --check`が成功。既存boundedUnits49記録の内容とTask status不変を照合した。製品／test差分はなく、読取diagnosticを既存evidenceから宣言し、文書だけlocal commitする。
+
+### maximumFixed changed attempt隔離 60分checkpoint（未完了、2026-09-27）
+
+計画は利用者確認済み。開始HEADは`4979b6bea63dc9e7d654a2286d5b72467a5bda64`で、開始時index／tracked／untrackedはclean。capture専用`sourceEnds`へ元source開始stateとstochastic failure stepを追加し、元reset後のattempt終了stateを観測する試作を実装中。独立maximumFixed changed-attempt consumer／gateとschema-legal代表・否定fixtureの試作がある。実native非commitを証明するconsumer／fixtureは未成立で、unit完了ではない。
+
+通常`pnpm`はSQLite storeでscript前に停止。既存`/tmp/tsk08-tools/pnpm`の730 bytes、SHA-256 `7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6`と内容を照合し、同generic runner・既存node_modules・CPU affinity 0-7を使った。対象Prettierは成功。application限定型検査はtestからdata-pipeline packageを解決できない依存境界で失敗し、先のsource相対import案でもproject `rootDir`違反を確認した。root型検査・新audit test・producer・audit・qualityは未成功。型検査で生成された未追跡data-pipeline build出力64件は除去済み。
+
+現在の変更候補はbattle-execution capture、maximumFixed既存診断shape保護、新attempt consumer／testの5 source paths。次は公開API追加やapplication実行依存を避け、既存public pipeline snapshot generatorから一度だけ共有parsed masterを作るfixture構成へ切替えて型検査を通す。次にgateのcheckPath別否定、audit suite登録、局所representative検証を閉じる。対象内Blockingが残る間は全件audit／qualityを開始せず、最終quality・Task／evidence完了記録・依頼範囲local commitが未達。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
+
+### maximumFixed changed attempt隔離 90分checkpoint（未完了、2026-09-27）
+
+開始HEADは`4979b6bea63dc9e7d654a2286d5b72467a5bda64`のまま。公開`normalizeAtlasSnapshot`を使う一度parseのschema fixtureへ変更し、先行prefix後のmaximumFixed増減・複数operation／source・境界・元source-local stochastic reset、同selected拒否transport、宣言artifactを接続する作業を継続中。capture-only元owner観測へsource開始／resetとnative inputRequired時の元required-input／occurrenceを追加し、通常実行のserialized shapeは変更しない。元ownerからの入力観測追加後、focused auditはnegative責務fixture 1件が通過し、positive／boundary 2件が失敗した。unit完了ではない。
+
+局所auditは既存generic runner、CPU affinity 0-7で15.01秒実行、warning 0。完全diagnostic artifactを保存した。changed noncommit artifact `.test-results/2026-09-26T21-09-03-666Z-3-fa0628/tsk-08-maximum-fixed-attempt-changed-noncommit.json` は6,777,216 bytes／SHA-256 `5ed5a8e0233bdf3b2e38ed669f1a54d5fad884c2f5b146f6368c0ba2c7a306ce`、boundary artifactは3,889,762 bytes／SHA-256 `4c26ce02f362195474b01f469fbb2b8a020d9507d016008da5960968b26afeb2`、negative artifactは18,192,313 bytes／SHA-256 `b4c4b7f8152667344cf830bfc6a6a84880961c6a9824f36191f5e4d60da9ab10`。positiveの`target.nativeRejectReached.type`はexpected array／actual object、no-op境界の`target.writeOrder.values[0]`はexpected writeなし／actual `[981022:0]`。前者はoriginal native rejection stepの型・根拠との照合を直し、後者は期待boundaryで到達したno-op writerを順序証明に含める必要がある。成功証拠として扱わない。
+
+次の最小操作は同じconsumerのnative reject step照合とboundary write orderだけを修正し、focused auditを再実行すること。その後、最新capture差分の型検査／format／差分レビュー、残る否定と artifact contractを閉じる。対象内Blockingが残るため全件production／audit／qualityは未実行。README必須quality、影響gate／counter、Task／evidenceの最終照合と依頼範囲local commitが未達。90分境界のため新semantic familyは開始しない。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、HP recovery／stale-mutation全体／TSK-08全体closureではない。pushなし。
+
+### 限定maximumFixed changed attempt隔離完了（2026-09-27）
+
+計画は利用者確認済み。攻撃役skillの`hpModifier/action:maximumFixed/sign:+1|-1/lifetime:active/sourceSelf/selection省略またはdirect/null bounds`に限定し、canonical source生成から元apply、実changed attempt、元native非commit、action-start HP／modifier／receiptと先行committed prefix保持、元reducerと同selected prepared/application/direct resultのtyped拒否、後段不生成まで共有consumer／gateへ接続した。通常runtime／serialized shapeは保持し、capture専用の元source開始・stochastic reset step・inputRequired occurrence観測だけを追加した。元native/reducer/transportの分類、HP算術、writer再実行、damage意味論は追加していない。
+
+公開pipeline normalizerから共有parsed masterを作るschema-legal代表で8 changed非commit経路を確認した。増加、current floor／maximum clampを含む減少、複数operation/source、choice cell、先行committed prefix、modifier-only source、到達可能なsource-local stochastic reset、元native invalid／inputRequiredを含む。5境界（receipt actual 0のno-op、dead、writer未到達、attempt前拒否、native committed）をchanged非commit成功から分離した。36否定（33 mutationと3 expected population欠落）でtyped reason／checkPath／canonical first differenceを確認した。通常／capture paired outcome、適用可能なranking拒否parity、同一executionのdirect resultと後段scenario／HP seed／read／NP／damage input／calculated result不在を確認し、別candidateや拒否graphを代用していない。
+
+Focused auditは1 file／3 tests pass、warning 0。完全diagnostic 3点はassertion前に宣言・保存され、保存receiptのbytes／SHA-256と厳密lossless復元が一致した。`.test-results/2026-09-26T22-03-18-165Z-3-14cf5e/manifest.json`は3,571 bytes／SHA-256 `9a3a76c956ad6e4b847c966a17869beb589770a6907438e5c8cb6b6d425e4d1c`。changed noncommitは6,839,055 bytes／`eace5bb426e88f665fcb276905e5470d3e3ad2f323e7bba61d4fd106f469ee01`、boundariesは3,906,845 bytes／`1a9dd5243b78755dcef8545330bc373e80b4d532fe31c881d7d3ed0e538ce3ca`、negativesは24,428,296 bytes／`b70f3c8f878c87a078f2446a7a2db51a4169da85e32d4a201dc3e2dcbc4cd7b1`。
+
+最終差分でREADME必須`pnpm quality`が成功した。manifest `.test-results/2026-09-26T22-03-48-927Z-3-4ca8b9/manifest.json`は270,568 bytes／SHA-256 `48161c90f1532c7867b8ba37aa339e7369dbb77764d78dd1d82192a882d80690`、所要546,269ms、unit 1444/1444、production 155/155、Playwright 29/29（retry 0）、warnings／unexpected console 0、artifact verification errors 0。application／data-pipeline双方のmaster read／parseとcompile、candidate／dedup／damage request countersは先行unit[48]と同一（application: 1／1／1、6673／4194／2596／1489、data-pipeline: 1／1／1、candidate／damage 0）。変更はcapture observationに限定され、通常経路の算術／damage構造は不変。通常／capture representative parityを確認し、既存unit[48]の計測条件を保持する。性能差の因果推定には使わず、production counterに増分なしと記録する。
+
+最初の全quality試行では`productionHpPaths.test.ts`が154/155で失敗した。同じ最終HEAD／差分で当該fileを単独再実行すると5/5 passし、その後の全quality 2回は155/155 passした。`diagnostic-attribution`により`environmentDependent`として記録する。同一の変更前clean baselineがなく、原因の独立性までは断定しない。最終全qualityが最終差分を含む。通常`pnpm`は外部SQLite storeでscript前に失敗したため、既存`/tmp/tsk08-tools/pnpm`（730 bytes／SHA-256 `7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6`）を照合し、CPU affinity 0-7、production 50%／4 workers、既存timeoutのままgeneric runnerへ切り替えた。
+
+`productionMasterControlAudit`と既存maximumFixed committed-forward 8 shardは再実行していない。期待母集団・既存producer／gateの製品sourceは不変で、`boundedUnits[48]` committed forward、`[47]` fixed HP native noncommit、`[46]` fixed HP committed forwardの独立証拠を再利用した。保存published forward population（宣言11／selected 62／changed 50、native committed transition 238）は新changed native-noncommit成功の根拠や将来の固定件数に使わない。
+
+対象製品9 fileをlocal commit `4655e72`（full SHAはevidence `boundedUnits[49].implementationCommit`）へ記録した。Task／evidence文書gateもPrettier、`test:docs` 6/6とintegrity、`git diff --check`が成功し、`boundedUnits[49]`とcurrent-stage／next-session handoffを更新した。今回の限定unitは完了したが、TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま。HP recovery、stale-mutation全体、TSK-08全体closureではなく、pushなし。次のbounded unitは未選定で、既存remaining-work summaryとcanonical inventoryから改めて限定する。
