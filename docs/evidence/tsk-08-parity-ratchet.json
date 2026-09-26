@@ -11645,9 +11645,2460 @@
         "push": false
       },
       "implementationCommit": "5ce926a8498139534b82e0f5b570260b2025cf09"
+    },
+    {
+      "name": "Attacker-skill battlePointCapacityModifier preparation non-commit attempt isolation shared audit consumer closure",
+      "status": "Completed authorized capacity noncommit isolation unit; required gates and result-document verification succeeded; product commit recorded; this record committed separately locally",
+      "baselineHead": "ac3f3ed9705feb8342a8a20ef54d70deec5f705e",
+      "priorProductCommit": "5ce926a8498139534b82e0f5b570260b2025cf09",
+      "worktreeAtStart": "HEAD/index/tracked/untracked matched reference; clean",
+      "authorizedScope": "One session: canonical attacker useSkillSlot capacity modifier that actually changes finite capacity/point or modifier state in a native attempted prefix, followed by original same-action invalid/unsupported/inputRequired non-commit -> exact action-start BP domain/capacity/modifier list/receipts/executedEffects/applied action retention -> original reducer/prepared/application typed rejection for the same selected scenario. Include same-domain fixed writes only as consumers within that failed prefix, and prior committed skill only to establish the true action-start. Connect shared consumer/gate, schema-legal representatives/grouped negatives, complete declared diagnostics. No successful recovery execution.",
+      "changedFiles": [
+        "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.ts",
+        "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.ts",
+        "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts"
+      ],
+      "ownership": {
+        "canonical": "Existing attacker command/master/form/choice/program scopes generate capacity selection independently of receipt/activation/native success. Same-action fixed writers are failed-prefix consumers. Exact action/source/occurrence/op/valueSetIndex0/valueIndex skillLevel-1/actor/domain and indexed modifier amount/lifetime/traits bind original receipts.",
+        "preparation": "Original owner/runtime/capture unchanged. Original attempt and WeakMap timeline provide write/sourceEnd/reconcile/native noncommit/attempted/returned; no writer replay or arithmetic/clamp/reconciliation/phase implementation in audit. Capacity timeline replaces fixed-only consecutive-write assumption for this typed audit mode.",
+        "consumer": "Shared existing noncommit rejection/state/result/downstream checks plus focused capacity consumer. Original refs and immutable canonical/owner snapshots reject coherent tampering. Capacity retained state/receipts/effects/prefix compare with authoritative saved start. Prior committed action receipts capacity40 versus actual reducer capacity90 establish exact failed-action start90.",
+        "transport": "Same selected wrapper/prepared/calculation/direct typed result attachment; complete prepared transport excluding unrelated master graph detects forbidden extra input/observation. No public API/serialized shape/normal allocation changes.",
+        "population": "Published selection collected before executable check, independent missing/duplicate selection/program/observation refusal. Strict committed capacity gate and production-control executable contract preserved. Published inventory and schema-legal noncommit coverage remain independent.",
+        "artifact": "All grouped positive/negative diagnostics saved before assertions; canonical identity/reason/expected-actual/checkPath/first difference; exact interned lossless in-memory/serialized/on-disk restoration and runner declaration/path/bytes/SHA-256 verification. Per-representative parsed master/execution shared; no timeout/threshold/exclusion changes."
+      },
+      "flowClosure": {
+        "status": "Verified scoped capacity noncommit isolation; Blocking0; no domain recovery or whole TSK-08 closure",
+        "matrix": [
+          {
+            "path": "finite increase/decrease/point clamp; same-domain multiple modifiers/fixed write/source prefix -> native unsupported/invalid/inputRequired",
+            "status": "Verified focused",
+            "evidence": "five changed representatives, original before/after/receipt/modifier/attempted proofs"
+          },
+          {
+            "path": "prior committed capacity/fixed actions -> native intermediate40 -> real reducer reconcile90 -> failed action-start90 and prior modifier list retained",
+            "status": "Verified focused",
+            "evidence": "prior-capacity-fixed-commit representative and stale/reconcile/reference/commit-loss negatives"
+          },
+          {
+            "path": "native noncommit -> exact original action-start retention -> original reducer rejection/command stop -> same selected wrapper/prepared/application/direct typed refusal",
+            "status": "Verified focused",
+            "evidence": "normal/capture/calculator/ranking/direct typed parity; generated input/phase/ordered/NP/contribution/calculated result absent"
+          },
+          {
+            "path": "null/zero capacity modifier-only; eligible absent/ineligible/non-applied/before capacity",
+            "status": "Verified boundary only",
+            "evidence": "six explicit boundaries; not counted as finite changed capacity"
+          },
+          {
+            "path": "failed prefix sourceEnd/reconcile continuity",
+            "status": "Verified for authorized stable actor/form/traits",
+            "evidence": "sourceEnd does not imply reconcile; original completeSource requires contextMutation for source reconciliation, excluded here. Failed reducer returns before outer reconcile; no reconcile or NP use fabricated. Actual prior committed reducer reconcile observed."
+          },
+          {
+            "path": "published independent selection and inventory gate",
+            "status": "Verified final published inventory/producer/gate; schema-legal noncommit coverage independent",
+            "evidence": "independent missing-selection and missing-declaration failures; current master is not synthetic noncommit coverage"
+          },
+          {
+            "path": "Completed committed capacity/fixed BP forward or fixed noncommit consumer reopening, scalar/criticalStars forward/recovery, S4/without-area/architecture; domain recovery/correction/resend/general retry/UI recovery; candidate damage-loop rollback; form/trait/eligibility switching/base trait capacity overrides, modifier expiration/removal/new lifetime semantics; auxiliary/passive/NP capacity writers; initial/terminal passive failure, OC-ready structural rejection; HP/trait/gauge/OC family implementation or failure-code/outcome classification changes; legacy cleanup, all stale-mutation/TSK-08 closure, TSK-09.1/09.",
+            "status": "N/A: outside bounded authorization",
+            "evidence": "No implementation or closure claim"
+          }
+        ],
+        "representatives": [
+          "increase-fixed-prefix",
+          "decrease-clamp-invalid",
+          "increase-input-required",
+          "multiple-source-prefix",
+          "prior-capacity-fixed-commit"
+        ],
+        "boundaries": [
+          "null-modifier-only",
+          "zero-modifier-only",
+          "eligible-absent",
+          "ineligible",
+          "non-applied",
+          "before-capacity"
+        ],
+        "changedRepresentatives": 5,
+        "boundariesCount": 6,
+        "negativeCount": 1854,
+        "diagnosticCount": 176,
+        "negativeGroups": [
+          "Missing command/master/source/action/operation/original attempt/start/prefix/write/receipt/modifier/native/reducer/retained/result/expected population/capture transport.",
+          "Wrong selected scenario/source/action/occurrence/op/value indices/actor/domain/lifetime/traits/identity/reference/order; duplicate/reversed prefix; coherent receipt/modifier/native status/returned state tampering.",
+          "Scenario seed substituted for action-start after prior committed capacity/fixed skill; stale or other-domain capacity/point/modifier list; attempted/intermediate substituted for retained state; amount-only change claims and reconciliation after values substituted for intermediate.",
+          "Fake commit/executedEffects/applied action, retained-prefix loss or rollback of preceding commit, uncommitted modifier/receipt/effect leak; next command or actual writer replay; mixed selected executions.",
+          "RequiredInputs/reason/trace/application typed result contradictions; invented live read/phase/scalar/NP consume/event/projection/effective contribution/canonical damage input/calculated result on rejected preparation; incomplete evidence/diagnostic accepted as success."
+        ],
+        "testGrouping": "16 responsibility groups x11 representatives/boundaries; parsed master and actual runs shared per representative; every negative executes once. Group splits bound complete diagnostic persistence under unchanged5s timeout.",
+        "review": "Parent direct-definition/use and final diff review: command/master/choice expected population before activation/result filters; capacity modifier versus fixed consumers; reference+snapshot authority; original timeline and real prior reconcile; native/reducer start retention and typed outcome mapping; same selected wrapper/direct result transport; no downstream execution or fabricated input; strict fixed807 and committed gates retained.77 old declared diagnostic artifacts byte-identical in final focused run. No production owner or public shape edits."
+      },
+      "verification": {
+        "focused": {
+          "manifest": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/manifest.json",
+          "outcome": "success",
+          "counts": {
+            "files": {
+              "total": 4,
+              "passed": 4,
+              "failed": 0,
+              "skipped": 0
+            },
+            "tests": {
+              "total": 253,
+              "passed": 253,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "warnings": 0,
+            "unexpectedObservations": 0,
+            "allowedObservations": 0,
+            "correlatedObservations": 0,
+            "infrastructureObservations": 0
+          },
+          "artifactVerification": {
+            "errors": []
+          },
+          "artifacts": [
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 131439,
+              "sha256": "5568e1c415f46f8d1768c5fe05f8f1763f63adf2a4840fddb08866c9416ba763"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 678991,
+              "sha256": "4831087877254d21f7ae8f3e71ee390aa7585cd7697c0b699a9b1278af7e53b4"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 845707,
+              "sha256": "33faf90dff72e3e55fb3d592f38206357ff4ad6f3ab22e311fc799acde324874"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 796393,
+              "sha256": "4744a3ee9e2d88efa4929305f1fa7ec943813a98a1ca498e7dd66f336c3e09da"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 433540,
+              "sha256": "df30ea1c526ad0d02b93f7ae6258accea61aadb79ac25b1ae39db76bd681ddf6"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 439757,
+              "sha256": "c837a8d0679be03c298b10998956148fc7d2f5697e1d981717a291374b9ba467"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 371301,
+              "sha256": "aa6f1a182b237e6ef429dfc0ab30eb44743021a6e23d04e2e496a5e261a87599"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 514441,
+              "sha256": "6ed2eb6c94eea1767951d97c9cf8eb9d6e110cdaf96cd6a469abeed62b972a2a"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 567718,
+              "sha256": "90e38ecb95c6e69736d9561f3d5d346b36f4d450ac8f06cd3f18588e3189475d"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 742096,
+              "sha256": "359f2c8abf9b33b2057eeab081d5414db8d683e13d7781e10ab13fc04d31a08f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 554129,
+              "sha256": "b7d3c95946b6f01c3700a94ddba1c46604b7e22d80f3d3aa43dd0211582a0241"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 323712,
+              "sha256": "ec380ee3cbc68174a4d9ac5d812855282b7b32c47e1b61fef9b39083993ecd9d"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 322945,
+              "sha256": "8adf76beae07962f1c92699a33af29107a96e30b3fcc9292aaf28b080b287111"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 316004,
+              "sha256": "e69d78aceba9c5ae8a29b2fc8a31639e17f3c0e608d1b28dacd934145c99aeab"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 952508,
+              "sha256": "77337722bd2e99376aace278a9da229d626b875c05b87604d14dd315d7578f34"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-fixed-prefix-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 435331,
+              "sha256": "e7642cc5d42e111541840b003f0a8ec9903f5fe64c934c94b914d1fa0b896cd3"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 127427,
+              "sha256": "f671e64ed21b7777a3433b3be41f98ab3882627cbae94590820e9da44dbc8b0e"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 689347,
+              "sha256": "0a02ebcfb719a05218edcf5d4a592692d1c8438d0997d80d12a47218cdbee167"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1020846,
+              "sha256": "c606a1a7d65046d36591bc317b0667dac4776d27dc6812e5114936d5f1f09d12"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 898732,
+              "sha256": "4eed144ab6ff0543bc95a7a2a2da263c90374b69fda9ebb0a4276653f5a0a53f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 470969,
+              "sha256": "24ff55750a59eea6a7c4782a8d7e31e1b8c6696dfb71bdc298b179cf0adb7cf6"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 627885,
+              "sha256": "e9b8cafdc7998165c14d5a93472abad87f4cc193c832a5a023422746c6e13b52"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 471366,
+              "sha256": "d1184fdb5ffdcac2b81d0c32ed370236b9936f7524786ae6822cb183dce054f1"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 747710,
+              "sha256": "90c51c90519dcc5706f301f11384dad7035ac93b8d8c559f0a79565f2aab2a9e"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 629544,
+              "sha256": "dd118e938885447fa53284965d0cb21a8a8de6bb3978d6cb7a9d88f05f7dc907"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 914681,
+              "sha256": "b051b4e5a51c3ae8927d300a47ecf1acc2befd9e22af098a65f755fd0b301072"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 615099,
+              "sha256": "6eb60691daab18def8aa7cc37001b45aefde011611bedc1182486bcaafeca87a"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 337247,
+              "sha256": "68a26845bbdfd433de92f6d03a35f1d2fe6c1aa623d428a3b62d61fdb0712dea"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 336327,
+              "sha256": "1c93fff664194b499a8aab7d903764b4f7dc56841638542c1d3496021ab57858"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 325942,
+              "sha256": "dbfa971a30987a5f1debd7b76a35d2d008992005a677c9e573ac71d69af49d52"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 982823,
+              "sha256": "8ba09f0469b802249ca8655caee01e75c7a0476de6d8c7cab89200263a4a856d"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-decrease-clamp-invalid-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 443507,
+              "sha256": "ac0369ae9d76d5a16a7c04440e771273fb2175ade15b50e806904f9be87dad79"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 129757,
+              "sha256": "dbda252e94dfc101c5834e65b6d2a40cd4ab0ca243135afb769b2d3e606760e5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 660560,
+              "sha256": "977153110b58357a97c180fcd096a82daecb753d7d79fcf52a39842119b0990b"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 599696,
+              "sha256": "36ba4c8c8f064661dc062654cab2a01181f39f100744697e784d9637ba1561f0"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 550166,
+              "sha256": "e1a2b59ad451bc31d7d5d3620f50e541ba6094af158130295639a8ac68860a6c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 414614,
+              "sha256": "ff392dedb8df3306ce9935daa288e14e706e03b2df7af4c857284f296aa7a91b"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 400731,
+              "sha256": "3ebfb33e1122a57010967b29db4d028e3fcc51e56fdb65a27ac2bfed2bf0435f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 323278,
+              "sha256": "613957a2898e105f881b166651584e120682a577d200889d0135e695251d00d5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 457563,
+              "sha256": "c6d45966334adbb285b08b80d1e497ce524710324b38438846e0994385be1fed"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 414084,
+              "sha256": "d20ac6449a04b10f71959d93f39dc6426e078e4755710a7e7dfff245a1c288a1"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 535434,
+              "sha256": "d3a728b5c5119837eb85a08ab4fb984eb861b30b4d0c57b00f34c0fceb0cc8a1"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 400619,
+              "sha256": "3d82d9509acef151719df3edf0bf7cda39e078363770c8735d52d12f9cf92575"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 285371,
+              "sha256": "b2a5cbfb27691b08608d5cbd913e891a8dc0c27604d206f04e2abd9b59105104"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 284849,
+              "sha256": "7a3a388543d2ab8c16db4f376b206cd02b511d0e419733567576e71a246052ef"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 295677,
+              "sha256": "e620d0f26bdc27eb7b230ffa47962e0ff0f1ed5940e26571771f10ae3cf9a3a1"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 865347,
+              "sha256": "e1556adc89d5dd6ff8b10aa0faa848b4e915889c56454703cb549e4ed7d53065"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-increase-input-required-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 419217,
+              "sha256": "a5fd6b7e4c04eefc199a931987f7406a4a4a835241d6131f58cd26866eb2ad90"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 164649,
+              "sha256": "16f44c240f75e166fc80ccb91ca27faab968f6e834d64a82ad05caef92d88bd0"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 761063,
+              "sha256": "8c5290bb93613d3b7c9b778bbf6a2cc12b282ea63bb048c3d40b95a06316fcdd"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1172451,
+              "sha256": "84a327e488088002a584efd8be9768629bb5c9426a4fbfd1dab3b01da0813dbf"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1177330,
+              "sha256": "50926a9390da96ddbcc92fa950b54038410def9fdaa319634d1e5b41a7fad042"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 534621,
+              "sha256": "b7b524ac4a25a5bbc7b69162cf583aba641817c474ca433cef777e6939c5d5f1"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1061831,
+              "sha256": "e45749c6f358f4569c8495313834e9d39d8680e2386c7c75cb07e100759b81a3"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 670260,
+              "sha256": "db2d0ea935d85fb07771a54cdb32eb8e0f2622e59862ff75eddcdd0ccb352488"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 809310,
+              "sha256": "7c3e3665b415bdf58bac22f6e3f298ef63c5fb282be10cec6a598e49ffd5d767"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 820711,
+              "sha256": "1f1062465c5bbed2255b92aa94e8e72aa795eedc52ca6478fa71854a9f80ee13"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1065236,
+              "sha256": "26b6d36e7d6b399db4882ea45a94ff10f54eab8b1d4c0f1a528487294e87ca40"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 804925,
+              "sha256": "5ab4ce461f0fdfcc73cafca0d85a2384ef2987a20c1f48ff73f138f4462ed914"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 529581,
+              "sha256": "c26a8f948b056b19ebfa435b0708d1423d6850487825e2a7c6dbf1c2b141155c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 527584,
+              "sha256": "03c16b5b93ff643701345c63e338433a6c5d66c8441d5135d99c384cc33028fc"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 383950,
+              "sha256": "c6e163b00a883bfc119815a5ac0261f882332f5d4ba738f6d898e9323004d424"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1167163,
+              "sha256": "c42d2288f4c762aa4eabc12016b0f5fcd4301cdeb28ff11e2a3465b044c217ad"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-multiple-source-prefix-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 502275,
+              "sha256": "e668c62f586f2c5d547d42b67ccda3c4b37e8f404fb2a46160e75815fc45635e"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 232314,
+              "sha256": "8e9e4735ec6eed7639c9913727ac10c08412f39ce8b0a4127b6b3af789fedb1f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1022079,
+              "sha256": "37920ff53c2c0ab4d678a3f1d3b063c0120234f345adb92939dac4e8f6738146"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1297397,
+              "sha256": "a1cfa88d41aa064aa42cb3bd601a896929ae3d86a1217638884149c7cd528fc8"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1277320,
+              "sha256": "4bfc0e966734c1d74c50e933680aed048254c27d4394bfbb3320cbc7304c4989"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 629986,
+              "sha256": "be3264fb84c9b01f150ebf0cac4aa1e68ea0f1f63f39b1fbe39cc51fa8a10e82"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 623871,
+              "sha256": "8d6af3671805bf7f0fc2ba408c0c49563149f6b6daa48bdb9ba145484900217b"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 567106,
+              "sha256": "9f8028e417aead3e62b31ef52e6d46e87fe21cb8e254756b784b59a8114a562f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 968337,
+              "sha256": "f632304c1b7b06b14dfa6201426134a1679b4727184a527e69e1b5049d273d3e"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 918408,
+              "sha256": "ee6eaa00dcfadda1abb097107150ee30cfcee7b86591aaa7b22cd23b2faad2ee"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1182086,
+              "sha256": "8a4fb11c55b0e193b8775425df84e1efacffe6fd273e7a32701572f01fd8703d"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 903806,
+              "sha256": "86c2fa7ea109249bb147ea90e22a5953a36b168cc222be3585c275b2997c4c9f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1134497,
+              "sha256": "36a338a5fcaa86bade4e0288bf82f5788806aa6504a5a9e8114618a3c703a71c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1129779,
+              "sha256": "4e922f128ebbe0c653b3edd9c6ea11feb4d5fc7285c9d6fb7dfa2e9275eca05c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 556738,
+              "sha256": "e61af20df9b5953cce84d431f28ee5aeb3dd69406c29b8c8132fe634ac771589"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1477544,
+              "sha256": "eacd9287dfef2c22aff3b14e488fda0be34629c8a0b2ceeee4fd304f6bf69684"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 602286,
+              "sha256": "a805c862cd24cf0027a49f84d1bab63730a82f190a8108af2664ae611b6a43cd"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 101193,
+              "sha256": "0f83bede2e2999847bf4193283c8fc6807bb944cbb62093a72f805e4fceece20"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 613733,
+              "sha256": "ba70bdfed8e71ddf69c3b086ebd066e048756c754d1b544351d94e60050263df"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 347136,
+              "sha256": "2c85be19110587f7e4f0c6e5a456a8c263f8c67933ec0211405689c7e7198593"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 318580,
+              "sha256": "890e4a71dad2eb2211c7f22901389965f7cee0485fce93be1d6120c30069cbf7"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 282645,
+              "sha256": "cd71ef321ae61566604ef51405e8bba4d7505304a3a3b753cf42fe01f41425b9"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 334490,
+              "sha256": "e9cef5afef97e9c2df0db06b7106d06723347cf0f95afd64932d6b70709d31bb"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 249361,
+              "sha256": "22678666e34564e3133a0d4fe6ecc56df9fdb08022216c45c6f579d9294991aa"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 374780,
+              "sha256": "5a25ca8d6f4cf0565eaf19c22e92a03602c4b0e42cafed4afa1517ec4589b68b"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 258020,
+              "sha256": "6ea550f11eca668625783e558faa0bf9b80067441051c81e6e896a9b75fb489a"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 323591,
+              "sha256": "97ab72095f2309c194b71cc2f37eba4cfde1f5664e12437442b19487a6debe16"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 244530,
+              "sha256": "9978915dd2da00d90793826d8ac69c7121d08ab6ac758ef76cec6f0ef732ccd5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 219993,
+              "sha256": "037cdea501d631e75e1fb204a8e50f3fe562aa3e1936d0900c41f549c24ecb3d"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 219733,
+              "sha256": "6256bf377a1887a795cf3c84c309b88b5c337b94d6b63061fc044e6965222778"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 248488,
+              "sha256": "c3d5295a16560a72f9cd26994583375f9f03576c67c41bbc14d8333acf6688b7"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 749154,
+              "sha256": "51624a345581d74b8102aa78b51990e641d98262d1ef83a998f3c2769be0ddd9"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-null-modifier-only-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 374324,
+              "sha256": "fb634e5146d7ec985caaeaf571868fb68dc62b9cca55c5caa0931145129c09f0"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 101158,
+              "sha256": "66283f5cc90b35083112446c092274bc5d7a2049032756b76f31982dfc901d6f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 613697,
+              "sha256": "02492ab274a44a6fbdfb6f71f000a4636c05103d601d6defa3abe0c8cab068af"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 347094,
+              "sha256": "561bfda23e2fd4bf714f581a039214a11596aa335c5a386e1f715e7e5e031410"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 318533,
+              "sha256": "134ff0f38ee15cb6685d0193ed3d8c1e38d8047044776da72c4ee1c42392c54f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 282609,
+              "sha256": "3284ba6200a9ceabd37b711a8d5889bb6c3aa55844ab426562f29053e11a06dc"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 334455,
+              "sha256": "4f2954b5c12364d111417f0942716529147ccc7d547e9e02265897e72274684a"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 249326,
+              "sha256": "2f30f5a5421f177f50e7d751fa33b35e55f8fe6cdd5abc5ff19a2a1aff0e7544"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 374739,
+              "sha256": "fda413a571e753b5f9f2ad36093b34e186d4c44a02d588a307eaaa26e74d06cb"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 257979,
+              "sha256": "ede60e037b21e65dc68f02135a0b0821ff8d384accbf311c624abfa171c78306"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 324515,
+              "sha256": "1459c0b5f88d2d2522fc17611399d428f0cf4a82f070149a9f5b3c0d187cd90a"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 245457,
+              "sha256": "b3ef637ad3a11249ae6803be9689de35d741d25548c8262ab6bd38e2f1d23329"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 219948,
+              "sha256": "f271971e26a5414df750b8d60da58971e3a8fc4888584a07c5ac61695e676adc"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 219683,
+              "sha256": "9c61b01cb1ead0e2af73bced91e1d93356b242d01fb404b367cd9cce30703ab0"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 249438,
+              "sha256": "af558c41c43e951dea9e36043294fb425999d56be764d7d3530d0267a0ebd0cb"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 749119,
+              "sha256": "8db3932d66b0336e9bb3b7b901876661fa51caff92da019b7758d80c2b39f8b0"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-zero-modifier-only-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 374289,
+              "sha256": "639c7a71416202e154452abb4f55725abeb97b1a1aa806f8ab2714a265bf707c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96403,
+              "sha256": "3b3171640359c3bb0493b88c08181c2c300538be4cf6c26423ca125e57da5386"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 599734,
+              "sha256": "b86288c3d60f0a995175a20f23481c4671798add15f04ce4e098a46031e917bf"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 314204,
+              "sha256": "7744e6fc027067fc295061a0cc5b98010e12d50b482ffa80ed712bf1bfb01755"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96410,
+              "sha256": "3e0fa0507ccf05f7457cb9881c5820ed43e14bc9118de7451dd1f5550fc5bd05"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 268978,
+              "sha256": "451105f0f3a97daa2347b35bb875dbd5b961146b70c15dfd9ad8a1665f0c56fe"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 324479,
+              "sha256": "ed292d8806c27364bf54a3c27415c4492145a703d7a06e7768c1dbaaee740514"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 242313,
+              "sha256": "a9c06fd22c7328a90907e7002422ae4899b85e37c94397e82b552763d7b10562"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 367440,
+              "sha256": "fcba3cba221d25f87683d0ad90dc3f7ba1b48e847b0d91ca289ea131747c5352"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96411,
+              "sha256": "8c19cd1d8b58da5054b5ee5d5102b9bdff22d58f6faf09cfd146bb52adc1cec8"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 196634,
+              "sha256": "70cec7af301fcfcec87fdb5167d7a31f7376ba2bafa363eeedf9e1a14a5d2257"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 188908,
+              "sha256": "c9a641e79790e03b8d865f7e0e5a5c010a688580f0ffa7ac90b8f28400208eba"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96418,
+              "sha256": "2b9ad5810d3f745e7b0b22384aed38f1afde0a998584538518d7ba50d25d6f7c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96416,
+              "sha256": "222891220c45bdb6e9ae07a5cfb00ce114c81b0ccbc2ba76477a9433e5fce198"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 228355,
+              "sha256": "1bdd15d5428cf5c1f9ab85611510d2d05babf906dc4c5e9e86be969f951b769c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 650631,
+              "sha256": "961c10bb66b1f730208a4a835124277be6ac52ad4314f023871922fc328efb5f"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-eligible-absent-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 366470,
+              "sha256": "dba536c1d48584337278913f77233406c2611917603d4f7a10e09ea73bb7371d"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96170,
+              "sha256": "ead51b5d9f9009114d352b0e9e05efd751ce915525b0f9e94af29d7d5f745f7a"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 599501,
+              "sha256": "d29b24bd76015b7d253ce790b47d397edb8aa78cb398cd1af8292e1fced84fdb"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 313971,
+              "sha256": "574ac58d64fd00af15ee452d6f1089e423419d8fd307bc4fb2b2b9bc16d81ad2"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96177,
+              "sha256": "fc5ac4d8d6e40c1c3efa8bb1a26814ae7015825ba60439519350118e89f8d33e"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 268740,
+              "sha256": "514d68aee4366c2f259ebcdd249ce115b927066d29f47e3f17cefffc1c884818"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 324246,
+              "sha256": "3c5e46a613ace07f687254bb6d6607b670332dfd589a6dbbb382952881015b84"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 242080,
+              "sha256": "0e46fa9807e0b0a5413c372dc0b7727e58a6c1439e5d9fe324ffecc0a325597c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 367207,
+              "sha256": "cef68e5c267f9980d3e132ecc2bf9bc2302d7a6c21d593bcb7559b97526b1b6d"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96178,
+              "sha256": "08bbba6baf63cb3e42f2856c2b3a81cd4d7f756c432d25c4d6d85a37751eb420"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 196400,
+              "sha256": "e15a9699aff3de83a55b8d480fd0cf02d9102233a791652fc508808d9f99d7f8"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 188674,
+              "sha256": "3bdbac678f314c4d9afbf7cbc89af126216c6dad8c87d06fffe1bffce09ab5f5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96185,
+              "sha256": "1f864a50441e47bb4fe012b69270e825f366787615ae0e2d432a5bb688e1d3c5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 96183,
+              "sha256": "e9e5d4a5dae34cddb89717e246f009242e37b1742bad73f4c510f14a0208b003"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 228122,
+              "sha256": "71cdb5e0d328ab6f422a94ed5133a73cda54a3a57cd546e0ea66abb487a0317a"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 650398,
+              "sha256": "eaec910089aabb21047c3b838b9eb4d5b036d02414e288abd2c903aa36756aa8"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-ineligible-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 366237,
+              "sha256": "682a46ddacabf5f874abb2f51ee5666a3128f688c5f6bbdeb3122124630b1b09"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 98129,
+              "sha256": "ac9dd03e636239ea8c76eea1b065654a702b1038f25bd6ffa39a52441de8bf37"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 601485,
+              "sha256": "340141d2a8e857eaefee602a495b3846488158e4955203afa8554e29449cf17e"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 353868,
+              "sha256": "8ad5d083ae9a90bcf3675042f84969d11fa8d2933677df931b80f3cd6ffb7a41"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 98136,
+              "sha256": "823738928e0fed44caf0fa725b395eb07b6ea5d733c595615f4f603e08b11ac9"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 270712,
+              "sha256": "4592e6a106950a66141717e15c5427aaa032ab7a9686c0e5aa24a5e49c1df417"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 326241,
+              "sha256": "d73a421369a8cf70a51b95f44c3652c9a09c91a8d94a1f845d07ee8be840dcfd"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 244062,
+              "sha256": "5e6f084d6d8120ac363ae40d93989df4d6a5158c2930059ca55149a8f6c8b755"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 369210,
+              "sha256": "bcfe88482e475194e2302556447104b87a0c6e3eaf3b2c33714b3a018c9f1595"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 98137,
+              "sha256": "c0a5e625cdbfdf9baa54b24bd1339faf85e2950f03398eb8e5cfd5187f39643c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 273166,
+              "sha256": "de5312e3d9a178d36bb9000c3aa5164001cf157409705321129886628b3c2cd5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 265440,
+              "sha256": "e7aee1e3f4aeab2c1325514a36525dabf22f051ae050514c6f87064c72a81901"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 98144,
+              "sha256": "b6fee4146e0be5f1ba67cea5558cf73a7d385d2a33a8aef56fb90d1f61dde8c3"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 98142,
+              "sha256": "2827babe150a20459b9ca49c157c8294f7eb6114a49862c044fefb7f721afd13"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 230067,
+              "sha256": "78da00ca0653730bf0f9aa308d1ec1a08234789a2a64864f2f386705fb6c36a5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 652372,
+              "sha256": "0b5937d75405c501b380a25ebfc0a3616ea3979d93cf75dc71f8a4cce0f28552"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-non-applied-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 368201,
+              "sha256": "96c756579454afb5cef711383f24144d94309b4f292101d9146b4b015cfd5227"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-positive.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92606,
+              "sha256": "7817731cf8ebb70b91c6f4d1e2c136c0612d6e082aa66d27d36a64081ded561d"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-missing-transport.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 571382,
+              "sha256": "19a74bd570ac8e95b4c3edf65df1af739a44880f1fea5416abd3612d44fe87d5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-missing-write.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92611,
+              "sha256": "6bc864ced9ba01fdd7d9c030575356932bd36babe0667f8731c4bc4d30da9814"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-missing-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92613,
+              "sha256": "e26a6b41abe2da4ad7071d345b45331252ee3af91dab2d1f697809075c210063"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-identity-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 246218,
+              "sha256": "48aaf35091675d52bf543fcd24a8823064bb3a20bbc467f48902122e0e1e8565"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-identity-native-source.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92620,
+              "sha256": "9c1ea19da9883ddcc6ce4f60903b2932354bd814f243a0d4bebe1d3e99b0b4f5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-identity-native-index.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92619,
+              "sha256": "dcdd05397ab78f55d6f6aa2562b4d9afe1dd0ad5f4da60b10429d53cd5912a0c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-identity-operation.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92616,
+              "sha256": "a85b9baa4a36ef92e6ab7e7d3c52bd28691f9e121199514ccb9c3eceb3ec81f0"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-identity-receipt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92614,
+              "sha256": "73fab3b4e138f71284d608d2cc51b7d12eac1cdab80f17329d1a83abf24e55a5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-state-before.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92610,
+              "sha256": "8a62ac58aafb4a638760b8aebe405ab4a7ced4469c0fa8c2c8a92e9b2f005306"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-state-after.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92609,
+              "sha256": "9af6f56f45070d950aaf8a22dc67b31a47b4911a7dc1a49cad61a5a35c5dcd26"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-state-modifier-identity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92621,
+              "sha256": "4f63947cdb559d01eea1d0b99fefc8a06f3634c2ab7cfc0a706e1c44a335783c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-state-modifier-values.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 92619,
+              "sha256": "047e7b72dd4f5f8640a7c5dc53abfcad8bd3f07ded966737efb34913c17b6882"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-state-retained.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 192475,
+              "sha256": "a8c71f74932f51a8eb70e48d839112679058e898ef0278f64c560e43f96a87e6"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-commit-downstream.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 606021,
+              "sha256": "6e2337115d8d094ff41506a794eedeed07b0c05aedb396fb9576c8d0af7eb4e7"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-attempt-before-capacity-result.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 344281,
+              "sha256": "24b0d4e10f4644f2d79db143ded18dce3e97c2b630d7fec2aa4871f593b046b5"
+            }
+          ]
+        },
+        "frozenSource": [
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.ts",
+            "bytes": 35295,
+            "sha256": "378c8cd765d2522d34a1ce64b4d6a347801077c1b3591f985a1de7fa78537c5b"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.ts",
+            "bytes": 20267,
+            "sha256": "0acbe5e33ce2ecdc0b2419c629cd0d948116367f8e21ee39495bac66479a244d"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+            "bytes": 53576,
+            "sha256": "4d1ee3b6c63ffcc63ea195c0375a9a47a0e996660d9e65a832bdea8973fbcea7"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 77741,
+            "sha256": "1a2ce11bf44c37d515486b5a0d0fbdbc196c049e19943be34cd019ed7cddb240"
+          }
+        ],
+        "typecheck": {
+          "command": "PATH=/tmp/tsk08-tools:$PATH pnpm exec tsc -b --pretty false",
+          "outcome": "success",
+          "log": {
+            "path": ".test-results/tsk-08-bp-capacity-attempt-20260926/types-final.log",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "lint": {
+          "command": "PATH=/tmp/tsk08-tools:$PATH pnpm exec eslint <four changed source/test> --max-warnings=0",
+          "outcome": "success",
+          "log": {
+            "path": ".test-results/tsk-08-bp-capacity-attempt-20260926/lint-final.log",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "audit": {
+          "manifest": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/manifest.json",
+          "outcome": "success",
+          "counts": {
+            "files": {
+              "total": 1,
+              "passed": 1,
+              "failed": 0,
+              "skipped": 0
+            },
+            "tests": {
+              "total": 3,
+              "passed": 3,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "warnings": 0,
+            "unexpectedObservations": 0,
+            "allowedObservations": 0,
+            "correlatedObservations": 0,
+            "infrastructureObservations": 0
+          },
+          "artifactVerification": {
+            "errors": []
+          },
+          "artifacts": [
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/vitest.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 3256,
+              "sha256": "ff02a080bd92e3599ea4cbb8638b1319b80471b94e24dcbb861795a488300f91"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/observations.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 47,
+              "sha256": "91ae9d1772193754d584658213a9742a7374854f69a5858e609eee3beac9efe0"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/stdout.log",
+              "format": "text",
+              "allowEmpty": true,
+              "bytes": 114,
+              "sha256": "619ca3384cd23b99736a3a957272dc9eb9bd55b0a2986d137709a52b23aba909"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/stderr.log",
+              "format": "text",
+              "allowEmpty": true,
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/warnings.jsonl",
+              "format": "jsonl",
+              "allowEmpty": true,
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-inert-control-production.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 166231666,
+              "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-scalar-quantity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 490,
+              "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-preparation-battle-point.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 3268,
+              "sha256": "f4e1a86c72c34ac1474f46d40c0cbfdb4007e098057c40f306845a4c2e417852"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-preparation-bp-attempt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 13225,
+              "sha256": "8565e000a08e062a45dda888367ac6d7e1e2f771a3730cb8e40b8c60e9308cf5"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-preparation-bp-capacity.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1865,
+              "sha256": "a8dbf42932c698919192f95992d6dd02f1b75a288f8b48d15b66f51135e82e4c"
+            },
+            {
+              "path": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-preparation-bp-capacity-attempt.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 1678,
+              "sha256": "d9f2bde629eae89f6bb0ccff0f25f46a8a53c8aad30b3dbe28736fe8706d2359"
+            }
+          ]
+        },
+        "quality": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/quality-runner.mjs",
+          "manifest": ".test-results/2026-09-26T13-14-40-276Z-21-a940b6/manifest.json",
+          "status": "success",
+          "durationMs": 502187,
+          "unit": 1191,
+          "production": 155,
+          "e2e": 29,
+          "retries": 0,
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "steps": [
+            {
+              "id": "format",
+              "code": 0
+            },
+            {
+              "id": "lint",
+              "code": 0
+            },
+            {
+              "id": "typecheck",
+              "code": 0
+            },
+            {
+              "id": "runner",
+              "code": 0
+            },
+            {
+              "id": "docs",
+              "code": 0
+            },
+            {
+              "id": "unit",
+              "code": 0
+            },
+            {
+              "id": "production",
+              "code": 0
+            },
+            {
+              "id": "master",
+              "code": 0
+            },
+            {
+              "id": "build",
+              "code": 0
+            },
+            {
+              "id": "playwright",
+              "code": 0
+            }
+          ],
+          "allRequiredExitZero": true,
+          "artifactVerification": {
+            "errors": []
+          }
+        },
+        "resultDocuments": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH pnpm test:docs; pnpm exec prettier --check four changed documents; git diff --check",
+          "status": "success",
+          "tests": 6,
+          "integrity": "passed",
+          "scope": "Result-only records after successful frozen-source quality; no product/config edits and no quality rerun"
+        }
+      },
+      "developmentRecovery": {
+        "pnpm": "pnpm exec prettier failed before formatter with external SQLite ERR_SQLITE_ERROR; switched to verified /tmp/tsk08-tools/pnpm generic runner with existing node_modules. Runner bytes730/SHA7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6.8CPU affinity/production50%4workers/timeouts unchanged.",
+        "localDiagnostics": "Initial negative capture gaps/no-op counterexamples corrected from original snapshots; prior-comitted full diagnostic groups exceeded5s, split by responsibility without deleting negatives. Witness fixture unselected choice referenced other domain and original owner rejected ambiguousDomain before preparation; corrected unselected choice to same domain without changing product semantics."
+      },
+      "evidenceReuse": {
+        "baselineReceiptCheck": {
+          "path": ".test-results/tsk-08-bp-capacity-attempt-handoff-20260926/preplan.json",
+          "bytes": 145860,
+          "sha256": "b69c98ad403b5d78dfa6abfd3752bb2acc10c03d8c98f82b721798e3f676d9c5"
+        },
+        "condition": "Reuse only with matched source/semantic conditions and artifact path/bytes/SHA-256. This preparation verified saved575 unique paths, historical6 declared Git blobs, latest frozen10 blobs/current and current19 inputs at5ce926a. Changed sources need new checksums/gates, not old hashes described as unchanged. Preserve committed capacity63/fixed14 diagnostics and protected S4/HP/domain/scalar/stars/without-area/control proofs/counters. No8-shard regeneration absent concrete identity doubt. Existing/new published0 count is not schema-legal noncommit coverage.",
+        "localProtectedDiagnosticComparisons": [
+          {
+            "kind": "forwardComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-battle-point-gain.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-battle-point-gain.json",
+            "bytes": 61624974,
+            "sha256": "11791e57657db7a86a216ea98b30b0ecfbaa48af230e12651eb07a1df0935724",
+            "identical": true
+          },
+          {
+            "kind": "forwardComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-battle-point-loss.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-battle-point-loss.json",
+            "bytes": 61624974,
+            "sha256": "93884d668663d01635261b557ab1244250596e9db26cef14b45d5ee7301ba3bd",
+            "identical": true
+          },
+          {
+            "kind": "forwardComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+            "bytes": 75301843,
+            "sha256": "7e1d1020af21be5c8c9a3c5b6ccad36c3865f71e6e77287aa185dcf1d3368b21",
+            "identical": true
+          },
+          {
+            "kind": "forwardComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-battle-point-intervening-skill.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-battle-point-intervening-skill.json",
+            "bytes": 97744328,
+            "sha256": "140888e156b48fefd6457b5af296667a6f50f2f7ec07be1a3a0f562f1cb79e02",
+            "identical": true
+          },
+          {
+            "kind": "forwardComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+            "bytes": 68931146,
+            "sha256": "145c418ccf6a2747e572880ee8539d1b2513ed38d5ffbee00a17a14b2f07b314",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-non-applied-boundary.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-non-applied-boundary.json",
+            "bytes": 1362300,
+            "sha256": "e910dac59f4b160179c2812ad2e40d4626bb91e983bc2baa2a44186f168a13fc",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-changed-before-invalid-bp.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-changed-before-invalid-bp.json",
+            "bytes": 1663928,
+            "sha256": "4cb5237a0344da8c954053a093e40b5ae6391168995f8bc46b3213d7d2bbc451",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-gain-unsupported.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-gain-unsupported.json",
+            "bytes": 1567084,
+            "sha256": "75faae79c2038394174bfa9bc323ea38c76fb768090cd7c440f5e07cddd1ba40",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-loss-input-required.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-loss-input-required.json",
+            "bytes": 1595252,
+            "sha256": "e67a3e4c0eacbcc4eb48c5df5121e3ed525cbcec9fd4c48901a985fe5c36f2e1",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-multiple-lower-clamp.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-multiple-lower-clamp.json",
+            "bytes": 2246613,
+            "sha256": "8b1052515d42f70fb79b2f3a3b72ff1c7c353dfc8769be77d10c033b2d5c1f6f",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-prior-commit-action-start.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-prior-commit-action-start.json",
+            "bytes": 2057714,
+            "sha256": "4a495556c5b58a89668d3d17e2ad7a9d1d08d32ce2b1a704a03437c55433543a",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-capacity-clamp.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-capacity-clamp.json",
+            "bytes": 1931886,
+            "sha256": "39cc2046c942c91155232e7feeffe8a95eec6ffbe1f7debaf0779004a813421e",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-unchanged-boundary.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-unchanged-boundary.json",
+            "bytes": 1565328,
+            "sha256": "6a92c38270e7388843b91729737aecd2213771c483d23e7150216ba11cf2afd1",
+            "identical": true
+          },
+          {
+            "kind": "attemptComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-preparation-bp-attempt-early-boundary.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-preparation-bp-attempt-early-boundary.json",
+            "bytes": 1273266,
+            "sha256": "7b2df20f03f94beeb59c3962f96a6c3ce88008d8a5aac9c8b2570a0d58bc8216",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-increase-gain-loss-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-increase-gain-loss-positive.json",
+            "bytes": 320002,
+            "sha256": "c5c8ab4aafaafed7b29750f1d99554a072660bc03b5398fe543ec16e9abd0161",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-increase-gain-loss-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-increase-gain-loss-missing.json",
+            "bytes": 1272959,
+            "sha256": "a0c30490b95c128cf06bb1ef45a94888477307b15895abc24c12237733c4881c",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-increase-gain-loss-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-increase-gain-loss-identity-source-action.json",
+            "bytes": 908223,
+            "sha256": "69ad608b310c43d555ec5262a4c42cebae2e39e6b21739901fd3f27f195a1853",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-increase-gain-loss-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-increase-gain-loss-identity-receipt-state.json",
+            "bytes": 2049503,
+            "sha256": "a09b8df80346c1b5496de16c498866f3d2ed104ac08948db9de0b5a35c3cbb08",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-increase-gain-loss-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-increase-gain-loss-stale-state.json",
+            "bytes": 1134292,
+            "sha256": "e7ca50f7b3a07d81e00de369ec7abf8cc9b9dcc8c5ccb59b32b495ed672b0ef3",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-increase-gain-loss-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-increase-gain-loss-fake-commit.json",
+            "bytes": 789998,
+            "sha256": "be05a6c675e61c7887e773a9e8a0b22ba6cbe9d77ddfec3518161f3bea0bd4ef",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-increase-gain-loss-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-increase-gain-loss-downstream.json",
+            "bytes": 621388,
+            "sha256": "f5488510ac9ae36406dbeac7bb61ee3c8131c58f86f8b114453deae40b2ecc20",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-decrease-point-clamp-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-decrease-point-clamp-positive.json",
+            "bytes": 313307,
+            "sha256": "b9373b3e03f8dc71ea4441f1e56eb8de66e9d991e5512c84c8e6d668a91938ad",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-decrease-point-clamp-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-decrease-point-clamp-missing.json",
+            "bytes": 1260490,
+            "sha256": "46835cf872a30e6bc9fe0fcc590544604d00bf5f776f61ad0392559d1ede7000",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-decrease-point-clamp-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-decrease-point-clamp-identity-source-action.json",
+            "bytes": 901514,
+            "sha256": "184b5ff4a64ef3dfeabcae39ca98838279d16142b787871cfc4c4f18013776ee",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-decrease-point-clamp-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-decrease-point-clamp-identity-receipt-state.json",
+            "bytes": 2035907,
+            "sha256": "3c160a29a2bda3727f7715feb763ec21bba47f456899963812f3bd57e382d5ed",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-decrease-point-clamp-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-decrease-point-clamp-stale-state.json",
+            "bytes": 1125828,
+            "sha256": "788c50f2b32dd2e4545019ff2f1ec77b10472f8ef6f67ed9a466dae68d6db7fb",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-decrease-point-clamp-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-decrease-point-clamp-fake-commit.json",
+            "bytes": 783302,
+            "sha256": "d754b154081659ded351b147c2fdb2b094cfe6e98b89fb55af1653cbb80fca0c",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-decrease-point-clamp-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-decrease-point-clamp-downstream.json",
+            "bytes": 614683,
+            "sha256": "390fd37e20087fc20d4b46ee2e464f845ed88ec7cae8d4a12d8e6c4a63dfddea",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-unchanged-point-permille-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-unchanged-point-permille-positive.json",
+            "bytes": 295480,
+            "sha256": "a6fb1fe646dce7db6171dd211c033189e5cc981c297222bd5626c216958afc38",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-unchanged-point-permille-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-unchanged-point-permille-missing.json",
+            "bytes": 1076147,
+            "sha256": "b297d7e09fba6327484e43faeece0e0058f75708901fb300f7865932a157630f",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-unchanged-point-permille-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-unchanged-point-permille-identity-source-action.json",
+            "bytes": 789626,
+            "sha256": "f8cda4172cbcb3fea5f0fcf2911731f49f9cdbcff7cfacd9b538eb3ce514a5d4",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-unchanged-point-permille-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-unchanged-point-permille-identity-receipt-state.json",
+            "bytes": 1648312,
+            "sha256": "ed7759690f662248bb09e949fd18482a8e035a7c04d609a67d44afa9c0610833",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-unchanged-point-permille-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-unchanged-point-permille-stale-state.json",
+            "bytes": 879340,
+            "sha256": "f4c0f0dc7ef489ccbbe3f685e9aea0e1fab97e504a9cd615d6e337d880df35fb",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-unchanged-point-permille-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-unchanged-point-permille-fake-commit.json",
+            "bytes": 735843,
+            "sha256": "9bb0b8a906b66e5fe26530aea52319bc870f6146327d7534ce07360d2b5f2e05",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-unchanged-point-permille-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-unchanged-point-permille-downstream.json",
+            "bytes": 596851,
+            "sha256": "f8d5afc3dee7f76d1e41ce8832def4c317164fb636e7c9595588f3d031b4cbc7",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-intermediate-reconciled-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-intermediate-reconciled-positive.json",
+            "bytes": 384346,
+            "sha256": "d8b139b0c2dc1ce63a88c8ac6c5f8162f9faee9aef96e011a85453653b65464a",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-intermediate-reconciled-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-intermediate-reconciled-missing.json",
+            "bytes": 1800365,
+            "sha256": "5d92c6cf74d9d5d6344fd536c0760f8e8518001670923d7ad1338689b6af09e3",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-intermediate-reconciled-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-intermediate-reconciled-identity-source-action.json",
+            "bytes": 1425053,
+            "sha256": "789767580a84f3f46fb323b1dead151963eefef3b307cf04a7fad0b9f9c810a2",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-intermediate-reconciled-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-intermediate-reconciled-identity-receipt-state.json",
+            "bytes": 4041703,
+            "sha256": "651b7cd78288dd7bc681ee5a8bea6974004a6743313607a8a6294e46e7e9b500",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-intermediate-reconciled-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-intermediate-reconciled-stale-state.json",
+            "bytes": 1973928,
+            "sha256": "ed52c775ee00013b7ae236c85126ffda77b671272395bba48e17990bf49ebd3f",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-intermediate-reconciled-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-intermediate-reconciled-fake-commit.json",
+            "bytes": 1036206,
+            "sha256": "e96f88675ee07eadcc32383e31ac8f75b960d3c112014482e560b9f85ed0dfbb",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-intermediate-reconciled-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-intermediate-reconciled-downstream.json",
+            "bytes": 699409,
+            "sha256": "4b655e6688c32d370d2163adad4412e2f3a503499d96123644ff84390f3b4512",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-prior-commit-action-start-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-prior-commit-action-start-positive.json",
+            "bytes": 365714,
+            "sha256": "599bec092f834e7a15158343851cc55e1474fcfdeacd2bd5689635384c0ff382",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-prior-commit-action-start-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-prior-commit-action-start-missing.json",
+            "bytes": 1502065,
+            "sha256": "923f394a3a49b072654f2259abb9288928cfc3562bb9f7db70b50dbf4a3625d3",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-prior-commit-action-start-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-prior-commit-action-start-identity-source-action.json",
+            "bytes": 1275988,
+            "sha256": "60f4ba1a59fac2ca8c5896642605a42f09fcd121d5c8e3f99b04cc38f30e9620",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-prior-commit-action-start-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-prior-commit-action-start-identity-receipt-state.json",
+            "bytes": 2595799,
+            "sha256": "723fc691039c0fbfc464e3b67234101a89e3e0d5ad17fa2394d719a4ba481964",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-prior-commit-action-start-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-prior-commit-action-start-stale-state.json",
+            "bytes": 1560091,
+            "sha256": "9ee829428cc06df5f0f19e4a5c21efdd14b8f676a734485fad37be4c901995a0",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-prior-commit-action-start-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-prior-commit-action-start-fake-commit.json",
+            "bytes": 976001,
+            "sha256": "f00704374f3436efd07c5087fa6ded449c7ececa9d0a789acf6079dba715bb74",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-prior-commit-action-start-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-prior-commit-action-start-downstream.json",
+            "bytes": 680662,
+            "sha256": "3a164e9c6180fc7ee1e85d7b43e5ac00abe69c57d7d25ccccf93c67cb232632b",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-null-capacity-boundary-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-null-capacity-boundary-positive.json",
+            "bytes": 298524,
+            "sha256": "6f418053afc6ce6805fa04e143d3efc5802e43d72077d351d1046f71a8f21098",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-null-capacity-boundary-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-null-capacity-boundary-missing.json",
+            "bytes": 1074146,
+            "sha256": "6fca7cae476bad492e5ea0ae06824743e8ffe008a1108f73bc0eb8af13d622f1",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-null-capacity-boundary-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-null-capacity-boundary-identity-source-action.json",
+            "bytes": 791734,
+            "sha256": "40ca6246dbeb5849765ddc38eb8ce345896de00754d396565235933e43d99374",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-null-capacity-boundary-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-null-capacity-boundary-identity-receipt-state.json",
+            "bytes": 1656200,
+            "sha256": "d49557dcc31165abf48a65eebd3825c8438c2177d1d6a6f2906d20c1f61f3433",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-null-capacity-boundary-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-null-capacity-boundary-stale-state.json",
+            "bytes": 885195,
+            "sha256": "40e7bb64c39dcfc63d7a3a4f089b0d484950a2682137fad0c7e164d17365b551",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-null-capacity-boundary-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-null-capacity-boundary-fake-commit.json",
+            "bytes": 738887,
+            "sha256": "12bbb252a099a9a2169d74bd3850267b851a339b95446d14895a5f4e5e53c3a4",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-null-capacity-boundary-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-null-capacity-boundary-downstream.json",
+            "bytes": 599895,
+            "sha256": "3e437a6cdf603f224f4aed71af6cf386d5ba6136601651fc66f5cf6b69d7e027",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-zero-amount-capacity-boundary-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-zero-amount-capacity-boundary-positive.json",
+            "bytes": 296253,
+            "sha256": "e1639fbc024541959346eefdbb8f919663168f7956d1eb2fc5132aef63efab76",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-zero-amount-capacity-boundary-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-zero-amount-capacity-boundary-missing.json",
+            "bytes": 1071863,
+            "sha256": "ebcef4065e035c94898f60bd6e084e0e02b545fa422815664b0d5725a7677c63",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-zero-amount-capacity-boundary-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-zero-amount-capacity-boundary-identity-source-action.json",
+            "bytes": 789563,
+            "sha256": "5274f1d0de49d5162e9c5cdcdcf58d3a8abe061b3651187e86e189fe844e7f9b",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-zero-amount-capacity-boundary-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-zero-amount-capacity-boundary-identity-receipt-state.json",
+            "bytes": 1647013,
+            "sha256": "524608e3ecd8cb18ccd330a2622dfcb4a8b47b2569f69cd49fddcf897555e0cd",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-zero-amount-capacity-boundary-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-zero-amount-capacity-boundary-stale-state.json",
+            "bytes": 881154,
+            "sha256": "5fbc038bc2f70b36fb703eb833e52e87a58a148bb807bca655b6af8ecb15e7cb",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-zero-amount-capacity-boundary-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-zero-amount-capacity-boundary-fake-commit.json",
+            "bytes": 736616,
+            "sha256": "ab8968bb04db8d7a382b372e50c164a04c4e02a7003c97b864d750bbaf92b0f5",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-zero-amount-capacity-boundary-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-zero-amount-capacity-boundary-downstream.json",
+            "bytes": 597614,
+            "sha256": "4b2d714b08f205bfa9fa0040082caff57a931d9f90c9e70ac56c3d931d1701ca",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-eligible-absent-boundary-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-eligible-absent-boundary-positive.json",
+            "bytes": 293121,
+            "sha256": "d86e8c05231c2f6973776fbf47eebd73a402d25a678d3696bc8f36e774998c63",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-eligible-absent-boundary-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-eligible-absent-boundary-missing.json",
+            "bytes": 933173,
+            "sha256": "576058d9b370cbd8656af4ead121d86d4a7976b36eee12e233f87c287496a879",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-eligible-absent-boundary-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-eligible-absent-boundary-identity-source-action.json",
+            "bytes": 772539,
+            "sha256": "18036c7fec7145e54b8af636adef49808a3d22002f25318fd2e7fe63abc15159",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-eligible-absent-boundary-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-eligible-absent-boundary-identity-receipt-state.json",
+            "bytes": 878269,
+            "sha256": "2d13d6833b4db024f76c7e15856abe22ce57ef671b917569e14ab6bb89e7107c",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-eligible-absent-boundary-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-eligible-absent-boundary-stale-state.json",
+            "bytes": 657212,
+            "sha256": "724034a88c56f3f618d0a41bd3be9233b5137c09eb065e77b528603bdfd3fad7",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-eligible-absent-boundary-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-eligible-absent-boundary-fake-commit.json",
+            "bytes": 730543,
+            "sha256": "f16b068887afd8ff89e0829380c826035f9e6803ec03867230ce4e74a7f30a43",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-eligible-absent-boundary-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-eligible-absent-boundary-downstream.json",
+            "bytes": 594492,
+            "sha256": "7c68fcdd977f2288274cdca8600f0f76406de770e35461ef716bd719f3dc7587",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-ineligible-boundary-positive.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-ineligible-boundary-positive.json",
+            "bytes": 289529,
+            "sha256": "16789380b15b1c48a5c2875621f9a9746e230ca49795fd070d99908d71d3bf75",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-ineligible-boundary-missing.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-ineligible-boundary-missing.json",
+            "bytes": 903009,
+            "sha256": "2cfd6a3d807fc93a7514824fd921cce60a51a8cd3a8e16669bc4e0c332975f47",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-ineligible-boundary-identity-source-action.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-ineligible-boundary-identity-source-action.json",
+            "bytes": 756891,
+            "sha256": "39011d202fc6bde8c96357b6dcbd90b06f0d47b5acf852348231c3eda2a0517e",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-ineligible-boundary-identity-receipt-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-ineligible-boundary-identity-receipt-state.json",
+            "bytes": 513670,
+            "sha256": "64d232a3a060a6849dad881d8705dc8c211bc4f3f181ff17533ed1c7043b5651",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-ineligible-boundary-stale-state.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-ineligible-boundary-stale-state.json",
+            "bytes": 420635,
+            "sha256": "4813308cb70103890a31bb7454f061de7d0217d69932c07fa8638f9b49c8eaa7",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-ineligible-boundary-fake-commit.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-ineligible-boundary-fake-commit.json",
+            "bytes": 724911,
+            "sha256": "6dd0799bd41e0901050056c34c4fe88e38e25294ff0af5aeaa24af32ec695a7c",
+            "identical": true
+          },
+          {
+            "kind": "capacityDiagnosticComparisons",
+            "baselinePath": ".test-results/2026-09-26T12-08-51-875Z-2-6cf065/unit/tsk-08-bp-capacity-ineligible-boundary-downstream.json",
+            "currentPath": ".test-results/2026-09-26T13-07-14-835Z-2-8a2f5e/tsk-08-bp-capacity-ineligible-boundary-downstream.json",
+            "bytes": 590920,
+            "sha256": "617003cb5bb09045560fa1f55e83aeebc256e42563f34c9ecd99a85ed4ba8b8b",
+            "identical": true
+          }
+        ],
+        "localReconciliation": {
+          "path": ".test-results/tsk-08-bp-capacity-attempt-20260926/local-reconciliation.json",
+          "bytes": 35455,
+          "sha256": "dc4108340940f9e9a173389c69beaf0ef73f62bf57fb845ab374263225a2bd18"
+        },
+        "auditComparisons": [
+          {
+            "name": "production-inert-control-production.json",
+            "baselinePath": ".test-results/2026-09-26T12-01-38-272Z-2-e73763/production-inert-control-production.json",
+            "currentPath": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-inert-control-production.json",
+            "bytes": 166231666,
+            "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74",
+            "identical": true
+          },
+          {
+            "name": "production-scalar-quantity.json",
+            "baselinePath": ".test-results/2026-09-26T12-01-38-272Z-2-e73763/production-scalar-quantity.json",
+            "currentPath": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-scalar-quantity.json",
+            "bytes": 490,
+            "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248",
+            "identical": true
+          },
+          {
+            "name": "production-preparation-battle-point.json",
+            "baselinePath": ".test-results/2026-09-26T12-01-38-272Z-2-e73763/production-preparation-battle-point.json",
+            "currentPath": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-preparation-battle-point.json",
+            "bytes": 3268,
+            "sha256": "f4e1a86c72c34ac1474f46d40c0cbfdb4007e098057c40f306845a4c2e417852",
+            "identical": true
+          },
+          {
+            "name": "production-preparation-bp-attempt.json",
+            "baselinePath": ".test-results/2026-09-26T12-01-38-272Z-2-e73763/production-preparation-bp-attempt.json",
+            "currentPath": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-preparation-bp-attempt.json",
+            "bytes": 13225,
+            "sha256": "8565e000a08e062a45dda888367ac6d7e1e2f771a3730cb8e40b8c60e9308cf5",
+            "identical": true
+          },
+          {
+            "name": "production-preparation-bp-capacity.json",
+            "baselinePath": ".test-results/2026-09-26T12-01-38-272Z-2-e73763/production-preparation-bp-capacity.json",
+            "currentPath": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/production-preparation-bp-capacity.json",
+            "bytes": 1865,
+            "sha256": "a8dbf42932c698919192f95992d6dd02f1b75a288f8b48d15b66f51135e82e4c",
+            "identical": true
+          }
+        ],
+        "finalReconciliation": {
+          "path": ".test-results/tsk-08-bp-capacity-attempt-20260926/final-reconciliation.json",
+          "bytes": 488832,
+          "sha256": "a16f3c3a9786ddacb2936f73e345f92121ae48d63cec8c9808b8f6242437e4eb",
+          "declarations": 910,
+          "uniqueArtifactReceipts": 1196,
+          "comparisonCounts": {
+            "protectedComparisons": 7,
+            "forwardComparisons": 5,
+            "attemptComparisons": 9,
+            "capacityDiagnosticComparisons": 63,
+            "domainTransportComparisons": 3,
+            "newCapacityAttemptDiagnostics": 176
+          },
+          "negativeCount": 1854,
+          "productionCounters": [
+            {
+              "artifact": "production-audit-calculation-application.json",
+              "boundary": "calculation-application",
+              "baseline": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "identical": true
+            },
+            {
+              "artifact": "production-audit-data-pipeline.json",
+              "boundary": "data-pipeline",
+              "baseline": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "identical": true
+            }
+          ],
+          "matrixVerification": {
+            "mergedDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+            "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+            "parityCount": 34600,
+            "parityFailures": 0
+          },
+          "errors": []
+        }
+      },
+      "remaining": [],
+      "sessionBoundary": {
+        "startedAt": "2026-09-26T12:39:46Z",
+        "checkpoint": "Recorded before60min; current source/test4 frozen after focused verification; finish this unit only",
+        "after90min": "No new semantic family; record unmet conditions and next minimum operation"
+      },
+      "performance": {
+        "artifact": {
+          "path": ".test-results/tsk-08-bp-capacity-attempt-20260926/performance.json",
+          "bytes": 3687,
+          "sha256": "08312a2edc7bbde25789ef376a78bc2eca68376b5135547d52b4d8ab88d550ca"
+        },
+        "log": {
+          "path": ".test-results/tsk-08-bp-capacity-attempt-20260926/performance.log",
+          "bytes": 483,
+          "sha256": "d05f917fe4ef79e4c32045045b406c19c53109f21c4666dc246163cef2afc9c7"
+        },
+        "baselineProductCommit": "5ce926a8498139534b82e0f5b570260b2025cf09",
+        "sources": [
+          {
+            "path": "packages/calculation-application/src/scenario.ts",
+            "bytes": 58849,
+            "sha256": "359e782342fe52dda4026df621efa8ccdca148fdcd5f8fc81db0175e0a71b3e1",
+            "baselineIdentical": true
+          },
+          {
+            "path": "packages/calculation-application/src/battlePointPreparationObservation.ts",
+            "bytes": 3215,
+            "sha256": "8dffd070d634f1caf9a7c9db7ba440b988800757161553a2b0e547e99d324339",
+            "baselineIdentical": true
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 50618,
+            "sha256": "ec8499f3f63a7f9c487bba3805d05b887511740eb9704d49e82f525fa77af0a1",
+            "baselineIdentical": true
+          },
+          {
+            "path": "packages/battle-execution/src/preparationTransaction.ts",
+            "bytes": 12322,
+            "sha256": "547de83440656591be100613ec5a5de51f45b8821a03f746181daa4e1706367e",
+            "baselineIdentical": true
+          },
+          {
+            "path": "packages/battle-execution/src/preNoblePhantasm.ts",
+            "bytes": 4908,
+            "sha256": "af3c5abaaa675dd940dd78c3ba9d761de6e338e9e8fa9143d2326f3f1c7f6364",
+            "baselineIdentical": true
+          },
+          {
+            "path": "packages/battle-execution/src/sourceCollection.ts",
+            "bytes": 19848,
+            "sha256": "42dbfa82df88331da46d23bb2c9a4c60cf4ae1bd6a354bf6fcc341be0f572c15",
+            "baselineIdentical": true
+          },
+          {
+            "path": "packages/battle-execution/src/battlePointResource.ts",
+            "bytes": 11912,
+            "sha256": "df757e4af22948278b7a73544971f40dbc9847ab848e1a1d9ab53f7dcc84180c",
+            "baselineIdentical": true
+          },
+          {
+            "path": "packages/battle-execution/src/preparationAttemptObservation.ts",
+            "bytes": 3185,
+            "sha256": "eebc544e490d953aace448ab610efff187d90605dff08f371c8f85e57bdb2669",
+            "baselineIdentical": true
+          }
+        ],
+        "rows": [
+          {
+            "capture": false,
+            "iterations": 100,
+            "samples": 9,
+            "beforeMs": [
+              0.2606270000000018,
+              0.3850260000000003,
+              0.20322999999999866,
+              0.20745299999999817,
+              0.23322800000000143,
+              0.24338600000000044,
+              0.19446699999999964,
+              0.20336299999999938,
+              0.2245629999999983
+            ],
+            "afterMs": [
+              0.3279489999999987,
+              0.3340149999999994,
+              0.24751999999999952,
+              0.25616199999999933,
+              0.2330009999999993,
+              0.17744500000000016,
+              0.2141430000000014,
+              0.22013300000000072,
+              0.2836669899999993
+            ],
+            "beforeMedianMs": 0.2245629999999983,
+            "afterMedianMs": 0.24751999999999952,
+            "changePercent": 10.222966383598987,
+            "observableEqual": true
+          },
+          {
+            "capture": true,
+            "iterations": 100,
+            "samples": 9,
+            "beforeMs": [
+              0.28533600000000203,
+              0.23932900000000018,
+              0.18756299999999781,
+              0.19541999999999915,
+              0.25646400000000086,
+              0.22770700000000033,
+              0.2563079999999991,
+              0.2700109999999995,
+              0.29339799999999966
+            ],
+            "afterMs": [
+              0.21142000000000052,
+              0.2465949999999998,
+              0.23947400000000016,
+              0.24888599999999997,
+              0.26521799999999984,
+              0.2803780000000006,
+              0.24967499999999973,
+              0.19990299999999933,
+              0.23571500000000015
+            ],
+            "beforeMedianMs": 0.2563079999999991,
+            "afterMedianMs": 0.2465949999999998,
+            "changePercent": -3.789581285016208,
+            "observableEqual": true
+          }
+        ],
+        "interpretation": "Original runtime owners byte-identical to baseline; paired observable/input/result parity exact. Normal median0.224563->0.247520ms (+10.22%, absolute0.022957ms), capture0.256308->0.246595ms (-3.79%). Small separately loaded identical-function benchmark cannot attribute this timing variation to an audit-only change; no normal/capture owner allocations or runtime code changed. New audit work separately bounded by unchanged5s per-group tests and exact production counters at final gate. Standalone tsx loader emitted DEP0205 infrastructure deprecation; retained in performance log, not suppressed or counted as a quality test warning."
+      },
+      "publishedPopulation": {
+        "status": "passed",
+        "declaredCapacityWriters": 0,
+        "excludedNp": 1,
+        "expectedSelections": 0,
+        "selected": 0,
+        "failures": []
+      },
+      "implementationCommit": "2b0af873254d6c71969f4b1915c708f117156533"
     }
   ],
-  "currentBoundedUnit": "Committed attacker-skill battlePointCapacityModifier preparation state/fixed-write/read/NP shared audit consumer closure",
+  "currentBoundedUnit": "Attacker-skill battlePointCapacityModifier preparation non-commit attempt isolation shared audit consumer closure",
   "handoffPreparation": {
     "baselineHead": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
     "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
@@ -11888,7 +14339,7 @@
       }
     },
     "currentStageReconciliation": {
-      "asOfProductCommit": "5ce926a8498139534b82e0f5b570260b2025cf09",
+      "asOfProductCommit": "2b0af873254d6c71969f4b1915c708f117156533",
       "historicalTable": "Task historical four-stage self-check remains historical; its contract-wait statements are superseded by later approved requirement/ADR and implemented units.",
       "stages": [
         {
@@ -11906,15 +14357,15 @@
         },
         {
           "stage": 2,
-          "current": "S4/stars/scalar/fixed-domain committed forward and original fixed BP noncommit isolation retained. Committed attacker-skill capacity modifier -> original apply/reconcile retained state -> same-domain fixed clamp/live read/phase/scalar/ordered NP/damage shared consumer now verified. Capacity noncommit/recovery and other families/legacy remain outside this closure; TSK-08 in_progress."
+          "current": "S4/stars/scalar/fixed-domain committed forward and original fixed BP noncommit isolation retained. Committed capacity forward retained. Attacker-skill capacity changed attempt -> native noncommit -> original action-start/modifier/committed-prefix retention -> original reducer refusal -> same selected scenario actual prepared/application typed refusal now verified by shared consumer/gate. Domain recovery and other families/legacy remain outside this unit; TSK-08 in_progress."
         },
         {
           "stage": 3,
           "current": "Matrix revision/remerge and eligibility reconciliation already recorded; latest revision matrix digest04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4 and eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 remain authoritative in their revision record. Old root or intermediate digest is historical, not a new current expectation."
         }
       ],
-      "latestBoundedUnit": "Committed attacker-skill battlePointCapacityModifier preparation state/fixed-write/read/NP shared audit consumer closure",
-      "latestEvidence": "Committed capacity unit complete at5ce926a, result records677f7d9:5 changed/4 boundaries/1491 negatives,quality1015/155/29 retry0,audit3,warnings/console0,367 declarations/242 receipts. Next capacity noncommit isolation prepared read-only, not implemented/verified. TSK-08 in_progress;09.1/09 blocked."
+      "latestBoundedUnit": "Attacker-skill battlePointCapacityModifier preparation non-commit attempt isolation shared audit consumer closure",
+      "latestEvidence": "Capacity noncommit isolation:5 finite changed/6 explicit boundaries/1854 negatives/176 complete diagnostics; quality1191/155/29 retry0,audit3,warnings/console0;910 declarations/1196 unique receipts/error0. Existing protected diagnostics/counters/digests retained. Product commit 2b0af873254d6c71969f4b1915c708f117156533. TSK-08 in_progress;09.1/09 blocked."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -11973,7 +14424,7 @@
       "name": "Attacker-skill battlePointCapacityModifier preparation non-commit attempt isolation shared audit consumer closure",
       "productBaselineCommit": "5ce926a8498139534b82e0f5b570260b2025cf09",
       "recordBaselineCommit": "677f7d9761263ac363173532bf02779a8469a079",
-      "status": "Read-only preparation complete; first deliverable is code-based phased plan and explicit user confirmation. Next consumer is not implemented or runtime-verified.",
+      "status": "User-approved bounded capacity noncommit isolation complete within scope; required gates and result-document verification succeeded. Product commit and full final evidence are in latest boundedUnits entry; this result record is its following local commit. Next semantic unit not selected or authorized here.",
       "scope": "One session: canonical attacker useSkillSlot capacity modifier that actually changes finite capacity/point or modifier state in a native attempted prefix, followed by original same-action invalid/unsupported/inputRequired non-commit -> exact action-start BP domain/capacity/modifier list/receipts/executedEffects/applied action retention -> original reducer/prepared/application typed rejection for the same selected scenario. Include same-domain fixed writes only as consumers within that failed prefix, and prior committed skill only to establish the true action-start. Connect shared consumer/gate, schema-legal representatives/grouped negatives, complete declared diagnostics. No successful recovery execution.",
       "excluded": "Completed committed capacity/fixed BP forward or fixed noncommit consumer reopening, scalar/criticalStars forward/recovery, S4/without-area/architecture; domain recovery/correction/resend/general retry/UI recovery; candidate damage-loop rollback; form/trait/eligibility switching/base trait capacity overrides, modifier expiration/removal/new lifetime semantics; auxiliary/passive/NP capacity writers; initial/terminal passive failure, OC-ready structural rejection; HP/trait/gauge/OC family implementation or failure-code/outcome classification changes; legacy cleanup, all stale-mutation/TSK-08 closure, TSK-09.1/09.",
       "sourceFindingsAsOfCommit": "5ce926a8498139534b82e0f5b570260b2025cf09",
@@ -12185,7 +14636,14 @@
             "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
           }
         ]
-      }
+      },
+      "planApproval": {
+        "approved": true,
+        "instruction": "OK",
+        "scope": "Same bounded capacity noncommit unit; continue through gates/records/local commit without ordinary reapproval."
+      },
+      "completedUnitProductCommit": "2b0af873254d6c71969f4b1915c708f117156533",
+      "nextBoundedUnit": "Not selected; capacity recovery, other semantic families and whole-task closure remain outside this authorization."
     },
     "completedScalarRecoveryPreparation": {
       "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",

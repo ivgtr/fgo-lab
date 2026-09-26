@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.73"
+document_version: "1.7.74"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3252,3 +3252,20 @@ committed攻撃役skill容量modifier unitはlocal製品／記録commit済み。
 本整理は既存4文書の検証・local commitだけで参照文書identityを作る。診断実行が計画決定に不可欠なら、最小診断／得る判断／停止境界を先に示して承認を待ち、診断だけの承認から製品実装へ進まない。60分checkpoint／90分以降新familyなし。8 shard再生成は具体的identity疑義時のみ。pushなし。
 
 本整理のdocs6/6・integrity・対象書式・差分whitespaceが成功。保存575path／historical6 blob／直前10固定blob・current／今回19入力の照合error0。製品source／test／設定は`5ce926a`から不変。既存4文書だけをlocal commitし、そのcommitを次作業者の参照文書identityとして依頼する。
+
+
+Current bounded-unit checkpoint（attacker-skill capacity元noncommit隔離、計画承認後）:
+
+元capacity changed attempt／receipt／modifier／到達prefixから、native noncommit・元action-start保持・元reducer拒否と同selected wrapper／prepared／実application typed拒否まで共有consumerへ接続した。通常runtime owner／capture／公開・serialized shapeは不変。容量timelineは実write／sourceEnd／reconcile順を観測し、監査で算術やwriter再実行を行わない。先行commitのreceipt容量40と実reducer reconcile後90を区別し、failed action-start90とmodifier list／committed prefixを保持する。
+
+5 changed代表・6明示境界、新176testと既存fixed forward／非commit・committed容量を含む最終局所253/253、warning0が成功。全176宣言diagnosticはassertion前保存・厳密なon-disk lossless復元一致を確認した。否定件数、検査群、manifest、固定4入力、flow deltaと回復履歴は既存evidence最新bounded unitを正本とする。既存gate／807否定とproducerのexecutable契約を維持する。
+
+60分前checkpoint。最終型／lint／性能・差分レビュー、影響audit／README必須quality、保護artifact／counter照合、結果記録・文書検証と範囲限定local commitが未達。今回の容量noncommit隔離のみを閉じ、domain recovery／再送／一般retry／UI・他familyやTSK-08全体へ広げない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+最終局所253/253・型／対象lint・差分レビューが成功し、対象内Blocking0。新5 changed／6境界・1854否定・176宣言diagnosticの完全保存／復元を確認し、先行fixed forward5／非commit9／committed容量63の77診断はbyte単位一致。元runtime owner8入力は先行製品commitとbyte一致で、同parsed masterの通常／capture paired baseline／currentはobservable一致。時間差の測定限界と独立tsx loaderのDEP0205はevidenceへ明記した。4 source/testを固定し、影響auditとREADME必須qualityへ進む。実行中は検証入力を変更しない。
+
+最終影響audit3/3・warning0・宣言artifact検証が成功。既存audit diagnosticはbyte単位一致し、新published容量attempt gateは現canonical攻撃役skill容量宣言0／selected0・対象外NP1を独立inventoryとして記録した。成功filterで非commit selectionを落とさず、既存committed gate／producerのexecutable要求を保持する。schema-legal5 changed代表の成功とは別の証拠。README必須qualityを開始し、入力を固定する。
+
+今回の容量changed attempt→native非commit→元action-start／modifier／committed prefix保持→同selected scenario実typed拒否のbounded unitは必須gate成功。quality1191／production155／E2E29（retry0）、audit3、warning／unexpected console0。910宣言／1196固有receipt、176完全diagnostic／1854否定、既存保護artifact・counter・matrix／eligibility digestの最終照合error0。4製品source/testのlocal commit `2b0af87`。最終quality後は結果文書のみ更新し、文書検証と記録local commitで閉じる。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、domain recovery／TSK-08全体のclosureとはしない。pushなし。
+
+結果文書の6検査・docs integrity・書式・diff checkも成功。製品commitの後続として既存4文書だけを記録local commitし、本sessionの依頼範囲を完了する。次semantic unitは未選定であり、本記録を追加範囲の承認とは扱わない。
