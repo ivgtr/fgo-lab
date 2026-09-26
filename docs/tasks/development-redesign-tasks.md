@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.68"
+document_version: "1.7.69"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3157,3 +3157,22 @@ Committed fixed domain BP preparation forward bounded-unit completion（2026-09-
 60分境界前に製品gateとcheckpointを閉じた。以後は既存4文書の結果記録のみ更新し、文書検証・最終差分／stage照合後に6 source／testと4文書だけlocal commitする。当該commitを今回の参照identityとする。必要な製品gateは残らない。次の最小操作は記録の文書検証と範囲限定local commitで、次unitは別途限定する。domain rollback／復元consumer、capacity変更、form／eligibility、補助actor writer、別family、failure意味論修正、legacy cleanup、一般retry／UI recoveryは未実装の対象外。今回をstale-mutation全体やTSK-08全体のclosureとは呼ばず、TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。pushなし。詳細は既存evidence最新bounded unitを正本とする。
 
 最終結果記録のdocs6/6・integrity・対象書式・差分whitespace検証も成功した。必要な実装／検証は残らず、最終stageの10対象を照合してlocal commitで閉じる。
+
+
+Step再確認と次sessionの限定handoff（2026-09-26、製品参照commit `ad9d216c5dfdd3f90da91dbf0f01417ac4095e46`）:
+
+直前のcommitted fixed domain BP preparation forward unitは10file local commit済み、開始HEAD／index／tracked／untrackedはclean。5代表・426否定、quality943/155/29（retry0）、audit3、warning／unexpected console0を確認した。旧4段階の契約待ちは履歴で、V41／V40保持と明示V41再計算、S4、matrix改訂を再開しない。Step0は基線／契約成立、Step1はV41実装検証済み、Step2はS4・criticalStars／scalar forward／recoveryと今回domain committed forward共有consumer検証済み、Step3は改訂matrix／eligibility digest照合済み。TSK-08には他mutation consumerとlegacy整理が残り`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+次の1セッションは**攻撃役skill preparationのfixed domain BP gain／lossが実changed attemptとなった後、元executePreparationOc actionが非commitとなる経路の隔離→元action-start BP state保持→同じscenario preparation拒否／既存typed result→共有consumer／gate／宣言artifact**に限定する。既存forwardは厳格なまま保持する。domain recovery／再送command／UI retry、damage-loop rollback、capacity変更、form／eligibility、補助actor writer、初期／終端passive action失敗、OC ready後のstructural拒否family、HP／trait／gauge等の意味論、failure分類修正、legacy cleanupとTSK-08全体は対象外。
+
+直接コードでは`executePreparationOc`のlocal currentへ実BP receiptが追加され、非commit時は`structuralState:args.state`を返す。`executeOcAction`のrejectは元OC stateと空outcomesを返し、failed BP attemptを外へ残す契約ではない。`planPreparationResourceTransaction`は非commitを既存codeへ写し、skill reducerは元stateを返す。先行committed skillがある場合のaction-startと初期値を区別する。`resolveAttackerFormExecution`は拒否でbreakし、applicationはdomain phase変換とordered execution前にrejectedとなる。その同じselected scenarioに後続NP／recovery readは存在しないので、架空のevent／input／NP消費を要求せず、元typed resultと後続実行の不在を閉じる。
+
+既存capture transitionとforward attachmentはchanged failed attemptやrejected prepared/resultを証明しない。最小authoritative captureとtransportが必要か、既存責務の拡張か焦点抽出かは次担当者が現symbolから計画する。加算／clamp／phase／rollback／condition／damageは監査へ複製しない。期待writer／action／attempt到達境界はcanonical command／master／source順から値と独立に導出し、成功receiptやexecutedEffects／空outcomes／既存candidate rollbackProofへ読み替えない。既存BP／HP／trait atomicity testの別途reducer再送は通常scenarioのrecovery consumer成立証拠ではない。
+
+本資料準備は読み取りと既存artifact checksum照合のみ。212固有artifact receiptと最終6 source／testのbytes／SHA-256が一致したが、新非commit consumerやattempt変化の成功証拠ではない。source test／producer／audit／qualityは新規実行していない。母集団・planning questions・否定検査群・再利用条件・receipt詳細は[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.currentStageReconciliation`と`nextSession`を正本とする。新しい計画書は作らない。
+
+最初の成果物はコードからの段階的実装計画で、利用者確認を待つ。確認前はコード／既存artifactの読み取り・checksumのみ、source／test／文書編集、source test／producer、stage／commitなし。確認後は同じunitの実装・局所検証・Blocking解消・最終影響audit／README quality・既存記録更新・範囲限定local commitまで続け、通常判断で再承認しない。未規定製品意味論／実質契約衝突だけ影響作業を止め、根拠symbolと改訂計画を示す。実行診断が計画に不可欠なら最小診断／判断／停止境界を示して先に確認し、診断だけの承認を製品実装へ読み替えない。
+
+資料4文書だけを検証・local commitし、そのcommitを依頼文の参照identityとする。既存8 shardは具体的identity疑義時のみ。60分checkpoint／90分以降新familyなし、pushなし。
+
+本資料整理のdocs6/6・integrity・対象書式・diff whitespaceが成功した。過去bounded unitと直前forwardの最終検証／receipt記録を保持し、製品source／test／設定は`ad9d216`から不変。この4文書だけlocal commitして、依頼プロンプトから当該commitを参照する。
