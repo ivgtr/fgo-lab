@@ -228,7 +228,7 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "Rollback/restored-value/recovery-read consumer closure and other mutation families remain separate TSK-08 bounded units. Committed criticalStars forward consumer is verified in the current unit.",
+    "Other mutation families remain separate TSK-08 bounded units. Both committed criticalStars forward and rolledBack/restored-value/ordered-recovery-read consumers are verified; without-area/S4/architecture remain preserved.",
     "Deferred legacy loader/scan/candidate-list/duplicate-fixture cleanup belongs to a later bounded unit; TSK-09.1/09 remain blocked."
   ],
   "statusInvariants": {
@@ -240,7 +240,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "CriticalStars rollback/restored-value/ordered-recovery-read shared audit consumer only. Source-based staged plan and user confirmation precede implementation; other families/legacy/whole task remain separate.",
+  "nextBoundedUnit": "Plan a later independently requested remaining TSK-08 bounded unit. Current criticalStars rollback/restored-value/ordered-recovery shared consumer unit is verified; do not reopen it or claim whole stale-mutation/TSK-08 closure.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -6124,9 +6124,530 @@
       ],
       "remaining": "No target Blocking or required product gate remains. Descriptive result records are finalized with documentation checks before the scoped local commit. Rollback/restored-value/recovery read, other mutation families, legacy cleanup and whole TSK-08 remain separate; TSK-08 in_progress, TSK-09.1/09 blocked.",
       "localCommit": "Scoped source/test/record diff after required gates and record reconciliation. Commit identity is repository HEAD after this local commit; no push."
+    },
+    {
+      "name": "CriticalStars rollback restored-value ordered recovery shared audit consumer closure",
+      "status": "critical_stars_recovery_bounded_unit_verified",
+      "baselineHead": "838a3268b5a3f2eb3db54fee58507b9a3bfcab43",
+      "priorProductCommit": "a941aabef4968b59fe11a5ebb4fa2b22e9cc9ecc",
+      "worktreeAtStart": {
+        "index": [],
+        "tracked": [],
+        "untracked": []
+      },
+      "authorizedScope": "Actual selected-candidate criticalStars rolledBack group -> actual restored address -> ordered later recovery reads -> event/projection/effective contribution/canonical input/unsupported result -> shared typed diagnostic gate -> separate schema-legal fixture population -> declared complete artifact. No other mutation families, legacy cleanup, whole stale-mutation/TSK-08 closure, general retry/UI recovery, TSK-09.1/09 or push.",
+      "ownership": {
+        "execution": "candidateExecution.ts and candidateStateAudit.ts remain byte-identical. Execution owns state/input rollback, attempted appliedOperationIds, mutation receipts, rollbackProof and condition evaluation. The consumer checks scalar receipt continuity; it never runs operations or restores battle state/input itself.",
+        "producer": "criticalStarsRecoveryProgram receives the original prepared/captured calculation and the canonical failed-operation reference selected by the schema-legal fixture contract. Canonical operations, source transaction groups, condition leaves and operation order derive membership independently of values/passing traces. Initial value comes from resolved canonical inputs. Original source references and owner snapshots are retained before corrupt transport is created.",
+        "consumer": "productionCriticalStarsRecoveryAudit.ts checks original calculation/observation/candidate/state/event/group/mutation/read and use references, immutable canonical/source receipts, operation/group/sequence/address identity, group-start restoration and later read continuity. Values come from execution receipts; no quantity, boolean or damage arithmetic is reproduced.",
+        "gate": "auditCriticalStarsRecoveryObservations is a dedicated shared typed recovery gate. Diagnostic passed certifies the expected executable calculation with unsupported result and empty rows, discarded failed-group contributions, and canonically identified later reader use. Existing auditProductionUserControlObservations on/off calculated contract and committed forward gate are unchanged.",
+        "artifact": "scenario.test.ts writes the entire positive/negative/witness diagnostic before assertions using the existing productionAuditTestOptions/writer. Unchanged generic runner validates declaration, lossless JSON, bytes and SHA-256. Failure includes typed reason, canonical identity, expected/actual, checkPath and shared canonical nested first difference."
+      },
+      "flowClosure": {
+        "ordinary": "Normal scenario/execution/ranking/public API and diagnostic production sources are byte-identical. The existing forward module changes only two internal exports; function bodies are byte-identical. No added normal observation allocation, candidate/damage replay or selection/operation/outcome change.",
+        "recovery": "Original prepared canonical program + selected execution -> group-start scalar receipt baseline -> distinct before/attemptedAfter vs rolledBack afterTransaction and owner rollbackProof -> ordered immediate/later reads including intervening committed writes -> original reader side/event/projection/effective contribution -> original canonical damage input/typed unsupported result -> shared recovery gate -> declared diagnostic/runner receipt.",
+        "valueRule": "Track read-before-write order using actual owner receipts. Each group retains the current entry value; within a group use attemptedAfter for sequential before/read comparison. Compare rolledBack afterTransaction against the group entry value and require both execution-owned restoration proofs. At the boundary the audit continuity cursor uses that verified entry value; subsequent committed receipts advance it. This cursor is proof comparison only, not a second executor/state rollback implementation.",
+        "representatives": [
+          {
+            "name": "changed-restoration",
+            "expectedMutations": [
+              {
+                "before": 20,
+                "attemptedAfter": 60,
+                "afterTransaction": 20
+              },
+              {
+                "before": 60,
+                "attemptedAfter": 60,
+                "afterTransaction": 20
+              }
+            ],
+            "restored": 20,
+            "finalRead": 20,
+            "immediateRead": null,
+            "attackBuff": 0,
+            "powerMod": 0.7,
+            "readerEffective": true,
+            "ordinaryParity": true
+          },
+          {
+            "name": "group-start-after-commit",
+            "expectedMutations": [
+              {
+                "before": 30,
+                "attemptedAfter": 70,
+                "afterTransaction": 30
+              },
+              {
+                "before": 70,
+                "attemptedAfter": 70,
+                "afterTransaction": 30
+              }
+            ],
+            "restored": 30,
+            "finalRead": 30,
+            "immediateRead": null,
+            "attackBuff": 0,
+            "powerMod": 0.7,
+            "readerEffective": true,
+            "ordinaryParity": true
+          },
+          {
+            "name": "multiple-attempts",
+            "expectedMutations": [
+              {
+                "before": 30,
+                "attemptedAfter": 70,
+                "afterTransaction": 30
+              },
+              {
+                "before": 70,
+                "attemptedAfter": 55,
+                "afterTransaction": 30
+              },
+              {
+                "before": 55,
+                "attemptedAfter": 55,
+                "afterTransaction": 30
+              }
+            ],
+            "restored": 30,
+            "finalRead": 30,
+            "immediateRead": null,
+            "attackBuff": 0,
+            "powerMod": 0.7,
+            "readerEffective": true,
+            "ordinaryParity": true
+          },
+          {
+            "name": "intervening-commit-nested-read",
+            "expectedMutations": [
+              {
+                "before": 30,
+                "attemptedAfter": 70,
+                "afterTransaction": 30
+              },
+              {
+                "before": 70,
+                "attemptedAfter": 55,
+                "afterTransaction": 30
+              },
+              {
+                "before": 55,
+                "attemptedAfter": 55,
+                "afterTransaction": 30
+              }
+            ],
+            "restored": 30,
+            "finalRead": 35,
+            "immediateRead": 30,
+            "attackBuff": 0,
+            "powerMod": 0.8,
+            "readerEffective": true,
+            "ordinaryParity": true
+          },
+          {
+            "name": "unsatisfied-recovery-reader",
+            "expectedMutations": [
+              {
+                "before": 20,
+                "attemptedAfter": 60,
+                "afterTransaction": 20
+              },
+              {
+                "before": 60,
+                "attemptedAfter": 60,
+                "afterTransaction": 20
+              }
+            ],
+            "restored": 20,
+            "finalRead": 20,
+            "immediateRead": null,
+            "attackBuff": 0,
+            "powerMod": 0,
+            "readerEffective": false,
+            "ordinaryParity": true
+          }
+        ],
+        "failClosed": "Missing trace/state/group/mutation/proof/reader/source/use, wrong candidate/target/canonical generator/reference, operation/transaction/group/sequence/address conflicts, duplicates/reversal, initial/last-before/attempted/stale restoration or read, coherently altered receipts/read, failed-group contribution revival, input/projection/contribution/result conflicts and forged product outcome fail the same gate. Negatives assert their own typed reason and checkPath, not any unrelated failure.",
+        "populations": "Published master remains the existing independent user-control/forward population. Saved S4 criticalStars mutations are committed and are not rollback coverage. Five schema-legal fixtures derive their own canonical populations; saved counts are measurements, not future fixed counts.",
+        "reviewMatrix": {
+          "changedRestoration": "Verified",
+          "priorCommittedWrite": "Verified",
+          "multipleAttemptedSameAddressWrites": "Verified",
+          "immediateAndInterveningCommittedWriteReads": "Verified",
+          "satisfiedAndUnsatisfiedReader": "Verified",
+          "nestedAllNotReadOccurrences": "Verified",
+          "failedGroupContributionDiscard": "Verified",
+          "unsupportedProductVsPassedDiagnostic": "Verified",
+          "sourceReferenceAndCanonicalSnapshotTampering": "Verified",
+          "publishedRollbackCoverage": "N/A: saved S4 committed receipts do not certify this fixture family",
+          "otherMutationFamilies": "Deferred: outside this unit"
+        },
+        "blocking": 0
+      },
+      "localVerification": {
+        "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH node scripts/test-runner.mjs compact --suite=unit packages/calculation-application/src/scenario.test.ts packages/calculation-application/src/productionClosureAudit.test.ts",
+        "manifest": ".test-results/2026-09-26T06-16-28-644Z-2-a695e9/manifest.json",
+        "outcome": "success",
+        "passed": 43,
+        "failed": 0,
+        "warnings": 0,
+        "artifactVerificationErrors": [],
+        "representative": {
+          "positives": 5,
+          "negatives": 469,
+          "allPositivePassed": true,
+          "allNegativeFailedOnRequiredCheck": true,
+          "schemaVersion": 2
+        },
+        "typecheck": "tsc -b --pretty false passed",
+        "targetLint": "eslint three changed source/test files passed",
+        "withoutArea": {
+          "sourceChecks": 14,
+          "negatives": 45,
+          "receiptMatched": true,
+          "artifact": {
+            "path": ".test-results/2026-09-26T06-16-28-644Z-2-a695e9/production-without-area-fixture.json",
+            "bytes": 15681829,
+            "sha256": "851632815d6039baa1903c9620d673d89f712fdbf690cfe973814f8ecdbb497f"
+          }
+        },
+        "forward": {
+          "positives": 4,
+          "negatives": 207,
+          "receiptMatched": true,
+          "artifact": {
+            "path": ".test-results/2026-09-26T06-16-28-644Z-2-a695e9/tsk-08-star-mutation-read.json",
+            "bytes": 85080629,
+            "sha256": "2fb12fae4dab6705e9d3836f3212b58981194c71530a6d9e8d55987b0c089122"
+          }
+        }
+      },
+      "verification": {
+        "status": "Required audit, mandatory quality, frozen-input/fixture reconciliation and result-record documentation verification passed.",
+        "audit": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/test-runner.mjs compact --suite=audit",
+          "manifest": ".test-results/2026-09-26T06-18-40-592Z-2-8606ce/manifest.json",
+          "outcome": "success",
+          "passed": 3,
+          "failed": 0,
+          "warnings": 0,
+          "durationMs": 37302,
+          "artifactVerificationErrors": [],
+          "S4ByteIdentical": true,
+          "observedPopulation": {
+            "observations": 1590,
+            "expectedIdentities": 1590,
+            "gate": "passed",
+            "failures": 0,
+            "forwardContracts": 24,
+            "forwardSides": 48,
+            "criticalStarMutations": 122,
+            "criticalStarReads": 410,
+            "committedMutations": 122,
+            "interveningWriteReads": 390,
+            "priorS4ByteIdenticalAfterRemovingForwardAdditions": true,
+            "priorS4Bytes": 65737938,
+            "priorS4Sha256": "09356db3215896ab70ac985ed4f64f4030c9f7a92df1383676ec7e11a953bb1a",
+            "strippedSha256": "09356db3215896ab70ac985ed4f64f4030c9f7a92df1383676ec7e11a953bb1a",
+            "fixture": {
+              "positive": 4,
+              "negative": 207,
+              "allPositivePassed": true,
+              "allNegativeFailed": true,
+              "names": [
+                "capped",
+                "same-group-write",
+                "next-group-write",
+                "nested-read"
+              ]
+            }
+          },
+          "condition": "Entire S4 envelope is byte-identical to preceding committed-forward unit. Its saved committed receipts preserve existing observers/gates and do not prove rollback coverage. Rollback proof is the independent schema-legal artifact."
+        },
+        "quality": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/quality-runner.mjs",
+          "manifest": ".test-results/2026-09-26T06-20-07-546Z-2-55cc3c/manifest.json",
+          "outcome": "success",
+          "durationMs": 410798,
+          "unit": {
+            "total": 936,
+            "passed": 936,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "production": {
+            "total": 155,
+            "passed": 155,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "e2e": {
+            "total": 29,
+            "passed": 29,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0,
+            "retries": 0,
+            "flaky": 0
+          },
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "artifactVerificationErrors": [],
+          "steps": [
+            "format",
+            "lint",
+            "typecheck",
+            "runner",
+            "docs",
+            "unit",
+            "production",
+            "master",
+            "build",
+            "playwright"
+          ]
+        },
+        "inputIdentity": "All9 frozen source/test/document/protected-evidence inputs matched bytes/SHA-256 after final quality. Only3 descriptive Task/evidence/index records receive final results; implementation/test/configuration/registry/protected evidence remain unchanged.",
+        "fixtureComparison": {
+          "allMatched": true,
+          "artifacts": [
+            {
+              "path": "production-without-area-fixture.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 15681829,
+              "sha256": "851632815d6039baa1903c9620d673d89f712fdbf690cfe973814f8ecdbb497f",
+              "matched": true
+            },
+            {
+              "path": "tsk-08-star-mutation-read.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 85080629,
+              "sha256": "2fb12fae4dab6705e9d3836f3212b58981194c71530a6d9e8d55987b0c089122",
+              "matched": true
+            },
+            {
+              "path": "tsk-08-execution-group-rollback.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 38506253,
+              "sha256": "30a111c30b57df5547be79052970cc710c4f97a1fed8bb6f95f08d9f4c5a1d77",
+              "matched": true
+            }
+          ],
+          "condition": "Focused and final quality rollback, forward and without-area diagnostic artifacts are byte-identical. Runner declarations/receipts passed in both runs. Legacy saved20->20->20 is only preparation transport evidence."
+        },
+        "performance": {
+          "sameRuntimeCounters": true,
+          "counters": [
+            {
+              "artifact": "production-audit-calculation-application.json",
+              "prior": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "final": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "sameCounters": true
+            },
+            {
+              "artifact": "production-audit-data-pipeline.json",
+              "prior": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "final": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "sameCounters": true
+            }
+          ],
+          "priorProductionMs": 83454,
+          "finalProductionMs": 84262,
+          "condition": "Same8 CPU affinity and existing50% production workers(four). Timing is an uncontrolled observation. Candidate/request growth0; no ratchet/timeout weakening."
+        },
+        "review": "Target Blocking0. Canonical source membership/read identities and original receipt references/snapshots close restoration/order/use/final unsupported proof. Audit consumer does no operation replay, state mutation, gain/loss/clamp/condition/damage semantics. Normal APIs/source/hot path/selection/order/input/outcome unchanged. Failures assert mechanism-specific checkPath plus typed reason and canonical nested first difference. Full artifact precedes assertions. Verified4 forward positives/207 negatives and14 without-area source checks/45 negatives retain exact bytes. No independent family or whole-task closure claim.",
+        "documentationAfterResultRecording": {
+          "command": "node --test scripts/docs-integrity.test.mjs && node scripts/docs-integrity.mjs",
+          "passed": 6,
+          "failed": 0,
+          "integrity": "passed",
+          "diffWhitespace": "passed",
+          "condition": "Only3 descriptive Task/evidence/index result records changed after frozen-input final quality. Source/test/configuration/registry/protected evidence unchanged; final metadata formatting and integrity verification finish the scoped commit."
+        }
+      },
+      "reusedEvidence": {
+        "checks": 107,
+        "allMatched": true,
+        "conditionArtifacts": 80,
+        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "candidateEligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+        "condition": "Same source/semantic boundary,107 bytes/SHA-256 receipts matched. Protected fixture bodies and ordinary sources unchanged; no concrete shard identity doubt. No shard regeneration."
+      },
+      "artifacts": [
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/source-review.json",
+          "bytes": 1532,
+          "sha256": "21b9ecf71022784f952ecebad71db31610422ba31edf84efafcbdff6a94d4bcc"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/reused-artifacts.json",
+          "bytes": 42333,
+          "sha256": "ef6fb2104754c4d5ce63f2a00031ac1c628dbe29a0d51500d3b34653c4037a0a"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-16-28-644Z-2-a695e9/manifest.json",
+          "bytes": 4492,
+          "sha256": "a1f0c60be079110eb54a84c42671536fb9fd7b3031b7227e54b24234dd2cad5b"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-16-28-644Z-2-a695e9/tsk-08-execution-group-rollback.json",
+          "bytes": 38506253,
+          "sha256": "30a111c30b57df5547be79052970cc710c4f97a1fed8bb6f95f08d9f4c5a1d77"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-16-28-644Z-2-a695e9/tsk-08-star-mutation-read.json",
+          "bytes": 85080629,
+          "sha256": "2fb12fae4dab6705e9d3836f3212b58981194c71530a6d9e8d55987b0c089122"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-16-28-644Z-2-a695e9/production-without-area-fixture.json",
+          "bytes": 15681829,
+          "sha256": "851632815d6039baa1903c9620d673d89f712fdbf690cfe973814f8ecdbb497f"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-18-40-592Z-2-8606ce/manifest.json",
+          "bytes": 2994,
+          "sha256": "21751f627ac52ce43234eb558ed1bf267dad98bb452545aeb470b2017c82a814"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-18-40-592Z-2-8606ce/production-inert-control-production.json",
+          "bytes": 166052306,
+          "sha256": "8f38464e6ad69a27793e77afb3ff53633b390acc46de4304bb5b29701fa728ca"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/final-input-files.json",
+          "bytes": 1542,
+          "sha256": "a0502dd4e4c4b8b8d2008ffbd1392b5e8b695310f9778e84686c7656d7285721"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/final-source-reconciliation.json",
+          "bytes": 2942,
+          "sha256": "e1b684971f6296afc13803472b794c5f4a53490dc1336d79e101597480a0bb72"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/fixture-reconciliation.json",
+          "bytes": 696,
+          "sha256": "37fea6f1e824b3bc54ff8b058f08965697bcbedde642f838992d232097d3e852"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/performance-comparison.json",
+          "bytes": 1355,
+          "sha256": "7d4233714175f7c11eb2ba0b80fb5d440eaa582e95eb1655fb8aa2454411f0f8"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/environment.json",
+          "bytes": 744,
+          "sha256": "b8a712d3279c34bd94d5d8edf44f68648da13bcfd5e5bf40a02aa9244eb506a8"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-20-07-546Z-2-55cc3c/manifest.json",
+          "bytes": 35958,
+          "sha256": "5b54f0ea18e1301fa52913acd3680427a9478366b10f8b8b568ef8997049d648"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-20-07-546Z-2-55cc3c/unit/manifest.json",
+          "bytes": 4580,
+          "sha256": "9853333dae4f621edeeb904da204535b12e7752d60ae765ffe0b383d3a70fa0b"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-20-07-546Z-2-55cc3c/production/manifest.json",
+          "bytes": 6038,
+          "sha256": "e42ab99f130013cad6e1d7828c8008c0f30b4dcf4159bed8efcba0983a211688"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-20-07-546Z-2-55cc3c/playwright/manifest.json",
+          "bytes": 92380,
+          "sha256": "059deb4f203a7e2e3d3f24e8b462ad80c4c7ac11658ccb69b4973157142956a9"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-20-07-546Z-2-55cc3c/unit/tsk-08-execution-group-rollback.json",
+          "bytes": 38506253,
+          "sha256": "30a111c30b57df5547be79052970cc710c4f97a1fed8bb6f95f08d9f4c5a1d77"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-20-07-546Z-2-55cc3c/unit/tsk-08-star-mutation-read.json",
+          "bytes": 85080629,
+          "sha256": "2fb12fae4dab6705e9d3836f3212b58981194c71530a6d9e8d55987b0c089122"
+        },
+        {
+          "path": ".test-results/2026-09-26T06-20-07-546Z-2-55cc3c/unit/production-without-area-fixture.json",
+          "bytes": 15681829,
+          "sha256": "851632815d6039baa1903c9620d673d89f712fdbf690cfe973814f8ecdbb497f"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/docs-tests.log",
+          "bytes": 505,
+          "sha256": "f08c1d60febb2d3d8181694f5c4449cdc824200dc2e52971b939a8de50828bf4"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-recovery-20260926/docs-integrity.log",
+          "bytes": 22,
+          "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+        }
+      ],
+      "remaining": "No target Blocking or required gate remains. Reviewed scoped local commit is the final operation. Other mutation families/legacy cleanup and whole TSK-08 remain separate; TSK-08 in_progress, TSK-09.1/09 blocked.",
+      "localCommit": "The local commit containing this bounded-unit source/test/document diff is its commit identity (repository HEAD after commit). Exact seven authorized paths only; no push.",
+      "environment": {
+        "pnpmFailure": {
+          "command": "pnpm test:diagnostic -- packages/calculation-application/src/scenario.test.ts -t audits changed criticalStars",
+          "stage": "Before script/source tests",
+          "error": "ERR_SQLITE_ERROR unable to open database file in external pnpm store",
+          "resolution": "Existing node_modules and unchanged generic runner via verified /tmp/tsk08-tools/pnpm shim; no dependency install/store modification."
+        },
+        "affinity": "8 CPUs 0-7; existing50% production workers(four); no timeout/threshold change",
+        "filteredRun": "A compact filtered -t run passed its assertion/artifact but correctly failed runner contract because37 tests were skipped. Replaced by full43-test scoped suite; no exclusion/runner weakening."
+      },
+      "sessionBoundary": {
+        "implementationStartedAt": "2026-09-26T05:54:33Z",
+        "finalQualityCompletedAt": "2026-09-26T06:26:58.344Z",
+        "checkpoint": "Approved unit completed product gates before60min. This existing bounded-unit/Task record is the phase checkpoint. No new semantic family started;90min limit not reached."
+      },
+      "commitPaths": [
+        "packages/calculation-application/src/productionCriticalStarsAudit.ts",
+        "packages/calculation-application/src/productionCriticalStarsRecoveryAudit.ts",
+        "packages/calculation-application/src/scenario.test.ts",
+        "docs/README.md",
+        "docs/evidence/README.md",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/tasks/development-redesign-tasks.md"
+      ]
     }
   ],
-  "currentBoundedUnit": "Committed criticalStars forward shared audit consumer closure",
+  "currentBoundedUnit": "CriticalStars rollback restored-value ordered recovery shared audit consumer closure",
   "handoffPreparation": {
     "baselineHead": "a3241095be383348b6aa8d3b3199309b435b15b8",
     "scope": "read-only code investigation plus documentation; no source/test edits or source tests/producers executed",
@@ -6274,6 +6795,14 @@
       ]
     },
     "nextSession": {
+      "completedBoundedUnit": "CriticalStars rollback restored-value ordered recovery shared audit consumer closure",
+      "scope": "Later independently requested remaining TSK-08 bounded unit only; do not reopen verified criticalStars forward/rollback recovery, without-area, S4 or architecture.",
+      "nextAction": "Read the current Task/evidence and reconcile HEAD/index/worktree. Choose one requested remaining unit and present its bounded source-based plan before implementation; do not treat current unit completion as whole TSK-08/stale-mutation closure.",
+      "remainingFamilies": "addQuantity/HP/battle-point/trait/form and legacy cleanup remain outside this completed unit; their ordering/scope is not fixed here.",
+      "evidenceReuse": "Latest boundedUnits entry owns final quality/audit/declared rollback fixture receipts. Reuse only with matching source/semantic conditions and bytes/SHA-256; no unconditional8-shard regeneration.",
+      "status": "TSK-08 in_progress; TSK-09.1/09 blocked. No push."
+    },
+    "completedCriticalStarsRecoveryPreparation": {
       "baselineHead": "a941aabef4968b59fe11a5ebb4fa2b22e9cc9ecc",
       "scope": "Read-only preparation for one session of criticalStars rolledBack group -> actual restored address value -> ordered later recovery inputQuantity read -> shared audit consumer/gate -> real schema-legal representative/negative fixture -> declared artifact. No source/test edits or source test/producer runs in this preparation.",
       "codeFindings": [
@@ -6359,6 +6888,11 @@
             "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
           }
         ]
+      },
+      "currentSession": {
+        "authorized": true,
+        "boundedUnit": "CriticalStars rollback restored-value ordered recovery shared audit consumer closure",
+        "state": "Verified product/audit closure; current boundedUnits entry is authoritative. This preparation is historical and is not an unresolved rollback handoff."
       }
     }
   }

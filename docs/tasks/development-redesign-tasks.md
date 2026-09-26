@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.61"
+document_version: "1.7.62"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3019,3 +3019,27 @@ Committed criticalStars forward bounded unit（2026-09-26、開始HEAD `b75e9574
 最初の成果物は段階的実装計画。責務・候補file・通常／監査の実経路・期待identityの生成元・代表／否定fixture・不変条件・通過条件・停止点・証拠再利用条件を示し、利用者確認を待つ。確認前はsource／test／文書を編集せず、source test／producer・stage／commitを行わない。確認後は同じbounded unitの実装・局所検証・必要な最終quality／監査・既存Task／evidence更新・依頼範囲local commitまで続ける。通常の技術判断で再承認を求めず、未規定の製品意味論や実質的な契約衝突だけ影響作業を止めて改訂計画を示す。
 
 この先行準備はコードと既存artifactの読み取り・checksum照合・資料更新だけで、source test／producer・監査／qualityを新しく実行していない。8 shard再生成は具体的なidentity疑義がある場合だけ判断する。60分checkpoint、90分以降の新family開始なし、pushなし。TSK-08はin_progress、TSK-09.1／09はblockedを維持する。
+
+
+Current criticalStars rollback／復元値／ordered recovery-read bounded unit（2026-09-26、開始HEAD `838a3268b5a3f2eb3db54fee58507b9a3bfcab43`）:
+
+利用者が段階計画を承認した。専用の共有監査consumer／typed gateを実canonical生成・同じselected executionへ接続し、既存forwardと非structural user-controlのcalculated成功契約を保持した。実fixtureは20→attempted60→rollback20→read20、事前commit後の30への復元、同addressの70→55の複数attempt、復元直後read30と介在commit後read35、複合conditionと不成立readerを扱う。元executionのproof／receiptを使い、寄与破棄、event／projection／effective contribution／canonical inputと最終unsupportedを照合する。監査passedを製品calculatedへ変換しない。
+
+局所43/43、5実正例／469否定ケースが成功し、否定は該当checkPathとtyped reason・canonical first differenceを要求した。完全diagnosticはassertion前に保存され、宣言／bytes／SHA-256検証が成功。通常sourceと既存fixture本体はbyte単位で不変、forwardは既存2関数の内部exportだけを追加。107 receiptとforward／without-area artifactが一致し、8 shardは再生成しない。対象内Blockingは0。必要なauditとREADME必須quality、最終入力照合、結果記録・文書検証・範囲限定local commitが未達。詳細とflow closureは既存[evidence](../evidence/tsk-08-parity-ratchet.json)の`CriticalStars rollback restored-value ordered recovery shared audit consumer closure`を正本とする。
+
+別mutation family、legacy cleanup、一般retry／UI recovery、TSK-08全体とTSK-09.1／09は対象外。解消済みforward／without-area／S4／architectureを再開しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+
+CriticalStars rollback／復元値／ordered recovery-read bounded-unit completion（2026-09-26）:
+
+共有consumer／専用typed gateが実5正例・469否定ケースを通り、20→attempted60→rollback20→read20、事前commit後のgroup-start30、失敗group内の70→55の複数attempt、復元直後read30と介在commit後read35、不成立readerとall/notの複数readを確認した。failed groupの寄与は破棄され、attempted appliedOperationIdsはcommit証拠にならず、後続reader成立後も製品resultはunsupportedのまま。通常／captureのinput・effects・effective contribution・typed resultは各代表で一致した。canonical生成元・元receipt／proof・参照から利用側まで同じgateへ届き、監査でexecutionやquantity／condition／damageを再実装しない。
+
+局所43/43、最終quality unit936/936・production155/155・E2E29/29（retry0）、audit3/3が成功。format／lint／型／runner／docs・integrity／master／buildも成功、warning・unexpected console0。全9固定入力のbytes／SHA-256がquality後も一致した。rollback diagnosticは38,506,253 bytes、SHA-256 `30a111c30b57df5547be79052970cc710c4f97a1fed8bb6f95f08d9f4c5a1d77`で局所版と最終quality版が一致し、assertion前保存とrunner宣言・receipt検証を閉じた。forwardの4正例／207否定とwithout-area14 source check／45否定もartifact byte単位で一致した。
+
+S4 artifact全体が先行forward版とbyte単位で一致し、月下／日輪・HP witness・battle-point live readを保持した。ただしS4のcommitted criticalStars receiptをrollback coverageとはみなさず、schema-legal独立母集団で復元契約を証明した。107 receipt／80 condition artifact／matrix・eligibility digestを照合して再利用し、8 shardは再生成しない。production counterは先行と一致し、candidate／damage request増加とratchet／timeout緩和はない。production時間83,454→84,262msは同じ4 worker条件での非制御観測である。
+
+対象内Blockingと必要な製品gateは残らない。以後は3文書の結果記録だけを更新し、文書検証・最終差分照合・範囲限定local commitで閉じる。command、失敗診断と回復、source責務、flow matrix、artifact path／bytes／SHA-256は既存[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを正本とする。60分checkpoint前に製品gateを完了し、新familyを開始していない。
+
+次sessionは、別途依頼された未達unitの限定計画から始める。今回のcriticalStars rollback／復元値／ordered recovery-readを再実装せず、解消済みforward／without-area／S4／architectureを再開しない。別mutation family、legacy cleanup、一般retry／UI recovery、TSK-09.1／09は今回の対象外で、今回をstale-mutation全体やTSK-08全体のclosureと呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、依頼範囲だけlocal commit、pushなし。
+
+記録更新後の書式、docs 6/6・integrity、diff whitespaceが成功した。最終quality後の変更はTask／evidence／evidence indexの結果記録だけで、source／test／設定／registry／protected evidenceは不変。この7ファイルの検証済み差分だけをlocal commitし、当該commitを今回の参照identityとする。pushなし。

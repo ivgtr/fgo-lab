@@ -49,7 +49,7 @@ export interface CriticalStarsForwardExpectation {
   excluded: CriticalStarsForwardProgram | null;
 }
 
-function inputQuantityLeaves(
+export function inputQuantityLeaves(
   condition: ConditionExpression,
 ): readonly Extract<ConditionExpression, { kind: 'inputQuantity' }>[] {
   if (condition.kind === 'inputQuantity') return [condition];
@@ -122,7 +122,7 @@ export function criticalStarsForwardSource(
 }
 
 type TransactionIdentity = OrderedExecutionGroupAuditEvent['transactionIdentity'];
-function transactionIdentity(operation: BattleOperation): TransactionIdentity {
+export function transactionIdentity(operation: BattleOperation): TransactionIdentity {
   const { source } = operation;
   return {
     origin: source.origin,
