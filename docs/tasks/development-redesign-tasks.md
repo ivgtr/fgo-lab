@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.80"
+document_version: "1.7.81"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3358,3 +3358,26 @@ Step0／1／3は成立済みを保持し、残る中心はStep2。次の1session
 TSK-08全体ではparity／unsupported／invalid／partial commit／inert control／stale mutationのratchet、typed reason／canonical identity／first diff・完全artifact到達性の未達を既存証拠と照合して閉じる。legacy aggregate auditor・旧loader／scan／candidate list／重複fixtureは現symbolの残存と責務を確認して整理する。最終統合入力で必要なinventory／parity／fail-closed／artifact／性能契約・qualityと記録を一致させてTSK-08完了を判断する。完了済みS4／without-area／scalar／stars／固定BP／容量／固定HPの再開や、identity疑義のない8 shard再生成は残作業に数えない。
 
 その後、TSK-09.1でDOC-P4〜P6のevidence／report・archive／tracking policy・静的参照整合を収束し、TSK-09で同一環境3回中央値・counter／output比較、canonical contributor workflow、残る旧runner／CI／ranking／compatibility path整理と最終受入を扱う。現在はTSK-08 in_progress、TSK-09.1／09 blockedを維持する。正本はevidenceの`remainingWorkSummary`と最新`handoffPreparation.nextSession`。
+
+
+### 限定maximumFixed committed forwardの局所成立・最終gate前checkpoint（2026-09-27）
+
+開始HEADは`276cb5e5f45db5998e68c8c73d7839fb0f651010`。参照commitからの差は先行4文書の残作業整理だけで、index／tracked／untrackedは空。計画確認後、元ownerのcapture限定modifierWritesから実operation／cell／instance／receipt slice、元native commit／reducer保持・prefix、同selected実HP read／continuous NP／input／resultを焦点の定まった共有consumerへ接続した。fixed writerのactual>0判定や母集団を流用せず、HP算術・identifier・failure分類・通常allocation・公開／serialized shapeを維持する。
+
+最終局所84件、関連局所250件（先行fixed HP104／64・architecture9を含む）が成功。canonical／write／commit／retained／facade／selected read／NP／projection／contribution／input／result／published母集団の否定を責務別に全保存し、宣言bytes／SHA／pathと保存後厳密lossless復元、canonical first differenceを照合した。拒否後に実行されないcommandを要求する監査側の不整合と、追加fieldの否定pathを解消した。5秒内に完全保存できない否定batchはケースを維持したまま分割し、timeout／heap／閾値の緩和・除外はない。通常／capture・calculator／ranking結果と、独立baseline/current graphで同parsed masterの実観測が一致。graph／loader／JIT差があるため速度改善は主張しない。
+
+差分レビューの対象内Blocking0。影響audit／README必須quality、保護diagnostic／counter／digest・全保存receipt照合、最終記録・文書検証・依頼内local commitが未達。直接symbol、件数、全診断receiptと有効証拠はevidenceの`boundedUnits[48]`を正本とする。Step0／1／3と先行Step2を保持し、TSK-08 in_progress、09.1／09 blocked。HP recovery／stale-mutation全体／TSK-08全体closureではなく、pushなし。
+
+2026-09-27 maximumFixed最終gate前更新: 局所84／84、507 source否定＋7 published母集団否定、84完全diagnostic、14,462 failure first differenceの保存後照合error0。影響auditは先行3件＋新consumer1件の4件成功。publishedはform-qualified宣言11／selected62／実changed50／実reader・continuous NP0を独立に記録し、reader／NPの架空接続は作らない。最初のauditは新診断保存・復元の追加により既存60秒taskを超え、必須artifact未保存で失敗。元selected controls／capture／authority snapshotと同parsed masterを保持して新gateの完全保存だけ専用60秒taskへ分け、全対象・assertionを維持して解消した。README quality・保護証拠／全receipt・最終記録／local commitが未達。
+
+2026-09-27 60分checkpoint更新: 新consumer局所84／影響audit4は成功。qualityは既存容量非commitのprior-capacity-fixed-commit commit-downstream完全診断batchが5秒を超え、2回とも1442／1443で失敗した（先行4923.59ms、今回5248.67／5034.83ms、変更なし単独3742.92ms）。単純retryでは閉じず、この1batchだけnative／保持とfabricated downstreamへ分割して全否定・assertion・完全保存を維持する。容量owner／consumer・意味論を変更せず、旧diagnosticとの厳密union一致、局所・最終qualityが残る。閾値・timeout・heap緩和、test除外はない。bounded unit完了とは呼ばない。
+
+容量診断batch分割の局所177件は成功。元42否定のunique unionを元順序へ戻し、各proof／typed reason／checkPath／first differenceとpositive／通常／rankingの記録が厳密一致。元native／reducer／容量意味論は不変。最終qualityへ戻る。
+
+### 限定maximumFixed committed forward完了（2026-09-27）
+
+元modifier／最大HP・現在HPの実変更→native commit／reducer・先行prefix保持→同selected実HP conditionのpermille read／projection・effective contribution、continuous current／maximum hpRatioLow NP／canonical damage input／calculated resultを共有consumer／gateで検証した。局所84件・84完全diagnostic、507 source否定＋7 published否定、影響audit4件が成功。published宣言11／selected62／changed50／reader・NP0は独立の母集団と境界であり、架空reader／NPを補わない。
+
+README必須qualityはunit1444／production155／E2E29（retry0）、warning／unexpected console0で成功。保護diagnostic・counter／matrix／eligibility digestと全新receipt、凍結sourceを照合しerror0。既存容量batch分割は元42否定とpositive proofの厳密一致を保持し、意味論変更はない。最終差分の対象内Blocking0。詳細な宣言path／bytes／SHA-256、失敗履歴、性能比較条件・保護差分はevidence `boundedUnits[48]`を正本とする。依頼範囲local commitの製品SHAを同記録へ残す。Step0／1／3と先行Step2を保持し、TSK-08 in_progress、09.1／09 blocked、HP recovery／stale-mutation全体／TSK-08全体closureではない。pushなし。
+
+限定maximumFixed製品local commit: `3d0f7870265a5f75e9397fd7a70c44859dd03da5`。凍結7入力の宣言checksum／Git blob／currentが一致しerror0。完了記録は本Taskとevidence `boundedUnits[48]`へ集約し、pushなし。
