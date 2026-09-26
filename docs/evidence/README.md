@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.92"
+document_version: "1.4.93"
 status: "Active"
 updated_at: "2026-09-27"
 ---
@@ -57,7 +57,7 @@ updated_at: "2026-09-27"
 | [tsk-07-outcome-closure](tsk-07-outcome-closure.json) | Complete | machine-readable: five typed outcome presentation、numeric-row boundary、exact AttackProfile normal-calculator recovery、typed invalid reset/reload、unsupported／policy-unavailable non-recovery、focused consumer checks | TSK-07 | `3ec65cd` baseline／no new commit |
 | [tsk-07-responsive-accessibility-closure](tsk-07-responsive-accessibility-closure.json) | Complete | machine-readable: desktop／390px／320px responsive containment、accessible names／roles／keyboard／focus、five-outcome recovery presentation、stale/cache identity preservation、integrated quality evidence | TSK-07 | `b9c323a` baseline／no new commit |
 | [tsk-08-parity-diagnostics](tsk-08-parity-diagnostics.json) | Active | machine-readable: typed calculator／ranking／portable parity failure reason、canonical identity／first diff、bounded summary、declared artifact checksum reachability | TSK-08 | `34828ea` baseline／no new commit |
-| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: TSK-08 bounded-unit ratchetsとStep再確認、canonical identity／diagnostic宣言／checksum／再利用条件。完了済みS4・without-area・scalar／stars・fixed BP／容量forwardと非commit隔離を保持。最新committed固定HP forwardは6 changed／7境界／1606否定／104完全diagnostic、quality1295/155/29 retry0・audit3成功。 | TSK-08 | 製品`6d571bd`／完了記録`da6c7cb`。次sessionは同固定HP changed attemptの元native非commit隔離→同scenario実typed拒否に限定し、現コードからの計画・確認後に実装。読取1777receipt／12製品blob／24関連入力error0は既存証拠整合で、新unit成功証拠ではない。詳細は`handoffPreparation.nextSession`。TSK-08 in_progress、09.1／09 blocked。 |
+| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: TSK-08 bounded-unit ratchets、Step再確認、canonical identity／完全diagnostic宣言／checksum／再利用条件。最新は固定HP changed attemptの元native非commit隔離→同scenario実typed拒否・後段不生成。先行forward／非commit各unitを保持。 | TSK-08 | 製品`e95c971`。7 changed／7境界／891否定／64完全diagnostic、quality1359/155/29 retry0・audit3成功、warning／console0。TSK-08 in_progress、09.1／09 blocked。詳細・次操作は最新bounded unitと`handoffPreparation`。 |
 | [tsk-08-shared-audit-model](tsk-08-shared-audit-model.json) | Active | machine-readable: TSK-06.5 source reference、data-pipeline／calculation-application boundary model、full matrix first-difference gate、artifact reachability | TSK-08 | `5d82e38` baseline／no new commit |
 | [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／historical closure had no commit; current baseline `197ff30` |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Complete | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 final closure | `49efe62`／TSK-06.48 complete |
@@ -80,4 +80,6 @@ TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ig
 - [Documentation inventory](documentation-inventory.md): TSK-00.1開始時のtracked／ignored／reference baseline
 - [Ignored documentation disposition](ignored-documentation-disposition.md): TSK-00.3の37件分類、移動前hash、quarantine検証
 
-TSK-08の限定committed fixed HP forwardは元保持HP→実条件read／continuous hpRatioLow NP／resultの共有consumer・gateまで完了。6 changed代表／7境界／1606否定／104完全診断、quality1295／155／29（retry0）、audit3、warning／console0。製品commit `6d571bdd9a43e34566e23fcde35aa5fbd386faca` と詳細・receipt・次操作は[既存parity evidence](tsk-08-parity-ratchet.json)最新bounded unitを参照。TSK-08はin_progress、09.1／09はblocked、HP recovery／全体closureは対象外。
+TSK-08の限定committed fixed HP forwardは元保持HP→実条件read／continuous hpRatioLow NP／resultの共有consumer・gateまで完了。6 changed代表／7境界／1606否定／104完全診断、quality1295／155／29（retry0）、audit3、warning／console0。製品commit `6d571bdd9a43e34566e23fcde35aa5fbd386faca` と詳細・receiptは[既存parity evidence](tsk-08-parity-ratchet.json)の先行boundedUnits[46]を参照。TSK-08はin_progress、09.1／09はblocked、HP recovery／全体closureは対象外。
+
+固定HP changed attempt→元native非commit→action-start HP／先行committed prefix保持→元reducer／同selected scenario実prepared・application typed拒否と後段不生成の限定unitは完了。製品 `e95c971a39e05ef7f7bbcbb8871b9296c80ceeed`。7 changed・7境界／891否定／64完全diagnostic、quality1359／155／29 retry0、audit3、warning／console0。全宣言receiptと保護397件の差分責務・counter／digestを照合しerror0。詳細は[既存parity evidence](tsk-08-parity-ratchet.json)最新bounded unit。TSK-08 in_progress、09.1／09 blockedを維持し、HP recovery／stale-mutation全体／TSK-08全体のclosureではない。

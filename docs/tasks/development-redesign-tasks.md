@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.77"
+document_version: "1.7.78"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3313,3 +3313,26 @@ Step0は基線／契約成立、Step1はV41 request schemaVersion／V40保存・
 次作業者の最初の成果は、現コードから判断した段階的実装計画とする。確認前は読取だけで、製品／test／文書編集、source test／producer／audit／quality、stage／commitを行わない。計画確認後は同じ限定unitを通常の技術判断で継続し、実装・局所検証・差分レビュー・必要な最終gate・既存Task／evidence更新・依頼範囲だけのlocal commitまで進める。push禁止。未規定の製品意味論／実質的契約衝突だけ影響作業を止め、symbol・差分・改訂計画を示す。60分checkpoint／90分新family禁止を維持する。
 
 資料整理の文書gateは書式check、`test:docs`（6件成功／参照整合成功）、`git diff --check`が成功。変更は既存Task／evidence／indexの4文書に限定し、完了済み`boundedUnits`とstatus不変を照合した。読取diagnosticはignored artifactとして保持し、文書だけlocal commitする。
+
+
+Current bounded-unit checkpoint（fixed HP changed attempt元native非commit隔離、計画承認後）:
+
+開始HEAD `3a1a6e89d0a01b83901dc2831db9676faf673bbf`、index／tracked／untrackedは空。元HP write／receipt／source-end before・after・到達step／attempt終了full stateから、native非commit・元action-start HPと先行committed prefix保持、元reducer拒否と同selected prepared／application／直接typed result拒否・後段不生成へ共有consumer／gateを接続した。source-local stochastic failureでcurrentが戻る代表を含め、最後のwrite.afterをattempt終了値に置換しない。HP算術／failure分類、通常allocation・公開／serialized shape、既存forward／production executable要求を保持する。
+
+7 changed代表・7明示境界、880独立source mutation＋8母集団／参照否定、63宣言完全diagnosticの最終局所63/63、型／対象lint／差分レビューが成功。既存HP forward104・固定BP5・architecture9も関係局所で成功したが、新consumerのcommit marker比較2失敗を含む同run全体は成功としない。修正後の最終局所を新証拠とする。diagnosticはassertion前保存・保存後厳密lossless復元・runner宣言／bytes／SHA-256を確認。通常／capture・calculator／ranking／直接result parityとwriter再実行不在を確認した。
+
+差分レビューの対象内Blocking0。同parsed masterのgain／先行commit後非commit／committed controlで独立baseline・current graphの観測値が一致。小さいgain中央値の通常+0.026463ms／capture+0.010138msを含め、graph／loader／JIT差があるため改善や原因帰属を主張しない。timeout／threshold／否定／test除外による緩和なし。詳細・失敗履歴・scope・固定8入力・artifactは既存evidence最新bounded unitを正本とする。
+
+60分境界前checkpoint。最終影響audit／README必須quality、保護artifact／counter／digestと全宣言receipt照合、最終記録／文書検証・範囲限定local commitが未達。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。HP recovery／stale-mutation全体／TSK-08全体のclosureではなく、pushなし。
+
+2026-09-27 HP非commit限定unitの最終gate前checkpoint: 局所64/64、changed7・境界7、883 source改変＋8参照／母集団否定（計891）、64完全diagnostic。元ownerのsource-end／attempt終了観測と同execution拒否の接続を確認し、製品sourceを固定した。影響audit・README quality・保存receipt／counter照合・最終記録とlocal commitが未達。TSK-08 in_progress、TSK-09.1／09 blockedを維持し、新familyへ広げない。
+
+### 限定fixed HP changed attempt元native非commit隔離の完了（2026-09-27）
+
+製品commit `e95c971a39e05ef7f7bbcbb8871b9296c80ceeed`。元ownerへcapture時のsource-end before／after・stepとattempt終了full stateだけを追加し、実HP changed write→source内resetを含む元native非commit→元action-start HPと先行committed prefix保持→元reducer拒否→同selected scenario／executionの実prepared・application typed拒否と後段不生成を、焦点の定まった共有consumer／gateへ接続した。元receiptにoperationIndexを追加せず、元source／operationIndexとreceipt sliceを対応させる。監査によるHP算術・writer再実行、failure分類・通常allocation・公開／serialized shapeの変更なし。published期待母集団は成功filter前に収集し、既存executable要求／HP witnessを保持する。committed境界は独立した既存HP forward gateが所有する証拠を維持し、今回の非commit成功証拠に混同しない。
+
+7 changed代表・7境界、883独立source mutation＋8参照／母集団否定（計891）、64宣言完全diagnosticが成功。全診断をassertion前保存し、保存後厳密lossless復元、typed reason／checkPath／canonical first difference、宣言path／bytes／SHA-256を確認。局所64、影響audit3、README必須quality unit1359／production155／E2E29（retry0）が成功し、warning／unexpected console0。対象内Blocking0。
+
+先行1777receiptは1772一致・依頼内5source/test変更を新checksumとして区別。510新宣言＋継承1395宣言、2373 unique保存receiptの照合error0。保護397件は383 byte一致・1計測時間だけ・13不完全HP capture表示へのsourceEnds／attempted追加だけで、先行1606否定／104診断と既存拒否証拠が一致。production counter／digestと改訂matrix／eligibilityを保持し、identity疑義がないため8 shardは再生成しない。最終8製品入力はcommit Git blobと一致する。heap重複保持・既存60秒内の保存未完了runを成功とせず記録し、committed境界の不要なforward graph複製を除いて解消した。制限／否定／test除外の緩和なし。
+
+Step0／1／3は成立済みを維持し、Step2へこの限定非commit隔離の成立を追加する。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。HP recovery／成功再送・retry／UI、他HP family／writer／recipient、別family／legacy、stale-mutation全体／TSK-08全体のclosureは対象外。次のbounded unitは未選択。60分前checkpointを保持し、新semantic familyを始めず同unitの証拠・記録・local commitへ収束した。pushなし。詳細・性能の観測限界・全artifact receipt・失敗履歴・次操作は既存evidence最新bounded unit／finalReconciliationを正本とする。
