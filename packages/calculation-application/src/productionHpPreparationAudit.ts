@@ -63,7 +63,7 @@ type HpAction = {
   skillId: string | null;
   effects: MasterEffect[];
 };
-interface HpCanonical {
+export interface HpCanonical {
   scenario: ResolvedScenario;
   masterVersion: string;
   servantId: string;

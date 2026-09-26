@@ -972,11 +972,11 @@ describe('committed preparation domain battle point shared audit', () => {
             },
           } as unknown as Source;
           negative.mutate(changed);
+          const changedProof: unknown = { expected: [changed.program], observations: [changed] };
           const failed: ReturnType<typeof auditBattlePointPreparationObservations> =
-            auditBattlePointPreparationObservations({
-              expected: [changed.program],
-              observations: [changed],
-            });
+            auditBattlePointPreparationObservations(
+              changedProof as Parameters<typeof auditBattlePointPreparationObservations>[0],
+            );
           negatives.push({
             name: `${spec.name}:${negative.name}`,
             group: negative.group,

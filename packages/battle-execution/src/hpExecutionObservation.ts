@@ -29,7 +29,14 @@ export interface PreparationHpAction {
     after: HpState;
     receipts: HpState['receipts'];
   }[];
+  sourceEnds: {
+    source: SourceEffect;
+    step: number;
+    before: PreNoblePhantasmState;
+    after: PreNoblePhantasmState;
+  }[];
   native?: OcActionResult;
+  attempted?: PreNoblePhantasmState;
   returned?: PreNoblePhantasmState;
 }
 const scopes = new WeakMap<PreparationExecutionContext, PreparationHpAction[]>();

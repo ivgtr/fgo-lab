@@ -154,7 +154,13 @@ export function executePreparationOc(args: {
   if (attempt) scope!.push(attempt);
   const hpScope = preparationHpScope(args.context);
   const hpAction: PreparationHpAction | undefined = hpScope
-    ? { actionId: args.actionId, start: args.state, sources: args.sources, writes: [] }
+    ? {
+        actionId: args.actionId,
+        start: args.state,
+        sources: args.sources,
+        writes: [],
+        sourceEnds: [],
+      }
     : undefined;
   if (hpAction) hpScope!.push(hpAction);
   let current = args.state;
@@ -1152,11 +1158,14 @@ export function executePreparationOc(args: {
         });
       return { kind: 'skip', outcome: 'notApplicable' };
     };
+    const sourceEndStep = steps.length;
     steps.push(
-      battlePointCapture
+      battlePointCapture || hpAction
         ? (state, outcomes) => {
+            const before = current;
             const step = completeSource(state, outcomes);
-            battlePointCapture.push({
+            hpAction?.sourceEnds.push({ source, step: sourceEndStep, before, after: current });
+            battlePointCapture?.push({
               kind: 'sourceEnd',
               actionId: args.actionId,
               source,
@@ -1296,6 +1305,7 @@ export function executePreparationOc(args: {
   }
   if (hpAction) {
     hpAction.native = result;
+    hpAction.attempted = current;
     hpAction.returned = result.status === 'committed' ? current : args.state;
   }
   if (attempt) {
