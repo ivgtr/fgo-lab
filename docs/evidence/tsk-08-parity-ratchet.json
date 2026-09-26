@@ -228,9 +228,10 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "Committed attacker-skill sourceSelf/direct/fixed HP preparation writer -> same selected real HP condition reader and hpRatioLow NP damage shared consumer/gate is the next bounded unit; existing HP witness and action receipts alone do not close this chain.",
-    "HP noncommit/recovery and modifier/percent/transfer/alternate actor paths, domain recovery, other mutation families and later legacy cleanup remain separately scoped. Rejected preparation has no later ordinary same-scenario recovery reader.",
-    "TSK-08 remains in_progress; TSK-09.1/09 blocked. No whole-task or stale-mutation closure claim."
+    "Next selected unit is committed attacker-skill sourceSelf/direct active maximumFixed HP modifier -> original retained maximum/current/modifiers -> same selected real HP condition/continuous hpRatioLow NP/input/result shared consumer/gate. Plan and user confirmation precede implementation.",
+    "Other HP modifier/lifecycle/percent/transfer/recipient/actor/expression and domain recovery or other mutation paths require current canonical inventory and owner-to-consumer coverage reconciliation, then separately bounded units for actual gaps. Excluded paths are not automatically missing product semantics; distinguish already-implemented owner behavior, missing audit connection, declared boundary, and out-of-product scope.",
+    "Whole TSK-08 parity/unsupported/invalid/partial-commit/inert-control/stale-mutation and typed diagnostic/artifact closure remains unclaimed; reuse completed units and matrix evidence where identities/governing semantics remain valid. Legacy aggregate auditor/old loader/scan/candidate-list/duplicate fixture cleanup must be reconciled with current actual symbols before removal.",
+    "TSK-08 remains in_progress;TSK-09.1/09 blocked. Step0/1/3 established; Step2 completed fixed HP forward/noncommit and prior units are retained, not reopened."
   ],
   "statusInvariants": {
     "TSK-06.5": "done",
@@ -241,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Attacker-skill sourceSelf direct fixed HP changed attempt/native noncommit isolation/shared typed-refusal audit",
+  "nextBoundedUnit": "Committed attacker-skill sourceSelf direct active maximumFixed HP modifier/live-read/NP shared audit",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -14906,7 +14907,7 @@
       }
     }
   ],
-  "currentBoundedUnit": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure",
+  "currentBoundedUnit": "Attacker-skill sourceSelf direct fixed HP changed attempt/native noncommit isolation/shared typed-refusal audit",
   "handoffPreparation": {
     "baselineHead": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
     "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
@@ -16062,5 +16063,48 @@
       "implementationCommit": "5ce926a8498139534b82e0f5b570260b2025cf09",
       "currentProductCommit": "5ce926a8498139534b82e0f5b570260b2025cf09"
     }
+  },
+  "remainingWorkSummary": {
+    "asOfPreparationCommit": "9cf15d0c85160646ce29593feafb0aeadbf4c7ff",
+    "establishedSteps": [
+      0,
+      1,
+      3
+    ],
+    "openStep": 2,
+    "nextSession": "handoffPreparation.nextSession;maximumFixed committed forward only",
+    "laterTsk08": [
+      {
+        "work": "Mutation family and path coverage reconciliation",
+        "detail": "Reconcile canonical declared/selected/reached/committed/rejected/reader/NP populations against completed boundedUnits. Separately scope actual gaps for other HP modifier actions and lifecycle/noncommit,percent/transfer/recipient/actor/value-expression paths,domain recovery and other mutations. No new supported semantics or synthetic same-scenario recovery implied; counts/session order not yet established."
+      },
+      {
+        "work": "Whole ratchet and diagnostic/artifact closure",
+        "detail": "Reconcile parity/unsupported/invalid/partial commit/inert control/stale mutation and typed reason/canonical identity/first diff/full artifact reachability. Completed S4/without-area/scalar/stars/BP/capacity/fixed HP and established matrix/eligibility are reusable evidence, not pending redo."
+      },
+      {
+        "work": "TSK-08 legacy audit cleanup",
+        "detail": "Confirm surviving legacy aggregate auditor quantityConditions assumptions,old loader/scan/candidate list/duplicate fixtures by current definitions/references; remove only reconciled obsolete paths,retain unique semantic coverage."
+      },
+      {
+        "work": "TSK-08 final acceptance",
+        "detail": "Close required full inventory/calculator-ranking/fail-closed/artifact/performance contract checks with final integrated inputs and records. Existing quality success is scoped unit evidence; do not rerun8 shards absent identity doubt or claim whole closure prematurely."
+      }
+    ],
+    "dependentTasks": [
+      {
+        "task": "TSK-09.1",
+        "status": "blocked",
+        "dependsOn": "TSK-08",
+        "work": "DOC-P4 evidence/report convergence;DOC-P5 superseded/complete/ignored/archive tracking policy;DOC-P6 reference/registry/frontmatter/ADR/Tasks static checks. No material ignored-data deletion without required approval."
+      },
+      {
+        "task": "TSK-09",
+        "status": "blocked",
+        "dependsOn": "TSK-09.1",
+        "work": "Comparable3-run performance medians and counters/output;canonical contributor workflow;remaining old runner/CI/ranking/compatibility path cleanup;final UI/production/performance/restart acceptance."
+      }
+    ],
+    "qualification": "This is a residual audit/closure inventory, not a decision to implement every excluded semantic path or an estimate of sessions. Next implementation authorization remains limited to nextSession after plan approval."
   }
 }

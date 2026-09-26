@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.79"
+document_version: "1.7.80"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3350,3 +3350,11 @@ Step0／1／3は成立済みを維持し、Step2へこの限定非commit隔離�
 最初の成果は現コードからの段階的実装計画。要件は確定として扱い、既存consumer／capture／module分割や過去案を解法に固定しない。計画提示後、利用者確認まで製品／test／文書編集・新source test／producer／audit／quality・stage／commitを行わず、コード／既存artifact／canonical JSONの読取・checksum照合は可。新実行診断が不可欠なら最小診断・得る判断・停止境界を先に示して確認を待ち、診断だけの承認から実装へ進まない。確認後は同unitを通常判断で継続し、実装・局所検証・差分レビュー・必要な最終audit／README quality・既存Task／evidence更新・依頼内local commitまで進める。未規定意味論／実質的契約衝突時だけ影響作業を停止して根拠symbol・差分・改訂計画を示す。60分checkpoint／90分新family禁止、pushなし。
 
 今回の整理は既存4文書だけ。書式check、`test:docs`6件／参照整合、status／boundedUnits不変・直接symbol・差分checkが成功した。新製品source／test／producer／audit／qualityは実行せず、文書だけlocal commitして次担当者の参照identityとする。
+
+### 残作業の現在整理（2026-09-27）
+
+Step0／1／3は成立済みを保持し、残る中心はStep2。次の1sessionは上記maximumFixed committed forwardだけで、計画提示・確認後に進める。その後はcanonical inventoryと既存bounded unitの対応から、他HP modifier／lifecycle・非commit／percent／transfer／recipient・actor・value-expression、domain recovery等の実際の監査接続不足と境界を確認し、一つずつ限定する。対象外一覧を一括の製品意味論追加TODOへ読み替えず、元owner実装済み／監査未接続／宣言境界／製品対象外を区別する。後続unitの数・順序は未確定。
+
+TSK-08全体ではparity／unsupported／invalid／partial commit／inert control／stale mutationのratchet、typed reason／canonical identity／first diff・完全artifact到達性の未達を既存証拠と照合して閉じる。legacy aggregate auditor・旧loader／scan／candidate list／重複fixtureは現symbolの残存と責務を確認して整理する。最終統合入力で必要なinventory／parity／fail-closed／artifact／性能契約・qualityと記録を一致させてTSK-08完了を判断する。完了済みS4／without-area／scalar／stars／固定BP／容量／固定HPの再開や、identity疑義のない8 shard再生成は残作業に数えない。
+
+その後、TSK-09.1でDOC-P4〜P6のevidence／report・archive／tracking policy・静的参照整合を収束し、TSK-09で同一環境3回中央値・counter／output比較、canonical contributor workflow、残る旧runner／CI／ranking／compatibility path整理と最終受入を扱う。現在はTSK-08 in_progress、TSK-09.1／09 blockedを維持する。正本はevidenceの`remainingWorkSummary`と最新`handoffPreparation.nextSession`。
