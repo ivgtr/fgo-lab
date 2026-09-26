@@ -1,3 +1,4 @@
+import { observeHpQuantity } from './hpExecutionObservation';
 import { liveInputQuantity } from './stackQuantities';
 import { markerTraitRead } from './buffInstances';
 import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
@@ -247,6 +248,15 @@ export function evaluateCondition(
                 : condition.comparison === 'atLeast'
                   ? actual >= condition.value
                   : actual > condition.value;
+      if (condition.quantity === 'attackerHpPermille')
+        observeHpQuantity(
+          state,
+          state.resourceActor ?? 'attacker',
+          actual,
+          condition.comparison,
+          condition.value,
+          evaluated,
+        );
       if (condition.quantity === 'battlePointPhase' && condition.subjectId !== undefined) {
         const value = readBattlePoint(
           state.battlePoints,

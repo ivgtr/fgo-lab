@@ -1,3 +1,4 @@
+import type { HpNpEvaluation } from './hpExecutionObservation';
 import { hpRatio } from './hpResource';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { BattleOperation, EffectDecision, ExecutableBattleState } from './contracts';
@@ -17,6 +18,7 @@ export function applyNoblePhantasmDamage(
   decisions: ReadonlyMap<string, EffectDecision>,
   contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
   observe?: (consumption: ScalarNpDamageConsumption) => void,
+  observeHp?: (evaluation: HpNpEvaluation) => void,
 ): DamageResolutionInput {
   const specialCondition = evaluateCondition(operation.specialAttackCondition, state);
   const specialDecision = operation.specialAttackDecisionKey
@@ -68,5 +70,6 @@ export function applyNoblePhantasmDamage(
       includeSpecialContribution: specialContributionEnabled,
     },
     observe,
+    observeHp,
   );
 }

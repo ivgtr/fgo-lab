@@ -10,7 +10,7 @@ import type {
 import { createOperationProjection, resolveOperationProjectionEvaluation } from './projection';
 import { cloneBattleState } from './state';
 
-function conditionResult(value: boolean | null): OperationResult['condition'] {
+export function operationConditionResult(value: boolean | null): OperationResult['condition'] {
   if (value === null) return 'unresolved';
   return value ? 'satisfied' : 'unsatisfied';
 }
@@ -52,7 +52,7 @@ export function createOperationResult({
   return {
     operation,
     outcome,
-    condition: conditionResult(condition),
+    condition: operationConditionResult(condition),
     state: cloneBattleState(state),
     projection: createOperationProjection(
       operation,

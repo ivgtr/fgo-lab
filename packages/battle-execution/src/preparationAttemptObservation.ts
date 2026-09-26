@@ -1,3 +1,6 @@
+import { beginPreparationHpCapture, finishPreparationHpCapture } from './hpExecutionObservation';
+export { preparationHpActionsFor, hpCandidateObservationFor } from './hpExecutionObservation';
+export type { PreparationHpAction, HpCandidateObservation } from './hpExecutionObservation';
 import type { SourceEffect } from './sourceCollection';
 import type { BattlePointState } from './battlePointResource';
 import type { OcActionResult, OcActionStep } from './ocState';
@@ -30,6 +33,7 @@ export interface PreparationOcAttempt {
 const scopes = new WeakMap<PreparationExecutionContext, PreparationOcAttempt[]>();
 const transitions = new WeakMap<PreparationTransitionResult, readonly PreparationOcAttempt[]>();
 export function beginPreparationAttemptCapture(context: PreparationExecutionContext): void {
+  beginPreparationHpCapture(context);
   scopes.set(context, []);
   battlePointScopes.set(context, []);
 }
@@ -40,6 +44,7 @@ export function finishPreparationAttemptCapture(
   context: PreparationExecutionContext,
   result: PreparationTransitionResult,
 ): void {
+  finishPreparationHpCapture(context, result);
   const attempts = scopes.get(context);
   if (attempts) transitions.set(result, attempts);
   scopes.delete(context);

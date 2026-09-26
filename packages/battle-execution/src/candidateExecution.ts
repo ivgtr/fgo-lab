@@ -1,3 +1,8 @@
+import {
+  applyObservedNpDamage,
+  evaluateObservedCondition,
+  beginHpCandidateCapture,
+} from './hpExecutionObservation';
 import type { ExecutionIssue, OperationResult } from './contracts';
 import { markerOperationDisposition, applyOrderedMarkerMutation } from './markerExecution';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
@@ -26,7 +31,6 @@ import {
   applyRuntimeNoblePhantasmVariantSelection,
   needsMutationValidation,
 } from './variantSelection';
-import { applyNoblePhantasmDamage } from './npDamageExecution';
 import {
   includedByPolicy,
   modifierValue,
@@ -34,13 +38,10 @@ import {
   userConditionMet,
   applyOrderedActorFormTransition,
   effectOperationGroups,
-  evaluateConditionAgainstKnownFacts,
   resolveOperationDisposition,
 } from './candidateOperationContext';
 import { createOperationResult } from './operationResult';
 import {
-  observeScalarNp,
-  appendConditionReadAudit,
   createMutableCandidateStateAudit,
   mutationAuditAddress,
   auditValuesEqual,
@@ -138,6 +139,7 @@ function executeOrderedScenarioCandidateInternal(
   const results: OperationResult[] = [];
   let input = candidateInput;
   recordPreGroupContextResolution(audit, candidate);
+  const hpCapture = audit && beginHpCandidateCapture(audit, candidate.state);
   const operationGroups = effectOperationGroups(operations);
   for (const [groupIndex, operationGroup] of operationGroups.entries()) {
     const initialGroupState = cloneBattleState(state);
@@ -156,19 +158,12 @@ function executeOrderedScenarioCandidateInternal(
         contributionPolicy,
         contributionIncluded,
       );
-      const condition = evaluateConditionAgainstKnownFacts(
+      const condition = evaluateObservedCondition(
         operation,
         state,
-        audit
-          ? (read) =>
-              appendConditionReadAudit(
-                audit,
-                read,
-                operationSequence,
-                groupIndex,
-                operation.operationId,
-              )
-          : undefined,
+        audit,
+        operationSequence,
+        groupIndex,
       );
       const resolvedModifierValue = modifierValue(operation, state);
       const decisionConditionSatisfied = userConditionMet(operation, condition, choice, state);
@@ -289,13 +284,16 @@ function executeOrderedScenarioCandidateInternal(
           if (contributionIncluded) candidateState.ignoreDamageCut = true;
         } else if (operation.kind === 'executeNpDamage') {
           if (contributionIncluded)
-            input = applyNoblePhantasmDamage(
+            input = applyObservedNpDamage(
               input,
               operation,
               state,
               decisions,
               contributionPolicy,
-              audit && observeScalarNp(audit, operation, operationSequence, groupIndex),
+              audit,
+              hpCapture,
+              operationSequence,
+              groupIndex,
             );
         }
         const mutationValidation = needsMutationValidation(operation)

@@ -1,3 +1,4 @@
+import type { HpNpEvaluation } from './hpExecutionObservation';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { targetPredicateKey } from './targetPredicate';
@@ -87,10 +88,22 @@ export function evaluateNpDamageOperation(
   return evaluateNpDamageOperationInternal(damage, context);
 }
 
+function hpNpFailure(
+  observe: ((evaluation: Omit<HpNpEvaluation, 'context' | 'input'>) => void) | undefined,
+  ratio: number | null,
+  missingEvidence: string,
+  disposition: 'missing' | 'invalid',
+): NpDamageOperationResult {
+  const evaluation = { status: 'unsupported' as const, missingEvidence };
+  observe?.({ ratio, disposition, evaluation });
+  return evaluation;
+}
+
 function evaluateNpDamageOperationInternal(
   damage: NpDamageSpec,
   context: NpDamageOperationContext,
   observe?: (evaluation: ScalarEvaluation) => void,
+  observeHp?: (evaluation: Omit<HpNpEvaluation, 'context' | 'input'>) => void,
 ): NpDamageOperationResult {
   const parameters = damage.parametersByOvercharge[context.overcharge - 1];
   if (!parameters) return { status: 'unsupported', missingEvidence: 'invalid_overcharge' };
@@ -115,6 +128,8 @@ function evaluateNpDamageOperationInternal(
     return { status: 'unsupported', missingEvidence: damage.quantity.reason };
   if (context.includeSpecialContribution === false) {
     const result = resolved(baseMultipliers, one());
+    if (damage.kind === 'hpRatioLow')
+      observeHp?.({ ratio: context.attackerHpRatio, disposition: 'excluded', evaluation: result });
     if (observe && damage.kind === 'battlePointPhase')
       observe({
         stateAddress: 'quantity:battlePointPhase',
@@ -130,17 +145,19 @@ function evaluateNpDamageOperationInternal(
   if (damage.kind === 'hpRatioLow') {
     const ratio = context.attackerHpRatio;
     if (ratio === null)
-      return { status: 'unsupported', missingEvidence: 'missing_attacker_hp_ratio' };
+      return hpNpFailure(observeHp, ratio, 'missing_attacker_hp_ratio', 'missing');
     if (!Number.isFinite(ratio) || ratio < 0 || ratio > 1)
-      return { status: 'unsupported', missingEvidence: 'invalid_attacker_hp_ratio' };
+      return hpNpFailure(observeHp, ratio, 'invalid_attacker_hp_ratio', 'invalid');
     if (parameters.some((parameter) => parameter.targetId == null))
-      return { status: 'unsupported', missingEvidence: 'missing_hp_ratio_coefficient' };
-    return resolved(
+      return hpNpFailure(observeHp, ratio, 'missing_hp_ratio_coefficient', 'missing');
+    const evaluation = resolved(
       parameters.map(
         (parameter) =>
           (parameter.valuePermille + Math.trunc((1 - ratio) * parameter.targetId!)) / 10,
       ) as [number, number, number, number, number],
     );
+    observeHp?.({ ratio, disposition: 'consumed', evaluation });
+    return evaluation;
   }
   if (damage.kind === 'battlePointPhase') {
     if (context.battlePointPhase === null) {
@@ -283,9 +300,10 @@ export function applyNpDamageOperationWithAudit(
   damage: NpDamageSpec,
   context: NpDamageOperationContext,
   observe?: ScalarObserver,
+  observeHp?: (evaluation: HpNpEvaluation) => void,
 ): DamageResolutionInput {
-  return observe
-    ? captureNpDamageOperation(input, damage, context, observe)
+  return observe || observeHp
+    ? captureNpDamageOperation(input, damage, context, observe, observeHp)
     : applyNpDamageOperation(input, damage, context);
 }
 
@@ -293,14 +311,26 @@ function captureNpDamageOperation(
   input: DamageResolutionInput,
   damage: NpDamageSpec,
   context: NpDamageOperationContext,
-  observe: ScalarObserver,
+  observe: ScalarObserver | undefined,
+  observeHp?: (evaluation: HpNpEvaluation) => void,
 ): DamageResolutionInput {
   let scalar: ScalarEvaluation | undefined;
-  const result = evaluateNpDamageOperationInternal(damage, context, (value) => {
-    scalar = value;
-  });
+  let hp: Omit<HpNpEvaluation, 'context' | 'input'> | undefined;
+  const result = evaluateNpDamageOperationInternal(
+    damage,
+    context,
+    (value) => {
+      scalar = value;
+    },
+    observeHp
+      ? (value) => {
+          hp = value;
+        }
+      : undefined,
+  );
   const output = npDamageInput(input, damage, result);
-  if (scalar) observe({ ...scalar, input: output });
+  if (scalar) observe?.({ ...scalar, input: output });
+  if (hp) observeHp?.({ ...hp, context, input: output });
   return output;
 }
 

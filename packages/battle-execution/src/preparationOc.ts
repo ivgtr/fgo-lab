@@ -1,3 +1,4 @@
+import { preparationHpScope, type PreparationHpAction } from './hpExecutionObservation';
 import {
   preparationAttemptScope,
   preparationBattlePointScope,
@@ -151,6 +152,11 @@ export function executePreparationOc(args: {
       }
     : undefined;
   if (attempt) scope!.push(attempt);
+  const hpScope = preparationHpScope(args.context);
+  const hpAction: PreparationHpAction | undefined = hpScope
+    ? { actionId: args.actionId, start: args.state, sources: args.sources, writes: [] }
+    : undefined;
+  if (hpAction) hpScope!.push(hpAction);
   let current = args.state;
   let markerReaders: ReadonlySet<string> | undefined;
   const markerIsUnobserved = (
@@ -723,6 +729,7 @@ export function executePreparationOc(args: {
           const receipt = args.npUse
             ? ocState.receipts.find((receipt) => receipt.actionId === args.actionId)
             : null;
+          const hpBefore = current.hp;
           const result = executeHpOperation({
             state: current.hp,
             operation,
@@ -826,6 +833,22 @@ export function executePreparationOc(args: {
             }
             return { kind: 'reject', status: result.status, reason: 'hpMutation' };
           }
+          if (
+            hpAction &&
+            source.origin === 'attacker' &&
+            operation.kind === 'resourceMutation' &&
+            operation.amount.kind === 'fixed' &&
+            operation.unit === 'fixed' &&
+            operation.recipient === 'sourceSelf' &&
+            (operation.selection === undefined || operation.selection === 'direct')
+          )
+            hpAction.writes.push({
+              source,
+              operationIndex,
+              before: hpBefore,
+              after: result.state,
+              receipts: result.state.receipts.slice(hpBefore.receipts.length),
+            });
           current = { ...current, hp: result.state };
           return { kind: 'skip', outcome: 'notApplicable' };
         });
@@ -1270,6 +1293,10 @@ export function executePreparationOc(args: {
       if (result.state.executedSources.has(key)) sourceOutcomes.set(key, outcome);
     }
     result = { ...result, state: { ...result.state, sourceOutcomes } };
+  }
+  if (hpAction) {
+    hpAction.native = result;
+    hpAction.returned = result.status === 'committed' ? current : args.state;
   }
   if (attempt) {
     attempt.native = result;

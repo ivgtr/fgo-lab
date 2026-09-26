@@ -1,3 +1,14 @@
+import { isDeepStrictEqual } from 'node:util';
+import {
+  hpPreparationSelection,
+  hpPreparationCanonical,
+  hpPreparationProgram,
+  hpPreparationSource,
+  auditPublishedHpPreparation,
+  type HpPreparationSelection,
+  type HpPreparationProgram,
+  type HpPreparationSource,
+} from './productionHpPreparationAudit';
 import {
   battlePointCapacityAttemptSelection,
   battlePointCapacityAttemptProgram,
@@ -100,6 +111,9 @@ import {
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
+  encodeProductionAuditDiagnostic,
+  decodeProductionAuditDiagnostic,
+  decodeProductionAuditArtifact,
 } from './productionAuditArtifacts';
 import {
   auditProductionUserControlObservations,
@@ -152,6 +166,13 @@ function loadProductionMaster() {
 }
 
 const scalarQuantityObservations: ScalarQuantitySource[] = [];
+const hpRequests: {
+  prepared: ReturnType<typeof prepareCalculationScenarioWithPolicy>;
+  calculation: ReturnType<typeof evaluatePreparedCalculationScenario>;
+}[] = [];
+const hpSelections: HpPreparationSelection[] = [];
+const hpPrograms: HpPreparationProgram[] = [];
+const hpObservations: HpPreparationSource[] = [];
 const capacityAttemptSelections: BattlePointCapacityAttemptSelection[] = [];
 const capacityAttemptPrograms: BattlePointCapacityAttemptProgram[] = [];
 const capacityAttemptObservations: BattlePointCapacityAttemptSource[] = [];
@@ -181,6 +202,13 @@ function evaluateWithOrderedOperationEvents(
     true,
   );
   const evaluated = evaluatePreparedCalculationScenario(prepared, versions);
+  if (hpPreparationCanonical(prepared)) hpRequests.push({ prepared, calculation: evaluated });
+  const hpSelection = hpPreparationSelection(prepared, evaluated, hpSelections.length);
+  if (hpSelection) {
+    hpSelections.push(hpSelection);
+    hpPrograms.push(hpPreparationProgram(hpSelection));
+    hpObservations.push(hpPreparationSource(hpSelection));
+  }
   const capacityAttemptSelection = battlePointCapacityAttemptSelection(
     prepared,
     capacityAttemptSelections.length,
@@ -458,6 +486,7 @@ describe('production master inventory ratchet', () => {
         'production-preparation-bp-attempt.json',
         'production-preparation-bp-capacity.json',
         'production-preparation-bp-capacity-attempt.json',
+        'production-preparation-hp.json',
       ]),
     },
     async ({ task }) => {
@@ -1415,6 +1444,25 @@ describe('production master inventory ratchet', () => {
         'production-preparation-bp-capacity-attempt.json',
         capacityAttemptGate,
       );
+      const hpGate = auditPublishedHpPreparation(
+        master,
+        hpRequests,
+        hpSelections,
+        hpPrograms,
+        hpObservations,
+      );
+      await writeProductionAuditArtifact(
+        task.meta,
+        'production-preparation-hp.json',
+        encodeProductionAuditDiagnostic(hpGate),
+      );
+      const savedHpGate = decodeProductionAuditArtifact(
+        await readFile(
+          resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-preparation-hp.json'),
+        ),
+      ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
+      expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(savedHpGate), hpGate)).toBe(true);
+
       const userControlGate = auditProductionUserControlObservations({
         expectedProjectionCount: expectedUserControlIdentities.length,
         expectedIdentities: selectedExpectedIdentities,
@@ -1434,6 +1482,7 @@ describe('production master inventory ratchet', () => {
         gate: userControlGate,
         observations: userControlObservations,
       });
+      expect(hpGate.status, JSON.stringify(hpGate.firstDifference)).toBe('passed');
       expect(scalarGate.status, JSON.stringify(scalarGate.firstDifference)).toBe('passed');
       expect(attemptGate.status).toBe('passed');
       expect(capacityAttemptGate.status, JSON.stringify(capacityAttemptGate.firstDifference)).toBe(
