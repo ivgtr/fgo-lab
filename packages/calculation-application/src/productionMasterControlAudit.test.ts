@@ -58,14 +58,13 @@ import {
 } from './productionAuditArtifacts';
 import {
   auditProductionUserControlObservations,
-  type ProductionUserControlEffectiveContribution,
-  type ProductionUserControlInputBinding,
-  type ProductionUserControlIdentity,
   type ProductionUserControlObservation,
-  type ProductionUserControlOperationEvent,
-  type ProductionUserControlProjectionObservation,
-  type ProductionUserControlSideObservation,
 } from './productionParityDiagnostics';
+
+import {
+  selectedProfileControlIdentity,
+  userControlSideObservation,
+} from './productionUserControlObservation';
 
 const root = resolve(import.meta.dirname, '../../..');
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
@@ -273,142 +272,6 @@ function hasAttackerHpCondition(condition: ConditionExpression): boolean {
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.some(hasAttackerHpCondition);
   return condition.kind === 'not' && hasAttackerHpCondition(condition.expression);
-}
-
-function controlDamageInputBinding(
-  projection: EffectProjection,
-  calculation: ReturnType<typeof calculateScenario>,
-): ProductionUserControlInputBinding {
-  const input = calculation.input;
-  switch (projection.modifier) {
-    case 'attackBuff':
-    case 'defenseBuff':
-    case 'cardBuff':
-    case 'cardResistance':
-    case 'npDamageBuff':
-    case 'npResistance':
-    case 'eventDamageBuff':
-    case 'specialDamageBuff':
-    case 'powerMod':
-    case 'flatDamage':
-      return { kind: 'bound', address: projection.modifier, value: input[projection.modifier] };
-    case 'ignoreDefense':
-      return {
-        kind: 'bound',
-        address: 'damageFunction.ignoreDefense',
-        value:
-          input.damageFunction.status === 'resolved'
-            ? input.damageFunction.ignoreDefense
-            : input.damageFunction,
-      };
-    case 'ignoreDamageCut':
-      return { kind: 'bound', address: 'ignoreDamageCut', value: input.ignoreDamageCut };
-    case 'npSpecial':
-      return {
-        kind: 'bound',
-        address: 'npSpecialMultipliers',
-        value: input.npSpecialMultipliers,
-      };
-    case 'npVariantSelection':
-      return {
-        kind: 'bound',
-        address: 'npVariantSelection.damageInput',
-        value: {
-          variant: calculation.noblePhantasmVariant,
-          cardType: input.cardType,
-          npMultipliers: input.npMultipliers,
-          damageFunction: input.damageFunction,
-        },
-      };
-    case null:
-      return { kind: 'unbound', reason: 'projection_has_no_damage_input_binding' };
-  }
-}
-
-function userControlSideObservation(
-  projection: EffectProjection,
-  calculation: ReturnType<typeof calculateScenario>,
-  executionObservation: CalculationExecutionObservation,
-): ProductionUserControlSideObservation {
-  if (calculation.executionObservation !== executionObservation)
-    throw new TypeError('production_control_execution_observation_identity_mismatch');
-  const operationEvents: ProductionUserControlOperationEvent[] =
-    executionObservation.targetExecution?.selection === 'selected' ||
-    executionObservation.targetExecution?.selection === 'unresolved'
-      ? executionObservation.targetExecution.operationEvents
-          .filter((event) => event.operationId === projection.operationId)
-          .map((event) => ({
-            projectionKey: event.projectionKey,
-            operationId: event.operationId,
-            contributionId: event.contributionId,
-            kind: event.operationKind,
-            operationOutcome: event.operationOutcome,
-            projectionOutcome: event.projectionOutcome,
-            projectionValuePermille: event.projectionValuePermille,
-          }))
-      : [];
-  const projections: ProductionUserControlProjectionObservation[] = calculation.effects
-    .filter(
-      (candidate) =>
-        candidate.projectionKey === projection.projectionKey &&
-        candidate.operationId === projection.operationId &&
-        candidate.contributionId === projection.contributionId,
-    )
-    .map((candidate) => ({
-      projectionKey: candidate.projectionKey,
-      operationId: candidate.operationId,
-      contributionId: candidate.contributionId,
-      outcome: candidate.outcome,
-      valuePermille: candidate.valuePermille,
-    }));
-  const effectiveContributions: ProductionUserControlEffectiveContribution[] =
-    projection.contributionId === null
-      ? []
-      : calculation.effectiveContributions.contributions
-          .filter(
-            (contribution) =>
-              contribution.operationId === projection.operationId &&
-              contribution.contributionId === projection.contributionId,
-          )
-          .map((contribution) => ({
-            operationId: contribution.operationId,
-            contributionId: contribution.contributionId,
-            modifier: contribution.modifier,
-            resolvedValue: contribution.resolvedValue,
-            executionOutcome: contribution.executionOutcome,
-            effective: contribution.effective,
-          }));
-  return {
-    executionObservation,
-    operationEvents,
-    projections,
-    inputBinding: controlDamageInputBinding(projection, calculation),
-    damageInputDefenseBuff: calculation.input.defenseBuff,
-    effectiveContributions,
-    damageResult: {
-      status: calculation.result.status,
-      rows: 'rows' in calculation.result ? calculation.result.rows : [],
-      ...(calculation.result.status === 'unavailable' ? { reason: calculation.result.reason } : {}),
-    },
-    ...(calculation.profileContinuity ? { profileContinuity: calculation.profileContinuity } : {}),
-  };
-}
-
-function selectedProfileControlIdentity(
-  ownerId: string,
-  projection: EffectProjection,
-  profileKey: string,
-): ProductionUserControlIdentity {
-  return {
-    ownerId,
-    profileKey,
-    path: 'selectedProfile',
-    projectionKey: projection.projectionKey,
-    operationId: projection.operationId,
-    contributionId: projection.contributionId,
-    modifier: projection.modifier,
-    contributionControl: projection.contributionControl,
-  };
 }
 
 const expectedUnsupportedFamilies = {} as const;

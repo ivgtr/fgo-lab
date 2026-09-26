@@ -1242,11 +1242,10 @@ it(
         normalNonApplicationGate,
         notRelevantGate,
         impossibleGate,
-        alternateGate,
         withoutBindingGate,
       },
       failureCases,
-      intentionalFailures: [inertNpSpecial, inertOperation, unresolvedSelection],
+      intentionalFailures: [inertNpSpecial, inertOperation, unresolvedSelection, alternateGate],
     });
     expect(passing).toMatchObject({
       status: 'passed',
@@ -1310,11 +1309,14 @@ it(
       normalNonApplicationGate,
       notRelevantGate,
       impossibleGate,
-      alternateGate,
       withoutBindingGate,
     ])
       expect(gate).toMatchObject({ status: 'passed', firstDifference: null, failures: [] });
-    expect(alternateGate.summary.withoutAreaAlternateCount).toBe(1);
+    // A path tag without the actual ranking producer binding is not alternate proof.
+    expect(alternateGate.status).toBe('failed');
+    expect(alternateGate.failures).toContainEqual(
+      expect.objectContaining({ reason: 'userControlRankingSourceMismatch' }),
+    );
     const reasons = {
       inventoryCount: 'userControlInventoryCoverageMismatch',
       duplicateIdentity: 'userControlDuplicateIdentity',

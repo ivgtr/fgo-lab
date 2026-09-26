@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.57"
+document_version: "1.7.58"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -2973,3 +2973,23 @@ productionのinventory／digest／runtime counterは先行runと一致し、cand
 最初に現在差分を照合し、直接symbolに基づく段階的計画（責務・候補file・通常／監査の実経路・代表と否定fixture・不変条件・通過条件・停止点・証拠再利用条件）を提示して確認を待つ。確認前は製品source／test／文書を編集せずsource test／producer・stage／commitを行わない。確認後は同じbounded unitを実装・局所検証・必要な最終quality／監査・Task／evidence更新・範囲限定local commitまで継続する。既存transportの抽出方法やgate拡張を本handoffで固定しない。未規定の製品意味論または実質的な契約衝突だけ影響作業を止めて改訂計画を示す。
 
 stale-mutationの実値・後続read・rollback／recovery consumer closure、legacy cleanup、TSK-09は別session。解消済みS4／architectureを再開せず、8 shardは具体的なidentity疑義がない限り再生成しない。先行quality unit 936／production 155／E2E 29、audit 3、S4 1,590、matrix／eligibility digestは[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitとhandoffPreparation.nextSessionを参照し、同条件で有効な証拠を再利用する。本準備はコード読み取りと資料更新だけで、製品編集・source test／producerは実行していない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+
+Current bounded unit（2026-09-26、without-area ranking consumer）:
+
+前回の限定handoffは本sessionで承認され、実ranking alternateから共有consumer／gate／代表fixture／宣言済みartifactへの接続を実装した。captureだけに実execution参照を保持し、selected／alternateの生成元とdetail、input、effective contribution、operation／projection／contribution identity、resultを照合する。operation／projectionのappliedと、areaViewによる最終寄与除外を分ける。published masterとschema-legal fixtureは別母集団・別gate・別artifactとし、期待identityは各生成元から導出する。fixtureをproduction inventoryへ加えず、1,590を新しい将来期待件数にしない。
+
+Flow closure、直接symbol、局所検証、否定fixture、完全artifact、既存証拠の再利用条件は[evidence](../evidence/tsk-08-parity-ratchet.json)の`Without-area ranking shared audit consumer closure`を正本とする。今回の対象内Blockingは0。最終qualityとauditが成功し、結果記録後の文書検証と範囲限定local commitで閉じる。通常rankingのcapture外emitted codeと、抽出したselected-profile adapterの本体がbaselineと一致した。107 artifact（80 condition artifactを含む）のbytes／SHA-256が一致し、8 shardは再生成しない。
+
+stale-mutationの実値・後続read・rollback／recovery consumer closureとlegacy cleanupは対象外。S4／architectureは再開しない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+
+Without-area bounded-unit completion（2026-09-26）:
+
+実rankingのschema-legal代表fixtureが共有consumer／gateを通過し、14の生成元・参照チェックがすべてtrue、45の否定ケースがtyped reason／canonical identity／first difference付きで拒否された。完全な正例・否定diagnosticはassertion前に保存され、局所43/43と最終qualityの両方で宣言・bytes／SHA-256検証が成功。同fixture artifactは15,681,829 bytes、SHA-256 `851632815d6039baa1903c9620d673d89f712fdbf690cfe973814f8ecdbb497f`で一致した。旧pathタグだけのalternate正例は、実生成元欠落を拒否する否定fixtureに変更した。
+
+最終qualityはunit 936/936、production 155/155、E2E 29/29（retry 0）、format／lint／型／runner 59/59／docs 6/6・integrity／master／buildが成功し、warning・unexpected console 0。auditも3/3、S4のexpected／observed 1,590、failure 0。S4 artifact全体が先行architecture unitとbyte単位で一致し、月下／日輪、HP witness、battle-point live readを保持した。published masterのselected-only alternate件数0は代表alternateの証拠とせず、別母集団の実ranking fixtureで証明した。
+
+production counterは先行qualityと一致し、candidate 6,673／deduplicated 4,194、damage request 2,596／distinct 1,489、master read／parse／compile各1。所要時間86,849→90,784ms（同じ4 worker条件）だが非制御の観測であり、candidate／request増加はない。8 shardと80 condition artifactはchecksumを照合して再利用し、再生成していない。最終quality後に固定17ファイルすべてのbytes／SHA-256一致を確認し、以後は3文書の結果記録だけを更新する。command・receipt・flow closureは既存[evidence](../evidence/tsk-08-parity-ratchet.json)の最新bounded unitを参照する。
+
+次の最小操作は、このbounded unitを再実装せず、別sessionでstale-mutation実値・後続read・rollback／recovery consumer closureまたはlegacy cleanupの限定計画を作ること。今回の結果をTSK-08全体のclosureとは呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。この検証済み範囲だけをlocal commitし、pushしない。

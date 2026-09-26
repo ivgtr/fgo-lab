@@ -1,4 +1,8 @@
 import {
+  rankingUserControlChecks,
+  type RankingUserControlSource,
+} from './productionUserControlObservation';
+import {
   firstCanonicalAuditDifference,
   productionAuditMatrixRecords,
   type CanonicalAuditDifference,
@@ -405,6 +409,7 @@ export interface ProductionUserControlSideObservation {
 
 export interface ProductionUserControlObservation {
   identity: ProductionUserControlIdentity;
+  rankingSource?: RankingUserControlSource;
   enabled: ProductionUserControlSideObservation;
   excluded: ProductionUserControlSideObservation;
   preparationSelection?: {
@@ -440,6 +445,7 @@ export interface ProductionUserControlObservation {
 }
 
 export type ProductionUserControlFailureReason =
+  | 'userControlRankingSourceMismatch'
   | 'userControlInventoryCoverageMismatch'
   | 'userControlDuplicateIdentity'
   | 'userControlProjectionIdentityMismatch'
@@ -797,6 +803,17 @@ export function auditProductionUserControlObservations(
       continue;
     }
     const profileIdentity = productionUserControlIdentity(identity);
+    if (identity.path === 'withoutAreaAlternate' || observation.rankingSource) {
+      const checks = rankingUserControlChecks(observation);
+      const sourceFailure = productionUserControlFailure(
+        'userControlRankingSourceMismatch',
+        `${profileIdentity}:ranking-source`,
+        Object.fromEntries(Object.keys(checks).map((key) => [key, true])),
+        checks,
+      );
+      if (sourceFailure) failures.push(sourceFailure);
+    }
+
     const battlePointContracts =
       input.expectedBattlePointReads?.filter(
         (expected) =>
@@ -1217,7 +1234,16 @@ export function auditProductionUserControlObservations(
             {
               modifier: identity.modifier,
               executionOutcome: projection?.outcome,
-              effective: projection?.outcome === 'applied',
+              effective:
+                identity.path === 'withoutAreaAlternate'
+                  ? observation.rankingSource?.trace?.[
+                      sideName === 'enabled' ? 'selectedExecution' : 'withoutAreaExecution'
+                    ]?.effectiveContributions.contributions.find(
+                      (candidate) =>
+                        candidate.operationId === identity.operationId &&
+                        candidate.contributionId === identity.contributionId,
+                    )?.effective
+                  : projection?.outcome === 'applied',
             },
             {
               modifier: contribution.modifier,

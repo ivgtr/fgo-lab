@@ -45,7 +45,18 @@ import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
 } from './productionAuditArtifacts';
-import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
+import {
+  rankingWithoutAreaControlObservation,
+  rankingUserControlChecks,
+} from './productionUserControlObservation';
+import {
+  auditProductionUserControlObservations,
+  type ProductionUserControlObservation,
+} from './productionParityDiagnostics';
+import {
+  calculateRankingCandidateSet,
+  type RankingExecutionObservation,
+} from './rankingPolicyCandidates';
 import { executeRankingScenarios } from './rankingExecution';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { rankingEffectContributes } from './rankingContribution';
@@ -984,169 +995,531 @@ describe('scenario calculation facade', () => {
     expect(ranked.input.npSpecialMultipliers).toEqual(on.input.npSpecialMultipliers);
   });
 
-  it('replays the selected scenario without area by removing only party-wide final damage', () => {
-    const baseServant = fixture.servants[0]!;
-    const scopedMaster = parseTestMaster({
-      ...fixture,
-      servants: [
-        {
-          ...baseServant,
-          skills: [
-            {
-              id: 'scoped-buffs',
-              slot: 1,
-              priority: 1,
-              name: 'scoped buffs',
-              detail: '',
-              imageKey: null,
-              effects: [
-                modifierEffect('personal-buff', 'upAtk', 100, [], 'self'),
-                modifierEffect('party-wide-buff', 'upAtk', 200, [], 'ptAll'),
-                modifierEffect('party-other-buff', 'upAtk', 400, [], 'ptOther'),
-              ],
-            },
-          ],
-        },
-      ],
-    });
-    const candidateSet = calculateRankingCandidateSet(
-      scopedMaster.servants[0]!,
-      scopedMaster,
-      { servantBuilds: {} },
-      DEFAULT_RANKING_POLICY_CONDITIONS,
-      { ...versions, masterDataVersion: scopedMaster.version },
-      true,
-      undefined,
-      true,
-    );
-    const detail = candidateSet.details.values().next().value;
-    if (!detail) throw new Error('calculated area detail required');
-    expect(
-      candidateSet.plan.preparedRankingScenarios.some(
-        (candidate) => 'executionObservation' in candidate,
-      ),
-    ).toBe(false);
-    expect(candidateSet.executions.some((execution) => 'executionObservation' in execution)).toBe(
-      false,
-    );
-    const withoutArea = detail.areaContribution;
-    if (!withoutArea) throw new Error('area counterfactual required');
-    if (withoutArea.withoutAreaResult.status !== 'calculated')
-      throw new Error('calculated without-area damage required');
-    const profileObservation = candidateSet.executionObservations?.get(detail.entryId);
-    if (!profileObservation) throw new Error('selected and without-area observations required');
-    if (profileObservation.candidateKey !== detail.candidateEvidence.candidateKey)
-      throw new Error('selected and without-area observations must share the selected candidate');
-    if (
-      profileObservation.selected.targetExecution?.selection !== 'selected' ||
-      profileObservation.withoutAreaAlternate?.targetExecution?.selection !== 'selected'
-    )
-      throw new Error('selected target execution required on both area paths');
-    const selectedTargetExecution = profileObservation.selected.targetExecution;
-    const withoutAreaTargetExecution = profileObservation.withoutAreaAlternate.targetExecution;
-    if (profileObservation.selectedInput !== detail.input)
-      throw new Error('selected observation must belong to the detail input');
-    if (profileObservation.withoutAreaInput !== withoutArea.withoutAreaInput)
-      throw new Error('without-area observation must belong to the alternate input');
-    if (
-      profileObservation.selectedEffectiveContributions !== detail.effectiveContributions ||
-      profileObservation.withoutAreaEffectiveContributions !== withoutArea.effectiveContributions
-    )
-      throw new Error('effective contributions must belong to the observed executions');
-    const selectedPartyWide = detail.effects.find(
-      (effect) => effect.source.effectId === 'party-wide-buff',
-    );
-    const withoutAreaPartyWide = withoutArea.withoutAreaEffects.find(
-      (effect) => effect.source.effectId === 'party-wide-buff',
-    );
-    if (!selectedPartyWide || !withoutAreaPartyWide)
-      throw new Error('party-wide projection required on both area paths');
-    const exactEvent = (
-      events: typeof selectedTargetExecution.operationEvents,
-      projection: NonNullable<typeof selectedPartyWide>,
-    ) => {
-      const matches = events.filter(
-        (event) =>
-          event.operationId === projection.operationId &&
-          event.projectionKey === projection.projectionKey &&
-          event.contributionId === projection.contributionId,
+  it(
+    'replays the selected scenario without area by removing only party-wide final damage',
+    productionAuditTestOptions(['production-without-area-fixture.json']),
+    async ({ task }) => {
+      const baseServant = fixture.servants[0]!;
+      const scopedMaster = parseTestMaster({
+        ...fixture,
+        servants: [
+          {
+            ...baseServant,
+            skills: [
+              {
+                id: 'scoped-buffs',
+                slot: 1,
+                priority: 1,
+                name: 'scoped buffs',
+                detail: '',
+                imageKey: null,
+                effects: [
+                  modifierEffect('personal-buff', 'upAtk', 100, [], 'self'),
+                  modifierEffect('party-wide-buff', 'upAtk', 200, [], 'ptAll'),
+                  modifierEffect('party-other-buff', 'upAtk', 400, [], 'ptOther'),
+                ],
+              },
+            ],
+          },
+        ],
+      });
+      const candidateSet = calculateRankingCandidateSet(
+        scopedMaster.servants[0]!,
+        scopedMaster,
+        { servantBuilds: {} },
+        DEFAULT_RANKING_POLICY_CONDITIONS,
+        { ...versions, masterDataVersion: scopedMaster.version },
+        true,
+        undefined,
+        true,
       );
-      if (matches.length !== 1) throw new Error('exact party-wide operation event required');
-      return matches[0]!;
-    };
-    const selectedPartyWideEvent = exactEvent(
-      selectedTargetExecution.operationEvents,
-      selectedPartyWide,
-    );
-    const withoutAreaPartyWideEvent = exactEvent(
-      withoutAreaTargetExecution.operationEvents,
-      withoutAreaPartyWide,
-    );
+      const detail = candidateSet.details.values().next().value;
+      if (!detail) throw new Error('calculated area detail required');
+      const withoutArea = detail.areaContribution;
+      if (!withoutArea) throw new Error('area counterfactual required');
+      if (withoutArea.withoutAreaResult.status !== 'calculated')
+        throw new Error('calculated without-area damage required');
+      const profileObservation = candidateSet.executionObservations?.get(detail.entryId);
+      if (!profileObservation) throw new Error('selected and without-area observations required');
+      if (profileObservation.candidateKey !== detail.candidateEvidence.candidateKey)
+        throw new Error('selected and without-area observations must share the selected candidate');
+      if (
+        profileObservation.selected.targetExecution?.selection !== 'selected' ||
+        profileObservation.withoutAreaAlternate?.targetExecution?.selection !== 'selected'
+      )
+        throw new Error('selected target execution required on both area paths');
+      const selectedTargetExecution = profileObservation.selected.targetExecution;
+      const withoutAreaTargetExecution = profileObservation.withoutAreaAlternate.targetExecution;
+      if (profileObservation.selectedInput !== detail.input)
+        throw new Error('selected observation must belong to the detail input');
+      if (profileObservation.withoutAreaInput !== withoutArea.withoutAreaInput)
+        throw new Error('without-area observation must belong to the alternate input');
+      if (
+        profileObservation.selectedEffectiveContributions !== detail.effectiveContributions ||
+        profileObservation.withoutAreaEffectiveContributions !== withoutArea.effectiveContributions
+      )
+        throw new Error('effective contributions must belong to the observed executions');
+      const selectedPartyWide = detail.effects.find(
+        (effect) => effect.source.effectId === 'party-wide-buff',
+      );
+      const withoutAreaPartyWide = withoutArea.withoutAreaEffects.find(
+        (effect) => effect.source.effectId === 'party-wide-buff',
+      );
+      if (!selectedPartyWide || !withoutAreaPartyWide)
+        throw new Error('party-wide projection required on both area paths');
+      const observation = rankingWithoutAreaControlObservation(
+        candidateSet,
+        detail,
+        selectedPartyWide,
+      );
+      // Expected fixture population comes from canonical projections/profile, not observations.
+      const expectedIdentities = detail.effects
+        .filter(
+          (projection) =>
+            projection.controllability === 'user' &&
+            projection.sourceActive &&
+            projection.contributionScope === 'partyWide',
+        )
+        .map((projection) => ({
+          ownerId: scopedMaster.servants[0]!.id,
+          profileKey: detail.entryId,
+          path: 'withoutAreaAlternate' as const,
+          projectionKey: projection.projectionKey,
+          operationId: projection.operationId,
+          contributionId: projection.contributionId,
+          modifier: projection.modifier,
+          contributionControl: projection.contributionControl,
+        }));
+      const audit = (observations: readonly ProductionUserControlObservation[]) =>
+        auditProductionUserControlObservations({
+          expectedProjectionCount: expectedIdentities.length,
+          expectedIdentities,
+          observations,
+        });
+      const withTrace = (trace: RankingExecutionObservation | null) =>
+        rankingWithoutAreaControlObservation(
+          {
+            ...candidateSet,
+            executionObservations: trace ? new Map([[detail.entryId, trace]]) : new Map(),
+          },
+          detail,
+          selectedPartyWide,
+        );
+      const wrongSource = (
+        alternate: NonNullable<RankingExecutionObservation['withoutAreaExecution']>,
+      ) => {
+        const alteredDetail = {
+          ...detail,
+          areaContribution: {
+            ...withoutArea,
+            effectiveContributions: alternate.effectiveContributions,
+          },
+        };
+        return rankingWithoutAreaControlObservation(
+          {
+            ...candidateSet,
+            executionObservations: new Map([
+              [
+                detail.entryId,
+                {
+                  ...profileObservation,
+                  withoutAreaExecution: alternate,
+                  withoutAreaEffectiveContributions: alternate.effectiveContributions,
+                },
+              ],
+            ]),
+          },
+          alteredDetail,
+          selectedPartyWide,
+        );
+      };
+      const alternate = profileObservation.withoutAreaExecution;
+      if (!alternate) throw new Error('actual alternate execution required');
+      const alteredContribution = (
+        change: (
+          contribution: NonNullable<
+            RankingExecutionObservation['withoutAreaExecution']
+          >['effectiveContributions']['contributions'][number],
+        ) => NonNullable<
+          RankingExecutionObservation['withoutAreaExecution']
+        >['effectiveContributions']['contributions'][number],
+      ) =>
+        wrongSource({
+          ...alternate,
+          effectiveContributions: {
+            ...alternate.effectiveContributions,
+            contributions: alternate.effectiveContributions.contributions.map(change),
+          },
+        });
+      const withoutSource = { ...observation };
+      delete withoutSource.rankingSource;
+      const failureCases: Record<string, ProductionUserControlObservation> = {
+        traceMissing: withTrace(null),
+        selectedTraceMissing: withTrace({
+          ...profileObservation,
+          selected: { battlePointWitness: null, targetExecution: null },
+        }),
+        alternateTraceMissing: withTrace({ ...profileObservation, withoutAreaAlternate: null }),
+        wrongCandidate: withTrace({ ...profileObservation, candidateKey: 'wrong-candidate' }),
+        swappedTraces: withTrace({
+          ...profileObservation,
+          selected: profileObservation.withoutAreaAlternate,
+          withoutAreaAlternate: profileObservation.selected,
+        }),
+        swappedExecutions: withTrace({
+          ...profileObservation,
+          selectedExecution: alternate,
+          withoutAreaExecution: profileObservation.selectedExecution,
+        }),
+        alternateUsesSelected: withTrace({
+          ...profileObservation,
+          withoutAreaAlternate: profileObservation.selected,
+          withoutAreaExecution: profileObservation.selectedExecution,
+          withoutAreaInput: profileObservation.selectedInput,
+          withoutAreaEffectiveContributions: profileObservation.selectedEffectiveContributions,
+        }),
+        selectedInputCopy: withTrace({
+          ...profileObservation,
+          selectedInput: { ...profileObservation.selectedInput },
+        }),
+        alternateInputCopy: withTrace({
+          ...profileObservation,
+          withoutAreaInput: { ...withoutArea.withoutAreaInput },
+        }),
+        selectedContributionsCopy: withTrace({
+          ...profileObservation,
+          selectedEffectiveContributions: { ...profileObservation.selectedEffectiveContributions },
+        }),
+        alternateContributionsCopy: withTrace({
+          ...profileObservation,
+          withoutAreaEffectiveContributions: { ...withoutArea.effectiveContributions },
+        }),
+        wrongProfile: {
+          ...observation,
+          identity: { ...observation.identity, profileKey: 'wrong-profile' },
+        },
+        wrongOwner: {
+          ...observation,
+          identity: { ...observation.identity, ownerId: 'wrong-owner' },
+        },
+        wrongPath: {
+          ...observation,
+          identity: { ...observation.identity, path: 'selectedProfile' },
+        },
+        bindingChanged: {
+          ...observation,
+          excluded: {
+            ...observation.excluded,
+            inputBinding: { kind: 'bound', address: 'attackBuff', value: 0.3 },
+          },
+        },
+        resultCopy: {
+          ...observation,
+          excluded: {
+            ...observation.excluded,
+            damageResult: {
+              ...observation.excluded.damageResult,
+              rows: structuredClone(observation.excluded.damageResult.rows),
+            },
+          },
+        },
+        resultSwapped: {
+          ...observation,
+          excluded: { ...observation.excluded, damageResult: observation.enabled.damageResult },
+        },
+        partyWideStillEffective: alteredContribution((contribution) =>
+          contribution.operationId === selectedPartyWide.operationId
+            ? { ...contribution, effective: true }
+            : contribution,
+        ),
+        areaReasonMissing: alteredContribution((contribution) =>
+          contribution.operationId === selectedPartyWide.operationId
+            ? { ...contribution, areaViewDecision: { kind: 'included' } }
+            : contribution,
+        ),
+        areaReasonWrong: alteredContribution((contribution) =>
+          contribution.operationId === selectedPartyWide.operationId
+            ? { ...contribution, areaViewDecision: { kind: 'excluded', reason: 'selfBuffPolicy' } }
+            : contribution,
+        ),
+        personalExcluded: alteredContribution((contribution) =>
+          contribution.modifier === 'attackBuff' &&
+          contribution.operationId !== selectedPartyWide.operationId
+            ? {
+                ...contribution,
+                effective: false,
+                areaViewDecision: { kind: 'excluded', reason: 'areaView' },
+              }
+            : contribution,
+        ),
+        sourceMissing: withoutSource,
+      };
+      for (const sideName of ['enabled', 'excluded'] as const) {
+        const side = observation[sideName];
+        failureCases[`${sideName}EventMissing`] = {
+          ...observation,
+          [sideName]: { ...side, operationEvents: [] },
+        };
+        failureCases[`${sideName}EventIdentity`] = {
+          ...observation,
+          [sideName]: {
+            ...side,
+            operationEvents: side.operationEvents.map((event) => ({
+              ...event,
+              operationId: 'wrong-operation',
+            })),
+          },
+        };
+        failureCases[`${sideName}ProjectionIdentity`] = {
+          ...observation,
+          [sideName]: {
+            ...side,
+            projections: side.projections.map((projection) => ({
+              ...projection,
+              projectionKey: 'wrong-projection',
+            })),
+          },
+        };
+        failureCases[`${sideName}ContributionIdentity`] = {
+          ...observation,
+          [sideName]: {
+            ...side,
+            effectiveContributions: side.effectiveContributions.map((contribution) => ({
+              ...contribution,
+              contributionId: 'wrong-contribution',
+            })),
+          },
+        };
+        failureCases[`${sideName}DuplicateProjection`] = {
+          ...observation,
+          [sideName]: { ...side, projections: [...side.projections, ...side.projections] },
+        };
+      }
+      const target = profileObservation.withoutAreaAlternate.targetExecution;
+      failureCases.wrongTarget = withTrace({
+        ...profileObservation,
+        withoutAreaAlternate: {
+          ...profileObservation.withoutAreaAlternate,
+          targetExecution: {
+            ...target,
+            targetCandidate: {
+              ...target.targetCandidate,
+              classId: target.targetCandidate.classId === 'saber' ? 'archer' : 'saber',
+            },
+          },
+        },
+      });
+      failureCases.nonSelected = withTrace({
+        ...profileObservation,
+        withoutAreaAlternate: { ...profileObservation.withoutAreaAlternate, targetExecution: null },
+      });
+      failureCases.planCandidateMismatch = rankingWithoutAreaControlObservation(
+        {
+          ...candidateSet,
+          plan: {
+            ...candidateSet.plan,
+            candidateKeys: candidateSet.plan.candidateKeys.map(() => 'wrong-planned-candidate'),
+          },
+        },
+        detail,
+        selectedPartyWide,
+      );
+      failureCases.detailInputCopy = rankingWithoutAreaControlObservation(
+        candidateSet,
+        { ...detail, input: { ...detail.input } },
+        selectedPartyWide,
+      );
+      failureCases.alternateResultCopy = rankingWithoutAreaControlObservation(
+        candidateSet,
+        {
+          ...detail,
+          areaContribution: {
+            ...withoutArea,
+            withoutAreaResult: { ...withoutArea.withoutAreaResult },
+          },
+        },
+        selectedPartyWide,
+      );
+      failureCases.alternateEffectsCopy = rankingWithoutAreaControlObservation(
+        candidateSet,
+        {
+          ...detail,
+          areaContribution: {
+            ...withoutArea,
+            withoutAreaEffects: [...withoutArea.withoutAreaEffects],
+          },
+        },
+        selectedPartyWide,
+      );
+      failureCases.policyMismatch = rankingWithoutAreaControlObservation(
+        candidateSet,
+        {
+          ...detail,
+          areaContribution: {
+            ...withoutArea,
+            contributionPolicy: detail.contributionPolicy,
+          },
+        },
+        selectedPartyWide,
+      );
+      for (const status of ['invalid', 'unsupported', 'inputRequired', 'unavailable'] as const) {
+        failureCases[`alternateOutcome:${status}`] = {
+          ...observation,
+          excluded: {
+            ...observation.excluded,
+            damageResult: { status, rows: [] },
+          },
+        };
+      }
+      const passing = audit([observation]);
+      const rejected = Object.fromEntries(
+        Object.entries(failureCases).map(([name, candidate]) => [name, audit([candidate])]),
+      );
+      rejected.inventoryMissing = audit([]);
+      rejected.inventoryDuplicate = audit([observation, observation]);
+      await writeProductionAuditArtifact(task.meta, 'production-without-area-fixture.json', {
+        schemaVersion: 1,
+        boundary: 'calculation-application-ranking-without-area-fixture',
+        population: 'schemaLegalFixture',
+        canonicalIdentity: passing.canonicalIdentity,
+        expectedIdentities,
+        observations: [observation],
+        sourceChecks: rankingUserControlChecks(observation),
+        gate: passing,
+        failureCases: Object.fromEntries(
+          Object.entries(failureCases).map(([name, candidate]) => [
+            name,
+            { observation: candidate, gate: rejected[name] },
+          ]),
+        ),
+        inventoryFailures: {
+          missing: rejected.inventoryMissing,
+          duplicate: rejected.inventoryDuplicate,
+        },
+      });
+      expect(passing).toMatchObject({
+        status: 'passed',
+        summary: { selectedProfileCount: 0, withoutAreaAlternateCount: expectedIdentities.length },
+        failures: [],
+      });
+      for (const [name, gate] of Object.entries(rejected)) {
+        expect(gate.status, name).toBe('failed');
+        if (gate.status === 'failed') {
+          expect(gate.failures.length, name).toBeGreaterThan(0);
+          const expectedReason = name.startsWith('inventory')
+            ? 'userControlInventoryCoverageMismatch'
+            : 'userControlRankingSourceMismatch';
+          expect(
+            gate.failures.some((failure) => failure.reason === expectedReason),
+            name,
+          ).toBe(true);
+          expect(gate.firstDifference, name).not.toBeNull();
+          expect(
+            gate.failures.every(
+              (failure) =>
+                failure.reason.length > 0 &&
+                failure.canonicalIdentity.length > 0 &&
+                Object.keys(failure.firstDifference).length > 0,
+            ),
+            name,
+          ).toBe(true);
+        }
+      }
+      expect(
+        candidateSet.plan.preparedRankingScenarios.some(
+          (candidate) => 'executionObservation' in candidate,
+        ),
+      ).toBe(false);
+      expect(candidateSet.executions.some((execution) => 'executionObservation' in execution)).toBe(
+        false,
+      );
+      const exactEvent = (
+        events: typeof selectedTargetExecution.operationEvents,
+        projection: NonNullable<typeof selectedPartyWide>,
+      ) => {
+        const matches = events.filter(
+          (event) =>
+            event.operationId === projection.operationId &&
+            event.projectionKey === projection.projectionKey &&
+            event.contributionId === projection.contributionId,
+        );
+        if (matches.length !== 1) throw new Error('exact party-wide operation event required');
+        return matches[0]!;
+      };
+      const selectedPartyWideEvent = exactEvent(
+        selectedTargetExecution.operationEvents,
+        selectedPartyWide,
+      );
+      const withoutAreaPartyWideEvent = exactEvent(
+        withoutAreaTargetExecution.operationEvents,
+        withoutAreaPartyWide,
+      );
 
-    expect(detail.input.attackBuff).toBe(0.3);
-    expect(withoutArea.withoutAreaInput.attackBuff).toBe(0.1);
-    expect(profileObservation.selectedInput).toBe(detail.input);
-    expect(profileObservation.withoutAreaInput).toBe(withoutArea.withoutAreaInput);
-    expect(withoutAreaPartyWide).toMatchObject({
-      projectionKey: selectedPartyWide.projectionKey,
-      operationId: selectedPartyWide.operationId,
-      contributionId: selectedPartyWide.contributionId,
-    });
-    expect(selectedPartyWide.outcome).toBe('applied');
-    expect(withoutAreaPartyWide.outcome).toBe('applied');
-    expect(selectedPartyWideEvent).toMatchObject({
-      operationOutcome: 'applied',
-      projectionOutcome: 'applied',
-      projectionKey: selectedPartyWide.projectionKey,
-      operationId: selectedPartyWide.operationId,
-      contributionId: selectedPartyWide.contributionId,
-    });
-    expect(withoutAreaPartyWideEvent).toMatchObject({
-      operationOutcome: 'applied',
-      projectionOutcome: 'applied',
-      projectionKey: withoutAreaPartyWide.projectionKey,
-      operationId: withoutAreaPartyWide.operationId,
-      contributionId: withoutAreaPartyWide.contributionId,
-    });
-    expect(detail.result.rows[0].average).toBeGreaterThan(
-      withoutArea.withoutAreaResult.rows[0].average,
-    );
-    const includedByScope = new Map(
-      detail.effectiveContributions.contributions.map((contribution) => [
-        contribution.source.effectId,
-        contribution,
-      ]),
-    );
-    const excludedByScope = new Map(
-      withoutArea.effectiveContributions.contributions.map((contribution) => [
-        contribution.source.effectId,
-        contribution,
-      ]),
-    );
-    expect(includedByScope.get('personal-buff')).toMatchObject({
-      effective: true,
-      areaViewDecision: { kind: 'included' },
-    });
-    expect(excludedByScope.get('personal-buff')).toMatchObject({
-      effective: true,
-      areaViewDecision: { kind: 'included' },
-    });
-    expect(includedByScope.get('party-wide-buff')).toMatchObject({
-      effective: true,
-      areaViewDecision: { kind: 'included' },
-    });
-    expect(excludedByScope.get('party-wide-buff')).toMatchObject({
-      effective: false,
-      areaViewDecision: { kind: 'excluded', reason: 'areaView' },
-    });
-    expect(
-      scopedMaster.servants[0]!.skills[0]!.effects.find(
-        (effect) => effect.id === 'party-other-buff',
-      )!.execution.find((operation) => 'route' in operation),
-    ).toMatchObject({ route: { contributionScope: 'partyOther' } });
-    expect(includedByScope.has('party-other-buff')).toBe(false);
-    expect(excludedByScope.has('party-other-buff')).toBe(false);
-  });
+      expect(detail.input.attackBuff).toBe(0.3);
+      expect(withoutArea.withoutAreaInput.attackBuff).toBe(0.1);
+      expect(profileObservation.selectedInput).toBe(detail.input);
+      expect(profileObservation.withoutAreaInput).toBe(withoutArea.withoutAreaInput);
+      expect(withoutAreaPartyWide).toMatchObject({
+        projectionKey: selectedPartyWide.projectionKey,
+        operationId: selectedPartyWide.operationId,
+        contributionId: selectedPartyWide.contributionId,
+      });
+      expect(selectedPartyWide.outcome).toBe('applied');
+      expect(withoutAreaPartyWide.outcome).toBe('applied');
+      expect(selectedPartyWideEvent).toMatchObject({
+        operationOutcome: 'applied',
+        projectionOutcome: 'applied',
+        projectionKey: selectedPartyWide.projectionKey,
+        operationId: selectedPartyWide.operationId,
+        contributionId: selectedPartyWide.contributionId,
+      });
+      expect(withoutAreaPartyWideEvent).toMatchObject({
+        operationOutcome: 'applied',
+        projectionOutcome: 'applied',
+        projectionKey: withoutAreaPartyWide.projectionKey,
+        operationId: withoutAreaPartyWide.operationId,
+        contributionId: withoutAreaPartyWide.contributionId,
+      });
+      expect(detail.result.rows[0].average).toBeGreaterThan(
+        withoutArea.withoutAreaResult.rows[0].average,
+      );
+      const includedByScope = new Map(
+        detail.effectiveContributions.contributions.map((contribution) => [
+          contribution.source.effectId,
+          contribution,
+        ]),
+      );
+      const excludedByScope = new Map(
+        withoutArea.effectiveContributions.contributions.map((contribution) => [
+          contribution.source.effectId,
+          contribution,
+        ]),
+      );
+      expect(includedByScope.get('personal-buff')).toMatchObject({
+        effective: true,
+        areaViewDecision: { kind: 'included' },
+      });
+      expect(excludedByScope.get('personal-buff')).toMatchObject({
+        effective: true,
+        areaViewDecision: { kind: 'included' },
+      });
+      expect(includedByScope.get('party-wide-buff')).toMatchObject({
+        effective: true,
+        areaViewDecision: { kind: 'included' },
+      });
+      expect(excludedByScope.get('party-wide-buff')).toMatchObject({
+        effective: false,
+        areaViewDecision: { kind: 'excluded', reason: 'areaView' },
+      });
+      expect(
+        scopedMaster.servants[0]!.skills[0]!.effects.find(
+          (effect) => effect.id === 'party-other-buff',
+        )!.execution.find((operation) => 'route' in operation),
+      ).toMatchObject({ route: { contributionScope: 'partyOther' } });
+      expect(includedByScope.has('party-other-buff')).toBe(false);
+      expect(excludedByScope.has('party-other-buff')).toBe(false);
+    },
+  );
 
   it('applies one exclusive conditional modifier and fails closed when both are selected', () => {
     const baseServant = fixture.servants[0]!;

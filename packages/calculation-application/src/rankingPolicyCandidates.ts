@@ -31,6 +31,8 @@ export interface RankingCandidateCalculation {
     string,
     {
       candidateKey: string;
+      selectedExecution: Extract<CalculationExecution, { status: 'executable' }>;
+      withoutAreaExecution: Extract<CalculationExecution, { status: 'executable' }> | null;
       selected: CalculationExecutionObservation;
       selectedInput: Extract<CalculationExecution, { status: 'executable' }>['input'];
       selectedEffectiveContributions: CalculationExecution['effectiveContributions'];
@@ -40,6 +42,14 @@ export interface RankingCandidateCalculation {
     }
   >;
 }
+
+export type RankingExecutionObservation =
+  NonNullable<RankingCandidateCalculation['executionObservations']> extends ReadonlyMap<
+    string,
+    infer Observation
+  >
+    ? Observation
+    : never;
 
 function withoutExecutionObservation(execution: CalculationExecution): CalculationExecution {
   const visibleExecution = { ...execution };
@@ -97,18 +107,7 @@ export function calculateRankingCandidateSet(
     plan,
   );
   const executionObservations = captureExecutionObservation
-    ? new Map<
-        string,
-        {
-          candidateKey: string;
-          selected: CalculationExecutionObservation;
-          selectedInput: Extract<CalculationExecution, { status: 'executable' }>['input'];
-          selectedEffectiveContributions: CalculationExecution['effectiveContributions'];
-          withoutAreaAlternate: CalculationExecutionObservation | null;
-          withoutAreaInput: Extract<CalculationExecution, { status: 'executable' }>['input'] | null;
-          withoutAreaEffectiveContributions: CalculationExecution['effectiveContributions'] | null;
-        }
-      >()
+    ? new Map<string, RankingExecutionObservation>()
     : null;
   const details = new Map(
     [...selected].flatMap(([profileKey, selectedIndex]) => {
@@ -164,6 +163,9 @@ export function calculateRankingCandidateSet(
           );
         executionObservations.set(profileKey, {
           candidateKey: plan.candidateKeys[selectedIndex]!,
+          selectedExecution: execution,
+          withoutAreaExecution:
+            withoutAreaExecution?.status === 'executable' ? withoutAreaExecution : null,
           selected: execution.executionObservation,
           selectedInput: execution.input,
           selectedEffectiveContributions: execution.effectiveContributions,
