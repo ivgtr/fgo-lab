@@ -241,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Plan the remaining without-area/stale-mutation production consumer closure separately; architecture unit quality is closed. Legacy cleanup and TSK-09 retain their existing boundaries.",
+  "nextBoundedUnit": "Without-area production consumer closure only: code-grounded plan and user confirmation, then the existing real ranking alternate observation -> shared gate -> representative schema-legal fixture/artifact path. Stale-mutation value/read/rollback consumer validation, legacy cleanup and whole TSK-08 closure remain separate.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -5605,6 +5605,37 @@
     ],
     "planningBoundary": "Choose extraction boundaries from direct code responsibilities; no line compression, test exclusion or threshold increase. Product outcomes, operation order, selection identity and state reference/rollback remain unchanged.",
     "evidenceReuse": "Latest bounded unit production 155/155, audit 3/3, E2E 29/29, S4 1590 identities and eight-shard 34640 outcomes remain valid only if the structural change preserves the observed semantic paths; do not rerun eight shards without a concrete identity concern.",
-    "followup": "Architecture planning handoff above is historical and fulfilled by the latest bounded unit; do not reopen S4 or regenerate eight shards without a new identity concern."
+    "followup": "Architecture planning handoff above is historical and fulfilled by the latest bounded unit; do not reopen S4 or regenerate eight shards without a new identity concern.",
+    "nextSession": {
+      "baselineHead": "a9364893e6edde4b6c2816b89d03e03da111845d",
+      "scope": "Read-only preparation for a one-session without-area production consumer closure prompt. No product source/test edits or source test/producer execution; no new implementation success claim.",
+      "codeFindings": [
+        {
+          "symbol": "rankingPolicyCandidates.ts::calculateRankingCandidateSet",
+          "evidence": "captureExecutionObservation returns the selected candidateKey and both selected/without-area observations, each with its own input and effective-contribution object references. The alternate is the execution already used to construct detail.areaContribution, not a separate audit replay.",
+          "path": "packages/calculation-application/src/rankingPolicyCandidates.ts"
+        },
+        {
+          "symbol": "scenario.test.ts::replays the selected scenario without area by removing only party-wide final damage",
+          "evidence": "Existing schema-legal fixture checks candidateKey, alternate input/contribution references and exact operation/projection/contribution identities. Personal attackBuff remains 0.1; selected includes party-wide final damage. The alternate operation/projection can remain applied while final contribution is excluded. This transport fixture alone does not close the production consumer.",
+          "path": "packages/calculation-application/src/scenario.test.ts"
+        },
+        {
+          "symbol": "productionMasterControlAudit.test.ts::selectedProfileControlIdentity / userControlSideObservation",
+          "evidence": "Current producer derives selected-profile expected identities and asserts withoutAreaAlternateCount 0. Its side adapter accepts a CalculationExecution and requires identity with its executionObservation; adapting a RankingPolicyDetail/areaContribution must be designed from actual references rather than fabricating another execution.",
+          "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts"
+        },
+        {
+          "symbol": "productionParityDiagnostics.ts::ProductionUserControlPath / auditProductionUserControlObservations",
+          "evidence": "The union accepts selectedProfile and withoutAreaAlternate, and the gate compares expected canonical identities and counts, but current production invocation supplies selected paths only. A supported path tag and zero alternate occurrence do not prove representative alternate consumer coverage.",
+          "path": "packages/calculation-application/src/productionParityDiagnostics.ts"
+        }
+      ],
+      "proposedBoundary": "Connect the actual ranking alternate to the shared audit-facing consumer/gate and require at least one schema-legal representative alternate plus fail-closed negative fixtures. Keep published-master expected population separate from representative-fixture population; derive each expected identity set from its source. Do not turn 1590 into a fixed future expected count or add fixture records to the production inventory.",
+      "planningBoundary": "Fresh worker first reconciles HEAD/index/tracked/untracked and presents direct-symbol responsibilities, candidate files, normal/audit paths, positive/negative fixtures, invariants, acceptance/stopping points and valid evidence reuse. Wait for user confirmation before product/source-test edits or source test/producer runs. The exact extraction and gate contract are not fixed by this preparation.",
+      "excluded": "Stale-mutation actual-value/read/rollback consumer closure, legacy cleanup, TSK-09, already closed S4/architecture work, protected matrix identity revision and unconditional eight-shard regeneration.",
+      "preservedEvidence": "Architecture unit final quality 936 unit /155 production /29 E2E, audit 3, S4 expected/observed 1590 and identical observations; matrix 04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4 and eligibility 68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759. Reuse only with matched source/semantic conditions and verified artifact bytes/SHA-256.",
+      "status": "TSK-08 in_progress; TSK-09.1/09 blocked. This is preparation, not implementation or test evidence."
+    }
   }
 }

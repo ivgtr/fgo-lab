@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.56"
+document_version: "1.7.57"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -2965,3 +2965,11 @@ Current bounded-unit completion（2026-09-26、battle-execution architecture）:
 productionのinventory／digest／runtime counterは先行runと一致し、candidate 6,673／deduplicated 4,194、damage request 2,596／distinct 1,489、master read／parse／compile各1。全production所要時間68,273→86,849ms、compile 21,533→16,322ms、witness 4,827→3,857msだが、先行6 worker／最終4 workerという負荷差があり、制御された性能改善とは解釈しない。26関数の本体token一致、性能ratchet成功、candidate／request増加なしを確認した。8 shardは再生成せず既存matrix／eligibility digestを維持する。検証command、失敗runと回復、artifact path／bytes／SHA-256は[evidence](../evidence/tsk-08-parity-ratchet.json)の`Battle-execution architecture responsibility closure`を参照する。
 
 このsource／test／資料差分だけをlocal commitし、pushしない。今回のarchitecture bounded unitにBlockingは残らないが、TSK-08全体は`in_progress`、TSK-09.1／09は`blocked`を維持する。次のwithout-area／stale-mutation production consumer closureとlegacy cleanupは別bounded unitとして計画し、解消済みS4を再開しない。
+
+次sessionの限定handoff（2026-09-26、参照実装commit `a9364893e6edde4b6c2816b89d03e03da111845d`）:
+
+次の1セッションは**without-area production consumer closureだけ**を扱う。`rankingPolicyCandidates.ts::calculateRankingCandidateSet`は選ばれたcandidateKeyと、detail作成に実際に使ったselected／without-area executionの観測・input・effective contributionを既に返す。`scenario.test.ts`の既存schema-legal代表fixtureはこれらの参照とoperation／projection／contribution identityを確認する。一方、`productionMasterControlAudit.test.ts`はselected-profile母集団を生成し、`withoutAreaAlternateCount: 0`で通る。`productionParityDiagnostics.ts::auditProductionUserControlObservations`にpath unionがあることや、transport fixtureの成功をproduction consumer closureとみなさない。実alternateから共有consumer／gate／代表fixture／宣言済みartifactへの経路を完成させ、欠落・誤candidate・誤参照・identity不一致をfail closedにする。published master母集団と代表fixtureの母集団は分け、両側の期待identityを各生成元から導出する。固定1,590やfixtureのproduction母集団混入で通さない。without-areaはparty-wide final damage寄与を除外してもoperation／projectionがappliedのままになり得るため、既存責務からgateの証明契約を計画する。
+
+最初に現在差分を照合し、直接symbolに基づく段階的計画（責務・候補file・通常／監査の実経路・代表と否定fixture・不変条件・通過条件・停止点・証拠再利用条件）を提示して確認を待つ。確認前は製品source／test／文書を編集せずsource test／producer・stage／commitを行わない。確認後は同じbounded unitを実装・局所検証・必要な最終quality／監査・Task／evidence更新・範囲限定local commitまで継続する。既存transportの抽出方法やgate拡張を本handoffで固定しない。未規定の製品意味論または実質的な契約衝突だけ影響作業を止めて改訂計画を示す。
+
+stale-mutationの実値・後続read・rollback／recovery consumer closure、legacy cleanup、TSK-09は別session。解消済みS4／architectureを再開せず、8 shardは具体的なidentity疑義がない限り再生成しない。先行quality unit 936／production 155／E2E 29、audit 3、S4 1,590、matrix／eligibility digestは[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitとhandoffPreparation.nextSessionを参照し、同条件で有効な証拠を再利用する。本準備はコード読み取りと資料更新だけで、製品編集・source test／producerは実行していない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
