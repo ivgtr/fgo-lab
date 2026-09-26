@@ -1,4 +1,12 @@
 import {
+  battlePointPreparationProgram,
+  battlePointPreparationSource,
+  battlePointPreparationCanonicalInventory,
+  auditPublishedBattlePointPreparationObservations,
+  type BattlePointPreparationProgram,
+  type BattlePointPreparationSource,
+} from './productionBattlePointPreparationAudit';
+import {
   scalarQuantityProgram,
   scalarQuantitySource,
   scalarQuantityCanonicalInventory,
@@ -119,6 +127,8 @@ function loadProductionMaster() {
 }
 
 const scalarQuantityObservations: ScalarQuantitySource[] = [];
+const domainPrograms: BattlePointPreparationProgram[] = [];
+const domainObservations: BattlePointPreparationSource[] = [];
 const controlPreparations = new WeakMap<
   ReturnType<typeof requireExecutableCalculation>,
   ReturnType<typeof prepareCalculationScenarioWithPolicy>
@@ -155,6 +165,11 @@ function evaluateWithOrderedOperationEvents(
   controlPreparations.set(calculation, prepared);
   const scalar = scalarQuantityProgram(prepared, calculation);
   if (scalar) scalarQuantityObservations.push(scalarQuantitySource(scalar));
+  const domain = battlePointPreparationProgram(prepared, calculation);
+  if (domain) {
+    domainPrograms.push(domain);
+    domainObservations.push(battlePointPreparationSource(domain));
+  }
   return { calculation, observation: prepared.executionObservation, prepared };
 }
 
@@ -372,6 +387,7 @@ describe('production master inventory ratchet', () => {
       ...productionAuditTestOptions([
         'production-inert-control-production.json',
         'production-scalar-quantity.json',
+        'production-preparation-battle-point.json',
       ]),
     },
     async ({ task }) => {
@@ -385,6 +401,9 @@ describe('production master inventory ratchet', () => {
         masterDataVersion: master.version,
       };
       scalarQuantityObservations.length = 0;
+      domainPrograms.length = 0;
+      domainObservations.length = 0;
+      const domainInventory = battlePointPreparationCanonicalInventory(master);
       const scalarInventory = scalarQuantityCanonicalInventory(master);
       const calculations = master.servants.flatMap((servant) => {
         try {
@@ -1282,6 +1301,16 @@ describe('production master inventory ratchet', () => {
         scalarQuantityObservations,
       );
       await writeProductionAuditArtifact(task.meta, 'production-scalar-quantity.json', scalarGate);
+      const domainGate = auditPublishedBattlePointPreparationObservations(
+        domainInventory,
+        domainPrograms,
+        domainObservations,
+      );
+      await writeProductionAuditArtifact(
+        task.meta,
+        'production-preparation-battle-point.json',
+        domainGate,
+      );
       const userControlGate = auditProductionUserControlObservations({
         expectedProjectionCount: expectedUserControlIdentities.length,
         expectedIdentities: selectedExpectedIdentities,
@@ -1302,6 +1331,7 @@ describe('production master inventory ratchet', () => {
         observations: userControlObservations,
       });
       expect(scalarGate.status, JSON.stringify(scalarGate.firstDifference)).toBe('passed');
+      expect(domainGate.status, JSON.stringify(domainGate.firstDifference)).toBe('passed');
       if (userControlGate.status !== 'passed')
         throw new Error(
           `production_user_control_ratchet_failed:${JSON.stringify({

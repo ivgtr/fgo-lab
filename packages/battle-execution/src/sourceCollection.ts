@@ -22,7 +22,11 @@ import {
 } from '@fgo-lab/master-data';
 import { battlePointPhaseCandidates } from './battlePointResource';
 import { battlePointEffectKey } from './battlePointResource';
-import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
+import type {
+  CalculationScenario,
+  DamageResolutionInput,
+  PreNoblePhantasmCommand,
+} from '@fgo-lab/schema';
 import type { ExecutionIssue, ExecutionPhase } from './contracts';
 import type { Origin } from './effectRouting';
 import {
@@ -32,6 +36,7 @@ import {
   type PreNoblePhantasmState,
   type PreparationExecutionContext,
   type PreparationFailureCode,
+  type PreparationTransitionResult,
 } from './preNoblePhantasm';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -97,6 +102,11 @@ export function resolveAttackerFormExecution(
     initialOvercharge?: 1 | 2 | 3 | 4 | 5;
     policy?: PreparationExecutionContext['policy'];
     initialBattlePointPoints?: Readonly<Record<string, number>>;
+    observePreparationTransition?: (
+      before: PreNoblePhantasmState,
+      command: PreNoblePhantasmCommand,
+      result: PreparationTransitionResult,
+    ) => void;
   } = {},
 ): ResolvedAttackerFormExecution {
   const auxiliary = options.master
@@ -250,6 +260,7 @@ export function resolveAttackerFormExecution(
     const actorFormId = state.currentFormId;
     const variantBeforeAction = state.selectedNoblePhantasmVariant;
     const result = reducePreNoblePhantasmAction(attacker, state, command, context);
+    options.observePreparationTransition?.(state, command, result);
     if (result.status === 'rejected') {
       recoveryInputDefinitions = result.recoveryInputDefinitions ?? [];
       if (

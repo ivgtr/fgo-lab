@@ -1,3 +1,7 @@
+import {
+  attachBattlePointPreparationObservation,
+  type BattlePointPreparationObservation,
+} from './battlePointPreparationObservation';
 import { resolveInitialMaximumHp, type InitialHpUnavailableIssue } from './initialHp';
 import {
   collectActivationRequirementOwners,
@@ -21,6 +25,8 @@ import {
   type PreparationFailureCode,
   type ResolvedAttackerFormExecution,
   type ResolvedCanonicalInputSet,
+  type PreNoblePhantasmState,
+  type PreparationTransitionResult,
 } from '@fgo-lab/battle-execution';
 import {
   classAttackRate,
@@ -50,6 +56,7 @@ import {
   type DamageResolutionInput,
   type ServantBuild,
   type VersionContext,
+  type PreNoblePhantasmCommand,
 } from '@fgo-lab/schema';
 import { calculateDamageResolution } from './damageResolution';
 import {
@@ -366,6 +373,7 @@ function damageResolutionInputForNoblePhantasm(
   attackerAtk: number,
   effectiveOvercharge: number,
   battlePoints?: BattlePointState,
+  observation?: BattlePointPreparationObservation,
 ): DamageResolutionInput {
   const damage = noblePhantasm.damage[0];
   if (!damage) throw new TypeError(`attack_np_damage_missing:${servant.id}`);
@@ -374,7 +382,23 @@ function damageResolutionInputForNoblePhantasm(
         (candidate) => candidate.id === scenario.craftEssence?.craftEssenceId,
       )
     : undefined;
-  return {
+  const parameter =
+    damage.kind === 'battlePointPhase' && battlePoints
+      ? damage.parametersByOvercharge[effectiveOvercharge - 1]?.[scenario.attacker.npLevel - 1]
+      : undefined;
+  const domain =
+    damage.kind === 'battlePointPhase' && battlePoints
+      ? master.battlePointDomains.find((candidate) => candidate.id === String(parameter?.targetId))
+      : undefined;
+  const value =
+    domain && battlePoints ? readBattlePoint(battlePoints, 'attacker', domain.id) : undefined;
+  const phase =
+    damage.kind === 'battlePointPhase' && battlePoints
+      ? domain
+        ? battlePointPhase(domain, value)
+        : null
+      : scenario.battleState.battlePointPhase;
+  const input: DamageResolutionInput = {
     attackerId: servant.id,
     attackerLevel: scenario.attacker.level,
     attackerAtk,
@@ -419,21 +443,7 @@ function damageResolutionInputForNoblePhantasm(
     attackerHpPermille: scenario.attackerHpPermille,
     targetRarity: null,
     targetStateTraits: [],
-    battlePointPhase:
-      damage.kind === 'battlePointPhase' && battlePoints
-        ? (() => {
-            const parameter =
-              damage.parametersByOvercharge[effectiveOvercharge - 1]?.[
-                scenario.attacker.npLevel - 1
-              ];
-            const domain = master.battlePointDomains.find(
-              (candidate) => candidate.id === String(parameter?.targetId),
-            );
-            return domain
-              ? battlePointPhase(domain, readBattlePoint(battlePoints, 'attacker', domain.id))
-              : null;
-          })()
-        : scenario.battleState.battlePointPhase,
+    battlePointPhase: phase,
     target: {
       classId:
         scenario.targetContext.class.kind === 'concrete'
@@ -446,6 +456,9 @@ function damageResolutionInputForNoblePhantasm(
       traits: [],
     },
   };
+  if (observation && damage.kind === 'battlePointPhase' && battlePoints && parameter)
+    observation.conversion = { state: battlePoints, domain, value, phase, input, parameter };
+  return input;
 }
 
 export function resolveScenarioPreparationOutcome(
@@ -453,6 +466,16 @@ export function resolveScenarioPreparationOutcome(
   master: MasterDataSnapshot,
   preparation: CalculationPreparationOptions = {},
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
+): ScenarioPreparationOutcome {
+  return resolveScenarioPreparationOutcomeObserved(scenario, master, preparation, policy);
+}
+
+function resolveScenarioPreparationOutcomeObserved(
+  scenario: ResolvedCalculationScenario,
+  master: MasterDataSnapshot,
+  preparation: CalculationPreparationOptions,
+  policy: ContributionApplicationPolicy,
+  observation?: BattlePointPreparationObservation,
 ): ScenarioPreparationOutcome {
   const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
   if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
@@ -499,6 +522,33 @@ export function resolveScenarioPreparationOutcome(
     {
       master,
       policy,
+      ...(observation
+        ? {
+            observePreparationTransition: (
+              before: PreNoblePhantasmState,
+              command: PreNoblePhantasmCommand,
+              result: PreparationTransitionResult,
+            ) => {
+              observation.transitions = [
+                ...observation.transitions,
+                {
+                  before: {
+                    battlePoints: before.battlePoints,
+                    appliedActionCount: before.appliedActions.length,
+                  },
+                  command,
+                  result: {
+                    status: result.status,
+                    state: {
+                      battlePoints: result.state.battlePoints,
+                      appliedActions: result.state.appliedActions,
+                    },
+                  },
+                },
+              ];
+            },
+          }
+        : {}),
       ...(preparation.initialOvercharge === undefined
         ? {}
         : { initialOvercharge: preparation.initialOvercharge }),
@@ -547,6 +597,7 @@ export function resolveScenarioPreparationOutcome(
       attackerAtk,
       formExecution.state.ocState.receipts.at(-1)!.effectiveOc,
       formExecution.state.battlePoints,
+      observation,
     ),
     formExecution,
   };
@@ -1157,7 +1208,15 @@ function prepareConcreteCalculationScenarioWithPolicy(
       contributionPolicy,
       preparation,
     };
-  const base = resolveScenarioPreparationOutcome(scenario, master, preparation, contributionPolicy);
+  const battlePointPreparation: BattlePointPreparationObservation | undefined =
+    captureExecutionObservation ? { transitions: [] } : undefined;
+  const base = resolveScenarioPreparationOutcomeObserved(
+    scenario,
+    master,
+    preparation,
+    contributionPolicy,
+    battlePointPreparation,
+  );
   if (base.status === 'invalid') {
     return {
       status: 'invalid',
@@ -1203,6 +1262,18 @@ function prepareConcreteCalculationScenarioWithPolicy(
   const execution =
     observedExecution?.execution ??
     executeOrderedScenario(orderedScenario, canonicalInputs, contributionPolicy);
+  const executionObservation = observedExecution
+    ? {
+        battlePointWitness: preparation.initialBattlePointPoints ?? null,
+        targetExecution: observedExecution.observation,
+      }
+    : undefined;
+  if (
+    executionObservation &&
+    battlePointPreparation &&
+    orderedScenario.battlePoints?.receipts.length
+  )
+    attachBattlePointPreparationObservation(executionObservation, battlePointPreparation);
   return {
     status: 'executable',
     master,
@@ -1226,14 +1297,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
     canonicalInputs,
     contributionPolicy,
     preparation,
-    ...(observedExecution
-      ? {
-          executionObservation: {
-            battlePointWitness: preparation.initialBattlePointPoints ?? null,
-            targetExecution: observedExecution.observation,
-          },
-        }
-      : {}),
+    ...(executionObservation ? { executionObservation } : {}),
   };
 }
 

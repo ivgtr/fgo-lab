@@ -241,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
+  "nextBoundedUnit": "Separately scoped remaining TSK-08 mutation work; no domain rollback/recovery or whole TSK-08 closure in this unit.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -7588,9 +7588,811 @@
         "docs/README.md"
       ],
       "localCommit": "dd7b396b4090be0b72d0044c263eac816829330a"
+    },
+    {
+      "name": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
+      "status": "Committed fixed domain BP preparation forward bounded consumer completed; product/diagnostic/documentation gates passed, scoped local commit is reference identity",
+      "baselineHead": "668457454cdc8320ddae2edc87a708ecdd8f35c7",
+      "priorProductCommit": "dd7b396b4090be0b72d0044c263eac816829330a",
+      "worktreeAtStart": {
+        "index": [],
+        "tracked": [],
+        "untracked": []
+      },
+      "authorizedScope": "One session: committed fixed resourceMutation/battlePoint gain/loss in selected attacker skill preparation -> original actor/domain point receipt and action/source identity -> terminal same-domain live condition read -> original domain-to-scalar NP input and actual executeNpDamage receipt -> same selected event/projection/effective contribution/canonical input/calculated result -> shared audit consumer/gate, schema-legal representatives/negative fixtures, declared complete artifact. Canonical domain is the address; no scalar addQuantity writer in this unit.",
+      "changedFiles": [
+        "packages/battle-execution/src/sourceCollection.ts",
+        "packages/calculation-application/src/scenario.ts",
+        "packages/calculation-application/src/productionBattlePointPreparationAudit.ts",
+        "packages/calculation-application/src/productionBattlePointPreparationAudit.test.ts",
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "packages/calculation-application/src/battlePointPreparationObservation.ts"
+      ],
+      "ownership": {
+        "preparation": "Original reducer transition is captured after the actual reduce call. Its applied status, original BP before/after state and committed action references connect the committed resource transaction; NP gauge resourceTransaction is not interpreted as a BP receipt. No preparation failure semantics change.",
+        "conversion": "Original application damageResolutionInputForNoblePhantasm evaluates phase once and captures original state/domain/value/parameter/phase/base input only when capturing. An internal WeakMap binds it to the original selected observation without changing its public/serialized shape; no normal observation allocation. Observation attachment types/storage live in the focused internal battlePointPreparationObservation module because index exports scenario symbols publicly. Public calculation observation and package exports remain unchanged.",
+        "expectation": "Commands, original initial form/master skill slot and canonical source/choice selection generate action/source/effect/operationIndex identities before activation or receipt values. Natural master condition leaves and NP identities anchor generated operation reader membership. Published writer declarations and same-domain natural NP contracts are independent of observed success and schema-legal fixtures.",
+        "consumer": "Dedicated domain preparation consumer compares original references and immutable owner/canonical snapshots, changed receipts, canonical write/skill ordering, final same-domain point/phase, actual scalar NP raw/consumed/evaluation/emitted input, event/projection/effective contribution/application canonical input/calculated result. No addition/clamp/phase/condition/damage replay.",
+        "writerRetention": "Unconditional committed BP writes may have only retained stateMutationOnly/notRelevant projections. Conditional retained operations are allowed as preservation evidence. No writer applied event or damage contribution is required; extra resourceMutation/addQuantity and writer damage contribution are rejected.",
+        "artifact": "Five representative tests each declare their complete JSON diagnostic and publish all positive/negative payloads before assertions. Existing lossless writer/runner verifies declaration, path, bytes and SHA-256; published audit declares its separate complete inventory/gate artifact."
+      },
+      "flowClosure": {
+        "status": "Scoped Blocking0; committed forward shared consumer5/426, normal/capture and calculator/ranking parity, declared diagnostics, audit3 and quality943/155/29 passed",
+        "normal": "Canonical selected command -> original preparation reducer/transaction/BP owner -> original phase conversion -> prepared ordered execution -> original application input/result. Only optional capture hooks added; candidate selection/order/semantics unchanged.",
+        "capture": "Same original execution -> capture-only reducer transitions + original domain phase conversion -> original domain condition reads and scalarNpConsumptions -> same event/projection/effective contribution/canonical input/typed result -> shared domain gate. No audit execution replay.",
+        "representatives": [
+          {
+            "name": "gain",
+            "point": 55,
+            "phase": 5,
+            "npRaw": 5,
+            "npConsumed": 5,
+            "receipts": [
+              {
+                "identity": "[\"preparation:0:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-0:0\",0]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 10,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 55,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                }
+              }
+            ],
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "result": "calculated"
+          },
+          {
+            "name": "loss",
+            "point": 50,
+            "phase": 5,
+            "npRaw": 5,
+            "npConsumed": 5,
+            "receipts": [
+              {
+                "identity": "[\"preparation:0:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-0:0\",0]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 80,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 50,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                }
+              }
+            ],
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "result": "calculated"
+          },
+          {
+            "name": "same-skill-lower-clamp",
+            "point": 55,
+            "phase": 5,
+            "npRaw": 5,
+            "npConsumed": 5,
+            "receipts": [
+              {
+                "identity": "[\"preparation:0:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-0:0\",0]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 10,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 80,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                }
+              },
+              {
+                "identity": "[\"preparation:0:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-0:0\",1]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 80,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 0,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                }
+              },
+              {
+                "identity": "[\"preparation:0:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-0:0\",2]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 0,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 55,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                }
+              }
+            ],
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "result": "calculated"
+          },
+          {
+            "name": "intervening-skill",
+            "point": 55,
+            "phase": 5,
+            "npRaw": 5,
+            "npConsumed": 5,
+            "receipts": [
+              {
+                "identity": "[\"preparation:0:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-0:0\",0]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 10,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 40,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                }
+              },
+              {
+                "identity": "[\"preparation:2:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-2:0\",0]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 40,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 55,
+                  "capacity": 100,
+                  "capacityModifiers": []
+                }
+              }
+            ],
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "result": "calculated"
+          },
+          {
+            "name": "permille-capacity-np-clamp",
+            "point": 120,
+            "phase": 5,
+            "npRaw": 5,
+            "npConsumed": 3,
+            "receipts": [
+              {
+                "identity": "[\"preparation:0:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-0:0\",0]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 180,
+                  "capacity": 200,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 200,
+                  "capacity": 200,
+                  "capacityModifiers": []
+                }
+              },
+              {
+                "identity": "[\"preparation:0:useSkillSlot\",\"attacker:fixture-saber\",\"domain-writer-0:0\",1]",
+                "actor": "attacker",
+                "domainId": "810000",
+                "before": {
+                  "kind": "present",
+                  "point": 200,
+                  "capacity": 200,
+                  "capacityModifiers": []
+                },
+                "after": {
+                  "kind": "present",
+                  "point": 120,
+                  "capacity": 200,
+                  "capacityModifiers": []
+                }
+              }
+            ],
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "result": "calculated"
+          }
+        ],
+        "negativeGroups": {
+          "missing": 120,
+          "identity-order": 138,
+          "value-continuity": 78,
+          "use-contradiction": 55,
+          "forged-commit-outcome": 35
+        },
+        "negativeCount": 426,
+        "alternate": "All five representatives pass normal/capture and calculator/ranking parity. Domain rollback/recovery, capacity modifier mutation, form/eligibility changes and auxiliary writer families remain outside this unit.",
+        "review": "Canonical/source membership and population omissions, valid other-domain transport, coherent receipt/read/input corruption, transaction/group/order conflicts and fabricated NP readers fail at their declared typed reason/checkPath with canonical first difference. Missing use operation now returns a typed failure instead of throwing. Published natural NP-domain contracts cannot be hidden by filtering absent condition observations. Canonical key-order equality is used consistently; unchanged reordered receipt fails changed check, reordered same-reference input passes without replay."
+      },
+      "verification": {
+        "focused": {
+          "manifest": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/manifest.json",
+          "status": "success",
+          "tests": 5,
+          "representatives": 5,
+          "negativeCount": 426,
+          "artifacts": [
+            {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-gain.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 61624974,
+              "sha256": "11791e57657db7a86a216ea98b30b0ecfbaa48af230e12651eb07a1df0935724"
+            },
+            {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-loss.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 61624974,
+              "sha256": "93884d668663d01635261b557ab1244250596e9db26cef14b45d5ee7301ba3bd"
+            },
+            {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 75301843,
+              "sha256": "7e1d1020af21be5c8c9a3c5b6ccad36c3865f71e6e77287aa185dcf1d3368b21"
+            },
+            {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-intervening-skill.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 97744328,
+              "sha256": "140888e156b48fefd6457b5af296667a6f50f2f7ec07be1a3a0f562f1cb79e02"
+            },
+            {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 68931146,
+              "sha256": "145c418ccf6a2747e572880ee8539d1b2513ed38d5ffbee00a17a14b2f07b314"
+            }
+          ],
+          "artifactVerification": {
+            "errors": []
+          }
+        },
+        "related": {
+          "manifest": ".test-results/2026-09-26T09-06-55-901Z-2-3f27db/manifest.json",
+          "tests": 76,
+          "condition": "Unchanged existing five test files: BP resource/preparation/NP evaluation and scalar forward/recovery. That run also passed the preceding domain5, which was superseded by the final focused domain run after added evidence checks. Do not treat the older domain results as final-source evidence."
+        },
+        "localStatic": {
+          "typecheck": "passed",
+          "lint": "passed",
+          "diffWhitespace": "passed"
+        },
+        "sourceCondition": {
+          "source": [
+            {
+              "path": "packages/battle-execution/src/sourceCollection.ts",
+              "bytes": 19545,
+              "sha256": "a9eaf6e32324a9d9de610e91610b6684294374c41f32242650c76df0fa9f29ed"
+            },
+            {
+              "path": "packages/calculation-application/src/scenario.ts",
+              "bytes": 56282,
+              "sha256": "478af388c13c2e9bf329c750be52c08ec9cc678ab77d42aa7d1a9ba50c586027"
+            },
+            {
+              "path": "packages/calculation-application/src/productionBattlePointPreparationAudit.ts",
+              "bytes": 38090,
+              "sha256": "387698b36df4920a6b0e39d0c5028292a0fd03abcdf1770cd6c7bc6b4d80e5e0"
+            },
+            {
+              "path": "packages/calculation-application/src/productionBattlePointPreparationAudit.test.ts",
+              "bytes": 39347,
+              "sha256": "7798d0b70c649b0565569d6d1a42e7d3070fe7fcc16258775e77929953b92d75"
+            },
+            {
+              "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+              "bytes": 73479,
+              "sha256": "7cb75444afbe7605dedf6bdaed6bb0e117bd2c25d381d35ccdf7fa77c6cb14a5"
+            },
+            {
+              "path": "packages/calculation-application/src/battlePointPreparationObservation.ts",
+              "bytes": 1807,
+              "sha256": "e78a4c6954ab7c6af64bb4e9f00be5cf6599ecc59ad6b5335eaf75f98eb5d7f7"
+            }
+          ],
+          "frozenSource": {
+            "path": ".test-results/tsk-08-domain-bp-forward-20260926/frozen-source.json",
+            "bytes": 1160,
+            "sha256": "90bf0d23eb23314b8600d7eeb02ebf64a965ef7603c399ea117cb0dbf47656ea"
+          },
+          "finalMatched": true
+        },
+        "audit": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/test-runner.mjs compact --suite=audit",
+          "manifest": ".test-results/2026-09-26T09-30-31-478Z-2-137079/manifest.json",
+          "status": "success",
+          "tests": 3,
+          "warnings": 0,
+          "artifactVerification": {
+            "errors": []
+          },
+          "publishedCanonicalWriters": 3,
+          "publishedNaturalNpDomainContracts": 0,
+          "observedConsumerPrograms": 0,
+          "artifacts": [
+            {
+              "path": ".test-results/2026-09-26T09-30-31-478Z-2-137079/production-preparation-battle-point.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 3268,
+              "sha256": "f4e1a86c72c34ac1474f46d40c0cbfdb4007e098057c40f306845a4c2e417852"
+            }
+          ]
+        },
+        "quality": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/quality-runner.mjs",
+          "manifest": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/manifest.json",
+          "status": "success",
+          "durationMs": 389249,
+          "unit": 943,
+          "production": 155,
+          "e2e": 29,
+          "retries": 0,
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "steps": [
+            {
+              "id": "format",
+              "code": 0
+            },
+            {
+              "id": "lint",
+              "code": 0
+            },
+            {
+              "id": "typecheck",
+              "code": 0
+            },
+            {
+              "id": "runner",
+              "code": 0
+            },
+            {
+              "id": "docs",
+              "code": 0
+            },
+            {
+              "id": "unit",
+              "code": 0
+            },
+            {
+              "id": "production",
+              "code": 0
+            },
+            {
+              "id": "master",
+              "code": 0
+            },
+            {
+              "id": "build",
+              "code": 0
+            },
+            {
+              "id": "playwright",
+              "code": 0
+            }
+          ],
+          "allRequiredExitZero": true
+        },
+        "finalRecording": {
+          "docsTests": "6/6",
+          "integrity": "passed",
+          "format": "passed",
+          "diffWhitespace": "passed",
+          "artifacts": [
+            {
+              "path": ".test-results/tsk-08-domain-bp-forward-20260926/docs-tests.log",
+              "bytes": 507,
+              "sha256": "ab48ab77ed7371f5689891170da2fb754fcdc3a1e7aa290f428df39b3c5ee323"
+            },
+            {
+              "path": ".test-results/tsk-08-domain-bp-forward-20260926/docs-integrity.log",
+              "bytes": 22,
+              "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+            },
+            {
+              "path": ".test-results/tsk-08-domain-bp-forward-20260926/docs-check.log",
+              "bytes": 66,
+              "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+            }
+          ],
+          "condition": "All required product gates ran on frozen final six source/test inputs. Only existing four result records changed afterward; final documentation/metadata/refs validation and scoped ten-file local commit close this unit."
+        }
+      },
+      "evidenceReuse": {
+        "baselineReceipts": "handoffPreparation.nextSession.evidenceReuse",
+        "verifiedAtStart": {
+          "uniqueHistoricalReceipts": 96,
+          "domainTransport": 3,
+          "receiptManifest": 1,
+          "errors": []
+        },
+        "condition": "Historical source/semantic conditions and exact receipt checksums are required; historical scalar5/440, quality938/155/29 and audit3 do not prove this domain consumer. Preserve S4/HP/domain reads, existing forward/recovery/without-area and current matrix/eligibility digests. No concrete identity concern; no eight-shard regeneration.",
+        "finalReconciliation": {
+          "path": ".test-results/tsk-08-domain-bp-forward-20260926/final-reconciliation.json",
+          "bytes": 73909,
+          "sha256": "6684b3c955de5a6bdf044150a3381897ef97dda39e310c0a55ccf852cf161f3f"
+        },
+        "checkedDeclarations": 268,
+        "uniqueArtifactReceipts": 212,
+        "receiptErrors": [],
+        "protectedComparisons": [
+          {
+            "name": "tsk-08-scalar-quantity-np-consumption.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-scalar-quantity-np-consumption.json",
+              "bytes": 25443252,
+              "sha256": "dcc0fd126b3371b088f546c6009fe9c3b37f1f26ddffaca125a4df32a827e392"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-scalar-quantity-np-consumption.json",
+              "bytes": 25443252,
+              "sha256": "dcc0fd126b3371b088f546c6009fe9c3b37f1f26ddffaca125a4df32a827e392"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-execution-group-rollback.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-execution-group-rollback.json",
+              "bytes": 38554219,
+              "sha256": "3851944cb98576dae786a33c68f05767a48b8fffa74acb7a955ba2f1b2b14c15"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-execution-group-rollback.json",
+              "bytes": 38554219,
+              "sha256": "3851944cb98576dae786a33c68f05767a48b8fffa74acb7a955ba2f1b2b14c15"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-star-mutation-read.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-star-mutation-read.json",
+              "bytes": 85176201,
+              "sha256": "853dcdb48d64b28f097a39f56a5f20d69caf933f38f3eead48020e94d3c04cc9"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-star-mutation-read.json",
+              "bytes": 85176201,
+              "sha256": "853dcdb48d64b28f097a39f56a5f20d69caf933f38f3eead48020e94d3c04cc9"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-without-area-fixture.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/production-without-area-fixture.json",
+              "bytes": 15693723,
+              "sha256": "f03926cdf5d09b4c698a344ffd3f7fe610c9559b5b4e3fc707eb2ac7c94a0eaa"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/production-without-area-fixture.json",
+              "bytes": 15693723,
+              "sha256": "f03926cdf5d09b4c698a344ffd3f7fe610c9559b5b4e3fc707eb2ac7c94a0eaa"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-inert-control-production.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-06-37-163Z-2-0300a2/production-inert-control-production.json",
+              "bytes": 166231666,
+              "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-30-31-478Z-2-137079/production-inert-control-production.json",
+              "bytes": 166231666,
+              "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-scalar-quantity.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-06-37-163Z-2-0300a2/production-scalar-quantity.json",
+              "bytes": 490,
+              "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-30-31-478Z-2-137079/production-scalar-quantity.json",
+              "bytes": 490,
+              "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-scalar-quantity-recovery.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-scalar-quantity-recovery.json",
+              "bytes": 45520578,
+              "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-scalar-quantity-recovery.json",
+              "bytes": 45520578,
+              "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
+            },
+            "byteIdentical": true
+          }
+        ],
+        "domainTransportComparisons": [
+          {
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/production/selected-execution-observation.json",
+              "bytes": 424238,
+              "sha256": "51dbe622e5d26b048dcfcdaa9da064484f14f62b533b6faf1147c3c3f44bc728"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/production/selected-execution-observation.json",
+              "bytes": 424238,
+              "sha256": "51dbe622e5d26b048dcfcdaa9da064484f14f62b533b6faf1147c3c3f44bc728"
+            },
+            "byteIdentical": true
+          },
+          {
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/production/battle-point-3300200-calculator.json",
+              "bytes": 1140618,
+              "sha256": "de730a792b81d044630aee407c2ac4a4deaa2b3ec4deee56c22ca52d2ab75fcb"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/production/battle-point-3300200-calculator.json",
+              "bytes": 1140618,
+              "sha256": "de730a792b81d044630aee407c2ac4a4deaa2b3ec4deee56c22ca52d2ab75fcb"
+            },
+            "byteIdentical": true
+          },
+          {
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/production/battle-point-705300.json",
+              "bytes": 4138864,
+              "sha256": "798d31727a008b323937e7b667b811319fb214587421ab2793d6c593f4aed4d1"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/production/battle-point-705300.json",
+              "bytes": 4138864,
+              "sha256": "798d31727a008b323937e7b667b811319fb214587421ab2793d6c593f4aed4d1"
+            },
+            "byteIdentical": true
+          }
+        ],
+        "focusedQualityComparisons": [
+          {
+            "name": "tsk-08-preparation-battle-point-gain.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-gain.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 61624974,
+              "sha256": "11791e57657db7a86a216ea98b30b0ecfbaa48af230e12651eb07a1df0935724"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-gain.json",
+              "bytes": 61624974,
+              "sha256": "11791e57657db7a86a216ea98b30b0ecfbaa48af230e12651eb07a1df0935724"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-battle-point-loss.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-loss.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 61624974,
+              "sha256": "93884d668663d01635261b557ab1244250596e9db26cef14b45d5ee7301ba3bd"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-loss.json",
+              "bytes": 61624974,
+              "sha256": "93884d668663d01635261b557ab1244250596e9db26cef14b45d5ee7301ba3bd"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 75301843,
+              "sha256": "7e1d1020af21be5c8c9a3c5b6ccad36c3865f71e6e77287aa185dcf1d3368b21"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+              "bytes": 75301843,
+              "sha256": "7e1d1020af21be5c8c9a3c5b6ccad36c3865f71e6e77287aa185dcf1d3368b21"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-battle-point-intervening-skill.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-intervening-skill.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 97744328,
+              "sha256": "140888e156b48fefd6457b5af296667a6f50f2f7ec07be1a3a0f562f1cb79e02"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-intervening-skill.json",
+              "bytes": 97744328,
+              "sha256": "140888e156b48fefd6457b5af296667a6f50f2f7ec07be1a3a0f562f1cb79e02"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T09-27-27-739Z-2-4fc67d/tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+              "format": "json",
+              "allowEmpty": false,
+              "bytes": 68931146,
+              "sha256": "145c418ccf6a2747e572880ee8539d1b2513ed38d5ffbee00a17a14b2f07b314"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+              "bytes": 68931146,
+              "sha256": "145c418ccf6a2747e572880ee8539d1b2513ed38d5ffbee00a17a14b2f07b314"
+            },
+            "byteIdentical": true
+          }
+        ],
+        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+      },
+      "developmentRecovery": [
+        {
+          "manifest": ".test-results/2026-09-26T08-51-19-441Z-2-2f5101/manifest.json",
+          "failure": "Fixture assumed a skill template in an empty fixture master. Replaced with explicit schema-legal template; no product change or false pass."
+        },
+        {
+          "manifest": ".test-results/2026-09-26T08-53-32-494Z-2-a4d250/manifest.json",
+          "failure": "NP fixture lacked required timing. Added canonical beforeDamage timing; no product semantics change."
+        },
+        {
+          "manifest": ".test-results/2026-09-26T08-55-28-015Z-2-adc8e1/manifest.json",
+          "failure": "Combined five representatives exceeded unchanged5s timeout. Split by representative with separate declarations; all coverage retained, no timeout relaxation."
+        },
+        {
+          "manifest": ".test-results/2026-09-26T08-56-28-032Z-2-07f1cb/manifest.json",
+          "failure": "Consumer incorrectly required preserve operation for unconditional retained BP evidence and equated NP emitted input with application aggregated input. Corrected to existing retention/aggregation ownership; product compiler/evaluator unchanged."
+        },
+        {
+          "manifest": ".test-results/2026-09-26T09-10-12-541Z-2-1d3ca3/manifest.json",
+          "failure": "Fabricated NP expectation reached missing operation and threw before publication. Added typed missing-operation guard; final fixture saves complete diagnostic and asserts canonical.npPopulation failure."
+        },
+        {
+          "reason": "Public export review found that scenario export-star would expose the observation getter/type. Moved only attachment types/storage to an internal unexported module; no semantics or serialized shape change. Refocused5/static gates passed; five complete diagnostics byte-identical. Previous audit passed3 at .test-results/2026-09-26T09-15-20-074Z-2-4ccb4d/manifest.json; final-source audit follows.",
+          "focusedArtifactByteIdentical": true
+        },
+        {
+          "manifest": ".test-results/2026-09-26T09-20-00-829Z-2-96695b/manifest.json",
+          "exit": 130,
+          "reason": "Quality intentionally stopped after unit943/production155/build passed: canonical comparator treats object key order as equal, while consumer used JSON-order equality and asserted non-null first difference. Unified canonical comparison; five reordered unchanged receipts now fail changed check, same-value reordered input passes. Partial running manifest is not final quality evidence. Final-source audit and full quality rerun required."
+        }
+      ],
+      "remaining": "No required implementation or verification remains for this bounded unit. Stage/commit exactly six source/test and four existing docs, no push. TSK-08 in_progress, TSK-09.1/09 blocked; all excluded families remain outside scope.",
+      "sessionBoundary": "60min checkpoint recorded before boundary; all required product gates completed before60min. No new semantic family. After gates only existing Task/evidence/index result records updated.",
+      "performance": {
+        "runtimeCounters": {
+          "baseline": [
+            {
+              "artifact": "production-audit-calculation-application.json",
+              "boundary": "calculation-application",
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "error": null
+            },
+            {
+              "artifact": "production-audit-data-pipeline.json",
+              "boundary": "data-pipeline",
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "error": null
+            }
+          ],
+          "current": [
+            {
+              "artifact": "production-audit-calculation-application.json",
+              "boundary": "calculation-application",
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "error": null
+            },
+            {
+              "artifact": "production-audit-data-pipeline.json",
+              "boundary": "data-pipeline",
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "error": null
+            }
+          ],
+          "identical": true
+        },
+        "timing": {
+          "baselineQualityMs": 354135,
+          "finalQualityMs": 389249,
+          "baselineProductionMs": 76336,
+          "finalProductionMs": 83936,
+          "interpretation": "Full-suite timings include added audit fixture serialization and uncontrolled runtime conditions; not a controlled normal hot-path benchmark. Normal capture allocation absent, same source evaluation count and candidate/damage counters preserved; no threshold/timeout changes."
+        }
+      }
     }
   ],
-  "currentBoundedUnit": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
+  "currentBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
   "handoffPreparation": {
     "baselineHead": "a3241095be383348b6aa8d3b3199309b435b15b8",
     "scope": "read-only code investigation plus documentation; no source/test edits or source tests/producers executed",
@@ -7856,7 +8658,9 @@
           "current": "Matrix revision/remerge and eligibility reconciliation already recorded; latest revision matrix digest04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4 and eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 remain authoritative in their revision record. Old root or intermediate digest is historical, not a new current expectation."
         }
       ],
-      "latestBoundedUnit": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure"
+      "latestBoundedUnit": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
+      "currentWorktreeBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
+      "currentWorktreeEvidence": "boundedUnits latest entry: committed fixed domain BP preparation forward5/426, audit3, quality943/155/29 retry0, final frozen source and declared/protected artifact/counter reconciliation passed. Historical asOfProductCommit/stages remain baseline; TSK-08 in_progress, TSK-09.1/09 blocked."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -7914,7 +8718,7 @@
     "nextSession": {
       "name": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
       "productBaselineCommit": "dd7b396b4090be0b72d0044c263eac816829330a",
-      "status": "Read-only preparation; no new source/test/producer execution and no new domain shared-consumer success claim. Present current-code staged plan and await user confirmation.",
+      "status": "Approved committed fixed domain BP preparation forward unit implemented; all required product gates passed. Reuse currentBoundedUnit records and final source receipts; any next unit must be separately scoped.",
       "scope": "One session: committed fixed resourceMutation/battlePoint gain/loss in selected attacker skill preparation -> original actor/domain point receipt and action/source identity -> terminal same-domain live condition read -> original domain-to-scalar NP input and actual executeNpDamage receipt -> same selected event/projection/effective contribution/canonical input/calculated result -> shared audit consumer/gate, schema-legal representatives/negative fixtures, declared complete artifact. Canonical domain is the address; no scalar addQuantity writer in this unit.",
       "excluded": "Domain rollback/restored/recovery consumer, capacity modifier mutation, form/eligibility transitions or auxiliary actor write paths; HP/trait/form and other families; failure semantics repair; legacy cleanup; general retry/UI recovery; whole stale-mutation/TSK-08 closure; TSK-09.1/09. Do not reopen verified criticalStars/scalar forward/recovery, without-area, S4 or architecture. No mandatory8-shard regeneration.",
       "sourceFindings": [

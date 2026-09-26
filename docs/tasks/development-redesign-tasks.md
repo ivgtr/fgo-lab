@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.67"
+document_version: "1.7.68"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3133,3 +3133,27 @@ domain point／phase／base scalar／NP consumedは別の観測責務で、phase
 今回の変更は既存4文書の整理だけ。8 shardは具体的identity疑義時のみ。60分checkpoint、90分以降新familyなし、pushなし。資料のdocs／integrity／書式・差分検証後にdocumentation-only local commitし、そのcommitを次担当者の参照identityとする。
 
 本資料整理のdocs6/6・integrity・対象書式・diff whitespaceが成功した。製品source／test／設定は`dd7b396`から不変。この4文書だけlocal commitし、依頼プロンプトから当該commitを参照する。
+
+
+Committed fixed domain BP preparation forward bounded-unit checkpoint（2026-09-26、開始HEAD `668457454cdc8320ddae2edc87a708ecdd8f35c7`）:
+
+利用者が段階計画を承認した。開始index／tracked／untrackedは空。攻撃役skillのcanonical fixed gain／lossから、元committed transition・changed actor／domain receipt、終端の同domain live condition read、元phase→scalar変換と実NP消費、同じselected executionのevent／projection／effective contribution／canonical input／calculated resultを専用共有consumer／gateへ接続した。capture限定の元観測を既存observationへ内部参照で対応付け、公開／serialized shapeと通常allocationを保持する。writerの保持projectionとdamage寄与を区別し、ordered loopへ二重適用しない。加算／clamp／phase／condition／damageを監査へ再実装しない。
+
+5代表・426検査別否定と宣言artifact検証、通常／capture・calculator／ranking parityが成功した。point／phaseの相違、同skill複数write、介在skillを含む複数commit、上下限／容量clamp、NP raw5／実consumed3を確認した。関連既存76test、型／lint／差分レビューが成功し、対象内Blocking0。published masterのwriter宣言と自然な同domain NP契約、schema-legal fixtureの母集団を独立に扱う。最終影響audit／README quality、入力・artifact・保護証拠とcounterの照合、結果記録／文書検証／範囲限定local commitが未達。flow・fixture・失敗診断・path／bytes／SHA-256は既存[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを正本とする。
+
+60分前checkpoint。domain rollback／復元／recovery、capacity変更、form／eligibility切替、補助actor writer、別family、failure意味論修正、legacy cleanupと一般retry／UI recoveryは対象外。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま。既存criticalStars／scalar forward・recovery、without-area、S4／architectureを再開せず、8 shardは再生成しない。pushなし。
+
+公開exportの差分確認で、観測getter／型をscenarioの一括exportへ追加しないよう、観測attachmentだけを内部moduleへ抽出した。source／testの最終6入力を固定し、再局所5／421と型／lintが成功。5宣言diagnosticは抽出前とbyte単位一致。先行audit3は成功したが、最終sourceの影響auditを閉じてからqualityへ進む。既存公開observation shape、通常allocation、semanticsは不変。
+
+最終sourceの影響audit3/3・warning0・宣言artifact検証が成功した。published writer3宣言に対し自然な同domain NP契約は0で、期待生成元を示した独立inventory／gateを保存した。これはschema-legal5代表のconsumer成功と別の証拠。6固定sourceが一致し、README必須qualityを開始する。実行中はsource／test／設定／文書を変更しない。
+
+canonical比較のkey順同値契約に合わせconsumerのnull非保証を修正した。同値key順入替の成功と値不変receipt5否定を追加し、最終局所5／426・型／lintが成功。先行qualityはunit943／production155／buildまで成功したが意図的中断exit130で、最終成功にはしない。修正後の6入力を再固定し、影響auditと必須qualityを取り直す。同unit内、60分前のcheckpoint更新。
+
+
+Committed fixed domain BP preparation forward bounded-unit completion（2026-09-26）:
+
+最終差分の5代表・426検査別否定、通常／capture・calculator／ranking parity、影響audit3/3、README必須quality unit943／production155／E2E29（retry0）が成功した。warning／unexpected console0、全必須gate exit0、対象内Blocking0。268宣言照合／212固有artifact receiptはpath／bytes／SHA-256一致、最終6入力も固定checksum一致。新domain診断5件は局所版／quality版でbyte単位一致、既存forward／recovery／without-area／S4の7保護artifactとdomain transport3件も一致した。月下／日輪・HP witness・domain live readとproduction counterを保持した。published writer3宣言／自然な同domain NP契約0はschema-legal成功5代表と独立inventoryで記録し、実在しないreaderを追加しない。
+
+60分境界前に製品gateとcheckpointを閉じた。以後は既存4文書の結果記録のみ更新し、文書検証・最終差分／stage照合後に6 source／testと4文書だけlocal commitする。当該commitを今回の参照identityとする。必要な製品gateは残らない。次の最小操作は記録の文書検証と範囲限定local commitで、次unitは別途限定する。domain rollback／復元consumer、capacity変更、form／eligibility、補助actor writer、別family、failure意味論修正、legacy cleanup、一般retry／UI recoveryは未実装の対象外。今回をstale-mutation全体やTSK-08全体のclosureとは呼ばず、TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。pushなし。詳細は既存evidence最新bounded unitを正本とする。
+
+最終結果記録のdocs6/6・integrity・対象書式・差分whitespace検証も成功した。必要な実装／検証は残らず、最終stageの10対象を照合してlocal commitで閉じる。
