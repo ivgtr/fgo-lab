@@ -16,13 +16,21 @@ import { battlePointPreparationCanonicalInventory } from './productionBattlePoin
 import type { CalculationExecution, PreparedCalculationScenario } from './scenario';
 
 type Transition = BattlePointPreparationRejectionObservation['transitions'][number];
-function canonical(prepared: Partial<PreparedCalculationScenario>) {
+function canonical(prepared: Partial<PreparedCalculationScenario>, capacity = false) {
   if (prepared.scenario?.mode !== 'resolved') return null;
   const scenario = prepared.scenario;
   const master = prepared.master;
   if (!master) return null;
   const servant = master.servants.find(({ id }) => id === scenario.attacker.servantId);
   if (!servant) return null;
+  if (
+    capacity &&
+    (!Array.isArray(scenario.preNoblePhantasmPlan) ||
+      (scenario.preNoblePhantasmPlan as readonly unknown[]).some(
+        (c) => c === null || typeof c !== 'object',
+      ))
+  )
+    return null;
   const actions = scenario.preNoblePhantasmPlan.map((command, commandIndex) => {
     const skill =
       command.kind === 'useSkillSlot'
@@ -44,10 +52,11 @@ function canonical(prepared: Partial<PreparedCalculationScenario>) {
   const writers = actions.flatMap((action) =>
     action.effects.flatMap((effect) =>
       effect.execution.flatMap((operation, operationIndex) =>
-        operation.kind === 'resourceMutation' &&
-        operation.resource === 'battlePoint' &&
-        operation.unit === 'fixed' &&
-        operation.amount.kind === 'fixed' &&
+        ((capacity && operation.kind === 'battlePointCapacityModifier') ||
+          (operation.kind === 'resourceMutation' &&
+            operation.resource === 'battlePoint' &&
+            operation.unit === 'fixed' &&
+            operation.amount.kind === 'fixed')) &&
         resolveResourceTargetPolicy('attacker', operation.recipient) === 'attacker'
           ? [
               {
@@ -123,18 +132,40 @@ const authorities = new WeakMap<
     calculation: CalculationExecution;
     result: CalculationExecution['result'];
     references: ReturnType<typeof originalReferences>;
+    capacity: boolean;
   }
 >();
+/** Canonical capacity membership is independent of activation, receipts and native outcome. */
+export function battlePointCapacityAttemptCanonical(
+  prepared: Partial<PreparedCalculationScenario>,
+) {
+  return canonical(prepared, true);
+}
+export function battlePointCapacityAttemptRejectionProgram(
+  prepared: PreparedCalculationScenario,
+  calculation: CalculationExecution,
+  evaluationIndex = 0,
+) {
+  return createAttemptProgram(prepared, calculation, evaluationIndex, true);
+}
 /** Selection is canonical-writer based, before any success/rejection/changed observation filter. */
 export function battlePointPreparationAttemptProgram(
   prepared: PreparedCalculationScenario,
   calculation: CalculationExecution,
   evaluationIndex = 0,
 ): BattlePointPreparationAttemptProgram | null {
-  const expected = canonical(prepared);
+  return createAttemptProgram(prepared, calculation, evaluationIndex, false);
+}
+function createAttemptProgram(
+  prepared: PreparedCalculationScenario,
+  calculation: CalculationExecution,
+  evaluationIndex: number,
+  capacity: boolean,
+): BattlePointPreparationAttemptProgram | null {
+  const expected = canonical(prepared, capacity);
   if (!expected?.writers.length) return null;
   const program: BattlePointPreparationAttemptProgram = {
-    canonicalIdentity: `tsk-08:preparation-bp-attempt:${canonicalAuditDigest([{ identity: 'selected-scenario', value: snapshot([expected.scenario, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
+    canonicalIdentity: `tsk-08:preparation-bp-${capacity ? 'capacity-attempt' : 'attempt'}:${canonicalAuditDigest([{ identity: 'selected-scenario', value: snapshot([expected.scenario, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
     prepared,
     calculation,
     expected,
@@ -151,6 +182,7 @@ export function battlePointPreparationAttemptProgram(
     calculation,
     result: calculation.result,
     references: originalReferences(program.capture),
+    capacity,
   });
   return program;
 }
@@ -196,6 +228,11 @@ type SourceProof = {
   calculation?: Partial<CalculationExecution>;
   capture?: CaptureProof | undefined;
 };
+function savedTransitionsForStart(capture: Record<string, CanonicalAuditValue>, index: number) {
+  const transitions = capture.transitions as Record<string, CanonicalAuditValue>[] | undefined;
+  return transitions?.[index]?.before as Record<string, CanonicalAuditValue> | undefined;
+}
+
 export function auditBattlePointPreparationAttemptObservations(input: {
   expected: readonly BattlePointPreparationAttemptProgram[];
   observations: readonly SourceProof[];
@@ -308,10 +345,15 @@ export function auditBattlePointPreparationAttemptObservations(input: {
       'attemptCanonicalMismatch',
       'canonical.observed',
       authority.contract,
-      canonical(source.prepared),
+      canonical(source.prepared, authority.capacity),
     );
     c('attemptCanonicalMismatch', 'canonical.contract', program.contract, program.expected);
-    c('attemptCanonicalMismatch', 'canonical.owner', program.contract, canonical(program.prepared));
+    c(
+      'attemptCanonicalMismatch',
+      'canonical.owner',
+      program.contract,
+      canonical(program.prepared, authority.capacity),
+    );
     c(
       'attemptCanonicalMismatch',
       'canonical.writerPopulation',
@@ -537,6 +579,10 @@ export function auditBattlePointPreparationAttemptObservations(input: {
     );
     c('attemptOrderMismatch', 'native.reached', savedAttempt?.reached, reached);
     c('attemptIdentityMismatch', 'native.stepOrigins', savedAttempt?.stepOrigins, stepOrigins);
+    const savedActionStart = savedAttempt?.start as Record<string, CanonicalAuditValue> | undefined;
+    const savedActionStartPoints = savedActionStart?.battlePoints as
+      Record<string, CanonicalAuditValue> | undefined;
+    const savedReducerStart = savedTransitionsForStart(savedCapture, rejectionIndex);
     const native: Partial<NonNullable<PreparationOcAttempt['native']>> | undefined = attempt.native;
     if (native) {
       c('attemptTransportMissing', 'native.ocStateObject', true, native.state !== undefined);
@@ -579,13 +625,21 @@ export function auditBattlePointPreparationAttemptObservations(input: {
       'attemptPopulationMismatch',
       'writer.reachedPopulation',
       reachedWriters.map((w) => [w.occurrenceId, w.operationIndex]),
-      writes.map((w) => [w.source.effect.occurrenceId, w.operationIndex]),
+      writes.map((w) => [
+        (w as { source?: typeof w.source }).source?.effect.occurrenceId,
+        w.operationIndex,
+      ]),
     );
     let previous = attempt.start.battlePoints;
     for (const [index, nativeWrite] of writes.entries()) {
       const write: Omit<PreparationOcAttempt['writes'][number], 'before' | 'after' | 'receipts'> &
         Partial<Pick<PreparationOcAttempt['writes'][number], 'before' | 'after' | 'receipts'>> =
         nativeWrite;
+      if (authority.capacity) {
+        const sourceProof: Partial<typeof write> = write;
+        c('attemptTransportMissing', `writer.${index}.source`, true, !!sourceProof.source);
+        if (!sourceProof.source) continue;
+      }
       const writer = reachedWriters[index];
       const path = `writer.${index}`;
       c(
@@ -653,7 +707,8 @@ export function auditBattlePointPreparationAttemptObservations(input: {
         write.receipts.length === originalWrite?.receiptReferences.length &&
           write.receipts.every((r, i) => r === originalWrite.receiptReferences[i]),
       );
-      c('attemptStateMismatch', `${path}.before`, previous, write.before);
+      // Capacity uses the original write/source/reconcile timeline in its focused consumer.
+      if (!authority.capacity) c('attemptStateMismatch', `${path}.before`, previous, write.before);
       const savedWrite = (
         savedAttempt?.writes as Record<string, CanonicalAuditValue>[] | undefined
       )?.[index];
@@ -711,24 +766,27 @@ export function auditBattlePointPreparationAttemptObservations(input: {
       }
       previous = write.after;
     }
-    c('attemptStateMismatch', 'native.attempted', previous, attempt.attempted);
+    if (!authority.capacity)
+      c('attemptStateMismatch', 'native.attempted', previous, attempt.attempted);
     c('attemptStateMismatch', 'native.returnedReference', true, attempt.returned === attempt.start);
     c(
       'attemptStateMismatch',
       'native.retainedState',
-      failed.before.battlePoints,
+      authority.capacity ? savedActionStart?.battlePoints : failed.before.battlePoints,
       attempt.returned?.battlePoints,
     );
     c(
       'attemptCommitLeak',
       'native.retainedReceipts',
-      failed.before.battlePoints.receipts,
+      authority.capacity ? savedActionStartPoints?.receipts : failed.before.battlePoints.receipts,
       attempt.returned?.battlePoints.receipts,
     );
     c(
       'attemptCommitLeak',
       'native.executedEffects',
-      failed.before.battlePoints.executedEffects,
+      authority.capacity
+        ? savedActionStartPoints?.executedEffects
+        : failed.before.battlePoints.executedEffects,
       attempt.returned?.battlePoints.executedEffects,
     );
     const rejection = capture.rejection;
@@ -764,7 +822,7 @@ export function auditBattlePointPreparationAttemptObservations(input: {
     c(
       'attemptCommitLeak',
       'rejection.committedPrefix',
-      failed.before.appliedActions,
+      authority.capacity ? savedReducerStart?.appliedActions : failed.before.appliedActions,
       rejection?.appliedPreparationActions,
     );
     c(

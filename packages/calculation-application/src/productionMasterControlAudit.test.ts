@@ -1,4 +1,13 @@
 import {
+  battlePointCapacityAttemptSelection,
+  battlePointCapacityAttemptProgram,
+  battlePointCapacityAttemptSource,
+  auditPublishedBattlePointCapacityPreparationAttempts,
+  type BattlePointCapacityAttemptSelection,
+  type BattlePointCapacityAttemptProgram,
+  type BattlePointCapacityAttemptSource,
+} from './productionBattlePointCapacityPreparationAttemptAudit';
+import {
   battlePointCapacitySelection,
   battlePointCapacityPreparationProgram,
   battlePointCapacityPreparationSource,
@@ -143,6 +152,9 @@ function loadProductionMaster() {
 }
 
 const scalarQuantityObservations: ScalarQuantitySource[] = [];
+const capacityAttemptSelections: BattlePointCapacityAttemptSelection[] = [];
+const capacityAttemptPrograms: BattlePointCapacityAttemptProgram[] = [];
+const capacityAttemptObservations: BattlePointCapacityAttemptSource[] = [];
 const capacitySelections: BattlePointCapacitySelection[] = [];
 const capacityPrograms: BattlePointCapacityProgram[] = [];
 const capacityObservations: BattlePointCapacitySource[] = [];
@@ -169,6 +181,20 @@ function evaluateWithOrderedOperationEvents(
     true,
   );
   const evaluated = evaluatePreparedCalculationScenario(prepared, versions);
+  const capacityAttemptSelection = battlePointCapacityAttemptSelection(
+    prepared,
+    capacityAttemptSelections.length,
+  );
+  if (capacityAttemptSelection) capacityAttemptSelections.push(capacityAttemptSelection);
+  const capacityAttempt = battlePointCapacityAttemptProgram(
+    prepared,
+    evaluated,
+    capacityAttemptSelections.length - 1,
+  );
+  if (capacityAttempt) {
+    capacityAttemptPrograms.push(capacityAttempt);
+    capacityAttemptObservations.push(battlePointCapacityAttemptSource(capacityAttempt));
+  }
   const selection = battlePointCapacitySelection(prepared, capacitySelections.length);
   if (selection) capacitySelections.push(selection);
   const capacity = battlePointCapacityPreparationProgram(
@@ -431,6 +457,7 @@ describe('production master inventory ratchet', () => {
         'production-preparation-battle-point.json',
         'production-preparation-bp-attempt.json',
         'production-preparation-bp-capacity.json',
+        'production-preparation-bp-capacity-attempt.json',
       ]),
     },
     async ({ task }) => {
@@ -1377,6 +1404,17 @@ describe('production master inventory ratchet', () => {
         'production-preparation-bp-capacity.json',
         capacityGate,
       );
+      const capacityAttemptGate = auditPublishedBattlePointCapacityPreparationAttempts(
+        master,
+        capacityAttemptSelections,
+        capacityAttemptPrograms,
+        capacityAttemptObservations,
+      );
+      await writeProductionAuditArtifact(
+        task.meta,
+        'production-preparation-bp-capacity-attempt.json',
+        capacityAttemptGate,
+      );
       const userControlGate = auditProductionUserControlObservations({
         expectedProjectionCount: expectedUserControlIdentities.length,
         expectedIdentities: selectedExpectedIdentities,
@@ -1398,6 +1436,9 @@ describe('production master inventory ratchet', () => {
       });
       expect(scalarGate.status, JSON.stringify(scalarGate.firstDifference)).toBe('passed');
       expect(attemptGate.status).toBe('passed');
+      expect(capacityAttemptGate.status, JSON.stringify(capacityAttemptGate.firstDifference)).toBe(
+        'passed',
+      );
       expect(capacityGate.status, JSON.stringify(capacityGate.firstDifference)).toBe('passed');
       expect(domainGate.status, JSON.stringify(domainGate.firstDifference)).toBe('passed');
       if (userControlGate.status !== 'passed')
