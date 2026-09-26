@@ -241,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Not selected. This committed fixed HP forward unit is complete; HP noncommit/recovery and whole TSK-08 closure remain outside it.",
+  "nextBoundedUnit": "Attacker-skill sourceSelf direct fixed HP changed attempt/native noncommit isolation/shared typed-refusal audit",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -14807,9 +14807,9 @@
       ],
       "latestBoundedUnit": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure",
       "latestEvidence": "Scoped committed HP:6 connected changed representatives/7 explicit boundary routes,1606 negatives,104 declared complete diagnostics; quality1295/155/29 retry0,audit3,warnings/console0,1395 cumulative declarations/1777 unique saved receipts/error0. Published66 declarations/378 selected/28 scoped changes,live HP readers/NP consumers0 explicitly bounded. Protected diagnostics/counters/current matrix/eligibility digests retained.",
-      "nextBoundedUnit": "Not selected. This committed fixed HP forward unit is complete; HP noncommit/recovery and whole TSK-08 closure remain outside it.",
-      "priorRecordCommit": "420ebcec9ebaf60f7e18ae00d8c9e842a7405a39",
-      "recordCommitPolicy": "This completion record is committed after implementationCommit; resolve its commit from local Git history."
+      "nextBoundedUnit": "Attacker-skill sourceSelf direct fixed HP changed attempt/native noncommit isolation/shared typed-refusal audit",
+      "priorRecordCommit": "da6c7cb956cc80cffaee8ec15fe51fd8d0e64b54",
+      "recordCommitPolicy": "Read-only handoff preparation follows the committed HP forward completion record; this update is not product implementation evidence. Resolve preparation documentation commit from Git history."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -14865,20 +14865,30 @@
       "implementationReference": "boundedUnits: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "name": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure",
-      "productBaselineCommit": "2b0af873254d6c71969f4b1915c708f117156533",
-      "recordBaselineCommit": "420ebcec9ebaf60f7e18ae00d8c9e842a7405a39",
-      "status": "completed authorized committed fixed HP bounded unit; next unit not selected",
-      "scope": "Canonical attacker-skill resourceMutation/hp, amount.kind=fixed, unit=fixed, recipient=sourceSelf, selection omitted or direct; committed gain/loss changing attacker absolute current HP -> original reducer/action retained HP -> same selected scenario ordered HP condition read and hpRatioLow NP damage consumption -> actual damage input/contribution/calculated result -> shared consumer/gate, schema-legal representatives/check-group negatives/complete declared artifacts. Form/traits/eligibility and HP maximum/modifier environment fixed within each route.",
-      "excluded": "HP noncommit/rollback/recovery, retry/resend/UI recovery, percent or hpTransfer/other recipient selection, hpModifier/removeHpModifiers/base or maximum changes/healing-rate modifiers/noHealing semantics, source/support/passive/NP HP writers, new HP state/lifetime semantics, candidate damage-loop rollback, form/trait/eligibility switching, HP value-expression family beyond condition reader and hpRatioLow, NP gauge/OC/trait/form or other mutation-family implementations, failure classification changes, legacy cleanup, stale-mutation/TSK-08 whole closure, TSK-09.1/09; completed S4/without-area/architecture/stars/scalar/fixed BP/capacity forward/noncommit reopening.",
-      "sourceFindingsAsOfCommit": "2b0af873254d6c71969f4b1915c708f117156533",
+      "name": "Attacker-skill sourceSelf direct fixed HP changed attempt/native noncommit isolation/shared typed-refusal audit",
+      "productBaselineCommit": "6d571bdd9a43e34566e23fcde35aa5fbd386faca",
+      "recordBaselineCommit": "da6c7cb956cc80cffaee8ec15fe51fd8d0e64b54",
+      "status": "Prepared by read-only source/checksum reconciliation; implementation plan and user confirmation pending; not implemented or verified",
+      "scope": [
+        "resourceMutation/hp; amount.kind fixed; unit fixed; recipient sourceSelf; selection omitted or direct; attacker skill origin",
+        "Actual changed gain/loss attempt followed by original native noncommit in the same action; original reducer retains action-start HP and previously committed prefix; same selected scenario/execution actual typed preparation/application refusal",
+        "Actor form/traits/eligibility and maximum HP/modifier environment fixed per path; prior committed skills establish the real action-start and prefix",
+        "Canonical expected population independent of receipt/activation/native success; shared consumer/gate, schema-legal representatives and explicit boundaries, responsibility-specific negatives, declared complete lossless diagnostic artifacts"
+      ],
+      "excluded": [
+        "Successful recovery, command resend/general retry/UI recovery; candidate damage-loop rollback",
+        "Percent/hpTransfer/other recipient or selection; HP modifier/remove/base/maximum/heal-rate/noHealing semantics; support/passive/NP HP writers",
+        "Form/trait/eligibility changes; HP value-expression family; gauge/OC or other semantic families; failure-code/outcome classification changes",
+        "Completed committed fixed HP forward, fixed BP/capacity forward and noncommit isolation, scalar/stars forward/recovery, S4, without-area, architecture; legacy cleanup and whole stale-mutation/TSK-08 closure; TSK-09.1/09"
+      ],
+      "sourceFindingsAsOfCommit": "da6c7cb956cc80cffaee8ec15fe51fd8d0e64b54",
       "sourceFindings": [
         {
           "symbols": [
             "packages/master-data/src/index.ts:hpMutationShape",
             "packages/data-pipeline/src/executionSemantics.ts:normalizeExecutionSemantics"
           ],
-          "finding": "Current HP member carries null subjectId, typed direction/unit/recipient/selection/amount.values/lossFloor; pipeline alone interprets raw vocabulary. Independent expectations must qualify source origin, command/form/choice and operation/value indices before receipt/success filtering."
+          "finding": "HP is a separate schema member: subjectId null, amount.values, recipient/selection and lossFloor; raw vocabulary remains pipeline-owned. Build legal representatives from actual generation; do not substitute BP/capacity fixture fields."
         },
         {
           "symbols": [
@@ -14886,42 +14896,39 @@
             "packages/battle-execution/src/hpResource.ts:transitionHp",
             "packages/battle-execution/src/hpResource.ts:HpMutationReceipt"
           ],
-          "finding": "Original per-recipient receipts have actionId/occurrenceId/actor/before/after/attempted/actual. Absolute gain clamps at maximum; fixed loss uses zero/oneIfAlive floor; dead/no-change receipt is not changed proof. No operationIndex in receipt, so repeated operations/occurrences must be independently resolved or minimally observed at original owner. Do not replay transitionHp for audit."
+          "finding": "Original receipts preserve before/after/attempted/actual and action/occurrence/actor, not operationIndex. Prove actual changed via original values; capture currently associates original receipt slices with original source and operationIndex. No audit HP arithmetic or writer replay."
         },
         {
           "symbols": [
             "packages/battle-execution/src/preparationOc.ts:executePreparationOc",
+            "packages/battle-execution/src/hpExecutionObservation.ts:PreparationHpAction",
+            "packages/battle-execution/src/preparationAttemptObservation.ts"
+          ],
+          "finding": "Current capture records action-start/sources/operation writes/native result/returned state. On noncommit returned and structuralState are args.state, resourceMutations empty. HP capture has no explicit attempt-end full state. Stochastic source failure can reset local current to sourceState; a reached HP write alone does not prove final attempted state or native noncommit. Determine any minimal missing owner observation from actual scope, rather than imposing old BP capture shape."
+        },
+        {
+          "symbols": [
             "packages/battle-execution/src/preparationTransaction.ts:planPreparationResourceTransaction",
             "packages/battle-execution/src/preparationSkillReducer.ts:reducePreparationSkillAction",
-            "packages/battle-execution/src/preparationContracts.ts:AppliedPreparationAction"
+            "packages/battle-execution/src/preparationContracts.ts:rejectPreparation"
           ],
-          "finding": "HP operations update original local current.hp. Only native committed transaction is promoted to reducer state; applied actions hold hpBefore/hpAfter. Initial seed, action-start after prior committed skill, each write and final retained state differ. Read direct exported reducer symbol before editing; audit cannot infer commit just from receipt."
+          "finding": "Native noncommit maps to existing typed rejection; reducer rejectPreparation receives original state and preserves it. hpBefore/hpAfter applied action exists only on commit. Retain source action-start after prior commit; do not change original failure meaning."
         },
         {
           "symbols": [
             "packages/calculation-application/src/scenario.ts:resolveScenarioPreparationOutcomeObserved",
-            "packages/battle-execution/src/candidatePreparation.ts:prepareCandidateBase",
-            "packages/battle-execution/src/resourceQueries.ts:conditionQuantityReads",
-            "packages/battle-execution/src/condition.ts:evaluateCondition"
+            "packages/calculation-application/src/battlePointPreparationObservation.ts:battlePointPreparationRejectionObservationFor"
           ],
-          "finding": "Scenario transition callback supplies full original state internally; current public observation is BP-focused. Candidate state seeds hp and attackerHpPermille from real prepared.hp; condition reads state quantity. Current ConditionReadAudit variants are inputQuantity and battlePointPhase only: HP reader use not yet captured by that union. Choose minimum original-owner observation if needed, avoid BP/scalar module duplication or treating current transport shape as fixed architecture."
+          "finding": "Internal transition transport already holds original full before/result references, and rejection is attached to actual prepared/calculation/result. Rejected prepared has orderedScenario/canonicalInputs null; ordered HP read, HP NP use, damage input and calculated result must remain absent. Reuse transport where suitable without changing ordinary/public serialized observation."
         },
         {
           "symbols": [
-            "packages/battle-execution/src/npDamageExecution.ts:applyNoblePhantasmDamage",
-            "packages/battle-execution/src/npDamageOperation.ts:applyNpDamageOperationWithAudit",
-            "packages/battle-execution/src/npDamageOperation.ts:evaluateNpDamageOperationInternal",
-            "packages/battle-execution/src/candidateStateAudit.ts:observeScalarNp"
+            "packages/calculation-application/src/productionHpPreparationAudit.ts:hpPreparationCanonical",
+            "packages/calculation-application/src/productionMasterControlAudit.test.ts:evaluateWithOrderedOperationEvents",
+            "packages/calculation-application/src/productionAuditArtifacts.ts:encodeProductionAuditDiagnostic",
+            "packages/calculation-application/src/productionAuditArtifacts.ts:decodeProductionAuditDiagnostic"
           ],
-          "finding": "Original NP owner passes hpRatio(state.hp.actors.attacker) into context; hpRatioLow computes actual NP multiplier. Existing optional observer reports scalar evaluations, not hpRatioLow consumption. Identify minimal capture-only real context/evaluation/input attachment at original evaluation; do not construct synthetic consumption or duplicate ratio/damage arithmetic."
-        },
-        {
-          "symbols": [
-            "packages/calculation-application/src/productionMasterControlAudit.test.ts:hpControlInitialCandidates / HP witness candidate loop",
-            "packages/calculation-application/src/productionClosureAudit.ts:compactPreparationActions",
-            "packages/calculation-application/src/productionAuditArtifacts.ts:encodeProductionAuditDiagnostic / decodeProductionAuditDiagnostic"
-          ],
-          "finding": "Existing HP witness reads actual selected candidate prepared.orderedScenario.hp, compares applied HP conditions; compact actions include hpBefore/hpAfter. Neither proves this new independent writer->reader->NP chain. Preserve executable production-control contract and witnesses. Fully persist diagnostics before assertions, declared receipt validation and strict saved lossless restore must cover new types."
+          "finding": "Existing forward consumer proves committed paths, not noncommit isolation. Original production producer collects HP requests before requireExecutableCalculation and still requires executable controls. Preserve that requirement and HP witness; no fake published rejected candidate or successful-status filter. Existing bounded HP population is 66 form-qualified declarations/378 selected executions/28 changes, with actual live HP reader/NP consumer 0; no new native-HP-noncommit population has been executed or claimed."
         }
       ],
       "canonicalPopulation": {
@@ -14932,135 +14939,74 @@
         },
         "staticTopLevelServantSkillHpDeclarations": 121,
         "staticSourceSelfDirectFixedHpDeclarations": 64,
-        "meaning": "Top-level servant.skills declarations only, not selected/form-qualified/committed scenarios or gate coverage. Regenerate expectations from current canonical master/command/choice before activation/success filters; no hardcoded future counts."
+        "priorFormQualifiedDeclarations": 66,
+        "priorSelectedExecutions": 378,
+        "meaning": "Historical current published inventories are independent of schema-legal native-noncommit representatives. Generate future expected population from current master/form-qualified source/selected command/choice before success filters; do not freeze these counts as future coverage."
       },
-      "planningQuestions": [
-        "Define responsibility/files from canonical generation and direct native owners; choose focused consumer or responsibility extension without freezing old module boundaries.",
-        "Independently derive eligible canonical population, selected command/choice/source/write/read identities and explicit nonapplied/noncommitted/no-reader boundaries; do not drop missing proof via success filters.",
-        "Resolve receipt operationIndex/valueSetIndex/valueIndex and repeated write order; decide if existing action/full transition/receipt capture suffices. Observe owner-only where actual missing evidence requires it.",
-        "Connect actual HP condition read and hpRatioLow consumption through same selected execution, input/effective contribution/calculated result; distinguish integer permille from continuous hpRatio and no simulation/replay.",
-        "Choose sufficient schema-legal increase/decrease/clamp/floor/multiple/prior-commit representatives, unchanged/no-op/excluded/missing/dead/no-reader boundaries and responsibility-group negatives; no fixed case-count requirement."
-      ],
       "requiredPlan": [
-        "Change owners and candidate files, reason for focused consumer or extending responsibility; normal/capture canonical source identity.",
-        "Canonical command/master/source/choice/operation/action/actor/value indices and independently generated expectations; no receipt/activation/native-success-only population.",
-        "Initial seed/max HP, previous commit action-start, per-write before/after/attempted/actual receipts, native commit/reducer retained state/HP list and transport order.",
-        "Prepared HP -> candidate seed -> actual HP condition read/projection/effective contribution -> actual hpRatioLow context/evaluation/input/calculated result; exact selected execution refs, no integer ratio substitution.",
-        "Leak/stale/out-of-order/dropped/duplicate/coherent forgery proof checks; full declared lossless diagnostics typed reason/checkPath/first difference.",
-        "Explicit boundaries, preserved old gates, source/checksum evidence reuse, local validation/stops, required finalquality/audit/performance/counters and records/local commits."
+        "Responsibilities/candidate files and reason to extend existing owner or focused consumer; do not presume previous modules are best",
+        "Normal/capture canonical source -> actual HP apply -> native noncommit -> original returned state/reducer/prefix -> actual same-scenario prepared/application typed refusal and downstream absence",
+        "Command/master/form/source/choice/action/occurrence/operationIndex/valueSetIndex/valueIndex/actor identity; direction/unit/amount/lossFloor and unambiguous receipt correspondence; expected population before activation/success",
+        "Initial HP/maximum, prior-commit action-start, operation intermediate before/after/attempted/actual, attempt-end state versus native/reducer final retention; absence of receipt/effect/applied-action leakage",
+        "Same selected scenario/execution references; required minimal original-owner observations and transport without normal allocation/public serialized changes",
+        "Schema-legal changed representatives, dead/no-op/nonapplication/pre-writer rejection/committed/out-of-scope boundaries; grouped typed/checkPath/first-difference negatives",
+        "Complete diagnostics saved before assertions; declaration/path/bytes/SHA-256 and strict on-disk lossless restore; production executable/witness and all existing gates preserved",
+        "Local verification/review/stop boundaries, conditional evidence reuse, applicable normal/capture/calculator/ranking/hot-path checks, final quality/impact audit, Task/evidence and scoped local commits"
       ],
-      "planBoundary": "Present plan and wait for user confirmation. Before confirmation no source/test/doc edits, new source tests/producer/audit/quality or staging/commit. Read code, existing artifacts/published JSON and checksum only. If a new runtime diagnostic is indispensable, first present smallest diagnostic/decision/stop boundary and await its separate approval; diagnostic-only approval does not authorize implementation. After plan approval continue implementation/verification/records/local commit without ordinary reapproval; no push.",
+      "planBoundary": "First deliver current-code phased implementation plan and wait for user confirmation. Before confirmation: read/checksum only; no product/test/docs edit, source test/producer/audit/quality, stage or commit. If a new execution diagnostic is essential, first specify minimal diagnostic/decision/stop boundary for separate confirmation; diagnostic-only approval does not authorize implementation.",
       "negativeGroups": [
-        "Missing canonical command/master/source/choice/action/operation/receipt/start/native/reducer/retained/reader/NP/input/result/transport/population/diagnostic.",
-        "Wrong scenario/source/action/occurrence/op/valueSetIndex/valueIndex/actor/recipient/direction/unit/amount/lossFloor/ref/order, duplicate/reverse, coherent receipt/state/commit/HP-read/result forgery.",
-        "Seed replacing post-prior-commit start, stale/other actor HP, intermediate before/after replacing final retained state, maximum/current swapped, declared amount replacing actual receipt change, integer permille replacing continuous ratio.",
-        "Uncommitted/excluded/stop-after writer masquerading as committed, prior commit lost, receipt/effect/applied action leakage or fake writer replay/read/NP/input/event/projection/contribution/calculated result, mixed selected executions.",
-        "Missing published declaration/selection/program, success filtering/no-reader silently covered, missing diagnostic fields/first difference/checkPath or incomplete saved/lossless artifact accepted."
+        "Missing canonical/command/master/form/source/choice/action/operation/value cells/receipt/action-start/native/reducer/retained/rejection/result/transport/expected population",
+        "Wrong selected execution/scenario/source/action/occurrence/operationIndex/value indexes/actor/recipient/direction/unit/amount/lossFloor/reference/order; duplicates/reversal and coherent owner-state/receipt/native/refusal tampering",
+        "Initial HP substituted for post-prefix action-start; stale/other-actor HP; intermediate replaced by retained; maximum/current confused; amount-only changed proof; fake commit or lost committed prefix",
+        "Noncommit/nonapplied receipt/effect/applied-action leakage; audit writer replay; fabricated ordered seed/read/HP NP use/event/projection/contribution/damage input/calculated result after actual preparation refusal",
+        "Missing published declarations/selections/programs, success-filter exclusion, incomplete diagnostic/declaration/restore accepted as success"
       ],
       "evidenceReuse": {
-        "latestCompletedUnit": "Attacker-skill battlePointCapacityModifier preparation non-commit attempt isolation shared audit consumer closure",
-        "productCommit": "2b0af873254d6c71969f4b1915c708f117156533",
-        "qualityManifest": ".test-results/2026-09-26T13-14-40-276Z-21-a940b6/manifest.json",
-        "auditManifest": ".test-results/2026-09-26T13-13-06-918Z-2-3bfa82/manifest.json",
-        "capacityChangedRepresentatives": 5,
-        "capacityBoundaries": 4,
-        "capacityNegatives": 1491,
-        "capacityDiagnostics": 63,
-        "fixedForwardRepresentatives": 5,
-        "fixedForwardNegatives": 426,
-        "fixedAttemptChangedRepresentatives": 6,
-        "fixedAttemptBoundaries": 3,
-        "fixedAttemptNegatives": 807,
-        "readOnlyReceiptCheck": {
-          "path": ".test-results/tsk-08-hp-fixed-forward-handoff-20260926/preplan.json",
-          "bytes": 359857,
-          "sha256": "c6acf1674f2b5644ac546f114805f7bffafadab4709182c11444e941cc83cdf7"
+        "latestCompletedUnit": "boundedUnits[-1] remains the completed committed HP forward unit; no new boundedUnits completion appended",
+        "completedReconciliation": {
+          "path": ".test-results/tsk-08-hp-fixed-forward-20260926/final-reconciliation.json",
+          "bytes": 727919,
+          "sha256": "fa79a831157d0db5ab51ffaab5b8617c72d9f2eab2ffd6d0d95ba27f5259de82"
         },
-        "matchedUniqueSavedPaths": 1196,
-        "latestFrozenSourceGitBlobsAndCurrent": 4,
-        "currentSourceConfigTests": 25,
-        "errors": [],
-        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
-        "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
-        "productionCounters": [
-          {
-            "artifact": "production-audit-calculation-application.json",
-            "boundary": "calculation-application",
-            "counters": {
-              "masterReadCount": 1,
-              "masterParseCount": 1,
-              "compileCount": 1,
-              "candidateCount": 6673,
-              "deduplicatedCandidateCount": 4194,
-              "damageRequestCount": 2596,
-              "distinctDamageRequestCount": 1489
-            },
-            "error": null
-          },
-          {
-            "artifact": "production-audit-data-pipeline.json",
-            "boundary": "data-pipeline",
-            "counters": {
-              "masterReadCount": 1,
-              "masterParseCount": 1,
-              "compileCount": 1,
-              "candidateCount": 0,
-              "damageRequestCount": 0
-            },
-            "error": null
-          }
-        ],
-        "performanceArtifact": {
-          "path": ".test-results/tsk-08-bp-capacity-attempt-20260926/performance.json",
-          "bytes": 3687,
-          "sha256": "08312a2edc7bbde25789ef376a78bc2eca68376b5135547d52b4d8ab88d550ca"
+        "readOnlyPreparation": {
+          "path": ".test-results/tsk-08-hp-fixed-attempt-handoff-20260927/preplan.json",
+          "bytes": 997868,
+          "sha256": "222a36bff84cafb56d24264c67931f70d5fbcc6c20015bed0eaf4e711d856d92"
         },
-        "condition": "Reuse only matched source/semantic conditions and path/bytes/SHA-256. Read-only preparation checks1196 saved paths, current product4 Git blobs/current and25 current sources/config. Preserve fixed807 and committed1491/capacity attempt1854 negatives and all protected gates/counters. New or changed sources require new checksum and affected gates. No8-shard regeneration absent concrete identity doubt; static declaration counts are not selected or schema-legal coverage.",
-        "recordCommit": "420ebcec9ebaf60f7e18ae00d8c9e842a7405a39",
-        "capacityAttemptChangedRepresentatives": 5,
-        "capacityAttemptBoundaries": 6,
-        "capacityAttemptNegatives": 1854,
-        "capacityAttemptDiagnostics": 176,
-        "historicalReference": "Prior capacity/fixed units and their exact source/diagnostic receipts remain in boundedUnits and final-reconciliation; old preparation evidence is historical, not latest product identity."
+        "condition": "Reuse only identical source/test/config/master/schema/digest/counters and declared artifact identities; compare changed source to new Git blob/hash. Read-only receipts establish prior evidence integrity, not new HP noncommit success. Existing timed protected artifact difference remains only elapsedMs as documented by completed unit. No 8-shard regeneration absent concrete identity doubt."
       },
-      "verificationPolicy": "Resolve target Blocking with focused schema-legal fixtures and scoped difference review before all-production/audit/quality. Complete diagnostic saved before assertion with canonical identity/typed reason/expected-actual/checkPath/first difference and exact lossless saved round-trip; existing runner declarations/path/bytes/SHA-256 unchanged. Verify normal/capture and applicable calculator/ranking parity and changed hot-path/counters. README mandatory quality and impact audit close frozen final inputs; result-only docs validation closes records. No thresholds/timeouts/exclusions/extra candidates or damage semantics.",
+      "verificationPolicy": "Build one shared parsed master/generation graph per representative and local responsibility fixtures first. Resolve in-scope Blocking and review diff before production/audit/quality. Then required README quality and impacted audits, complete artifact declarations/restoration, protected gates/counters and applicable parity/hot-path comparison. No timeout/threshold relaxation, test exclusion, negative deletion, duplicate unrelated master graphs or fake readers.",
       "environment": {
         "genericRunner": {
           "path": "/tmp/tsk08-tools/pnpm",
           "bytes": 730,
           "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6"
         },
-        "condition": "Read verified existing /tmp/tsk08-tools/pnpm generic runner; verify existence/content again before use. If pnpm external SQLite store fails before scripts, record and use existing node_modules with same generic runner. Existing8CPU affinity and production50%4worker setting, unchanged timeouts. Commands, single execution, poll>=30sec and session boundaries follow execution-efficiency requirements.",
-        "baselineFailure": "Historical previous committed-capacity run had STACK_TRACE_ERROR and a later unchanged-input full success. Latest capacity-attempt unit final quality1191/155/29 retry0/audit3 succeeded with warning/unexpected console0. The pnpm exec pre-script SQLite failure was recorded in latest unit and used verified generic runner. Keep both historical failures and successes; no timeout change."
+        "condition": "Check content/checksum before use; record pnpm pre-script external SQLite-store failure if encountered, then use existing node_modules and verified generic runner. Keep 8 CPU affinity, production50%/4 workers, unchanged timeouts and efficiency command/single-run/poll>=30sec rules."
       },
-      "sessionBoundary": {
-        "checkpoint": "60min existing handoff records: evidence, unmet gates, diff and next smallest operation",
-        "after90min": "No new semantic family; finish current atomic action and hand off any unmet conditions",
-        "push": false
-      },
+      "sessionBoundary": "At60min update existing handoff checkpoint with evidence/unmet conditions/diff/next minimal operation; after90min begin no new semantic family. A checkpoint is not completion.",
       "readOnlyPreparation": {
         "artifact": {
-          "path": ".test-results/tsk-08-hp-fixed-forward-handoff-20260926/preplan.json",
-          "bytes": 359857,
-          "sha256": "c6acf1674f2b5644ac546f114805f7bffafadab4709182c11444e941cc83cdf7"
+          "path": ".test-results/tsk-08-hp-fixed-attempt-handoff-20260927/preplan.json",
+          "bytes": 997868,
+          "sha256": "222a36bff84cafb56d24264c67931f70d5fbcc6c20015bed0eaf4e711d856d92"
         },
-        "savedReceiptPaths": 1196,
-        "latestProductGitBlobsAndCurrent": 4,
-        "currentSourcesAndConfig": 25,
-        "errors": [],
-        "newProductExecutions": [],
-        "limitation": "Existing proof integrity only; no new HP source test/producer/audit/quality executed. Missing operation/read/NP observation coverage must be planned from current symbols.",
-        "documentVerification": {
-          "tests": 6,
-          "docsIntegrity": "passed",
-          "format": "passed",
-          "diffCheck": "passed",
-          "scope": "Four existing documents only; no new product source/test/producer/audit/quality execution"
-        }
+        "savedReceipts": 1777,
+        "frozenProductInputs": 12,
+        "directInputs": 24,
+        "errors": 0,
+        "sourceTestProducerAuditQualityExecuted": false
       },
-      "nextMinimalOperation": "Read HEAD/index/worktree and latest completed HP unit/receipts; select and plan the next separately bounded TSK-08 unit. Do not reopen prior contract wait or completed BP/capacity/scalar/stars/S4/without-area/architecture. No current HP noncommit/recovery authorization.",
-      "completedProductCommit": "6d571bdd9a43e34566e23fcde35aa5fbd386faca",
-      "completedEvidence": "boundedUnits latest entry / finalReconciliation / final frozen-source audit and quality"
+      "nextMinimalOperation": "Reconcile HEAD/index/tracked/untracked with this documentation commit and product baseline; read current direct symbols and deliver phased plan for this one HP native-noncommit isolation unit; wait for user confirmation.",
+      "documentationVerification": {
+        "scope": "Preparation documentation only; no product/source test/producer/audit/quality run",
+        "commands": [
+          "node node_modules/prettier/bin/prettier.cjs --check docs/README.md docs/evidence/README.md docs/tasks/development-redesign-tasks.md docs/evidence/tsk-08-parity-ratchet.json",
+          "/tmp/tsk08-tools/pnpm test:docs",
+          "git diff --check"
+        ],
+        "result": "format passed; docs tests6/pass6 and docs integrity passed; whitespace passed; completed boundedUnits/statusInvariants unchanged"
+      }
     },
     "completedScalarRecoveryPreparation": {
       "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",

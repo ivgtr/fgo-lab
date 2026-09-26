@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.76"
+document_version: "1.7.77"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3299,3 +3299,17 @@ schema-legal6 connected changed代表・7明示境界、1606否定（source1528�
 60分前checkpointを既存Task／evidenceへ保存し、90分以降は同unitの証拠照合・記録・local commitだけを継続した。引継ぎ1196receiptは1193一致・依頼内3source変更を新checksumとして区別。新485＋継承910宣言、1777 unique保存receiptの最終照合error0。詳細・直接symbol・path／bytes／SHA-256・失敗履歴・再利用条件は既存evidence最新bounded unit／finalReconciliationを正本とする。
 
 Step0契約／基線、Step1 V41 requestとV40保存・明示V41再計算、Step2先行unitと今回の限定committed HP forward、Step3改訂matrix／eligibility照合を保持。旧契約待ちは履歴。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。今回をHP recovery、stale-mutation全体、TSK-08全体のclosureと呼ばない。次のbounded unitは未選択で、別sessionの限定計画から始める。pushなし。
+
+### Step再確認と次sessionの限定handoff（固定HP changed attemptの元非commit隔離、2026-09-27）
+
+Step0は基線／契約成立、Step1はV41 request schemaVersion／V40保存・明示V41再計算実装済み、Step3は改訂matrix／eligibility digest照合済みを維持する。Step2には最新製品`6d571bdd9a43e34566e23fcde35aa5fbd386faca`のcommitted固定HP forward共有consumer／gate完了（記録`da6c7cb956cc80cffaee8ec15fe51fd8d0e64b54`）までを含める。旧契約待ちは履歴であり再開しない。直前の「次unit未選択」は、このhandoffで次範囲を選定したため履歴となる。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま。
+
+次の1sessionは、攻撃役skillの`resourceMutation/hp`、`amount.kind: fixed`、`unit: fixed`、`recipient: sourceSelf`、selection省略／directに限定し、実gain／loss changed attempt→元native非commit→元action-start HP／先行committed prefix保持→元reducer拒否→同selected scenario／executionの実prepared／application typed拒否と後段不生成を共有consumer／gate・schema-legal代表／検査別否定・宣言完全diagnosticへ接続する。各経路のactor form／traits／eligibility、最大HP／modifier環境は固定。先行commitは正しいaction-startを作る前提で、成功recovery／再送／retry／UI recovery、他HP writer・HP意味論・他family・failure分類変更は対象外。完了済みforward／BP／容量／scalar／stars／S4／without-area／architectureを再開せず、HP recovery／stale-mutation全体／TSK-08全体のclosureとは呼ばない。
+
+読取で、元HP apply／receipt、`executePreparationOc`のoperation別source／operationIndex／HP／receipt capture、native／returned参照、`planPreparationResourceTransaction`の非commit拒否、`reducePreparationSkillAction`／`rejectPreparation`の元state保持、applicationのfull transition／実拒否transportを確認した。HP captureはattempt終了時full stateを明示保持せず、sourceのstochastic failureにはlocal currentをsourceStateへ戻す分岐がある。必要な不足だけ元ownerで観測する方法は次作業者が直接symbolから計画し、既存consumer／hook／module分割やBP fixture置換を最善解に固定しない。拒否後にordered HP reader／NP／damage input／calculated resultを作らない。production-controlのexecutable要求・HP witnessを保ち、publishedとschema-legal代表を独立に扱う。
+
+今回の資料準備はHEAD／index／tracked／untrackedがcleanな状態からの読み取り・checksum照合と文書整理だけ。製品source／test、producer／audit／qualityは実行・変更していない。既存保存receipt1777件、先行製品12source/testの宣言Git blobとcurrent、関連24入力を照合しerror0。新HP非commitconsumerの成功証拠ではない。読取診断のpath／bytes／SHA-256と直接symbol、除外範囲、期待母集団・否定群・必要計画・再利用条件は`tsk-08-parity-ratchet.json`の`handoffPreparation.nextSession`を正本とする。
+
+次作業者の最初の成果は、現コードから判断した段階的実装計画とする。確認前は読取だけで、製品／test／文書編集、source test／producer／audit／quality、stage／commitを行わない。計画確認後は同じ限定unitを通常の技術判断で継続し、実装・局所検証・差分レビュー・必要な最終gate・既存Task／evidence更新・依頼範囲だけのlocal commitまで進める。push禁止。未規定の製品意味論／実質的契約衝突だけ影響作業を止め、symbol・差分・改訂計画を示す。60分checkpoint／90分新family禁止を維持する。
+
+資料整理の文書gateは書式check、`test:docs`（6件成功／参照整合成功）、`git diff --check`が成功。変更は既存Task／evidence／indexの4文書に限定し、完了済み`boundedUnits`とstatus不変を照合した。読取diagnosticはignored artifactとして保持し、文書だけlocal commitする。
