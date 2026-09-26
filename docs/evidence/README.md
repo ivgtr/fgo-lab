@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.93"
+document_version: "1.4.94"
 status: "Active"
 updated_at: "2026-09-27"
 ---
@@ -57,7 +57,7 @@ updated_at: "2026-09-27"
 | [tsk-07-outcome-closure](tsk-07-outcome-closure.json) | Complete | machine-readable: five typed outcome presentation、numeric-row boundary、exact AttackProfile normal-calculator recovery、typed invalid reset/reload、unsupported／policy-unavailable non-recovery、focused consumer checks | TSK-07 | `3ec65cd` baseline／no new commit |
 | [tsk-07-responsive-accessibility-closure](tsk-07-responsive-accessibility-closure.json) | Complete | machine-readable: desktop／390px／320px responsive containment、accessible names／roles／keyboard／focus、five-outcome recovery presentation、stale/cache identity preservation、integrated quality evidence | TSK-07 | `b9c323a` baseline／no new commit |
 | [tsk-08-parity-diagnostics](tsk-08-parity-diagnostics.json) | Active | machine-readable: typed calculator／ranking／portable parity failure reason、canonical identity／first diff、bounded summary、declared artifact checksum reachability | TSK-08 | `34828ea` baseline／no new commit |
-| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: TSK-08 bounded-unit ratchets、Step再確認、canonical identity／完全diagnostic宣言／checksum／再利用条件。最新は固定HP changed attemptの元native非commit隔離→同scenario実typed拒否・後段不生成。先行forward／非commit各unitを保持。 | TSK-08 | 製品`e95c971`。7 changed／7境界／891否定／64完全diagnostic、quality1359/155/29 retry0・audit3成功、warning／console0。TSK-08 in_progress、09.1／09 blocked。詳細・次操作は最新bounded unitと`handoffPreparation`。 |
+| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: TSK-08 bounded-unit ratchets、Step再確認、canonical identity／完全diagnostic宣言／checksum／再利用条件。最新は固定HP changed attemptの元native非commit隔離→同scenario実typed拒否・後段不生成。先行forward／非commit各unitを保持。 | TSK-08 | 製品`e95c971`。7 changed／7境界／891否定／64完全diagnostic、quality1359/155/29 retry0・audit3成功、warning／console0。TSK-08 in_progress、09.1／09 blocked。次sessionはcommitted maximumFixed self HP modifier forwardに限定。最初に現コードから計画し、確認後に実装。読取2373receipt／8製品入力／26関連入力error0は既存証拠整合で新unit成功ではない。詳細は最新bounded unitと`handoffPreparation.nextSession`。 |
 | [tsk-08-shared-audit-model](tsk-08-shared-audit-model.json) | Active | machine-readable: TSK-06.5 source reference、data-pipeline／calculation-application boundary model、full matrix first-difference gate、artifact reachability | TSK-08 | `5d82e38` baseline／no new commit |
 | [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／historical closure had no commit; current baseline `197ff30` |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Complete | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 final closure | `49efe62`／TSK-06.48 complete |

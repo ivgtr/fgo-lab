@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.78"
+document_version: "1.7.79"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3336,3 +3336,17 @@ Current bounded-unit checkpoint（fixed HP changed attempt元native非commit隔�
 先行1777receiptは1772一致・依頼内5source/test変更を新checksumとして区別。510新宣言＋継承1395宣言、2373 unique保存receiptの照合error0。保護397件は383 byte一致・1計測時間だけ・13不完全HP capture表示へのsourceEnds／attempted追加だけで、先行1606否定／104診断と既存拒否証拠が一致。production counter／digestと改訂matrix／eligibilityを保持し、identity疑義がないため8 shardは再生成しない。最終8製品入力はcommit Git blobと一致する。heap重複保持・既存60秒内の保存未完了runを成功とせず記録し、committed境界の不要なforward graph複製を除いて解消した。制限／否定／test除外の緩和なし。
 
 Step0／1／3は成立済みを維持し、Step2へこの限定非commit隔離の成立を追加する。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。HP recovery／成功再送・retry／UI、他HP family／writer／recipient、別family／legacy、stale-mutation全体／TSK-08全体のclosureは対象外。次のbounded unitは未選択。60分前checkpointを保持し、新semantic familyを始めず同unitの証拠・記録・local commitへ収束した。pushなし。詳細・性能の観測限界・全artifact receipt・失敗履歴・次操作は既存evidence最新bounded unit／finalReconciliationを正本とする。
+
+### Step再確認と次sessionの限定handoff（committed maximumFixed HP modifier、2026-09-27）
+
+直前製品`e95c971a39e05ef7f7bbcbb8871b9296c80ceeed`／完了記録`a8fedf6934d695d6cce2218c44a5d1c79cfc80aa`とHEAD／index／tracked／untrackedを照合しclean。Step0は基線／契約成立、Step1はV41 request schemaVersionとV40保存・明示V41再計算実装済み、Step3は改訂matrix／eligibility digest照合済みを維持する。Step2は先行committed固定HP forwardに加え、固定HP実changed attempt→元native非commit→action-start HP／先行committed prefix保持→元reducer／同scenario実typed拒否・後段不生成まで共有consumer／gate検証済み。7 changed／7境界／891否定／64完全diagnostic、quality1359／155／29 retry0・audit3・warning／console0を維持する。旧契約待ちは履歴で再開しない。TSK-08 in_progress、09.1／09 blocked。
+
+次の1sessionは、攻撃役skillの`hpModifier/action:maximumFixed/sign:1または-1/lifetime:active/route.target:sourceSelf/selection省略またはdirect/bounds両端null/useCondition省略またはalways`のcommitted forwardに限定する。実modifier／最大HP・現在HP変更→元native commit／reducer保持→同selected scenario実ordered HP条件read／projection・effective contribution→continuous hpRatioLow NP利用／canonical damage input／calculated resultを共有consumer／gate・schema-legal代表／検査別否定・宣言完全diagnosticへ接続する。form／traits／eligibility／初期baseMaximumと対象外modifier環境は経路ごとに固定。後続固定self HP gain／lossは変更最大HPの実consumer、先行commitは正しいaction-start／prefixの前提として扱う。非commit／rollback／recovery、除去／失効／constant・他HP modifier action／他recipient／writer／percent／transfer／value expression、初期最大HP resolver意味論・他family／failure分類・legacy・TSK全体closureは対象外。完了済み各unitを再開しない。
+
+現schemaは固定HP mutationとは別のhpModifier member。pipelineだけがrawを解釈する。`executeHpOperation`は元`changeHpModifiers`でmodifier instanceと最大HP／現在HPを更新するが、receipt attempted／actualは0のままであり固定HP changed判定は流用できない。operationIndexを持たない元receipt／instance idと、同occurrence内の複数operationを曖昧に対応させない。現在のoperation別HP write captureは固定mutationに限定され、sourceEnds／attemptedだけではmodifier別before／afterを証明しない。既存HP canonicalはfixed writerなしでnull、hpModifierは境界であり、新consumer成功証拠ではない。必要な最小owner観測とconsumer責務は次担当者が直接定義・生成・利用symbolから計画する。監査へHP算術／writer再実行／damage意味論を複製せず、通常allocation・公開／serialized shape、既存executable要求・HP witnessを保持する。
+
+資料準備は読取・checksumだけで、新source test／producer／audit／qualityは未実行。2373保存receipt、先行製品8入力の宣言Git blob／current、関連26入力error0。published maximumFixedトップレベル23宣言／今回self範囲9宣言、form-qualified25／今回範囲11宣言は宣言の読取母集団で、selected execution／実changed／reader／NP成功ではなく将来の固定期待値にも使わない。読取diagnosticのpath／bytes／SHA-256、直接symbol、必要計画、除外・否定・証拠再利用条件は既存evidenceの`handoffPreparation.nextSession`を正本とする。既存8 shardは具体的identity疑義時だけ判断する。
+
+最初の成果は現コードからの段階的実装計画。要件は確定として扱い、既存consumer／capture／module分割や過去案を解法に固定しない。計画提示後、利用者確認まで製品／test／文書編集・新source test／producer／audit／quality・stage／commitを行わず、コード／既存artifact／canonical JSONの読取・checksum照合は可。新実行診断が不可欠なら最小診断・得る判断・停止境界を先に示して確認を待ち、診断だけの承認から実装へ進まない。確認後は同unitを通常判断で継続し、実装・局所検証・差分レビュー・必要な最終audit／README quality・既存Task／evidence更新・依頼内local commitまで進める。未規定意味論／実質的契約衝突時だけ影響作業を停止して根拠symbol・差分・改訂計画を示す。60分checkpoint／90分新family禁止、pushなし。
+
+今回の整理は既存4文書だけ。書式check、`test:docs`6件／参照整合、status／boundedUnits不変・直接symbol・差分checkが成功した。新製品source／test／producer／audit／qualityは実行せず、文書だけlocal commitして次担当者の参照identityとする。
