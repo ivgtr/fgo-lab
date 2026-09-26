@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.74"
+document_version: "1.7.75"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3269,3 +3269,18 @@ Current bounded-unit checkpoint（attacker-skill capacity元noncommit隔離、�
 今回の容量changed attempt→native非commit→元action-start／modifier／committed prefix保持→同selected scenario実typed拒否のbounded unitは必須gate成功。quality1191／production155／E2E29（retry0）、audit3、warning／unexpected console0。910宣言／1196固有receipt、176完全diagnostic／1854否定、既存保護artifact・counter・matrix／eligibility digestの最終照合error0。4製品source/testのlocal commit `2b0af87`。最終quality後は結果文書のみ更新し、文書検証と記録local commitで閉じる。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、domain recovery／TSK-08全体のclosureとはしない。pushなし。
 
 結果文書の6検査・docs integrity・書式・diff checkも成功。製品commitの後続として既存4文書だけを記録local commitし、本sessionの依頼範囲を完了する。次semantic unitは未選定であり、本記録を追加範囲の承認とは扱わない。
+
+
+Step再確認と次sessionの限定handoff（2026-09-26、製品参照commit `2b0af873254d6c71969f4b1915c708f117156533`、完了記録 `420ebcec9ebaf60f7e18ae00d8c9e842a7405a39`）:
+
+直前の容量changed attempt非commit隔離unitは製品／記録local commit済み、開始HEAD／index／tracked／untrackedはclean。Step0は基線／契約成立、Step1はV41 request schemaVersionとV40保存・明示V41再計算実装検証済み。Step2はS4、stars／scalar forward・recovery、fixed BP forward／元非commit隔離、committed容量→実reconcile保持→同domain fixed clamp／live read・phase・ordered NP／damageに加え、容量changed attempt→native非commit→元action-start／modifier／committed prefix保持→同selected scenario実typed拒否の共有consumer／gateまで検証済み。Step3は改訂matrix／eligibility digest照合済み。旧契約待ちは履歴。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+次の1セッションは**攻撃役skillのcanonical固定HP gain／loss（resourceMutation/hp、amount.kind=fixed、unit=fixed、recipient=sourceSelf、selection省略またはdirect）が実HP変更をcommitし、元reducer保持値から同selected scenarioの実HP condition read／projection・effective contributionとhpRatioLow NP実消費／canonical damage input／calculated resultへ届く共有consumer／gate・schema-legal代表／検査別否定・宣言完全artifact**に限定する。各経路のform／traits／eligibility、最大HP／modifier環境は固定する。初期値・先行commit後action-start・operation別before／afterとattempted／actual receipt・最終保持値を区別する。監査側でHP加減算、clamp／floor、permille／continuous ratioやdamageを再実装しない。
+
+HP非commit／rollback／recovery・一般retry／UI、percent／transfer／他recipient選択、HP modifier／除去・最大HP／base変更・heal rate／noHealing意味論、別actor／passive／NP HP writer、form／trait／eligibility切替、candidate rollback、HP value expression family、gauge／OC等の別family・failure分類修正・legacy／TSK-08全体は対象外。完了済みBP／容量／scalar／stars／S4／without-area／architectureを再開しない。HP current0でNP拒否等は既存境界として記録し、新非commit consumerへ広げない。
+
+元executeHpOperation／transitionHpのreceiptはaction／occurrence／actor・before／after・attempted／actualを持つがoperationIndexは持たない。reducerのapplied actionにはhpBefore／hpAfterがある。元candidate seedはprepared.hpからHP量を生成する。既存HP witnessは実selected candidateを読むが、新writer→reader→NP監査接続ではない。現在のConditionReadAuditはinputQuantity／battlePointPhaseのみ、NP observerもscalar消費で、hpRatioLow実ratio消費を証明しない。必要な最小観測とtransport、責務拡張／焦点consumerの選択は次担当者が直接symbolから計画する。既存captureやmodule分割を最善解に固定せず、元writer／reader再実行や架空eventを足さない。成功receipt／activation／native成功filterに依存しないcanonical期待母集団とproducer／gateを設計し、既存production-controlのexecutable契約を保持する。
+
+本資料準備は読み取り・checksumのみ。保存1196receipt、直前製品4source/testのGit blob／current、関連25source/configを照合しerror0。publishedトップレベルservant.skillsのHP宣言121件、sourceSelf／direct／固定値・固定単位64件は静的inventoryでありselected／committed／新consumerの成功や将来固定期待件数ではない。先行quality1191/155/29（retry0）、audit3、warning／unexpected console0、容量attempt5 changed／6境界／1854否定／176診断、committed容量5／4／1491、fixed forward5／426・非commit6／3／807を保持する。詳細symbol、population、receipt、counter、matrix／eligibility digest、再利用条件と計画項目は既存evidenceのhandoffPreparation.currentStageReconciliation／nextSessionを正本とする。新source test／producer／audit／qualityは実行していない。
+
+次担当者の最初の成果物は現コードからの段階的実装計画。利用者確認前は製品source／test／文書の編集、新source test／producer／audit／quality、stage／commitを行わず、読取・既存artifact／published JSONのchecksumは可。新実行診断が計画に不可欠なら最小診断・得る判断・停止境界を先に示して別途確認する。確認後は同作業の実装・局所検証・差分レビュー・影響audit／必須quality・既存Task／evidence更新・範囲限定local commitまで進め、通常判断の再承認は不要。未規定意味論／実質的契約衝突時だけ影響作業を止め、symbol・差分・改訂計画を提示する。60分checkpoint／90分以降新familyなし、push禁止。8 shardは具体的identity疑義時のみ。
