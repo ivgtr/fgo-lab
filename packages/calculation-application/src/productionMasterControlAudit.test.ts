@@ -1,4 +1,9 @@
 import { applyCanonicalInputCommand } from './canonicalInputs';
+import {
+  criticalStarsForwardProgram,
+  criticalStarsForwardSource,
+  type CriticalStarsForwardExpectation,
+} from './productionCriticalStarsAudit';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
@@ -106,6 +111,11 @@ function loadProductionMaster() {
   return productionMaster;
 }
 
+const controlPreparations = new WeakMap<
+  ReturnType<typeof requireExecutableCalculation>,
+  ReturnType<typeof prepareCalculationScenarioWithPolicy>
+>();
+
 function evaluateWithOrderedOperationEvents(
   scenario: ResolvedScenario,
   master: ReturnType<typeof masterSnapshotSchema.parse>,
@@ -134,6 +144,7 @@ function evaluateWithOrderedOperationEvents(
   );
   if (calculation.executionObservation !== prepared.executionObservation)
     throw new TypeError(`production_control_observation_mismatch:${scenario.attacker.servantId}`);
+  controlPreparations.set(calculation, prepared);
   return { calculation, observation: prepared.executionObservation, prepared };
 }
 
@@ -490,6 +501,7 @@ describe('production master inventory ratchet', () => {
           ),
       );
       const userControlObservations: ProductionUserControlObservation[] = [];
+      const expectedCriticalStarsForward: CriticalStarsForwardExpectation[] = [];
       const selectedProfileKeys = new Map<string, string>();
       const preparationInventories = new Map<
         string,
@@ -992,7 +1004,42 @@ describe('production master inventory ratchet', () => {
             const profileKey = intendedProfileKey(active.profileContinuity);
             if (!profileKey) throw new TypeError('production_control_profile_key_missing');
             selectedProfileKeys.set(`${servant.id}:${member.projectionKey}`, profileKey);
+            const activePrepared = controlPreparations.get(active);
+            const excludedPrepared = controlPreparations.get(excluded);
+            if (!activePrepared || !excludedPrepared)
+              throw new TypeError('production_control_prepared_source_missing');
+            const programs = {
+              enabled: criticalStarsForwardProgram(activePrepared, active),
+              excluded: criticalStarsForwardProgram(excludedPrepared, excluded),
+            };
+            const forward = programs.enabled !== null || programs.excluded !== null;
+            const identity = selectedProfileControlIdentity(servant.id, member, profileKey);
+            if (forward) expectedCriticalStarsForward.push({ identity, ...programs });
             userControlObservations.push({
+              ...(forward
+                ? {
+                    criticalStarsSource: {
+                      ...(programs.enabled
+                        ? {
+                            enabled: criticalStarsForwardSource(
+                              programs.enabled,
+                              activePrepared,
+                              active,
+                            ),
+                          }
+                        : {}),
+                      ...(programs.excluded
+                        ? {
+                            excluded: criticalStarsForwardSource(
+                              programs.excluded,
+                              excludedPrepared,
+                              excluded,
+                            ),
+                          }
+                        : {}),
+                    },
+                  }
+                : {}),
               identity: selectedProfileControlIdentity(servant.id, member, profileKey),
               enabled: userControlSideObservation(member, active, activeObservation),
               excluded: userControlSideObservation(member, excluded, excludedObservation),
@@ -1219,6 +1266,7 @@ describe('production master inventory ratchet', () => {
         expectedProjectionCount: expectedUserControlIdentities.length,
         expectedIdentities: selectedExpectedIdentities,
         expectedBattlePointReads,
+        expectedCriticalStarsForward,
         observations: userControlObservations,
       });
       await writeProductionAuditArtifact(task.meta, 'production-inert-control-production.json', {
@@ -1228,6 +1276,7 @@ describe('production master inventory ratchet', () => {
         canonicalIdentity: userControlGate.canonicalIdentity,
         expectedIdentities: selectedExpectedIdentities,
         expectedBattlePointReads,
+        expectedCriticalStarsForward,
         preparationInventories: Object.fromEntries(preparationInventories),
         gate: userControlGate,
         observations: userControlObservations,

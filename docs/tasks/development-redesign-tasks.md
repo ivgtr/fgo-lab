@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.59"
+document_version: "1.7.60"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -2995,14 +2995,14 @@ production counterは先行qualityと一致し、candidate 6,673／deduplicated 
 次の最小操作は、このbounded unitを再実装せず、別sessionでstale-mutation実値・後続read・rollback／recovery consumer closureまたはlegacy cleanupの限定計画を作ること。今回の結果をTSK-08全体のclosureとは呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。この検証済み範囲だけをlocal commitし、pushしない。
 
 
-次sessionの限定handoff（2026-09-26、参照製品commit `4ca8caccf25da352be5c94ede0eed589f4fa2f9b`）:
+Committed criticalStars forward bounded unit（2026-09-26、開始HEAD `b75e9574af4328d68a0ebbd202b2dc2499ddb183`）:
 
-次の1セッションは**criticalStarsのcommit済みmutationから順序付き後続inputQuantity readへ実値が届く共有監査consumer closure**だけを扱う。stale-mutation全体を一括で閉じず、rollback／復元値／recovery read、addQuantity／HP／battle-point／trait／formの別mutation family、legacy cleanupは別sessionへ残す。rollback済みgroupをcommit成功の証拠として受け入れない境界は今回確認するが、rollback／recovery consumerの完成とは呼ばない。
+利用者が段階計画を確認し、今回の実装を承認した。`productionMasterControlAudit.test.ts`の既存on/off実executionとprepared canonical programを共有consumer／gateへ接続した。`productionCriticalStarsAudit.ts`はcanonical operation／condition leaf／targetから期待identityを導出し、元executionのevent／mutation receipt、同じselected candidateのgroup／read、利用側のprojection／effective contribution／canonical input／resultを照合する。計算式はexecutionに残し、同一addressの介在書込みをoperation順序で辿る。通常source・公開API・選択・operation順序・damage／outcomeは変更しない。
 
-`resourceSemantics.ts::applyOrderedCriticalStarsMutation`がgain／lossと0..99へのclampを所有し、`candidateExecution.ts::executeOrderedScenarioCandidateInternal`が実mutationのbefore／attemptedAfterとcondition readを観測する。`candidateStateAudit.ts`がcommit／rollback境界のafterTransactionとgroup／read identityを記録する。既存`scenario.test.ts`の69→99→read 99はsnapshot transportであり、共有gateを通ったstale-mutation証拠ではない。現行user-control gateはcriticalStarsのexecutionGroups／mutations／inputQuantityReadsを検証していない。NP preparation resourceTransaction gateとも区別する。直接symbol、保存観測のreceipt、未達条件は[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.nextSession`を正本とする。
+実schema-legal fixtureの69→capped99→read99、同一group／別groupのgain→loss→read84、all/notの複数readが同じ共有gateを通った。4正例と207否定ケースをassertion前に完全保存し、否定はtyped reasonだけでなく欠落・identity・順序・実値・利用・参照の該当failure pathを要求する。rolledBackやattempted値のみをcommitted成功には使わない。rollback／復元値／recovery read自体のconsumer closureは別unitへDeferredする。
 
-保存済みS4 artifactの読み取りでは1,590 observations／candidateState付き3,180 sides、criticalStars read 410 occurrence、mutation 122 occurrence（すべてcommitted・後続readあり）を確認した。mutation identityはowner／profile／operationの組で8、対象ownerは3。各mutationのafterTransactionと最初の後続readが等しいのは48 occurrenceだけで、間に同じaddressへの書込みが続く。したがって最初のmutation値を任意の後続readへ直接比較せず、同じcandidate・state address・operation／group順序からread直前の有効値を辿る契約を計画する。122等は保存観測数であり、将来期待件数にしない。owner ID分岐や、成功する観測だけを選ぶfilterで母集団を作らない。
+局所43/43・型／対象lintとpublished audit3/3が成功。published母集団は1,590 expected／observed control identitiesを保持し、canonical programから24 forward contracts／48 sidesを導出した。122 committed mutation／410 saved readなどは今回の観測件数であり将来期待数にしない。新forward情報だけを除いたS4 artifactは先行版とbyte単位で一致し、月下／日輪・HP witness・battle-point live readを保持する。without-areaの14 source check／45否定ケースとartifact SHA-256を維持し、8 shard／80 condition artifactを含む107 receiptが一致したため再生成しない。詳細・flow closure・artifact path／bytes／SHA-256は[evidence](../evidence/tsk-08-parity-ratchet.json)の最新bounded unitを正本とする。
 
-最初の成果物は段階的実装計画とし、責務、候補file、通常／監査の実経路、canonical生成元から導出する期待identity、代表・否定fixture、保持する不変条件、通過条件、停止点、証拠再利用条件を示して確認を待つ。解法やmodule分割は本handoffで固定しない。確認前はsource／test／文書を編集せずsource test／producer・stage／commitを行わない。確認後は同じbounded unitの実装・局所検証・必要なquality／audit・既存Task／evidence更新・依頼範囲local commitまで続け、通常の技術判断で再承認を求めない。未規定の製品意味論・実質的な契約衝突だけ影響作業を止めて改訂計画を示す。
+対象内Blockingは0。最終qualityはunit936/936、production155/155、E2E29/29（retry0）、format／lint／root・Web型検査／runner／docs・integrity／master／buildが成功し、warning・unexpected console0。監査3/3も最終実装の証拠として有効。9固定入力のbytes／SHA-256がquality後も一致し、criticalStars／without-areaの代表artifactは局所版と最終quality版でbyte単位一致した。production counterも先行版と一致し、candidate／request増加・ratchet緩和はない。以後はTask／evidence／evidence indexの結果記録だけを更新し、文書検証・最終差分照合の後、この依頼範囲だけをlocal commitする。pnpmの外部SQLite store失敗は記録し、既存node_modulesとgeneric runnerを利用した。60分checkpoint、90分以降の新family開始なし、pushなし。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
 
-先行without-areaのquality unit936／production155／E2E29、audit3、14 source checkと45否定ケース、S4 artifact byte一致、matrix／eligibility digestを保持する。解消済みwithout-area／S4／architectureは再開せず、同条件の証拠はreceiptを照合して再利用し、8 shardを必須再生成工程にしない。この準備はコードと保存artifactの読み取り・資料更新だけで、製品編集・source test／producer・full gateは実行していない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+次sessionへ残す範囲はrollback／復元値／recovery read consumer closure、addQuantity／HP／battle-point／trait／formの別mutation family、legacy cleanup。今回をstale-mutation全体やTSK-08全体のclosureとは呼ばず、解消済みwithout-area／S4／architectureを再開しない。

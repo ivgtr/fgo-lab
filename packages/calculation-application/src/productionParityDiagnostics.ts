@@ -3,6 +3,11 @@ import {
   type RankingUserControlSource,
 } from './productionUserControlObservation';
 import {
+  auditCriticalStarsForwardSide,
+  type CriticalStarsForwardExpectation,
+  type CriticalStarsForwardSource,
+} from './productionCriticalStarsAudit';
+import {
   firstCanonicalAuditDifference,
   productionAuditMatrixRecords,
   type CanonicalAuditDifference,
@@ -409,6 +414,10 @@ export interface ProductionUserControlSideObservation {
 
 export interface ProductionUserControlObservation {
   identity: ProductionUserControlIdentity;
+  criticalStarsSource?: {
+    enabled?: CriticalStarsForwardSource;
+    excluded?: CriticalStarsForwardSource;
+  };
   rankingSource?: RankingUserControlSource;
   enabled: ProductionUserControlSideObservation;
   excluded: ProductionUserControlSideObservation;
@@ -445,6 +454,7 @@ export interface ProductionUserControlObservation {
 }
 
 export type ProductionUserControlFailureReason =
+  | 'userControlCriticalStarsForwardMismatch'
   | 'userControlRankingSourceMismatch'
   | 'userControlInventoryCoverageMismatch'
   | 'userControlDuplicateIdentity'
@@ -505,6 +515,7 @@ export type ProductionUserControlGate =
 export interface ProductionUserControlGateInput {
   expectedProjectionCount: number;
   expectedIdentities: readonly ProductionUserControlIdentity[];
+  expectedCriticalStarsForward?: readonly CriticalStarsForwardExpectation[];
   expectedBattlePointReads?: readonly {
     ownerId: string;
     projectionKey: string;
@@ -742,6 +753,26 @@ export function auditProductionUserControlObservations(
     { projectionCount: input.observations.length },
   );
   if (inventoryCountFailure) failures.push(inventoryCountFailure);
+  for (const contract of input.expectedCriticalStarsForward ?? []) {
+    const key = productionUserControlIdentity(contract.identity);
+    const expectedCount = input.expectedIdentities.filter(
+      (identity) => productionUserControlIdentity(identity) === key,
+    ).length;
+    const observedCount = input.observations.filter(
+      ({ identity }) => productionUserControlIdentity(identity) === key,
+    ).length;
+    const failure = productionUserControlFailure(
+      'userControlCriticalStarsForwardMismatch',
+      `${key}:critical-stars:population`,
+      { expectedCount: 1, observedCount: 1, forwardProgram: true },
+      {
+        expectedCount,
+        observedCount,
+        forwardProgram: contract.enabled !== null || contract.excluded !== null,
+      },
+    );
+    if (failure) failures.push(failure);
+  }
 
   for (const observation of input.observations) {
     const { identity, enabled, excluded } = observation;
@@ -803,6 +834,49 @@ export function auditProductionUserControlObservations(
       continue;
     }
     const profileIdentity = productionUserControlIdentity(identity);
+    const starContracts =
+      input.expectedCriticalStarsForward?.filter(
+        (expected) => productionUserControlIdentity(expected.identity) === profileIdentity,
+      ) ?? [];
+    if (starContracts.length > 0 || observation.criticalStarsSource) {
+      const coverageFailure = productionUserControlFailure(
+        'userControlCriticalStarsForwardMismatch',
+        `${profileIdentity}:critical-stars:contract`,
+        { count: 1 },
+        { count: starContracts.length },
+      );
+      if (coverageFailure) failures.push(coverageFailure);
+      if (starContracts.length === 1) {
+        for (const sideName of ['enabled', 'excluded'] as const) {
+          const program = starContracts[0]![sideName];
+          if (!program) {
+            const failure = productionUserControlFailure(
+              'userControlCriticalStarsForwardMismatch',
+              `${profileIdentity}:${sideName}:critical-stars:unexpected-source`,
+              { present: false },
+              { present: observation.criticalStarsSource?.[sideName] !== undefined },
+            );
+            if (failure) failures.push(failure);
+            continue;
+          }
+          const audited = auditCriticalStarsForwardSide(
+            program,
+            observation.criticalStarsSource?.[sideName],
+            observation[sideName],
+            identity,
+          );
+          for (const difference of audited.differences) {
+            const failure = productionUserControlFailure(
+              'userControlCriticalStarsForwardMismatch',
+              `${profileIdentity}:${sideName}:critical-stars:${difference.path}`,
+              { value: difference.expected },
+              { value: difference.actual },
+            );
+            if (failure) failures.push(failure);
+          }
+        }
+      }
+    }
     if (identity.path === 'withoutAreaAlternate' || observation.rankingSource) {
       const checks = rankingUserControlChecks(observation);
       const sourceFailure = productionUserControlFailure(

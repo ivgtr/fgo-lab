@@ -7,7 +7,13 @@ import {
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
-import { executeOrderedScenario, prepareOrderedScenario } from '@fgo-lab/battle-execution';
+import {
+  executeOrderedScenario,
+  prepareOrderedScenario,
+  type OrderedExecutionAuditObservation,
+  type OrderedExecutionGroupAuditEvent,
+  type OrderedInputQuantityReadAuditEvent,
+} from '@fgo-lab/battle-execution';
 import { masterSnapshotSchema, type CanonicalEffectRequirement } from '@fgo-lab/master-data';
 import type { TargetPredicate } from '@fgo-lab/schema';
 import {
@@ -37,6 +43,11 @@ import {
   calculateScenarioWithPolicy,
   resolveScenarioPreparationOutcome,
 } from './scenario';
+import {
+  criticalStarsForwardProgram,
+  criticalStarsReadRequirements,
+  criticalStarsForwardSource,
+} from './productionCriticalStarsAudit';
 import { materializeRankingQuantity } from './rankingQuantityWorld';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
@@ -48,6 +59,8 @@ import {
 import {
   rankingWithoutAreaControlObservation,
   rankingUserControlChecks,
+  selectedProfileControlIdentity,
+  userControlSideObservation,
 } from './productionUserControlObservation';
 import {
   auditProductionUserControlObservations,
@@ -2056,150 +2069,607 @@ describe('scenario calculation facade', () => {
     'observes the selected candidate star mutation and the later read of its capped value',
     productionAuditTestOptions(['tsk-08-star-mutation-read.json']),
     async ({ task }) => {
-      const baseServant = fixture.servants[0]!;
-      const modifier = modifierEffect('star-audit-transaction', 'upAtk', 500);
-      const starMutation = {
-        ...modifier,
-        occurrenceId: 'star-audit-mutation:0',
-        id: 'star-audit-mutation',
-        label: 'star audit mutation',
-        inputDefinitions: [],
-        requirement: { recipient: 'sourceSelf' as const, expression: { kind: 'always' as const } },
-        execution: [
-          {
-            kind: 'resourceMutation' as const,
-            resource: 'criticalStars' as const,
-            direction: 'gain' as const,
-            unit: 'fixed' as const,
+      const positives: {
+        name: string;
+        gate: ReturnType<typeof auditProductionUserControlObservations>;
+        observation: ProductionUserControlObservation;
+        expected: unknown;
+      }[] = [];
+      const negatives: {
+        name: string;
+        gate: ReturnType<typeof auditProductionUserControlObservations>;
+        observation?: unknown;
+      }[] = [];
+      for (const spec of [
+        { name: 'capped', sameGroup: false, intervening: false, finalValue: 99, nested: false },
+        { name: 'same-group-write', sameGroup: true, intervening: true, finalValue: 84 },
+        { name: 'next-group-write', sameGroup: false, intervening: true, finalValue: 84 },
+        { name: 'nested-read', sameGroup: false, intervening: true, finalValue: 84, nested: true },
+      ]) {
+        const baseServant = fixture.servants[0]!;
+        const modifier = modifierEffect('star-audit-transaction', 'upAtk', 500);
+        const starMutation = {
+          ...modifier,
+          occurrenceId: 'star-audit-mutation:0',
+          id: 'star-audit-mutation',
+          label: 'star audit mutation',
+          inputDefinitions: [],
+          requirement: {
             recipient: 'sourceSelf' as const,
-            amount: {
-              kind: 'fixed' as const,
-              values: [Array<number>(10).fill(40), [], [], [], []] as [
-                number[],
-                number[],
-                number[],
-                number[],
-                number[],
+            expression: { kind: 'always' as const },
+          },
+          execution: [
+            {
+              kind: 'resourceMutation' as const,
+              resource: 'criticalStars' as const,
+              direction: 'gain' as const,
+              unit: 'fixed' as const,
+              recipient: 'sourceSelf' as const,
+              amount: {
+                kind: 'fixed' as const,
+                values: [Array<number>(10).fill(40), [], [], [], []] as [
+                  number[],
+                  number[],
+                  number[],
+                  number[],
+                  number[],
+                ],
+              },
+              subjectId: null,
+            },
+          ],
+        };
+        const starReader = {
+          ...modifierEffect('star-audit-reader', 'upAtk', 500),
+          inputDefinitions: [
+            {
+              key: 'battle:criticalStars',
+              kind: 'criticalStars' as const,
+              owner: 'field' as const,
+              label: 'クリティカルスター',
+              description: '星依存効果の現在値',
+              minimum: 0,
+              maximum: 99,
+              step: 1,
+              defaultValue: 69,
+              defaultReason: 'fixture',
+            },
+          ],
+          requirement: {
+            recipient: 'sourceSelf' as const,
+            expression: {
+              kind: 'inputQuantity' as const,
+              inputKey: 'battle:criticalStars',
+              comparison: 'atLeast' as const,
+              value: spec.finalValue,
+            },
+          },
+        };
+        const readerEffect = spec.nested
+          ? {
+              ...starReader,
+              requirement: {
+                ...starReader.requirement,
+                expression: {
+                  kind: 'all' as const,
+                  requirements: [
+                    starReader.requirement.expression,
+                    {
+                      kind: 'not' as const,
+                      requirement: {
+                        ...starReader.requirement.expression,
+                        comparison: 'lessThan' as const,
+                      },
+                    },
+                  ],
+                },
+              },
+            }
+          : starReader;
+        const intervening = {
+          ...starMutation,
+          id: 'star-audit-loss',
+          occurrenceId: 'star-audit-loss:0',
+          execution: [
+            {
+              ...starMutation.execution[0]!,
+              direction: 'loss' as const,
+              amount: {
+                kind: 'fixed' as const,
+                values: [Array<number>(10).fill(15), [], [], [], []] as [
+                  number[],
+                  number[],
+                  number[],
+                  number[],
+                  number[],
+                ],
+              },
+            },
+          ],
+        };
+        const mutation = spec.sameGroup
+          ? { ...starMutation, execution: [...starMutation.execution, ...intervening.execution] }
+          : starMutation;
+        const resourceMaster = parseTestMaster({
+          ...fixture,
+          servants: [
+            {
+              ...baseServant,
+              skills: [
+                {
+                  id: 'star-audit-skill',
+                  slot: 1,
+                  priority: 1,
+                  name: 'star audit',
+                  detail: '',
+                  imageKey: null,
+                  resourceRequirement: null,
+                  effects: [
+                    mutation,
+                    ...(spec.intervening && !spec.sameGroup ? [intervening] : []),
+                    readerEffect,
+                  ],
+                },
               ],
             },
-            subjectId: null,
+          ],
+        });
+        const scenario: ResolvedScenario = {
+          ...createDefaultResolvedScenario(resourceMaster, undefined),
+          preNoblePhantasmPlan: [
+            { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
+            { kind: 'executeAttackNoblePhantasm' },
+          ],
+        };
+        const prepared = prepareCalculationScenarioWithPolicy(
+          scenario,
+          resourceMaster,
+          { kind: 'calculator' },
+          {},
+          true,
+        );
+        const execution = evaluatePreparedCalculationScenario(prepared, {
+          ...versions,
+          masterDataVersion: resourceMaster.version,
+        });
+        const active = requireExecutableCalculation(execution);
+        const program = criticalStarsForwardProgram(prepared, active);
+        if (!program || !active.executionObservation)
+          throw new Error('canonical star program required');
+        // Reader identity comes from the canonical condition, independently of observed values.
+        const reader = program.operations.find(
+          (operation) => criticalStarsReadRequirements(operation.condition).length > 0,
+        );
+        if (!reader) throw new Error('canonical reader required');
+        const projection = active.effects.find(
+          ({ operationId }) => operationId === reader.operationId,
+        );
+        if (!projection || active.profileContinuity?.kind !== 'matched')
+          throw new Error('reader projection/profile required');
+        const excludedScenario = applyEffectControlPresentationDecision(
+          scenario,
+          active.effectControls.find(({ key }) => key === projection.projectionKey)!,
+          false,
+          active.activationRequirements,
+          active.effects,
+          active.effectInputs,
+        );
+        const excludedPrepared = prepareCalculationScenarioWithPolicy(
+          excludedScenario,
+          resourceMaster,
+          { kind: 'calculator' },
+          {},
+          true,
+        );
+        const excluded = requireExecutableCalculation(
+          evaluatePreparedCalculationScenario(excludedPrepared, {
+            ...versions,
+            masterDataVersion: resourceMaster.version,
+          }),
+        );
+        const excludedProgram = criticalStarsForwardProgram(excludedPrepared, excluded);
+        if (!excludedProgram || !excluded.executionObservation)
+          throw new Error('excluded canonical program required');
+        const identity = selectedProfileControlIdentity(
+          baseServant.id,
+          projection,
+          active.profileContinuity.intendedProfileKey,
+        );
+        const observation: ProductionUserControlObservation = {
+          identity,
+          enabled: userControlSideObservation(projection, active, active.executionObservation),
+          excluded: userControlSideObservation(projection, excluded, excluded.executionObservation),
+          criticalStarsSource: {
+            enabled: criticalStarsForwardSource(program, prepared, active),
+            excluded: criticalStarsForwardSource(excludedProgram, excludedPrepared, excluded),
           },
-        ],
-      };
-      const starReader = {
-        ...modifierEffect('star-audit-reader', 'upAtk', 500),
-        inputDefinitions: [
-          {
-            key: 'battle:criticalStars',
-            kind: 'criticalStars' as const,
-            owner: 'field' as const,
-            label: 'クリティカルスター',
-            description: '星依存効果の現在値',
-            minimum: 0,
-            maximum: 99,
-            step: 1,
-            defaultValue: 69,
-            defaultReason: 'fixture',
-          },
-        ],
-        requirement: {
-          recipient: 'sourceSelf' as const,
-          expression: {
-            kind: 'inputQuantity' as const,
-            inputKey: 'battle:criticalStars',
-            comparison: 'atLeast' as const,
-            value: 99,
-          },
-        },
-      };
-      const resourceMaster = parseTestMaster({
-        ...fixture,
-        servants: [
-          {
-            ...baseServant,
-            skills: [
+        };
+        const gateInput = {
+          expectedProjectionCount: 1,
+          expectedIdentities: [identity],
+          expectedCriticalStarsForward: [{ identity, enabled: program, excluded: excludedProgram }],
+          observations: [observation],
+        };
+        const gate = auditProductionUserControlObservations(gateInput);
+        positives.push({
+          name: spec.name,
+          gate,
+          observation,
+          expected: { initial: 69, capped: 99, read: spec.finalValue },
+        });
+        const target = active.executionObservation.targetExecution;
+        if (!target || target.selection !== 'selected' || !target.candidateState)
+          throw new Error('real selected trace required');
+        const corrupt = (
+          name: string,
+          change: (
+            candidate: Extract<OrderedExecutionAuditObservation, { selection: 'selected' }>,
+          ) => void,
+        ) => {
+          const altered = structuredClone(target);
+          change(altered);
+          const changed = {
+            ...observation,
+            enabled: {
+              ...observation.enabled,
+              executionObservation: { ...active.executionObservation!, targetExecution: altered },
+            },
+          };
+          negatives.push({
+            name: `${spec.name}:${name}`,
+            observation: changed,
+            gate: auditProductionUserControlObservations({ ...gateInput, observations: [changed] }),
+          });
+        };
+        const groups = (
+          candidate: Extract<OrderedExecutionAuditObservation, { selection: 'selected' }>,
+        ) => candidate.candidateState!.executionGroups as OrderedExecutionGroupAuditEvent[];
+        const mutationGroup = (
+          candidate: Extract<OrderedExecutionAuditObservation, { selection: 'selected' }>,
+        ) =>
+          groups(candidate).find(({ mutations }) =>
+            mutations.some(({ stateAddress }) => stateAddress === 'battle:criticalStars'),
+          )!;
+        const reads = (
+          candidate: Extract<OrderedExecutionAuditObservation, { selection: 'selected' }>,
+        ) => candidate.candidateState!.inputQuantityReads as OrderedInputQuantityReadAuditEvent[];
+        const firstMutation = (
+          candidate: Extract<OrderedExecutionAuditObservation, { selection: 'selected' }>,
+        ) => mutationGroup(candidate).mutations[0]!;
+        const starRead = (
+          candidate: Extract<OrderedExecutionAuditObservation, { selection: 'selected' }>,
+        ) => reads(candidate).find(({ operationId }) => operationId === reader.operationId)!;
+        corrupt('missing-state', (candidate) => {
+          delete candidate.candidateState;
+        });
+        corrupt('wrong-candidate', (candidate) => {
+          candidate.candidateIndex += 1;
+        });
+        corrupt('wrong-target', (candidate) => {
+          candidate.targetCandidate = {
+            ...candidate.targetCandidate,
+            families: candidate.targetCandidate.families.length ? [] : ['beast'],
+          };
+        });
+        corrupt('missing-event', (candidate) => {
+          (candidate.operationEvents as unknown[]).pop();
+        });
+        corrupt('reverse-events', (candidate) => {
+          (candidate.operationEvents as unknown[]).reverse();
+        });
+        corrupt('duplicate-event', (candidate) => {
+          (candidate.operationEvents as unknown[]).push(candidate.operationEvents[0]);
+        });
+        corrupt('missing-group', (candidate) => {
+          groups(candidate).splice(groups(candidate).indexOf(mutationGroup(candidate)), 1);
+        });
+        corrupt('wrong-group', (candidate) => {
+          mutationGroup(candidate).groupIndex += 1;
+        });
+        corrupt('wrong-source', (candidate) => {
+          mutationGroup(candidate).transactionIdentity.sourceInstanceId += ':wrong';
+        });
+        corrupt('wrong-transaction', (candidate) => {
+          mutationGroup(candidate).transactionIdentity.transactionGroupId = 'wrong';
+        });
+        corrupt('duplicate-group', (candidate) => {
+          groups(candidate).push(mutationGroup(candidate));
+        });
+        corrupt('reverse-groups', (candidate) => {
+          groups(candidate).reverse();
+        });
+        corrupt('missing-mutation', (candidate) => {
+          (mutationGroup(candidate).mutations as unknown[]).shift();
+        });
+        corrupt('wrong-mutation-operation', (candidate) => {
+          firstMutation(candidate).operationId = reader.operationId;
+        });
+        corrupt('wrong-mutation-kind', (candidate) => {
+          firstMutation(candidate).operationKind = 'addQuantity';
+        });
+        corrupt('wrong-mutation-address', (candidate) => {
+          firstMutation(candidate).stateAddress = 'quantity:wrong';
+        });
+        corrupt('wrong-mutation-sequence', (candidate) => {
+          firstMutation(candidate).operationSequence += 1;
+        });
+        corrupt('duplicate-mutation', (candidate) => {
+          const group = mutationGroup(candidate);
+          (group.mutations as unknown[]).push(group.mutations[0]);
+        });
+        corrupt('wrong-before', (candidate) => {
+          firstMutation(candidate).before = 0;
+        });
+        corrupt('attempted-only', (candidate) => {
+          firstMutation(candidate).afterTransaction = 98;
+        });
+        corrupt('rolled-back', (candidate) => {
+          mutationGroup(candidate).outcome = 'rolledBack';
+        });
+        corrupt('rollback-proof', (candidate) => {
+          mutationGroup(candidate).rollbackProof = {
+            battleStateRestored: true,
+            damageInputRestored: true,
+          };
+        });
+        corrupt('missing-applied', (candidate) => {
+          mutationGroup(candidate).appliedOperationIds = [];
+        });
+        corrupt('missing-reader', (candidate) => {
+          reads(candidate).splice(reads(candidate).indexOf(starRead(candidate)), 1);
+        });
+        corrupt('wrong-reader-operation', (candidate) => {
+          starRead(candidate).operationId = 'wrong';
+        });
+        corrupt('wrong-reader-address', (candidate) => {
+          starRead(candidate).inputKey = 'wrong';
+        });
+        corrupt('wrong-reader-sequence', (candidate) => {
+          starRead(candidate).operationSequence = 0;
+        });
+        corrupt('wrong-reader-group', (candidate) => {
+          starRead(candidate).operationGroupIndex += 1;
+        });
+        corrupt('duplicate-reader', (candidate) => {
+          reads(candidate).push(starRead(candidate));
+        });
+        corrupt('initial-value-read', (candidate) => {
+          starRead(candidate).value = 69;
+        });
+        corrupt('stale-value-read', (candidate) => {
+          starRead(candidate).value = spec.intervening ? 99 : 98;
+        });
+        corrupt('missing-read-value', (candidate) => {
+          starRead(candidate).value = null;
+        });
+        if (spec.intervening)
+          corrupt('missing-intervening-write', (candidate) => {
+            for (const group of groups(candidate))
+              group.mutations = group.mutations.filter(
+                ({ operationSequence }) =>
+                  operationSequence === firstMutation(candidate).operationSequence,
+              );
+          });
+        corrupt('coherent-stale-receipt-and-read', (candidate) => {
+          const record = firstMutation(candidate);
+          record.attemptedAfter = 98;
+          record.afterTransaction = 98;
+          for (const read of reads(candidate)) read.value = 98;
+        });
+        corrupt('hidden-mutation-and-initial-read', (candidate) => {
+          for (const group of groups(candidate)) group.mutations = [];
+          candidate.operationEvents = candidate.operationEvents.map((event) =>
+            event.operationKind === 'resourceMutation'
+              ? { ...event, operationOutcome: 'notApplied', projectionOutcome: 'notApplied' }
+              : event,
+          );
+          for (const read of reads(candidate)) read.value = 69;
+        });
+        const rejectSide = (name: string, side: typeof observation.enabled) =>
+          negatives.push({
+            name: `${spec.name}:${name}`,
+            observation: { ...observation, enabled: side },
+            gate: auditProductionUserControlObservations({
+              ...gateInput,
+              observations: [{ ...observation, enabled: side }],
+            }),
+          });
+        rejectSide('missing-trace', {
+          ...observation.enabled,
+          executionObservation: { battlePointWitness: null, targetExecution: null },
+        });
+        rejectSide('wrong-input', {
+          ...observation.enabled,
+          inputBinding: { kind: 'bound', address: 'attackBuff', value: 0.123 },
+        });
+        rejectSide('missing-projection', { ...observation.enabled, projections: [] });
+        rejectSide('missing-effective', { ...observation.enabled, effectiveContributions: [] });
+        rejectSide('wrong-effective', {
+          ...observation.enabled,
+          effectiveContributions: observation.enabled.effectiveContributions.map((item) => ({
+            ...item,
+            resolvedValue: 0.123,
+          })),
+        });
+        rejectSide('wrong-result', {
+          ...observation.enabled,
+          damageResult: { ...observation.enabled.damageResult, rows: [] },
+        });
+        const source = observation.criticalStarsSource!.enabled!;
+        const rejectSource = (name: string, alteredSource: typeof source) => {
+          const altered = {
+            ...observation,
+            criticalStarsSource: { ...observation.criticalStarsSource, enabled: alteredSource },
+          };
+          negatives.push({
+            name: `${spec.name}:${name}`,
+            observation: altered,
+            gate: auditProductionUserControlObservations({ ...gateInput, observations: [altered] }),
+          });
+        };
+        rejectSource('copied-input-reference', { ...source, input: { ...source.input } });
+        rejectSource('copied-result-reference', { ...source, result: { ...source.result } });
+        rejectSource('copied-effects-reference', { ...source, effects: [...source.effects] });
+        rejectSource('copied-effective-reference', {
+          ...source,
+          effectiveContributions: { ...source.effectiveContributions },
+        });
+        rejectSource('copied-calculation-reference', {
+          ...source,
+          calculation: { ...source.calculation },
+        });
+        rejectSource('copied-program-reference', { ...source, program: { ...source.program } });
+        rejectSource('swapped-execution', {
+          ...source,
+          calculation: excluded,
+          observation: excluded.executionObservation,
+        });
+        negatives.push({
+          name: `${spec.name}:missing-contract`,
+          gate: auditProductionUserControlObservations({
+            ...gateInput,
+            expectedCriticalStarsForward: [],
+          }),
+        });
+        negatives.push({
+          name: `${spec.name}:null-contract`,
+          gate: auditProductionUserControlObservations({
+            ...gateInput,
+            expectedCriticalStarsForward: [
+              { ...gateInput.expectedCriticalStarsForward[0]!, enabled: null },
+            ],
+          }),
+        });
+        negatives.push({
+          name: `${spec.name}:missing-source`,
+          gate: auditProductionUserControlObservations({
+            ...gateInput,
+            observations: [
               {
-                id: 'star-audit-skill',
-                slot: 1,
-                priority: 1,
-                name: 'star audit',
-                detail: '',
-                imageKey: null,
-                resourceRequirement: null,
-                effects: [starMutation, starReader],
+                identity: observation.identity,
+                enabled: observation.enabled,
+                excluded: observation.excluded,
               },
             ],
-          },
-        ],
-      });
-      const scenario: ResolvedScenario = {
-        ...createDefaultResolvedScenario(resourceMaster, undefined),
-        preNoblePhantasmPlan: [
-          { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
-          { kind: 'executeAttackNoblePhantasm' },
-        ],
+          }),
+        });
+        negatives.push({
+          name: `${spec.name}:duplicate-contract`,
+          gate: auditProductionUserControlObservations({
+            ...gateInput,
+            expectedCriticalStarsForward: [
+              ...gateInput.expectedCriticalStarsForward,
+              ...gateInput.expectedCriticalStarsForward,
+            ],
+          }),
+        });
+      }
+      const mechanismPaths: Record<string, string> = {
+        'missing-state': ':candidateState.present',
+        'wrong-candidate': ':candidateIndex',
+        'wrong-target': ':candidate',
+        'missing-event': ':events',
+        'reverse-events': ':events',
+        'duplicate-event': ':events',
+        'missing-group': ':groups',
+        'wrong-group': ':groups',
+        'wrong-source': ':groups',
+        'wrong-transaction': ':groups',
+        'duplicate-group': ':groups',
+        'reverse-groups': ':groups',
+        'missing-mutation': ':mutations.identity',
+        'wrong-mutation-operation': ':mutations.identity',
+        'wrong-mutation-kind': ':mutations.identity',
+        'wrong-mutation-address': ':mutations.identity',
+        'wrong-mutation-sequence': ':mutations.identity',
+        'duplicate-mutation': ':mutations.identity',
+        'wrong-before': ':before',
+        'attempted-only': ':receipt',
+        'rolled-back': ':committed',
+        'rollback-proof': ':rollbackProof',
+        'missing-applied': ':applied',
+        'missing-reader': ':reads.identity',
+        'wrong-reader-operation': ':reads.identity',
+        'wrong-reader-address': ':reads.identity',
+        'wrong-reader-sequence': ':reads.identity',
+        'wrong-reader-group': ':reads.identity',
+        'duplicate-reader': ':reads.identity',
+        'initial-value-read': ':value',
+        'stale-value-read': ':value',
+        'missing-read-value': ':value',
+        'missing-intervening-write': ':mutations.identity',
+        'coherent-stale-receipt-and-read': ':mutations.ownerReceipts',
+        'hidden-mutation-and-initial-read': ':mutations.identity',
+        'missing-trace': ':selection',
+        'wrong-input': ':use.inputBinding',
+        'missing-projection': ':use.projections',
+        'missing-effective': ':use.effectiveContributions',
+        'wrong-effective': ':use.effectiveContributions',
+        'wrong-result': ':use.damageResult',
+        'missing-source': ':source.present',
+        'duplicate-contract': ':contract',
+        'missing-contract': ':contract',
+        'null-contract': ':unexpected-source',
+        'copied-input-reference': ':source.references',
+        'copied-result-reference': ':source.references',
+        'copied-effects-reference': ':source.references',
+        'copied-effective-reference': ':source.references',
+        'copied-calculation-reference': ':source.references',
+        'copied-program-reference': ':source.references',
+        'swapped-execution': ':source.references',
       };
-      const prepared = prepareCalculationScenarioWithPolicy(
-        scenario,
-        resourceMaster,
-        { kind: 'calculator' },
-        {},
-        true,
-      );
-      const execution = evaluatePreparedCalculationScenario(prepared, {
-        ...versions,
-        masterDataVersion: resourceMaster.version,
-      });
-      const targetExecution = execution.executionObservation?.targetExecution;
-      const candidateState =
-        targetExecution?.selection === 'selected' ? targetExecution.candidateState : undefined;
       await recordTsk08AuditArtifact(task.meta, 'tsk-08-star-mutation-read.json', {
-        schemaVersion: 1,
-        canonicalIdentity: 'tsk-08:ordered-mutation-read:critical-stars:69-cap-99-read-99',
-        targetExecution,
-        executionObservation: execution.executionObservation,
-        calculationStatus: execution.result.status,
-        firstDifference: null,
+        schemaVersion: 2,
+        population: 'schemaLegalFixture',
+        canonicalIdentity: 'tsk-08:committed-critical-stars-forward',
+        positives,
+        negatives,
+        mechanismPaths,
+        firstDifference:
+          positives.find(({ gate }) => gate.status !== 'passed')?.gate.firstDifference ?? null,
       });
-      if (!targetExecution || targetExecution.selection !== 'selected')
-        throw new Error('selected candidate audit observation required');
-      const selected = targetExecution;
-      if (!candidateState) throw new Error('selected candidate state audit required');
-
-      const starMutationEvent = selected.operationEvents.find(
-        ({ operationKind }) => operationKind === 'resourceMutation',
-      );
-      if (!starMutationEvent) throw new Error('critical star mutation event required');
-      const mutationGroup = candidateState.executionGroups.find((group) =>
-        group.mutations.some(({ operationId }) => operationId === starMutationEvent.operationId),
-      );
-      if (!mutationGroup) throw new Error('critical star mutation transaction required');
-      const mutation = mutationGroup.mutations.find(
-        ({ operationId }) => operationId === starMutationEvent.operationId,
-      )!;
-      const laterRead = candidateState.inputQuantityReads.find(
-        ({ inputKey, operationSequence, value }) =>
-          inputKey === 'battle:criticalStars' &&
-          value === 99 &&
-          operationSequence > mutation.operationSequence,
-      );
-
-      expect(execution.result.status).toBe('calculated');
-      if (execution.status !== 'executable') throw new Error('executable calculation required');
-      expect(candidateState.preGroupContextResolution).not.toBeNull();
-      expect(mutationGroup.outcome).toBe('committed');
-      expect(mutation).toMatchObject({
-        stateAddress: 'battle:criticalStars',
-        before: 69,
-        attemptedAfter: 99,
-        afterTransaction: 99,
-      });
-      expect(laterRead).toMatchObject({ inputKey: 'battle:criticalStars', value: 99 });
-      expect(
-        selected.operationEvents.find(({ operationId }) => operationId === laterRead?.operationId)
-          ?.condition,
-      ).toBe('satisfied');
-      expect(execution.input.attackBuff).toBe(0.5);
+      for (const { name, gate, observation, expected } of positives) {
+        expect(gate.status, `${name}:${JSON.stringify(gate.failures)}`).toBe('passed');
+        const selected = observation.enabled.executionObservation.targetExecution;
+        if (!selected || selected.selection !== 'selected')
+          throw new Error('selected fixture required');
+        const mutation = selected.candidateState!.executionGroups.flatMap(
+          ({ mutations }) => mutations,
+        )[0]!;
+        expect(mutation).toMatchObject({ before: 69, attemptedAfter: 99, afterTransaction: 99 });
+        const reader = selected.candidateState!.inputQuantityReads.find(
+          ({ operationId }) => operationId === observation.identity.operationId,
+        )!;
+        expect(reader.value).toBe((expected as { read: number }).read);
+        expect(observation.enabled.inputBinding).toEqual({
+          kind: 'bound',
+          address: 'attackBuff',
+          value: 0.5,
+        });
+        expect(observation.excluded.inputBinding).toEqual({
+          kind: 'bound',
+          address: 'attackBuff',
+          value: 0,
+        });
+      }
+      for (const { name, gate } of negatives) {
+        expect(gate.status, name).toBe('failed');
+        expect(
+          gate.failures.some(({ reason }) => reason === 'userControlCriticalStarsForwardMismatch'),
+          name,
+        ).toBe(true);
+        expect(gate.firstDifference, name).not.toBeNull();
+        const expectedPath = mechanismPaths[name.split(':').at(-1)!];
+        expect(expectedPath, name).toBeDefined();
+        expect(
+          gate.failures.some(
+            ({ reason, canonicalIdentity }) =>
+              reason === 'userControlCriticalStarsForwardMismatch' &&
+              canonicalIdentity.includes(expectedPath!),
+          ),
+          `${name}:${JSON.stringify(gate.failures)}`,
+        ).toBe(true);
+      }
     },
   );
 

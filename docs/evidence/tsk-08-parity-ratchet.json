@@ -228,7 +228,7 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "Stale-mutation actual-value, subsequent-read and rollback/recovery production consumer closure belongs to a later TSK-08 bounded unit.",
+    "Rollback/restored-value/recovery-read consumer closure and other mutation families remain separate TSK-08 bounded units. Committed criticalStars forward consumer is verified in the current unit.",
     "Deferred legacy loader/scan/candidate-list/duplicate-fixture cleanup belongs to a later bounded unit; TSK-09.1/09 remain blocked."
   ],
   "statusInvariants": {
@@ -240,7 +240,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Committed criticalStars forward mutation/read shared consumer closure only: plan from current code, obtain user confirmation, then implement/verify/record/commit the bounded path. Rollback/recovery, other mutation families and legacy cleanup remain separate; TSK-08 in_progress, TSK-09.1/09 blocked.",
+  "nextBoundedUnit": "Separate scoped planning for rollback/restored-value/recovery-read closure, another explicitly selected mutation family, or legacy cleanup. Do not reopen the verified criticalStars committed forward unit, without-area, S4 or architecture; whole TSK-08 remains in_progress.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -5825,9 +5825,308 @@
         }
       },
       "localCommit": "The scoped local commit containing this completed bounded-unit record; resolve exact identity with git log. No push."
+    },
+    {
+      "name": "Committed criticalStars forward shared audit consumer closure",
+      "status": "committed_critical_stars_forward_bounded_unit_verified",
+      "baselineHead": "b75e9574af4328d68a0ebbd202b2dc2499ddb183",
+      "priorProductCommit": "4ca8caccf25da352be5c94ede0eed589f4fa2f9b",
+      "worktreeAtStart": {
+        "index": [],
+        "tracked": [],
+        "untracked": []
+      },
+      "authorizedScope": "User approved staged plan in this session. Committed criticalStars mutation -> ordered later inputQuantity read -> shared production consumer/gate -> real representative/negative fixture -> declared artifact, required final quality and scoped local commit. No push.",
+      "ownership": {
+        "execution": "applyOrderedCriticalStarsMutation and existing audit generation remain unchanged; execution alone owns gain/loss/clamp and transactional receipts.",
+        "producer": "productionMasterControlAudit.test.ts retains prepared objects for the actual on/off executions in an audit-only WeakMap. Program membership and read identities derive from canonical ordered operations/condition leaves and target resolution, independently of observed values or passing traces. All original control identities still pass the existing inventory gate.",
+        "consumer": "productionCriticalStarsAudit.ts consumes the actual source calculation, observation, input, effects, effective contributions and result; source references are checked before serialization. Canonical identity expectations are separate from snapshots of all owner-generated event/mutation receipts. Those receipt snapshots prevent mutable transport from rewriting the original evidence; they do not compute gain/loss or form a success-filtered expected population.",
+        "gate": "auditProductionUserControlObservations invokes the same consumer for applicable expected on/off programs and rejects missing/duplicate/unmatched contracts, provenance/identity/order/value/use conflicts with userControlCriticalStarsForwardMismatch, canonical identity and first difference.",
+        "artifact": "Existing productionAuditTestOptions/writer save positive and negative diagnostics before assertions. Unchanged generic runner verifies declarations, JSON, bytes and SHA-256."
+      },
+      "flowClosure": {
+        "forward": "Prepared canonical scenario/program and target candidates + actual selected execution -> shared side/source consumer -> canonical operation/group/read identity and owner receipt comparison -> operation-ordered live value continuity -> reader event/projection/effective contribution -> source canonical input/result -> shared gate -> declared artifact/verified receipt.",
+        "normal": "All battle-execution sources, scenario.ts, rankingPolicyCandidates.ts and public index files retain HEAD bytes. No extra execution or observation allocation on the normal path; candidate selection, operation order, input/damage/outcome semantics are unchanged.",
+        "valueRule": "Read is evaluated before the mutation of its own operation. Each committed write checks before against the current address value and afterTransaction against the actual attemptedAfter receipt, then advances the current value. Subsequent reads consume the latest value, including intervening writes within and across committed groups. No gain/loss/clamp/damage formula is reproduced in the audit.",
+        "success": "Verified: real 69 -> capped99 -> read99; gain then loss in the same transaction and a later transaction -> read84; canonical all/not with repeated reads. All use actual on/off executions, the shared gate, canonical input and calculated result.",
+        "normalNonApplication": "Canonical operations and read occurrences are inventoried even when a controlled contribution is excluded; receipts are required according to the original owner-generated operation disposition. Excluded sides use their own actual prepared/execution objects, not fabricated executions.",
+        "failClosed": "Missing trace/state/group/mutation/reader/source/contract, wrong candidate/target/source/transaction/operation/group/sequence/address, duplicate/reordered records, initial/stale/missing read values, discontinuous before, attempted-only/rolledBack proof, coherent altered receipt+read, hidden mutation, input/projection/contribution/result contradictions and copied/swapped references are rejected. Negative assertions check the mechanism-specific canonical failure path, not merely any failure.",
+        "rollbackBoundary": "RolledBack groups and rollbackProof cannot certify committed forward success. A rollback-dependent read cannot use an unknown restored value as a numeric fallback. Restoration value/proof and recovery-read consumer closure remain Deferred to a later TSK-08 unit.",
+        "populations": "Published source-derived programs and schemaLegalFixture programs remain separate. The 24 contracts/48 sides,122 mutations,410 saved reads,1590 observations and207 fixture cases are measured receipts, not fixed future population expectations.",
+        "blocking": "Target Blocking0. Focused fixtures, source review, published audit, mandatory final quality and fixed-input reconciliation pass."
+      },
+      "localVerification": {
+        "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH node scripts/test-runner.mjs compact --suite=unit packages/calculation-application/src/scenario.test.ts packages/calculation-application/src/productionClosureAudit.test.ts",
+        "manifest": ".test-results/2026-09-26T05-22-49-742Z-2-d6a156/manifest.json",
+        "passed": 43,
+        "failed": 0,
+        "skipped": 0,
+        "warnings": 0,
+        "representativePositiveCases": 4,
+        "negativeCases": 207,
+        "mechanismChecks": "Each negative requires the typed criticalStars reason and its declared mechanism-specific canonical failure path.",
+        "typecheck": "Final quality root/Web typecheck passed on the fixed final implementation.",
+        "lint": "Final quality lint passed on the fixed final implementation.",
+        "pnpm": "pnpm test:diagnostic failed before its script with external SQLite StoreIndex.openDatabase ERR_SQLITE_ERROR. Existing /tmp/tsk08-tools/pnpm shim, node_modules and unchanged generic runner used.",
+        "developmentRecovery": "Nested fixture initially used execution expressions instead of canonical master requirements; schema rejected it and runner correctly reported missing artifact receipt. Fixture now uses canonical all/not requirements. Early type/lint findings were corrected without relaxed rules. These earlier runs are not final success evidence."
+      },
+      "verification": {
+        "audit": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/test-runner.mjs compact --suite=audit",
+          "manifest": ".test-results/2026-09-26T05-23-03-059Z-2-1e90e2/manifest.json",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "warnings": 0,
+          "durationMs": 39920,
+          "artifactVerificationErrors": [],
+          "population": {
+            "observations": 1590,
+            "expectedIdentities": 1590,
+            "gate": "passed",
+            "failures": 0,
+            "forwardContracts": 24,
+            "forwardSides": 48,
+            "criticalStarMutations": 122,
+            "criticalStarReads": 410,
+            "committedMutations": 122,
+            "interveningWriteReads": 390,
+            "priorS4ByteIdenticalAfterRemovingForwardAdditions": true,
+            "priorS4Bytes": 65737938,
+            "priorS4Sha256": "09356db3215896ab70ac985ed4f64f4030c9f7a92df1383676ec7e11a953bb1a",
+            "strippedSha256": "09356db3215896ab70ac985ed4f64f4030c9f7a92df1383676ec7e11a953bb1a",
+            "fixture": {
+              "positive": 4,
+              "negative": 207,
+              "allPositivePassed": true,
+              "allNegativeFailed": true,
+              "names": [
+                "capped",
+                "same-group-write",
+                "next-group-write",
+                "nested-read"
+              ]
+            }
+          }
+        },
+        "quality": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/quality-runner.mjs",
+          "manifest": ".test-results/2026-09-26T05-28-24-718Z-2-6fdaf0/manifest.json",
+          "outcome": "success",
+          "durationMs": 377921,
+          "unit": {
+            "total": 936,
+            "passed": 936,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "production": {
+            "total": 155,
+            "passed": 155,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "e2e": {
+            "total": 29,
+            "passed": 29,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0,
+            "retries": 0,
+            "flaky": 0
+          },
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "artifactVerificationErrors": [],
+          "steps": [
+            "format",
+            "lint",
+            "typecheck",
+            "runner",
+            "docs",
+            "unit",
+            "production",
+            "master",
+            "build",
+            "playwright"
+          ]
+        },
+        "inputIdentity": "All9 frozen source/test/document/protected-evidence files matched after final quality. Only3 descriptive records receive final gate/handoff results; source/test/configuration, documentation registry and protected TSK-06.5 evidence remain unchanged.",
+        "performance": {
+          "sameRuntimeCounters": true,
+          "counters": [
+            {
+              "artifact": "production-audit-calculation-application.json",
+              "prior": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "final": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "sameCounters": true
+            },
+            {
+              "artifact": "production-audit-data-pipeline.json",
+              "prior": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "final": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "sameCounters": true
+            }
+          ],
+          "priorProductionMs": 90784,
+          "finalProductionMs": 83454,
+          "condition": "Same8 CPU affinity and existing50% production workers(four). Time is an uncontrolled observation; no candidate/request growth or ratchet/timeout changes."
+        },
+        "fixtureComparison": "Focused and final quality representative criticalStars and without-area artifacts are byte-identical. Declarations/receipts verified in both runner manifests.",
+        "review": "Target Blocking0. Forward identity population derives from canonical program/read requirements; execution receipt snapshots retain all dispositions and do not replace live value continuity. Same selected execution/calculation/source references close use through canonical input/result. No ID/label runtime branch, arithmetic duplication, numeric fallback, test exclusion, threshold/timeout relaxation, extra execution or normal-path allocation. Whole stale-mutation/TSK-08 closure is not claimed.",
+        "documentationAfterResultRecording": {
+          "command": "node --test scripts/docs-integrity.test.mjs && node scripts/docs-integrity.mjs",
+          "passed": 6,
+          "failed": 0,
+          "integrity": "passed",
+          "condition": "Only3 descriptive result records changed after successful fixed-input quality. Final metadata receipts, JSON and whitespace checks follow; no source/test/config/protected evidence changed."
+        }
+      },
+      "reusedEvidence": {
+        "checks": 107,
+        "conditionArtifacts": 80,
+        "allMatched": true,
+        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "candidateEligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+        "condition": "Source boundary unchanged and107 saved artifact receipts including8-shard manifests and80 condition artifacts matched bytes/SHA-256. No concrete matrix identity doubt; no regeneration. Existing without-area artifact remains identical and its14 source checks/45 negative cases pass in the same focused suite. Prior S4 envelope is byte-identical after removing only new criticalStars source/expectation additions."
+      },
+      "artifacts": [
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/source-review.json",
+          "bytes": 28413,
+          "sha256": "9969ad8fdd65d1e49c6b36501480f6b217649d52c244ec87ce465215887b00bc"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/consumer-review.json",
+          "bytes": 758,
+          "sha256": "f5bc4a3a4b88c8891f8f63c2454230cf376eb00c0dfe6997bed7bd4b9f44c5e5"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/reused-artifacts.json",
+          "bytes": 29558,
+          "sha256": "cf1efd2c48c0c9ad418d982b71dab82deb7bca4f305b920d702472f9a598c597"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-22-49-742Z-2-d6a156/manifest.json",
+          "bytes": 4489,
+          "sha256": "c415f15770fff32df2fb87347ee9c557bb2843ebc2bbb030aff1a35f76a1813b"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-22-49-742Z-2-d6a156/tsk-08-star-mutation-read.json",
+          "bytes": 85080629,
+          "sha256": "2fb12fae4dab6705e9d3836f3212b58981194c71530a6d9e8d55987b0c089122"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-22-49-742Z-2-d6a156/production-without-area-fixture.json",
+          "bytes": 15681829,
+          "sha256": "851632815d6039baa1903c9620d673d89f712fdbf690cfe973814f8ecdbb497f"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-23-03-059Z-2-1e90e2/manifest.json",
+          "bytes": 2994,
+          "sha256": "ba9d8423bfd37fff138e1e9eeb60fc6a4e4ef6e54c1315a3edd7a5fc6966a467"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-23-03-059Z-2-1e90e2/production-inert-control-production.json",
+          "bytes": 166052306,
+          "sha256": "8f38464e6ad69a27793e77afb3ff53633b390acc46de4304bb5b29701fa728ca"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/final-input-files.json",
+          "bytes": 1563,
+          "sha256": "244c345450a31190468bdad6f600790f59e566c6f99ce158a9f60457d4d157fa"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/final-source-reconciliation.json",
+          "bytes": 2128,
+          "sha256": "67390db1118a9fc47e32c8012bdca260080b31b5a39ca0af928897631022ed62"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/performance-comparison.json",
+          "bytes": 1378,
+          "sha256": "6871e9500f41487899c8eca23683eb8248a3eef36afc648640a59f8601ef80da"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/fixture-comparison.json",
+          "bytes": 1093,
+          "sha256": "82175bcd4e93241633fcc49ae116a138d790621eacc5f15b3b761e15449ddd9c"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-28-24-718Z-2-6fdaf0/manifest.json",
+          "bytes": 35951,
+          "sha256": "8c294554abff311893f1fbd0d1ab71e99efdebe5786b8ed02a5078536a0ee61a"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-28-24-718Z-2-6fdaf0/unit/manifest.json",
+          "bytes": 4577,
+          "sha256": "4dcc3b3796d22e7723919ef6a301fe7d07ad29b4d8ff1d808baca502f9ca89d7"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-28-24-718Z-2-6fdaf0/unit/tsk-08-star-mutation-read.json",
+          "bytes": 85080629,
+          "sha256": "2fb12fae4dab6705e9d3836f3212b58981194c71530a6d9e8d55987b0c089122"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-28-24-718Z-2-6fdaf0/unit/production-without-area-fixture.json",
+          "bytes": 15681829,
+          "sha256": "851632815d6039baa1903c9620d673d89f712fdbf690cfe973814f8ecdbb497f"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-28-24-718Z-2-6fdaf0/production/manifest.json",
+          "bytes": 6038,
+          "sha256": "e40d3e33e8f9568ceb678c39251fad5b1d1070dd93bd7d40f7243c02fc8a7e87"
+        },
+        {
+          "path": ".test-results/2026-09-26T05-28-24-718Z-2-6fdaf0/playwright/manifest.json",
+          "bytes": 92380,
+          "sha256": "97f06642abb9e34e5a08788fc49daaa1a5d184954b19d850d1803e2c2707d3a8"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/docs-tests.log",
+          "bytes": 507,
+          "sha256": "c89d8b1cdce213ddc721463a1e84499121e918affbfdca64361be6309498ad03"
+        },
+        {
+          "path": ".test-results/tsk-08-critical-stars-forward-20260926/docs-integrity.log",
+          "bytes": 22,
+          "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+        }
+      ],
+      "remaining": "No target Blocking or required product gate remains. Descriptive result records are finalized with documentation checks before the scoped local commit. Rollback/restored-value/recovery read, other mutation families, legacy cleanup and whole TSK-08 remain separate; TSK-08 in_progress, TSK-09.1/09 blocked.",
+      "localCommit": "Scoped source/test/record diff after required gates and record reconciliation. Commit identity is repository HEAD after this local commit; no push."
     }
   ],
-  "currentBoundedUnit": "Without-area ranking shared audit consumer closure",
+  "currentBoundedUnit": "Committed criticalStars forward shared audit consumer closure",
   "handoffPreparation": {
     "baselineHead": "a3241095be383348b6aa8d3b3199309b435b15b8",
     "scope": "read-only code investigation plus documentation; no source/test edits or source tests/producers executed",
@@ -5928,7 +6227,7 @@
       "excluded": "Rollback/restored-value/subsequent recovery-read consumer closure, addQuantity/HP/battle-point/trait/form mutation families, legacy cleanup, whole TSK-08 closure, TSK-09.1/09, already closed S4/architecture/without-area work, unconditional eight-shard regeneration.",
       "preservedEvidence": "Without-area bounded unit at 4ca8caccf25da352be5c94ede0eed589f4fa2f9b: quality unit936/production155/E2E29 (0 retries), audit3, warning/console0. Real without-area fixture14 source checks +45 negative cases; published S4 artifact65,737,938 bytes SHA-25609356db3215896ab70ac985ed4f64f4030c9f7a92df1383676ec7e11a953bb1a. Matrix04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4, eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759. Reuse only with matching conditions and verified receipts.",
       "verification": "Read-only source/direct-reference and saved-artifact inspection only. No product source/test edits, source tests, producer, audit or quality executed. Documentation tests 6/6, docs integrity and diff whitespace passed after handoff recording; final target format/docs checks follow receipt metadata update. Documentation-only local commit; no push.",
-      "status": "Preparation only; TSK-08 in_progress, TSK-09.1/09 blocked. Forward unit is not stale-mutation or whole-task closure.",
+      "status": "Preparation fulfilled by the user-approved Committed criticalStars forward shared audit consumer closure. Read the latest bounded unit for final quality/audit/artifact and remaining scope. Saved population is historical observation, not future expected counts.",
       "documentationArtifacts": [
         {
           "path": ".test-results/tsk-08-stale-forward-handoff-20260926/docs-tests.log",
