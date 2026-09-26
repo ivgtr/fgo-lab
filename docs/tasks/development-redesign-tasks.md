@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.62"
+document_version: "1.7.63"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3043,3 +3043,27 @@ S4 artifact全体が先行forward版とbyte単位で一致し、月下／日輪�
 次sessionは、別途依頼された未達unitの限定計画から始める。今回のcriticalStars rollback／復元値／ordered recovery-readを再実装せず、解消済みforward／without-area／S4／architectureを再開しない。別mutation family、legacy cleanup、一般retry／UI recovery、TSK-09.1／09は今回の対象外で、今回をstale-mutation全体やTSK-08全体のclosureと呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、依頼範囲だけlocal commit、pushなし。
 
 記録更新後の書式、docs 6/6・integrity、diff whitespaceが成功した。最終quality後の変更はTask／evidence／evidence indexの結果記録だけで、source／test／設定／registry／protected evidenceは不変。この7ファイルの検証済み差分だけをlocal commitし、当該commitを今回の参照identityとする。pushなし。
+
+
+旧4段階と現在の到達点の整理（2026-09-26、製品参照commit `be8b604eeaa954587ce7f8a71b1f4604daca38f3`）:
+
+以前のセルフチェック表は判断時点の履歴として保持する。現在の停止条件は次のとおりであり、「manual requestのschema版なし／契約確認待ち」を再開しない。
+
+| 段階 | 現在の判定 |
+| --- | --- |
+| 0. 契約と基線 | 既存契約と基線は確立済み。次の限定unitは新しいコード起点の実装計画を提示し、利用者確認を待つ。 |
+| 1. v41の利用者経路 | requestの必須`versionContext.schemaVersion: 41`は要件／ADRで承認され、manual／resolvedに実装済み。旧V40 requestとfingerprintを保持し、明示再計算で別V41 requestを生成する。resultだけ版を変える案は現行実装ではない。 |
+| 2. S4の実read証明 | domain別battle-pointの実read・同条件on/off・共有gateは検証済み。月下／日輪、HP witnessを保持。S4のcommitted starsはrollbackやscalar addQuantity consumptionの証拠ではない。 |
+| 3. matrixと引継ぎ | 8 shardのidentity改訂／再mergeとeligibility照合は記録済み。後続unitは条件一致とchecksum照合で再利用している。旧root／中間digestを最新revisionへ混同しない。 |
+
+直接symbolと最新revision digestは[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.currentStageReconciliation`を参照する。TSK-08全体には別familyとlegacy cleanupが残るため`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+次sessionの限定handoff（committed addQuantity scalar→ordered NP consumption、計画確認から開始）:
+
+1セッションの対象は、canonical `contextMutation/addQuantity`のscalar `battlePointPhase`のcommitted実変化から、順序付き`executeNpDamage`の実scalar消費、同じselected executionのevent／projection／effective contribution／canonical input／typed result、共有監査consumer／gate、実schema-legal代表・否定fixture、宣言済みdiagnostic artifactへの接続までとする。addQuantity rollback／recovery、domain別battlePoint resource mutation、HP／trait／form、legacy cleanup、一般retry／UI recovery、TSK-08全体、TSK-09.1／09は対象外。解消済みcriticalStars forward／recovery、without-area、S4、architectureを再開しない。
+
+読み取りで、`applyOrderedQuantityMutation`がscalar値とclamp／欠落failureを所有し、既存captureが`quantity:battlePointPhase`のmutation receiptを生成することを確認した。`quantityOperationIsNotRelevant`はtiming・subject・NP damage targetから非適用を決める。`applyNoblePhantasmDamage`は実state scalarをNP damage contextへ渡す。一方、既存`battlePointPhaseReads`はsubject/domain別のpoint／phaseであり、no-subject scalarのreadや実NP消費を証明しない。source requirementのdomain条件を無理にscalar条件へ変えず、canonical NP生成と実利用symbolから観測責務を計画する。監査で加算／clamp／condition／damageを複製せず、capture外のallocationや監査専用再実行を加えない。
+
+最初の成果物は段階的実装計画。変更責務・候補file、通常／監査の実経路、canonical writerと実readerの期待identity母集団、実receipt／消費値の生成元、代表とまとめた否定fixture、不変条件、gate／artifact通過条件、停止点、既存証拠再利用条件を示して利用者確認を待つ。確認前はsource／test／文書を編集せず、source test／producer・stage／commitを行わない。確認後は同じunitの実装・局所検証・必要な最終quality／監査・既存Task／evidence更新・依頼範囲local commitまで続け、通常の技術判断で再承認しない。未規定の製品意味論や実質的契約衝突だけ影響作業を止め、改訂計画を示す。
+
+この整理は資料変更のみ。新しい実行診断・source test／producerは実行していない。直前unitの22 artifact receiptをpath／bytes／SHA-256照合し一致したが、新unit成功証拠にはしない。対象内Blocking解消前に全件production／audit／qualityを先行せず、局所fixtureと差分レビューの後でREADME必須qualityと影響監査を閉じる。8 shardは具体的identity疑義がある場合だけ追加検証を判断する。60分でcheckpoint、90分以降は新familyを始めず、pushは禁止。直接symbol・fixture matrix・証拠条件は同evidenceの`handoffPreparation.nextSession`を正本とする。
