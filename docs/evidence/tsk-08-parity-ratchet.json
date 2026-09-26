@@ -240,7 +240,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Plan a later independently requested remaining TSK-08 bounded unit. Current criticalStars rollback/restored-value/ordered-recovery shared consumer unit is verified; do not reopen it or claim whole stale-mutation/TSK-08 closure.",
+  "nextBoundedUnit": "Start only a separately requested remaining TSK-08 bounded unit with a fresh scoped plan. Do not reopen completed scalar forward/recovery, criticalStars forward/recovery, without-area, S4 or architecture. TSK-08 in_progress; TSK-09.1/09 blocked.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -7066,9 +7066,529 @@
         }
       ],
       "localCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3"
+    },
+    {
+      "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
+      "status": "complete",
+      "baselineHead": "3a4e09e99939322a622f3982a7cdf2bf3033fd46",
+      "priorProductCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3",
+      "worktreeAtStart": "HEAD matched requested documentation commit; index/tracked/untracked empty. Compared product baseline: four documentation files only.",
+      "authorizedScope": "User approved staged plan; scalar changed attempt -> original transaction rollback/group-start restoration -> natural ordered actual NP consumption -> same selected use and unsupported result -> shared diagnostic consumer/gate/artifact. No other-family closure, failure semantics repair, legacy/UI/general recovery or whole TSK-08 closure; no push.",
+      "changedFiles": [
+        "packages/calculation-application/src/productionScalarQuantityAudit.ts",
+        "packages/calculation-application/src/productionScalarQuantityAudit.test.ts",
+        "packages/calculation-application/src/productionScalarQuantityRecoveryAudit.ts",
+        "packages/calculation-application/src/productionScalarQuantityRecoveryAudit.test.ts",
+        "packages/calculation-application/src/scalarQuantityAudit.test-support.ts"
+      ],
+      "ownership": {
+        "execution": "Existing canonical schema/compiler/relevance, addition/scalar clamp, candidate rollback/proof and NP evaluation/consumption receipts remain unchanged. No normal allocation or audit replay.",
+        "producer": "scalarQuantityProgram retains original canonical operation membership, group identities, references and immutable snapshots. Dedicated recovery descriptor derives failed group and expected typed issue from the original canonical resource operation reference; no successful trace/value filter.",
+        "consumer": "Existing scalar consumer kernel shares original reference/candidate/trace/NP use checks. Dedicated recovery gate requires changed attempt, prior committed/group-start continuity, original restoration proof, discarded failed-group input/contribution and typed unsupported result. Forward public audit wrapper retains calculated/commit contracts; no outcome union widening.",
+        "fixture": "Shared schema-legal scalar fixture builder extracted without body changes. Failure scaffolding is a separate same-skill percent criticalStars resource effect with non-null fixed amount and actual later canonical stars guard; no criticalStars consumer closure or semantics changes.",
+        "artifact": "New test declares tsk-08-scalar-quantity-recovery.json and saves complete positive/negative transports and typed failures before assertions; unchanged writer/runner validates lossless JSON/path/bytes/SHA-256."
+      },
+      "flowClosure": {
+        "status": "Verified scoped Blocking0; five schema-legal representatives,440 checkPath/typed-reason negatives, shared gate, declared diagnostics and final gates passed. Only scalar rollback/restored-value/ordered actual NP consumption closure.",
+        "normal": "sourceCollection -> compileEffect/NP compilation -> prepareOrderedScenario original order -> selected candidate executor -> resolved original input/effects/contributions/result. All normal execution files unchanged.",
+        "capture": "Same original selected execution -> scalar before/attemptedAfter/afterTransaction + original proof -> later scalarNpConsumptions raw/consumed/evaluation/emitted input -> original event/projection/effective contribution/canonical input/unsupported result -> dedicated shared recovery gate.",
+        "valueRule": "Audit comparison cursor retains group entry receipt value, checks sequential before vs previous owner attemptedAfter, checks rolledBack afterTransaction against group entry and both owner proofs, resumes verified entry value at next group; committed receipts advance it. No addition/clamp/condition/damage/state rollback replay.",
+        "representatives": [
+          {
+            "name": "changed-restoration",
+            "initial": 2,
+            "attempted": [
+              5
+            ],
+            "restored": 2,
+            "npRaw": 2,
+            "npConsumed": 2,
+            "ordinaryParity": true,
+            "result": "unsupported",
+            "failedAttackBuff": 0
+          },
+          {
+            "name": "group-start-after-commit",
+            "initial": 2,
+            "attempted": [
+              7
+            ],
+            "restored": 4,
+            "npRaw": 4,
+            "npConsumed": 4,
+            "ordinaryParity": true,
+            "result": "unsupported",
+            "failedAttackBuff": 0
+          },
+          {
+            "name": "multiple-upper-clamp",
+            "initial": 2,
+            "attempted": [
+              10,
+              7
+            ],
+            "restored": 4,
+            "npRaw": 4,
+            "npConsumed": 4,
+            "ordinaryParity": true,
+            "result": "unsupported",
+            "failedAttackBuff": 0
+          },
+          {
+            "name": "multiple-lower-clamp",
+            "initial": 2,
+            "attempted": [
+              0,
+              3
+            ],
+            "restored": 4,
+            "npRaw": 4,
+            "npConsumed": 4,
+            "ordinaryParity": true,
+            "result": "unsupported",
+            "failedAttackBuff": 0
+          },
+          {
+            "name": "intervening-commit-np-clamp",
+            "initial": 2,
+            "attempted": [
+              10,
+              7
+            ],
+            "restored": 4,
+            "npRaw": 9,
+            "npConsumed": 4,
+            "ordinaryParity": true,
+            "result": "unsupported",
+            "failedAttackBuff": 0
+          }
+        ],
+        "negativeGroups": [
+          "missing trace/state/group/mutation/proof/reader/use/canonical expectation",
+          "source/candidate/reference/transaction/operation/group/sequence/address conflicts; duplicates and reversal",
+          "wrong group-start; initial/stale/attempted/uncommitted consumption; coherent receipt/proof forgery; unchanged attempted receipts",
+          "revived failed-group contributions/projections/input; event/projection/effective contribution/NP canonical input conflict",
+          "forged commit/proof/typed issue/outcome; recovery passed vs forward calculated separation"
+        ],
+        "published": "Independent canonical writer inventory previously0; published audit collector unchanged. Published absence and S4 are not scalar recovery coverage.",
+        "alternate": "Normal/capture parity across all five representatives. No additional NP reader or audit execution. Other mutation/preparation/UI recovery families Deferred outside this unit."
+      },
+      "verification": {
+        "focused": {
+          "manifest": ".test-results/2026-09-26T08-03-08-341Z-2-6cac70/manifest.json",
+          "tests": 2,
+          "status": "passed",
+          "representatives": 5,
+          "negativeCases": 440,
+          "warnings": 0,
+          "artifact": {
+            "path": ".test-results/2026-09-26T08-03-08-341Z-2-6cac70/tsk-08-scalar-quantity-recovery.json",
+            "bytes": 45520578,
+            "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
+          }
+        },
+        "relatedFocused": {
+          "manifest": ".test-results/2026-09-26T08-01-50-869Z-2-b384e0/manifest.json",
+          "files": 3,
+          "tests": 40,
+          "status": "passed",
+          "condition": "Final scalar consumer semantics; subsequent alias export only restores unchanged snapshot body/name and new recovery negatives. Final focused consumer tests cover those changes."
+        },
+        "sourceCondition": {
+          "baselineCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3",
+          "source": [
+            {
+              "path": "packages/calculation-application/src/productionScalarQuantityAudit.ts",
+              "bytes": 38593,
+              "sha256": "e52668bedae69e46ca58376324b86e56364a13322f8af8613941ddf8af9e854d"
+            },
+            {
+              "path": "packages/calculation-application/src/productionScalarQuantityAudit.test.ts",
+              "bytes": 21973,
+              "sha256": "3562d42f5a5382db2e856355455fdc6aa317ba8fc6336c2d5decd62750b1cb29"
+            },
+            {
+              "path": "packages/calculation-application/src/productionScalarQuantityRecoveryAudit.ts",
+              "bytes": 5534,
+              "sha256": "7a68a5973267c8cd2405d2707170bc16d8431dad911962fd3f61a4925802e9b9"
+            },
+            {
+              "path": "packages/calculation-application/src/productionScalarQuantityRecoveryAudit.test.ts",
+              "bytes": 28847,
+              "sha256": "ba5af5c9d98ac4a16c7fb71ceb0ec48ed981c8e7cd7f16d074fcfb1e8bf3e7e1"
+            },
+            {
+              "path": "packages/calculation-application/src/scalarQuantityAudit.test-support.ts",
+              "bytes": 4583,
+              "sha256": "609badae7a7881a0ed499d43453cbedb5b90d3a1351a4514b310db5f95c336fb"
+            }
+          ],
+          "protectedSource": [
+            {
+              "path": "packages/battle-execution/src/operationCompiler.ts",
+              "bytes": 39273,
+              "sha256": "69620bda0880c3be269d36d61527fb4b3ca87c5328740d711cf3bf18dce04aea",
+              "baselineEqual": true
+            },
+            {
+              "path": "packages/battle-execution/src/candidateOperationContext.ts",
+              "bytes": 8594,
+              "sha256": "32102096b57006d0ce6c6ac8b92b698af0627008a97b27cd276b7c69f5132304",
+              "baselineEqual": true
+            },
+            {
+              "path": "packages/battle-execution/src/candidateExecution.ts",
+              "bytes": 15244,
+              "sha256": "c30387cd102b6cd24f9dcc5421c03b3a660f97f87a7f85493d9d48f316c39758",
+              "baselineEqual": true
+            },
+            {
+              "path": "packages/battle-execution/src/candidateStateAudit.ts",
+              "bytes": 7469,
+              "sha256": "08d62c62c89d713300cd05f05a661e10166db3dbd2ff90a73488cdc3e94899d5",
+              "baselineEqual": true
+            },
+            {
+              "path": "packages/battle-execution/src/npDamageOperation.ts",
+              "bytes": 11522,
+              "sha256": "22268db78eaa4453eb35582753cbc90fd8be6fb7193df2068223b15b68c2d404",
+              "baselineEqual": true
+            },
+            {
+              "path": "packages/battle-execution/src/npDamageExecution.ts",
+              "bytes": 2969,
+              "sha256": "5fcf4c74e91586867c1f499425e0b0c6b09dc3eb9e1bcbfc8c0e624301b23854",
+              "baselineEqual": true
+            },
+            {
+              "path": "packages/calculation-application/src/scenario.ts",
+              "bytes": 53926,
+              "sha256": "59014a60fd6e35cced47c7375fe641b60b67fc4a4ef76f37b424b33ee4338c57",
+              "baselineEqual": true
+            },
+            {
+              "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+              "bytes": 72273,
+              "sha256": "0d0ebd38bd2768ca961e9cd36a6100f38b7b8492d3d9b5845de88afb030c3600",
+              "baselineEqual": true
+            }
+          ]
+        },
+        "remaining": "None: final product gates and documentation6/6/integrity passed. Final target format/whitespace and scoped commit close this record.",
+        "localStatic": {
+          "typecheck": "passed",
+          "lint": "passed",
+          "logs": [
+            {
+              "path": ".test-results/tsk-08-scalar-recovery-20260926/typecheck.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": ".test-results/tsk-08-scalar-recovery-20260926/lint.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          ]
+        },
+        "audit": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/test-runner.mjs compact --suite=audit",
+          "manifest": ".test-results/2026-09-26T08-06-37-163Z-2-0300a2/manifest.json",
+          "status": "passed",
+          "tests": 3,
+          "warnings": 0,
+          "publishedCanonicalWriters": 0,
+          "publishedConsumerContracts": 0,
+          "artifactVerificationErrors": []
+        },
+        "quality": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/quality-runner.mjs",
+          "manifest": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/manifest.json",
+          "status": "passed",
+          "durationSeconds": 354.135,
+          "unit": 938,
+          "production": 155,
+          "e2e": {
+            "files": {
+              "total": 3,
+              "passed": 3,
+              "failed": 0,
+              "skipped": 0
+            },
+            "tests": {
+              "total": 29,
+              "passed": 29,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0,
+              "retries": 0,
+              "flaky": 0
+            },
+            "warnings": 0,
+            "unexpectedObservations": 0,
+            "allowedObservations": 87,
+            "correlatedObservations": 87,
+            "infrastructureObservations": 0
+          },
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "steps": [
+            {
+              "id": "format",
+              "code": 0
+            },
+            {
+              "id": "lint",
+              "code": 0
+            },
+            {
+              "id": "typecheck",
+              "code": 0
+            },
+            {
+              "id": "runner",
+              "code": 0
+            },
+            {
+              "id": "docs",
+              "code": 0
+            },
+            {
+              "id": "unit",
+              "code": 0
+            },
+            {
+              "id": "production",
+              "code": 0
+            },
+            {
+              "id": "master",
+              "code": 0
+            },
+            {
+              "id": "build",
+              "code": 0
+            },
+            {
+              "id": "playwright",
+              "code": 0
+            }
+          ],
+          "artifactVerificationErrors": [],
+          "condition": "Final source/test/runner/config/documentation inputs fixed during full gate;8CPU affinity, unchanged50% production settings giving4workers, no timeout/ratchet relaxation."
+        },
+        "finalSourceCondition": "All13 frozen inputs (five changed source/test and eight unchanged execution/application files) match after quality. Subsequent edits only four existing documentation records; no source/test/config/protected evidence changes.",
+        "finalDocumentation": {
+          "docsTests": "6/6",
+          "integrity": "passed",
+          "format": "final target check",
+          "diffWhitespace": "passed",
+          "logs": [
+            {
+              "path": ".test-results/tsk-08-scalar-recovery-20260926/docs-tests.log",
+              "bytes": 507,
+              "sha256": "41eb9f80959db9bc195e8d9b7e62bfaa2e7f7698f5bfe94419908edb6e305ec5"
+            },
+            {
+              "path": ".test-results/tsk-08-scalar-recovery-20260926/docs-integrity.log",
+              "bytes": 22,
+              "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+            }
+          ],
+          "condition": "Only existing four documentation result records after successful quality. Source/test/config/protected evidence/frozen input unchanged. Final target format/integrity and scoped commit follow this metadata recording."
+        }
+      },
+      "evidenceReuse": {
+        "receipts": 140,
+        "matched": 140,
+        "receiptSource": {
+          "path": ".test-results/tsk-08-scalar-recovery-handoff-20260926/reused-artifacts.json",
+          "bytes": 33146,
+          "sha256": "3e273adc7ad6a2030a1059cee344272a08bd9d993f9f7ab62b4999e35d017026",
+          "matched": 140
+        },
+        "newForwardArtifact": {
+          "path": ".test-results/2026-09-26T08-03-08-341Z-2-6cac70/tsk-08-scalar-quantity-np-consumption.json",
+          "bytes": 25443252,
+          "sha256": "dcc0fd126b3371b088f546c6009fe9c3b37f1f26ddffaca125a4df32a827e392"
+        },
+        "forwardByteIdentical": true,
+        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+        "condition": "Matched source/semantic conditions and bytes/SHA-256; no8-shard regeneration or new recovery proof from historical success. Final artifacts/counters/protected witnesses checked after gates.",
+        "finalReconciliation": {
+          "path": ".test-results/tsk-08-scalar-recovery-20260926/final-reconciliation.json",
+          "bytes": 29561,
+          "sha256": "482b94e50bbccb789b67fb705fa81f728408f7fa0e799d2ae8fa3c57030cec71"
+        },
+        "checkedDeclarations": 142,
+        "uniqueArtifactReceipts": 96,
+        "receiptErrors": [],
+        "protectedComparisons": [
+          {
+            "name": "tsk-08-scalar-quantity-np-consumption.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T07-20-37-482Z-2-7452e7/unit/tsk-08-scalar-quantity-np-consumption.json",
+              "bytes": 25443252,
+              "sha256": "dcc0fd126b3371b088f546c6009fe9c3b37f1f26ddffaca125a4df32a827e392"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-scalar-quantity-np-consumption.json",
+              "bytes": 25443252,
+              "sha256": "dcc0fd126b3371b088f546c6009fe9c3b37f1f26ddffaca125a4df32a827e392"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-execution-group-rollback.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T07-20-37-482Z-2-7452e7/unit/tsk-08-execution-group-rollback.json",
+              "bytes": 38554219,
+              "sha256": "3851944cb98576dae786a33c68f05767a48b8fffa74acb7a955ba2f1b2b14c15"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-execution-group-rollback.json",
+              "bytes": 38554219,
+              "sha256": "3851944cb98576dae786a33c68f05767a48b8fffa74acb7a955ba2f1b2b14c15"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-star-mutation-read.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T07-20-37-482Z-2-7452e7/unit/tsk-08-star-mutation-read.json",
+              "bytes": 85176201,
+              "sha256": "853dcdb48d64b28f097a39f56a5f20d69caf933f38f3eead48020e94d3c04cc9"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-star-mutation-read.json",
+              "bytes": 85176201,
+              "sha256": "853dcdb48d64b28f097a39f56a5f20d69caf933f38f3eead48020e94d3c04cc9"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-without-area-fixture.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T07-20-37-482Z-2-7452e7/unit/production-without-area-fixture.json",
+              "bytes": 15693723,
+              "sha256": "f03926cdf5d09b4c698a344ffd3f7fe610c9559b5b4e3fc707eb2ac7c94a0eaa"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/production-without-area-fixture.json",
+              "bytes": 15693723,
+              "sha256": "f03926cdf5d09b4c698a344ffd3f7fe610c9559b5b4e3fc707eb2ac7c94a0eaa"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-inert-control-production.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T07-17-33-304Z-2-0a666d/production-inert-control-production.json",
+              "bytes": 166231666,
+              "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T08-06-37-163Z-2-0300a2/production-inert-control-production.json",
+              "bytes": 166231666,
+              "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-scalar-quantity.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T07-17-33-304Z-2-0a666d/production-scalar-quantity.json",
+              "bytes": 490,
+              "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T08-06-37-163Z-2-0300a2/production-scalar-quantity.json",
+              "bytes": 490,
+              "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "scalar recovery focused/final quality",
+            "baseline": {
+              "path": ".test-results/2026-09-26T08-03-08-341Z-2-6cac70/tsk-08-scalar-quantity-recovery.json",
+              "bytes": 45520578,
+              "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-scalar-quantity-recovery.json",
+              "bytes": 45520578,
+              "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
+            },
+            "byteIdentical": true
+          }
+        ],
+        "productionCountersEqual": true,
+        "productionDurationMs": {
+          "baseline": 83766,
+          "current": 76228
+        },
+        "timingLimitation": "Same8CPU affinity/4worker settings, non-controlled full-suite timing; no hot-path implementation changed."
+      },
+      "developmentRecovery": [
+        {
+          "manifest": ".test-results/2026-09-26T07-52-33-060Z-2-b1ae04/manifest.json",
+          "failure": "Fixture default scalar intent conflicted with domain initial point intent; rejected invalidBattlePointIntent before declared diagnostic could save. Fixed by existing forward convention battleState.battlePointPhase:null, no product semantics change."
+        },
+        {
+          "manifest": ".test-results/2026-09-26T07-55-00-188Z-2-cb16bb/manifest.json",
+          "failure": "Snapshot export rename missed map callback identifiers, fixed immediately; no false pass, runner correctly reported missing diagnostic."
+        },
+        {
+          "manifest": ".test-results/2026-09-26T07-58-34-468Z-2-18c193/manifest.json",
+          "failure": "Wrong mutation operationId failed earlier canonical scalar membership/count checks; expectation checkPath corrected to group scalarMutations. Complete diagnostic saved before assertion."
+        }
+      ],
+      "artifacts": [
+        {
+          "path": ".test-results/tsk-08-scalar-recovery-20260926/frozen-source.json",
+          "bytes": 2913,
+          "sha256": "043f5960eca012395383bb2f1453a2f50e739dc727602a2e26e7dac547307e0f"
+        },
+        {
+          "path": ".test-results/tsk-08-scalar-recovery-20260926/final-reconciliation.json",
+          "bytes": 29561,
+          "sha256": "482b94e50bbccb789b67fb705fa81f728408f7fa0e799d2ae8fa3c57030cec71"
+        },
+        {
+          "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/manifest.json",
+          "bytes": 36837,
+          "sha256": "8938a564b07e10fb3a08bee442656aa22d2e3deda1f6a233321e3bf5e388748a"
+        },
+        {
+          "path": ".test-results/2026-09-26T08-06-37-163Z-2-0300a2/manifest.json",
+          "bytes": 3210,
+          "sha256": "434ff83e436f14be35ce3da625c2b039e189a0adf3254603e46e6698e66878de"
+        },
+        {
+          "path": ".test-results/2026-09-26T08-07-21-417Z-2-9f9455/unit/tsk-08-scalar-quantity-recovery.json",
+          "bytes": 45520578,
+          "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
+        }
+      ],
+      "remaining": "No scoped Blocking or required product/documentation gate remains. Commit only the listed9files; the local commit containing this final record is the bounded unit reference identity. TSK-08 in_progress; TSK-09.1/09 blocked; no push.",
+      "sessionBoundary": "Checkpoint and final product gates completed before60min; no additional family begun. Only documentation result recording after final quality; no push.",
+      "review": "No public API/normal observation allocation/replay/candidate selection/order/input/damage/outcome change. Source schema/compiler/relevance/scalar owner/rollback/proof/NP evaluator/production collector byte-identical to prior product commit. Expectations are canonical and value-independent; failed writer precedes the canonical failure, actual changed receipt differs from restored value, proofs/receipt snapshots reject coherent tampering, sequential attempts and intervening commit control actual NP receipt continuity. NP clamp/evaluation/emitted input are original receipts, not recomputed. Failed group projections/contributions cannot revive; unsupported remains product result even when recovery gate passed. Existing forward calculated/commit and user-control contracts preserved. Shared fixture extraction byte-equivalent. Published writer0, S4 and historical successes never counted as recovery coverage.",
+      "commitPaths": [
+        "packages/calculation-application/src/productionScalarQuantityAudit.ts",
+        "packages/calculation-application/src/productionScalarQuantityAudit.test.ts",
+        "packages/calculation-application/src/productionScalarQuantityRecoveryAudit.ts",
+        "packages/calculation-application/src/productionScalarQuantityRecoveryAudit.test.ts",
+        "packages/calculation-application/src/scalarQuantityAudit.test-support.ts",
+        "docs/tasks/development-redesign-tasks.md",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/evidence/README.md",
+        "docs/README.md"
+      ]
     }
   ],
-  "currentBoundedUnit": "Committed addQuantity scalar ordered NP consumption shared audit consumer closure",
+  "currentBoundedUnit": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
   "handoffPreparation": {
     "baselineHead": "a3241095be383348b6aa8d3b3199309b435b15b8",
     "scope": "read-only code investigation plus documentation; no source/test edits or source tests/producers executed",
@@ -7314,7 +7834,7 @@
       "stages": [
         {
           "stage": 0,
-          "current": "Contract and baseline established. Committed scalar addQuantity unit verified at9f460567; next bounded unit is scalar rollback/restored-value/ordered actual NP consumption, beginning with a fresh code-based plan for user approval."
+          "current": "Contract and baseline established. Committed scalar addQuantity unit verified at9f460567; subsequent user-approved scalar rollback/restored-value/ordered actual NP consumption unit now passed scoped fixtures, shared gate, affected audit and mandatory quality. No whole TSK-08 closure."
         },
         {
           "stage": 1,
@@ -7333,7 +7853,8 @@
           "stage": 3,
           "current": "Matrix revision/remerge and eligibility reconciliation already recorded; latest revision matrix digest04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4 and eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 remain authoritative in their revision record. Old root or intermediate digest is historical, not a new current expectation."
         }
-      ]
+      ],
+      "latestBoundedUnit": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure"
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -7391,7 +7912,7 @@
     "nextSession": {
       "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
       "productBaselineCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3",
-      "status": "Read-only preparation; execution witness and new recovery consumer not implemented or run. Begin with source-based staged plan and wait for user approval.",
+      "status": "Preparation fulfilled by user-approved scalar rollback/restored-value/ordered NP consumption bounded unit. Read latest boundedUnits entry for final gates and preserved evidence; no reopening completed families.",
       "scope": "One session: schema-legal canonical scalar battlePointPhase addQuantity actual changed attempt in failed original transaction group -> original rollback proof/group-start restoration -> ordered later actual executeNpDamage scalar consumption -> same selected execution event/projection/effective contribution/canonical input/typed unsupported result -> shared diagnostic consumer/gate and declared complete artifact.",
       "excluded": "Other mutation families and domain battlePoint mutation; repair or redesign of failure-trigger semantics; general retry/UI recovery; legacy cleanup; whole stale-mutation/TSK-08 closure; TSK-09.1/09; reopening verified criticalStars forward/recovery, committed scalar forward, without-area, S4 or architecture; mandatory8-shard regeneration.",
       "contract": "Changed attempted value must differ from restored group-start value. Attempted appliedOperationIds are not committed/effective evidence. Later successful reader does not change unsupported product result. Diagnostic pass is distinct from calculated success; existing forward/user-control gates retain their success contracts.",

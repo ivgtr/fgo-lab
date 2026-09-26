@@ -23,6 +23,7 @@ function snapshot(value: unknown): CanonicalAuditValue {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, snapshot(item)]));
   return value as CanonicalAuditValue;
 }
+export { snapshot as scalarQuantitySnapshot };
 const equal = (left: unknown, right: unknown) =>
   JSON.stringify(snapshot(left)) === JSON.stringify(snapshot(right));
 export type ScalarQuantityBoundary = 'committed' | 'notRelevant' | 'nullScalar';
@@ -153,7 +154,14 @@ export function scalarQuantityProgram(
   const initialValue = prepared.orderedScenario.baseInput.battlePointPhase;
   const canonicalIdentity = `tsk-08:scalar-quantity:${JSON.stringify(operations.filter((operation) => operation.kind === 'addQuantity').map(({ operationId }) => operationId))}`;
   return {
-    contract: snapshot({ canonicalIdentity, writers, readers, groups, boundary, initialValue }),
+    contract: snapshot({
+      canonicalIdentity,
+      writers,
+      readers,
+      groups,
+      boundary,
+      initialValue,
+    }),
     receipts: (state?.scalarNpConsumptions ?? []).map(snapshot),
     canonicalIdentity,
     boundary,
@@ -225,7 +233,8 @@ export type ScalarQuantityFailureReason =
   | 'scalarOrderMismatch'
   | 'scalarValueMismatch'
   | 'scalarUseMismatch'
-  | 'scalarOutcomeMismatch';
+  | 'scalarOutcomeMismatch'
+  | 'scalarRollbackMismatch';
 export interface ScalarQuantityFailure {
   reason: ScalarQuantityFailureReason;
   checkPath: string;
@@ -244,11 +253,28 @@ export interface ScalarQuantityGate {
   committedMutations: number;
   consumptions: number;
 }
-/** Comparison of authoritative receipts only: no mutation, condition, clamp or damage replay. */
+/** Recovery expectations come from the original canonical failure operation, not trace outcomes. */
+export interface ScalarQuantityRecoveryContract {
+  failedGroupIndex: number;
+  failedOperation: BattleOperation;
+  issue: { kind: 'unsupportedOperation'; operationId: string; detail: string };
+  snapshot: CanonicalAuditValue;
+}
 export function auditScalarQuantityObservations(input: {
   expected: readonly ScalarQuantityProgram[];
   observations: readonly ScalarQuantitySource[];
 }): ScalarQuantityGate {
+  return auditScalarQuantityContract(input);
+}
+
+/** Comparison of authoritative receipts only: no mutation, condition, clamp or damage replay. */
+export function auditScalarQuantityContract(
+  input: {
+    expected: readonly ScalarQuantityProgram[];
+    observations: readonly ScalarQuantitySource[];
+  },
+  recovery?: ScalarQuantityRecoveryContract,
+): ScalarQuantityGate {
   const failures: ScalarQuantityFailure[] = [];
   let committedMutations = 0;
   let consumptions = 0;
@@ -435,7 +461,134 @@ export function auditScalarQuantityObservations(input: {
       ),
     );
     let current = program.initialValue;
+    let groupStart = current;
+    let previousGroupIndex = -1;
+    let changedRollbackAttempt = false;
+    if (recovery) {
+      c('scalarPopulationMismatch', 'recovery.contract', recovery.snapshot, {
+        failedGroupIndex: recovery.failedGroupIndex,
+        failedOperation: recovery.failedOperation,
+        issue: recovery.issue,
+      });
+      c(
+        'scalarSourceMismatch',
+        'recovery.operationReference',
+        true,
+        program.operations.includes(recovery.failedOperation),
+      );
+      c(
+        'scalarIdentityMismatch',
+        'recovery.groupMembership',
+        true,
+        program.groups[recovery.failedGroupIndex]?.operationIds.includes(
+          recovery.failedOperation.operationId,
+        ),
+      );
+      c(
+        'scalarPopulationMismatch',
+        'recovery.readers',
+        true,
+        program.readers.length > 0 &&
+          program.readers.every((reader) => reader.operationGroupIndex > recovery.failedGroupIndex),
+      );
+      c(
+        'scalarPopulationMismatch',
+        'recovery.writers',
+        true,
+        program.writers.some((writer) => writer.operationGroupIndex === recovery.failedGroupIndex),
+      );
+      c(
+        'scalarOrderMismatch',
+        'recovery.writerOrder',
+        true,
+        program.writers
+          .filter((writer) => writer.operationGroupIndex === recovery.failedGroupIndex)
+          .every(
+            (writer) =>
+              writer.operationSequence < program.operations.indexOf(recovery.failedOperation),
+          ),
+      );
+      for (const expectedGroup of program.groups) {
+        const group = state.executionGroups[expectedGroup.groupIndex];
+        const failed = expectedGroup.groupIndex === recovery.failedGroupIndex;
+        c(
+          'scalarRollbackMismatch',
+          `group.${expectedGroup.groupIndex}.transaction`,
+          {
+            outcome: failed ? 'rolledBack' : 'committed',
+            issues: failed ? [recovery.issue] : [],
+            rollbackProof: failed ? { battleStateRestored: true, damageInputRestored: true } : null,
+          },
+          group && {
+            outcome: group.outcome,
+            issues: group.issues,
+            rollbackProof: group.rollbackProof,
+          },
+        );
+        const operations = program.operations.filter((operation) =>
+          expectedGroup.operationIds.includes(operation.operationId),
+        );
+        const scalarWriters = program.writers.filter(
+          (writer) => writer.operationGroupIndex === expectedGroup.groupIndex,
+        );
+        c(
+          'scalarIdentityMismatch',
+          `group.${expectedGroup.groupIndex}.scalarMutations`,
+          scalarWriters.map((writer) => writer.operationId),
+          group?.mutations
+            .filter((mutation) => mutation.stateAddress === address)
+            .map((mutation) => mutation.operationId),
+        );
+        if (!failed) continue;
+        c(
+          'scalarOutcomeMismatch',
+          'recovery.failedEvents',
+          operations.map((operation) => ({
+            operationId: operation.operationId,
+            outcome: 'unsupported',
+          })),
+          target.operationEvents
+            .filter((event) => expectedGroup.operationIds.includes(event.operationId))
+            .map((event) => ({ operationId: event.operationId, outcome: event.operationOutcome })),
+        );
+        c(
+          'scalarUseMismatch',
+          'recovery.discardedContributions',
+          true,
+          source.effectiveContributions.contributions
+            .filter(
+              (item) => item.operationId && expectedGroup.operationIds.includes(item.operationId),
+            )
+            .every((item) => !item.effective),
+        );
+        c(
+          'scalarUseMismatch',
+          'recovery.discardedProjections',
+          true,
+          source.effects
+            .filter(
+              (item) => item.operationId && expectedGroup.operationIds.includes(item.operationId),
+            )
+            .every((item) => item.outcome === 'unsupported'),
+        );
+      }
+      c(
+        'scalarOutcomeMismatch',
+        'recovery.resultRows',
+        [],
+        'rows' in source.result ? source.result.rows : null,
+      );
+    }
     for (const [sequence, operation] of program.operations.entries()) {
+      const operationGroupIndex = recovery
+        ? program.groups.findIndex((group) => group.operationIds.includes(operation.operationId))
+        : -1;
+      if (recovery && operationGroupIndex !== previousGroupIndex) {
+        if (previousGroupIndex === recovery.failedGroupIndex) current = groupStart;
+        groupStart = current;
+        previousGroupIndex = operationGroupIndex;
+      }
+      const rolledBack = recovery && operationGroupIndex === recovery.failedGroupIndex;
       const writer = program.writers.find((item) => item.operationSequence === sequence);
       const reader = program.readers.find((item) => item.operationSequence === sequence);
       if (writer) {
@@ -444,8 +597,9 @@ export function auditScalarQuantityObservations(input: {
           (event) => event.operationId === operation.operationId,
         );
         c('scalarIdentityMismatch', `writer.${sequence}.event`, 1, events.length);
-        const outcome =
-          program.boundary === 'notRelevant'
+        const outcome = rolledBack
+          ? 'unsupported'
+          : program.boundary === 'notRelevant'
             ? 'notRelevant'
             : program.boundary === 'nullScalar'
               ? 'unsupported'
@@ -478,17 +632,18 @@ export function auditScalarQuantityObservations(input: {
             ),
           );
         if (!group || !mutations[0] || program.boundary !== 'committed') continue;
-        c(
-          'scalarCommitMismatch',
-          `writer.${sequence}.commit`,
-          { outcome: 'committed', issues: [], rollbackProof: null, applied: true },
-          {
-            outcome: group.outcome,
-            issues: group.issues,
-            rollbackProof: group.rollbackProof,
-            applied: group.appliedOperationIds.includes(operation.operationId),
-          },
-        );
+        if (!rolledBack)
+          c(
+            'scalarCommitMismatch',
+            `writer.${sequence}.commit`,
+            { outcome: 'committed', issues: [], rollbackProof: null, applied: true },
+            {
+              outcome: group.outcome,
+              issues: group.issues,
+              rollbackProof: group.rollbackProof,
+              applied: group.appliedOperationIds.includes(operation.operationId),
+            },
+          );
         const mutation = mutations[0];
         c(
           'scalarIdentityMismatch',
@@ -508,12 +663,49 @@ export function auditScalarQuantityObservations(input: {
         );
         c('scalarValueMismatch', `writer.${sequence}.before`, current, mutation.before);
         c(
-          'scalarCommitMismatch',
+          rolledBack ? 'scalarRollbackMismatch' : 'scalarCommitMismatch',
           `writer.${sequence}.after`,
-          mutation.attemptedAfter,
+          rolledBack ? groupStart : mutation.attemptedAfter,
           mutation.afterTransaction,
         );
-        if (group.outcome === 'committed') {
+        if (rolledBack) {
+          c(
+            'scalarRollbackMismatch',
+            `writer.${sequence}.attemptApplied`,
+            true,
+            group.appliedOperationIds.includes(operation.operationId),
+          );
+          const originalGroup = (program.owner as Record<string, CanonicalAuditValue>)
+            .observation as Record<string, CanonicalAuditValue>;
+          const originalTarget = originalGroup.targetExecution as Record<
+            string,
+            CanonicalAuditValue
+          >;
+          const originalState = originalTarget.candidateState as Record<
+            string,
+            CanonicalAuditValue
+          >;
+          const originalGroups = originalState.executionGroups as Record<
+            string,
+            CanonicalAuditValue
+          >[];
+          const originalMutations = originalGroups[operationGroupIndex]!.mutations as Record<
+            string,
+            CanonicalAuditValue
+          >[];
+          c(
+            'scalarValueMismatch',
+            `writer.${sequence}.receipt`,
+            originalMutations.find((item) => item.operationId === operation.operationId),
+            mutation,
+          );
+          if (
+            mutation.before !== mutation.attemptedAfter &&
+            mutation.attemptedAfter !== mutation.afterTransaction
+          )
+            changedRollbackAttempt = true;
+          current = mutation.attemptedAfter;
+        } else if (group.outcome === 'committed') {
           current = mutation.afterTransaction;
           committedMutations++;
         }
@@ -723,10 +915,11 @@ export function auditScalarQuantityObservations(input: {
     c(
       'scalarOutcomeMismatch',
       'result.status',
-      program.boundary === 'nullScalar' ? 'unsupported' : 'calculated',
+      recovery || program.boundary === 'nullScalar' ? 'unsupported' : 'calculated',
       source.result.status,
     );
-    if (program.boundary === 'committed') {
+    if (recovery) c('scalarValueMismatch', 'recovery.changed', true, changedRollbackAttempt);
+    if (!recovery && program.boundary === 'committed') {
       c('scalarPopulationMismatch', 'committed.readers', true, program.readers.length > 0);
       c(
         'scalarValueMismatch',

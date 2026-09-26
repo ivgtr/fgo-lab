@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.65"
+document_version: "1.7.66"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3096,3 +3096,23 @@ Step再確認と次sessionの限定handoff（2026-09-26、製品基線`9f4605675
 代表は実際に変化したattemptと復元、事前commit後のgroup-start、複数attemptとclamp、復元後の介在commitを必要な組合せで扱う。期待writer／失敗group／後続NP identityはcanonical生成と順序から値と独立に導出する。失敗triggerはschema-legalな既存typed failureをfixture補助として選ぶ。addQuantity amountは整数でnullは不可。skillUse effectsはskill単位action groupだが、compileEffect内unsupported resourceはapplicableより先に出るため、生成順序とgroup境界を計画・代表で確認する。現時点で新しい実行診断は行わず、具体fixture成立を検証済みとはしない。module分割／hookは固定しない。直接symbol、否定分類、未確認点とartifact receiptは[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.nextSession`を正本とする。
 
 今回は資料整理のみ。直前の140 artifact receiptをpath／bytes／SHA-256照合し一致したが、新scalar recovery成功証拠ではない。source／test／producer／audit／qualityの新規実行なし。資料の書式・docs／integrity・差分検査で閉じ、この資料commitを次担当者の参照identityにする。対象内Blocking中に全件検証を先行しない。8 shardはidentity疑義時のみ。60分checkpoint、90分以降新familyなし。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+
+Current scalar addQuantity rollback／group-start復元／ordered実NP消費 bounded-unit checkpoint（2026-09-26、開始HEAD `3a4e09e99939322a622f3982a7cdf2bf3033fd46`）:
+
+利用者が段階計画を承認した。開始index／tracked／untrackedは空。canonical生成と同じselected executionの元receipt／proof／実NP消費を共有scalar consumerと専用復元gateへ接続し、既存forwardのcalculated成功条件を維持した。別effectのschema-legal percent criticalStars既存typed failureは同skill groupのfixture補助だけに使用し、そのfamilyのconsumerや意味論を変更しない。通常execution／canonical生成／relevance／NP evaluatorは不変。
+
+5実代表・440検査別否定が局所成功し、事前commit後のgroup-start、複数attemptと上下限clamp、復元後の介在commitとNP側clamp、失敗group寄与破棄、後続NP利用と最終unsupportedを確認した。通常／captureが一致し、forward gateは復元代表を成功へ受け入れない。完全診断をassertion前に保存し、宣言artifact検証が成功した。既存140 receiptは一致、forward診断は先行unitとbyte単位一致。関連局所40test成功、対象内Blocking0。必要な最終audit／README qualityと最終入力・artifact照合、結果記録・文書検証・依頼範囲local commitが未達。flow／責務／diagnosticと失敗回復は既存[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを正本とする。
+
+60分前checkpoint。別mutation family、failure意味論修正、legacy cleanup、一般retry／UI recovery、TSK-08全体とTSK-09.1／09は対象外。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、pushなし。
+
+
+Scalar addQuantity rollback／group-start復元／ordered実NP消費 bounded-unit completion（2026-09-26）:
+
+専用共有gateが5実代表・440検査別否定を通過し、2→attempt5→rollback2→実NP2、事前commit後のgroup-start4、同addressの複数attemptと上下限clamp、復元4後のcommit9→NP raw9／実consumed4を確認した。失敗groupのinput／寄与を破棄し、後続NPのevent／projection／effective contribution／canonical inputと元typed unsupported resultを照合する。通常／captureは一致し、診断passedを製品calculatedへ変換しない。加算／clamp／condition／damage／rollbackを監査で再実装せず、通常executionと既存production collectorは不変。
+
+局所40testと最終対象2test、型／lint／差分レビューが成功。影響audit3/3、README必須quality unit938/938・production155/155・E2E29/29（retry0）、全必須stepが成功し、warning／unexpected console0。全13固定入力がquality後も一致した。新復元診断は局所版とquality版がbyte単位一致し、assertion前保存と宣言／receipt検証を閉じた。既存scalar forward・criticalStars forward／recovery・without-area・S4 envelopeもbyte単位一致し、月下／日輪・HP witness・domain live readとproduction counterを保持した。142宣言receipt、96固有artifactのbytes／SHA-256を照合し不一致0。件数は今回の実manifest由来で将来期待値にはしない。8 shardはidentity疑義がなく再生成しない。詳細・flow closure・artifact path／bytes／SHA-256は既存[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを正本とする。
+
+対象内Blockingと必要な製品gateは残らない。quality後は4既存文書の結果記録だけを更新し、文書検証・最終差分照合後、この9対象fileだけlocal commitして当該commitを参照identityとする。60分前にcheckpointと製品gateを完了。別family、failure意味論修正、legacy cleanup、一般retry／UI recoveryは対象外で、stale-mutation全体やTSK-08全体のclosureとは呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、pushなし。次は別途依頼された未達unitの限定計画から始め、完了済みunitを再開しない。
+
+記録更新後のdocs6/6・integrity・diff whitespaceが成功した。最終対象format／参照照合後に9対象fileだけlocal commitし、そのcommitを今回の参照identityとする。quality後の変更は結果記録だけで、全13固定入力は不変。pushなし。
