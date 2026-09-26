@@ -294,6 +294,7 @@ export function executePreparationOc(args: {
     );
     let sourceApplies = true;
     let sourceState = current;
+    let sourceStochasticFailureSteps: number[] | undefined;
     steps.push(() => {
       sourceState = current;
       if (!source.sourceEnabled) {
@@ -1113,6 +1114,12 @@ export function executePreparationOc(args: {
         )
       ) {
         current = sourceState;
+        if (hpAction)
+          sourceStochasticFailureSteps = outcomes.flatMap((outcome) =>
+            outcome.step >= firstStep && outcome.outcome === 'stochasticFailure'
+              ? [outcome.step]
+              : [],
+          );
         return { kind: 'skip', outcome: 'notApplicable' };
       }
       const contextOperations = source.effect.execution.filter(
@@ -1187,7 +1194,18 @@ export function executePreparationOc(args: {
         ? (state, outcomes) => {
             const before = current;
             const step = completeSource(state, outcomes);
-            hpAction?.sourceEnds.push({ source, step: sourceEndStep, before, after: current });
+            hpAction?.sourceEnds.push({
+              source,
+              step: sourceEndStep,
+              before,
+              after: current,
+              ...(sourceStochasticFailureSteps?.length
+                ? {
+                    sourceStart: sourceState,
+                    stochasticFailureSteps: sourceStochasticFailureSteps,
+                  }
+                : {}),
+            });
             battlePointCapture?.push({
               kind: 'sourceEnd',
               actionId: args.actionId,
@@ -1328,6 +1346,8 @@ export function executePreparationOc(args: {
   }
   if (hpAction) {
     hpAction.native = result;
+    if (result.status === 'inputRequired' && requiredInput && occurrenceId)
+      hpAction.rejectionInput = { requiredInput, occurrenceId };
     hpAction.attempted = current;
     hpAction.returned = result.status === 'committed' ? current : args.state;
   }

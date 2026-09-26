@@ -7,6 +7,7 @@ import type { EffectDecision, BattleOperation } from './contracts';
 import type { ContributionApplicationPolicy } from './executionTypes';
 import type { SourceEffect } from './sourceCollection';
 import type { HpState, HpModifierInstance } from './hpResource';
+import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type {
   PreNoblePhantasmState,
   PreparationExecutionContext,
@@ -45,8 +46,13 @@ export interface PreparationHpAction {
     step: number;
     before: PreNoblePhantasmState;
     after: PreNoblePhantasmState;
+    /** Present only when the original owner restored sourceState after a stochastic failure. */
+    sourceStart?: PreNoblePhantasmState;
+    stochasticFailureSteps?: readonly number[];
   }[];
   native?: OcActionResult;
+  /** Original preparation owner input and occurrence when a native attempt requests input. */
+  rejectionInput?: { requiredInput: CanonicalInputDefinition; occurrenceId: string };
   attempted?: PreNoblePhantasmState;
   returned?: PreNoblePhantasmState;
 }

@@ -7,6 +7,7 @@
     { "path": "../profile-domain" },
     { "path": "../master-data" },
     { "path": "../calc-core" },
-    { "path": "../battle-execution" }
+    { "path": "../battle-execution" },
+    { "path": "../data-pipeline" }
   ]
 }

@@ -118,8 +118,8 @@ function hpActionView(v: unknown): unknown {
     sourceEnds: mapped(v['sourceEnds'], (e) =>
       record(e)
         ? {
-            ...e,
             source: sourceView(e['source']),
+            step: e['step'],
             before: stateView(e['before']),
             after: stateView(e['after']),
           }

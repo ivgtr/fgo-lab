@@ -14,5 +14,8 @@
     "@fgo-lab/master-data": "workspace:*",
     "@fgo-lab/schema": "workspace:*",
     "@fgo-lab/profile-domain": "workspace:*"
+  },
+  "devDependencies": {
+    "@fgo-lab/data-pipeline": "workspace:*"
   }
 }

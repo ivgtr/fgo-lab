@@ -148,6 +148,10 @@ importers:
       '@fgo-lab/profile-domain':
         specifier: workspace:*
         version: link:../profile-domain
+    devDependencies:
+      '@fgo-lab/data-pipeline':
+        specifier: workspace:*
+        version: link:../data-pipeline
       '@fgo-lab/schema':
         specifier: workspace:*
         version: link:../schema
