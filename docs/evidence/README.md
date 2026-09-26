@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.90"
+document_version: "1.4.91"
 status: "Active"
-updated_at: "2026-09-26"
+updated_at: "2026-09-27"
 ---
 
 # Evidence report index
@@ -79,3 +79,5 @@ TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ig
 
 - [Documentation inventory](documentation-inventory.md): TSK-00.1開始時のtracked／ignored／reference baseline
 - [Ignored documentation disposition](ignored-documentation-disposition.md): TSK-00.3の37件分類、移動前hash、quarantine検証
+
+TSK-08の限定committed fixed HP forwardは元保持HP→実条件read／continuous hpRatioLow NP／resultの共有consumer・gateまで完了。6 changed代表／7境界／1606否定／104完全診断、quality1295／155／29（retry0）、audit3、warning／console0。製品commit `6d571bdd9a43e34566e23fcde35aa5fbd386faca` と詳細・receipt・次操作は[既存parity evidence](tsk-08-parity-ratchet.json)最新bounded unitを参照。TSK-08はin_progress、09.1／09はblocked、HP recovery／全体closureは対象外。

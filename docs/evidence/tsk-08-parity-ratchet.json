@@ -241,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure",
+  "nextBoundedUnit": "Not selected. This committed fixed HP forward unit is complete; HP noncommit/recovery and whole TSK-08 closure remain outside it.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -14096,9 +14096,450 @@
         "failures": []
       },
       "implementationCommit": "2b0af873254d6c71969f4b1915c708f117156533"
+    },
+    {
+      "name": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure",
+      "status": "complete within committed fixed HP writer/retained/read/NP bounded unit only",
+      "baselineHead": "3e19f1a85190262b0915d62dcba82e4e1b4404ff",
+      "priorProductCommit": "2b0af873254d6c71969f4b1915c708f117156533",
+      "worktreeAtStart": {
+        "index": [],
+        "tracked": [],
+        "untracked": []
+      },
+      "authorizedScope": "Committed attacker-skill canonical fixed HP sourceSelf omitted/direct write, fixed form/traits/eligibility/max/modifier environment -> original retained HP -> same selected actual HP condition read and hpRatioLow evaluation/input/calculated result; no HP noncommit/recovery/other writer family/whole TSK-08 closure",
+      "changedFiles": [
+        "docs/README.md",
+        "docs/evidence/README.md",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/tasks/development-redesign-tasks.md",
+        "packages/battle-execution/src/candidateExecution.ts",
+        "packages/battle-execution/src/condition.ts",
+        "packages/battle-execution/src/npDamageExecution.ts",
+        "packages/battle-execution/src/npDamageOperation.ts",
+        "packages/battle-execution/src/operationResult.ts",
+        "packages/battle-execution/src/preparationAttemptObservation.ts",
+        "packages/battle-execution/src/preparationOc.ts",
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "packages/battle-execution/src/hpExecutionObservation.ts",
+        "packages/calculation-application/src/productionHpPreparationAudit.ts",
+        "packages/calculation-application/src/productionHpPreparationAudit.test.ts",
+        "packages/calculation-application/src/productionBattlePointPreparationAudit.test.ts"
+      ],
+      "ownership": [
+        "Pipeline/master schema unchanged; original preparationEffectSource creates runtime source. Capture-only HP action/write/source/operation/receipt/native/returned references attach to existing original transition transport.",
+        "Original HP arithmetic unchanged. Candidate seed and condition evaluator capture real integer quantity; original hpRatioLow evaluation branch captures continuous ratio/disposition/evaluation/input once.",
+        "Focused HP shared audit consumer derives selected expectations from command/master/form/choice before success filtering, freezes owner observations and reference anchors. Independent full selected requests, selections, programs and published declarations are reconciled.",
+        "Public ConditionReadAudit union retained. Internal original quantity-read scope captures HP during actual ordered evaluation; original conditionResult owner shared internally. One explicit existing BP audit return type annotation is retained to avoid TS2589; no semantic assertions or negative fixture changes.",
+        "HP observation adapters now reside in hpExecutionObservation.ts; candidateStateAudit.ts byte-identical baseline. Existing architecture250 limit retained and all9 architecture assertions passed.",
+        "Existing BP test has one explicit audit ReturnType annotation to avoid TS2589 during full typecheck; semantic assertions and all426 negatives unchanged.",
+        "Selected skill other HP writer and NP-side HP environment mutation are explicit outside-scope boundaries, preserving scoped expectations before success filtering."
+      ],
+      "flowClosure": {
+        "status": "Verified scoped committed fixed HP slice, Blocking0; final audit and README quality passed; TSK-08 remains in_progress",
+        "matrix": [
+          {
+            "path": "canonical -> original fixed HP write -> native committed -> reducer prefix/retained -> prepared/candidate seed",
+            "status": "Verified final focused source"
+          },
+          {
+            "path": "actual integer HP condition read -> operation event/projection/effective contribution",
+            "status": "Verified final focused source"
+          },
+          {
+            "path": "continuous HP ratio -> original hpRatioLow actual consumption -> evaluation/input/calculated result",
+            "status": "Verified final focused source"
+          },
+          {
+            "path": "no-op/nonapplication/no-reader/standard NP/dead before NP",
+            "status": "Explicit boundaries, not counted as completed reader/NP chain"
+          },
+          {
+            "path": "HP noncommit/recovery; percent/transfer/other actor or origin; HP modifiers/form switches",
+            "status": "Outside authorized unit; no consumer implemented; selected environment-changing routes explicitly bounded"
+          },
+          {
+            "path": "published request/declaration/selection/program shared consumer gate",
+            "status": "Verified final published gate:378 selected/66 form-qualified declarations/28 actual scoped changes;0 live HP readers/HP NP consumers. Missing readers and outside environments remain boundaries; complete chain proved by schema-legal representatives."
+          }
+        ]
+      },
+      "verification": {
+        "earlierLocal": {
+          "manifest": ".test-results/2026-09-26T14-14-06-055Z-2-f377f5/manifest.json",
+          "tests": 195,
+          "warnings": 0,
+          "scope": "104 HP tests plus original NP/HP/preparation/condition owners. Later consumer shape and published-check deltas require final focused rerun."
+        },
+        "legacyLocal": {
+          "manifest": ".test-results/2026-09-26T14-10-38-856Z-2-ed44c2/manifest.json",
+          "legacyPassed": 253,
+          "hpFailed": 13,
+          "reason": "HP negative expected-path mapping only; fixed forward/noncommit/capacity forward/attempt files all passed. Not a final all-success manifest."
+        },
+        "typecheck": "passed final mandatory quality",
+        "lint": "passed final mandatory quality",
+        "newArtifactPolicy": "All complete diagnostics saved before assertions, runner-declared path/bytes/SHA-256 and saved lossless deep-strict restoration. Failures retain typed reason/checkPath/canonical first difference.",
+        "finalAudit": {
+          "manifest": {
+            "path": ".test-results/2026-09-26T15-00-24-945Z-23-09523d/manifest.json",
+            "bytes": 4340,
+            "sha256": "3599e281fbe9fd344b0f7611c1411fc38dcc89664968e75cf1438591bcbdcdb7"
+          },
+          "tests": 3,
+          "warnings": 0,
+          "durationMs": 54377,
+          "hpDiagnostic": {
+            "path": ".test-results/2026-09-26T15-00-24-945Z-23-09523d/production-preparation-hp.json",
+            "bytes": 44131692,
+            "sha256": "7332afa72d3550140d791da1e4d5f458a943df5f0f2b763b73264af4d3af2694"
+          },
+          "savedLosslessRestoration": "deep strict equal passed before gate assertions"
+        },
+        "quality": {
+          "manifest": {
+            "path": ".test-results/2026-09-26T15-01-22-820Z-3-70d8e4/manifest.json",
+            "bytes": 205456,
+            "sha256": "c03abc21cfc1e30e271841fbab681ff04c7c0a6763443f0c902b50e6841bcae4"
+          },
+          "outcome": "success",
+          "unit": 1295,
+          "production": 155,
+          "e2e": 29,
+          "retries": 0,
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "durationMs": 519944,
+          "frozenGitBlobsMatch": true
+        },
+        "focused": {
+          "manifest": {
+            "path": ".test-results/2026-09-26T14-59-16-974Z-2-3c3811/manifest.json",
+            "bytes": 26501,
+            "sha256": "dff26398055012bcadfde8f077e01d66a529238b88989a7f52751da1f62b8f81"
+          },
+          "tests": 104,
+          "hpTests": 104,
+          "routes": 13,
+          "connectedChangedRepresentatives": 6,
+          "explicitBoundaryRoutes": 7,
+          "negativeChecks": 1606,
+          "completeDiagnostics": 104,
+          "warnings": 0,
+          "artifactRestoration": "Complete declared HP payloads saved before assertions; strict on-disk lossless restore; each negative reason/checkPath/canonical first difference verified",
+          "negativeSourceChecks": 1528,
+          "negativePublishedChecks": 78,
+          "architectureAndBpManifest": ".test-results/2026-09-26T14-54-54-307Z-2-060cd7/manifest.json",
+          "architectureAndBpTests": 14,
+          "negativeResponsibilityVerification": {
+            "artifact": {
+              "path": ".test-results/tsk-08-hp-fixed-forward-20260926/negative-responsibility-reconciliation.json",
+              "bytes": 973,
+              "sha256": "b1fca7fafd72aebe17c735f84598aeb0d284cff634da87854e8d457646bf591e"
+            },
+            "negativeCount": 1606,
+            "firstDifferencesVerified": 4241,
+            "responsibilityChecksVerified": 389,
+            "errors": []
+          }
+        },
+        "auditInterrupted": {
+          "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm test:audit",
+          "artifactDirectory": ".test-results/2026-09-26T14-28-19-542Z-22-931dd5",
+          "exitCode": 130,
+          "result": "Interrupted after excessive synchronous diagnostic graph duplication; no complete HP artifact, not success evidence. Existing limits unchanged.",
+          "additionalStoppedRun": {
+            "directory": ".test-results/2026-09-26T14-42-03-233Z-3-75bf4c",
+            "exitCode": 130,
+            "reason": "Stopped to compact remaining published canonical declaration graph; not success evidence."
+          }
+        },
+        "earlierAudit": {
+          "manifest": ".test-results/2026-09-26T14-43-16-720Z-3-4cd3e1/manifest.json",
+          "tests": 3,
+          "durationMs": 54440,
+          "warnings": 0,
+          "scope": "Passed compact HP diagnostics before final observation adapter relocation; repeat final frozen source gate"
+        },
+        "qualityTypeFailure": {
+          "manifest": ".test-results/2026-09-26T14-51-29-679Z-3-cdd77b/manifest.json",
+          "outcome": "step_failure",
+          "reason": "TS2589 at old BP audit assertion inference; fixed by explicit ReturnType annotation only. BP5 local tests/426 negative logic preserved."
+        },
+        "qualityInitialFailure": {
+          "manifest": ".test-results/2026-09-26T14-44-43-427Z-20-403f18/manifest.json",
+          "outcome": "test_failure",
+          "unitPassed": 1294,
+          "unitFailed": 1,
+          "reason": "candidateStateAudit.ts 306 > existing250 line limit; fixed by returning HP observation adapters to hpExecutionObservation.ts, original candidateStateAudit.ts restored231. No limit changes. Final local architecture9 passed."
+        },
+        "artifactCounts": {
+          "inheritedDeclarations": 910,
+          "newDeclarations": 485,
+          "totalDeclarations": 1395,
+          "uniqueSavedReceipts": 1777,
+          "completeHpDiagnostics": 104,
+          "sourceNegativeChecks": 1528,
+          "publishedNegativeChecks": 78,
+          "totalNegativeChecks": 1606,
+          "errors": 0
+        },
+        "diagnosticCompaction": "Scope-complete HP canonical/command/source/operation/receipt/native/prefix/retained/read/NP context/evaluation/input/projection/contribution/result preserved. Atlas metadata and unrelated state graph duplication excluded; no truncation, success filtering, timeout increase, fixture exclusion or gate relaxation."
+      },
+      "evidenceReuse": {
+        "readOnlyInputs": "25 current source/config and4 original product Git blobs/current matched preplan checksums; preplan/master/generic runner matched;1196 receipts inherited from matched preplan, not rehashed at initial read.",
+        "condition": "Changed files require fresh hashes/affected checks; old protected artifacts/counters/digests and fixed426/807/capacity1491/attempt1854 remain mandatory. No8-shard regeneration absent identity doubt.",
+        "reconciliation": {
+          "path": ".test-results/tsk-08-hp-fixed-forward-20260926/baseline-reconciliation.json",
+          "unchangedInheritedReceipts": 1193,
+          "authorizedChangedSourceReceipts": 3,
+          "legacyDiagnosticsCompared": 253,
+          "errors": 0,
+          "bytes": 361231,
+          "sha256": "f1806c9c80955fec6622e015d909c572c465022ec54f75234aa43120350f8d11"
+        },
+        "finalReconciliation": {
+          "path": ".test-results/tsk-08-hp-fixed-forward-20260926/final-reconciliation.json",
+          "bytes": 727919,
+          "sha256": "fa79a831157d0db5ab51ffaab5b8617c72d9f2eab2ffd6d0d95ba27f5259de82"
+        },
+        "protectedDiagnosticComparisons": {
+          "count": 292,
+          "byteIdentical": 291,
+          "timingOnlyCanonicalEqual": 1,
+          "difference": "production-closure-parity-diagnostics.json payload.audit.conditionSummaries.0.elapsedMs47.13070000000005->46.701502000000005; all non-time fields equal. Original compactProductionClosureAudit excludes elapsedMs; never described as byte-identical."
+        },
+        "frozenSource": [
+          {
+            "path": "packages/battle-execution/src/candidateExecution.ts",
+            "bytes": 15102,
+            "sha256": "3fc3dad55077f2eeed4abcf99ca9badb17472b48fb8ea37529f7a9963a1feda9"
+          },
+          {
+            "path": "packages/battle-execution/src/condition.ts",
+            "bytes": 12423,
+            "sha256": "00021befc635886213cdc387ff3dc6fc4dc0b11b243c42a88c58644698cecdf2"
+          },
+          {
+            "path": "packages/battle-execution/src/npDamageExecution.ts",
+            "bytes": 3100,
+            "sha256": "f734cf503df19abf92b0e0fd60628d6610748a4b2b8d0ebae6af2b61575f00e7"
+          },
+          {
+            "path": "packages/battle-execution/src/npDamageOperation.ts",
+            "bytes": 12646,
+            "sha256": "2710028d77337600f2569f246bb5d945cb216c7c58418deca880208ebc59a524"
+          },
+          {
+            "path": "packages/battle-execution/src/operationResult.ts",
+            "bytes": 1839,
+            "sha256": "22117b19977e50eaad1a573158193f371525695bd61bb60ee2bc4c242ba1b908"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationAttemptObservation.ts",
+            "bytes": 3556,
+            "sha256": "89f866c7a9520786b769da74837e508024e87289fcc00f77a449b9ddba5df641"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 51758,
+            "sha256": "86ac02dc34c4e732650af8d682b241f1e61ce812d900360e37d690ce8e70e238"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAudit.test.ts",
+            "bytes": 39425,
+            "sha256": "d5cecde84c86064e7116320d6f4de51bd92584c174c71226c77e8ccc929a4195"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 79630,
+            "sha256": "3b9765d424807674e1e0d223a11a4382a95f163ce1141d3954d108cba9525ead"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 6591,
+            "sha256": "cc0fcdb981952eddde8718e609349306c431136dcd41b33e7651ebcc7c0fc4ac"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.ts",
+            "bytes": 41991,
+            "sha256": "12709b9e7e85b68ef4ef38f7a9c696864ba01f7355118ea40f8a096b7d0f4cf1"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.test.ts",
+            "bytes": 33431,
+            "sha256": "cc96b7f93f6f611e5e32d78939370268f24b95b072a3772c43b583b5e768e64e"
+          }
+        ],
+        "productionCounters": [
+          {
+            "artifact": "production-audit-calculation-application.json",
+            "baseline": {
+              "masterReadCount": 1,
+              "masterParseCount": 1,
+              "compileCount": 1,
+              "candidateCount": 6673,
+              "deduplicatedCandidateCount": 4194,
+              "damageRequestCount": 2596,
+              "distinctDamageRequestCount": 1489
+            },
+            "actual": {
+              "masterReadCount": 1,
+              "masterParseCount": 1,
+              "compileCount": 1,
+              "candidateCount": 6673,
+              "deduplicatedCandidateCount": 4194,
+              "damageRequestCount": 2596,
+              "distinctDamageRequestCount": 1489
+            },
+            "identical": true,
+            "baselineDigest": "7b8552ded1e134a0b35e12f0810f239fd64cc6db169b533f52ff662c47a2225f",
+            "digest": "7b8552ded1e134a0b35e12f0810f239fd64cc6db169b533f52ff662c47a2225f"
+          },
+          {
+            "artifact": "production-audit-data-pipeline.json",
+            "baseline": {
+              "masterReadCount": 1,
+              "masterParseCount": 1,
+              "compileCount": 1,
+              "candidateCount": 0,
+              "damageRequestCount": 0
+            },
+            "actual": {
+              "masterReadCount": 1,
+              "masterParseCount": 1,
+              "compileCount": 1,
+              "candidateCount": 0,
+              "damageRequestCount": 0
+            },
+            "identical": true,
+            "baselineDigest": "f7f2610d809b52ae3f249b01ca22190879b36ead370ce619e4c006d7165455c8",
+            "digest": "f7f2610d809b52ae3f249b01ca22190879b36ead370ce619e4c006d7165455c8"
+          }
+        ],
+        "matrixReuse": {
+          "priorFinalReconciliation": {
+            "path": ".test-results/tsk-08-bp-capacity-attempt-20260926/final-reconciliation.json",
+            "bytes": 488832,
+            "sha256": "a16f3c3a9786ddacb2936f73e345f92121ae48d63cec8c9808b8f6242437e4eb",
+            "declarations": 910,
+            "uniqueArtifactReceipts": 1196,
+            "comparisonCounts": {
+              "protectedComparisons": 7,
+              "forwardComparisons": 5,
+              "attemptComparisons": 9,
+              "capacityDiagnosticComparisons": 63,
+              "domainTransportComparisons": 3,
+              "newCapacityAttemptDiagnostics": 176
+            },
+            "negativeCount": 1854,
+            "productionCounters": [
+              {
+                "artifact": "production-audit-calculation-application.json",
+                "boundary": "calculation-application",
+                "baseline": {
+                  "masterReadCount": 1,
+                  "masterParseCount": 1,
+                  "compileCount": 1,
+                  "candidateCount": 6673,
+                  "deduplicatedCandidateCount": 4194,
+                  "damageRequestCount": 2596,
+                  "distinctDamageRequestCount": 1489
+                },
+                "counters": {
+                  "masterReadCount": 1,
+                  "masterParseCount": 1,
+                  "compileCount": 1,
+                  "candidateCount": 6673,
+                  "deduplicatedCandidateCount": 4194,
+                  "damageRequestCount": 2596,
+                  "distinctDamageRequestCount": 1489
+                },
+                "identical": true
+              },
+              {
+                "artifact": "production-audit-data-pipeline.json",
+                "boundary": "data-pipeline",
+                "baseline": {
+                  "masterReadCount": 1,
+                  "masterParseCount": 1,
+                  "compileCount": 1,
+                  "candidateCount": 0,
+                  "damageRequestCount": 0
+                },
+                "counters": {
+                  "masterReadCount": 1,
+                  "masterParseCount": 1,
+                  "compileCount": 1,
+                  "candidateCount": 0,
+                  "damageRequestCount": 0
+                },
+                "identical": true
+              }
+            ],
+            "matrixVerification": {
+              "mergedDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+              "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+              "parityCount": 34600,
+              "parityFailures": 0
+            },
+            "errors": []
+          },
+          "matrixVerification": {
+            "mergedDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+            "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+            "parityCount": 34600,
+            "parityFailures": 0
+          },
+          "condition": "Canonical published master, matrix/eligibility identity inputs and governing semantics unchanged; matched inherited receipts; final calculator/ranking normal/capture parity and exact production counters/digests. No concrete identity doubt, no eight-shard regeneration."
+        }
+      },
+      "performance": {
+        "path": ".test-results/tsk-08-hp-fixed-forward-20260926/performance.json",
+        "scope": "Paired independent baseline/current module graphs, same parsed HP fixture master, normal/capture,9 alternating warmed batches of100; actual calculated observables equal. Independent graph/loader differences limit attribution; faster medians are not claimed as optimization.",
+        "externalDiagnosticWarning": "Independent tsx loader emitted DEP0205; not a suite or product warning.",
+        "finalSourceResult": "Before/after warmed median normal1.919651/0.882750ms,capture2.045131/0.917400ms; actual calculated observables equal. Independent module graphs/loader effects prevent attributing lower medians to optimization. Audit-only scope predicate deltas do not affect this runtime benchmark.",
+        "artifact": {
+          "path": ".test-results/tsk-08-hp-fixed-forward-20260926/performance.json",
+          "bytes": 1939,
+          "sha256": "fbb8ed729d60a69ff72f33ac580de59748cb209b2efc6783f1fa07dabecd797d"
+        },
+        "log": {
+          "path": ".test-results/tsk-08-hp-fixed-forward-20260926/performance.log",
+          "bytes": 484,
+          "sha256": "4fa56b70a765a319fdc9107127132c4aeef6d3703927142d123bdcbb6ee3f7f7"
+        },
+        "extraReadOnlyDiagnosticWarning": "Saved negative responsibility verifier uses same standalone tsx loader DEP0205; not a suite/product warning. Final mandatory quality/audit warnings0."
+      },
+      "remaining": [],
+      "sessionBoundary": {
+        "checkpoint": "Existing Task/evidence checkpoint before60min; final product source frozen before final gates",
+        "after90min": "No new semantic family; only complete saved-diagnostic/counter/receipt reconciliation, records and scoped local commits",
+        "push": false
+      },
+      "implementationCommit": "6d571bdd9a43e34566e23fcde35aa5fbd386faca",
+      "publishedPopulation": {
+        "status": "passed",
+        "expected": 378,
+        "changed": 28,
+        "readers": 0,
+        "nps": 0,
+        "inventory": 66,
+        "selected": 378,
+        "failures": 0,
+        "boundaries": {
+          "noChange": 98,
+          "noOrderedHpReader": 120,
+          "noHpRatioLowNp": 120,
+          "outsideScope:hpEnvironmentMutation": 214,
+          "outsideScope:hpEnvironmentMutation,otherHpWriter": 30,
+          "outsideScope:hpEnvironmentMutation,npHpWriter": 10,
+          "outsideScope:npHpWriter": 4
+        }
+      }
     }
   ],
-  "currentBoundedUnit": "Attacker-skill battlePointCapacityModifier preparation non-commit attempt isolation shared audit consumer closure",
+  "currentBoundedUnit": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure",
   "handoffPreparation": {
     "baselineHead": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
     "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
@@ -14339,7 +14780,7 @@
       }
     },
     "currentStageReconciliation": {
-      "asOfProductCommit": "2b0af873254d6c71969f4b1915c708f117156533",
+      "asOfProductCommit": "6d571bdd9a43e34566e23fcde35aa5fbd386faca",
       "historicalTable": "Task historical four-stage self-check remains historical; its contract-wait statements are superseded by later approved requirement/ADR and implemented units.",
       "stages": [
         {
@@ -14357,17 +14798,18 @@
         },
         {
           "stage": 2,
-          "current": "S4/stars/scalar/fixed-domain committed forward and original fixed BP noncommit isolation retained. Committed capacity forward retained. Attacker-skill capacity changed attempt -> native noncommit -> original action-start/modifier/committed-prefix retention -> original reducer refusal -> same selected scenario actual prepared/application typed refusal now verified by shared consumer/gate. Domain recovery and other families/legacy remain outside this unit; TSK-08 in_progress."
+          "current": "S4/stars/scalar/fixed-domain committed forward and original fixed BP noncommit isolation retained. Committed capacity forward retained. Attacker-skill capacity changed attempt -> native noncommit -> original action-start/modifier/committed-prefix retention -> original reducer refusal -> same selected scenario actual prepared/application typed refusal now verified by shared consumer/gate. Domain recovery and other families/legacy remain outside this unit; TSK-08 in_progress. Committed attacker-skill fixed HP original apply/native commit/reducer retained -> same selected actual HP read/projection/contribution and continuous hpRatioLow evaluation/input/result now verified by shared consumer/gate,6 changed connected representatives/7 boundaries/1606 negatives/104 complete diagnostics; no HP recovery or whole TSK-08 closure."
         },
         {
           "stage": 3,
           "current": "Matrix revision/remerge and eligibility reconciliation already recorded; latest revision matrix digest04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4 and eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 remain authoritative in their revision record. Old root or intermediate digest is historical, not a new current expectation."
         }
       ],
-      "latestBoundedUnit": "Attacker-skill battlePointCapacityModifier preparation non-commit attempt isolation shared audit consumer closure",
-      "latestEvidence": "Capacity noncommit isolation:5 finite changed/6 explicit boundaries/1854 negatives/176 complete diagnostics; quality1191/155/29 retry0,audit3,warnings/console0;910 declarations/1196 unique receipts/error0. Existing protected diagnostics/counters/digests retained. Product commit 2b0af873254d6c71969f4b1915c708f117156533. TSK-08 in_progress;09.1/09 blocked.",
-      "latestRecordCommit": "420ebcec9ebaf60f7e18ae00d8c9e842a7405a39",
-      "nextBoundedUnit": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure"
+      "latestBoundedUnit": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure",
+      "latestEvidence": "Scoped committed HP:6 connected changed representatives/7 explicit boundary routes,1606 negatives,104 declared complete diagnostics; quality1295/155/29 retry0,audit3,warnings/console0,1395 cumulative declarations/1777 unique saved receipts/error0. Published66 declarations/378 selected/28 scoped changes,live HP readers/NP consumers0 explicitly bounded. Protected diagnostics/counters/current matrix/eligibility digests retained.",
+      "nextBoundedUnit": "Not selected. This committed fixed HP forward unit is complete; HP noncommit/recovery and whole TSK-08 closure remain outside it.",
+      "priorRecordCommit": "420ebcec9ebaf60f7e18ae00d8c9e842a7405a39",
+      "recordCommitPolicy": "This completion record is committed after implementationCommit; resolve its commit from local Git history."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -14426,7 +14868,7 @@
       "name": "Committed attacker-skill sourceSelf direct fixed HP preparation write/live-read/NP shared audit consumer closure",
       "productBaselineCommit": "2b0af873254d6c71969f4b1915c708f117156533",
       "recordBaselineCommit": "420ebcec9ebaf60f7e18ae00d8c9e842a7405a39",
-      "status": "Read-only handoff preparation complete; first deliverable is current-code implementation plan; user confirmation required before source/test edits or product executions. HP consumer not implemented or verified here.",
+      "status": "completed authorized committed fixed HP bounded unit; next unit not selected",
       "scope": "Canonical attacker-skill resourceMutation/hp, amount.kind=fixed, unit=fixed, recipient=sourceSelf, selection omitted or direct; committed gain/loss changing attacker absolute current HP -> original reducer/action retained HP -> same selected scenario ordered HP condition read and hpRatioLow NP damage consumption -> actual damage input/contribution/calculated result -> shared consumer/gate, schema-legal representatives/check-group negatives/complete declared artifacts. Form/traits/eligibility and HP maximum/modifier environment fixed within each route.",
       "excluded": "HP noncommit/rollback/recovery, retry/resend/UI recovery, percent or hpTransfer/other recipient selection, hpModifier/removeHpModifiers/base or maximum changes/healing-rate modifiers/noHealing semantics, source/support/passive/NP HP writers, new HP state/lifetime semantics, candidate damage-loop rollback, form/trait/eligibility switching, HP value-expression family beyond condition reader and hpRatioLow, NP gauge/OC/trait/form or other mutation-family implementations, failure classification changes, legacy cleanup, stale-mutation/TSK-08 whole closure, TSK-09.1/09; completed S4/without-area/architecture/stars/scalar/fixed BP/capacity forward/noncommit reopening.",
       "sourceFindingsAsOfCommit": "2b0af873254d6c71969f4b1915c708f117156533",
@@ -14615,7 +15057,10 @@
           "diffCheck": "passed",
           "scope": "Four existing documents only; no new product source/test/producer/audit/quality execution"
         }
-      }
+      },
+      "nextMinimalOperation": "Read HEAD/index/worktree and latest completed HP unit/receipts; select and plan the next separately bounded TSK-08 unit. Do not reopen prior contract wait or completed BP/capacity/scalar/stars/S4/without-area/architecture. No current HP noncommit/recovery authorization.",
+      "completedProductCommit": "6d571bdd9a43e34566e23fcde35aa5fbd386faca",
+      "completedEvidence": "boundedUnits latest entry / finalReconciliation / final frozen-source audit and quality"
     },
     "completedScalarRecoveryPreparation": {
       "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",

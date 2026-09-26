@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.75"
+document_version: "1.7.76"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-26"
+updated_at: "2026-09-27"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -3284,3 +3284,18 @@ HP非commit／rollback／recovery・一般retry／UI、percent／transfer／他r
 本資料準備は読み取り・checksumのみ。保存1196receipt、直前製品4source/testのGit blob／current、関連25source/configを照合しerror0。publishedトップレベルservant.skillsのHP宣言121件、sourceSelf／direct／固定値・固定単位64件は静的inventoryでありselected／committed／新consumerの成功や将来固定期待件数ではない。先行quality1191/155/29（retry0）、audit3、warning／unexpected console0、容量attempt5 changed／6境界／1854否定／176診断、committed容量5／4／1491、fixed forward5／426・非commit6／3／807を保持する。詳細symbol、population、receipt、counter、matrix／eligibility digest、再利用条件と計画項目は既存evidenceのhandoffPreparation.currentStageReconciliation／nextSessionを正本とする。新source test／producer／audit／qualityは実行していない。
 
 次担当者の最初の成果物は現コードからの段階的実装計画。利用者確認前は製品source／test／文書の編集、新source test／producer／audit／quality、stage／commitを行わず、読取・既存artifact／published JSONのchecksumは可。新実行診断が計画に不可欠なら最小診断・得る判断・停止境界を先に示して別途確認する。確認後は同作業の実装・局所検証・差分レビュー・影響audit／必須quality・既存Task／evidence更新・範囲限定local commitまで進め、通常判断の再承認は不要。未規定意味論／実質的契約衝突時だけ影響作業を止め、symbol・差分・改訂計画を提示する。60分checkpoint／90分以降新familyなし、push禁止。8 shardは具体的identity疑義時のみ。
+
+
+Current bounded-unit completion（committed attacker-skill fixed HP forward、2026-09-27）:
+
+製品local commit `6d571bdd9a43e34566e23fcde35aa5fbd386faca`。開始HEAD `3e19f1a85190262b0915d62dcba82e4e1b4404ff`、index／tracked／untrackedは空。元HP applyのsource／operationIndex／receipt参照、native commit、reducerのaction-start／committed prefix／保持HPをcapture限定で既存transition transportへ接続した。元candidate seed、実HP条件readの整数permilleと実返値tag、元hpRatioLow branchのcontinuous ratio／evaluation／input、同selected executionのprojection／effective contribution／calculated resultを共有consumer／gateへ接続。元HP／condition／NP／damage算術と公開／serialized shapeを維持した。
+
+schema-legal6 connected changed代表・7明示境界、1606否定（source1528／published78）と104宣言完全diagnosticが成功。各診断をassertion前に全保存し、path／bytes／SHA-256、保存後lossless deep-strict復元を検証。保存された4241 failureのcanonical first differenceと責務別389 checkのtyped reason／checkPathも既存比較器で一致。publishedはform-qualified宣言66、selected378、対象内operationの実変更28、実HP reader／hpRatioLow NP consumer0を独立に照合し、readerなし・HP環境変更・他HP writer・NP HP writerを境界として残した。架空published candidate／reader／NPは作らない。
+
+最終12source/testのGit blob／currentとgate入力checksumが一致。局所HP104、architecture9、既存BP5／426否定、影響audit3、README必須quality1295 unit／155 production／29 E2E（retry0）、warning／unexpected console0が成功し、対象内Blocking0。先行固定BP forward426／元非commit807、committed容量1491／元noncommit容量1854、S4／HP witness／domain live read／scalar／stars／without-areaとcounterを保持。保護292診断の291はbyte一致、既存parity診断1件はelapsedMs1箇所だけ変動し非時間部分一致。matrix／eligibility digestと34600 parityは適合条件を照合して再利用し、8 shardを再生成しない。
+
+全件auditの初回は無関係graph重複で中断し成功証拠としなかった。HP scopeの完全診断へ絞って再検証。初回qualityの既存250行上限違反はHP adapterを新設済みHP観測moduleへ戻し、candidateStateAudit.tsを元231行に復元して解消。後続TS2589は既存BP audit返値型の明示1箇所だけで解消し、意味論・assertion・否定fixtureを維持した。timeout／閾値／gate緩和・test除外はない。性能比較はnormal／captureの元calculated観測が一致し、別module graph／loaderの影響から速度改善とは主張しない。
+
+60分前checkpointを既存Task／evidenceへ保存し、90分以降は同unitの証拠照合・記録・local commitだけを継続した。引継ぎ1196receiptは1193一致・依頼内3source変更を新checksumとして区別。新485＋継承910宣言、1777 unique保存receiptの最終照合error0。詳細・直接symbol・path／bytes／SHA-256・失敗履歴・再利用条件は既存evidence最新bounded unit／finalReconciliationを正本とする。
+
+Step0契約／基線、Step1 V41 requestとV40保存・明示V41再計算、Step2先行unitと今回の限定committed HP forward、Step3改訂matrix／eligibility照合を保持。旧契約待ちは履歴。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。今回をHP recovery、stale-mutation全体、TSK-08全体のclosureと呼ばない。次のbounded unitは未選択で、別sessionの限定計画から始める。pushなし。
