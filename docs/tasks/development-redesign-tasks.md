@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.70"
+document_version: "1.7.71"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3198,3 +3198,20 @@ Fixed domain BP non-commit preparation attempt bounded-unit completion（2026-09
 必要な製品gateは残らず、以後は結果4文書の検証・最終差分照合と14対象だけlocal commitで閉じる。次のsemantic unitは別途限定する。domain recovery／再送／UI、candidate rollback、capacity mutation、form／eligibility、補助actor、passive failure、OC ready後のstructural拒否、別familyとlegacyは未実装の対象外。今回をstale-mutation全体／TSK-08全体のclosureと呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま。pushなし。
 
 結果記録のdocs6/6・integrity・対象書式・差分whitespaceが成功した。最終186宣言／124固有current artifact receipt、10固定入力、7保護artifact／5先行forward診断／9新診断とproduction counterは照合一致。既存212receiptの保持条件も維持する。14対象のstage差分を照合し、当該記録を含むlocal commitを今回の参照identityとして閉じる。pushなし。
+
+
+Step再確認と次sessionの限定handoff（2026-09-26、製品参照commit `0a479fdaf4fab28e37798374ae6e2f5f3faf68ba`）:
+
+直前のfixed BP元changed attempt非commit隔離unitは14file local commit済み。開始HEAD／index／tracked／untrackedはclean。6 changed代表・3境界・807否定、quality952/155/29（retry0）、audit3、warning／unexpected console0を保持する。Step0は基線／契約成立、Step1はV41とV40保持・明示再計算実装済み、Step2はS4・stars／scalar forward／recovery・fixed domain committed forwardと元noncommit attempt→同scenario typed拒否まで検証済み、Step3は改訂matrix／eligibility digest照合済み。旧4段階の契約待ちは履歴で再開しない。他mutation consumerと後段legacyは残り、TSK-08は`in_progress`、TSK-09.1／09は`blocked`。
+
+次の1セッションは**攻撃役skillのcanonical battlePointCapacityModifierが実capacity／modifier state変更をcommitし、同domainの後続fixed gain／loss・実live read・phase変換・実NP消費／damage利用へ届く共有consumer／gate／schema-legal代表・否定／宣言artifact接続**に限定する。form／trait／eligibilityは固定し、既存capacityの加算・clamp・reconcile・phase意味をownerから観測する。容量writerのnoncommit／rollback／recovery、modifier失効・除去・新lifetime、補助actor／passive／NP writer、別family、一般retry／UI recovery、failure分類修正、legacyとTSK-08全体は対象外。固定writeは変更capacityの実consumerとしてだけ扱い、完了済みfixed forward／attemptやscalar／stars／S4／without-area／architectureを再開しない。
+
+直接コードではcapacity操作も元applyBattlePointOperationがreceiptとidentity／amount／lifetime／traitsを持つmodifier listを更新し、後段reconcileは元domain定義とmodifier listから状態を調整する。元per-write afterとreconcile後の保持値を同一と仮定しない。既存captureはcapacityの元writeも採取できるが、共有forward／attemptの期待writerはfixed resourceMutationだけ。operationCompilerは容量operationをordered生成とretained writer markerの対象にしていないので、架空のwriter event／projection／寄与を作らず、元preparation証拠と実reader／NP利用をどう結ぶか先に計画する。監査で加算／clamp／phase／condition／damageを再実装しない。
+
+canonical published JSONにはNP由来capacity operation1件、攻撃役skill由来0件を読み取った。これは次consumer成功ではなく、origin-qualified母集団とschema-legal代表を独立にする根拠。過去件数を将来期待値へ固定せず、NP writerをこのsliceへ広げない。本資料準備は読み取り／checksumだけで、先行212 receipt（保存artifact206と先行source6のGit blob）・current124 artifact、現10固定入力をidentity別に照合した。更新済みsourceを過去checksumのまま不変とは扱わない。詳細件数、published identity、path／bytes／SHA-256、直接symbolと未検証点は既存[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.currentStageReconciliation`／`nextSession`を正本とする。新source test／producer／audit／qualityは実行していない。
+
+最初の成果物は段階的実装計画。現symbolから責務・候補file、通常／captureの生成→apply→reconcile→commit→実reader／NP／application利用、canonical期待母集団とidentity、action-start／中間／reconcile後保持state、writer保持と寄与の区別／二重適用不在、代表・検査別否定、gate／完全artifact／証拠再利用条件・停止点・最終検証を示し、利用者確認を待つ。過去consumerやhook／module／具体値を最善解に固定しない。確認前は読み取り・checksumのみ、source／test／文書編集・source実行・stage／commitなし。確認後は同じunitの実装から必要な最終quality／影響audit、既存Task／evidence更新・範囲限定local commitまで継続し、通常判断で再承認しない。未規定意味論／実質契約衝突だけ根拠symbol・差分・改訂計画で影響作業を止める。
+
+本整理は既存4文書だけを検証・local commitして参照identityを作る。8 shardは具体的identity疑義時のみ。次sessionは60分checkpoint／90分以降新familyなし。pushなし。
+
+本整理のdocs6/6・integrity・対象書式・差分whitespaceが成功した。保存artifact330固有path、先行source6の宣言commit blobと現source10を各identityで照合し、error0。製品source／test／設定は`0a479fd`から不変。この4文書だけlocal commitし、そのcommitを次作業者の参照文書identityとして依頼する。

@@ -228,8 +228,8 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "Fixed domain BP attempted changed writes in failed executePreparationOc action -> original action-start retained state and same scenario typed rejection shared consumer is next bounded unit. Existing forward evidence does not prove it.",
-    "Domain recovery, capacity/alternate actor/form-eligibility and other mutation-family consumers remain separately scoped; no whole stale-mutation closure claim.",
+    "Committed attacker-skill capacity modifier state -> subsequent same-domain fixed BP use/live reader/NP shared consumer is next bounded unit; existing fixed forward/noncommit attempt evidence does not prove capacity coverage.",
+    "Capacity noncommit/domain recovery, alternate actor/form-eligibility and other mutation-family consumers remain separately scoped. Existing failed preparation breaks same scenario; no later ordinary recovery reader is inferred.",
     "Deferred legacy loader/scan/candidate-list/duplicate-fixture cleanup remains later work; TSK-08 in_progress, TSK-09.1/09 blocked."
   ],
   "statusInvariants": {
@@ -241,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
+  "nextBoundedUnit": "Committed attacker-skill battlePointCapacityModifier preparation state/read/NP shared audit consumer closure",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -8970,7 +8970,8 @@
               "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
             }
           ],
-          "condition": "All product gates ran on frozen final ten source/config/test inputs. Four existing result documents changed afterward; final document validation and scoped14-file local commit close the session. Commit identity is the Git commit containing this record."
+          "condition": "All product gates ran on frozen final ten source/config/test inputs. Four existing result documents changed afterward; final document validation and scoped14-file local commit close the session. Commit identity is the Git commit containing this record.",
+          "localCommit": "0a479fdaf4fab28e37798374ae6e2f5f3faf68ba"
         }
       },
       "evidenceReuse": {
@@ -9386,7 +9387,7 @@
           "action": "Test-local lossless content-interned value DAG with exact deep roundtrip including undefined/Set/Map/null prototypes; full original diagnostics retained, saved before assertions through unchanged declared runner envelope. No timeout/threshold/test-count changes. Focused9 passed; prior-commit2030ms, artifact2057714bytes vs122271581bytes. Types/lint passed after discriminated union typing fix; final quality validates unchanged runtime."
         }
       },
-      "remaining": "No required implementation/product/audit gates or scoped Blocking remain; validated result recording and authorized scoped14-file local commit close this unit. No push; no next semantic unit authorized.",
+      "remaining": "None in this authorized non-commit attempt unit; scoped14-file local commit completed at 0a479fdaf4fab28e37798374ae6e2f5f3faf68ba. No push. Domain recovery and other mutation consumers remain separately scoped.",
       "sessionBoundary": "Started2026-09-26T09:53:17Z; checkpoint before60min; mandatory gates completed in same bounded unit. No new semantic family. TSK-08 in_progress; TSK-09.1/09 blocked.",
       "diagnosticEncoding": {
         "version": 1,
@@ -9440,10 +9441,11 @@
             "sha256": "a619c4a35dd4041efd5d0122df36f2e0917b60f561b9251be3f8747f1f3432bd"
           }
         ]
-      }
+      },
+      "implementationCommit": "0a479fdaf4fab28e37798374ae6e2f5f3faf68ba"
     }
   ],
-  "currentBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
+  "currentBoundedUnit": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
   "handoffPreparation": {
     "baselineHead": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
     "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
@@ -9684,12 +9686,12 @@
       }
     },
     "currentStageReconciliation": {
-      "asOfProductCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
+      "asOfProductCommit": "0a479fdaf4fab28e37798374ae6e2f5f3faf68ba",
       "historicalTable": "Task historical four-stage self-check remains historical; its contract-wait statements are superseded by later approved requirement/ADR and implemented units.",
       "stages": [
         {
           "stage": 0,
-          "current": "Contracts/baseline established; current approved non-commit attempt bounded unit product gates complete. Old contract wait not reopened."
+          "current": "Baseline/contracts established; fixed BP original non-commit attempt unit and local commit complete. No old contract wait."
         },
         {
           "stage": 1,
@@ -9710,7 +9712,7 @@
         }
       ],
       "latestBoundedUnit": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
-      "latestEvidence": "Fixed domain BP original changed non-commit attempt isolation/same selected typed rejection:6 changed/3 boundaries/807 negatives, audit3, quality952/155/29 retry0, warning/unexpected0, final artifact/source/counter reconciliation."
+      "latestEvidence": "Non-commit fixed BP attempt unit local commit0a479fd complete:6 changed/3 boundaries/807 negatives, audit3, quality952/155/29 retry0, warning/unexpected0, frozen10/current124 receipt reconciliation. Step0/1/3 contracts implemented; Step2 other mutation consumers and later legacy remain."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -9766,139 +9768,287 @@
       "implementationReference": "boundedUnits: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "name": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
-      "productBaselineCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
-      "status": "Approved non-commit attempt bounded unit completed; see latest boundedUnits final gates/artifacts. No next semantic unit authorized.",
-      "scope": "One session: canonical attacker useSkillSlot fixed resourceMutation/battlePoint gain/loss executed as a real changed attempt within executePreparationOc, followed by that original OC action returning non-committed -> original action-start BP state/receipts/executedEffects retained by the reducer -> same selected scenario preparation rejection and existing typed application result -> shared audit consumer/gate, schema-legal representatives/grouped negatives and declared complete artifact. Stop at the actual preparation rejection; no automatic continuation, terminal NP execution or recovery consumer.",
-      "excluded": "Committed forward consumer reopening or relaxation; domain recovery or resubmitted command/UI retry, candidate damage-loop rollback, capacity modifier mutation, form/eligibility transitions, auxiliary actor writes, initial/terminal passive action failures, post-OC ready/structural rejection families, HP/trait/form/gauge/OC semantic changes, failure-code/outcome repair, legacy cleanup, whole stale-mutation/TSK-08 closure and TSK-09.1/09.",
+      "name": "Committed attacker-skill battlePointCapacityModifier preparation state/read/NP shared audit consumer closure",
+      "productBaselineCommit": "0a479fdaf4fab28e37798374ae6e2f5f3faf68ba",
+      "status": "Read-only preparation complete; first deliverable is code-based staged implementation plan awaiting user confirmation. No new capacity consumer implemented or tested.",
+      "scope": "One session: canonical attacker useSkillSlot battlePointCapacityModifier that commits a real capacity/modifier-state change on a stable eligible present actor/domain -> actual apply/reconcile state -> subsequent same-domain fixed gain/loss as a consumer of changed capacity -> original committed preparation -> same selected scenario live battlePointPhase read/phase-to-scalar conversion and actual ordered NP consumption/damage application -> shared audit consumer/gate, schema-legal representatives/grouped negatives and declared complete artifacts. Fixed writes/read/NP are consumers in this capacity-writer slice, not reopened fixed-forward implementation.",
+      "excluded": "Non-commit capacity attempts/rollback/recovery, command resend/general retry/UI recovery; completed fixed BP forward/non-commit attempt or scalar/criticalStars forward/recovery reopening; candidate damage-loop rollback; form/eligibility changes, actor-trait capacity override changes, capacity modifier expiration/removal/new lifetime semantics; auxiliary/passive/NP capacity writers; initial/terminal passive failure, post-OC-ready structural failure; HP/trait/gauge/OC or outcome classification changes; legacy cleanup, whole stale-mutation/TSK-08 closure and TSK-09.1/09.",
       "sourceFindings": [
         {
           "symbols": [
+            "packages/master-data/src/index.ts:effectExecutionOperationSchema battlePointCapacityModifier member",
+            "packages/data-pipeline/src/executionSemantics.ts:capacity modifier canonical generation"
+          ],
+          "fact": "Canonical capacity operation has recipient, subjectId, values, lifetime active/constant and traits. It is distinct from resourceMutation/battlePoint fixed direction/amount. Pipeline owns raw vocabulary; no new raw/ID branch or compatibility fallback is needed.",
+          "planningImpact": "Derive writer population/values/index/lifetime/traits from selected commands/master/source/choice/operation order, before successful activation/receipt filters. Concrete schema-legal values/representative count remain a code-based planning choice."
+        },
+        {
+          "symbols": [
+            "packages/battle-execution/src/battlePointResource.ts:applyBattlePointOperation",
+            "packages/battle-execution/src/battlePointResource.ts:reconcileBattlePointActor",
+            "packages/battle-execution/src/battlePointResource.ts:effectiveCapacity",
+            "packages/battle-execution/src/battlePointResource.ts:reconcilePreparationBattlePoints"
+          ],
+          "fact": "Original apply appends capacity modifier identity/amount/lifetime/traits and before/after receipt; capacity update can clamp point. Subsequent reconciliation uses original domain base/maximum and stored modifiers. Null capacity and absent/ineligible state have explicit owner behavior.",
+          "planningImpact": "Distinguish action-start, per-operation before/after, post-source reconciliation and final retained state. Do not assume last receipt.after equals final state or reimplement sum/clamp/reconciliation/phase in the gate. Plan authoritative continuity proof and explicit no-change/nonapplicable boundaries; no eligibility/trait toggles or removal family."
+        },
+        {
+          "symbols": [
             "packages/battle-execution/src/preparationOc.ts:executePreparationOc",
-            "packages/battle-execution/src/battlePointResource.ts:applyBattlePointOperation"
-          ],
-          "fact": "The actual BP operation appends identity/actor/domain before-after receipts to local current state. Identity comes from actionId/sourceInstanceId/effect occurrence/canonical operationIndex. At function return structuralState is current only for committed; otherwise args.state. executedEffects is added only inside the committed branch. Non-commit attempt state is not exposed by the present return contract.",
-          "planningImpact": "Prove a real changed attempted write and native non-commit, not a theoretical writer or unchanged returned state. Decide minimal capture-only authoritative observation at the original owner; no writer re-execution."
-        },
-        {
-          "symbols": [
-            "packages/battle-execution/src/ocState.ts:executeOcAction"
-          ],
-          "fact": "The native reject helper returns prior OC state and empty outcomes; the BP local current belongs to executePreparationOc. A candidate ordered execution rollbackProof is a different transaction mechanism.",
-          "planningImpact": "Do not interpret empty OC outcomes, committedActions, or candidate mutationAuditAddress/rollbackProof as an original attempted BP receipt. Bind native action status/reason to exact attempted prefix and failed action identity."
-        },
-        {
-          "symbols": [
+            "packages/battle-execution/src/preparationAttemptObservation.ts:PreparationOcAttempt",
             "packages/battle-execution/src/preparationTransaction.ts:planPreparationResourceTransaction",
-            "packages/battle-execution/src/preparationSkillReducer.ts:reducePreparationSkillAction",
-            "packages/battle-execution/src/preparationContracts.ts:rejectPreparation"
-          ],
-          "fact": "actionId uses original appliedActions.length. Non-committed oc.result maps to existing PreparationFailureCode and no ready payload; skill reducer rejection returns its supplied original state. Preceding committed skills can therefore be the failed action-start state, not initial state.",
-          "planningImpact": "Generate expectation from selected commands/master/canonical operation order independently of receipts/activation. Failed action does not append applied action; command index and actionId index must not be conflated after a rejection. Exclude post-OC ready structural rejection families from this unit."
-        },
-        {
-          "symbols": [
             "packages/battle-execution/src/sourceCollection.ts:resolveAttackerFormExecution"
           ],
-          "fact": "Existing callback observes original reducer before/command/result. On rejected result ordinary collection breaks before state advancement; returned actions only include preceding commits.",
-          "planningImpact": "Use same scenario/action-start state and rejection boundary. Do not append a recovery action or pretend a terminal NP ran in this selected execution."
+          "fact": "Existing owner branch handles capacity and fixed BP operations. Capture-only writes already record original source/operation index/status/before/after/receipts for both kinds. Committed branch records BP executedEffects; action-source reconciliation occurs in original generated steps; callback observes original reducer before/command/result.",
+          "planningImpact": "Assess existing native capture/transition refs directly; keep ordinary allocation/public serialized shape. If post-source reconciliation needs minimal capture, put it at original owner only. No audit writer replay. Original fixed noncommit tests/contracts stay unchanged."
         },
         {
           "symbols": [
-            "packages/calculation-application/src/scenario.ts:resolveScenarioPreparationOutcomeObserved",
-            "packages/calculation-application/src/scenario.ts:prepareConcreteCalculationScenarioWithPolicy",
-            "packages/calculation-application/src/scenario.ts:rejectedPreparationResolvedInput",
-            "packages/calculation-application/src/scenario.ts:evaluatePreparedCalculationScenario"
-          ],
-          "fact": "Preparation rejection returns before domain phase conversion, prepared orderedScenario/canonicalInputs are null and there is no executable target observation. Existing result conversion distinguishes inputRequired/unavailable/unsupported according to the existing code.",
-          "planningImpact": "Bind the original preparation rejection to actual resolved/result objects and assert absence of conversion/ordered execution/NP receipt/damage use. Do not replace missing execution with a synthetic event/projection/input or classify audit passed as calculated. Typed mappings remain unchanged."
-        },
-        {
-          "symbols": [
+            "packages/calculation-application/src/productionBattlePointPreparationAudit.ts:isWriter",
+            "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.ts:canonical",
             "packages/calculation-application/src/battlePointPreparationObservation.ts",
-            "packages/calculation-application/src/scenario.ts:attachBattlePointPreparationObservation call"
+            "packages/calculation-application/src/scenario.ts:prepareConcreteCalculationScenarioWithPolicy"
           ],
-          "fact": "Current attachment is keyed by an executable CalculationExecutionObservation and is created after actual ordered execution. Rejected branch has no such attachment.",
-          "planningImpact": "Choose an internal capture-only transport reachable from actual rejected prepared/evaluated result, preserving public/serialized API and ordinary allocation. Extending existing owner vs focused extraction is a design choice; do not force the forward adapter onto a missing execution."
+          "fact": "Both published fixed BP consumers select resourceMutation/battlePoint fixed gain/loss and exclude capacity writers. Existing native capture attaches to actual executable prepared/calculation/result objects as well as rejected objects; forward transport/read/conversion remain independent.",
+          "planningImpact": "Decide extension vs focused consumer from responsibilities. Keep both existing gates strict; do not count a capacity declaration or passing fixed receipt as complete capacity consumer coverage, and do not clone all scalar/forward gate checks."
         },
         {
           "symbols": [
-            "packages/calculation-application/src/productionBattlePointPreparationAudit.ts:canonical",
-            "packages/calculation-application/src/productionBattlePointPreparationAudit.ts:auditBattlePointPreparationObservations",
-            "packages/calculation-application/src/productionMasterControlAudit.test.ts:evaluateWithOrderedOperationEvents"
+            "packages/battle-execution/src/sourceCollection.ts:battlePointExecutionCommitted",
+            "packages/battle-execution/src/operationCompiler.ts:compile source retained/applicable selection",
+            "packages/calculation-application/src/scenario.ts:damageResolutionInputForNoblePhantasm"
           ],
-          "fact": "Existing forward program/gate requires executable prepared/result, applied transitions and calculated result. Existing control collector rejects non-executable prepared scenarios before collecting forward programs. Published forward inventory has3 fixed writer declarations and0 natural NP-domain contracts; these are independent of rejection observations.",
-          "planningImpact": "Keep forward gate strict. Connect non-commit consumer to original preparation/rejection generation and canonical inventory/source program/selected command populations. Do not filter rejected scenarios out of expected population or reuse previous observed counts as expectations. Published attempted non-commit coverage is not established by this read-only preparation."
+          "fact": "Source carries original BP executed-effect evidence. Compiler skips capacity operation in ordered applicable operations and does not include its kind in retained preserveSemanticEffect selection. Existing damage input reads final BP through original phase owner; actual ordered reader/NP produces downstream evidence.",
+          "planningImpact": "Do not fabricate capacity writer ordered event/projection or assume fixed resource writer marker applies. Plan proof via actual preparation receipt/modifier/state and actual reader/NP/event/projection/effective contribution/input/result. Separate writer retention evidence from damage contribution, and prove no double application. A new product marker/classification requirement would require a concrete contract decision, not audit inference."
         },
         {
           "symbols": [
-            "packages/battle-execution/src/preparationTransaction.test.ts:BP/HP/context atomicity test near line2280"
+            "apps/web/public/master/master.json",
+            "packages/data-pipeline/src/executionSemanticsProduction.test.ts"
           ],
-          "fact": "Existing local test asserts same original rejected state and a separately submitted follow-up skill, with HP/trait/gauge side effects. It does not expose attempted BP state or prove shared same-scenario rejection consumer.",
-          "planningImpact": "Use as owner contract evidence only. New fixtures must isolate fixed domain BP and existing rejection trigger, without reopening HP/trait/gauge or pretending manual reducer resubmission is an ordinary scenario continuation."
+          "fact": "Read-only canonical published JSON inventory finds one capacity operation under an NP variant, partyMember recipient, and zero attacker-skill capacity declarations. Existing pipeline production assertion also declares capacity kind count1. Published master was not recompiled or run.",
+          "planningImpact": "New published expected population must come from current canonical master/origin/command rules, not frozen count1/0 or fixed writer3. NP writer is outside this slice; schema-legal attacker skill capacity representatives independently prove shared consumer. No fabricated published candidate or natural NP contract."
         }
       ],
       "planningQuestions": [
-        "How to observe actual changed attempted BP receipt/prefix, original action-start state and native non-commit status/reason before executePreparationOc discards local current? Existing original reducer transition alone cannot prove attempted change.",
-        "How to attach that capture to same rejected prepared/result without changing public API/serialized observation/ordinary allocation, replaying owner, or creating ordered execution?",
-        "How command/master/canonical choice and operation order independently define writer and failed action expectations, while activation/nonreach/early rejection stay distinct?",
-        "How shared gate verifies same-domain retained state/receipts/executedEffects/applied actions, preceding commits and failed-skill absence, actual typed result and no downstream use, retaining strict forward gate?",
-        "Which schema-legal failure triggers actually occur after changed BP operations at the original owner and can be used without changing failure semantics or opening another family?"
+        "Which original refs/snapshots bind command/master/source/action/operation/actor/domain to committed capacity modifier receipt and stored modifier identity/lifetime/traits, including action-start after preceding commits?",
+        "How to observe per-operation intermediate capacity/point vs post-source reconciliation/final retained state without calculating capacity/clamp/phase in audit or replaying writer?",
+        "How changed capacity affects a subsequent same-domain fixed BP operation and final live reader/phase/scalar/actual NP consumption under the same selected scenario/execution?",
+        "How to prove writer retention and no double application with current compiler omission, without inventing ordered writer event/projection or damage contribution?",
+        "Which focused schema-legal combinations cover finite capacity increase/decrease with point clamp, repeated/ordered capacity and fixed writes, point-scale/permille reader difference and explicit absent/ineligible/null/zero/non-change boundaries necessary to the selected slice?",
+        "How to derive published origin-qualified expected population independently of successful outputs, and preserve old fixed/attempt/scalar/stars gates and diagnostic contracts?"
+      ],
+      "planRequired": "Present staged plan with owners/candidate files, ordinary/capture canonical generation/preparation/apply/reconcile/reducer/read/NP/application flow, independent writer/action populations, original identities/refs and ordered prefix, action-start/intermediate/reconciled/retained states, writer retention vs actual damage use/no duplicate writes, representative/grouped-negative cells, invariant/gate/artifact/reuse conditions, stop boundary and final gates. Do not fix previous consumer design or module/hook/fixture values as the best solution. Wait for user confirmation before edits/source execution/stage/commit.",
+      "negativeGroups": [
+        "Missing command/master/canonical source/action/operation/receipt/modifier-state/reconciliation/transition/read/NP/input/result/population or capture transport; typed reason/checkPath/first difference required.",
+        "Wrong candidate/source/action/occurrence/operationIndex/value set/value index/actor/domain/lifetime/traits/identity/reference/order; duplicate/reversed capacity/fixed writes or coherent receipt/modifier/status tampering.",
+        "Action-start replaced by initial state after earlier commits; stale/wrong-domain capacity/point/modifier list; attempted/per-write intermediate value substituted for reconciled/retained state; amount-only evidence accepted despite unchanged/missing capacity state.",
+        "Forged commit/executedEffects/applied action, missing committed capacity modifier, double ordered application, writer itself forged as effective damage contribution, fabricated writer event/projection/read/NP consumption/input/result or mixed selected execution.",
+        "Inconsistent actual reader/phase conversion/scalar/NP consumption/projection/effective contribution/canonical input/typed result; declared-only or partial proof accepted as passed; incomplete diagnostics/artifact transport accepted."
       ],
       "fixturePlanning": {
-        "representatives": "Choose schema-legal combinations from actual owner: changed gain and loss attempts followed by native non-commit, multiple same-domain attempted writes, nonzero action-start from preceding committed skill, lower/upper clamp, point!=phase/permille where useful. Include no-change/early rejection only as explicit boundary, not changed rollback proof. Concrete values/failure kinds/fixture count are to be determined from current schema and actual generation.",
-        "outcome": "Actual scenario rejects and stops; assert actual existing typed result and no terminal phase conversion/ordered loop/NP scalar use/damage input/contribution. No demand for calculated success or same-execution recovery read.",
-        "normalCapture": "Compare ordinary/capture preparation and typed application outcomes; calculator/ranking through their real policies where applicable, no invented eligible candidate.",
-        "published": "Keep canonical fixed writer inventory and generated selected commands independent of observations and schema-legal fixtures. Existing forward3 declarations/0 NP contracts do not predict failed-attempt coverage or future counts."
+        "representatives": "Use original schema/owner to choose smallest sufficient combinations for changed committed capacity increase/decrease, point clamp and unchanged-point phase/rate sensitivity, multiple modifier/fixed-write order, preceding committed action-start. Domain/traits/form stable. Nonapplicable/no-change/null/zero cases are explicit boundaries only; do not claim changed coverage from them. No concrete values/counts predetermined.",
+        "outcome": "Same actual executable selected scenario and existing calculated result when fully resolved. Native rejection stays a boundary outside capacity noncommit closure; do not invent recovery or force audit passed to product calculated.",
+        "published": "Independent canonical origin-qualified inventory and declared gate artifact; NP-only published capacity operation excluded explicitly, no zero-count coverage claim. Schema-legal consumers use same product flow.",
+        "normalCapture": "Ordinary/capture and applicable calculator/ranking real policy parity; do not expand candidate admission or create eligible candidates for test convenience."
       },
-      "negativeGroups": [
-        "Missing canonical command/master/source/action/native attempt/state/rejection/result/population or observation transport",
-        "Wrong candidate/source/action/occurrence/operationIndex/actor/domain/order/non-commit reason/reference; duplicate/reversed attempts; command index falsely used as applied action index",
-        "Initial state substituted for preceding committed action-start, attempted/intermediate BP leaking into returned state, stale/wrong-domain retained values; coherent reference/receipt/status tampering",
-        "Forged commit/executedEffects/applied action, failed writer retained as committed evidence or contribution, synthetic phase conversion/NP consumption/damage input/effective contribution/calculated success",
-        "Contradictory preparation failure code/required input/trace/result typed outcome, missing result proof accepted as audit success; reason/checkPath/first canonical difference must identify each check"
-      ],
-      "planRequired": "Present code-based staged plan with owners/files, ordinary/capture actual generation/attempt/non-commit/reducer/application use boundary, canonical writer/action populations, original attempted prefix and changed receipt, action-start retention with preceding commits, rejected typed outcome/absence of downstream execution, representatives/grouped negatives, strict forward protection, gate/artifact conditions/evidence reuse/stops/final validation. Wait for user confirmation before any product/test/docs edit or source test/producer/stage/commit. After confirmation continue same unit through scoped local commit without routine reapproval; no push.",
+      "artifactContract": "Complete canonical identity/typed reason/expected/actual/checkPath/firstDifference saved before assertions; declarations/existence/bytes/SHA-256 validated by existing runner. Preserve current fixed BP attempt lossless-interned diagnostics and all old forward/recovery/S4 artifacts. Choose focused representation/transport without data loss, sampled negatives, arbitrary fallback, timeout/threshold relaxation, test exclusions or line stuffing.",
       "evidenceReuse": {
-        "latestBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
-        "productCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
-        "baseline": "Committed domain forward5/426, quality943/155/29 retry0, audit3, warning/unexpected console0; verified old scalar/stars/without-area/S4 envelopes and domain transport/counters. Existing evidence consistency only, no failed BP attempt isolation proof.",
-        "receiptVerification": {
-          "path": ".test-results/tsk-08-domain-bp-rejection-handoff-20260926/reused-artifacts.json",
-          "bytes": 55278,
-          "sha256": "fa272ed7438aa3b9e54064c854f7aed54d019c97d690eaf193d9caffa1207f2d"
+        "previousProductCommit": "0a479fdaf4fab28e37798374ae6e2f5f3faf68ba",
+        "latestUnit": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
+        "quality": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/quality-runner.mjs",
+          "manifest": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/manifest.json",
+          "status": "success",
+          "durationMs": 444430,
+          "unit": 952,
+          "production": 155,
+          "e2e": 29,
+          "retries": 0,
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "steps": [
+            {
+              "id": "format",
+              "code": 0
+            },
+            {
+              "id": "lint",
+              "code": 0
+            },
+            {
+              "id": "typecheck",
+              "code": 0
+            },
+            {
+              "id": "runner",
+              "code": 0
+            },
+            {
+              "id": "docs",
+              "code": 0
+            },
+            {
+              "id": "unit",
+              "code": 0
+            },
+            {
+              "id": "production",
+              "code": 0
+            },
+            {
+              "id": "master",
+              "code": 0
+            },
+            {
+              "id": "build",
+              "code": 0
+            },
+            {
+              "id": "playwright",
+              "code": 0
+            }
+          ],
+          "allRequiredExitZero": true
         },
-        "matchedUniqueReceipts": 212,
-        "matchedFrozenSource": 6,
+        "auditManifest": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/manifest.json",
+        "fixedForwardRepresentatives": 5,
+        "fixedForwardNegatives": 426,
+        "attemptChangedRepresentatives": 6,
+        "attemptBoundaries": 3,
+        "attemptNegatives": 807,
+        "readOnlyReceiptCheck": {
+          "path": ".test-results/tsk-08-bp-capacity-handoff-20260926/preplan.json",
+          "bytes": 80480,
+          "sha256": "b225426d7474f9b5699b3871b938df68c6f278cc7e145b6cc44b9a600b76e0ac"
+        },
+        "matchedUniqueReceipts": 330,
+        "priorSavedArtifacts": 206,
+        "historicalSourceReceipts": [
+          {
+            "path": "packages/battle-execution/src/sourceCollection.ts",
+            "bytes": 19545,
+            "sha256": "a9eaf6e32324a9d9de610e91610b6684294374c41f32242650c76df0fa9f29ed",
+            "referenceCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46"
+          },
+          {
+            "path": "packages/calculation-application/src/scenario.ts",
+            "bytes": 56282,
+            "sha256": "478af388c13c2e9bf329c750be52c08ec9cc678ab77d42aa7d1a9ba50c586027",
+            "referenceCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAudit.ts",
+            "bytes": 38090,
+            "sha256": "387698b36df4920a6b0e39d0c5028292a0fd03abcdf1770cd6c7bc6b4d80e5e0",
+            "referenceCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAudit.test.ts",
+            "bytes": 39347,
+            "sha256": "7798d0b70c649b0565569d6d1a42e7d3070fe7fcc16258775e77929953b92d75",
+            "referenceCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 73479,
+            "sha256": "7cb75444afbe7605dedf6bdaed6bb0e117bd2c25d381d35ccdf7fa77c6cb14a5",
+            "referenceCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46"
+          },
+          {
+            "path": "packages/calculation-application/src/battlePointPreparationObservation.ts",
+            "bytes": 1807,
+            "sha256": "e78a4c6954ab7c6af64bb4e9f00be5cf6599ecc59ad6b5335eaf75f98eb5d7f7",
+            "referenceCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46"
+          }
+        ],
+        "priorUniqueReceipts": 212,
+        "currentUniqueReceipts": 124,
+        "frozenSource": [
+          {
+            "path": "packages/battle-execution/package.json",
+            "bytes": 364,
+            "sha256": "e09931a3ccf0aeb8a060f1467c478980a06aa472104e708193d122e013a86ff0"
+          },
+          {
+            "path": "packages/battle-execution/src/ocState.ts",
+            "bytes": 17371,
+            "sha256": "0c805f2325d1f0cc8e3cfd0dc32b26914496f12bf5dce5aa221d9aade496411f"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationAttemptObservation.ts",
+            "bytes": 1827,
+            "sha256": "0693a2c6022bd90a71315506934f64228da8441b526f227d56d824ffdaf75b2b"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 48990,
+            "sha256": "2a4053997fc5299e9ede89d7acf3d4550aabbc46f751e519fd34077b32243d36"
+          },
+          {
+            "path": "packages/battle-execution/src/sourceCollection.ts",
+            "bytes": 19848,
+            "sha256": "42dbfa82df88331da46d23bb2c9a4c60cf4ae1bd6a354bf6fcc341be0f572c15"
+          },
+          {
+            "path": "packages/calculation-application/src/battlePointPreparationObservation.ts",
+            "bytes": 3215,
+            "sha256": "8dffd070d634f1caf9a7c9db7ba440b988800757161553a2b0e547e99d324339"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.test.ts",
+            "bytes": 45113,
+            "sha256": "601749a129dbcc0f5d7e521fdd19f2cf6c555b647bcabde9e8b98e42bc40500d"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.ts",
+            "bytes": 32749,
+            "sha256": "84b309f5d9a837e07b036141897b75f0866f8805c56b56b37ee7d7732fca07ee"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 74663,
+            "sha256": "9410247a297729d41f0cf92a4c307e1887d9357885ff95d5f983c5d4e896aa9e"
+          },
+          {
+            "path": "packages/calculation-application/src/scenario.ts",
+            "bytes": 58612,
+            "sha256": "c4ace3a1a9d9e4bcebc97bd39b112b8f97862b01ec9d5490487dd094ee100d0c"
+          }
+        ],
         "errors": [],
         "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
         "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
-        "condition": "Recheck dynamic manifests/path/bytes/SHA-256 and source/semantic conditions. Keep forward/shared gate and protected S4/HP/domain reads, scalar/stars recovery/without-area, inventory/digests/counters intact. No8-shard regeneration without concrete identity concern."
+        "condition": "Exact path/bytes/SHA and unchanged semantic/input conditions required. Reuse is old evidence integrity, not new capacity consumer success. Ten current source/config/test inputs checked; replace only changed fingerprints after implementation. Prior212 receipts comprise206 archived artifact paths and6 historical source identities verified against ad9d216 Git blobs. Current124 artifact receipts and final10 current source fingerprints verified separately; changed old source identities are not claimed physically unchanged. Preplan deduplicates330 artifact paths. Do not regenerate8 shards without a concrete identity concern."
       },
-      "verificationPolicy": "Resolve scoped Blocking with focused schema-legal fixtures/difference review before full production/audit/README quality. Save complete diagnostic before assertions with canonical identity/typed reason/expected-actual/checkPath/first difference and declared runner path/bytes/SHA-256 contract. No timeout/threshold/exclusion changes. If source execution diagnosis is indispensable to plan, propose minimum diagnosis/decision/stop boundary and get confirmation first; diagnosis-only authorization does not authorize implementation.",
-      "sessionBoundary": "Checkpoint to existing Task/evidence by60min; no new semantic family after90min. Record valid evidence/unmet gates/current diff/minimum next step. TSK-08 in_progress; TSK-09.1/09 blocked. Local scoped commit only; no push.",
-      "preparationValidation": {
-        "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
-        "sourceTestsOrProducers": "Not run. No new audit/quality. Only code/saved artifact reads and checksums; docs checks follow.",
-        "documentation": {
-          "docsTests": "6/6",
-          "integrity": "passed",
-          "format": "passed",
-          "diffWhitespace": "passed",
-          "artifacts": [
-            {
-              "path": ".test-results/tsk-08-domain-bp-rejection-handoff-20260926/docs-tests.log",
-              "bytes": 505,
-              "sha256": "ee6a9780a3f5123fe17e6abc7951f5bea0e19cdac21eebf0de2180ca4389be3d"
-            },
-            {
-              "path": ".test-results/tsk-08-domain-bp-rejection-handoff-20260926/docs-integrity.log",
-              "bytes": 22,
-              "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
-            }
-          ],
-          "condition": "Four existing documentation files only; product source/test/config unchanged from ad9d216. Final metadata/refs and staged scope checks precede documentation-only local commit."
-        }
+      "execution": "Read AGENTS/README/docs index and execution-efficiency/systematic-review requirements. No full production/audit/quality before scoped Blocking resolves. After focused checks/direct diff review, required affected audit and README quality on final frozen inputs. Existing /tmp/tsk08-tools/pnpm generic shim,8 CPU affinity,50% production4 workers only after existence/content verification; SQLite script-start failure recorded then generic runner with existing node_modules, no timeout changes. Complete output/artifact and long-process/poll/session limits follow repository requirements.",
+      "authorization": "First code-based plan then user confirmation. Before confirmation read code/artifacts/checksums only; no source/test/doc edits, source test/producer, stage/commit. After confirmation continue same bounded implementation/focused/final gates/existing Task/evidence/scoped local commit without repeated routine permission; no push. Unspecified product semantics/substantive contract conflict alone stops dependent work with symbols/diff/revised plan. If new execution diagnosis is indispensable for the plan, propose minimal diagnosis/decision/stop first; diagnosis-only approval is not implementation approval.",
+      "sessionBoundary": "One session; checkpoint existing handoff at60min; no new semantic family after90min. Preserve valid evidence/remaining conditions/diff/next smallest action at boundary. TSK-08 in_progress; TSK-09.1/09 blocked.",
+      "preparationOnly": "This handoff preparation reads code/Git/published JSON and checksums; only four existing documents change. No new source test/producer/audit/quality, no capacity implementation claim. Documentation validation/scoped local commit supplies reference identity.",
+      "preparationVerification": {
+        "mode": "documentation-only",
+        "docsTests": "6/6",
+        "integrity": "passed",
+        "format": "passed",
+        "diffWhitespace": "passed",
+        "artifacts": [
+          {
+            "path": ".test-results/tsk-08-bp-capacity-handoff-20260926/docs-tests.log",
+            "bytes": 504,
+            "sha256": "a005504d1e15ef6bb3992ce1a79eb3ec570d1b1e93f7f1f5c9a1bd881d78691d"
+          },
+          {
+            "path": ".test-results/tsk-08-bp-capacity-handoff-20260926/docs-integrity.log",
+            "bytes": 22,
+            "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+          },
+          {
+            "path": ".test-results/tsk-08-bp-capacity-handoff-20260926/docs-format.log",
+            "bytes": 66,
+            "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+          }
+        ],
+        "sourceCondition": "Source/test/config unchanged from product commit0a479fd; no source suite/producer/audit/quality executed. Only four existing documents changed; the local commit containing this handoff is the reference documentation identity."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -10158,6 +10308,142 @@
         }
       }
     },
-    "currentPreparationRecord": "Latest boundedUnits non-commit attempt unit is authoritative: product/audit gates, source/artifact/counter reconciliation and result docs verification complete. Scoped local commit containing this record closes the session. Domain recovery/other families remain separately scoped."
+    "currentPreparationRecord": "Current product baseline0a479fd; latest boundedUnits is completed non-commit attempt evidence. nextSession is a new bounded committed capacity writer plan, requiring code-based staged plan/user confirmation before implementation. This documentation preparation runs no source test/producer/audit/quality.",
+    "completedPreparationAttemptPreparation": {
+      "name": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
+      "productBaselineCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
+      "status": "Historical preplan for completed non-commit attempt unit; source findings were at ad9d216 baseline; implementation/gates/local commit are in latest boundedUnits.",
+      "scope": "One session: canonical attacker useSkillSlot fixed resourceMutation/battlePoint gain/loss executed as a real changed attempt within executePreparationOc, followed by that original OC action returning non-committed -> original action-start BP state/receipts/executedEffects retained by the reducer -> same selected scenario preparation rejection and existing typed application result -> shared audit consumer/gate, schema-legal representatives/grouped negatives and declared complete artifact. Stop at the actual preparation rejection; no automatic continuation, terminal NP execution or recovery consumer.",
+      "excluded": "Committed forward consumer reopening or relaxation; domain recovery or resubmitted command/UI retry, candidate damage-loop rollback, capacity modifier mutation, form/eligibility transitions, auxiliary actor writes, initial/terminal passive action failures, post-OC ready/structural rejection families, HP/trait/form/gauge/OC semantic changes, failure-code/outcome repair, legacy cleanup, whole stale-mutation/TSK-08 closure and TSK-09.1/09.",
+      "sourceFindings": [
+        {
+          "symbols": [
+            "packages/battle-execution/src/preparationOc.ts:executePreparationOc",
+            "packages/battle-execution/src/battlePointResource.ts:applyBattlePointOperation"
+          ],
+          "fact": "The actual BP operation appends identity/actor/domain before-after receipts to local current state. Identity comes from actionId/sourceInstanceId/effect occurrence/canonical operationIndex. At function return structuralState is current only for committed; otherwise args.state. executedEffects is added only inside the committed branch. Non-commit attempt state is not exposed by the present return contract.",
+          "planningImpact": "Prove a real changed attempted write and native non-commit, not a theoretical writer or unchanged returned state. Decide minimal capture-only authoritative observation at the original owner; no writer re-execution."
+        },
+        {
+          "symbols": [
+            "packages/battle-execution/src/ocState.ts:executeOcAction"
+          ],
+          "fact": "The native reject helper returns prior OC state and empty outcomes; the BP local current belongs to executePreparationOc. A candidate ordered execution rollbackProof is a different transaction mechanism.",
+          "planningImpact": "Do not interpret empty OC outcomes, committedActions, or candidate mutationAuditAddress/rollbackProof as an original attempted BP receipt. Bind native action status/reason to exact attempted prefix and failed action identity."
+        },
+        {
+          "symbols": [
+            "packages/battle-execution/src/preparationTransaction.ts:planPreparationResourceTransaction",
+            "packages/battle-execution/src/preparationSkillReducer.ts:reducePreparationSkillAction",
+            "packages/battle-execution/src/preparationContracts.ts:rejectPreparation"
+          ],
+          "fact": "actionId uses original appliedActions.length. Non-committed oc.result maps to existing PreparationFailureCode and no ready payload; skill reducer rejection returns its supplied original state. Preceding committed skills can therefore be the failed action-start state, not initial state.",
+          "planningImpact": "Generate expectation from selected commands/master/canonical operation order independently of receipts/activation. Failed action does not append applied action; command index and actionId index must not be conflated after a rejection. Exclude post-OC ready structural rejection families from this unit."
+        },
+        {
+          "symbols": [
+            "packages/battle-execution/src/sourceCollection.ts:resolveAttackerFormExecution"
+          ],
+          "fact": "Existing callback observes original reducer before/command/result. On rejected result ordinary collection breaks before state advancement; returned actions only include preceding commits.",
+          "planningImpact": "Use same scenario/action-start state and rejection boundary. Do not append a recovery action or pretend a terminal NP ran in this selected execution."
+        },
+        {
+          "symbols": [
+            "packages/calculation-application/src/scenario.ts:resolveScenarioPreparationOutcomeObserved",
+            "packages/calculation-application/src/scenario.ts:prepareConcreteCalculationScenarioWithPolicy",
+            "packages/calculation-application/src/scenario.ts:rejectedPreparationResolvedInput",
+            "packages/calculation-application/src/scenario.ts:evaluatePreparedCalculationScenario"
+          ],
+          "fact": "Preparation rejection returns before domain phase conversion, prepared orderedScenario/canonicalInputs are null and there is no executable target observation. Existing result conversion distinguishes inputRequired/unavailable/unsupported according to the existing code.",
+          "planningImpact": "Bind the original preparation rejection to actual resolved/result objects and assert absence of conversion/ordered execution/NP receipt/damage use. Do not replace missing execution with a synthetic event/projection/input or classify audit passed as calculated. Typed mappings remain unchanged."
+        },
+        {
+          "symbols": [
+            "packages/calculation-application/src/battlePointPreparationObservation.ts",
+            "packages/calculation-application/src/scenario.ts:attachBattlePointPreparationObservation call"
+          ],
+          "fact": "Current attachment is keyed by an executable CalculationExecutionObservation and is created after actual ordered execution. Rejected branch has no such attachment.",
+          "planningImpact": "Choose an internal capture-only transport reachable from actual rejected prepared/evaluated result, preserving public/serialized API and ordinary allocation. Extending existing owner vs focused extraction is a design choice; do not force the forward adapter onto a missing execution."
+        },
+        {
+          "symbols": [
+            "packages/calculation-application/src/productionBattlePointPreparationAudit.ts:canonical",
+            "packages/calculation-application/src/productionBattlePointPreparationAudit.ts:auditBattlePointPreparationObservations",
+            "packages/calculation-application/src/productionMasterControlAudit.test.ts:evaluateWithOrderedOperationEvents"
+          ],
+          "fact": "Existing forward program/gate requires executable prepared/result, applied transitions and calculated result. Existing control collector rejects non-executable prepared scenarios before collecting forward programs. Published forward inventory has3 fixed writer declarations and0 natural NP-domain contracts; these are independent of rejection observations.",
+          "planningImpact": "Keep forward gate strict. Connect non-commit consumer to original preparation/rejection generation and canonical inventory/source program/selected command populations. Do not filter rejected scenarios out of expected population or reuse previous observed counts as expectations. Published attempted non-commit coverage is not established by this read-only preparation."
+        },
+        {
+          "symbols": [
+            "packages/battle-execution/src/preparationTransaction.test.ts:BP/HP/context atomicity test near line2280"
+          ],
+          "fact": "Existing local test asserts same original rejected state and a separately submitted follow-up skill, with HP/trait/gauge side effects. It does not expose attempted BP state or prove shared same-scenario rejection consumer.",
+          "planningImpact": "Use as owner contract evidence only. New fixtures must isolate fixed domain BP and existing rejection trigger, without reopening HP/trait/gauge or pretending manual reducer resubmission is an ordinary scenario continuation."
+        }
+      ],
+      "planningQuestions": [
+        "How to observe actual changed attempted BP receipt/prefix, original action-start state and native non-commit status/reason before executePreparationOc discards local current? Existing original reducer transition alone cannot prove attempted change.",
+        "How to attach that capture to same rejected prepared/result without changing public API/serialized observation/ordinary allocation, replaying owner, or creating ordered execution?",
+        "How command/master/canonical choice and operation order independently define writer and failed action expectations, while activation/nonreach/early rejection stay distinct?",
+        "How shared gate verifies same-domain retained state/receipts/executedEffects/applied actions, preceding commits and failed-skill absence, actual typed result and no downstream use, retaining strict forward gate?",
+        "Which schema-legal failure triggers actually occur after changed BP operations at the original owner and can be used without changing failure semantics or opening another family?"
+      ],
+      "fixturePlanning": {
+        "representatives": "Choose schema-legal combinations from actual owner: changed gain and loss attempts followed by native non-commit, multiple same-domain attempted writes, nonzero action-start from preceding committed skill, lower/upper clamp, point!=phase/permille where useful. Include no-change/early rejection only as explicit boundary, not changed rollback proof. Concrete values/failure kinds/fixture count are to be determined from current schema and actual generation.",
+        "outcome": "Actual scenario rejects and stops; assert actual existing typed result and no terminal phase conversion/ordered loop/NP scalar use/damage input/contribution. No demand for calculated success or same-execution recovery read.",
+        "normalCapture": "Compare ordinary/capture preparation and typed application outcomes; calculator/ranking through their real policies where applicable, no invented eligible candidate.",
+        "published": "Keep canonical fixed writer inventory and generated selected commands independent of observations and schema-legal fixtures. Existing forward3 declarations/0 NP contracts do not predict failed-attempt coverage or future counts."
+      },
+      "negativeGroups": [
+        "Missing canonical command/master/source/action/native attempt/state/rejection/result/population or observation transport",
+        "Wrong candidate/source/action/occurrence/operationIndex/actor/domain/order/non-commit reason/reference; duplicate/reversed attempts; command index falsely used as applied action index",
+        "Initial state substituted for preceding committed action-start, attempted/intermediate BP leaking into returned state, stale/wrong-domain retained values; coherent reference/receipt/status tampering",
+        "Forged commit/executedEffects/applied action, failed writer retained as committed evidence or contribution, synthetic phase conversion/NP consumption/damage input/effective contribution/calculated success",
+        "Contradictory preparation failure code/required input/trace/result typed outcome, missing result proof accepted as audit success; reason/checkPath/first canonical difference must identify each check"
+      ],
+      "planRequired": "Present code-based staged plan with owners/files, ordinary/capture actual generation/attempt/non-commit/reducer/application use boundary, canonical writer/action populations, original attempted prefix and changed receipt, action-start retention with preceding commits, rejected typed outcome/absence of downstream execution, representatives/grouped negatives, strict forward protection, gate/artifact conditions/evidence reuse/stops/final validation. Wait for user confirmation before any product/test/docs edit or source test/producer/stage/commit. After confirmation continue same unit through scoped local commit without routine reapproval; no push.",
+      "evidenceReuse": {
+        "latestBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
+        "productCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
+        "baseline": "Committed domain forward5/426, quality943/155/29 retry0, audit3, warning/unexpected console0; verified old scalar/stars/without-area/S4 envelopes and domain transport/counters. Existing evidence consistency only, no failed BP attempt isolation proof.",
+        "receiptVerification": {
+          "path": ".test-results/tsk-08-domain-bp-rejection-handoff-20260926/reused-artifacts.json",
+          "bytes": 55278,
+          "sha256": "fa272ed7438aa3b9e54064c854f7aed54d019c97d690eaf193d9caffa1207f2d"
+        },
+        "matchedUniqueReceipts": 212,
+        "matchedFrozenSource": 6,
+        "errors": [],
+        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+        "condition": "Recheck dynamic manifests/path/bytes/SHA-256 and source/semantic conditions. Keep forward/shared gate and protected S4/HP/domain reads, scalar/stars recovery/without-area, inventory/digests/counters intact. No8-shard regeneration without concrete identity concern."
+      },
+      "verificationPolicy": "Resolve scoped Blocking with focused schema-legal fixtures/difference review before full production/audit/README quality. Save complete diagnostic before assertions with canonical identity/typed reason/expected-actual/checkPath/first difference and declared runner path/bytes/SHA-256 contract. No timeout/threshold/exclusion changes. If source execution diagnosis is indispensable to plan, propose minimum diagnosis/decision/stop boundary and get confirmation first; diagnosis-only authorization does not authorize implementation.",
+      "sessionBoundary": "Checkpoint to existing Task/evidence by60min; no new semantic family after90min. Record valid evidence/unmet gates/current diff/minimum next step. TSK-08 in_progress; TSK-09.1/09 blocked. Local scoped commit only; no push.",
+      "preparationValidation": {
+        "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
+        "sourceTestsOrProducers": "Not run. No new audit/quality. Only code/saved artifact reads and checksums; docs checks follow.",
+        "documentation": {
+          "docsTests": "6/6",
+          "integrity": "passed",
+          "format": "passed",
+          "diffWhitespace": "passed",
+          "artifacts": [
+            {
+              "path": ".test-results/tsk-08-domain-bp-rejection-handoff-20260926/docs-tests.log",
+              "bytes": 505,
+              "sha256": "ee6a9780a3f5123fe17e6abc7951f5bea0e19cdac21eebf0de2180ca4389be3d"
+            },
+            {
+              "path": ".test-results/tsk-08-domain-bp-rejection-handoff-20260926/docs-integrity.log",
+              "bytes": 22,
+              "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+            }
+          ],
+          "condition": "Four existing documentation files only; product source/test/config unchanged from ad9d216. Final metadata/refs and staged scope checks precede documentation-only local commit."
+        }
+      }
+    }
   }
 }
