@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.71"
+document_version: "1.7.72"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3215,3 +3215,23 @@ canonical published JSONにはNP由来capacity operation1件、攻撃役skill由
 本整理は既存4文書だけを検証・local commitして参照identityを作る。8 shardは具体的identity疑義時のみ。次sessionは60分checkpoint／90分以降新familyなし。pushなし。
 
 本整理のdocs6/6・integrity・対象書式・差分whitespaceが成功した。保存artifact330固有path、先行source6の宣言commit blobと現source10を各identityで照合し、error0。製品source／test／設定は`0a479fd`から不変。この4文書だけlocal commitし、そのcommitを次作業者の参照文書identityとして依頼する。
+
+
+Current bounded-unit checkpoint（committed attacker-skill capacity、計画承認後）:
+
+元capacity apply／receiptと実source-end・reconcile・native commit／reducer保持から、canonical先行modifierを持つ同domain後続fixed write、実live read／phase／scalar／ordered NP消費と同じselected executionのevent／projection／effective contribution／canonical input／typed resultまで、共有consumer／gateへ接続した。容量writer用の架空ordered marker／projection／寄与を作らず、writer保持とdamage利用を区別する。通常allocation・公開／serialized shape・元算術／clamp／phase／failure分類と既存fixed gateを保持する。
+
+5 changed代表・4明示境界、1491検査別否定、63局所test・関係195test、型／対象lint／差分レビューが成功。全63宣言diagnosticをassertion前に完全保存し、lossless復元一致・typed reason／checkPath／canonical first differenceとrunner receipt検証を閉じた。先行fixed forward5／426・非commit6 changed／3境界／807否定の14診断はbyte単位一致。単独paired容量scenarioの通常+1.03%／capture+1.82%、実input／result／effects／contributions一致を確認。詳細・flow・source／artifact checksumは既存[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを正本とする。
+
+60分境界前checkpoint。対象内Blocking0、最終影響audit／README quality、保護artifact／counter・固定入力照合、結果記録／文書検証・範囲限定local commitが未達。capacity非commit／rollback／recovery、失効・除去、新lifetime、form／trait／eligibility切替、補助actor／passive／NP容量writer、一般retry／UI、別family、legacyは対象外。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、今回をTSK-08全体やstale-mutation全体のclosureと呼ばない。pushなし。
+
+
+Current bounded-unit final gate（committed attacker-skill capacity）:
+
+容量modifier commit→元reconcile保持→同domain後続fixed writeの実clamp／live read／phase・scalar／ordered NP消費・damage利用を共有consumer／gateと宣言artifactへ接続した。5 changed代表・4明示境界・1491否定、影響audit3、README quality1015/155/29（retry0）、warning／unexpected console0が成功。367宣言／242固有receipt、固定source/test10件、容量diagnostic63件の局所／quality一致、先行fixed forward5／非commit9診断、保護artifact7／既存audit4／domain transport3とproduction counterを照合しerror0。matrix／eligibility digestを保持し8 shard再生成なし。詳細は既存evidence最新bounded unitとfinal-reconciliationを正本とする。
+
+初回qualityは未変更data-pipeline scope ratchet1件が5082msで失敗した。対象7入力は先行製品commitとbyte一致、限定診断の当該assertionは2264msで成功したが全件gate成功として扱わず、同じ固定入力・既存timeout／threshold／4worker設定の必須qualityを再実行して全件成功した。比較条件の制限と失敗manifestもevidenceへ保持した。
+
+source/test10件の製品local commitは`5ce926a8498139534b82e0f5b570260b2025cf09`。以後は結果4文書の検証・範囲限定local記録commitだけで閉じる。容量noncommit／rollback／recovery、失効・除去、新lifetime、form／trait／eligibility切替、補助actor／passive／NP容量writer、別family・legacyは対象外。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持し、TSK-08全体／stale-mutation全体のclosureではない。pushなし。
+
+結果4文書のdocs6/6・integrity・対象書式・差分whitespaceが成功した。製品commit `5ce926a`の10 blobと固定入力を照合一致、対象内Blocking0、必須gateと記録が一致。4記録だけlocal commitして今回のcommitted容量unitを閉じる。次semantic unitは未選択。TSK-08 `in_progress`／TSK-09.1・09 `blocked`を維持し、pushなし。
