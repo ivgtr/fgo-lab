@@ -18,11 +18,8 @@ import { materializeTargetCandidate, type TargetCandidate } from './targetContex
 import type { PreparedOrderedScenario, ResolvedCanonicalInputSet } from './executionTypes';
 import { resolveCompileProjections } from './candidateDecisions';
 import { resolveStochasticOutcomes, type ResolvedStochasticOutcome } from './stochasticOutcomes';
-import {
-  resolveCandidateSelections,
-  validateCandidateSelections,
-  type OperationActivation,
-} from './candidateSelection';
+import { resolveCandidateSelections, type OperationActivation } from './candidateSelection';
+import { validateCandidateSelections } from './candidateSelectionValidation';
 
 interface PreparedCandidateBase {
   candidateInput: DamageResolutionInput;

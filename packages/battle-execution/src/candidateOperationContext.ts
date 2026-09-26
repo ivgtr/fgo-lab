@@ -1,7 +1,24 @@
-import type { BattleOperation, ExecutableBattleState } from './contracts';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
+import type {
+  BattleOperation,
+  EffectDecision,
+  EffectProjection,
+  ExecutionIssue,
+  ExecutableBattleState,
+  OperationResult,
+} from './contracts';
+import type { markerOperationDisposition } from './markerExecution';
+import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
+import { applyActorFormTransition } from './state';
+import { validateActorFormWorldFacts } from './formConstraintValidation';
+import { operationHasNoRuntimeDamageImpact } from './resourceSemantics';
 import type { OperationActivation } from './candidateSelection';
 import type { ContributionApplicationPolicy, PreparedOrderedScenario } from './executionTypes';
-import { activationRequirementsSatisfied } from './condition';
+import {
+  activationRequirementsSatisfied,
+  evaluateCondition,
+  type ConditionReadAudit,
+} from './condition';
 import { contributionIsIncluded } from './effectiveContributions';
 import { resolveModifierValue } from './projection';
 
@@ -45,4 +62,193 @@ export function userConditionMet(
     operation.decisionPlan.condition === 'userMayAssume' &&
     activationRequirementsSatisfied(operation.condition, state)
   );
+}
+
+function effectTransactionKey(operation: BattleOperation): string {
+  const { source } = operation;
+  return [
+    source.origin,
+    source.sourceInstanceId,
+    source.transactionGroupId ?? `${source.skillId}:${source.effectOccurrenceId}`,
+  ].join(':');
+}
+
+export function applyOrderedActorFormTransition(
+  state: ExecutableBattleState,
+  operation: Extract<BattleOperation, { kind: 'transformActorForm' }>,
+): ExecutionIssue | null {
+  const issue = validateActorFormWorldFacts(state, operation);
+  if (issue) return issue;
+  const changed = applyActorFormTransition(state, operation);
+  state.actorFormId = changed.actorFormId;
+  state.traits = changed.traits;
+  state.traitCounts = changed.traitCounts;
+  return null;
+}
+export function effectOperationGroups(operations: readonly BattleOperation[]): BattleOperation[][] {
+  const groups: BattleOperation[][] = [];
+  for (const operation of operations) {
+    const current = groups.at(-1);
+    if (!current || effectTransactionKey(current[0]!) !== effectTransactionKey(operation))
+      groups.push([operation]);
+    else current.push(operation);
+  }
+  return groups;
+}
+export function evaluateConditionAgainstKnownFacts(
+  operation: BattleOperation,
+  state: ExecutableBattleState,
+  onConditionRead?: (read: ConditionReadAudit) => void,
+): boolean | null {
+  const evaluated = evaluateCondition(operation.condition, state, onConditionRead);
+  if (evaluated !== null) return evaluated;
+  const satisfiable = validateConstraintSet({
+    fixedFacts: fixedConstraintFactsFromState(state, operation.operationId),
+    expressions: [{ sourceKey: operation.operationId, expression: operation.condition }],
+  });
+  return satisfiable.status === 'conflict' ? false : null;
+}
+
+function quantityOperationIsNotRelevant(
+  operation: BattleOperation,
+  candidateInput: DamageResolutionInput,
+  damage: PreparedOrderedScenario['damage'],
+  baseInput: DamageResolutionInput,
+): boolean {
+  if (operation.kind !== 'addQuantity') return false;
+  const targetId =
+    damage?.kind === 'battlePointPhase'
+      ? damage.parametersByOvercharge[baseInput.overcharge - 1]?.[baseInput.npLevel - 1]?.targetId
+      : null;
+  return (
+    operation.applicationTiming === 'representedByCurrentInput' ||
+    operation.subjectId !== candidateInput.attackerId ||
+    damage?.kind !== 'battlePointPhase' ||
+    String(targetId) !== operation.subjectId
+  );
+}
+
+function operationTransactionKey(operation: BattleOperation): string {
+  return (
+    operation.source.transactionGroupId ??
+    `${operation.source.skillId}:${operation.source.effectOccurrenceId}`
+  );
+}
+
+interface OperationDispositionInput {
+  operation: BattleOperation;
+  invalidDecisionKeys: ReadonlySet<string>;
+  activation: OperationActivation;
+  enabled: boolean;
+  markerDisposition: ReturnType<typeof markerOperationDisposition>;
+  candidateInput: DamageResolutionInput;
+  damage: PreparedOrderedScenario['damage'];
+  baseInput: DamageResolutionInput;
+  supersededVariantTransactionKeys: ReadonlySet<string>;
+  resolvedModifierValue: number | null;
+  decisionConditionSatisfied: boolean;
+  choice: EffectDecision | undefined;
+  condition: boolean | null;
+  localConditionSatisfied: boolean;
+}
+
+interface OperationDisposition {
+  outcome: OperationResult['outcome'];
+  code: EffectProjection['explanation']['code'];
+  issue: ExecutionIssue | null;
+}
+
+export function resolveOperationDisposition({
+  operation,
+  invalidDecisionKeys,
+  activation,
+  enabled,
+  markerDisposition,
+  candidateInput,
+  damage,
+  baseInput,
+  supersededVariantTransactionKeys,
+  resolvedModifierValue,
+  decisionConditionSatisfied,
+  choice,
+  condition,
+  localConditionSatisfied,
+}: OperationDispositionInput): OperationDisposition {
+  let outcome: OperationResult['outcome'] = 'applied';
+  let code: EffectProjection['explanation']['code'] = 'applied';
+  let issue: ExecutionIssue | null = null;
+  if (
+    (operation.decisionKey && invalidDecisionKeys.has(operation.decisionKey)) ||
+    activation.activeDecisionKeys.some((key) => invalidDecisionKeys.has(key))
+  ) {
+    outcome = 'notApplied';
+    code = 'conditionNotMet';
+  } else if (!enabled) {
+    outcome = 'notApplied';
+    code = 'disabled';
+  } else if (markerDisposition) {
+    [outcome, code] = markerDisposition;
+  } else if (quantityOperationIsNotRelevant(operation, candidateInput, damage, baseInput)) {
+    outcome = 'notRelevant';
+    code = 'disabled';
+  } else if (supersededVariantTransactionKeys.has(operationTransactionKey(operation))) {
+    outcome = 'notRelevant';
+    code = 'disabled';
+  } else if (operation.kind === 'addModifier' && resolvedModifierValue === null) {
+    outcome = 'unsupported';
+    code = 'unresolved';
+    issue = {
+      kind: 'unsupportedOperation',
+      operationId: operation.operationId,
+      detail: 'modifier_value_quantity_missing',
+    };
+  } else if (
+    decisionConditionSatisfied &&
+    (operation.kind === 'addTrait' ||
+      operation.kind === 'removeTrait' ||
+      operation.kind === 'suppressInitialTrait')
+  ) {
+    outcome = 'unsupported';
+    code = 'unresolved';
+    issue = {
+      kind: 'unsafeLocalConditionDecision',
+      operationId: operation.operationId,
+      detail: 'condition_satisfaction_would_create_world_fact',
+    };
+  } else if (condition === null && localConditionSatisfied) {
+    outcome = 'applied';
+  } else if (
+    condition === null &&
+    operation.decisionKey &&
+    choice?.conditionSatisfaction !== 'assumeSatisfied'
+  ) {
+    outcome = 'notApplied';
+    code = 'unresolved';
+  } else if (
+    condition === null &&
+    (operation.kind === 'addTrait' ||
+      operation.kind === 'removeTrait' ||
+      operation.kind === 'suppressInitialTrait' ||
+      operation.kind === 'addQuantity')
+  ) {
+    outcome = 'notApplied';
+    code = 'unresolved';
+  } else if (condition === null) {
+    outcome = 'unsupported';
+    code = 'unresolved';
+    issue = {
+      kind: 'unsupportedCondition',
+      operationId: operation.operationId,
+      detail: 'quantity_missing',
+    };
+  } else if (!condition && !localConditionSatisfied) {
+    outcome = 'notApplied';
+    code = 'conditionNotMet';
+  } else if (
+    operationHasNoRuntimeDamageImpact(operation) &&
+    !(operation.kind === 'preserveSemanticEffect' && operation.buffMutation)
+  ) {
+    [outcome, code] = ['notRelevant', 'stateMutationOnly'];
+  }
+  return { outcome, code, issue };
 }

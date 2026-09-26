@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.55"
+document_version: "1.7.56"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -2947,3 +2947,21 @@ identity ratchet停止点: 独立candidateの8 shard中、先行4 shardは34,640
 全production 155/155、audit 3/3、全E2E 29/29、root／Web typecheck、production build、ESLint、Prettier、docs integrity／6件、runner契約59件、master validateが通過した。全unitは926/928で新規失敗0、残る2件は開始HEADから無変更の`engine.ts` 134行>80行と`candidateSelection.ts` 181行>180行のarchitecture ratchet。追加UI入力による4 screenshotを更新して通常モードで再検証した。件数、elapsed、manifest／artifactのbytes・SHA-256は[evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを正本とする。今回の単位をTSK-08全体の完了とはせず、`in_progress`、TSK-09.1／09は`blocked`、pushなし。
 
 次sessionの限定handoff（2026-09-26、参照実装commit `a3241095be383348b6aa8d3b3199309b435b15b8`）: 次は既存architecture ratchetの2件だけを修復し、unit／qualityの阻害を解消する。`engine.ts::executeOrderedScenarioWithAuditObservation`はcandidate execution／comparisonからselected・unresolved・ambiguousの監査観測を組み立て、public exportから`scenario.ts`の通常／監査実行入口へ接続する。`candidateSelection.ts::resolveCandidateSelections`と`validateCandidateSelections`は選択解決と制約検証・初期state保持を所有し、`candidatePreparation.ts`が利用する。行数を削るための圧縮やthreshold緩和ではなく、実責務から抽出境界を計画する。普通の実行と監査実行のresult、同じcandidate identity／index、operation順序、fail-closed、preapply／rollback／recovery参照を保持する。計画を先に提示して確認を待ち、その後は実装・局所検証・既存Task／evidence更新・依頼範囲local commitまで続ける。未完了のwithout-area／stale-mutation production consumer closureとlegacy cleanupは別sessionとし、S4の解消済み問題を再開しない。今回の先行調査は読み取りと資料更新だけで、製品source／test編集・source test・producerは実行していない。evidence先頭の古い未達／次作業記述をこの現行境界へ整理した。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
+
+Current bounded-unit checkpoint（2026-09-26、battle-execution architecture）:
+
+開始HEAD `08f3ac78d7a97afe2a0a16dfb93b912129b03dc9`、index／tracked worktree／untracked filesは空。静的照合で、2件目のarchitecture testが`candidateSelection.ts`で停止し、後続`candidateExecution.ts` 838行>400行を隠していたと確認した。利用者は追加ファイルを含む改訂計画を承認した。engineはexecution／comparison orchestration、観測組立ては`executionAuditObservation`、選択解決は`candidateSelection`、制約・world fact／variant適用・terminal form検証は`candidateSelectionValidation`へ分離。executorはordered transaction loopを保持し、operation context／result／state auditを各責務へ移した。改行分割でengine 80/80、selection 83/180、executor 389/400。新moduleにもarchitecture上限を追加し、既存thresholdは維持した。
+
+既存局所検証86/86、architecture 9/9、追加の通常／監査parity・identity・rollback fixtureは最初の7/7が通過。26関数の本体token列が開始HEADとすべて一致し、通常hot path、operation順序、allocationの条件を保持した。先行bounded unitの28 artifactはpath／bytes／SHA-256一致。最終form／variant preapplyを含む局所unit 94/94、対象lintと局所差分レビューが通過した。必須quality／監査検証を閉じることが次操作。詳細とartifactは[既存evidence](../evidence/tsk-08-parity-ratchet.json)最新bounded unitを正本とする。`pnpm`は外部SQLite storeでscript前に停止したため、既存node_modulesと同じgeneric runnerへ切替。8 shard再生成は具体的なidentity疑義がない限り行わない。without-area／stale-mutation production consumer closure、legacy cleanup、TSK-09は対象外。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+最終quality途中の参照修復: format／lint／typecheck通過後、runner契約58/59で`E2E-A054-BP-REPLAY`の旧testタイトル参照が停止した。先行実装`a3241095`が実testを「phase intent」から「starting point」へ改名し、移行manifestだけ旧名だった。製品意味論とassertionは変更せず、`e2e/assertions.json`のreplacementTestとその固定digestを現行定義へ同期した。69件・exact marker・削除／誤再割当て拒否は維持し、局所runner契約5/5で確認。最終qualityをこの統合差分で再開する。
+
+quality再開時の実行負荷調整: 全unit 936/936、runner 59/59、format／lint／型／docsは通過。production 154/155の1件は既定5秒に対し5,139msで停止し、同一sourceの単独診断は3,510msで成功（先行runは4,827ms）。数値assertionの不一致は観測されず、並列負荷による時間制限超過と判断した。timeout・閾値・検査対象を変更せず、8 CPU affinityで既存50%設定を4 production workerへ制限してfull qualityを再実行する。並列条件が異なるため所要時間を制御された性能改善とは扱わない。
+
+Current bounded-unit completion（2026-09-26、battle-execution architecture）:
+
+3ファイルの超過を責務分離で解消し、architecture 9/9と局所semantic 94/94を通過した。最終qualityはunit 936/936、production 155/155、E2E 29/29（retry 0）、format／lint／root・Web型／runner 59/59／docs 6/6・integrity／master／buildがすべて成功、warning・unexpected console 0。監査suiteも3/3、S4 expected／observed 1,590、failure 0。先行S4との全observation・identity・battle-point read・preparation inventory・gateが一致し、月下／日輪、HP witness、battle-point live readを維持した。最終quality実行前後で固定した16ファイルのbytes／SHA-256はすべて一致。以後は結果記録だけを更新し文書検証で閉じる。
+
+productionのinventory／digest／runtime counterは先行runと一致し、candidate 6,673／deduplicated 4,194、damage request 2,596／distinct 1,489、master read／parse／compile各1。全production所要時間68,273→86,849ms、compile 21,533→16,322ms、witness 4,827→3,857msだが、先行6 worker／最終4 workerという負荷差があり、制御された性能改善とは解釈しない。26関数の本体token一致、性能ratchet成功、candidate／request増加なしを確認した。8 shardは再生成せず既存matrix／eligibility digestを維持する。検証command、失敗runと回復、artifact path／bytes／SHA-256は[evidence](../evidence/tsk-08-parity-ratchet.json)の`Battle-execution architecture responsibility closure`を参照する。
+
+このsource／test／資料差分だけをlocal commitし、pushしない。今回のarchitecture bounded unitにBlockingは残らないが、TSK-08全体は`in_progress`、TSK-09.1／09は`blocked`を維持する。次のwithout-area／stale-mutation production consumer closureとlegacy cleanupは別bounded unitとして計画し、解消済みS4を再開しない。

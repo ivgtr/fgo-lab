@@ -618,6 +618,6 @@
     "oldAssertion": "battle-point phase intent persists without serializing internal point state and resets with a new attacker",
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
-    "replacementTest": "[E2E-054] battle-point phase intent survives replay and resets with attacker @desktop @journey"
+    "replacementTest": "[E2E-054] battle-point starting point survives replay and resets with attacker @desktop @journey"
   }
 ]

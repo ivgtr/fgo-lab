@@ -241,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Plan then repair only the two inherited battle-execution architecture ratchets, preserve ordinary/audited execution identity and transactional selection behavior, restore unit/quality gates, update existing Task/evidence and create a scoped local commit. Do not reopen completed S4 or begin the other TSK-08 families.",
+  "nextBoundedUnit": "Plan the remaining without-area/stale-mutation production consumer closure separately; architecture unit quality is closed. Legacy cleanup and TSK-09 retain their existing boundaries.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -5350,9 +5350,235 @@
         "intermediateRunMatrixDigest": "cb23821f72d614c9e7d2abe03c040d2473c39c25e30d5e7d86f8c32aaf02a7b9"
       },
       "remaining": "Scope S4 implementation and evidence are verified except the two inherited HEAD architecture ratchets outside this request. TSK-08 remains in_progress; TSK-09.1/09 blocked. Scoped local commit pending; no push."
+    },
+    {
+      "name": "Battle-execution architecture responsibility closure",
+      "status": "architecture_bounded_unit_verified",
+      "baselineHead": "08f3ac78d7a97afe2a0a16dfb93b912129b03dc9",
+      "priorProductCommit": "a3241095be383348b6aa8d3b3199309b435b15b8",
+      "authorizedScope": "Three structural line-count violations behind two failing architecture tests; user approved adding candidateExecution.ts after static discovery. No damage, candidate, canonical input, API, outcome or operation-order change. TSK-08 remains in_progress; TSK-09.1/09 blocked; no push.",
+      "findings": {
+        "engine.ts": {
+          "beforeLines": 134,
+          "limit": 80,
+          "afterLines": 80
+        },
+        "candidateSelection.ts": {
+          "beforeLines": 181,
+          "limit": 180,
+          "afterLines": 83
+        },
+        "candidateExecution.ts": {
+          "beforeLines": 838,
+          "limit": 400,
+          "afterLines": 389,
+          "discovery": "Sequential architecture loop stopped at candidateSelection; candidateExecution violation was hidden, not a new regression."
+        }
+      },
+      "ownership": {
+        "engine": "Candidate execution/comparison orchestration; executionAuditObservation assembles selected/unresolved/ambiguous observations from the actual audited candidate, with identity fail-closed guards.",
+        "selection": "candidateSelection resolves activations/decisions/variant transactions; candidateSelectionValidation validates constraints, applies world/variant context, checks terminal form, and retains initial state on rejection.",
+        "executor": "candidateExecution retains the unchanged ordered transaction/commit/rollback loop. candidateOperationContext owns condition/disposition/form/group helpers; operationResult owns operation snapshot/projection; candidateStateAudit owns audit reads, state/group receipts and rollback proof."
+      },
+      "paths": "index public API -> calculation-application scenario prepareConcreteCalculationScenarioWithPolicy ordinary/audited branches -> shared candidate preparation/execution. Calculator/ranking/portable consumers retain the application/execution path. No reexecution for observation and no ordinary-path audit allocation.",
+      "fixtures": "Public engine audit parity for selected, impossible, unsupported, ambiguous, missing candidate identity, partial transaction rollback/recovery, form/variant preapply; exact initial-state reference on variant/constraint rejection. Existing candidatePreparation, variantSelection and preparationTransaction semantic fixtures retained.",
+      "localVerification": {
+        "architectureAndExistingSemantic": "Final focused generic unit 94/94 across architecture, public audit parity/preapply, candidate preparation, variant and preparation transaction suites; skipped/todo 0; warnings 0. Architecture 9/9 and added semantic cases 8/8.",
+        "relocation": "All 26 original candidateExecution/candidateSelection function bodies have identical TypeScript scanner token sequences after relocation; signatures/imports/exports excluded. Includes the ordinary hot path and ordered loop.",
+        "pnpm": "pnpm test:diagnostic stopped before scripts on external SQLite StoreIndex.openDatabase: ERR_SQLITE_ERROR unable to open database file. Existing node_modules and unchanged generic test/quality runners use an ignored PATH shim mapping package scripts/exec to installed tools. No dependency installation or runner source change.",
+        "lint": "Battle-execution source ESLint passed after moving type-only imports; root project-reference TypeScript passed before final preapply fixture, final quality will verify final fixture."
+      },
+      "reusedEvidence": {
+        "source": "Previous bounded unit in this file and docs/evidence/tsk-06-5-production-closure.json",
+        "artifactChecks": "28 referenced path/bytes/SHA-256 manifests and artifacts matched. S4 1590 identities and 2301100 moon/day, 1000100 HP and 3300200 live read retained; eight shards not regenerated absent a concrete identity concern.",
+        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "candidateEligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+      },
+      "artifacts": [
+        {
+          "path": ".test-results/tsk-08-architecture-20260926/relocation.json",
+          "bytes": 4671,
+          "sha256": "5ebaded54f580b2e54289cb4e01685b26186c54bcd6b55f3df8e99e4b86108c9"
+        },
+        {
+          "path": ".test-results/tsk-08-architecture-20260926/reused-artifacts.json",
+          "bytes": 4373,
+          "sha256": "21714c6526dd6ea1542d0ea5c587e5baa239c0141aae03d8fb6cb541dbdba5c5"
+        },
+        {
+          "path": ".test-results/tsk-08-architecture-20260926/final-input-files.json",
+          "bytes": 2727,
+          "sha256": "9d52fb4463067c75c69fdefb0ea7d9031e1aa28b168d6c00a3245984579eef4a"
+        },
+        {
+          "path": ".test-results/tsk-08-architecture-20260926/performance-comparison.json",
+          "bytes": 1677,
+          "sha256": "227082a847fffbc80548013590f554ae9bb41d44d7dc1676036b625b486ac9d4"
+        },
+        {
+          "path": ".test-results/tsk-08-architecture-20260926/s4-comparison.json",
+          "bytes": 1046,
+          "sha256": "6fe1145a67411d56aefb1aad011a2321be11d24d688ed4bd1f7a2f8af6f9fa87"
+        },
+        {
+          "path": "/tmp/tsk08-tools/pnpm",
+          "bytes": 730,
+          "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6"
+        },
+        {
+          "path": ".test-results/2026-09-26T03-53-16-080Z-2-b966b3/manifest.json",
+          "bytes": 3083,
+          "sha256": "2dd10eeb8ca346806365f6ef7a31bd547943c8dfdd65816c2ea5639069e78e98"
+        },
+        {
+          "path": ".test-results/2026-09-26T03-54-09-482Z-2-af871a/manifest.json",
+          "bytes": 3258,
+          "sha256": "3bfe03cdc58fe901780e2e7594f2f3ec54cad440cdaa6f50106c516f8d42a0ab"
+        },
+        {
+          "path": ".test-results/2026-09-26T03-57-09-286Z-2-1e56c1/manifest.json",
+          "bytes": 22120,
+          "sha256": "82d42739adaaff84f786711c9a357b5d87dcef95f1dcb8a39f7dfbcaaa287f2c"
+        },
+        {
+          "path": ".test-results/2026-09-26T03-57-09-286Z-2-1e56c1/production/manifest.json",
+          "bytes": 6043,
+          "sha256": "f86823627dcd387db8e1be9a8d3f14a98df047493ab47bd3544802071e07caec"
+        },
+        {
+          "path": ".test-results/2026-09-26T04-00-35-881Z-2-461c71/manifest.json",
+          "bytes": 2898,
+          "sha256": "ffa6b6a15bce5960a0542a0110d5fd4dd6e80a3b4aadb1c813d9896b8109a76e"
+        },
+        {
+          "path": ".test-results/2026-09-26T04-01-19-697Z-2-b44cf7/manifest.json",
+          "bytes": 35512,
+          "sha256": "6ab9ce03b28d8f915022c42c65925ee6d67574804f5b6d153992343d31a0c31b"
+        },
+        {
+          "path": ".test-results/2026-09-26T04-01-19-697Z-2-b44cf7/unit/manifest.json",
+          "bytes": 4348,
+          "sha256": "88e251ec577a7722dbc0e3cedc85c8d3930e737bb19f57e227ed03c3b1ebbc25"
+        },
+        {
+          "path": ".test-results/2026-09-26T04-01-19-697Z-2-b44cf7/production/manifest.json",
+          "bytes": 6038,
+          "sha256": "5ef7400e2dbc5c2d59be52a82d611eb7da41014136bfa350a92eff628f491b98"
+        },
+        {
+          "path": ".test-results/2026-09-26T04-01-19-697Z-2-b44cf7/playwright/manifest.json",
+          "bytes": 92380,
+          "sha256": "3e5cec48668a01c6861ac2f76a2326fd0d315310608bed8d6875d068aa22fca4"
+        },
+        {
+          "path": ".test-results/2026-09-26T04-08-37-938Z-2-dd714f/manifest.json",
+          "bytes": 2993,
+          "sha256": "6a80fd7bdb6f7ff68a3833717d22f84430e042e8cae25311a901cc4cd57e7417"
+        },
+        {
+          "path": ".test-results/2026-09-26T04-08-37-938Z-2-dd714f/production-inert-control-production.json",
+          "bytes": 65737938,
+          "sha256": "09356db3215896ab70ac985ed4f64f4030c9f7a92df1383676ec7e11a953bb1a"
+        },
+        {
+          "path": ".test-results/tsk-08-architecture-20260926/documentation-checks.json",
+          "bytes": 1319,
+          "sha256": "0c579be049ab1e06a213e3053582351856a203ae19cfe8fa9d80d0f6a2dc3d0c"
+        }
+      ],
+      "remaining": "This bounded unit has no remaining architecture Blocking. TSK-08 remains in_progress: without-area/stale-mutation production consumer closure and legacy cleanup are separate work; TSK-09.1/09 remain blocked. Eight-shard evidence reused with unchanged matrix/eligibility identity; no whole-task completion claim.",
+      "qualityRecovery": {
+        "firstRun": ".test-results/2026-09-26T03-54-09-482Z-2-af871a/manifest.json",
+        "passedSteps": [
+          "format",
+          "lint",
+          "typecheck"
+        ],
+        "failure": "Runner 58/59: E2E-A054-BP-REPLAY migration replacementTest retained the old title after a324109 renamed the actual test. Source/marker/assertions unchanged in this bounded unit.",
+        "correction": "Updated only replacementTest to the current exact title and its manifest SHA-256 ratchet. 69 observations and every exact marker test retained; no exclusion or threshold change.",
+        "manifestDigest": "7f0eb0e8d04ed3367fc27fbb5293346a5f3f1d412c65b0a94d00b274bc4773a1",
+        "secondRun": {
+          "manifest": ".test-results/2026-09-26T03-57-09-286Z-2-1e56c1/manifest.json",
+          "passed": "format, lint, root/Web typecheck, runner 59/59, docs, unit 936/936",
+          "production": "154/155; productionBattlePointControlWitness duration 5139ms vs default 5000ms (reported STACK_TRACE_ERROR). Prior same test 4827ms; isolated final source 3510ms and passed. Inferred contention timeout, not a observed damage mismatch.",
+          "diagnostic": ".test-results/2026-09-26T04-00-35-881Z-2-461c71/manifest.json",
+          "nextRun": "Unchanged full quality runner with taskset -c 0-7; existing production 50% worker setting becomes four workers. No timeout/expectation/test exclusion/config changes. Timings across differing worker load are not a controlled speedup benchmark."
+        }
+      },
+      "verification": {
+        "quality": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/quality-runner.mjs",
+          "manifest": ".test-results/2026-09-26T04-01-19-697Z-2-b44cf7/manifest.json",
+          "outcome": "success",
+          "durationMs": 415473,
+          "unit": {
+            "passed": 936,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "production": {
+            "passed": 155,
+            "failed": 0,
+            "skipped": 0
+          },
+          "e2e": {
+            "passed": 29,
+            "failed": 0,
+            "skipped": 0,
+            "retries": 0
+          },
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "steps": "format, lint, root/Web typecheck, runner 59/59, docs 6/6 plus integrity, unit, production, master validation, production build, Chromium/mobile E2E"
+        },
+        "audit": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/test-runner.mjs compact --suite=audit",
+          "manifest": ".test-results/2026-09-26T04-08-37-938Z-2-dd714f/manifest.json",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "warnings": 0,
+          "s4ExpectedIdentities": 1590,
+          "s4ObservedIdentities": 1590,
+          "gateFailures": 0,
+          "comparison": "All 1590 observations, expected identities, expected battle-point reads, preparation inventories and gate equal the prior S4 artifact, including 2301100 moon/day, 1000100 HP witness and 3300200 live read."
+        },
+        "inputIdentity": "All 16 frozen source/test/config/docs files matched after final quality. Only Task/evidence result recording follows; implementation, verification inputs, expected values and configuration remain unchanged.",
+        "performance": {
+          "sameInventory": true,
+          "sameProductionDigest": true,
+          "sameRuntimeCounters": true,
+          "candidates": 6673,
+          "deduplicatedCandidates": 4194,
+          "damageRequests": 2596,
+          "distinctDamageRequests": 1489,
+          "masterReadCount": 1,
+          "masterParseCount": 1,
+          "compileCount": 1,
+          "productionPriorMs": 68273,
+          "productionFinalMs": 86849,
+          "priorReadParseCompileMs": [
+            110.66519700000003,
+            3081.504567,
+            21533.475379000003
+          ],
+          "finalReadParseCompileMs": [
+            104.861899,
+            2574.2624880000003,
+            16322.117798
+          ],
+          "priorWitnessMs": 4826.9357199999995,
+          "finalWitnessMs": 3857.346475,
+          "interpretation": "Six prior production workers vs four final via CPU affinity; slower full suite and lower compile/witness times reflect differing load and cannot be called a controlled speedup. No candidate/request growth; unchanged ordinary function bodies and existing performance ratchets pass."
+        },
+        "review": "Existing limits unchanged, new extracted-module size bounds added; all 26 relocated executor/selection function bodies token-identical; public API and consumer entry points retained. Selected/unresolved/ambiguous identity guards, original state references on rejection, preapply, operation order, transaction rollback/recovery verified. Ancillary E2E manifest reference correction retains all 69 observations and marker checks.",
+        "documentationAfterResultRecording": "docs tests 6/6, integrity, targeted Prettier and diff whitespace passed. All 13 source/test/config files still match the final quality snapshot; only the three documentation records changed."
+      },
+      "localCommit": "The scoped source/test/documentation commit containing this record; resolve its identity with git log for this bounded-unit change. No push."
     }
   ],
-  "currentBoundedUnit": "S4 owner 3300200 domain intent, execution receipt, and eight-shard identity revision",
+  "currentBoundedUnit": "Battle-execution architecture responsibility closure",
   "handoffPreparation": {
     "baselineHead": "a3241095be383348b6aa8d3b3199309b435b15b8",
     "scope": "read-only code investigation plus documentation; no source/test edits or source tests/producers executed",
@@ -5378,6 +5604,7 @@
       }
     ],
     "planningBoundary": "Choose extraction boundaries from direct code responsibilities; no line compression, test exclusion or threshold increase. Product outcomes, operation order, selection identity and state reference/rollback remain unchanged.",
-    "evidenceReuse": "Latest bounded unit production 155/155, audit 3/3, E2E 29/29, S4 1590 identities and eight-shard 34640 outcomes remain valid only if the structural change preserves the observed semantic paths; do not rerun eight shards without a concrete identity concern."
+    "evidenceReuse": "Latest bounded unit production 155/155, audit 3/3, E2E 29/29, S4 1590 identities and eight-shard 34640 outcomes remain valid only if the structural change preserves the observed semantic paths; do not rerun eight shards without a concrete identity concern.",
+    "followup": "Architecture planning handoff above is historical and fulfilled by the latest bounded unit; do not reopen S4 or regenerate eight shards without a new identity concern."
   }
 }
