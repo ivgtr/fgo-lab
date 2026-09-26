@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.69"
+document_version: "1.7.70"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3176,3 +3176,25 @@ Step再確認と次sessionの限定handoff（2026-09-26、製品参照commit `ad
 資料4文書だけを検証・local commitし、そのcommitを依頼文の参照identityとする。既存8 shardは具体的identity疑義時のみ。60分checkpoint／90分以降新familyなし、pushなし。
 
 本資料整理のdocs6/6・integrity・対象書式・diff whitespaceが成功した。過去bounded unitと直前forwardの最終検証／receipt記録を保持し、製品source／test／設定は`ad9d216`から不変。この4文書だけlocal commitして、依頼プロンプトから当該commitを参照する。
+
+
+Current bounded-unit checkpoint（fixed domain BP non-commit preparation attempt隔離、計画承認後）:
+
+開始HEAD `f40eaa117fabc7104f384db5b5afcc6fbc392502`、index／tracked／untrackedは空。元ownerのchanged attempt receipt／到達prefix／native非commitをcaptureし、元action-start保持、元reducer拒否、同じselected scenarioのpreparation拒否と実typed resultへ内部transport・共有consumer／gateを接続した。phase witness選択時のwrapperコピーと直接typed result経路にも元captureを保持する。通常のallocation、command／candidate選択・operation順、加算／clamp／condition／phase／damage／failure分類は維持する。
+
+6 changed代表・3明示境界、807検査別否定、最終局所9/9と関係局所115/115、型／対象lint／差分レビューが成功。宣言diagnosticはassertion前に完全保存し、該当typed reason／checkPath／canonical first differenceとrunner receipt検証を閉じた。値が同じでも元receipt／state／typed result参照を置換した否定を含む。先行212receiptを保持し、詳細・flow matrix・artifactとsource checksumは[evidence](../evidence/tsk-08-parity-ratchet.json)の最新bounded unitを正本とする。
+
+対象内Blockingは0。影響audit、README必須quality、最終artifact／counter照合、結果記録・文書検証と依頼範囲local commitが未達。domain recovery／再送・UI recovery、candidate rollback、capacity mutation、form／eligibility、補助actor、初期／終端passive failure、OC ready後のstructural拒否、別familyとlegacyは対象外。先行forward／recovery／S4／without-area／architectureを再開せず、今回をstale-mutation全体／TSK-08全体のclosureと呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+最終影響audit3/3が成功し、published宣言writer3／selected canonical writer10は全てcommitted境界だった。実noncommit coverageは独立schema-legal6代表で証明する。必須qualityはdocs registry差分を修正後、unit951/952で先行commit代表の完全diagnostic保存が既存timeoutを超え、宣言artifact欠落で停止した。timeout／検査数を変えず、完全復元一致を確認する重複値共有形式に改めた。再局所9/9・807否定と型／lintが成功、診断はassertion前保存を維持する。60分境界前checkpoint更新、最終quality中は入力を固定する。詳細の失敗manifest・復元契約・receiptは既存evidenceへ記録した。
+
+
+Fixed domain BP non-commit preparation attempt bounded-unit completion（2026-09-26）:
+
+元changed attempt／複数write到達prefix／native非commitから元action-start BP保持、元reducer拒否、同じselected scenarioのrequired input／trace／実typed application resultまで、内部capture・共有consumer／gateへ接続した。6 changed代表・3明示境界・807検査別否定、通常／capture・calculator／rankingと直接typed result parity、影響audit3/3、README必須quality unit952／production155／E2E29（retry0）が成功。warning／unexpected console0、対象内Blocking0。公開／serialized shape、通常allocation、command／candidate／operation順、damage／outcome分類と既存forwardの成功条件を維持した。
+
+完全diagnostic9件はassertion前保存・厳密復元一致・宣言／bytes／SHA-256検証を閉じ、局所／quality版がbyte一致した。先行committed BP5診断とscalar／criticalStars／rollback／without-area／S4保護artifact、production counterが不変。最終10source／config／test checksum一致、matrix／eligibility digestと既存212receiptを保持した。published writer3／selected writer10はcommitted境界で、schema-legal changed6代表と独立に記録する。timeout／threshold／検査数は変更していない。path／bytes／SHA-256、失敗qualityの原因と解消、全checkPath・flowの正本は既存evidence最新bounded unit。
+
+必要な製品gateは残らず、以後は結果4文書の検証・最終差分照合と14対象だけlocal commitで閉じる。次のsemantic unitは別途限定する。domain recovery／再送／UI、candidate rollback、capacity mutation、form／eligibility、補助actor、passive failure、OC ready後のstructural拒否、別familyとlegacyは未実装の対象外。今回をstale-mutation全体／TSK-08全体のclosureと呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`のまま。pushなし。
+
+結果記録のdocs6/6・integrity・対象書式・差分whitespaceが成功した。最終186宣言／124固有current artifact receipt、10固定入力、7保護artifact／5先行forward診断／9新診断とproduction counterは照合一致。既存212receiptの保持条件も維持する。14対象のstage差分を照合し、当該記録を含むlocal commitを今回の参照identityとして閉じる。pushなし。

@@ -1,5 +1,9 @@
+import { preparationOcAttemptsFor } from '@fgo-lab/battle-execution/preparation-audit';
 import {
   attachBattlePointPreparationObservation,
+  carryBattlePointPreparationObservation,
+  attachBattlePointPreparationRejectionObservation,
+  battlePointPreparationRejectionObservationFor,
   type BattlePointPreparationObservation,
 } from './battlePointPreparationObservation';
 import { resolveInitialMaximumHp, type InitialHpUnavailableIssue } from './initialHp';
@@ -456,6 +460,10 @@ function damageResolutionInputForNoblePhantasm(
       traits: [],
     },
   };
+  if (observation) {
+    const capture = battlePointPreparationRejectionObservationFor(observation);
+    if (capture) capture.damageInputGenerated = input;
+  }
   if (observation && damage.kind === 'battlePointPhase' && battlePoints && parameter)
     observation.conversion = { state: battlePoints, domain, value, phase, input, parameter };
   return input;
@@ -529,6 +537,12 @@ function resolveScenarioPreparationOutcomeObserved(
               command: PreNoblePhantasmCommand,
               result: PreparationTransitionResult,
             ) => {
+              battlePointPreparationRejectionObservationFor(observation)?.transitions.push({
+                before,
+                command,
+                result,
+                attempts: preparationOcAttemptsFor(result),
+              });
               observation.transitions = [
                 ...observation.transitions,
                 {
@@ -1210,6 +1224,8 @@ function prepareConcreteCalculationScenarioWithPolicy(
     };
   const battlePointPreparation: BattlePointPreparationObservation | undefined =
     captureExecutionObservation ? { transitions: [] } : undefined;
+  if (battlePointPreparation)
+    attachBattlePointPreparationRejectionObservation(battlePointPreparation, { transitions: [] });
   const base = resolveScenarioPreparationOutcomeObserved(
     scenario,
     master,
@@ -1230,7 +1246,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
     };
   }
   if (base.status === 'rejected') {
-    return {
+    const prepared: PreparedCalculationScenario = {
       status: 'rejected',
       master,
       scenario,
@@ -1240,6 +1256,14 @@ function prepareConcreteCalculationScenarioWithPolicy(
       contributionPolicy,
       preparation,
     };
+    const capture =
+      battlePointPreparation &&
+      battlePointPreparationRejectionObservationFor(battlePointPreparation);
+    if (capture) {
+      capture.rejection = base;
+      attachBattlePointPreparationRejectionObservation(prepared, capture);
+    }
+    return prepared;
   }
   const scenarioInput = base.input;
   const orderedScenario = prepareOrderedScenario(
@@ -1248,6 +1272,9 @@ function prepareConcreteCalculationScenarioWithPolicy(
     master,
     base.formExecution,
   );
+  const preparationCapture =
+    battlePointPreparation && battlePointPreparationRejectionObservationFor(battlePointPreparation);
+  if (preparationCapture) preparationCapture.orderedScenario = orderedScenario;
   const canonicalInputs = resolveCanonicalInputValues(
     orderedScenario.inputDefinitions,
     scenario.canonicalInputValues,
@@ -1262,6 +1289,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
   const execution =
     observedExecution?.execution ??
     executeOrderedScenario(orderedScenario, canonicalInputs, contributionPolicy);
+  if (preparationCapture) preparationCapture.orderedExecution = execution;
   const executionObservation = observedExecution
     ? {
         battlePointWitness: preparation.initialBattlePointPoints ?? null,
@@ -1274,7 +1302,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
     orderedScenario.battlePoints?.receipts.length
   )
     attachBattlePointPreparationObservation(executionObservation, battlePointPreparation);
-  return {
+  const prepared: PreparedCalculationScenario = {
     status: 'executable',
     master,
     scenario,
@@ -1299,6 +1327,10 @@ function prepareConcreteCalculationScenarioWithPolicy(
     preparation,
     ...(executionObservation ? { executionObservation } : {}),
   };
+  const capture =
+    battlePointPreparation && battlePointPreparationRejectionObservationFor(battlePointPreparation);
+  if (capture) attachBattlePointPreparationRejectionObservation(prepared, capture);
+  return prepared;
 }
 
 function battlePointWitnesses(
@@ -1505,8 +1537,18 @@ export function prepareCalculationScenarioWithPolicy(
       candidate.status === 'executable',
   );
   const unresolved = candidates.find((candidate) => candidate.status !== 'executable');
-  if (unresolved) return { ...unresolved, scenario, preparation: effectivePreparation };
-  if (!executable.length) return { ...candidates[0]!, scenario, preparation: effectivePreparation };
+  if (unresolved)
+    return carryBattlePointPreparationObservation(unresolved, {
+      ...unresolved,
+      scenario,
+      preparation: effectivePreparation,
+    });
+  if (!executable.length)
+    return carryBattlePointPreparationObservation(candidates[0]!, {
+      ...candidates[0]!,
+      scenario,
+      preparation: effectivePreparation,
+    });
   const selected = executable
     .map((candidate) => {
       const result = calculateDamageResolution(candidate.resolved.input, {
@@ -1524,7 +1566,11 @@ export function prepareCalculationScenarioWithPolicy(
       };
     })
     .sort((left, right) => right.maximum - left.maximum)[0]!.candidate;
-  return { ...selected, scenario, preparation: effectivePreparation };
+  return carryBattlePointPreparationObservation(selected, {
+    ...selected,
+    scenario,
+    preparation: effectivePreparation,
+  });
 }
 
 export function rematerializePreparedCalculationInputs(
@@ -1562,7 +1608,7 @@ export function evaluatePreparedCalculationScenario(
   versions: VersionContext,
   cachedCalculation?: ReturnType<typeof calculateDamageResolution>,
 ): CalculationExecution {
-  return evaluateResolvedCalculation(
+  const calculation = evaluateResolvedCalculation(
     prepared.scenario,
     prepared.status === 'executable' ? prepared.scenarioInput : null,
     prepared.resolved,
@@ -1570,6 +1616,12 @@ export function evaluatePreparedCalculationScenario(
     cachedCalculation,
     prepared.status === 'executable' ? prepared.executionObservation : undefined,
   );
+  const capture = battlePointPreparationRejectionObservationFor(prepared);
+  if (capture) {
+    attachBattlePointPreparationRejectionObservation(calculation, capture);
+    attachBattlePointPreparationRejectionObservation(calculation.result, capture);
+  }
+  return calculation;
 }
 
 export function evaluatePreparedCalculationResult(
@@ -1577,7 +1629,10 @@ export function evaluatePreparedCalculationResult(
   versions: VersionContext,
   cachedCalculation?: ReturnType<typeof calculateDamageResolution>,
 ): CalculationApplicationResult {
-  return resolvedCalculationResult(prepared.resolved, versions, cachedCalculation);
+  const result = resolvedCalculationResult(prepared.resolved, versions, cachedCalculation);
+  const capture = battlePointPreparationRejectionObservationFor(prepared);
+  if (capture) attachBattlePointPreparationRejectionObservation(result, capture);
+  return result;
 }
 
 export function calculateScenario(

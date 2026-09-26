@@ -201,7 +201,10 @@ export function executeOcAction(
     OcActionStep | ((state: OcState, outcomes: readonly OcActionOutcome[]) => OcActionStep)
   )[],
   hp: Readonly<Record<string, number | null>>,
-  options: { hasFutureNpUse: boolean } = { hasFutureNpUse: true },
+  options: {
+    hasFutureNpUse: boolean;
+    observeStep?: (index: number, step: OcActionStep) => void;
+  } = { hasFutureNpUse: true },
 ): OcActionResult {
   if (prior.committedActions.has(actionId))
     return { status: 'invalid', state: prior, reason: 'ocActionAlreadyCommitted', outcomes: [] };
@@ -229,6 +232,7 @@ export function executeOcAction(
   });
   for (const [index, instruction] of steps.entries()) {
     const step = typeof instruction === 'function' ? instruction(state, outcomes) : instruction;
+    options.observeStep?.(index, step);
     if (step.kind === 'reject') return reject(step.status, step.reason);
     if (step.kind === 'uncertainRate') {
       if (state.uncertainRates.some((rate) => rate.sourceKey === step.rate.sourceKey)) {

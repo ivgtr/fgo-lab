@@ -8391,6 +8391,1056 @@
         }
       },
       "implementationCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46"
+    },
+    {
+      "name": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
+      "status": "Complete for fixed domain BP original changed non-commit preparation attempt isolation through same selected preparation rejection/typed application result; not domain recovery or TSK-08-wide closure",
+      "baselineHead": "f40eaa117fabc7104f384db5b5afcc6fbc392502",
+      "priorProductCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
+      "worktreeAtStart": "HEAD matched reference documentation; index/tracked/untracked empty",
+      "authorizedScope": "One session: canonical attacker useSkillSlot fixed resourceMutation/battlePoint gain/loss executed as a real changed attempt within executePreparationOc, followed by that original OC action returning non-committed -> original action-start BP state/receipts/executedEffects retained by the reducer -> same selected scenario preparation rejection and existing typed application result -> shared audit consumer/gate, schema-legal representatives/grouped negatives and declared complete artifact. Stop at the actual preparation rejection; no automatic continuation, terminal NP execution or recovery consumer.",
+      "changedFiles": [
+        "packages/battle-execution/package.json",
+        "packages/battle-execution/src/ocState.ts",
+        "packages/battle-execution/src/preparationAttemptObservation.ts",
+        "packages/battle-execution/src/preparationOc.ts",
+        "packages/battle-execution/src/sourceCollection.ts",
+        "packages/calculation-application/src/battlePointPreparationObservation.ts",
+        "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.test.ts",
+        "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.ts",
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "packages/calculation-application/src/scenario.ts",
+        "docs/README.md",
+        "docs/evidence/README.md",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/tasks/development-redesign-tasks.md"
+      ],
+      "ownership": {
+        "nativeAttempt": "executePreparationOc captures only the original action-start BP reference, original applyBattlePointOperation before/after/receipt references and real step origins/reached prefix/status. executeOcAction observes its original resolved steps; no owner replay, arithmetic/clamp/condition/phase/damage audit implementation. Committed effects remain solely in the existing committed branch.",
+        "transport": "Capture-only context/transition WeakMaps in battle-execution; an internal preparation-audit subpath leaves the existing package-root exports and command/state/result signatures unchanged. sourceCollection original before/command/result callback carries the attempt without reducer/transaction semantics changes. Application WeakMaps bind original selected prepared, CalculationExecution and actual typed result. Immediate witness-selection wrapper copies carry only the selected original capture. No capture fields enter public/serialized product shapes or prior forward artifacts.",
+        "population": "Canonical master/form/slot/choice/source/operation order precedes success/receipt/value filtering. actionId uses actual action-start applied count, audited against preceding command/commit prefix. Published canonical fixed writer declarations and all canonical-writer selected evaluations are collected before the existing executable-only control collector rejects non-executable preparation. Existing forward gate remains strict.",
+        "consumer": "Shared dedicated attempt gate uses canonical and original-owner snapshots plus separately retained original references. It audits changed receipts, actor/domain/order/occurrence/opIndex, reached failure prefix/native noncommit, action-start BP/receipts/executedEffects retention, no failed applied action, exact preparation rejection/required inputs/trace/typed result and absence of selected conversion/ordered execution/NP/damage input/contribution. No fabricated reader or continuation.",
+        "artifact": "Nine representative/boundary tests save complete diagnostics before assertions through existing lossless writer, declared paths/bytes/SHA-256 verification. Grouped negatives require their typed reason/checkPath/canonical first difference, including coherent values with substituted original references and attached fake result. Published inventory/selected programs receive a separate declared diagnostic."
+      },
+      "flowClosure": {
+        "status": "Scoped Blocking0; original changed attempt to same selected native noncommit/action-start/reducer/typed rejection shared gate completed; no downstream execution",
+        "matrix": [
+          {
+            "path": "fixed attacker skill changed gain/loss -> original native unsupported/invalid/inputRequired -> original action-start retention -> same selected scenario typed rejection",
+            "status": "Verified",
+            "evidence": "six changed representatives, original owner references, grouped negatives"
+          },
+          {
+            "path": "multiple same-actor/domain attempts, preceding committed skill, execution lower/capacity clamp, canonical choice, phase-intent witness-selected rejected wrapper",
+            "status": "Verified",
+            "evidence": "focused representative combinations; initial/action-start/intermediate/attempted/retained differentiated"
+          },
+          {
+            "path": "non-applied / unchanged / native rejection before BP operation",
+            "status": "Verified boundary only",
+            "evidence": "three explicit unchangedNonCommit boundaries; never counted as changed isolation"
+          },
+          {
+            "path": "selected rejection -> phase/damage input creation, ordered preparation/execution, terminal NP consumption/contribution",
+            "status": "Verified absent",
+            "evidence": "original generation/execution capture markers absent and original prepared null fields/application empty uses"
+          },
+          {
+            "path": "committed domain/scalar/stars forward and recovery; S4/without-area/matrix",
+            "status": "Verified prior evidence conditionally reused",
+            "evidence": "prior receipts + unchanged old forward consumer/fixtures; final protected artifact comparison pending"
+          },
+          {
+            "path": "domain recovery/resend/UI recovery/candidate rollback/capacity mutation/form-eligibility/auxiliary writes/passive failures/post-OC-ready structural rejection/other families/legacy/TSK-09.1/09",
+            "status": "N/A: excluded by bounded authorization",
+            "evidence": "no new implementation or completion claims"
+          }
+        ],
+        "representatives": [
+          {
+            "name": "capacity-clamp",
+            "kind": "changedNonCommit",
+            "initialPoint": 180,
+            "retainedPoint": 180,
+            "attemptedPoints": [
+              200,
+              120
+            ],
+            "nativeStatus": "unsupported",
+            "applicationStatus": "unsupported",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 98,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-capacity-clamp.json",
+              "bytes": 1931886,
+              "sha256": "39cc2046c942c91155232e7feeffe8a95eec6ffbe1f7debaf0779004a813421e"
+            }
+          },
+          {
+            "name": "changed-before-invalid-bp",
+            "kind": "changedNonCommit",
+            "initialPoint": 10,
+            "retainedPoint": 10,
+            "attemptedPoints": [
+              55
+            ],
+            "nativeStatus": "invalid",
+            "applicationStatus": "unsupported",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 89,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-changed-before-invalid-bp.json",
+              "bytes": 1663928,
+              "sha256": "4cb5237a0344da8c954053a093e40b5ae6391168995f8bc46b3213d7d2bbc451"
+            }
+          },
+          {
+            "name": "early-boundary",
+            "kind": "unchangedNonCommit",
+            "initialPoint": 10,
+            "retainedPoint": 10,
+            "attemptedPoints": [],
+            "nativeStatus": "unsupported",
+            "applicationStatus": "unsupported",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 74,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-early-boundary.json",
+              "bytes": 1273266,
+              "sha256": "7b2df20f03f94beeb59c3962f96a6c3ce88008d8a5aac9c8b2570a0d58bc8216"
+            }
+          },
+          {
+            "name": "gain-unsupported",
+            "kind": "changedNonCommit",
+            "initialPoint": 20,
+            "retainedPoint": 20,
+            "attemptedPoints": [
+              65
+            ],
+            "nativeStatus": "unsupported",
+            "applicationStatus": "unsupported",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 87,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-gain-unsupported.json",
+              "bytes": 1567084,
+              "sha256": "75faae79c2038394174bfa9bc323ea38c76fb768090cd7c440f5e07cddd1ba40"
+            }
+          },
+          {
+            "name": "loss-input-required",
+            "kind": "changedNonCommit",
+            "initialPoint": 80,
+            "retainedPoint": 80,
+            "attemptedPoints": [
+              50
+            ],
+            "nativeStatus": "inputRequired",
+            "applicationStatus": "inputRequired",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 88,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-loss-input-required.json",
+              "bytes": 1595252,
+              "sha256": "e67a3e4c0eacbcc4eb48c5df5121e3ed525cbcec9fd4c48901a985fe5c36f2e1"
+            }
+          },
+          {
+            "name": "multiple-lower-clamp",
+            "kind": "changedNonCommit",
+            "initialPoint": 10,
+            "retainedPoint": 10,
+            "attemptedPoints": [
+              80,
+              0,
+              55
+            ],
+            "nativeStatus": "unsupported",
+            "applicationStatus": "unsupported",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 107,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-multiple-lower-clamp.json",
+              "bytes": 2246613,
+              "sha256": "8b1052515d42f70fb79b2f3a3b72ff1c7c353dfc8769be77d10c033b2d5c1f6f"
+            }
+          },
+          {
+            "name": "non-applied-boundary",
+            "kind": "unchangedNonCommit",
+            "initialPoint": 10,
+            "retainedPoint": 10,
+            "attemptedPoints": [],
+            "nativeStatus": "unsupported",
+            "applicationStatus": "unsupported",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 77,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-non-applied-boundary.json",
+              "bytes": 1362300,
+              "sha256": "e910dac59f4b160179c2812ad2e40d4626bb91e983bc2baa2a44186f168a13fc"
+            }
+          },
+          {
+            "name": "prior-commit-action-start",
+            "kind": "changedNonCommit",
+            "initialPoint": 10,
+            "retainedPoint": 40,
+            "attemptedPoints": [
+              60,
+              45
+            ],
+            "nativeStatus": "inputRequired",
+            "applicationStatus": "inputRequired",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 100,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-prior-commit-action-start.json",
+              "bytes": 2057714,
+              "sha256": "4a495556c5b58a89668d3d17e2ad7a9d1d08d32ce2b1a704a03437c55433543a"
+            }
+          },
+          {
+            "name": "unchanged-boundary",
+            "kind": "unchangedNonCommit",
+            "initialPoint": 100,
+            "retainedPoint": 100,
+            "attemptedPoints": [
+              100
+            ],
+            "nativeStatus": "unsupported",
+            "applicationStatus": "unsupported",
+            "normalCaptureParity": true,
+            "calculatorRankingParity": true,
+            "directTypedResultParity": true,
+            "negativeCount": 87,
+            "artifact": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-unchanged-boundary.json",
+              "bytes": 1565328,
+              "sha256": "6a92c38270e7388843b91729737aecd2213771c483d23e7150216ba11cf2afd1"
+            }
+          }
+        ],
+        "changedRepresentatives": 6,
+        "boundaries": 3,
+        "negativeCount": 807,
+        "negativeGroups": {
+          "missing": 271,
+          "identity-order": 262,
+          "state": 63,
+          "commit-downstream": 155,
+          "result": 56
+        },
+        "review": "Original attempted receipt/state identity is not inferred from empty OC outcomes or candidate rollbackProof. Private immutable canonical/owner snapshots and separately retained references reject coherent receipt/result/status/reference tampering. Noncommit BP state is captured before discarded current becomes unreachable. Same scenario breaks at the original reducer rejection; no terminal source is claimed."
+      },
+      "verification": {
+        "focused": {
+          "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 node scripts/test-runner.mjs diagnostic packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.test.ts",
+          "manifest": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/manifest.json",
+          "outcome": "success",
+          "counts": {
+            "files": {
+              "total": 1,
+              "passed": 1,
+              "failed": 0,
+              "skipped": 0
+            },
+            "tests": {
+              "total": 9,
+              "passed": 9,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "warnings": 0,
+            "unexpectedObservations": 0,
+            "allowedObservations": 0,
+            "correlatedObservations": 0,
+            "infrastructureObservations": 0
+          },
+          "artifactVerification": {
+            "errors": []
+          },
+          "artifacts": [
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/vitest.json",
+              "bytes": 6096,
+              "sha256": "bf7d4e52f4a4ee4998a74d44d7ba0fb11f109a786b06d6cc011c268940535c8a"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/observations.json",
+              "bytes": 47,
+              "sha256": "91ae9d1772193754d584658213a9742a7374854f69a5858e609eee3beac9efe0"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/stdout.log",
+              "bytes": 1825,
+              "sha256": "b3ddbbbd6441eaa988ef71346fd8f869b95ac062129b24667105a0ac2fcaa03d"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/warnings.jsonl",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-non-applied-boundary.json",
+              "bytes": 1362300,
+              "sha256": "e910dac59f4b160179c2812ad2e40d4626bb91e983bc2baa2a44186f168a13fc"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-changed-before-invalid-bp.json",
+              "bytes": 1663928,
+              "sha256": "4cb5237a0344da8c954053a093e40b5ae6391168995f8bc46b3213d7d2bbc451"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-gain-unsupported.json",
+              "bytes": 1567084,
+              "sha256": "75faae79c2038394174bfa9bc323ea38c76fb768090cd7c440f5e07cddd1ba40"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-loss-input-required.json",
+              "bytes": 1595252,
+              "sha256": "e67a3e4c0eacbcc4eb48c5df5121e3ed525cbcec9fd4c48901a985fe5c36f2e1"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-multiple-lower-clamp.json",
+              "bytes": 2246613,
+              "sha256": "8b1052515d42f70fb79b2f3a3b72ff1c7c353dfc8769be77d10c033b2d5c1f6f"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-prior-commit-action-start.json",
+              "bytes": 2057714,
+              "sha256": "4a495556c5b58a89668d3d17e2ad7a9d1d08d32ce2b1a704a03437c55433543a"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-capacity-clamp.json",
+              "bytes": 1931886,
+              "sha256": "39cc2046c942c91155232e7feeffe8a95eec6ffbe1f7debaf0779004a813421e"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-unchanged-boundary.json",
+              "bytes": 1565328,
+              "sha256": "6a92c38270e7388843b91729737aecd2213771c483d23e7150216ba11cf2afd1"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-early-boundary.json",
+              "bytes": 1273266,
+              "sha256": "7b2df20f03f94beeb59c3962f96a6c3ce88008d8a5aac9c8b2570a0d58bc8216"
+            }
+          ]
+        },
+        "related": {
+          "manifest": ".test-results/2026-09-26T10-19-12-056Z-2-cbd90d/manifest.json",
+          "tests": 115,
+          "scope": "attempt + unchanged forward fixture + preparationTransaction + scenario; subsequent changes limited to capture reference/transport checks covered by final focused9"
+        },
+        "localStatic": {
+          "rootTypes": "passed",
+          "scopedLint": "passed",
+          "diffWhitespace": "passed"
+        },
+        "frozenSource": [
+          {
+            "path": "packages/battle-execution/package.json",
+            "bytes": 364,
+            "sha256": "e09931a3ccf0aeb8a060f1467c478980a06aa472104e708193d122e013a86ff0"
+          },
+          {
+            "path": "packages/battle-execution/src/ocState.ts",
+            "bytes": 17371,
+            "sha256": "0c805f2325d1f0cc8e3cfd0dc32b26914496f12bf5dce5aa221d9aade496411f"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationAttemptObservation.ts",
+            "bytes": 1827,
+            "sha256": "0693a2c6022bd90a71315506934f64228da8441b526f227d56d824ffdaf75b2b"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 48990,
+            "sha256": "2a4053997fc5299e9ede89d7acf3d4550aabbc46f751e519fd34077b32243d36"
+          },
+          {
+            "path": "packages/battle-execution/src/sourceCollection.ts",
+            "bytes": 19848,
+            "sha256": "42dbfa82df88331da46d23bb2c9a4c60cf4ae1bd6a354bf6fcc341be0f572c15"
+          },
+          {
+            "path": "packages/calculation-application/src/battlePointPreparationObservation.ts",
+            "bytes": 3215,
+            "sha256": "8dffd070d634f1caf9a7c9db7ba440b988800757161553a2b0e547e99d324339"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.test.ts",
+            "bytes": 45113,
+            "sha256": "601749a129dbcc0f5d7e521fdd19f2cf6c555b647bcabde9e8b98e42bc40500d"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.ts",
+            "bytes": 32749,
+            "sha256": "84b309f5d9a837e07b036141897b75f0866f8805c56b56b37ee7d7732fca07ee"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 74663,
+            "sha256": "9410247a297729d41f0cf92a4c307e1887d9357885ff95d5f983c5d4e896aa9e"
+          },
+          {
+            "path": "packages/calculation-application/src/scenario.ts",
+            "bytes": 58612,
+            "sha256": "c4ace3a1a9d9e4bcebc97bd39b112b8f97862b01ec9d5490487dd094ee100d0c"
+          }
+        ],
+        "audit": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/test-runner.mjs compact --suite=audit",
+          "manifest": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/manifest.json",
+          "outcome": "success",
+          "counts": {
+            "files": {
+              "total": 1,
+              "passed": 1,
+              "failed": 0,
+              "skipped": 0
+            },
+            "tests": {
+              "total": 3,
+              "passed": 3,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "warnings": 0,
+            "unexpectedObservations": 0,
+            "allowedObservations": 0,
+            "correlatedObservations": 0,
+            "infrastructureObservations": 0
+          },
+          "artifactVerification": {
+            "errors": []
+          },
+          "publishedCanonicalWriters": 3,
+          "selectedCanonicalWriters": 10,
+          "boundaries": {
+            "committed": 10
+          },
+          "artifacts": [
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/vitest.json",
+              "bytes": 2756,
+              "sha256": "c4901810ae8ff085e7c415681fcd504c8fc64002d5499e46e1434652452b017f"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/observations.json",
+              "bytes": 47,
+              "sha256": "91ae9d1772193754d584658213a9742a7374854f69a5858e609eee3beac9efe0"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/stdout.log",
+              "bytes": 114,
+              "sha256": "da78aa86767d7ff179eb6f035134dc883f52c5eb0241280784e64ad603951d71"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/stderr.log",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/warnings.jsonl",
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/production-inert-control-production.json",
+              "bytes": 166231666,
+              "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/production-scalar-quantity.json",
+              "bytes": 490,
+              "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/production-preparation-battle-point.json",
+              "bytes": 3268,
+              "sha256": "f4e1a86c72c34ac1474f46d40c0cbfdb4007e098057c40f306845a4c2e417852"
+            },
+            {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/production-preparation-bp-attempt.json",
+              "bytes": 13225,
+              "sha256": "8565e000a08e062a45dda888367ac6d7e1e2f771a3730cb8e40b8c60e9308cf5"
+            }
+          ]
+        },
+        "quality": {
+          "command": "PATH=/tmp/tsk08-tools:$PWD/node_modules/.bin:$PATH taskset -c 0-7 node scripts/quality-runner.mjs",
+          "manifest": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/manifest.json",
+          "status": "success",
+          "durationMs": 444430,
+          "unit": 952,
+          "production": 155,
+          "e2e": 29,
+          "retries": 0,
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "steps": [
+            {
+              "id": "format",
+              "code": 0
+            },
+            {
+              "id": "lint",
+              "code": 0
+            },
+            {
+              "id": "typecheck",
+              "code": 0
+            },
+            {
+              "id": "runner",
+              "code": 0
+            },
+            {
+              "id": "docs",
+              "code": 0
+            },
+            {
+              "id": "unit",
+              "code": 0
+            },
+            {
+              "id": "production",
+              "code": 0
+            },
+            {
+              "id": "master",
+              "code": 0
+            },
+            {
+              "id": "build",
+              "code": 0
+            },
+            {
+              "id": "playwright",
+              "code": 0
+            }
+          ],
+          "allRequiredExitZero": true
+        },
+        "finalRecording": {
+          "docsTests": "6/6",
+          "integrity": "passed",
+          "format": "passed",
+          "diffWhitespace": "passed",
+          "artifacts": [
+            {
+              "path": ".test-results/tsk-08-preparation-bp-attempt-20260926/docs-tests.log",
+              "bytes": 506,
+              "sha256": "ce41cadbb7dad31a58b1cb3915a860dac27d96a4ed4bbd44baffd09731357d5b"
+            },
+            {
+              "path": ".test-results/tsk-08-preparation-bp-attempt-20260926/docs-integrity.log",
+              "bytes": 22,
+              "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+            },
+            {
+              "path": ".test-results/tsk-08-preparation-bp-attempt-20260926/docs-check.log",
+              "bytes": 66,
+              "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+            }
+          ],
+          "condition": "All product gates ran on frozen final ten source/config/test inputs. Four existing result documents changed afterward; final document validation and scoped14-file local commit close the session. Commit identity is the Git commit containing this record."
+        }
+      },
+      "evidenceReuse": {
+        "matchedPriorUniqueReceipts": 212,
+        "errors": [],
+        "condition": "Prior212 receipt identities retained; final current declarations and ten source/config/test fingerprints verified. Old protected scalar/stars/rollback/without-area/S4/control artifacts and five committed BP diagnostics byte-identical. Nine full lossless non-commit diagnostics focused/quality byte-identical. Matrix/eligibility digest unchanged. Production counters unchanged; no8-shard regeneration.",
+        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+        "finalReconciliation": {
+          "path": ".test-results/tsk-08-preparation-bp-attempt-20260926/final-reconciliation.json",
+          "bytes": 45239,
+          "sha256": "e81190bc07d404a62ef5914135378f90415b605f5e9e34e5059bbfdfcdd0099d"
+        },
+        "checkedDeclarations": 186,
+        "uniqueArtifactReceipts": 124,
+        "receiptErrors": [],
+        "protectedComparisons": [
+          {
+            "name": "tsk-08-scalar-quantity-np-consumption.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-scalar-quantity-np-consumption.json",
+              "bytes": 25443252,
+              "sha256": "dcc0fd126b3371b088f546c6009fe9c3b37f1f26ddffaca125a4df32a827e392"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-scalar-quantity-np-consumption.json",
+              "bytes": 25443252,
+              "sha256": "dcc0fd126b3371b088f546c6009fe9c3b37f1f26ddffaca125a4df32a827e392"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-execution-group-rollback.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-execution-group-rollback.json",
+              "bytes": 38554219,
+              "sha256": "3851944cb98576dae786a33c68f05767a48b8fffa74acb7a955ba2f1b2b14c15"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-execution-group-rollback.json",
+              "bytes": 38554219,
+              "sha256": "3851944cb98576dae786a33c68f05767a48b8fffa74acb7a955ba2f1b2b14c15"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-star-mutation-read.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-star-mutation-read.json",
+              "bytes": 85176201,
+              "sha256": "853dcdb48d64b28f097a39f56a5f20d69caf933f38f3eead48020e94d3c04cc9"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-star-mutation-read.json",
+              "bytes": 85176201,
+              "sha256": "853dcdb48d64b28f097a39f56a5f20d69caf933f38f3eead48020e94d3c04cc9"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-without-area-fixture.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/production-without-area-fixture.json",
+              "bytes": 15693723,
+              "sha256": "f03926cdf5d09b4c698a344ffd3f7fe610c9559b5b4e3fc707eb2ac7c94a0eaa"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/production-without-area-fixture.json",
+              "bytes": 15693723,
+              "sha256": "f03926cdf5d09b4c698a344ffd3f7fe610c9559b5b4e3fc707eb2ac7c94a0eaa"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-inert-control-production.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-30-31-478Z-2-137079/production-inert-control-production.json",
+              "bytes": 166231666,
+              "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/production-inert-control-production.json",
+              "bytes": 166231666,
+              "sha256": "f7858f40853b0334b62d35589bfa5c2cbbca6a0cb1e6f39d7b03a283859f1f74"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "production-scalar-quantity.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-30-31-478Z-2-137079/production-scalar-quantity.json",
+              "bytes": 490,
+              "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-35-10-972Z-2-b50233/production-scalar-quantity.json",
+              "bytes": 490,
+              "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-scalar-quantity-recovery.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-scalar-quantity-recovery.json",
+              "bytes": 45520578,
+              "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-scalar-quantity-recovery.json",
+              "bytes": 45520578,
+              "sha256": "2879e1b47eda79d6ea4962c6da19f1a819a3ad2df6379aa5d1e72bb415a166bc"
+            },
+            "byteIdentical": true
+          }
+        ],
+        "forwardComparisons": [
+          {
+            "name": "tsk-08-preparation-battle-point-loss.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-loss.json",
+              "bytes": 61624974,
+              "sha256": "93884d668663d01635261b557ab1244250596e9db26cef14b45d5ee7301ba3bd"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-battle-point-loss.json",
+              "bytes": 61624974,
+              "sha256": "93884d668663d01635261b557ab1244250596e9db26cef14b45d5ee7301ba3bd"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-battle-point-intervening-skill.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-intervening-skill.json",
+              "bytes": 97744328,
+              "sha256": "140888e156b48fefd6457b5af296667a6f50f2f7ec07be1a3a0f562f1cb79e02"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-battle-point-intervening-skill.json",
+              "bytes": 97744328,
+              "sha256": "140888e156b48fefd6457b5af296667a6f50f2f7ec07be1a3a0f562f1cb79e02"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+              "bytes": 68931146,
+              "sha256": "145c418ccf6a2747e572880ee8539d1b2513ed38d5ffbee00a17a14b2f07b314"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-battle-point-permille-capacity-np-clamp.json",
+              "bytes": 68931146,
+              "sha256": "145c418ccf6a2747e572880ee8539d1b2513ed38d5ffbee00a17a14b2f07b314"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+              "bytes": 75301843,
+              "sha256": "7e1d1020af21be5c8c9a3c5b6ccad36c3865f71e6e77287aa185dcf1d3368b21"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-battle-point-same-skill-lower-clamp.json",
+              "bytes": 75301843,
+              "sha256": "7e1d1020af21be5c8c9a3c5b6ccad36c3865f71e6e77287aa185dcf1d3368b21"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-battle-point-gain.json",
+            "baseline": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/tsk-08-preparation-battle-point-gain.json",
+              "bytes": 61624974,
+              "sha256": "11791e57657db7a86a216ea98b30b0ecfbaa48af230e12651eb07a1df0935724"
+            },
+            "current": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-battle-point-gain.json",
+              "bytes": 61624974,
+              "sha256": "11791e57657db7a86a216ea98b30b0ecfbaa48af230e12651eb07a1df0935724"
+            },
+            "byteIdentical": true
+          }
+        ],
+        "newDiagnosticComparisons": [
+          {
+            "name": "tsk-08-preparation-bp-attempt-non-applied-boundary.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-non-applied-boundary.json",
+              "bytes": 1362300,
+              "sha256": "e910dac59f4b160179c2812ad2e40d4626bb91e983bc2baa2a44186f168a13fc"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-non-applied-boundary.json",
+              "bytes": 1362300,
+              "sha256": "e910dac59f4b160179c2812ad2e40d4626bb91e983bc2baa2a44186f168a13fc"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-bp-attempt-prior-commit-action-start.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-prior-commit-action-start.json",
+              "bytes": 2057714,
+              "sha256": "4a495556c5b58a89668d3d17e2ad7a9d1d08d32ce2b1a704a03437c55433543a"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-prior-commit-action-start.json",
+              "bytes": 2057714,
+              "sha256": "4a495556c5b58a89668d3d17e2ad7a9d1d08d32ce2b1a704a03437c55433543a"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-bp-attempt-capacity-clamp.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-capacity-clamp.json",
+              "bytes": 1931886,
+              "sha256": "39cc2046c942c91155232e7feeffe8a95eec6ffbe1f7debaf0779004a813421e"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-capacity-clamp.json",
+              "bytes": 1931886,
+              "sha256": "39cc2046c942c91155232e7feeffe8a95eec6ffbe1f7debaf0779004a813421e"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-bp-attempt-changed-before-invalid-bp.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-changed-before-invalid-bp.json",
+              "bytes": 1663928,
+              "sha256": "4cb5237a0344da8c954053a093e40b5ae6391168995f8bc46b3213d7d2bbc451"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-changed-before-invalid-bp.json",
+              "bytes": 1663928,
+              "sha256": "4cb5237a0344da8c954053a093e40b5ae6391168995f8bc46b3213d7d2bbc451"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-bp-attempt-gain-unsupported.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-gain-unsupported.json",
+              "bytes": 1567084,
+              "sha256": "75faae79c2038394174bfa9bc323ea38c76fb768090cd7c440f5e07cddd1ba40"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-gain-unsupported.json",
+              "bytes": 1567084,
+              "sha256": "75faae79c2038394174bfa9bc323ea38c76fb768090cd7c440f5e07cddd1ba40"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-bp-attempt-multiple-lower-clamp.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-multiple-lower-clamp.json",
+              "bytes": 2246613,
+              "sha256": "8b1052515d42f70fb79b2f3a3b72ff1c7c353dfc8769be77d10c033b2d5c1f6f"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-multiple-lower-clamp.json",
+              "bytes": 2246613,
+              "sha256": "8b1052515d42f70fb79b2f3a3b72ff1c7c353dfc8769be77d10c033b2d5c1f6f"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-bp-attempt-unchanged-boundary.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-unchanged-boundary.json",
+              "bytes": 1565328,
+              "sha256": "6a92c38270e7388843b91729737aecd2213771c483d23e7150216ba11cf2afd1"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-unchanged-boundary.json",
+              "bytes": 1565328,
+              "sha256": "6a92c38270e7388843b91729737aecd2213771c483d23e7150216ba11cf2afd1"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-bp-attempt-early-boundary.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-early-boundary.json",
+              "bytes": 1273266,
+              "sha256": "7b2df20f03f94beeb59c3962f96a6c3ce88008d8a5aac9c8b2570a0d58bc8216"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-early-boundary.json",
+              "bytes": 1273266,
+              "sha256": "7b2df20f03f94beeb59c3962f96a6c3ce88008d8a5aac9c8b2570a0d58bc8216"
+            },
+            "byteIdentical": true
+          },
+          {
+            "name": "tsk-08-preparation-bp-attempt-loss-input-required.json",
+            "focused": {
+              "path": ".test-results/2026-09-26T10-46-08-631Z-2-99309d/tsk-08-preparation-bp-attempt-loss-input-required.json",
+              "bytes": 1595252,
+              "sha256": "e67a3e4c0eacbcc4eb48c5df5121e3ed525cbcec9fd4c48901a985fe5c36f2e1"
+            },
+            "quality": {
+              "path": ".test-results/2026-09-26T10-50-14-060Z-2-6a46b7/unit/tsk-08-preparation-bp-attempt-loss-input-required.json",
+              "bytes": 1595252,
+              "sha256": "e67a3e4c0eacbcc4eb48c5df5121e3ed525cbcec9fd4c48901a985fe5c36f2e1"
+            },
+            "byteIdentical": true
+          }
+        ],
+        "productionCounters": {
+          "baseline": [
+            {
+              "artifact": "production-audit-calculation-application.json",
+              "boundary": "calculation-application",
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "error": null
+            },
+            {
+              "artifact": "production-audit-data-pipeline.json",
+              "boundary": "data-pipeline",
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "error": null
+            }
+          ],
+          "current": [
+            {
+              "artifact": "production-audit-calculation-application.json",
+              "boundary": "calculation-application",
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 6673,
+                "deduplicatedCandidateCount": 4194,
+                "damageRequestCount": 2596,
+                "distinctDamageRequestCount": 1489
+              },
+              "error": null
+            },
+            {
+              "artifact": "production-audit-data-pipeline.json",
+              "boundary": "data-pipeline",
+              "counters": {
+                "masterReadCount": 1,
+                "masterParseCount": 1,
+                "compileCount": 1,
+                "candidateCount": 0,
+                "damageRequestCount": 0
+              },
+              "error": null
+            }
+          ],
+          "identical": true
+        }
+      },
+      "performance": {
+        "artifact": {
+          "path": ".test-results/tsk-08-preparation-bp-attempt-20260926/performance.json",
+          "bytes": 7093,
+          "sha256": "bc999bc0cb6a7f952ecc8cbf840bb16f8e33ef787f824dc151befca5d5ae7d46"
+        },
+        "method": "Alternating paired normal complete-scenario kernel; 8 CPU affinity; 7x1000 cycles per side after100 warm-up. Not a field or full production speed claim.",
+        "summaries": [
+          {
+            "kind": "failed",
+            "baselineMedianMs": 130.27829900000006,
+            "currentMedianMs": 125.39499999999998,
+            "relativeChange": -0.03748359502299059,
+            "identicalResult": true
+          },
+          {
+            "kind": "standard",
+            "baselineMedianMs": 583.5423989999999,
+            "currentMedianMs": 581.8385959999996,
+            "relativeChange": -0.0029197587063426456,
+            "identicalResult": true
+          }
+        ],
+        "interpretation": "Normal kernel paired medians show unchanged typed results under final production sources; no normal capture allocation, no extra owner execution. Production runtime counters identical. Not a speedup/field-performance claim."
+      },
+      "developmentRecovery": {
+        "runner": "Verified existing /tmp/tsk08-tools/pnpm generic shim; existing node_modules/generic runner, 8 CPU affinity, unchanged50% production4 worker setting. No new native pnpm SQLite attempt or timeout adjustment.",
+        "localFailures": "Early-boundary negative initially shared aliased start/attempted state; fixed fixture isolation. Invalid-case negative initially selected the already-present failure code; changed to a distinct existing code. Fixture ranking policy and deep mutable proof typings corrected; lint-safe partial audit proof checks fail closed. Benchmark harness root bare workspace alias failed to resolve; corrected its import to the canonical master-data/src/index.ts, without substituting data or credentials. Complete logs retained.",
+        "qualityDocumentationFailure": {
+          "manifest": ".test-results/2026-09-26T10-36-33-913Z-2-988842/manifest.json",
+          "reason": "docs integrity: docs/README.md self-registry row v1.5.102 lagged frontmatter v1.5.103; corrected row, no product/source/test/config changes. Failed quality stopped at docs before unit/production/E2E.",
+          "action": "Focused docs gate then final mandatory quality; successful source fixtures/audit remain valid under unchanged inputs."
+        },
+        "qualityUnitArtifactFailure": {
+          "manifest": ".test-results/2026-09-26T10-39-35-673Z-2-b400e7/manifest.json",
+          "reason": "Unit951/952; prior-commit diagnostic save exceeded existing5000ms timeout and declared artifact missing. No product semantic failure.",
+          "action": "Test-local lossless content-interned value DAG with exact deep roundtrip including undefined/Set/Map/null prototypes; full original diagnostics retained, saved before assertions through unchanged declared runner envelope. No timeout/threshold/test-count changes. Focused9 passed; prior-commit2030ms, artifact2057714bytes vs122271581bytes. Types/lint passed after discriminated union typing fix; final quality validates unchanged runtime."
+        }
+      },
+      "remaining": "No required implementation/product/audit gates or scoped Blocking remain; validated result recording and authorized scoped14-file local commit close this unit. No push; no next semantic unit authorized.",
+      "sessionBoundary": "Started2026-09-26T09:53:17Z; checkpoint before60min; mandatory gates completed in same bounded unit. No new semantic family. TSK-08 in_progress; TSK-09.1/09 blocked.",
+      "diagnosticEncoding": {
+        "version": 1,
+        "encoding": "lossless-interned-values",
+        "definition": "encodeDiagnostic/decodeDiagnostic in productionBattlePointPreparationAttemptAudit.test.ts; DAG nodes preserve complete canonical identity/reason/expected/actual/checkPath/firstDifference payload; rejects unknown/nonfinite/cyclic values, no fallback; isDeepStrictEqual roundtrip before save and asserted after complete save. Existing artifactVersion2 envelope/declarations/bytes/SHA verification unchanged.",
+        "focusedRoundTrips": 9,
+        "priorUninternedArtifacts": [
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-capacity-clamp.json",
+            "bytes": 35472919,
+            "sha256": "1c0400577e1257aa5b3dda229feb2fbe908f54d365914aec0fcb8be5405d02c0"
+          },
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-changed-before-invalid-bp.json",
+            "bytes": 25468990,
+            "sha256": "1dea115baf9ee9c01259f441a6bd166a3d4f4d22ba34c47b87fdd967c0eca00d"
+          },
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-early-boundary.json",
+            "bytes": 18096577,
+            "sha256": "0ad0ae8d6be175bee252c80bcf4e872b574f89d9df41cc96237a62c20d34641e"
+          },
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-gain-unsupported.json",
+            "bytes": 23745122,
+            "sha256": "48938fbdd119c7fdc5a895278b742a74206df8c1b11a27042d9f9ddd32f1a4f4"
+          },
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-loss-input-required.json",
+            "bytes": 68119158,
+            "sha256": "8b0778fa7efd1a4f4e5e1b1f2c909852e8d8e05bc368c0ec67c4574e5fc068f7"
+          },
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-multiple-lower-clamp.json",
+            "bytes": 47859964,
+            "sha256": "a75d3875718ebb7c98981bc8ea9339ea18a29ed2e505f052324ae860bc6449f1"
+          },
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-non-applied-boundary.json",
+            "bytes": 20649307,
+            "sha256": "b6e70f599c55dac0be47a63df4ef37a4c0b487e3a61aa19a617a633f40180503"
+          },
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-prior-commit-action-start.json",
+            "bytes": 122271581,
+            "sha256": "109b0c754f9e7a2a6207aa652ac5eaa690c091f533464ab4cad0efbece86222e"
+          },
+          {
+            "path": ".test-results/2026-09-26T10-29-13-479Z-2-8deb61/tsk-08-preparation-bp-attempt-unchanged-boundary.json",
+            "bytes": 23786142,
+            "sha256": "a619c4a35dd4041efd5d0122df36f2e0917b60f561b9251be3f8747f1f3432bd"
+          }
+        ]
+      }
     }
   ],
   "currentBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
@@ -8639,7 +9689,7 @@
       "stages": [
         {
           "stage": 0,
-          "current": "Contracts/baseline established. criticalStars and scalar forward/recovery complete; committed fixed domain BP skill preparation forward consumer5/426 is now locally committed. Next is a separately bounded failed OC-action attempted fixed domain BP isolation and actual rejected application outcome; fresh code-based plan and user confirmation first."
+          "current": "Contracts/baseline established; current approved non-commit attempt bounded unit product gates complete. Old contract wait not reopened."
         },
         {
           "stage": 1,
@@ -8652,15 +9702,15 @@
         },
         {
           "stage": 2,
-          "current": "S4 and protected domain live-read witnesses verified. criticalStars/scalar forward/recovery complete; committed fixed domain BP preparation changed receipt -> terminal same-domain read/actual NP consumption -> shared forward consumer complete at ad9d216. Non-commit attempt isolation remains unproved by that forward consumer; recovery/alternate families remain separately scoped."
+          "current": "S4/stars/scalar/domain committed forward retained; fixed domain BP original changed non-commit preparation attempt isolation to same selected preparation typed rejection now verified. Domain recovery/other families/legacy remain separately scoped; TSK-08 in_progress."
         },
         {
           "stage": 3,
           "current": "Matrix revision/remerge and eligibility reconciliation already recorded; latest revision matrix digest04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4 and eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 remain authoritative in their revision record. Old root or intermediate digest is historical, not a new current expectation."
         }
       ],
-      "latestBoundedUnit": "Committed attacker-skill fixed domain battlePoint preparation mutation read/NP shared audit consumer closure",
-      "latestEvidence": "Committed forward5/426; quality943/155/29 retry0, audit3, warning/unexpected console0; final frozen six source/test inputs,268 declarations/212 unique artifact receipts and protected witnesses/counters matched. Product commit ad9d216."
+      "latestBoundedUnit": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
+      "latestEvidence": "Fixed domain BP original changed non-commit attempt isolation/same selected typed rejection:6 changed/3 boundaries/807 negatives, audit3, quality952/155/29 retry0, warning/unexpected0, final artifact/source/counter reconciliation."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -8718,7 +9768,7 @@
     "nextSession": {
       "name": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
       "productBaselineCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
-      "status": "Documentation-only scope prepared from direct code; fresh staged implementation plan and user confirmation required. No new non-commit consumer or source diagnostic verified.",
+      "status": "Approved non-commit attempt bounded unit completed; see latest boundedUnits final gates/artifacts. No next semantic unit authorized.",
       "scope": "One session: canonical attacker useSkillSlot fixed resourceMutation/battlePoint gain/loss executed as a real changed attempt within executePreparationOc, followed by that original OC action returning non-committed -> original action-start BP state/receipts/executedEffects retained by the reducer -> same selected scenario preparation rejection and existing typed application result -> shared audit consumer/gate, schema-legal representatives/grouped negatives and declared complete artifact. Stop at the actual preparation rejection; no automatic continuation, terminal NP execution or recovery consumer.",
       "excluded": "Committed forward consumer reopening or relaxation; domain recovery or resubmitted command/UI retry, candidate damage-loop rollback, capacity modifier mutation, form/eligibility transitions, auxiliary actor writes, initial/terminal passive action failures, post-OC ready/structural rejection families, HP/trait/form/gauge/OC semantic changes, failure-code/outcome repair, legacy cleanup, whole stale-mutation/TSK-08 closure and TSK-09.1/09.",
       "sourceFindings": [
@@ -9108,6 +10158,6 @@
         }
       }
     },
-    "currentPreparationRecord": "currentStageReconciliation and nextSession are authoritative for this handoff; completedDomainBattlePointForwardPreparation preserves the previous preparation. Earlier findings/followup/preparation fields are historical records."
+    "currentPreparationRecord": "Latest boundedUnits non-commit attempt unit is authoritative: product/audit gates, source/artifact/counter reconciliation and result docs verification complete. Scoped local commit containing this record closes the session. Domain recovery/other families remain separately scoped."
   }
 }

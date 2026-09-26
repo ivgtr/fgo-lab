@@ -1,4 +1,11 @@
 import {
+  battlePointPreparationAttemptProgram,
+  battlePointPreparationAttemptSource,
+  auditPublishedBattlePointPreparationAttempts,
+  type BattlePointPreparationAttemptProgram,
+  type BattlePointPreparationAttemptSource,
+} from './productionBattlePointPreparationAttemptAudit';
+import {
   battlePointPreparationProgram,
   battlePointPreparationSource,
   battlePointPreparationCanonicalInventory,
@@ -127,6 +134,8 @@ function loadProductionMaster() {
 }
 
 const scalarQuantityObservations: ScalarQuantitySource[] = [];
+const attemptPrograms: BattlePointPreparationAttemptProgram[] = [];
+const attemptObservations: BattlePointPreparationAttemptSource[] = [];
 const domainPrograms: BattlePointPreparationProgram[] = [];
 const domainObservations: BattlePointPreparationSource[] = [];
 const controlPreparations = new WeakMap<
@@ -147,6 +156,16 @@ function evaluateWithOrderedOperationEvents(
     preparation,
     true,
   );
+  const evaluated = evaluatePreparedCalculationScenario(prepared, versions);
+  const attemptProgram = battlePointPreparationAttemptProgram(
+    prepared,
+    evaluated,
+    attemptPrograms.length,
+  );
+  if (attemptProgram) {
+    attemptPrograms.push(attemptProgram);
+    attemptObservations.push(battlePointPreparationAttemptSource(attemptProgram));
+  }
   if (
     prepared.status !== 'executable' ||
     prepared.orderedScenario === null ||
@@ -157,9 +176,7 @@ function evaluateWithOrderedOperationEvents(
     throw new TypeError(
       `production_control_scenario_not_executable:${scenario.attacker.servantId}`,
     );
-  const calculation = requireExecutableCalculation(
-    evaluatePreparedCalculationScenario(prepared, versions),
-  );
+  const calculation = requireExecutableCalculation(evaluated);
   if (calculation.executionObservation !== prepared.executionObservation)
     throw new TypeError(`production_control_observation_mismatch:${scenario.attacker.servantId}`);
   controlPreparations.set(calculation, prepared);
@@ -388,6 +405,7 @@ describe('production master inventory ratchet', () => {
         'production-inert-control-production.json',
         'production-scalar-quantity.json',
         'production-preparation-battle-point.json',
+        'production-preparation-bp-attempt.json',
       ]),
     },
     async ({ task }) => {
@@ -401,6 +419,8 @@ describe('production master inventory ratchet', () => {
         masterDataVersion: master.version,
       };
       scalarQuantityObservations.length = 0;
+      attemptPrograms.length = 0;
+      attemptObservations.length = 0;
       domainPrograms.length = 0;
       domainObservations.length = 0;
       const domainInventory = battlePointPreparationCanonicalInventory(master);
@@ -1311,6 +1331,16 @@ describe('production master inventory ratchet', () => {
         'production-preparation-battle-point.json',
         domainGate,
       );
+      const attemptGate = auditPublishedBattlePointPreparationAttempts(
+        master,
+        attemptPrograms,
+        attemptObservations,
+      );
+      await writeProductionAuditArtifact(
+        task.meta,
+        'production-preparation-bp-attempt.json',
+        attemptGate,
+      );
       const userControlGate = auditProductionUserControlObservations({
         expectedProjectionCount: expectedUserControlIdentities.length,
         expectedIdentities: selectedExpectedIdentities,
@@ -1331,6 +1361,7 @@ describe('production master inventory ratchet', () => {
         observations: userControlObservations,
       });
       expect(scalarGate.status, JSON.stringify(scalarGate.firstDifference)).toBe('passed');
+      expect(attemptGate.status).toBe('passed');
       expect(domainGate.status, JSON.stringify(domainGate.firstDifference)).toBe('passed');
       if (userControlGate.status !== 'passed')
         throw new Error(

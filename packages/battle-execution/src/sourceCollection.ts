@@ -1,3 +1,7 @@
+import {
+  beginPreparationAttemptCapture,
+  finishPreparationAttemptCapture,
+} from './preparationAttemptObservation';
 import { hpEffectKey } from './preparationHp';
 import { markerEffectReads, terminalMarkerReads, markerHasOpaqueReads } from './markerDependency';
 import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
@@ -259,7 +263,9 @@ export function resolveAttackerFormExecution(
   for (const command of scenario.preNoblePhantasmPlan) {
     const actorFormId = state.currentFormId;
     const variantBeforeAction = state.selectedNoblePhantasmVariant;
+    if (options.observePreparationTransition) beginPreparationAttemptCapture(context);
     const result = reducePreNoblePhantasmAction(attacker, state, command, context);
+    if (options.observePreparationTransition) finishPreparationAttemptCapture(context, result);
     options.observePreparationTransition?.(state, command, result);
     if (result.status === 'rejected') {
       recoveryInputDefinitions = result.recoveryInputDefinitions ?? [];

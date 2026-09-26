@@ -1,3 +1,7 @@
+import {
+  preparationAttemptScope,
+  type PreparationOcAttempt,
+} from './preparationAttemptObservation';
 import { projectPlanningHpCondition, UnresolvedPreparationPlanningRead } from './hpPlanning';
 import {
   markerEffectReads,
@@ -133,6 +137,18 @@ export function executePreparationOc(args: {
     buffInputs.some((input) =>
       input.instanceTraits.some((trait) => operation.traits.includes(trait)),
     );
+  const scope = preparationAttemptScope(args.context);
+  const attempt: PreparationOcAttempt | undefined = scope
+    ? {
+        actionId: args.actionId,
+        sources: args.sources,
+        start: args.state,
+        stepOrigins: [],
+        reached: [],
+        writes: [],
+      }
+    : undefined;
+  if (attempt) scope!.push(attempt);
   let current = args.state;
   let markerReaders: ReadonlySet<string> | undefined;
   const markerIsUnobserved = (
@@ -219,6 +235,10 @@ export function executePreparationOc(args: {
     ),
   );
   for (const source of sources) {
+    const sourceFirstStep = steps.length;
+    const origins = attempt
+      ? [{ index: sourceFirstStep, source, operationIndex: null as number | null }]
+      : undefined;
     let program = compileOcSourceProgram(source);
     if (source.effect.selection?.kind === 'playerChoice') {
       const family = source.effect.selection.group.key;
@@ -382,6 +402,8 @@ export function executePreparationOc(args: {
     const firstStep = steps.length;
     let ocIndex = 0;
     for (const [operationIndex, operation] of source.effect.execution.entries()) {
+      const operationFirstStep = steps.length;
+      origins?.push({ index: operationFirstStep, source, operationIndex });
       // Other players are donor actors. A projected attacker-only write cannot
       // establish their post-write quantity, even when it is a no-op for the attacker.
       if (
@@ -614,6 +636,18 @@ export function executePreparationOc(args: {
         (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
       ) {
         steps.push(() => {
+          const write: PreparationOcAttempt['writes'][number] | undefined = attempt
+            ? {
+                source,
+                operationIndex,
+                step: operationFirstStep,
+                status: 'notApplicable',
+                before: current.battlePoints,
+                after: current.battlePoints,
+                receipts: [],
+              }
+            : undefined;
+          if (write) attempt!.writes.push(write);
           if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
           if (activation.get(source.effect)?.conditionOutcome !== true) {
             if (
@@ -636,6 +670,7 @@ export function executePreparationOc(args: {
             )
               return { kind: 'skip', outcome: 'notApplicable' };
           }
+          const beforeBattlePoints = current.battlePoints;
           const applied = applyBattlePointOperation({
             state: current.battlePoints,
             domains: args.context.battlePointDomains ?? [],
@@ -649,6 +684,12 @@ export function executePreparationOc(args: {
               operationIndex,
             ]),
           });
+          if (write) {
+            write.status = applied.status;
+            write.before = beforeBattlePoints;
+            write.after = applied.state;
+            write.receipts = applied.state.receipts.slice(beforeBattlePoints.receipts.length);
+          }
           if (applied.status !== 'applied')
             return { kind: 'reject', status: applied.status, reason: 'battlePointMutation' };
           current = { ...current, battlePoints: applied.state };
@@ -828,7 +869,11 @@ export function executePreparationOc(args: {
                   operation.amount.selector.traits.includes(write.trait),
               )
             )
-              return { kind: 'reject', status: 'unsupported', reason: 'unresolvedPopulationWrite' };
+              return {
+                kind: 'reject',
+                status: 'unsupported',
+                reason: 'unresolvedPopulationWrite',
+              };
             const issue = populationInputIssue(
               source.effect.inputDefinitions,
               facts.resolvedInputValues,
@@ -849,7 +894,11 @@ export function executePreparationOc(args: {
           ) {
             if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
             if (activation.get(source.effect)?.conditionOutcome !== true)
-              return { kind: 'reject', status: 'unsupported', reason: 'unknownTransferCondition' };
+              return {
+                kind: 'reject',
+                status: 'unsupported',
+                reason: 'unknownTransferCondition',
+              };
             if (
               (operation.amount.donor === 'enemyCharge' && current.uncertainEnemyCharge) ||
               (operation.amount.donor === 'playerNp' && current.uncertainPlayerNp)
@@ -985,6 +1034,7 @@ export function executePreparationOc(args: {
         return bound;
       });
     }
+    origins?.push({ index: steps.length, source, operationIndex: null });
     if (program.operations.length > 0)
       steps.push({ kind: 'recordSource', sourceKey: ocSourceOperationKey(program, 0) });
     // Earlier canonical trait writes are visible to later OC/rate conditions in this command.
@@ -1052,6 +1102,11 @@ export function executePreparationOc(args: {
       current = reconcilePreparationBattlePoints(args.servant, current, args.context);
       return { kind: 'skip', outcome: 'notApplicable' };
     });
+    if (attempt && origins)
+      for (let index = sourceFirstStep; index < steps.length; index++) {
+        const origin = [...origins].reverse().find((item) => item.index <= index)!;
+        attempt.stepOrigins.push({ ...origin, index });
+      }
   }
   const hp: Record<string, number | null> = {
     get attacker() {
@@ -1069,9 +1124,18 @@ export function executePreparationOc(args: {
       get: () => hpPermille(current.hp?.actors[source.sourceInstanceId]),
     });
   }
-  let result = executeOcAction(args.state.ocState, args.actionId, steps, hp, {
-    hasFutureNpUse: args.terminalNp !== true,
-  });
+  let result = executeOcAction(
+    args.state.ocState,
+    args.actionId,
+    steps,
+    hp,
+    attempt
+      ? {
+          hasFutureNpUse: args.terminalNp !== true,
+          observeStep: (index, step) => attempt.reached.push({ index, step }),
+        }
+      : { hasFutureNpUse: args.terminalNp !== true },
+  );
   if (result.status !== 'committed' && result.requiredInput) {
     requiredInput = result.requiredInput;
     occurrenceId = result.occurrenceId ?? occurrenceId;
@@ -1157,6 +1221,11 @@ export function executePreparationOc(args: {
       if (result.state.executedSources.has(key)) sourceOutcomes.set(key, outcome);
     }
     result = { ...result, state: { ...result.state, sourceOutcomes } };
+  }
+  if (attempt) {
+    attempt.native = result;
+    attempt.attempted = current.battlePoints;
+    attempt.returned = result.status === 'committed' ? current : args.state;
   }
   return {
     result,
