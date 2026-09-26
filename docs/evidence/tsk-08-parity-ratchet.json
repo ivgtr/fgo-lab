@@ -7011,7 +7011,7 @@
         "sink": 3600000,
         "limitation": "Paired kernel medians +4.4% scalar and +7.5% standard; bounded diagnostic, not whole-scenario performance claim. Normal capture allocation/re-execution absent. Full production155 passed with unchanged counts/ratchets; prior production84262ms vs current83766ms is non-controlled timing."
       },
-      "remaining": "No target Blocking, product gate or documentation check remains. Scoped12-file local commit is the final reference identity. TSK-08 in_progress; TSK-09.1/09 blocked; no push.",
+      "remaining": "None within committed scalar bounded unit: product/documentation gates and scoped local commit completed. Scalar rollback/restored-value/ordered NP consumption remains separate next unit. TSK-08 in_progress; TSK-09.1/09 blocked; no push.",
       "review": "Original receipt snapshots protect consumed clamp/evaluation/output even when aliased multiplier arrays are altered together. Added explicit reader commit/event outcome, projection cardinality/binding, contribution source/identity, calculation status and resolved execution source references. Final62 local tests pass; unchanged canonical writer/compiler/relevance/scalar owner, public index/engine/scenario/ranking semantics. Existing function/file bounds retained by capture callback ownership in candidateStateAudit; no threshold relaxation. Final review separates captured lexical state into captureNpDamageOperation and guards observer factory invocation in candidateExecution itself; normal execution never enters the capture closure/factory. Missing scalar evaluation is not counted as actual consumption. Final62 local tests, type/lint and existing400/250 file boundaries pass after this change.",
       "artifacts": [
         {
@@ -7064,7 +7064,8 @@
           "bytes": 490,
           "sha256": "da7cc52b0efb0c5e7623b1057091d2ec07a0321ccce14af0ec38ebe04b5dd248"
         }
-      ]
+      ],
+      "localCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3"
     }
   ],
   "currentBoundedUnit": "Committed addQuantity scalar ordered NP consumption shared audit consumer closure",
@@ -7214,59 +7215,6 @@
         }
       ]
     },
-    "nextSession": {
-      "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
-      "completedBoundedUnit": "CriticalStars rollback restored-value ordered recovery shared audit consumer closure",
-      "scope": "One session: committed addQuantity scalar battlePointPhase mutation -> ordered actual scalar consumption by executeNpDamage -> same selected execution event/projection/effective contribution/canonical input/typed result -> shared audit consumer/gate -> schema-legal representative/negative fixtures and declared diagnostic artifact. This is a requested next bounded unit, not a completed implementation.",
-      "excluded": "addQuantity rollback/recovery; domain-keyed battlePoint resource mutations and S4 live reads; HP/trait/form/other mutation families; legacy cleanup; general retry/UI recovery; whole stale-mutation/TSK-08 closure; TSK-09.1/09; reopening completed criticalStars forward/recovery, without-area, S4 or architecture; unconditional eight-shard regeneration.",
-      "firstDeliverable": "Source-based staged implementation plan: responsibilities/candidate files, normal/capture paths, canonical writer and actual damage-reader identity population, receipt/consumption source, representative and grouped negative fixture matrix, invariants, gate/artifact checks, stopping boundary and evidence reuse. Wait for user approval before source/test/document edits, source tests/producers, staging or commits. Then continue the same unit through implementation/local checks/final required gates/Task-evidence updates/scoped local commit without ordinary reapproval. No push.",
-      "codeFindings": [
-        {
-          "path": "packages/master-data/src/index.ts",
-          "symbol": "canonical contextMutation addQuantity schema",
-          "finding": "Schema-legal operation is quantity battlePointPhase with subjectId, integer amount and applicationTiming. It is distinct from resourceMutation battlePoint. Do not invent HP addQuantity or raw/ID-dependent behavior."
-        },
-        {
-          "path": "packages/battle-execution/src/operationCompiler.ts",
-          "symbol": "compile contextMutation addQuantity / compileRequirement",
-          "finding": "Canonical source emits the addQuantity operation with source/order/subject/timing. Source requirement battlePointPhase needs a domain subject; scalar NP dependency is generated separately. Do not fabricate a source requirement without subject to obtain a passing reader."
-        },
-        {
-          "path": "packages/battle-execution/src/candidateOperationContext.ts",
-          "symbol": "quantityOperationIsNotRelevant",
-          "finding": "Relevance requires duringExecution timing, subject matching candidate attacker and battlePointPhase NP damage parameter target. representedByCurrentInput, wrong subject or unrelated damage is notRelevant. Subject identity comparisons are existing product semantics, not permission to add hardcoded IDs."
-        },
-        {
-          "path": "packages/battle-execution/src/resourceSemantics.ts",
-          "symbol": "applyOrderedQuantityMutation",
-          "finding": "Execution owns nullable scalar state, typed missing-quantity failure and domain clamp. Audit must consume original execution values rather than duplicate arithmetic."
-        },
-        {
-          "path": "packages/battle-execution/src/candidateExecution.ts / candidateStateAudit.ts",
-          "symbol": "executeOrderedScenarioCandidateInternal / mutationAuditAddress / appendExecutionGroupAudit",
-          "finding": "Capture already emits addQuantity scalar quantity:battlePointPhase before/attemptedAfter/afterTransaction in original transaction groups. Committed group has no rollbackProof. Do not equate attempted appliedOperationIds with effective contribution."
-        },
-        {
-          "path": "packages/battle-execution/src/npDamageCompilation.ts / npDamageExecution.ts / npDamageOperation.ts",
-          "symbol": "NP special dependency / applyNoblePhantasmDamage / evaluateNpDamageOperation",
-          "finding": "Canonical battlePointPhase damage generates scalar quantity dependency; original applyNoblePhantasmDamage passes state.quantities.battlePointPhase to damage context. Plan must cover actual damage consumption, not only a satisfied condition or copied final input. Inspect reader/context observation ownership before choosing hook or module."
-        },
-        {
-          "path": "packages/battle-execution/src/condition.ts / candidateStateAudit.ts / executionTypes.ts",
-          "symbol": "evaluateCondition / appendConditionReadAudit / OrderedCandidateStateAudit",
-          "finding": "Existing battlePointPhaseReads is subject/domain-scoped point/phase observation; scalar no-subject quantity reads are not emitted there. inputQuantityReads is a different address space. Neither existing collection proves scalar NP consumption; do not alias the scalar to S4 domain reads."
-        }
-      ],
-      "fixtures": "Canonical schema-legal selected execution with actual nonzero committed scalar write and downstream NP consumption; sequential same-address writes; execution-owned clamp; declared representedByCurrentInput/wrong-subject/unrelated-damage nonrelevance controls and null scalar typed failure as needed to prove forward boundary. Negative matrix: missing trace/candidateState/group/mutation/reader/use evidence, wrong source/candidate/reference, operation/group/sequence/address mismatch, duplicates/reordering, stale/before/attempted-but-not-committed consumption, forged outcome/proof, projection/effective contribution/input/result contradictions. Assert appropriate typed reason and actual check failure path, not arbitrary rejection. Do not execute another candidate solely to fabricate evidence.",
-      "planningUncertainty": "Scope and invariants are fixed; producer/consumer design and legal fixture construction are not fixed. No execution diagnostic was run or needed for handoff preparation. If planning truly needs new execution diagnostics, first propose minimum command/decision/stop boundary and wait; diagnostic-only approval does not authorize implementation. Stop only affected work for an unspecified product semantic or substantive contract conflict.",
-      "evidenceReuse": {
-        "productCommit": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
-        "previousReceiptCheck": "All 22 latest completed bounded-unit artifact receipts matched path/bytes/SHA-256 during read-only preparation. This proves existing evidence integrity, not addQuantity coverage.",
-        "authority": "Latest completed criticalStars recovery boundedUnits entry owns final quality/audit/declared fixture receipts; prior committed-forward and without-area entries retain their contracts. Reuse only unchanged semantic/source conditions and matching bytes/SHA-256. Published master and schema-legal fixture populations derive independently from canonical generators; do not fix historical counts as future expected coverage. No unconditional eight-shard regeneration."
-      },
-      "status": "Preparation fulfilled by user-approved current scalar bounded unit; read currentBoundedUnit for current verification and remaining gates.",
-      "implementationReference": "boundedUnits: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
-    },
     "completedCriticalStarsRecoveryPreparation": {
       "baselineHead": "a941aabef4968b59fe11a5ebb4fa2b22e9cc9ecc",
       "scope": "Read-only preparation for one session of criticalStars rolledBack group -> actual restored address value -> ordered later recovery inputQuantity read -> shared audit consumer/gate -> real schema-legal representative/negative fixture -> declared artifact. No source/test edits or source test/producer runs in this preparation.",
@@ -7361,12 +7309,12 @@
       }
     },
     "currentStageReconciliation": {
-      "asOfProductCommit": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
+      "asOfProductCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3",
       "historicalTable": "Task historical four-stage self-check remains historical; its contract-wait statements are superseded by later approved requirement/ADR and implemented units.",
       "stages": [
         {
           "stage": 0,
-          "current": "Contract and baseline established; next addQuantity unit still requires a new source-based implementation plan approval."
+          "current": "Contract and baseline established. Committed scalar addQuantity unit verified at9f460567; next bounded unit is scalar rollback/restored-value/ordered actual NP consumption, beginning with a fresh code-based plan for user approval."
         },
         {
           "stage": 1,
@@ -7379,13 +7327,151 @@
         },
         {
           "stage": 2,
-          "current": "S4 real subject/domain live reads, same-condition on/off gate and protected witnesses verified; subsequent architecture/without-area/criticalStars units preserve evidence. S4 committed stars do not prove rollback or scalar addQuantity coverage."
+          "current": "S4 domain live reads and protected witnesses remain verified. Separate criticalStars recovery and committed scalar addQuantity consumers are verified. None proves scalar addQuantity rollback/restored-value/actual NP consumption."
         },
         {
           "stage": 3,
           "current": "Matrix revision/remerge and eligibility reconciliation already recorded; latest revision matrix digest04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4 and eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 remain authoritative in their revision record. Old root or intermediate digest is historical, not a new current expectation."
         }
       ]
+    },
+    "completedScalarQuantityForwardPreparation": {
+      "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
+      "completedBoundedUnit": "CriticalStars rollback restored-value ordered recovery shared audit consumer closure",
+      "scope": "One session: committed addQuantity scalar battlePointPhase mutation -> ordered actual scalar consumption by executeNpDamage -> same selected execution event/projection/effective contribution/canonical input/typed result -> shared audit consumer/gate -> schema-legal representative/negative fixtures and declared diagnostic artifact. This is a requested next bounded unit, not a completed implementation.",
+      "excluded": "addQuantity rollback/recovery; domain-keyed battlePoint resource mutations and S4 live reads; HP/trait/form/other mutation families; legacy cleanup; general retry/UI recovery; whole stale-mutation/TSK-08 closure; TSK-09.1/09; reopening completed criticalStars forward/recovery, without-area, S4 or architecture; unconditional eight-shard regeneration.",
+      "firstDeliverable": "Source-based staged implementation plan: responsibilities/candidate files, normal/capture paths, canonical writer and actual damage-reader identity population, receipt/consumption source, representative and grouped negative fixture matrix, invariants, gate/artifact checks, stopping boundary and evidence reuse. Wait for user approval before source/test/document edits, source tests/producers, staging or commits. Then continue the same unit through implementation/local checks/final required gates/Task-evidence updates/scoped local commit without ordinary reapproval. No push.",
+      "codeFindings": [
+        {
+          "path": "packages/master-data/src/index.ts",
+          "symbol": "canonical contextMutation addQuantity schema",
+          "finding": "Schema-legal operation is quantity battlePointPhase with subjectId, integer amount and applicationTiming. It is distinct from resourceMutation battlePoint. Do not invent HP addQuantity or raw/ID-dependent behavior."
+        },
+        {
+          "path": "packages/battle-execution/src/operationCompiler.ts",
+          "symbol": "compile contextMutation addQuantity / compileRequirement",
+          "finding": "Canonical source emits the addQuantity operation with source/order/subject/timing. Source requirement battlePointPhase needs a domain subject; scalar NP dependency is generated separately. Do not fabricate a source requirement without subject to obtain a passing reader."
+        },
+        {
+          "path": "packages/battle-execution/src/candidateOperationContext.ts",
+          "symbol": "quantityOperationIsNotRelevant",
+          "finding": "Relevance requires duringExecution timing, subject matching candidate attacker and battlePointPhase NP damage parameter target. representedByCurrentInput, wrong subject or unrelated damage is notRelevant. Subject identity comparisons are existing product semantics, not permission to add hardcoded IDs."
+        },
+        {
+          "path": "packages/battle-execution/src/resourceSemantics.ts",
+          "symbol": "applyOrderedQuantityMutation",
+          "finding": "Execution owns nullable scalar state, typed missing-quantity failure and domain clamp. Audit must consume original execution values rather than duplicate arithmetic."
+        },
+        {
+          "path": "packages/battle-execution/src/candidateExecution.ts / candidateStateAudit.ts",
+          "symbol": "executeOrderedScenarioCandidateInternal / mutationAuditAddress / appendExecutionGroupAudit",
+          "finding": "Capture already emits addQuantity scalar quantity:battlePointPhase before/attemptedAfter/afterTransaction in original transaction groups. Committed group has no rollbackProof. Do not equate attempted appliedOperationIds with effective contribution."
+        },
+        {
+          "path": "packages/battle-execution/src/npDamageCompilation.ts / npDamageExecution.ts / npDamageOperation.ts",
+          "symbol": "NP special dependency / applyNoblePhantasmDamage / evaluateNpDamageOperation",
+          "finding": "Canonical battlePointPhase damage generates scalar quantity dependency; original applyNoblePhantasmDamage passes state.quantities.battlePointPhase to damage context. Plan must cover actual damage consumption, not only a satisfied condition or copied final input. Inspect reader/context observation ownership before choosing hook or module."
+        },
+        {
+          "path": "packages/battle-execution/src/condition.ts / candidateStateAudit.ts / executionTypes.ts",
+          "symbol": "evaluateCondition / appendConditionReadAudit / OrderedCandidateStateAudit",
+          "finding": "Existing battlePointPhaseReads is subject/domain-scoped point/phase observation; scalar no-subject quantity reads are not emitted there. inputQuantityReads is a different address space. Neither existing collection proves scalar NP consumption; do not alias the scalar to S4 domain reads."
+        }
+      ],
+      "fixtures": "Canonical schema-legal selected execution with actual nonzero committed scalar write and downstream NP consumption; sequential same-address writes; execution-owned clamp; declared representedByCurrentInput/wrong-subject/unrelated-damage nonrelevance controls and null scalar typed failure as needed to prove forward boundary. Negative matrix: missing trace/candidateState/group/mutation/reader/use evidence, wrong source/candidate/reference, operation/group/sequence/address mismatch, duplicates/reordering, stale/before/attempted-but-not-committed consumption, forged outcome/proof, projection/effective contribution/input/result contradictions. Assert appropriate typed reason and actual check failure path, not arbitrary rejection. Do not execute another candidate solely to fabricate evidence.",
+      "planningUncertainty": "Scope and invariants are fixed; producer/consumer design and legal fixture construction are not fixed. No execution diagnostic was run or needed for handoff preparation. If planning truly needs new execution diagnostics, first propose minimum command/decision/stop boundary and wait; diagnostic-only approval does not authorize implementation. Stop only affected work for an unspecified product semantic or substantive contract conflict.",
+      "evidenceReuse": {
+        "productCommit": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
+        "previousReceiptCheck": "All 22 latest completed bounded-unit artifact receipts matched path/bytes/SHA-256 during read-only preparation. This proves existing evidence integrity, not addQuantity coverage.",
+        "authority": "Latest completed criticalStars recovery boundedUnits entry owns final quality/audit/declared fixture receipts; prior committed-forward and without-area entries retain their contracts. Reuse only unchanged semantic/source conditions and matching bytes/SHA-256. Published master and schema-legal fixture populations derive independently from canonical generators; do not fix historical counts as future expected coverage. No unconditional eight-shard regeneration."
+      },
+      "status": "Preparation fulfilled by user-approved current scalar bounded unit; read currentBoundedUnit for current verification and remaining gates.",
+      "implementationReference": "boundedUnits: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
+    },
+    "nextSession": {
+      "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
+      "productBaselineCommit": "9f4605675b24472eb15a8772f6444cc82e71f5d3",
+      "status": "Read-only preparation; execution witness and new recovery consumer not implemented or run. Begin with source-based staged plan and wait for user approval.",
+      "scope": "One session: schema-legal canonical scalar battlePointPhase addQuantity actual changed attempt in failed original transaction group -> original rollback proof/group-start restoration -> ordered later actual executeNpDamage scalar consumption -> same selected execution event/projection/effective contribution/canonical input/typed unsupported result -> shared diagnostic consumer/gate and declared complete artifact.",
+      "excluded": "Other mutation families and domain battlePoint mutation; repair or redesign of failure-trigger semantics; general retry/UI recovery; legacy cleanup; whole stale-mutation/TSK-08 closure; TSK-09.1/09; reopening verified criticalStars forward/recovery, committed scalar forward, without-area, S4 or architecture; mandatory8-shard regeneration.",
+      "contract": "Changed attempted value must differ from restored group-start value. Attempted appliedOperationIds are not committed/effective evidence. Later successful reader does not change unsupported product result. Diagnostic pass is distinct from calculated success; existing forward/user-control gates retain their success contracts.",
+      "sourceFindings": [
+        {
+          "path": "packages/master-data/src/index.ts",
+          "symbol": "effectExecutionOperationSchema contextMutation/addQuantity",
+          "finding": "Only scalar battlePointPhase, nonempty subjectId, integer amount, duringExecution/representedByCurrentInput. Null amount is illegal; do not copy criticalStars null-amount failure as addQuantity semantics."
+        },
+        {
+          "path": "packages/battle-execution/src/operationCompiler.ts",
+          "symbol": "transactionGroupId / compileEffect / sourceIdentity",
+          "finding": "skillUse and npBeforeDamage effects use skillId:action group identity. addQuantity compiled from canonical applicable semantics with original source/order/subject/timing. Separate canonical effects in one skill can supply ordered writer and existing typed failure trigger without hand-made runtime operations. unsupported-resource emission precedes applicable semantics within an effect; fixture order must be proven from generated operations."
+        },
+        {
+          "path": "packages/battle-execution/src/candidateOperationContext.ts",
+          "symbol": "quantityOperationIsNotRelevant / effectOperationGroups",
+          "finding": "Existing timing/attacker subject/NP kind/parameter target nonrelevance must remain. Grouping uses source identity and original operation order; expectations must derive from canonical program rather than successful receipt filter."
+        },
+        {
+          "path": "packages/battle-execution/src/candidateExecution.ts",
+          "symbol": "executeOrderedScenarioCandidateInternal",
+          "finding": "Snapshots group-start state/input; records attempted mutation; after group issues resets state/input, marks group operations unsupported and emits rolledBack proof. Continues later groups with unresolved issues retained. Original final result must remain unsupported."
+        },
+        {
+          "path": "packages/battle-execution/src/candidateStateAudit.ts",
+          "symbol": "mutationAuditAddress / appendExecutionGroupAudit / observeScalarNp",
+          "finding": "Scalar address quantity:battlePointPhase. RolledBack mutations afterTransaction use original restored group-start state; proof checks state/input restoration. Actual NP receipt belongs to original capture with sequence/group/operation identity."
+        },
+        {
+          "path": "packages/battle-execution/src/npDamageOperation.ts / npDamageExecution.ts",
+          "symbol": "evaluateNpDamageOperationInternal / captureNpDamageOperation / applyNoblePhantasmDamage",
+          "finding": "Original evaluator owns raw scalar and actual NP-clamped consumed value, disposition, exact evaluation and emitted input. Use this receipt for later consumption; no recomputed clamp/damage or second execution for proof."
+        },
+        {
+          "path": "packages/calculation-application/src/productionScalarQuantityAudit.ts",
+          "symbol": "scalarQuantityProgram / scalarQuantitySource / auditScalarQuantityObservations / scalarQuantityCanonicalInventory",
+          "finding": "Existing canonical program/reference/snapshot machinery and actual consumption consumer are forward only: boundary committed/notRelevant/nullScalar. committed requires no proof; null boundary is not changed rollback restoration coverage. Choose focused responsibility extension/extraction from current definitions; do not blindly widen successful outcome union."
+        },
+        {
+          "path": "packages/calculation-application/src/productionScalarQuantityAudit.test.ts / scenario.test.ts / productionCriticalStarsRecoveryAudit.ts",
+          "symbol": "fixtureMaster / scalar representatives / criticalStars recovery program and gate",
+          "finding": "Legal forward master construction and recovery audit mechanisms are evidence/examples, not fixed implementation. CriticalStars recovery covers a different address/read space and cannot certify scalar recovery."
+        },
+        {
+          "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+          "symbol": "existing scalar capture collector / published inventory gate",
+          "finding": "Existing shared collector has no extra execution. Published scalar writer inventory0 is independent from schema-legal coverage; recover population must also be canonical and independently expected."
+        }
+      ],
+      "fixturePlanning": "At minimum changed attempted value -> original restored group-start -> actual downstream NP consumption; prior committed scalar write before failed group; multiple attempted same-address writes and execution-owned clamp; intervening committed scalar write before NP, distinguishing restore from consumption. Use natural canonical NP ordering; do not fabricate extra NP reads or candidate executions. Combine these axes into necessary representatives rather than requiring arbitrary counts. Failed-group applied input/contribution must be discarded, later reader use/input/contribution and final unsupported must correspond.",
+      "failureTriggerUncertainty": "No new execution diagnostic run. Legal failure trigger and compilation/group ordering require source-based plan proof and representative validation after approval. A schema-legal existing typed failure can be fixture scaffolding only; other-family consumer closure/product repairs stay excluded. Never invent null scalar amount, manual operation/group identity, or change relevance/failure semantics to manufacture rollback. If execution diagnostic is indispensable before planning, propose minimum command/decision/stop boundary and await separate approval.",
+      "negativeGroups": [
+        "missing trace/state/group/mutation/proof/reader/use and independent canonical coverage",
+        "wrong source/candidate/reference/transaction/operation/group/sequence/address, duplicates and reversal",
+        "wrong group-start restoration, stale/initial/attempted/uncommitted consumption, coherently altered receipts/proof",
+        "revived failed-group contribution/input, projection/event/use/effective contribution/canonical input contradictions",
+        "forged commit/proof/typed outcome and diagnostic pass confused with product calculated"
+      ],
+      "planRequired": "Responsibilities/files; actual normal/capture generation-execution-use flow; value-independent writer/failed-group/reader populations; original receipt/proof/consumption ownership; grouped positive/negative matrix with reason/checkPath; invariants/gates/artifacts; reuse conditions, stop points and final validation. Present plan then wait. Before approval no product/test/docs edits, source tests/producers, stage/commit. Read/checksum permitted. After approval same task through implementation/local/final verification/records/scoped local commit without routine reapproval; no push.",
+      "evidenceReuse": {
+        "latestBoundedUnit": "Committed addQuantity scalar ordered NP consumption shared audit consumer closure",
+        "baseline": "unit937/production155/E2E29 retry0; audit3; warnings/unexpected console0; committed6/boundaries5/negatives352",
+        "receiptVerification": {
+          "path": ".test-results/tsk-08-scalar-recovery-handoff-20260926/reused-artifacts.json",
+          "bytes": 33146,
+          "sha256": "3e273adc7ad6a2030a1059cee344272a08bd9d993f9f7ab62b4999e35d017026",
+          "matched": 140
+        },
+        "condition": "Rechecked dynamic final receipt population at unchanged source/semantic conditions. Historical success only, not scalar recovery coverage. Preserve current artifact/digest/counters and protected S4 witnesses; no8-shard regeneration without concrete identity doubt."
+      },
+      "validationPolicy": "Resolve scoped Blocking with fixtures/review before full affected audit and README quality. Full diagnostics saved before assertions with canonical identity/typed reason/expected-actual/first difference, declared path/bytes/SHA-256 checked by unchanged runner. No timeout/threshold/test exclusions. Existing pnpm SQLite recovery via verified shim/generic runner and8CPU affinity/4production workers may be reused after existence check.",
+      "sessionBoundary": "60min checkpoint to existing Task/evidence; at90min no new family. Leave valid evidence, difference, unmet gates and minimum next action. TSK-08 in_progress, TSK-09.1/09 blocked.",
+      "preparationValidation": {
+        "format": "passed",
+        "docsTests": "6/6",
+        "integrity": "passed after registry version reconciliation",
+        "diffWhitespace": "passed",
+        "productTests": "not run: documentation/read-only preparation only"
+      }
     }
   }
 }

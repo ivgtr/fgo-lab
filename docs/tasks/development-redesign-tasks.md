@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.64"
+document_version: "1.7.65"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3058,7 +3058,7 @@ S4 artifact全体が先行forward版とbyte単位で一致し、月下／日輪�
 
 直接symbolと最新revision digestは[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.currentStageReconciliation`を参照する。TSK-08全体には別familyとlegacy cleanupが残るため`in_progress`、TSK-09.1／09は`blocked`を維持する。
 
-次sessionの限定handoff（committed addQuantity scalar→ordered NP consumption、計画確認から開始）:
+先行handoff履歴（committed addQuantity scalar→ordered NP consumption、9f460567で完了）:
 
 1セッションの対象は、canonical `contextMutation/addQuantity`のscalar `battlePointPhase`のcommitted実変化から、順序付き`executeNpDamage`の実scalar消費、同じselected executionのevent／projection／effective contribution／canonical input／typed result、共有監査consumer／gate、実schema-legal代表・否定fixture、宣言済みdiagnostic artifactへの接続までとする。addQuantity rollback／recovery、domain別battlePoint resource mutation、HP／trait／form、legacy cleanup、一般retry／UI recovery、TSK-08全体、TSK-09.1／09は対象外。解消済みcriticalStars forward／recovery、without-area、S4、architectureを再開しない。
 
@@ -3083,3 +3083,16 @@ Committed scalar addQuantity bounded-unit completion（2026-09-26）:
 共有consumer／gateが6 committed実変化・実NP消費、5非適用／null境界、352検査別否定を通過した。監査成功とcalculated成功を区別し、null scalarはunsupportedを維持する。published canonical writer母集団0とschema-legal fixtureを独立に記録した。診断はassertion前保存し、宣言／bytes／SHA-256検証を閉じた。加算／clamp／condition／damageの再実装、通常観測allocation、監査専用再実行はない。性能は限定kernelでscalar中央値+4.4%／standard+7.5%、全scenarioの速度評価ではない。通常経路・candidate／request数・閾値・timeoutを維持した。
 
 必要な製品gateは残らない。最終quality後は結果記録だけを更新し、文書検証・差分照合後に12対象ファイルだけlocal commitする。当該commitを参照identityとする。60分境界前にcheckpointと製品gateを閉じ、新familyを開始していない。今回をstale-mutation全体やTSK-08全体のclosureとは呼ばない。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。詳細は既存evidence最新bounded unitが正本。
+
+
+Step再確認と次sessionの限定handoff（2026-09-26、製品基線`9f4605675b24472eb15a8772f6444cc82e71f5d3`）:
+
+旧4段階の契約待ちは履歴。V41／S4／matrix改訂は検証済みで、committed scalar addQuantity→実NP消費も6 committed・5境界・352否定、quality unit937／production155／E2E29（retry0）、audit3、warning／unexpected console0で完了した。直前unitのlocal commitも完了し、worktreeは開始時clean。次はscalar addQuantityのrollback／group-start復元→後続ordered実NP消費→同じselected executionの利用側証拠／unsupported result→共有診断consumer／gate／宣言artifactだけに限定する。別familyやlegacy cleanupを同sessionへ追加しない。
+
+直接コードでは元executionがgroup-start state／inputを復元し、scalar mutation afterTransactionとrollbackProofを生成する。新scalarNpConsumptionsは実NP evaluatorの実消費値と出力を保持する。現scalar consumerのcommitted／notRelevant／nullScalar境界はchanged rollback復元を証明しない。既存criticalStars recoveryは別addressとread空間の証拠で、scalar coverageへ読み替えない。失敗groupの寄与を復活させず、後続NPが成立しても製品unsupportedを維持する。
+
+最初は現symbolから段階計画を提示し利用者確認を待つ。確認前は読み取り・checksumだけ、source／test／文書編集・source test／producer・stage／commitなし。確認後は同じ限定unitを実装・局所検証・対象Blocking解消・必要な最終audit／README quality・正本更新・local commitまで継続する。通常判断で再承認せず、未規定意味論／実質的契約衝突だけ根拠と改訂計画を示す。
+
+代表は実際に変化したattemptと復元、事前commit後のgroup-start、複数attemptとclamp、復元後の介在commitを必要な組合せで扱う。期待writer／失敗group／後続NP identityはcanonical生成と順序から値と独立に導出する。失敗triggerはschema-legalな既存typed failureをfixture補助として選ぶ。addQuantity amountは整数でnullは不可。skillUse effectsはskill単位action groupだが、compileEffect内unsupported resourceはapplicableより先に出るため、生成順序とgroup境界を計画・代表で確認する。現時点で新しい実行診断は行わず、具体fixture成立を検証済みとはしない。module分割／hookは固定しない。直接symbol、否定分類、未確認点とartifact receiptは[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.nextSession`を正本とする。
+
+今回は資料整理のみ。直前の140 artifact receiptをpath／bytes／SHA-256照合し一致したが、新scalar recovery成功証拠ではない。source／test／producer／audit／qualityの新規実行なし。資料の書式・docs／integrity・差分検査で閉じ、この資料commitを次担当者の参照identityにする。対象内Blocking中に全件検証を先行しない。8 shardはidentity疑義時のみ。60分checkpoint、90分以降新familyなし。TSK-08は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
