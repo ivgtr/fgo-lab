@@ -228,10 +228,9 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "resolve B3 403400 targetRarity and five other S4 failures without weakening inert-control classification",
-    "complete without-area alternate and stale-mutation consumer ratchets",
-    "run remaining full production/audit/quality gates only after known Blocking repairs",
-    "retain deferred legacy cleanup for its own later bounded unit; no TSK-09 work in this unit"
+    "Inherited battle-execution architecture ratchets: engine.ts 134 lines > 80; candidateSelection.ts 181 lines > 180. Repair responsibility boundaries without changing execution semantics or weakening thresholds.",
+    "Remaining TSK-08 without-area alternate and stale-mutation production consumer closure must be assessed in a later bounded unit; prior fixtures and full suite success alone do not claim closure.",
+    "Deferred legacy loader/scan/candidate-list/duplicate-fixture cleanup belongs to a later bounded unit; TSK-09.1/09 remain blocked."
   ],
   "statusInvariants": {
     "TSK-06.5": "done",
@@ -242,7 +241,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Implement owner 3300200 S4 battle-point operation-read witness and independent resolved enemy defense with exact v40 historical identity and v41 migration, following the latest bounded-unit handoff. Preserve 1000100 HP and 2301100 moon/day regressions; other ratchets remain Blocking.",
+  "nextBoundedUnit": "Plan then repair only the two inherited battle-execution architecture ratchets, preserve ordinary/audited execution identity and transactional selection behavior, restore unit/quality gates, update existing Task/evidence and create a scoped local commit. Do not reopen completed S4 or begin the other TSK-08 families.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -5353,5 +5352,32 @@
       "remaining": "Scope S4 implementation and evidence are verified except the two inherited HEAD architecture ratchets outside this request. TSK-08 remains in_progress; TSK-09.1/09 blocked. Scoped local commit pending; no push."
     }
   ],
-  "currentBoundedUnit": "S4 owner 3300200 domain intent, execution receipt, and eight-shard identity revision"
+  "currentBoundedUnit": "S4 owner 3300200 domain intent, execution receipt, and eight-shard identity revision",
+  "handoffPreparation": {
+    "baselineHead": "a3241095be383348b6aa8d3b3199309b435b15b8",
+    "scope": "read-only code investigation plus documentation; no source/test edits or source tests/producers executed",
+    "findings": [
+      {
+        "path": "packages/battle-execution/src/engine.ts",
+        "symbols": [
+          "executeOrderedScenario",
+          "executeOrderedScenarioWithAuditObservation",
+          "auditOperationEvents"
+        ],
+        "responsibility": "ordinary candidate comparison and public orchestration plus audited selected/unresolved/ambiguous observation assembly currently share engine; 134-line file exceeds architecture limit 80",
+        "consumer": "index.ts public exports -> calculation-application/scenario.ts prepareConcreteCalculationScenarioWithPolicy chooses audited or ordinary execution"
+      },
+      {
+        "path": "packages/battle-execution/src/candidateSelection.ts",
+        "symbols": [
+          "resolveCandidateSelections",
+          "validateCandidateSelections"
+        ],
+        "responsibility": "selection/activation/variant transaction resolution and constraint validation with initial-state retention; 181 lines exceeds limit 180",
+        "consumer": "candidatePreparation.ts -> validateCandidateSelections -> candidate execution"
+      }
+    ],
+    "planningBoundary": "Choose extraction boundaries from direct code responsibilities; no line compression, test exclusion or threshold increase. Product outcomes, operation order, selection identity and state reference/rollback remain unchanged.",
+    "evidenceReuse": "Latest bounded unit production 155/155, audit 3/3, E2E 29/29, S4 1590 identities and eight-shard 34640 outcomes remain valid only if the structural change preserves the observed semantic paths; do not rerun eight shards without a concrete identity concern."
+  }
 }
