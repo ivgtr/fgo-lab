@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.60"
+document_version: "1.7.61"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-26"
@@ -3006,3 +3006,16 @@ Committed criticalStars forward bounded unit（2026-09-26、開始HEAD `b75e9574
 対象内Blockingは0。最終qualityはunit936/936、production155/155、E2E29/29（retry0）、format／lint／root・Web型検査／runner／docs・integrity／master／buildが成功し、warning・unexpected console0。監査3/3も最終実装の証拠として有効。9固定入力のbytes／SHA-256がquality後も一致し、criticalStars／without-areaの代表artifactは局所版と最終quality版でbyte単位一致した。production counterも先行版と一致し、candidate／request増加・ratchet緩和はない。以後はTask／evidence／evidence indexの結果記録だけを更新し、文書検証・最終差分照合の後、この依頼範囲だけをlocal commitする。pnpmの外部SQLite store失敗は記録し、既存node_modulesとgeneric runnerを利用した。60分checkpoint、90分以降の新family開始なし、pushなし。TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
 
 次sessionへ残す範囲はrollback／復元値／recovery read consumer closure、addQuantity／HP／battle-point／trait／formの別mutation family、legacy cleanup。今回をstale-mutation全体やTSK-08全体のclosureとは呼ばず、解消済みwithout-area／S4／architectureを再開しない。
+
+
+次sessionの限定handoff（2026-09-26、参照製品commit `a941aabef4968b59fe11a5ebb4fa2b22e9cc9ecc`）:
+
+次の1セッションは**criticalStarsのrollback済みgroupから実復元値、順序付き後続recovery inputQuantity readへ届く共有監査consumer closure**だけを扱う。別mutation family、legacy cleanup、stale-mutation全体／TSK-08全体、TSK-09.1／09は対象外。解消済みcommitted criticalStars forward／without-area／S4／architectureを再開しない。先行製品unitのquality936/155/29、audit3、4正例／207否定、without-area14 source check／45否定とartifact receiptを条件付きで再利用する。
+
+読み取りでは`candidateExecution.ts`のgroup-start state／input復元、group全operationのunsupported化、`candidateStateAudit.ts`の復元address afterTransaction／rollbackProof／attempted appliedOperationIdsを確認した。既存`scenario.test.ts`のrollback fixtureはamount nullで、保存値は20→attempted20→restored20。後続readをvalue20で検索し、firstDifference:nullのsnapshotを保存しているだけである。変化した値の復元や共有gateの成功を証明していない。新fixtureでは実canonical executionで値が変わった後にgroupが失敗し、group-start値へ復元される経路と後続readを確認する。期待readerは値とは独立に導出し、同一addressの複数attempted write／介在committed writeを順序から扱う。
+
+このfixtureの最終resultは正しくunsupported。既存forward consumerと非structural user-control gateのcalculated条件を緩めたり、rolledBackをcommitted成功へ混ぜたりしない。診断gateの成功と製品のtyped failureを区別し、失敗groupの寄与破棄、復元値、後続readerのevent／projection／effective contribution、canonical inputと最終outcomeを同じ実executionで照合する。具体的なmodule／gate設計は現コードから計画する。直接symbol、保存fixtureと調査artifactのpath／bytes／SHA-256は[evidence](../evidence/tsk-08-parity-ratchet.json)の`handoffPreparation.nextSession`を正本とする。先行forward準備は同evidenceの`completedCriticalStarsForwardPreparation`へ移して保持した。
+
+最初の成果物は段階的実装計画。責務・候補file・通常／監査の実経路・期待identityの生成元・代表／否定fixture・不変条件・通過条件・停止点・証拠再利用条件を示し、利用者確認を待つ。確認前はsource／test／文書を編集せず、source test／producer・stage／commitを行わない。確認後は同じbounded unitの実装・局所検証・必要な最終quality／監査・既存Task／evidence更新・依頼範囲local commitまで続ける。通常の技術判断で再承認を求めず、未規定の製品意味論や実質的な契約衝突だけ影響作業を止めて改訂計画を示す。
+
+この先行準備はコードと既存artifactの読み取り・checksum照合・資料更新だけで、source test／producer・監査／qualityを新しく実行していない。8 shard再生成は具体的なidentity疑義がある場合だけ判断する。60分checkpoint、90分以降の新family開始なし、pushなし。TSK-08はin_progress、TSK-09.1／09はblockedを維持する。
