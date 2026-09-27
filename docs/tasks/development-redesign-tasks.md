@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.99"
+document_version: "1.7.100"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3663,3 +3663,28 @@ outer attemptは元観測の呼出し内で完全immutable typed proofを取得�
 units[0]〜[51]、unit52 consumer `05d16fa`／復元比較 `c387c9f`／committed proof `a842b91`とresume／gateDesign記録を保全した。committed65／proof5・比較12・consumer58等は同じsource／input／責務だけ再利用する。旧全240は235成功5失敗の歴史的runのままであり、後続の個別成功から全240成功を作らない。
 
 今回のsliceはBlocking0の製品未完了local checkpointとしてcommitし、pushしない。TSK-08 `in_progress`、09.1／09 `blocked`、Step2未完了を維持する。次は既存失敗証拠と現sourceからraw occurrence集計またはHP production inventoryの一ownerを別途限定計画し、元live phase帰属を確認する。共通gate／scalar／codecやruntimeへ暗黙に広げず、具体的な原因解消なしに全240／README quality／最終counter・digest／製品closureへ進まない。60分checkpoint／90分停止境界内で終了し、既存timeout／worker／affinity／thresholdを維持した。
+
+### Step再照合とpublished-master監査入力lifecycleの1セッション引継ぎ（2026-09-27）
+
+開始HEAD `f375eea18ed2184de2943f7303ada777dfc44f71`、index／tracked／untrackedはclean。今回の実行は現コード・既存artifact・JSONの読み取りとchecksum照合、既存正本の整理更新のみ。source test／producer／audit／quality、live計測、製品実装は行っていない。準備の正本はevidence `handoffPreparation.nextSession.productionAuditInputLifecycleSession`。主対象／直接参照・入力identity、成立済みcheckpoint、旧失敗・保存inventory、最初の計画成果物、限定計測、変更境界、検証、closure条件、60／90分境界を記録した。計画書は追加しない。
+
+| Step | 照合結果 | 次の扱い |
+| --- | --- | --- |
+| 0 | baseline／契約成立済み | 再開しない |
+| 1 | V41 request versionContext、V40保存・明示V41再計算成立済み | 現行契約と一致する証拠を再利用 |
+| 2 | 未完了。[46]〜[51]完了、unit52 consumer／復元比較／committed proof／attempt proofはcommit済みの限定checkpoint | 次の1セッションは既存production監査入力lifecycleと残りgate。TSK-08 closureは全義務の照合が揃う場合だけ |
+| 3 | 改訂matrix／eligibility digest成立済み | 再生成せず正本digestを保持 |
+
+現sourceで `executionSemanticsProduction.test.ts`は14 tests、同じpublished masterのread／JSON parse／strict parseが13箇所ある。残る1 testはraw servant／equipを読む別のHP条件証拠で、失敗名「raw occurrence」はnormalized master／Atlas evidence集計を指す。`productionHpPaths.test.ts`は5 testsでmasterPromiseを1つ共有し、最初の5000ms inventory taskがreadinessを待って全cellを元HP ownerで実行する。後続4 taskの既存60000msとcalculator／ranking／portable実経路も保持する。HPを「cellごとのmaster再読込」と説明しない。
+
+既存 `measureProductionAuditLifecycle`と2つのshared `productionAudit.test.ts`は別の計測owner。runnerの1／1／1 counterは指定shared modelだけを表し、上記2 suiteの全read／parseを既に数えているわけではない。test-file／workerを跨ぐglobal共有を既定解にせず、入力・lifetime・failure伝播と実費用を見える形で設計する。単にbeforeAllへ費用を移して5000ms gateを隠す方法、schema／runner変更、HP cell実行やartifact生成の予算外移動は採らない。
+
+読み取り照合で2つの旧production失敗を確認した。occurrenceは約5046ms、HP inventoryは約5513msで、各runでは他方が成功している。完全HP artifactは双方486 sources／7470 cells／digest `1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55`、bytes／SHAも一致。保存成功を失敗taskの全assertion到達とはしない。主対象2 sourceは製品baseline `60dea89`と同一だが、現在の元live phase原因やintroduced／unchanged／unrelated帰属は未確定。
+
+前sessionのattempt proof `f375eea`は最終182／control7成功、旧177完全値・bytes／SHA一致、199 receipt error0。今回26 checkpoint参照を照合し不一致0。`a842b91` committed65／proof5、`05d16fa` consumer58、`c387c9f`復元比較、units[0]〜[51]とunit52の全既存フィールドを保全する。published capacity selected0／excludedNp1は非empty fixtureとは別の境界。旧全240は235成功5失敗の歴史的runのままで、後続成功を合成しない。
+
+次作業者は要件確定済みとして、現在の定義・直接生成／利用経路から「published master監査入力のlifecycle」という1 familyに限定して解法を再判断する。最初の成果物は実装・最小元live計測・全14／5影響検証とTSK-08 closure可否の計画であり、編集やsource実行前に利用者確認を待つ。確認後は同じ範囲の必要な計測・修正・検証・記録・対象限定local commitまで続ける。HPの主費用が別ownerなら移行せず、未達条件と次の限定操作を残す。通常の技術判断の再承認は求めない。
+
+TSK-08は現時点で完了可能とは判定していない。チェックリスト／Done gate／Contract closure matrixと `remainingWorkSummary`にあるcoverage・全ratchet・diagnostic／artifact到達性・legacy削除・最終受入を現owner／既存証拠へ照合する義務が残る。新family／意味論追加なしでこの照合とgate原因解消が揃い、時間内に必須quality・必要なaudit／正式性能gate・最終counter／digest／receiptまで成立できるなら、承認後の同sessionでTSK-08完了を目指す。quality成功だけで未照合義務を完了にせず、実装gapや未達gateが残れば製品未完了checkpointで止める。TSK-09.1／09の作業は開始しない。
+
+60分で既存Task／evidenceへcheckpoint、90分で現在のatomic actionを終えて引き継ぐ。8 CPU affinity、production50%＝4workers／unit4workers、既存timeout／thresholdを維持。計測は設計に必要な元live baseline／candidate各1runから始め、未解決の判断がない反復はしない。広いqualityを探索目的で再試行せず、closure準備が揃ってから一度実行する。source／schema／codec／runtime／capture／runner／入力ファイルの無関係な変更と新familyは対象外。今回の整理更新と次sessionの依頼内commitはlocalのみで、pushしない。

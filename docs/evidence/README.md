@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.110"
+document_version: "1.4.111"
 status: "Active"
 updated_at: "2026-09-27"
 ---
@@ -57,7 +57,7 @@ updated_at: "2026-09-27"
 | [tsk-07-outcome-closure](tsk-07-outcome-closure.json) | Complete | machine-readable: five typed outcome presentation、numeric-row boundary、exact AttackProfile normal-calculator recovery、typed invalid reset/reload、unsupported／policy-unavailable non-recovery、focused consumer checks | TSK-07 | `3ec65cd` baseline／no new commit |
 | [tsk-07-responsive-accessibility-closure](tsk-07-responsive-accessibility-closure.json) | Complete | machine-readable: desktop／390px／320px responsive containment、accessible names／roles／keyboard／focus、five-outcome recovery presentation、stale/cache identity preservation、integrated quality evidence | TSK-07 | `b9c323a` baseline／no new commit |
 | [tsk-08-parity-diagnostics](tsk-08-parity-diagnostics.json) | Active | machine-readable: typed calculator／ranking／portable parity failure reason、canonical identity／first diff、bounded summary、declared artifact checksum reachability | TSK-08 | `34828ea` baseline／no new commit |
-| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: bounded-unit契約・完全diagnostic・checksum・再利用条件。[46]〜[51]完了、unit52は製品未完了checkpoint。 | TSK-08 | baseline製品`60dea89`。consumer `05d16fa`、復元比較 `c387c9f`、committed proof `a842b91`を保持。現outer attemptは原177＋追加5の182／影響control7成功、旧177完全値・bytes／SHA一致、199 receipt error0。正本はboundedUnits[52].capacityAttemptMaterializationCheckpoint。公開capacity selected0／excludedNp1は非empty fixtureと区別する。raw／HP既知gate・必須quality・最終counter／digest・製品closure未達。次の限定操作は同checkpoint.nextOperation。TSK-08 in_progress、09.1／09 blocked。 |
+| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: bounded-unit契約・完全diagnostic・checksum・再利用条件。[46]〜[51]完了、unit52は製品未完了checkpoint。 | TSK-08 | baseline製品`60dea89`。consumer `05d16fa`、復元比較 `c387c9f`、committed proof `a842b91`を保持。現outer attemptは原177＋追加5の182／影響control7成功、旧177完全値・bytes／SHA一致、199 receipt error0。正本はboundedUnits[52].capacityAttemptMaterializationCheckpoint。公開capacity selected0／excludedNp1は非empty fixtureと区別する。raw／HP既知gate・必須quality・最終counter／digest・製品closure未達。次の正本はhandoffPreparation.nextSession.productionAuditInputLifecycleSession。既存occurrence14／HP paths5の入力lifecycleを1sessionで計画・確認後に整理し、全TSK-08義務と時間が揃う場合だけclosureへ進む。TSK-08 in_progress、09.1／09 blocked。 |
 | [tsk-08-shared-audit-model](tsk-08-shared-audit-model.json) | Active | machine-readable: TSK-06.5 source reference、data-pipeline／calculation-application boundary model、full matrix first-difference gate、artifact reachability | TSK-08 | `5d82e38` baseline／no new commit |
 | [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／historical closure had no commit; current baseline `197ff30` |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Complete | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 final closure | `49efe62`／TSK-06.48 complete |
