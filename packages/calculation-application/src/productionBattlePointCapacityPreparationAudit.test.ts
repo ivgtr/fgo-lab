@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
+import { materializeBattlePointCapacityValue } from './productionBattlePointCapacityProof';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -14,7 +15,7 @@ import {
 } from './scenario';
 import {
   battlePointCapacityPreparationProgram,
-  battlePointCapacityDiagnostic,
+  battlePointCapacityDiagnosticProof,
   battlePointCapacitySelection,
   battlePointCapacityPreparationSource,
   auditBattlePointCapacityPreparation,
@@ -29,6 +30,26 @@ import {
   serializeProductionAuditArtifact,
   decodeProductionAuditArtifact,
 } from './productionAuditArtifacts';
+
+async function saveCapacityContract(
+  meta: Parameters<typeof writeProductionAuditArtifact>[0],
+  name: string,
+  payload: unknown,
+) {
+  const encoded = encodeProductionAuditDiagnostic(payload);
+  const memory = decodeProductionAuditDiagnostic(encoded);
+  const serialized = decodeProductionAuditDiagnostic(
+    decodeProductionAuditArtifact(serializeProductionAuditArtifact(encoded)) as typeof encoded,
+  );
+  await writeProductionAuditArtifact(meta, name, { encoded });
+  const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, name));
+  const disk = decodeProductionAuditDiagnostic(
+    (decodeProductionAuditArtifact(bytes) as { encoded: typeof encoded }).encoded,
+  );
+  expect(equalProductionAuditDiagnosticValues(memory, payload)).toBe(true);
+  expect(equalProductionAuditDiagnosticValues(serialized, payload)).toBe(true);
+  expect(equalProductionAuditDiagnosticValues(disk, payload)).toBe(true);
+}
 
 type Entry =
   | { kind: 'capacity'; amount: number; lifetime?: 'active' | 'constant' }
@@ -458,7 +479,11 @@ function run(master: MasterDataSnapshot, spec: Spec, capture = true, ranking = f
   const program = battlePointCapacityPreparationProgram(prepared, calculation);
   if (!program) throw new Error('capacity canonical program missing');
   const source = battlePointCapacityPreparationSource(program);
-  const gate = auditBattlePointCapacityPreparation({ expected: [program], observations: [source] });
+  const { gate } = auditBattlePointCapacityPreparation({
+    expected: [program],
+    observations: [source],
+    evidence: 'diagnostics',
+  });
   return { program, source, gate, result };
 }
 const preparations = new Map<
@@ -520,7 +545,7 @@ for (const spec of specs)
           group: string;
           reason: BattlePointCapacityFailureReason;
           path: string;
-          gate: ReturnType<typeof auditBattlePointCapacityPreparation>;
+          gate: ReturnType<typeof auditBattlePointCapacityPreparation>['gate'];
           transport: unknown;
         }[] = [];
         const source = positive.source,
@@ -535,9 +560,10 @@ for (const spec of specs)
           if (groupFor(group, path) !== testGroup) return;
           const restore = mutate();
           try {
-            const gate = auditBattlePointCapacityPreparation({
+            const { gate, valueProof } = auditBattlePointCapacityPreparation({
               expected: [program],
               observations: [source],
+              evidence: 'diagnostics',
             });
             checks.push({
               name,
@@ -545,7 +571,7 @@ for (const spec of specs)
               reason,
               path,
               gate,
-              transport: structuredClone(battlePointCapacityDiagnostic(source)),
+              transport: (materializeBattlePointCapacityValue(valueProof) as unknown[])[0],
             });
           } finally {
             restore();
@@ -1279,15 +1305,21 @@ for (const spec of specs)
             ['missing-population', [program], []],
             ['extra-population', [], [source]],
             ['duplicate-population', [program], [source, source]],
-          ] as const)
+          ] as const) {
+            const { gate, valueProof } = auditBattlePointCapacityPreparation({
+              expected,
+              observations,
+              evidence: 'population',
+            });
             checks.push({
               name,
               group: 'missing',
               reason: 'capacityPopulationMismatch',
               path: 'population',
-              gate: auditBattlePointCapacityPreparation({ expected, observations }),
-              transport: { expected, observations },
+              gate,
+              transport: materializeBattlePointCapacityValue(valueProof),
             });
+          }
         change(
           'missing',
           'master-owner',
@@ -1476,13 +1508,17 @@ for (const spec of specs)
           positive: {
             gate: positive.gate,
             result: positive.result,
-            proof: battlePointCapacityDiagnostic(positive.source),
+            proof: materializeBattlePointCapacityValue(
+              battlePointCapacityDiagnosticProof(positive.source),
+            ),
           },
           normal: normal.source.downstream.calculation,
           ranking: {
             gate: ranking.gate,
             result: ranking.result,
-            proof: battlePointCapacityDiagnostic(ranking.source),
+            proof: materializeBattlePointCapacityValue(
+              battlePointCapacityDiagnosticProof(ranking.source),
+            ),
           },
           published,
           negatives,
@@ -1652,3 +1688,146 @@ for (const spec of specs)
         expect(positive.result).toEqual(positive.source.downstream.result);
       },
     );
+
+it(
+  'fixes observed capacity canonical mutations before restore without changing authority',
+  productionAuditTestOptions(['tsk-08-capacity-proof-lifetime.json']),
+  async ({ task }) => {
+    const master = fixtureMaster(specs[0]!);
+    const { program, source } = run(master, specs[0]!);
+    const before = battlePointCapacityDiagnosticProof(source);
+    const writers = program.downstream.expected.writers;
+    let mutated: ReturnType<typeof auditBattlePointCapacityPreparation>;
+    let published: ReturnType<typeof auditPublishedBattlePointCapacityPreparation>;
+    try {
+      program.downstream.expected.writers = [];
+      mutated = auditBattlePointCapacityPreparation({
+        expected: [program],
+        observations: [source],
+        evidence: 'diagnostics',
+      });
+      published = auditPublishedBattlePointCapacityPreparation(
+        master,
+        [program],
+        [source],
+        [battlePointCapacitySelection(program.downstream.prepared)!],
+      );
+    } finally {
+      program.downstream.expected.writers = writers;
+    }
+    const after = battlePointCapacityDiagnosticProof(source);
+    const raw = materializeBattlePointCapacityValue(mutated.valueProof) as {
+      canonical: { writers: unknown[] };
+    }[];
+    const input = source.downstream.input;
+    let copy: ReturnType<typeof auditBattlePointCapacityPreparation>;
+    let copyTransport: unknown;
+    try {
+      source.downstream.input = structuredClone(input);
+      copy = auditBattlePointCapacityPreparation({
+        expected: [program],
+        observations: [source],
+        evidence: 'diagnostics',
+      });
+      copyTransport = materializeBattlePointCapacityValue(copy.valueProof);
+    } finally {
+      source.downstream.input = input;
+    }
+    await saveCapacityContract(task.meta, 'tsk-08-capacity-proof-lifetime.json', {
+      before: materializeBattlePointCapacityValue(before),
+      mutated: { gate: mutated.gate, proof: raw },
+      copy: { gate: copy.gate, proof: copyTransport },
+      after: materializeBattlePointCapacityValue(after),
+      published,
+    });
+    expect(
+      copy.gate.failures.some(
+        (f) => f.reason === 'capacityIdentityMismatch' && f.checkPath === 'use.original',
+      ),
+    ).toBe(true);
+    expect(raw[0]!.canonical.writers).toEqual([]);
+    expect(mutated.gate.failures.some((f) => f.checkPath === 'canonical.contract')).toBe(true);
+    expect(published.gate.failures).toEqual(mutated.gate.failures);
+    expect(
+      equalProductionAuditDiagnosticValues(
+        materializeBattlePointCapacityValue(before),
+        materializeBattlePointCapacityValue(after),
+      ),
+    ).toBe(true);
+    expect(
+      auditBattlePointCapacityPreparation({
+        expected: [program],
+        observations: [source],
+        evidence: 'diagnostics',
+      }).gate.status,
+    ).toBe('passed');
+  },
+);
+
+it(
+  'fixes the complete capacity population envelope including unmatched and duplicate observations',
+  productionAuditTestOptions(['tsk-08-capacity-proof-population.json']),
+  async ({ task }) => {
+    const { program, source } = run(fixtureMaster(specs[0]!), specs[0]!);
+    const unmatched = {
+      ...source,
+      program: { ...program, canonicalIdentity: 'unmatched-capacity-observation' },
+    };
+    const inspected = auditBattlePointCapacityPreparation({
+      expected: [program],
+      observations: [source, unmatched, source],
+      evidence: 'population',
+    });
+    const established = materializeBattlePointCapacityValue(inspected.valueProof);
+    let whileMutated: unknown;
+    const steps = source.steps;
+    const identity = program.canonicalIdentity;
+    try {
+      source.steps = [];
+      program.canonicalIdentity = 'later-capacity-mutation';
+      whileMutated = materializeBattlePointCapacityValue(inspected.valueProof);
+    } finally {
+      source.steps = steps;
+      program.canonicalIdentity = identity;
+    }
+    const restored = materializeBattlePointCapacityValue(inspected.valueProof) as {
+      expected: (typeof program)[];
+      observations: (typeof source)[];
+    };
+    const diagnostics = auditBattlePointCapacityPreparation({
+      expected: [],
+      observations: [unmatched, source, source],
+      evidence: 'diagnostics',
+    });
+    const observed = materializeBattlePointCapacityValue(diagnostics.valueProof) as {
+      canonicalIdentity: string;
+    }[];
+    await saveCapacityContract(task.meta, 'tsk-08-capacity-proof-population.json', {
+      gate: inspected.gate,
+      proof: restored,
+      whileMutated,
+      diagnostics: { gate: diagnostics.gate, proof: observed },
+    });
+    expect(equalProductionAuditDiagnosticValues(restored, established)).toBe(true);
+    expect(equalProductionAuditDiagnosticValues(whileMutated, established)).toBe(true);
+    expect(
+      equalProductionAuditDiagnosticValues(restored, {
+        expected: [program],
+        observations: [source, unmatched, source],
+      }),
+    ).toBe(true);
+    expect(restored.expected).toHaveLength(1);
+    expect(restored.observations).toHaveLength(3);
+    expect(restored.observations[0]).toBe(restored.observations[2]);
+    expect(restored.observations[1]!.program.canonicalIdentity).toBe(
+      'unmatched-capacity-observation',
+    );
+    expect(observed.map((o) => o.canonicalIdentity)).toEqual([
+      'unmatched-capacity-observation',
+      identity,
+      identity,
+    ]);
+    expect(inspected.gate.status).toBe('failed');
+    expect(diagnostics.gate.status).toBe('failed');
+  },
+);

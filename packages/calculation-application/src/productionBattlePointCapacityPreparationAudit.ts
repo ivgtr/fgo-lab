@@ -22,6 +22,10 @@ import {
   type BattlePointPreparationRejectionObservation,
 } from './battlePointPreparationObservation';
 import { scalarQuantitySnapshot as snapshot } from './productionScalarQuantityAudit';
+import {
+  captureBattlePointCapacityValue,
+  battlePointCapacityCanonicalSnapshotter,
+} from './productionBattlePointCapacityProof';
 import type { PreparedCalculationScenario, CalculationExecution } from './scenario';
 
 type Operation = MasterEffect['execution'][number];
@@ -91,13 +95,18 @@ function view(source: BattlePointCapacitySource) {
   };
 }
 /** Complete bounded proof: selected canonical contract and all actual consumer evidence. */
-export function battlePointCapacityDiagnostic(source: BattlePointCapacitySource) {
+function diagnosticValue(source: BattlePointCapacitySource) {
   return {
     canonicalIdentity: source.program.canonicalIdentity,
     canonical: source.program.downstream.expected,
     ...view(source),
   };
 }
+/** Fresh complete observed values, including the mutable canonical contract. */
+export function battlePointCapacityDiagnosticProof(source: BattlePointCapacitySource) {
+  return captureBattlePointCapacityValue(diagnosticValue(source));
+}
+
 function originalReferences(source: BattlePointCapacitySource) {
   const conversion = source.downstream.preparation?.conversion;
   const target = source.downstream.observation?.targetExecution;
@@ -221,10 +230,11 @@ export function battlePointCapacityPreparationProgram(
   downstream.canonicalIdentity = canonicalIdentity;
   const program = { canonicalIdentity, downstream };
   const source = battlePointCapacityPreparationSource(program);
+  const canonicalSnapshot = battlePointCapacityCanonicalSnapshotter();
   authorities.set(program, {
     identity: canonicalIdentity,
-    canonical: snapshot(expected),
-    owner: snapshot(view(source)),
+    canonical: canonicalSnapshot(expected),
+    owner: canonicalSnapshot(view(source)),
     references: originalReferences(source),
     downstream,
     master: prepared.master,
@@ -250,7 +260,18 @@ export function battlePointCapacityPreparationSource(
 export function auditBattlePointCapacityPreparation(input: {
   expected: readonly BattlePointCapacityProgram[];
   observations: readonly BattlePointCapacitySource[];
+  evidence: 'diagnostics' | 'population';
 }) {
+  const evidence: unknown = input.evidence;
+  if (evidence !== 'population' && evidence !== 'diagnostics')
+    throw new TypeError('invalid_capacity_proof_evidence');
+  // Capture all observations before filtering, including unmatched and duplicate population.
+  const valueProof = captureBattlePointCapacityValue(
+    evidence === 'population'
+      ? { expected: input.expected, observations: input.observations }
+      : input.observations.map(diagnosticValue),
+  );
+  const snapshot = battlePointCapacityCanonicalSnapshotter();
   const failures: BattlePointCapacityFailure[] = [];
   const check = (
     identity: string,
@@ -1045,16 +1066,19 @@ export function auditBattlePointCapacityPreparation(input: {
       );
   }
   return {
-    canonicalIdentity: identity,
-    status: failures.length ? ('failed' as const) : ('passed' as const),
-    expected: expectedIds,
-    actual: actualIds,
-    failures,
-    firstDifference: failures[0]?.firstDifference ?? null,
-    changedCapacityWrites,
-    fixedConsumers,
-    npConsumptions,
-    boundaries,
+    valueProof,
+    gate: {
+      canonicalIdentity: identity,
+      status: failures.length ? ('failed' as const) : ('passed' as const),
+      expected: expectedIds,
+      actual: actualIds,
+      failures,
+      firstDifference: failures[0]?.firstDifference ?? null,
+      changedCapacityWrites,
+      fixedConsumers,
+      npConsumptions,
+      boundaries,
+    },
   };
 }
 
@@ -1109,7 +1133,11 @@ export function auditPublishedBattlePointCapacityPreparation(
   expectedSelections: readonly BattlePointCapacitySelection[],
 ) {
   const inventory = battlePointCapacityCanonicalInventory(master),
-    gate = auditBattlePointCapacityPreparation({ expected: programs, observations });
+    gate = auditBattlePointCapacityPreparation({
+      expected: programs,
+      observations,
+      evidence: 'diagnostics',
+    }).gate;
   const member = (x: {
     ownerId: string;
     skillId: string;

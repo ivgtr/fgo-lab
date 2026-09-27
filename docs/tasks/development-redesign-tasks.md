@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.96"
+document_version: "1.7.97"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3626,3 +3626,17 @@ attempt consumer／177 tests、global codec／共有scalar snapshot、production
 次の作業者は固定要件と現コードから実装・限定計測・検証計画を提示し、利用者確認後に同じ1セッション範囲を続ける。固定期待契約、元live参照、完全typed実値、検査結果、保存を分ける設計を候補とし、raw参照diagnostic APIの置換を妨げる互換wrapper／fallbackは要求しない。不変typed表現や呼出し内共有は候補であり、既存unit52 helperの機械的共通化、全面graph化、clone削除は既定解にしない。全否定・canonical path・完全artifact・受理値の契約を保つ。canonical不一致後のmutable期待値使用を変更する場合は別の意味論判断であり、保存責務修正に暗黙に混ぜない。
 
 今回の成果はsource未変更の整理更新commitと次作業者向け依頼文であり、製品gate成功ではない。追加計測は元committed失敗2groupの設計上必要な問いに限定。変更時は局所反証・差分レビュー後に原committed63全件／完全復元／receiptを検証する。attempt177、global codec、共有scalar、runtime／runner／設定は対象外。60分checkpoint／90分停止、製品未完了local checkpoint、pushなしを維持する。
+
+### committed capacity実値proofの保存責務checkpoint（2026-09-27）
+
+開始HEAD `33128446eee221a2a33e1aa64dab0e98750c663e`、index／tracked／untrackedはclean。現コードに基づく限定計測・実装・検証計画を提示し、利用者のOK後に承認範囲を実行した。設計判断・最終source／artifact identity・計測・検証・未達gateの正本はevidence `boundedUnits[52].committedCapacityMaterializationCheckpoint`。今回の範囲はcommitted consumer／fixtureとcapacity専用proof helper・小型契約fixtureのみである。
+
+consumerが元live値から不変typed proofを呼出し内で取得し、通常否定はfixtureが確定済みproofだけをrestore前にmaterializeする。population否定は完全 `{expected, observations}` を取得し、unmatched／duplicateも保存する。positive／rankingのpayload取得時点、published内部gateの独立呼出し、固定authorityと元live owner／leafの参照検査を維持した。observed mutable canonicalを固定期待値で置換せず、canonical不一致後のmutable期待値による検査も変更していない。
+
+canonical projectionはtyped保存と分け、authority生成時／各gate呼出し内の同じ元object identityだけを共有する。scalar snapshot・global codec・first difference比較・ゲーム意味論・timeout／threshold・runner設定は変更していない。Set／Mapは不変のtagged配列で保持し、同値別objectを統合しない。既存codecの件数損失反例は完全比較で拒否する。
+
+元live失敗2groupの限定計測では、source-actionのsnapshot約599→175ms／encode約1395→301ms、receipt-stateのsnapshot約541→134ms／encode約819→191msを観測した。新proof層のcapture／materialize費用も記録した合成変更の1組比較であり、保存interned再生・単独component原因帰属・3回中央値ではない。baselineのwrite区間にはtimeout後の次task CPU処理が含まれ得るため、純粋なI/O費用としない。filter付き診断はskipを理由にrunner contract_failureとなる場合があり、製品gate成功へ読み替えない。
+
+計測を外した最終sourceで元committed63＋追加lifetime／population2の全65 testsが成功し、proof契約5も成功した。旧失敗2taskは約1482／1515ms。元63保存artifactは全てbytes／SHA・独立した完全decoded値が一致し、1,491否定／5,623失敗check・母集団・境界・メモリ／serialize後／実disk復元・assertion前保存を維持した。75 receipt照合error0、source lint／root typecheck成功。protected units[0]〜[51]、consumer `05d16fa`、復元比較 `c387c9f` の既存記録と対象外sourceは不変である。
+
+これは製品未完了の対象限定local checkpointであり、pushしない。Step0／1／3成立、Step2未完了、[46]〜[51]完了、TSK-08 `in_progress`／TSK-09.1・09 `blocked`を維持する。attempt174／177と歴史的全240の235成功5失敗はそのまま残す。raw集計／HP inventory、README quality、最終counter／digest／全receipt統合、unit52／製品closureは未達。次は残る既知gateについて責務・比較入力・最小command・停止境界を別に限定し、今回のproofや既存checkpointを再開しない。60分checkpoint／90分停止を維持し、具体的原因解消なしに全240／qualityを反復しない。
