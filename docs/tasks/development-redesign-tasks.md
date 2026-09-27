@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.100"
+document_version: "1.7.101"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3688,3 +3688,36 @@ units[0]〜[51]、unit52 consumer `05d16fa`／復元比較 `c387c9f`／committed
 TSK-08は現時点で完了可能とは判定していない。チェックリスト／Done gate／Contract closure matrixと `remainingWorkSummary`にあるcoverage・全ratchet・diagnostic／artifact到達性・legacy削除・最終受入を現owner／既存証拠へ照合する義務が残る。新family／意味論追加なしでこの照合とgate原因解消が揃い、時間内に必須quality・必要なaudit／正式性能gate・最終counter／digest／receiptまで成立できるなら、承認後の同sessionでTSK-08完了を目指す。quality成功だけで未照合義務を完了にせず、実装gapや未達gateが残れば製品未完了checkpointで止める。TSK-09.1／09の作業は開始しない。
 
 60分で既存Task／evidenceへcheckpoint、90分で現在のatomic actionを終えて引き継ぐ。8 CPU affinity、production50%＝4workers／unit4workers、既存timeout／thresholdを維持。計測は設計に必要な元live baseline／candidate各1runから始め、未解決の判断がない反復はしない。広いqualityを探索目的で再試行せず、closure準備が揃ってから一度実行する。source／schema／codec／runtime／capture／runner／入力ファイルの無関係な変更と新familyは対象外。今回の整理更新と次sessionの依頼内commitはlocalのみで、pushしない。
+
+
+### Published-master監査入力lifecycleの限定checkpoint（2026-09-27）
+
+開始HEADは `4059f552f70936f3b9ba92280f7681683bc7d6c4`、index／tracked／untrackedはclean。利用者は現sourceに基づく計画を `OK` で承認した。今回の結果正本は [parity evidence](../evidence/tsk-08-parity-ratchet.json) の `boundedUnits[52].productionAuditInputLifecycleCheckpoint`。前節の準備source identity／次session計画は履歴として保持し、以降はこのcheckpointの結果・未達条件・次操作から再開する。
+
+`executionSemanticsProduction.test.ts` の同一published masterを読む13 testsは、suiteが明示的に作成した `createSuiteAuditInput` から同じstrict parsed master／順序付きeffectsを借用する。最初のtestが既存5000ms内でread／JSON parse／schema parse／freeze／射影を負担し、後続testだけが再利用する。失敗Promiseも保持し、read／JSON／schema／射影の失敗をretry・代替入力・部分viewへ変換しない。借用JSON graphとviewをfreezeし、consumerが作る局所配列のsort等は保持する。別入力・別suite・別workerは別ownerであり、global cacheを追加しない。
+
+変更は上記suiteと焦点の定まったtest-only helper／8件の契約fixtureのみ。HP sourceはHEADとbyte一致で、元のmodule-level masterPromise、最初の5000ms内の全cell実行／record／digest／serialize／write／assertion、後続4件の60000msとcalculator／ranking／portable実経路を保持した。`allEffects`定義はbyte一致、全14 test本文は入力bindingの置換を除いて同一。schema／normalize／runtime／unit52 consumer／runner／suite登録／入力／timeout／thresholdは無変更。
+
+元live baseline／candidate各1回は同じ入力・affinity0-7・production50%上限4workersで全14＋5を実行し、双方19成功。occurrenceのread／JSON／schemaは13→1、effects射影は14→1。module開始からsuite終了は27,897.90→4,494.70msで、candidateのfreeze費用230.996msも最初のtest内に含む。baselineの累計JSON 3,330.400ms、JSONを除くschema 21,579.227ms、occurrence集計／assertion 79.941msに対し、candidateはJSON 254.040ms、schema 2,232.037ms、集計／assertion 103.096ms。集計を書き換える根拠はなく、確認できた入力・射影重複だけを除いた。
+
+HPは両runともmaster read／JSON／schema各1。readiness 2,750.992→2,637.144msに対し全7470 cellのexecute累計44.176→43.721msで、別HP ownerの算術変更へ広げていない。readinessとmodule setupは重なり、async read／writeにはscheduleや他taskのCPUが含まれ得る。baseline strict計測はJSONを含むためreportで差し引き、重なるphaseを加算しない。2-file比較は全productionの4worker競合と同一ではなく、旧timeoutを再現していない。旧失敗のintroduced／unchanged／unrelated帰属や正式3-run性能成功は主張しない。計測sourceとgenerator、全phase、manifest／disk receiptは `.test-results/tsk-08-input-lifecycle-session-20260927/reconciliation.json` に記録した。candidate計測sourceは同じ最終source・保存generatorからの決定的復元であり、再runではない。
+
+計測を外した最終sourceでは全production33 files／155 tests成功（主対象14／5を含む、warning0、88.36秒）。artifactは `.test-results/2026-09-27T12-57-38-655Z-3-0f8fc5`。occurrence task166.06ms、最初の入力負担test3,020.24ms、HP inventory3,176.87msで元5000ms内に全assertion到達した。fixture8、package TypeScript、対象lint／formatも成功。HP全5 artifactはbaseline／candidate／最終の完全decoded値・順序・bytes／SHAが一致し、旧2失敗runのHP inventoryもbyte一致。486 sources／7470 cells／digest `1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55` を保持した。runner宣言receipt29と別ownerのdisk receipt17はerror0。HP helperはrunnerへartifactを宣言していないため、独立disk receiptをrunner receiptへ読み替えない。既存shared modelの1／1／1とcandidate6673／deduplicated4194／damage2596／distinct1489は元contractと一致し、新しいsuite計測とは区別する。
+
+TSK-08 closureは次のように照合した。詳細の現定義・参照はcheckpoint `closureReconciliation` を正本とする。
+
+| 義務 | 現owner／成立証拠 | 今回の判定 |
+| --- | --- | --- |
+| occurrence／HP既知gate | suite内入力owner、元HP masterPromise、最終production155 | 現最終sourceで成立。履歴の失敗や正式性能契約は別 |
+| 全HP primitive population | 元HP ownerで486／7470と完全artifact | 全cell実行は成立。fresh stateのstatus／range検査だけで全transaction／live read／NP／noncommitを閉じない |
+| 完了済みmutation slices | S4／without-area／stars／scalar／BP、fixed HP／maximumFixed／receive、unit52各checkpoint | 同一責務の限定証拠を保全。selectorが除くaction／lifetime／recipientへ成功を転用しない |
+| 残るcoverage | 現schema、preparationHp／hpResource、primitive tests、outside-boundary／否定fixture | runtimeとgeneric経路は実装済み。全population→共有gate接続は未照合で、runtime実装gapとは断定しない |
+| 全ratchet／diagnostic到達性 | typed parity／final outcome／transaction／control gates、既存persistence／matrix | 部分成立。全母集団、first diff、完全artifact到達性の統合closureは未達 |
+| legacy削除 | 対象suiteの旧13-load／反復射影を削除。現resource／OC／closure auditor参照を確認 | 検索範囲のquantityConditionsはnormalize内の現行局所変数。raw証拠producerの固有coverageは保持し、全legacy定義・参照の完了は主張しない |
+| 最終受入／正式性能 | README quality、matrixのRK-PERF-001／TS-PERF-002 | 1-run比較で代用しない。全義務の照合が未成立なので依存するquality／正式auditを開始しない |
+
+具体的にはschemaのmaximumRate／baseFixed／baseRate／give／noHealing、active／constantをruntimeが扱い、primitive testsも最大率等を検証する。一方、maximumFixed共有auditにはmaximumRate／constant／bounded／partyOther／NP writerの明示outside-boundaryがあり、receiveの `give` 否定fixtureはgiveのpositive auditではない。published宣言にはskill give/sourceSelf 1、CE give/sourceSelf 4、skill hpTransfer/sourceSelf 2、percent resource 3があるが、これを選択／到達／commit／read／NP件数へ転用しない。新しいHP意味論が必要とは判断しておらず、既存ownerと共有consumerの接続・coverageを次の限定調査で区別する必要がある。
+
+今回familyのBlockingは0だが、全TSK-08 coverage／ratchet／diagnostic／legacy／正式性能／README quality／最終統合counter・digest・全receiptは未達であり、製品未完了local checkpointとして閉じる。units[0]〜[51]とunit52全既存フィールド／各checkpointはJSON完全一致で保全し、182／control7・199 receipt、committed65／proof5、consumer58、復元比較12を再実行していない。旧全240は235成功5失敗の履歴のまま。Step0／1／3成立、Step2未完了、TSK-08 `in_progress`、09.1／09 `blocked`を維持する。
+
+次は `hpModifier action give` 一ownerに限定した読み取り専用coverage照合とし、canonical宣言→既存hpResource／preparationHp→実applicationのwriter／reader／NP／native noncommit→共有audit selector／否定fixtureの対応を整理する。既存positive証拠・監査未接続・宣言境界・対象外・実装gapを分けてから必要な次unitを決め、今回の入力lifecycleや完了済みunitsを再開しない。通常pnpmの外部SQLite store失敗はscript開始前の環境障害として記録し、正本指定730bytes／SHA一致の `/tmp/tsk08-tools/pnpm` と既存node_modules／generic runnerで検証した。今回記録を含むcommitが対象限定local checkpointで、pushなし。60／90分の上限より前に終了し、新family／TSK-09作業／quality探索反復は行っていない。

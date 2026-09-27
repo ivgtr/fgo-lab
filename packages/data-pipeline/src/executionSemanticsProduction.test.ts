@@ -8,6 +8,7 @@ import {
   type MasterEffect,
 } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
+import { createSuiteAuditInput } from './suiteAuditInput.test-support';
 
 const root = resolve(import.meta.dirname, '../../..');
 
@@ -22,6 +23,13 @@ function allEffects(master: ReturnType<typeof masterSnapshotSchema.parse>): Mast
     ...master.mysticCodes.flatMap((code) => code.skills.flatMap((skill) => skill.effects)),
   ];
 }
+
+// One borrowed published input per suite; the first consumer pays readiness within its 5s task.
+const publishedInput = createSuiteAuditInput({
+  read: () => readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8'),
+  parse: (input) => masterSnapshotSchema.parse(input),
+  project: (master) => Object.freeze(allEffects(master)),
+});
 
 function evidenceValues(effect: MasterEffect, limitBreak = false) {
   const sets =
@@ -46,10 +54,8 @@ const quantityRequirements = (effect: MasterEffect) =>
 
 describe('production canonical execution semantics', () => {
   it('ratchets every probabilistic terminal damage occurrence into canonical proc semantics', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const probabilistic = allEffects(master).filter((effect) => effect.proc.kind !== 'guaranteed');
+    const { master, view: effects } = await publishedInput();
+    const probabilistic = effects.filter((effect) => effect.proc.kind !== 'guaranteed');
     expect(
       probabilistic.reduce<Record<string, number>>((counts, effect) => {
         counts[effect.proc.kind] = (counts[effect.proc.kind] ?? 0) + 1;
@@ -143,10 +149,7 @@ describe('production canonical execution semantics', () => {
   });
 
   it('ratchets every normalized HP condition family and cumulative series', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const effects = allEffects(master);
+    const { view: effects } = await publishedInput();
     const hpEvidence = effects.filter((effect) =>
       effect.atlasEvidence.buffConditionKeys.some(
         (key) => key === 'HP_LOWER' || key === 'HP_HIGHER',
@@ -231,10 +234,7 @@ describe('production canonical execution semantics', () => {
   });
 
   it('maps every raw occurrence to a typed operation family', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const effects = allEffects(master);
+    const { master, view: effects } = await publishedInput();
     const operations = effects.flatMap((effect) => effect.execution);
     const counts = operations.reduce<Record<string, number>>((result, operation) => {
       result[operation.kind] = (result[operation.kind] ?? 0) + 1;
@@ -422,10 +422,8 @@ describe('production canonical execution semantics', () => {
   });
 
   it('ratchets canonical contribution scopes independently from target routing', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const scoped = allEffects(master)
+    const { view: effects } = await publishedInput();
+    const scoped = effects
       .flatMap((effect) => effect.execution)
       .filter((operation) => 'route' in operation && operation.kind !== 'unsupported');
     const terminal = scoped.filter((operation) =>
@@ -454,10 +452,8 @@ describe('production canonical execution semantics', () => {
   });
 
   it('classifies every production NP gauge occurrence without a raw runtime fallback', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const transitions = allEffects(master).flatMap(({ execution }) =>
+    const { master, view: effects } = await publishedInput();
+    const transitions = effects.flatMap(({ execution }) =>
       execution.flatMap((operation) =>
         operation.kind === 'resourceMutation' && operation.resource === 'npGauge'
           ? [operation]
@@ -479,7 +475,7 @@ describe('production canonical execution semantics', () => {
     });
     expect(transitions).toHaveLength(742);
     // PIR-001: bound count readers now execute; each retains its input identity and raw coefficient cells.
-    const counted = allEffects(master).filter((effect) =>
+    const counted = effects.filter((effect) =>
       effect.execution.some(
         (operation) =>
           operation.kind === 'resourceMutation' && operation.amount.kind === 'buffCount',
@@ -511,7 +507,7 @@ describe('production canonical execution semantics', () => {
       values: [[500, 550, 600, 650, 700, 750, 800, 850, 900, 1000], [], [], [], []],
     });
     expect(
-      allEffects(master)
+      effects
         .flatMap(({ execution }) => execution)
         .filter(
           (operation) =>
@@ -535,10 +531,7 @@ describe('production canonical execution semantics', () => {
   });
 
   it('keeps modifier values exactly equal to the former execution value source', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const effects = allEffects(master);
+    const { view: effects } = await publishedInput();
     let compared = 0;
     for (const effect of effects) {
       if (effect.operationReference !== null) continue;
@@ -555,10 +548,8 @@ describe('production canonical execution semantics', () => {
   });
 
   it('classifies all Value effects without placing trait IDs in modifier series', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const valueEffects = allEffects(master).filter((effect) =>
+    const { view: effects } = await publishedInput();
+    const valueEffects = effects.filter((effect) =>
       effect.atlasEvidence.parameterSemantics.value.includes('Value'),
     );
     const purposeCounts = { modifier: 0, modifierRate: 0, contextTraitId: 0, otherOperation: 0 };
@@ -609,11 +600,9 @@ describe('production canonical execution semantics', () => {
   });
 
   it('ratchets build-time referenced skills and their ordered canonical operations', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
+    const { view: effects } = await publishedInput();
     expect(
-      allEffects(master)
+      effects
         .filter((effect) => effect.operationReference !== null)
         .map((effect) => ({
           effectId: effect.id,
@@ -725,10 +714,8 @@ describe('production canonical execution semantics', () => {
   });
 
   it('retains trait provenance policies instead of reducing them to combined traits', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const counts = allEffects(master)
+    const { view: effects } = await publishedInput();
+    const counts = effects
       .flatMap((effect) => requirementLeaves(effect.requirement.expression))
       .filter((requirement) => requirement.kind === 'trait')
       .reduce<Record<string, number>>((result, requirement) => {
@@ -749,10 +736,8 @@ describe('production canonical execution semantics', () => {
   });
 
   it('keeps linked trait grants and suppressions under one canonical state identity', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const linked = allEffects(master).filter((effect) => effect.stateIdentity !== null);
+    const { view: effects } = await publishedInput();
+    const linked = effects.filter((effect) => effect.stateIdentity !== null);
     expect(linked).toHaveLength(31);
     const paired = linked.filter((effect) => effect.stateIdentity?.key === 'trait:2841');
     expect(
@@ -788,10 +773,8 @@ describe('production canonical execution semantics', () => {
   });
 
   it('normalizes forced-equality field counts without widening a single-enemy condition', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const fieldCountEffects = allEffects(master).filter((effect) =>
+    const { view: effects } = await publishedInput();
+    const fieldCountEffects = effects.filter((effect) =>
       effect.atlasEvidence.parameterSemantics.condition.includes('TriggeredFieldCountRange'),
     );
     expect(fieldCountEffects).toHaveLength(1);
@@ -818,10 +801,7 @@ describe('production canonical execution semantics', () => {
   });
 
   it('retains every MLB-only effect with explicit availability', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const effects = allEffects(master);
+    const { view: effects } = await publishedInput();
     expect(effects.filter((effect) => effect.availability === 'allLimitBreakStates')).toHaveLength(
       13_867,
     );
@@ -847,9 +827,7 @@ describe('production canonical execution semantics', () => {
   });
 
   it('ratchets complete shared MLB value evidence without runtime fallbacks', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
+    const { master } = await publishedInput();
     const sharedValues: unknown[] = [];
     let mlbSkillCraftEssences = 0;
     let sharedEffects = 0;
