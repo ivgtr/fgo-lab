@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.109"
+document_version: "1.7.110"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3872,3 +3872,18 @@ Published transfer2宣言をcommand由来の期待母集団から照合し、元
 今回接続のBlockingは0。TSK-08 checklist／Done gate／Contract closure matrix、remainingWorkSummary、入力lifecycle closureReconciliationには、全native／read／NP／recovery coverage、全ratchet／diagnostic到達、legacy固有coverage、正式性能、README最終quality、統合counter／digest／全receiptが残る。依存quality・製品closure・別familyを開始せず、Step0／1／3成立、Step2未完了、TSK-08 in_progress、09.1／09 blockedを維持する。units0..51とunit52全既存keyは開始HEADのdecoded値と完全一致で保持した。60分前に必要な局所・影響gateを閉じ、既存4文書の記録・文書gate・対象9fileのlocal commitで終了する。pushなし。次は既存inventoryと直接reader／proof参照から未観測coverageを限定読取照合し、次計画を別途決める。
 
 記録更新後の変更4文書Prettier、docs6／6・integrity、参照／registry、diff whitespace、全既存checkpoint decoded値と最終source／input／artifact identityの照合も成功した。以後は対象9fileのstage差分を照合してlocal checkpoint commitを作り、そのSHAをGit履歴から解決する。製品quality／全体closureは未達のままで、pushしない。
+
+
+### Step再照合と残存HP proof対応の1セッション準備（2026-09-28）
+
+開始HEAD `1cc348209ff3953512f120772e0482bf18f4ef70`、index／tracked差分／untrackedはclean。Step 0はbaseline／契約、Step 1はV41 versionContext・V40保持／明示V41再計算、Step 3は改訂matrix／eligibility digest成立済み。Step 2は未完了で、units[0]〜[51]は再開しない。unit52 transfer限定接続は同HEADで保存済み。Published2宣言、default12＋nonempty12の元native operation／receipt append／retained selected HP seedを接続したが、HP実read／HP依存NP各0を全read・NP因果・native noncommit・成功recoveryへ拡張しない。TSK-08 `in_progress`、TSK-09.1／09 `blocked`を維持する。
+
+今回の先行調査は元condition／NP reader、capture、既存forward／attempt proof、HP production／局所fixtureの定義・参照と既存artifactの読取・checksum照合のみ。transfer source5／input1／artifact4、HP coverage artifact3、指定runnerのbytes／SHAは一致。HP quantity leafは元resourceActor／attackerの実readをcapture scopeへ保存し、NPのhpRatioLowは元contextのratioとconsumed／missing／invalidを分ける。support HP productionには入力修復とportable replayがあるが、最終recordsの成功だけで修復前後のnative／実read／NPの完全proofとしない。fixedSelf forward／attemptのselectorと借用transportは限定責務であり、他familyや成功recoveryへ自動拡張しない。詳細・source8 identity・既存artifact7 identity・未照合の設計判断は[parity evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.hpRemainingProofReconciliationSession.preparationReport`を正本とする。新しい計画書は追加せず、製品source編集／source test／producer／audit／quality／live計測は実施していない。
+
+次の1セッションは、残存HP reader／NP／native noncommit／recoveryと既存proofの対応を現コードから照合し、既存証拠で足りるか、同じcoverage責務内の監査接続が必要か判断する。必要な共有inventory／typed coverage gate／既存artifact field接続／小型identity反証は同責務内で対応する。HP486／486／7470・54軸groupと各source／actor／action／operation／step／instance／receiptのidentity・順序を保つ。宣言、available、実selected、reached、native outcome、append、実read、HP、NP、recovery、正常除外を分ける。別family forward／native noncommit／成功recovery、新observerやnative family実装、対象外owner／runtime gapへの変更が必要なら根拠・未達条件・次の限定操作を残して止める。旧sessionは履歴と成立証拠であり、次の固定手順ではない。
+
+最初の成果物は現定義・参照・直接生成／利用経路に基づく設計・検証・TSK-08 closure可否の計画。既存producer接続／借用参照整理／焦点moduleの選択と候補file、owner／lifetime／failure伝播、完全母集団とcanonical identity join、重複・除外・未観測、小型反証、局所fixture／影響suite、旧新artifact完全値・順序・件数・typed reason・first difference・実disk bytes／SHA／receipt、60／90分境界を示し、利用者確認を待つ。確認前は読込・checksumのみで、編集・source実行・stage／commitをしない。不可欠な実行診断は最小command／比較入力／判断／停止境界を先に示し、診断だけの承認を実装承認へ読み替えない。確認後は同範囲を必要な実装・検証・正本更新・対象限定local commitまで続け、通常判断の再承認は求めない。
+
+TSK-08 checklist／Done gate／Contract closure matrix、remainingWorkSummary、入力lifecycle closureReconciliationを初期計画から全義務へ照合する。全ratchet／typed diagnosticsと完全artifact到達、legacy固有coverage、正式3-run性能、最終quality、統合counter／digest／全receiptは未達または未照合であり、現準備時点では全体closureを見込む根拠はない。全義務が有効既存証拠と今回coverage責務内の整理で成立し、対象内Blocking0かつ時間余裕があれば、確認後の同sessionで必要な影響audit／正式性能／README最終quality／最終統合照合まで進みTSK-08完了commitを目指す。未達coverage・gate、別family、対象外owner、実装gapが残れば依存quality／製品closureを開始せず製品未完了checkpointで終了する。legacy全件整理やTSK-09.1／09をこのsessionへ連鎖しない。計算構造／capture／hot pathに影響する場合だけ同条件1-run pairを限定診断し、正式3-runの代替にしない。旧成功・否定境界・全既存checkpointを保護し、8shardの無条件再生成や成功数のrun横断合成をしない。60分でcheckpoint、90分で現在のatomic actionを終え引継ぎ、対象限定local commit、pushなし。
+
+整理対象4文書のformat、docs6／6・integrity、diff whitespaceと全boundedUnits／旧transfer sessionのdecoded完全保持を確認した。通常pnpmのscript前SQLite store失敗は指定shim照合後に切替。初回integrityのevidence index版参照漏れは修正し、再実行成功。製品source実行・最終quality・正式性能は行っていない。整理commitのSHAはGit履歴から解決し、次作業者の依頼文に記載する。

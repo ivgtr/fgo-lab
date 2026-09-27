@@ -229,7 +229,7 @@
   ],
   "unresolved": [
     "Give native noncommit checkpoint has9 changed/8 boundary/45 negative representatives,final give3/HP6,retained related391 tests andaffectedAudit77;full protected artifact comparisons and370 independent disk/350 test-owned receipt checks error0. Docs6/integrity,format,typecheck,lint passed;target-only checkpoint commit0e8ada48d6b93b4ca8e5073d48e768f2bd494e02,no push. Whole other-family coverage/ratchet/legacy/formal performance/README quality/final integrated counters,digests/all receipts remain pending;see boundedUnits[52].giveNativeNoncommitCheckpoint. Preserve all prior successes/failures with original identities/responsibilities.",
-    "HP canonical486／7470とowner-to-consumer参照はunit52.hpCoverageReconciliationCheckpointで照合済み。全native／実read／NP／recoveryは未達。Published maximumRate／baseFixed／baseRate0とnoHealing／transfer／percent／origin／recipient／lifetime／phaseを別分類し、新runtime gapや製品除外を推測していない。次はtransfer2／selected参照12を候補に限定計画を作り、今回別familyは開始していない。 Transfer2／default12＋nonempty12の元native／retained selected HP seedはboundedUnits[52].hpTransferEvidenceReconciliationCheckpointで接続済み。Published HP read／HP-dependent NP各0と未観測のnative noncommit／成功recoveryを全closureへ読み替えない。",
+    "HP canonical486／7470とowner-to-consumer参照はunit52.hpCoverageReconciliationCheckpointで照合済み。全native／実read／NP／recoveryは未達。Published maximumRate／baseFixed／baseRate0とnoHealing／transfer／percent／origin／recipient／lifetime／phaseを別分類し、新runtime gapや製品除外を推測していない。transfer候補計画は完了済み履歴。次の正本はhandoffPreparation.nextSession.hpRemainingProofReconciliationSession。 Transfer2／default12＋nonempty12の元native／retained selected HP seedはboundedUnits[52].hpTransferEvidenceReconciliationCheckpointで接続済み。Published HP read／HP-dependent NP各0と未観測のnative noncommit／成功recoveryを全closureへ読み替えない。",
     "Whole TSK-08 parity/unsupported/invalid/partial-commit/inert-control/stale-mutation and typed diagnostic/artifact closure remains unclaimed; reuse completed units and matrix evidence where identities/governing semantics remain valid. Legacy aggregate auditor/old loader/scan/candidate-list/duplicate fixture cleanup must be reconciled with current actual symbols before removal.",
     "TSK-08 in_progress;TSK-09.1/09 blocked. Step0/1/3 established; Step2 completed units through[51] retained. Unit52 consumer checkpoint is not unit52 product completion or whole closure."
   ],
@@ -21904,7 +21904,7 @@
         {
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open. Current give native noncommit A/B shared audit is implemented with separate filtered empty-read capture;final give3/HP6/related391 retained/audit77 and full comparisons/370 disk+350 declared receipt error0 verified;not whole closure. HPcanonical486/7470/54groups andgenericconsumerreferences verified;seehpCoverageReconciliationCheckpoint;notnative/read/recoveryorwholeclosure. Transfer2 declarations/24 original native operations andretained selectedHP seeds nowconnected;old selected12/HP7/give6/audit77 artifacts retained. ActualHP read/HP-dependentNP0 inthesePublishedcases isnotNP causality/recoveryclosure. See boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint.",
-          "nextBoundedScope": "既存remainingWorkSummaryとHP coverage軸から、未観測のHP reader／NP／native noncommit／recoveryと既存proofの直接参照を限定読取照合し、次の計画を別途決める。別family実装を連鎖開始しない。",
+          "nextBoundedScope": "残存HP reader／NP／native noncommit／recoveryと既存proofの直接参照を現コードから照合し、同じcoverage責務内で必要な監査接続・検証とTSK-08 closure可否の計画を提示する。利用者確認後に同scopeをlocal commitまで続け、別family実装を連鎖開始しない。",
           "nextScopeQualification": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint",
           "activeUnit52ScopeReference": "boundedUnits[52]"
         },
@@ -21918,7 +21918,7 @@
       "nextBoundedUnit": "unit52 remaining coverage evidence reconciliation;plan separately,no chained family implementation",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "handoffPreparation.nextSession.hpTransferEvidenceReconciliationSession",
+      "nextScopeQualification": "handoffPreparation.nextSession.hpRemainingProofReconciliationSession",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -21929,7 +21929,8 @@
       "asOfGiveNativeCheckpointCommit": "0e8ada48d6b93b4ca8e5073d48e768f2bd494e02",
       "asOfHpCoverageCheckpointReference": "boundedUnits[52].hpCoverageReconciliationCheckpoint",
       "asOfHpCoverageCheckpointCommit": "51aad93b7212c1697738d43f9f4614bfa89d1117",
-      "asOfHpTransferEvidenceCheckpointReference": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint"
+      "asOfHpTransferEvidenceCheckpointReference": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint",
+      "asOfHpTransferEvidenceCheckpointCommit": "1cc348209ff3953512f120772e0482bf18f4ef70"
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -22733,8 +22734,8 @@
         "nextOperationReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint.nextOperation"
       },
       "historicalRootQualification": "Historical-prefixed plans remainhistory. productionAuditInputLifecycleSession wasconfirmedandexecuted;currentresultandnextlimitedoperationareownedby boundedUnits[52].productionAuditInputLifecycleCheckpoint.",
-      "currentCheckpointCommit": "51aad93b7212c1697738d43f9f4614bfa89d1117",
-      "currentSessionReference": "handoffPreparation.nextSession.hpTransferEvidenceReconciliationSession",
+      "currentCheckpointCommit": "1cc348209ff3953512f120772e0482bf18f4ef70",
+      "currentSessionReference": "handoffPreparation.nextSession.hpRemainingProofReconciliationSession",
       "capacityAttemptMaterializationSession": {
         "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -23793,6 +23794,168 @@
           "commitPolicy": "Resolve this preparation commit from Git history;final handoff prompt carries actual SHA."
         },
         "executionCheckpointReference": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint"
+      },
+      "hpRemainingProofReconciliationSession": {
+        "status": "prepared_read_only_plan_confirmation_required",
+        "name": "残存HP reader／NP／native noncommit／recoveryの既存proof対応と全体closure判断",
+        "baselineHead": "1cc348209ff3953512f120772e0482bf18f4ef70",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "worktreeAtPreparation": "HEAD/index/tracked/untracked clean",
+        "authority": "今回指示の正本。旧hpCoverage／hpTransfer／give／input lifecycle sessionsは履歴と成立証拠であり固定手順ではない。",
+        "objective": "現HP coverage軸と元reader／既存proofの対応を照合し、既存証拠で足りるか、同じcoverage責務内の監査接続が必要か判断する。必要な共有inventory／typed gate／既存artifact field接続／小型identity反証だけを1sessionで実装・検証・正本更新・対象限定local commitまで行う。pushしない。",
+        "firstDeliverable": "現コードの定義・参照・直接生成／利用経路から設計と検証計画、TSK-08 checklist／Done gate／Contract closure matrixへの対応、全体closure可否、60／90分停止境界を提示して利用者確認を待つ。",
+        "preApprovalBoundary": "コード・文書・JSON・既存artifactの読込とchecksum照合のみ。編集、source test／producer／audit／quality／live計測、stage／commitを行わない。診断実行が不可欠なら最小command・比較入力・判断・停止境界を先に提示し、診断承認を実装承認へ読み替えない。",
+        "afterConfirmation": "同責務内の必要作業をlocal commitまで続ける。通常の技術判断で再承認を求めない。製品意味論や実質的な範囲拡張だけは別扱い。",
+        "sourceIdentities": [
+          {
+            "path": "packages/battle-execution/src/condition.ts",
+            "bytes": 12423,
+            "sha256": "00021befc635886213cdc387ff3dc6fc4dc0b11b243c42a88c58644698cecdf2"
+          },
+          {
+            "path": "packages/battle-execution/src/npDamageOperation.ts",
+            "bytes": 12646,
+            "sha256": "2710028d77337600f2569f246bb5d945cb216c7c58418deca880208ebc59a524"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 11298,
+            "sha256": "29797680d4bbc8893ad2505dc45087ca6d0575902316bc945bb130d8f65da0a2"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpTransferEvidence.ts",
+            "bytes": 15052,
+            "sha256": "29b41025e371945a36bc74dfa5170e3270f06941a88b243eba462f95fdcb4c21"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPaths.test.ts",
+            "bytes": 33701,
+            "sha256": "b99cb0165fc1d88b3cc1e45b78b838830456af1ac206b0559a9882f4ed1005c3"
+          },
+          {
+            "path": "packages/calculation-application/src/hpExecution.test.ts",
+            "bytes": 47898,
+            "sha256": "73a056ab3443eabb95ae5da72ecf04eadb1e12b311187a95a74867b97bd615e4"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.ts",
+            "bytes": 42748,
+            "sha256": "eed65dc9d1458df4af30ad98944a575d538270cf958008b4246e9332a0e2f746"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAttemptAudit.ts",
+            "bytes": 29763,
+            "sha256": "8c3c8011ce92829a770960f4eb73746e229d5ba9c13c06935ec9333c3e4c9426"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "existingArtifactIdentities": [
+          {
+            "path": ".test-results/tsk-08-hp-coverage-20260928/complete-comparison.json",
+            "bytes": 173704,
+            "sha256": "2d4b208f4fbade4c5cde00866ee61b0f3260a2feb21b48c2827e0917ae2cb91d"
+          },
+          {
+            "path": ".test-results/tsk-08-hp-coverage-20260928/consumer-mapping.json",
+            "bytes": 1508286,
+            "sha256": "c7d42d3525b1d4669d664edfdbce51ef018e58f07bc79a9ae89b8afbd458fab9"
+          },
+          {
+            "path": ".test-results/2026-09-27T16-07-08-155Z-21-ef6310/hp-operation-coverage.json",
+            "bytes": 9437575,
+            "sha256": "fd951501c6508cffd1258fedfc52df816848f9654a44dbacf2a19d87a1b1dcbe"
+          },
+          {
+            "path": ".test-results/tsk-08-hp-transfer-20260928/complete-comparison.json",
+            "bytes": 318396,
+            "sha256": "3b0f5db9d992ade9d6f34dc91aee872626c2b479fa8c500c290d6003ea8a1328"
+          },
+          {
+            "path": ".test-results/2026-09-27T16-58-22-636Z-3-b6818d/hp-transfer-evidence.json",
+            "bytes": 652291,
+            "sha256": "a3e7d70f398095d43de0c804fba5fcf95cbea19b58958ccffdbc1ef2651107f3"
+          },
+          {
+            "path": ".test-results/2026-09-27T16-57-42-011Z-20-f11e99/hp-transfer-identity.json",
+            "bytes": 71553,
+            "sha256": "5ebc12c17084d792d1f6fe2b5210a068fc85cefc14df7132b1aadd9fbd7d6a6f"
+          },
+          {
+            "path": ".test-results/tsk-08-hp-transfer-20260928/compare.mjs",
+            "bytes": 7710,
+            "sha256": "f045106e6eae498f9c98764fd4fbd7b2604b4970f4a5fe5795d2a70d4a49965e"
+          }
+        ],
+        "preparationReport": {
+          "method": "現code定義／参照・既存JSON／artifact読込、checksumのみ。製品source編集／source実行／live計測なし。文書整理gateは別記する。",
+          "identityVerification": "transfer source5/input1/artifact4、HP coverage artifact3、指定runner1のbytes/SHA一致。下記source8を現ファイルから固定。",
+          "findings": [
+            {
+              "path": "packages/battle-execution/src/condition.ts::evaluateConditionAgainstKnownFacts / hpExecutionObservation.ts::evaluateObservedCondition",
+              "finding": "attackerHpPermille quantity leafはresourceActor又はattackerを実readしてobserveHpQuantityへ渡す。candidate observationのWeakMap登録がある場合だけoperationId／sequence／group／state／conditionOutcomeを保存し、finallyでscopeを復帰。宣言や保存HP一致だけではこの実readを証明しない。"
+            },
+            {
+              "path": "packages/battle-execution/src/npDamageOperation.ts::evaluateNpDamageOperationInternal / hpExecutionObservation.ts::applyObservedNpDamage",
+              "finding": "hpRatioLowは実contextのattackerHpRatioを読む。missing／invalid／coefficient missingとconsumedを分け、candidate npsへ元evaluationを保存する。HP条件付きnpGauge更新とhpRatioLow damage係数readは別責務であり、補助actor HP更新をattacker NP消費へ読み替えない。"
+            },
+            {
+              "path": "packages/calculation-application/src/productionHpTransferEvidence.ts::reconcileHpTransferEvidence",
+              "finding": "元native operation／receipt appendとretained selected seed接続は成立。unobservedはavailableActionInventory／transferModifierRead／transferToNpCausality／nativeNoncommitCoverage／successfulRecoveryCoverageを明示する。Published read／HP-dependent NP各0はこのrequest集合の観測数だけ。transferはreceive/give倍率observerを通らず、倍率不在をempty read成功にしない。"
+            },
+            {
+              "path": "packages/calculation-application/src/productionHpPaths.test.ts::support HP phase",
+              "finding": "元calculateScenario→inputRequired時のapplyCanonicalInputCommand→再calculateScenario→portable replayが存在。recordsは最終actions／inputs／resultとmissingSourceFactsOutcomeを保存するが、修復前後の全native transaction／実read／NP observationを同一identityで保存するproofとは限らない。source fact付与とinput repairを同じ成功recoveryへ合成しない。"
+            },
+            {
+              "path": "packages/calculation-application/src/hpExecution.test.ts",
+              "finding": "HP heal後の条件／hpRatioLow、HP-conditioned NP update、ordered writer後の別skill reader、input repair／portable parity等の局所fixtureが存在。局所test名・数値一致・portable実行だけで共有production proof完成としない。"
+            },
+            {
+              "path": "packages/calculation-application/src/productionHpPreparationAudit.ts::isFixedSelfHpWriter / hpPreparationCanonicalFor; productionHpPreparationAttemptAudit.ts::hpPreparationAttemptSource",
+              "finding": "fixed／fixed unit／sourceSelf／directを選ぶ既存forward proofは限定責務。attemptは元transport.transitionsのattempts／hpActionsを借用する。新familyにselectorを広げたり、全noncommit・recoveryへ既存成功を拡張する根拠は未確認。"
+            }
+          ],
+          "establishedPopulation": "HP486 sources／486 canonical declarations／7470 cells／54groups。consumer mapping429 context declarations／211 explicit selected declarations、2952 context refs／1038 selected refs。これらは全native／実read／NP／recovery件数ではない。",
+          "unresolvedDesignQuestions": [
+            "各coverage軸の期待母集団がどの元canonical identityから生成され、既存proofのselector／input／owner／phase／receiptと完全対応するか。",
+            "既存artifactの値と参照だけで不足が閉じるか、元captureの借用参照を同責務内で接続する必要があるか。新observerやnative family実装が必要なら次の限定操作へ分離する。",
+            "source fact充足、入力修復、native rollback、成功recoveryの成立契約がどこまで既存証拠で区別されるか。",
+            "全ratchet／diagnostic到達／legacy固有coverage／正式性能／最終統合受入に有効な既存証拠があるか。今準備だけではTSK-08 closureを見込めない。"
+          ]
+        },
+        "planMustExplain": [
+          "成立済み契約、未接続監査、未照合、変更不要を分ける。Step0/1/3とunits0..51を再開しない。",
+          "完全母集団・coverage軸とcanonical source/actor/action/operation/step/instance/receipt identity join、順序、重複／除外／未観測を示す。宣言→available→selected→reached→native→append→実read→HP→NP→recovery→正常除外を区別する。",
+          "既存producer接続／借用参照整理／焦点moduleの選択、候補file、採らない代替の理由、producer/capture/consumer/proof/artifactのowner・lifetime・failure伝播を示す。",
+          "判断を覆す小型反証、再利用fixture、局所／影響suite、旧新完全decoded値・順序・件数・typed reason・first diff・disk bytes/SHA/receiptの比較を選ぶ。",
+          "checklist／Done gate／Contract closure matrix、remainingWorkSummary、input lifecycle closureReconciliationを初期計画から全義務へ照合し、成立証拠／不足／今回内で閉じる条件を示す。"
+        ],
+        "changeBoundary": "残存HP proof correspondenceのcoverage責務に限定。共有inventory／typed coverage gate／既存artifact field接続／小型identity反証は可。元owner再実行、新期待値生成器、巨大proof再decode、別family forward／native noncommit／成功recoveryの連鎖実装を既定解にしない。observer不在hot pathへ不要allocationを追加しない。",
+        "excluded": "schema/parser/normalize/raw/master入力、HP算術・倍率・sign・bounds・truncation・clamp、writer transaction/commit/reducer/route/native分類、scenario/portable/ranking意味論、scalar/global codec/共通attempt authority、入力lifecycle、runner/suite登録/設定/GC/timeout/threshold、units0..51、UI retry/damage rollback/form switch/new supported behavior、無関係legacy削除、TSK09.1/09。",
+        "protectedEvidence": "unit52全既存checkpointを保持。HP486/7470 digest1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55、旧HP7/give6/audit77完全値・順序・bytes/SHA、give A/B／実倍率read／prefix／empty-read正常除外／下流非生成を元責務で維持。shared1/1/1・6673/4194/2596/1489、consumer58／復元12／committed65/proof5／attempt182/control7を全suite counterにしない。旧240=235成功5失敗を改変しない。",
+        "verification": "新しい疑義がない有効既存証拠は再利用。missing/duplicate/unmatched、同値foreign identity、誤family/actor/recipient、順序、対象外、declared対reached、実read対正常除外を小型集合で反証。runner verification／独立disk descriptor／test-owned declared receiptを分離。artifact不存在やidentity不一致を過去run成功で補わない。",
+        "performance": "計算構造/capture/hot pathに影響する場合だけ元live phase同input/affinity/workers/予算baseline/candidate各1runを限定診断。正式3-runを代用しない。正式既存証拠のsource/input/契約適用を照合する。",
+        "closurePolicy": "全義務が有効既存証拠と今回coverage責務内の整理で成立し、対象内Blocking0かつ時間余裕があれば確認後の同sessionで必要audit／正式性能／README最終quality／統合counter・digest・全receiptまで進みTSK-08完了commitを目指す。未達coverage/gate、別family、対象外owner、runtime gapが残れば依存quality／製品closureを開始せず製品未完了checkpointで止める。",
+        "sessionBoundary": "60分で既存Task/evidenceへcheckpoint。90分で現在のatomic actionを終え引継ぎ。追加quality再試行・独立調査・別family開始なし。対象差分review/stage/local commit、pushなし。",
+        "runner": "8CPU affinity0-7、production50%=4workers/unit4workers、audit1worker、既存timeout/threshold維持。pnpm外部SQLite storeによるscript前失敗は記録し/tmp/tsk08-tools/pnpmの内容/730bytes/SHA7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6照合後、nested PATHを含め既存node_modulesの同generic runnerへ切替。製品fallbackなし。",
+        "recordCommitPolicy": "この整理commitはGit履歴から解決。新計画書は作らず既存Task/evidenceへ成果・判断・identity・成功/失敗・counter/digest/receipt・保護checkpoint・未達条件・次限定操作を記録。",
+        "documentationVerification": {
+          "scope": "文書・指示4fileのみ。製品source/test実行なし。",
+          "commands": [
+            "node node_modules/prettier/bin/prettier.cjs --check <changed4>",
+            "PATH=/tmp/tsk08-tools:$PATH /tmp/tsk08-tools/pnpm test:docs",
+            "git diff --check"
+          ],
+          "result": "format成功、docs6/6とintegrity成功。全boundedUnitsと旧transfer sessionのdecoded値完全保持。",
+          "attemptHistory": [
+            "通常pnpmはformatter開始前に外部SQLite store ERR_SQLITE_ERROR。内容/730bytes/SHA照合済み指定shimと既存node_modulesへ切替。",
+            "最初のdocs6/6後integrityはevidence index registry版の更新漏れで失敗。registryを現frontmatter版へ修正し再実行成功。"
+          ]
+        }
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -24764,7 +24927,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "既存remainingWorkSummaryとHP coverage軸から、未観測のHP reader／NP／native noncommit／recoveryと既存proofの直接参照を限定読取照合し、次の計画を別途決める。別family実装を連鎖開始しない。",
+    "nextSession": "残存HP reader／NP／native noncommit／recoveryと既存proofの直接参照を現コードから照合し、同じcoverage責務内で必要な監査接続・検証とTSK-08 closure可否の計画を提示する。利用者確認後に同scopeをlocal commitまで続け、別family実装を連鎖開始しない。",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -24799,7 +24962,7 @@
     ],
     "qualification": "Original published6 declaration qualification belongs to retained selected-recipient unit52 scope. Current give5 declarations and original owner exclusion are separately recorded in giveCommittedForwardCheckpoint;neither declaration inventory implies selected/committed/reader/NP consumption. Whole product closure remains open.",
     "asOfProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
-    "asOfPreparationBaseline": "ea7290d79230931ba802d6f735541f36ec25ecb1",
+    "asOfPreparationBaseline": "1cc348209ff3953512f120772e0482bf18f4ef70",
     "unit52DeferredGates": [
       "Outer capacity attempt proof ownership/call-local canonical duplication is now verified by final182/control7;see boundedUnits[52].capacityAttemptMaterializationCheckpoint. Remaining common/scalar/codec/production lifecycle consumers are not automatically migrated.",
       "Establishedoccurrence/HP5sgatespassedincurrentfinalproduction33/155 aftersuite-localstrictinputreuse;HPsourceunchanged. ThisisnotformalperformanceorTSK08closure;see boundedUnits[52].productionAuditInputLifecycleCheckpoint"
@@ -24809,7 +24972,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "handoffPreparation.nextSession.hpTransferEvidenceReconciliationSession",
+    "nextSessionReference": "handoffPreparation.nextSession.hpRemainingProofReconciliationSession",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
     "capacityAttemptMaterializationCheckpointCommit": "f375eea18ed2184de2943f7303ada777dfc44f71",
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",
@@ -24820,6 +24983,7 @@
     "asOfGiveNativeCheckpointCommit": "0e8ada48d6b93b4ca8e5073d48e768f2bd494e02",
     "hpCoverageCheckpointReference": "boundedUnits[52].hpCoverageReconciliationCheckpoint",
     "asOfHpCoverageCheckpointCommit": "51aad93b7212c1697738d43f9f4614bfa89d1117",
-    "hpTransferCheckpointReference": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint"
+    "hpTransferCheckpointReference": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint",
+    "hpTransferCheckpointCommit": "1cc348209ff3953512f120772e0482bf18f4ef70"
   }
 }
