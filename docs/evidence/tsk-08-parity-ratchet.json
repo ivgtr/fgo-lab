@@ -16966,7 +16966,8 @@
         },
         "gcQualification": "Isolated63 tests passed with command-only NODE_OPTIONS=--max-semi-space-size=64; outside bounded investigation, not adopted, not full quality success; runner/config unchanged.",
         "stop": "No further quality/performance/legacy investigation this session. Retain scoped source uncommitted; commit existing documentation checkpoint only. No push."
-      }
+      },
+      "handoffPreparation": "Read-only retained6-source/local55/control7 manifest checksum reconciliation passed; Step0/1/3 established, Step2 unit52 remains incomplete. Next scope in handoffPreparation.nextSession.resumeUnit52."
     }
   ],
   "currentBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
@@ -17242,7 +17243,9 @@
       "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "Unit52 approved and in progress; final gates/records pending; not whole TSK-08 closure."
+      "nextScopeQualification": "Unit52 checkpoint, not completion: reuse verified six-source identity/local55/control7; plan bounded final-gate closure from current code and failures before further implementation. No other family or broad timeout/GC repair.",
+      "latestCompletedBoundedUnit": 51,
+      "activeBoundedUnit": 52
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -17298,7 +17301,7 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "Unit52 implementation checkpoint; mandatory gates incomplete; broader timeout fixes require separately bounded plan and confirmation.",
+      "status": "handoff ready; plan first, user confirmation required before implementation or source validation",
       "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "priorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
@@ -17769,7 +17772,23 @@
         "formatPolicy": "Keep frontmatter/table structure; docs ignored by Prettier, no forced override",
         "scope": "Four existing documentation records only; units0..51 unchanged; no new semantic execution claim"
       },
-      "recordCommitPolicy": "Resolve this documentation preparation commit from Git history; no self-referential commit hash."
+      "recordCommitPolicy": "Step reconciliation/handoff preparation is docs-only; resolve this preparation commit from Git history. Implementation source remains uncommitted until mandatory completion gates pass.",
+      "resumeUnit52": {
+        "checkpointRecordCommit": "72e16c48dd8875e01a485b8517b192ae0530445d",
+        "worktreeDependency": "Six scoped implementation files remain uncommitted (two untracked); this handoff requires this worktree, not a clean clone. Do not reset or discard. Source identities in boundedUnits[52].scopeCorrection.retainedSourceIdentity.",
+        "goal": "Complete existing unit52 only: assess current definitions/canonical generation/direct consumers and gate failures; propose staged implementation/validation plan, wait for user confirmation, then necessary bounded fixes, final gates/reconciliation/records/scoped local commits. No new semantic family.",
+        "planQuestions": [
+          "Which existing responsibilities actually require changes on current six-file difference? Keep valid completed coverage instead of rebuilding the consumer.",
+          "Which current gate failure has a demonstrated direct connection to this unit? Identify minimum diagnostic/change and evidence reuse, without assuming scheduling or GC is the cause.",
+          "How will local, affected audit, mandatory quality and final source/artifact/counter/digest reconciliation fit one session? State stopping boundary before execution."
+        ],
+        "preConfirmation": "Read-only code/artifact/canonical JSON/checksum inspection only. No source/test/docs edits, source tests/producer/audit/quality, stage or commit. If execution diagnostics indispensable, propose minimum command and separate diagnostic approval; diagnostic approval is not implementation approval.",
+        "afterConfirmation": "Proceed through same unit without reapproval for routine technical choices. Preserve existing semantics/negative fixtures/thresholds/timeouts/workers; no arbitrary GC/config/fixture changes for unrelated failures.",
+        "failedGateBoundary": "Do not repeat full quality without changed input or a concrete resolved cause. A failure outside the agreed direct scope is a gate blocker, not implicit permission to broaden fixes: record identity/results and revised bounded proposal; stop dependent closure, never claim completion.",
+        "sessionLimit": "60min checkpoint. At90min finish current atomic action and hand off; do not start another quality retry, family or investigation.",
+        "finish": "On mandatory-gate success reconcile final identities, counters/digests and protected units; update existing Task/evidence and commit only scoped changes locally, no push. If blocked/time-limited, preserve differential checkpoint and never commit as completed product.",
+        "preparationVerification": "Retained six-source and local55/control7 manifest bytes/SHA matched; protected boundedUnits0..51 unchanged; pnpm test:docs6/6 and docs integrity, git diff --check passed. No source validation/quality run."
+      }
     },
     "completedScalarRecoveryPreparation": {
       "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
@@ -18740,7 +18759,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Resume unit52 only after a bounded gate-resolution plan; local55/control7 evidence retained, mandatory quality/counter/digest/final reconciliation/product commit incomplete. Do not resume completed46-51 or expand to unrelated fixture/GC fixes.",
+    "nextSession": "Unit52 final-gate closure only; read current code/diff and failed artifacts, propose bounded staged plan and wait for confirmation. Reuse valid local55/control7, no new semantic family or unrelated fixture/GC repair.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",

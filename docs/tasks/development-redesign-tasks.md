@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.87"
+document_version: "1.7.88"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3506,3 +3506,18 @@ native非commit隔離の実装、recovery／retry／UI、他origin／recipient�
 必須qualityは未達。既存5秒timeoutの失敗が続いた後、既存HP fixture readiness補正とGC調査へ広げた点は、利用者の指摘を受け範囲逸脱として停止した。fixture変更はHEADと同一に撤回、GC設定は採用しない。60分checkpointは保存済みだが、同unitのgate継続が1sessionの収束範囲を超えた。これ以上のquality再実行・独立調査は行わない。
 
 今回の終了は文書checkpointのlocal commitだけとし、対象内実装6ファイルは未commitで保持する。必須quality・最終counter／digest／receipt照合・製品完了commitは未達であり、unit52を完了と呼ばない。再開はまずgate解消を1sessionへ収める限定計画を提示し、確認後に進める。既存[46]〜[51]や旧checkpointを再開せず、他familyへ広げない。TSK-08 `in_progress`、09.1／09 `blocked`、pushなし。
+
+### Step再照合とunit52再開handoff（2026-09-27）
+
+記録HEAD `72e16c48dd8875e01a485b8517b192ae0530445d`、index clean、tracked4／untracked2の対象内source差分を確認。保持6ファイルと局所55／control7 manifestのbytes・SHA-256はcheckpoint一致。今回の準備は読み取りと文書整理だけで、製品source変更やsource test／producer／audit／qualityは実行していない。
+
+| Step | 現在の成立範囲 | 今回以降の対応 |
+| --- | --- | --- |
+| 0 | baseline／契約成立済み | 有効な証拠を再利用 |
+| 1 | V41 request versionContext、V40保存・明示V41再計算成立済み | 新規対応なし |
+| 2 | [46]〜[51]の限定forward／noncommit成立済み。unit52は実装差分・局所55／control7成功を保持、必須quality未達 | 次の1sessionは既存unit52の差分確認・必要局所修正・最終gate／照合／記録だけ |
+| 3 | 改訂matrix／eligibility digest成立済み | 改訂後の正本identityを保持 |
+
+次作業者は保持差分の定義・canonical生成・直接consumerと既存失敗artifactを読み、変更要否、証拠再利用、必要な局所診断、必須gateを1sessionへ収める段階計画を提示して利用者確認を待つ。確認後は同unitを必要な修正・検証・記録・対象限定local commitまで続ける。失敗原因は未確定であり、GC／fixture補正を既定解にしない。具体的な解消根拠なしに全体qualityを反復せず、無関係な失敗の修正を暗黙のscopeへ足さない。範囲外gate障害は記録し改訂した限定計画へ切り戻す。
+
+60分でcheckpoint、90分では現在のatomic actionを終えて引き継ぎ、quality再試行や独立調査を開始しない。詳細正本はevidence `handoffPreparation.nextSession.resumeUnit52`。このhandoffは同worktreeの未commit／untracked sourceを必要とし、clean cloneだけでは実装差分を復元できない。旧unitの再開・新family・全体closureは対象外。TSK-08 `in_progress`、09.1／09 `blocked`、pushなし。
