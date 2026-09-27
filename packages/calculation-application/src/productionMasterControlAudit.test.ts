@@ -1,4 +1,16 @@
 import {
+  receiveCanonical,
+  receiveSelection,
+  receiveProgram,
+  receiveSource,
+  receiveDiagnostic,
+  auditPublishedReceive,
+  type ReceiveRequest,
+  type ReceiveProgram,
+  type ReceiveSource,
+} from './productionHpReceivePreparationAudit';
+import { evaluatePreparedCalculationResult } from './scenario';
+import {
   maximumFixedCanonical,
   maximumFixedSelection,
   maximumFixedProgram,
@@ -201,6 +213,9 @@ const maximumFixedSelections: MaximumFixedSelection[] = [];
 const maximumFixedPrograms: MaximumFixedProgram[] = [];
 const maximumFixedObservations: MaximumFixedSource[] = [];
 let maximumFixedPopulationComplete = false;
+const receiveRequests: ReceiveRequest[] = [];
+const receivePrograms: ReceiveProgram[] = [];
+const receiveObservations: ReceiveSource[] = [];
 const hpSelections: HpPreparationSelection[] = [];
 const hpPrograms: HpPreparationProgram[] = [];
 const hpObservations: HpPreparationSource[] = [];
@@ -234,6 +249,13 @@ function evaluateWithOrderedOperationEvents(
   );
   const evaluated = evaluatePreparedCalculationScenario(prepared, versions);
   // Request population is collected before any executable/native/activation filter.
+  if (receiveCanonical(prepared)) {
+    receiveRequests.push({ prepared, calculation: evaluated });
+    const selection = receiveSelection(prepared, evaluated, receivePrograms.length)!;
+    const direct = evaluatePreparedCalculationResult(prepared, versions);
+    receivePrograms.push(receiveProgram(selection, direct));
+    receiveObservations.push(receiveSource(selection, direct));
+  }
   if (maximumFixedCanonical(prepared))
     maximumFixedRequests.push({ prepared, calculation: evaluated });
   const maximum = maximumFixedSelection(prepared, evaluated, maximumFixedSelections.length);
@@ -551,6 +573,9 @@ describe('production master inventory ratchet', () => {
         masterDataVersion: master.version,
       };
       maximumFixedPopulationComplete = false;
+      receiveRequests.length = 0;
+      receivePrograms.length = 0;
+      receiveObservations.length = 0;
       maximumFixedRequests.length = 0;
       maximumFixedSelections.length = 0;
       maximumFixedPrograms.length = 0;
@@ -1780,6 +1805,41 @@ describe('production master inventory ratchet', () => {
       expect(maximumFixedGate.status, JSON.stringify(maximumFixedGate.firstDifference)).toBe(
         'passed',
       );
+    },
+  );
+
+  it(
+    'connects original receive controls to their separate fixed HP consumers',
+    {
+      timeout: 60_000,
+      ...productionAuditTestOptions(['production-preparation-hp-receive.json']),
+    },
+    async ({ task }) => {
+      const master = await loadProductionMaster();
+      const gate = auditPublishedReceive(
+        master,
+        receiveRequests,
+        receivePrograms,
+        receiveObservations,
+      );
+      const proof = {
+        originalControlPopulation: { expected: true, actual: maximumFixedPopulationComplete },
+        gate,
+        proofs: receiveObservations.map(receiveDiagnostic),
+      };
+      await writeProductionAuditArtifact(
+        task.meta,
+        'production-preparation-hp-receive.json',
+        encodeProductionAuditDiagnostic(proof),
+      );
+      const saved = decodeProductionAuditArtifact(
+        await readFile(
+          resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-preparation-hp-receive.json'),
+        ),
+      ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
+      expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(saved), proof)).toBe(true);
+      expect(maximumFixedPopulationComplete).toBe(true);
+      expect(gate.status, JSON.stringify(gate.firstDifference)).toBe('passed');
     },
   );
 

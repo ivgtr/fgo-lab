@@ -7,6 +7,7 @@ import type { EffectDecision, BattleOperation } from './contracts';
 import type { ContributionApplicationPolicy } from './executionTypes';
 import type { SourceEffect } from './sourceCollection';
 import type { HpState, HpModifierInstance } from './hpResource';
+import type { HpGainConsumption } from './preparationHp';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type {
   PreNoblePhantasmState,
@@ -41,6 +42,15 @@ export interface PreparationHpAction {
     modifiers: readonly HpModifierInstance[];
     receipts: HpState['receipts'];
   }[];
+  /** Kept separate from maximumFixed writes to preserve existing diagnostic scopes. */
+  receiveWrites?: NonNullable<PreparationHpAction['modifierWrites']>;
+  receiveConsumptions?: {
+    source: SourceEffect;
+    operationIndex: number;
+    valueSetIndex: number;
+    valueIndex: number;
+    consumption: HpGainConsumption;
+  }[];
   sourceEnds: {
     source: SourceEffect;
     step: number;
@@ -50,6 +60,8 @@ export interface PreparationHpAction {
     sourceStart?: PreNoblePhantasmState;
     stochasticFailureSteps?: readonly number[];
   }[];
+  /** Original state immediately before native committed execution markers are appended. */
+  commitStartHp?: HpState;
   native?: OcActionResult;
   /** Original preparation owner input and occurrence when a native attempt requests input. */
   rejectionInput?: { requiredInput: CanonicalInputDefinition; occurrenceId: string };

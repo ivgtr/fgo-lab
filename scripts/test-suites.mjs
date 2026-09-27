@@ -44,4 +44,5 @@ export const PRODUCTION_TEST_INCLUDES = [
 export const AUDIT_TEST_INCLUDES = [
   'packages/calculation-application/src/productionMasterControlAudit.test.ts',
   'packages/calculation-application/src/productionHpMaximumFixedPreparationAttemptAudit.test.ts',
+  'packages/calculation-application/src/productionHpReceivePreparationAudit.test.ts',
 ];

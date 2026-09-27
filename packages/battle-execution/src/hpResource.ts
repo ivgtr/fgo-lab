@@ -127,6 +127,7 @@ export function hpModifierValue(
   state: HpState,
   actor: string,
   action: HpModifierInstance['operation']['action'],
+  observe?: (instances: readonly HpModifierInstance[], value: number) => void,
 ): number {
   const instances = (state.modifiers ?? []).filter(
     (instance) => instance.actor === actor && instance.operation.action === action,
@@ -144,6 +145,7 @@ export function hpModifierValue(
   );
   if (minima.length) value = Math.max(Math.min(...minima), value);
   if (maxima.length) value = Math.min(Math.max(...maxima), value);
+  observe?.(instances, value);
   return value - base;
 }
 function maximumHp(state: HpState, actor: string, base: number): number {

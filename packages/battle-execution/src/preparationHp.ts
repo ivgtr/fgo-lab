@@ -93,6 +93,15 @@ function recipients(operation: HpOperation, source: SourceEffect, state: HpState
       return null;
   }
 }
+/** Original HP owner inputs/results; allocated only for requested capture. */
+export interface HpGainConsumption {
+  actor: string;
+  before: HpActorState;
+  modifierState: HpState;
+  receive: { instances: readonly HpModifierInstance[]; value: number };
+  mutation: Parameters<typeof transitionHp>[1];
+  result: ReturnType<typeof transitionHp>;
+}
 export function executeHpOperation(args: {
   state: HpState;
   operation: HpOperation;
@@ -100,6 +109,7 @@ export function executeHpOperation(args: {
   values: Readonly<Record<string, number>>;
   actionId: string;
   valueSetIndex: number;
+  observeGain?: ((consumption: HpGainConsumption) => void) | undefined;
   unresolvedCondition?: CanonicalInputDefinition | null;
   modifierCondition?: (instance: HpModifierInstance) => {
     outcome: boolean | null;
@@ -360,7 +370,8 @@ export function executeHpOperation(args: {
                 }),
               }
             : state;
-        const result = transitionHp(actor, {
+        let receiveRead: HpGainConsumption['receive'] | undefined;
+        const mutation: Parameters<typeof transitionHp>[1] = {
           direction: operation.direction,
           unit: operation.unit,
           amount,
@@ -368,14 +379,34 @@ export function executeHpOperation(args: {
           receive:
             transfer || operation.direction === 'loss'
               ? 1000
-              : 1000 + hpModifierValue(modifierState, id, 'receive'),
+              : 1000 +
+                hpModifierValue(
+                  modifierState,
+                  id,
+                  'receive',
+                  args.observeGain
+                    ? (instances, value) => {
+                        receiveRead = { instances, value };
+                      }
+                    : undefined,
+                ),
           give:
             transfer || operation.direction === 'loss'
               ? 1000
               : 1000 + hpModifierValue(modifierState, sourceActor(source), 'give'),
           noHealing:
             operation.direction === 'gain' && hpModifierValue(modifierState, id, 'noHealing') > 0,
-        });
+        };
+        const result = transitionHp(actor, mutation);
+        if (args.observeGain && receiveRead)
+          args.observeGain({
+            actor: id,
+            before: actor,
+            modifierState,
+            receive: receiveRead,
+            mutation,
+            result,
+          });
         if (result.status !== 'applied') {
           if (id === 'attacker') return result;
           actor = { kind: 'missing' };

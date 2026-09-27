@@ -13,7 +13,12 @@ import {
 } from './markerDependency';
 import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
 import { hpPermille } from './hpResource';
-import { isHpOperation, executeHpOperation, hpEffectKey } from './preparationHp';
+import {
+  isHpOperation,
+  executeHpOperation,
+  hpEffectKey,
+  type HpGainConsumption,
+} from './preparationHp';
 import { applyNpTransfer } from './npTransfer';
 import {
   applyPopulationFunctionToState,
@@ -737,7 +742,7 @@ export function executePreparationOc(args: {
             ? ocState.receipts.find((receipt) => receipt.actionId === args.actionId)
             : null;
           const hpBefore = current.hp;
-          const result = executeHpOperation({
+          const hpArguments: Parameters<typeof executeHpOperation>[0] = {
             state: current.hp,
             operation,
             source,
@@ -816,7 +821,33 @@ export function executePreparationOc(args: {
                 input: requiredOcConditionInput(recipientProgram, bound),
               };
             },
-          });
+          };
+          if (
+            hpAction &&
+            source.origin === 'attacker' &&
+            operation.kind === 'resourceMutation' &&
+            operation.direction === 'gain' &&
+            operation.amount.kind === 'fixed' &&
+            operation.unit === 'fixed' &&
+            operation.recipient === 'sourceSelf' &&
+            (operation.selection === undefined || operation.selection === 'direct')
+          )
+            hpArguments.observeGain = (consumption: HpGainConsumption) => {
+              // Only retain receive consumers, not unrelated HP gains.
+              if (
+                consumption.receive.instances.some(
+                  (instance) => instance.operation.action === 'receive',
+                )
+              )
+                (hpAction.receiveConsumptions ??= []).push({
+                  source,
+                  operationIndex,
+                  valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+                  valueIndex: source.valueIndex,
+                  consumption,
+                });
+            };
+          const result = executeHpOperation(hpArguments);
           if (result.status !== 'applied') {
             if (result.status === 'inputRequired') {
               requiredInput = result.requiredInput;
@@ -869,6 +900,30 @@ export function executePreparationOc(args: {
             (operation.useCondition === undefined || operation.useCondition.kind === 'always')
           )
             (hpAction.modifierWrites ??= []).push({
+              source,
+              operationIndex,
+              operation,
+              valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+              valueIndex: source.valueIndex,
+              before: hpBefore,
+              after: result.state,
+              modifiers: (result.state.modifiers ?? []).slice(hpBefore.modifiers?.length ?? 0),
+              receipts: result.state.receipts.slice(hpBefore.receipts.length),
+            });
+          if (
+            hpAction &&
+            source.origin === 'attacker' &&
+            operation.kind === 'hpModifier' &&
+            operation.action === 'receive' &&
+            operation.sign === 1 &&
+            operation.lifetime === 'active' &&
+            operation.route.target === 'sourceSelf' &&
+            (operation.selection === undefined || operation.selection === 'direct') &&
+            operation.bounds.minimum === 0 &&
+            operation.bounds.maximum === 50000 &&
+            (operation.useCondition === undefined || operation.useCondition.kind === 'always')
+          )
+            (hpAction.receiveWrites ??= []).push({
               source,
               operationIndex,
               operation,
@@ -1292,6 +1347,7 @@ export function executePreparationOc(args: {
     }
   }
   if (result.status === 'committed') {
+    if (hpAction?.receiveWrites?.length && current.hp) hpAction.commitStartHp = current.hp;
     const beforeCommit = current.battlePoints;
     current = {
       ...current,
