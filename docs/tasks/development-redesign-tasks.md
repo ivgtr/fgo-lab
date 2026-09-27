@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.90"
+document_version: "1.7.91"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3547,3 +3547,13 @@ productionの直接経路では、data-pipeline execution-semantics fileの個�
 優先する変更機構は、gate中に完全なactual値proofをcall-localの共有グラフとして凍結し、codecへ渡す前の木への複製を避けること。source restore後にraw値を遅延取得する設計は証拠を書き換えるため採らない。単一objectの異なるsemantic viewも区別する。元HP leaf参照の検査は値graphから独立させる。現scopeは他HP writerを境界で除外するため、未commit consumerに残る固定HP writer連鎖の一般化も責務整理候補とする。対象外writerを成功へ接続せず、旧familyのcleanupやHP意味論追加へ広げない。
 
 次の実装sessionでは、正本の段階計画に従ってproof／restoration契約と取得済みprofileをbaselineとして固定し、確認した支配的な機構に対する共有gate修正とunit52 proof分離を別々にレビューする。production lifecycleは別に明示した修正範囲と計測契約で扱う。通常のqualityを診断目的で反復せず、対象内Blockingと影響fixtureを閉じ、具体的なgate解消後にREADME quality・最終counter／digest／receipt・製品local commitへ進む。今回は調査記録だけで、新しい実装承認ではない。unit52は未完了、保持6 sourceは未commit、TSK-08 `in_progress`、09.1／09 `blocked`、pushなし。
+
+### Step照合と次の1セッションの限定（2026-09-27）
+
+Step 0（baseline／契約）、Step 1（V41 request versionContext・V40保存／明示V41再計算）、Step 3（改訂matrix／eligibility digest）は成立済み。Step 2のunit[46]〜[51]は完了済み、active unit52は未完了である。consumer設計調査とcapacity CPU profileは追加証拠であり、必須quality・最終counter／digest／全receipt照合・製品完了commitの代わりにはならない。TSK-08 `in_progress`、TSK-09.1／09 `blocked`を維持する。
+
+次の1セッションは**unit52 consumerのcanonical期待契約／immutable typed実値proof／元ownerのlive参照／検査・完全保存diagnosticの責務整理**に限定する。現コードと保持差分から実装・検証計画を先に提示して確認を待ち、確認後は通常の技術判断で再承認を求めず、局所修正・否定fixture・差分レビュー・影響audit・記録・対象限定checkpoint commitまで進める。未commit APIの置換も候補だが、過去の抽出案やmodule配置を必須解法としない。元HP意味論・算術・writerの再実行は追加しない。詳細の成果物・候補file・証拠契約・停止境界はevidence `handoffPreparation.nextSession.resumeUnit52.singleSessionScope`を正本とする。
+
+共有capacity consumer／codec／復元基盤の移行とproduction inventoryのread／parse lifecycle修正まで同時に行わない。取得済みprofileはこれらを別途限定する根拠として保存し、今回のconsumer修正だけで既存5秒timeoutが解消すると断定しない。全否定・完全diagnostic・独立したlossless復元・同値HP-copy拒否を維持し、call間cacheやrestore後の遅延snapshotで証拠を縮小しない。
+
+この限定成果をunit52製品完了と呼ばない。README必須qualityは免除せず、具体的な原因解消なしに反復しない。対象外gateが未解消なら依存する最終closureを止め、限定成果・未達gate・次の操作を既存Task／evidenceへ保存してlocal checkpointとする。全必須gateと最終照合が成立した場合だけ製品完了commitへ進む。60分checkpoint／90分停止、保持6ファイルと無関係差分の保全、pushなしは継続する。
