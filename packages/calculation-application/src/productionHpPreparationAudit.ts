@@ -116,6 +116,7 @@ export function hpPreparationCanonicalFor<W extends MasterEffect['execution'][nu
   prepared: PreparedCalculationScenario,
   writer: (operation: MasterEffect['execution'][number]) => operation is W,
   environmentBoundary: (operation: MasterEffect['execution'][number]) => boolean,
+  resourceConsumer: (operation: MasterEffect['execution'][number]) => boolean = isFixedSelfHpWriter,
 ): HpCanonical<W> | null {
   const scenario = prepared.scenario;
   if (scenario.mode !== 'resolved') return null;
@@ -216,7 +217,7 @@ export function hpPreparationCanonicalFor<W extends MasterEffect['execution'][nu
           (operation) =>
             operation.kind === 'resourceMutation' &&
             operation.resource === 'hp' &&
-            !isFixedSelfHpWriter(operation),
+            !resourceConsumer(operation),
         ),
       ),
     )

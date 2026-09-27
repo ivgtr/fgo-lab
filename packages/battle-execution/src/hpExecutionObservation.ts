@@ -7,7 +7,7 @@ import type { EffectDecision, BattleOperation } from './contracts';
 import type { ContributionApplicationPolicy } from './executionTypes';
 import type { SourceEffect } from './sourceCollection';
 import type { HpState, HpModifierInstance } from './hpResource';
-import type { HpGainConsumption } from './preparationHp';
+import type { HpGainConsumption, HpGiveGainConsumption } from './preparationHp';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type {
   PreNoblePhantasmState,
@@ -53,6 +53,16 @@ export interface PreparationHpAction {
     valueIndex: number;
     consumption: HpGainConsumption;
   }[];
+  /** Give evidence has its own lifetime and never changes receive diagnostic payloads. */
+  giveWrites?: NonNullable<PreparationHpAction['modifierWrites']>;
+  giveGains?: PreparationHpAction['writes'];
+  giveConsumptions?: {
+    source: SourceEffect;
+    operationIndex: number;
+    valueSetIndex: number;
+    valueIndex: number;
+    consumption: HpGiveGainConsumption;
+  }[];
   sourceEnds: {
     source: SourceEffect;
     step: number;
@@ -93,6 +103,38 @@ export function captureSelectedAllyMaximumFixedWrite(
   )
     return;
   (action.selectedAllyMaximumFixedWrites ??= []).push({
+    source,
+    operationIndex,
+    operation,
+    valueSetIndex,
+    valueIndex: source.valueIndex,
+    before,
+    after,
+    modifiers: (after.modifiers ?? []).slice(before.modifiers?.length ?? 0),
+    receipts: after.receipts.slice(before.receipts.length),
+  });
+}
+
+/** Capture only original active/direct sourceSelf give writes; sign/bounds remain owner values. */
+export function captureGiveWrite(
+  action: PreparationHpAction,
+  source: SourceEffect,
+  operation: SourceEffect['effect']['execution'][number],
+  operationIndex: number,
+  before: HpState,
+  after: HpState,
+  valueSetIndex: number,
+): void {
+  if (
+    source.origin !== 'attacker' ||
+    operation.kind !== 'hpModifier' ||
+    operation.action !== 'give' ||
+    operation.lifetime !== 'active' ||
+    operation.route.target !== 'sourceSelf' ||
+    (operation.selection !== undefined && operation.selection !== 'direct')
+  )
+    return;
+  (action.giveWrites ??= []).push({
     source,
     operationIndex,
     operation,

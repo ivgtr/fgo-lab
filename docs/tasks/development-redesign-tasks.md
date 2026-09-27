@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.102"
+document_version: "1.7.103"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3745,3 +3745,16 @@ TSK-08 closureは次のように照合した。詳細の現定義・参照はche
 Input lifecycleの最終production33／155（occurrence14／HP5）、契約8、HP486／7470・exact digest・全5完全artifact、runner29／独立disk17 receipt error0は `boundedUnits[52].productionAuditInputLifecycleCheckpoint` に保持する。Attempt182／control7／199 receipt、committed65／proof5、consumer58、復元比較12とunits[0]〜[51]も同責務で再利用し、今回準備ではboundedUnits全体をJSON完全一致で保全した。旧全240は235成功5失敗の履歴のまま。Published capacity selected0／excludedNp1やgive宣言件数をnonempty実消費証拠へ読み替えない。
 
 TSK-08は引き続き `in_progress`、09.1／09は `blocked`。次sessionの初期計画からTaskチェックリスト／Done gate／Contract closure matrix、remainingWorkSummary、input lifecycle checkpoint.closureReconciliationを限定照合する。全義務が既存実装・有効証拠とgive一familyの整理で成立し、対象内Blocking0と時間が揃えばREADME quality／必要audit／正式性能／最終統合counter・digest・全receiptまで進みTSK-08完了を目指す。別family／実装gap／未達coverage・gateが残れば依存するqualityを開始せず製品未完了checkpointとし、09.1／09を開始しない。1-run診断を正式3-run契約の代用にしない。60分checkpoint／90分停止、affinity0-7／production50%=4workers／unit4workers、既存audit条件／timeout／thresholdを維持する。今回準備記録を含むcommitを整理更新commitとして参照し、次workerも対象限定local commitまで、pushなし。
+
+
+### Give committed forward共有監査の限定checkpoint（2026-09-27）
+
+開始HEAD `eca76dcc`、index／tracked／untracked clean。現コードから提示した計画を利用者の `OK` で確認し、give一familyのcapture／共有consumer／typed gate／artifactへ接続した。結果・入力／source identity・完全母集団・反証・比較・receipt・未達条件の正本は [parity evidence](../evidence/tsk-08-parity-ratchet.json) の `boundedUnits[52].giveCommittedForwardCheckpoint`。既存units[0]〜[51]とunit52全既存checkpointをJSON完全一致で保全する。
+
+元 `hpModifierValue` のgive instance／倍率readを専用observerで捕捉し、別skill／別actionの同回復元固定gain（sourceSelf／partyMember）と受取HPを保持する。元writer、native committed結果、後続read、返却HP、selected candidateのlive HP条件／continuous hpRatioLow NP、event／projection／contribution／input／resultを照合する。倍率／算術／writer transaction／reducer／route／recoveryと既存receive payloadは変更しない。Captureは既存WeakMapへ借用参照を置き、proofは一度だけ物化する。observer不在時に新しいobject／arrayを生成しない。
+
+Publishedはgive宣言5（skill1／constant CE4）、対象skill owner1。元profile／preparation plannerのNP1〜5×OC1〜5は攻撃候補0で、owner1をrequest生成前に除外する。selected／reached／committed／gain-consumed／HP-reader／NPは0。この境界はgive unsupportedではなく、別actorのdefault inputや攻撃NPへ置換しない。Strict schema-legal13代表はselected13／writer宣言14／reached14／committed append13／正常除外1／gain消費10／changed receipt7／HP-reader13／NP13／接続10。source actorとrecipient actorを分けるprimitive反例の補助actor HPをattacker NP消費へ読み替えない。
+
+元HP ownerと影響unit／production12 files／391 tests、既存audit4 files／77 tests、最終give3は成功した。旧HP5完全artifactと既存receive／maximumFixed attempt19完全artifactはdecoded値・順序・bytes／SHA一致。新giveの完全artifactはassertionより先に保存し、container型／governing inputを含む30否定をtyped reason／first differenceへ接続した。標準pnpmの外部SQLite失敗はscript開始前で、指定shimの内容・730bytes／SHAを照合し同generic runnerを使用した。名前filterでpublished1成功／5skipになった試行はrunner contract失敗であり、成功gateへ合成せず現在の全6file検証へ戻る。最終HP6とworkspace／影響package typecheck、lint／formatは成功。既存391 run内のgive3は最終fixture／artifactで再検証し、既存388の成功は同責務で再利用した。Runner artifact verification error0、独立disk descriptor359／test-owned declared receipt339照合error0。詳細は上記checkpointを参照する。
+
+今回の1-run HP診断は正式3-run性能証拠ではなく、旧timeout帰属も決めない。全TSK-08 coverage／ratchet／diagnostic到達性／legacy削除／正式性能／README最終quality／統合counter・digest・全receiptは未達。giveの局所成功を製品closureへ読み替えず、依存するquality、native give noncommit、constant CEや別family、TSK-09.1／09は開始しない。次はgive native noncommitの現coverageを元ownerと既存fixtureへ読み取りで照合し、別の限定計画とする。対象内forward Blocking0の製品未完了local checkpointとして対象限定commitまで進め、pushしない。60分checkpoint／90分停止境界を維持する。

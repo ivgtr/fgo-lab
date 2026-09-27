@@ -32,6 +32,21 @@ import {
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { createStaticAttackProfiles } from './attackProfile';
+import {
+  giveInventory,
+  isGiveSelf,
+  isGiveFixedGain,
+  auditGive,
+} from './productionHpGivePreparationAudit';
+import {
+  productionAuditTestOptions,
+  writeProductionAuditArtifact,
+  encodeProductionAuditDiagnostic,
+  decodeProductionAuditArtifact,
+  decodeProductionAuditDiagnostic,
+} from './productionAuditArtifacts';
+import { isDeepStrictEqual } from 'node:util';
+import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 const root = resolve(import.meta.dirname, '../../..');
 const masterPromise = readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
   (s) => masterSnapshotSchema.parse(JSON.parse(s)),
@@ -568,3 +583,122 @@ it('executes every selectable HP support skill before an HP-dependent damage rea
     }),
   ).toEqual([]);
 }, 60000);
+
+it(
+  'reconciles all published give declarations with selected native preparation and distinct damage-reader boundaries',
+  productionAuditTestOptions(['hp-give-coverage.json']),
+  async ({ task }) => {
+    const master = await masterPromise,
+      declarations = giveInventory(master);
+    const eligible = master.servants.flatMap((servant) =>
+      servant.actorFormGraph.initialFormIds.flatMap((form) => {
+        const skills = getSkillsForActorForm(servant, form);
+        return skills
+          .filter((skill) => skill.effects.some((e) => e.execution.some(isGiveSelf)))
+          .map((writer) => ({
+            servant,
+            form,
+            writer,
+            gains: skills.filter((skill) =>
+              skill.effects.some((e) => e.execution.some(isGiveFixedGain)),
+            ),
+          }));
+      }),
+    );
+    const records = eligible.flatMap(({ servant, form, writer, gains }) => {
+      const profiles = createStaticAttackProfiles(servant);
+      const plans = Array.from(
+        { length: 5 },
+        (_, index) => (index + 1) as 1 | 2 | 3 | 4 | 5,
+      ).flatMap((npLevel) =>
+        Array.from({ length: 5 }, (_, index) => (index + 1) as 1 | 2 | 3 | 4 | 5).map(
+          (overcharge) => {
+            const original = planPreNoblePhantasmCandidates(
+              servant,
+              master.npResourceSemantics,
+              npLevel,
+              overcharge,
+            );
+            return {
+              npLevel,
+              overcharge,
+              inventory: original.inventory,
+              candidates: original.candidates,
+            };
+          },
+        ),
+      );
+      // The real profile/planner owners exclude this published actor before request generation.
+      // Do not replace its nonAttack NP with an attack NP or manufacture a request from another actor.
+      return [
+        {
+          owner: servant.id,
+          form,
+          writer: writer.id,
+          gains: gains.map((gain) => gain.id),
+          profileCount: profiles.length,
+          plans,
+          disposition: 'excludedNoAttackCandidate' as const,
+        },
+      ];
+    });
+    const gate = auditGive({ requests: [], expected: [], observations: [] });
+    const payload = {
+      declarations,
+      eligible: eligible.map((e) => ({
+        owner: e.servant.id,
+        form: e.form,
+        writer: e.writer.id,
+        gains: e.gains.map((g) => g.id),
+      })),
+      qualification:
+        'Declaration/request/native write/gain consumption and damage-selected populations are separate. Constant CE declarations are outside this committed attacker-skill audit. Schema-legal fixture success is separate.',
+      records,
+      gate,
+    };
+    const receipt = await writeProductionAuditArtifact(
+      task.meta,
+      'hp-give-coverage.json',
+      encodeProductionAuditDiagnostic(payload),
+    );
+    const bytes = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-give-coverage.json'),
+    );
+    expect(bytes.length).toBe(receipt.expectedBytes);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(receipt.expectedSha256);
+    expect(
+      isDeepStrictEqual(
+        decodeProductionAuditDiagnostic(
+          decodeProductionAuditArtifact(bytes) as ReturnType<
+            typeof encodeProductionAuditDiagnostic
+          >,
+        ),
+        payload,
+      ),
+    ).toBe(true);
+    expect(
+      declarations.map((d) => [d.origin, d.operation.lifetime, d.operation.route.target]),
+    ).toEqual([
+      ['skill', 'active', 'sourceSelf'],
+      ...Array.from({ length: 4 }, () => ['craftEssence', 'constant', 'sourceSelf']),
+    ]);
+    expect(eligible.length).toBe(1);
+    expect(records.length).toBe(1);
+    expect(gate.failures).toEqual([]);
+    expect(gate.readers).toBe(0);
+    expect(gate.nps).toBe(0);
+    expect(gate.connected).toBe(0);
+    expect([
+      gate.selected,
+      gate.reached,
+      gate.committed,
+      gate.gainConsumed,
+      gate.readers,
+      gate.nps,
+    ]).toEqual([0, 0, 0, 0, 0, 0]);
+    for (const record of records) {
+      expect(record.profileCount).toBe(0);
+      expect(record.plans.every((plan) => plan.candidates.length === 0)).toBe(true);
+    }
+  },
+);

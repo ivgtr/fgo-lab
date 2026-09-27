@@ -1,6 +1,7 @@
 import {
   preparationHpScope,
   captureSelectedAllyMaximumFixedWrite,
+  captureGiveWrite,
   type PreparationHpAction,
 } from './hpExecutionObservation';
 import {
@@ -851,6 +852,26 @@ export function executePreparationOc(args: {
                   consumption,
                 });
             };
+          if (
+            hpAction &&
+            source.origin === 'attacker' &&
+            operation.kind === 'resourceMutation' &&
+            operation.direction === 'gain' &&
+            operation.amount.kind === 'fixed' &&
+            operation.unit === 'fixed' &&
+            (operation.recipient === 'sourceSelf' || operation.recipient === 'partyMember') &&
+            (operation.selection === undefined || operation.selection === 'direct')
+          )
+            hpArguments.observeGiveGain = (consumption) => {
+              if (consumption.give.instances.length)
+                (hpAction.giveConsumptions ??= []).push({
+                  source,
+                  operationIndex,
+                  valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+                  valueIndex: source.valueIndex,
+                  consumption,
+                });
+            };
           const result = executeHpOperation(hpArguments);
           if (result.status !== 'applied') {
             if (result.status === 'inputRequired') {
@@ -948,6 +969,24 @@ export function executePreparationOc(args: {
               modifiers: (result.state.modifiers ?? []).slice(hpBefore.modifiers?.length ?? 0),
               receipts: result.state.receipts.slice(hpBefore.receipts.length),
             });
+          if (hpAction && hpArguments.observeGiveGain)
+            (hpAction.giveGains ??= []).push({
+              source,
+              operationIndex,
+              before: hpBefore,
+              after: result.state,
+              receipts: result.state.receipts.slice(hpBefore.receipts.length),
+            });
+          if (hpAction)
+            captureGiveWrite(
+              hpAction,
+              source,
+              operation,
+              operationIndex,
+              hpBefore,
+              result.state,
+              receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+            );
           current = { ...current, hp: result.state };
           return { kind: 'skip', outcome: 'notApplicable' };
         });
@@ -1361,7 +1400,8 @@ export function executePreparationOc(args: {
     }
   }
   if (result.status === 'committed') {
-    if (hpAction?.receiveWrites?.length && current.hp) hpAction.commitStartHp = current.hp;
+    if ((hpAction?.receiveWrites?.length || hpAction?.giveWrites?.length) && current.hp)
+      hpAction.commitStartHp = current.hp;
     const beforeCommit = current.battlePoints;
     current = {
       ...current,
