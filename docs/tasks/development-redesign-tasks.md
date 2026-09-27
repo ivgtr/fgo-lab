@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.92"
+document_version: "1.7.93"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3566,3 +3566,22 @@ Step 0（baseline／契約）、Step 1（V41 request versionContext・V40保存�
 責務境界の反例としてrestore後の値不変性・gate間非共有・異なるsemantic view・受理済み値のlossless保存復元、live selectionのidentity／index／canonicalのin-place変更、published宣言の元operation変更を追加した。境界判定は検査済みcanonicalを使い、返す宣言もlive参照から切り離す。元55 testsのsource prefixはbyte／SHA一致のまま、最終局所58 testsとcontrol audit7 tests、source lint／format／root typecheckが成功した。局所manifestは`.test-results/2026-09-27T09-48-53-345Z-21-872531/manifest.json`、controlは`.test-results/2026-09-27T09-51-28-245Z-74-37bc70/manifest.json`。139 receipt照合error0、既存1,270否定identity・全代表境界・published6宣言／12selected／changed0を維持し、protected units[0]〜[51]は不変である。独立したdisk復元比較とassertion前保存を維持し、re-encode一致を復元証明にしていない。設計判断・最終source／artifact identity・検証の正本はevidence `boundedUnits[52].consumerResponsibilityConvergence`。
 
 今回の成果は製品完了を意味しないsource込みのlocal checkpointであり、commit identityはGit履歴で解決する。既存5秒timeoutの原因帰属はunverifiedのまま、共有capacity／global codec・復元基盤／production read・parse lifecycleは変更せず、qualityを再試行していない。README必須quality、最終統合counter／digest／全receipt照合、unit52製品完了は未達。次は既存gate障害の修正範囲・比較条件・最小command・停止境界を別途限定し、具体的な原因解消後に最終closureへ進む。Step0／1／3、完了済み[46]〜[51]を再開せず、新familyを開始しない。60／90分境界を維持し、TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
+
+### Step再照合とcapacity復元比較の1セッション引継ぎ（2026-09-27）
+
+consumer責務整理はlocal checkpoint `05d16fa33487de73137298b59621b6f4d64df424`へ保存済みで、開始時HEAD／index／tracked／untrackedを照合した結果はcleanである。以前の「未commit6ファイルを同worktreeで保持」は当時の記録であり、現在は同commitから復元できる。局所58／control7の成功は変更したconsumer責務の証拠であり、未達qualityの成功へ読み替えない。
+
+| Step | 現在の成立範囲 | 次の扱い |
+| --- | --- | --- |
+| 0 | baseline／契約成立済み | 有効な証拠を再利用 |
+| 1 | V41 request versionContext、V40保存・明示V41再計算成立済み | 再開しない |
+| 2 | [46]〜[51]完了、unit52 consumer限定checkpoint成立、必須quality・最終counter／digest未達 | 既存capacity 2 fixtureの完全値復元比較だけを次の1セッションへ限定 |
+| 3 | 改訂matrix／eligibility digest成立済み | 正本identityを保持 |
+
+次作業者は**capacityの完全diagnosticを元のメモリ値と独立に比較する責務**を現コードから計画し、利用者確認後に同範囲の修正・検証・記録・対象限定local checkpointまで進める。具体的な対象はcommitted／attemptの既存2 audit fixtureと責務上必要な焦点の定まった比較helper／契約fixtureである。保存profileのdeep復元比較約28〜30%は繰返しgraph展開を検討する根拠であり、5秒timeoutの原因帰属・解消証明ではない。旧設計案や抽出位置を必須解法にしない。
+
+committed fixtureはdecodeとserialize後decodeの完全比較・保存宣言を持つが、そのcall siteに実disk再読込比較はない。attempt fixtureは実disk比較も持つ。この差を計画で明示し、独立した完全disk復元とreceiptをどのように成立させるか決める。共有内容のinterningは元alias topology／live owner同一性の証明ではない。Set／Mapの順序、missing／undefined、null-prototype、共有graph下の深い不一致も契約fixtureで反証し、全否定・typed reason／checkPath／first difference・完全expected／actual・assertion前保存を維持する。encode→decode→再encodeだけの一致は独立復元証明としない。
+
+共有capacity consumerのproof生成移行、global codec形式／encode・decode変更、production read／parse lifecycleは同時に扱わない。局所契約fixtureとBlocking差分レビュー後に原capacity 2 file全240 testsの影響検証・完全artifact復元／receipt照合を行う。比較前後の計測は同入力・同条件へ限定し、保存済みinterned再生と実payloadの費用を区別する。未変更consumer58／control7や実行parityは責務と入力が一致する範囲だけ再利用し、変更した復元比較の成功へ読み替えない。
+
+次の正本はevidence `handoffPreparation.nextSession.capacityRestorationComparisonSession`（読取調査のsource identity・観測call site・証拠・境界を保存）。README必須qualityは製品完了条件のままで、他の既知gate未解消時は依存する最終closureを止める。原因解消なしの全体quality反復、新family、完了済みunits[0]〜[51]再開、TSK-08全体closureは行わない。60分で既存Task／evidenceへcheckpoint、90分で現在のatomic actionを終えて引継ぎ。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、製品未完了、pushなしを維持する。

@@ -17957,7 +17957,7 @@
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
           "nextBoundedScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
-          "nextScopeQualification": "Consumer responsibility convergence is verified within unit52. Mandatory quality/counter/digest/product closure remain open; shared capacity/global codec/restoration and production lifecycle repairs require separate bounded scope. See consumerResponsibilityConvergence."
+          "nextScopeQualification": "Next one session: capacityRestorationComparisonSession (independent complete-value restoration comparison in existing two capacity fixtures only). First source-based plan and confirmation, then scoped changes/checks/records/local incomplete checkpoint. Consumer checkpoint05d16fa is reusable; global codec/consumer/lifecycle migration and whole closure are deferred."
         },
         {
           "stage": 3,
@@ -17969,7 +17969,7 @@
       "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "Consumer responsibility convergence is verified within unit52. Mandatory quality/counter/digest/product closure remain open; shared capacity/global codec/restoration and production lifecycle repairs require separate bounded scope. See consumerResponsibilityConvergence.",
+      "nextScopeQualification": "Next one session: capacityRestorationComparisonSession (independent complete-value restoration comparison in existing two capacity fixtures only). First source-based plan and confirmation, then scoped changes/checks/records/local incomplete checkpoint. Consumer checkpoint05d16fa is reusable; global codec/consumer/lifecycle migration and whole closure are deferred.",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52
     },
@@ -18515,7 +18515,7 @@
         "finish": "On mandatory-gate success reconcile final identities, counters/digests and protected units; update existing Task/evidence and commit only scoped changes locally, no push. If blocked/time-limited, preserve differential checkpoint and never commit as completed product.",
         "preparationVerification": "Retained six-source and local55/control7 manifest bytes/SHA matched; protected boundedUnits0..51 unchanged; pnpm test:docs6/6 and docs integrity, git diff --check passed. No source validation/quality run.",
         "latestAssessmentReference": "boundedUnits[52].consumerResponsibilityConvergence; existing gate blockers remain resumeGateAssessment/gateDesignInvestigation",
-        "nextOperation": "Scope the existing mandatory-gate repair separately from resumeGateAssessment/gateDesignInvestigation with comparator, minimal commands and stop boundary. Reuse this frozen consumer checkpoint; do not reopen completed units or automatically migrate shared capacity/global codec/restoration/production read-parse lifecycle. After concrete cause resolution: affected checks -> README quality -> final integrated counter/digest/receipt reconciliation.",
+        "nextOperation": "Next one session: capacityRestorationComparisonSession (independent complete-value restoration comparison in existing two capacity fixtures only). First source-based plan and confirmation, then scoped changes/checks/records/local incomplete checkpoint. Consumer checkpoint05d16fa is reusable; global codec/consumer/lifecycle migration and whole closure are deferred.",
         "singleSessionScope": {
           "status": "Consumer responsibility convergence verified and checkpointed; unit52 product completion remains pending",
           "preparationHead": "13fe1a8a202c702584cd76d39c17637a8c33d7c4",
@@ -18551,6 +18551,86 @@
             "execution": "No new product/source test, producer, audit or quality run during this handoff preparation"
           },
           "resultReference": "boundedUnits[52].consumerResponsibilityConvergence"
+        }
+      },
+      "capacityRestorationComparisonSession": {
+        "status": "Read-only preparation; implementation requires a source-based plan and user confirmation. Existing unit52 consumer checkpoint is complete within its scope; product gates remain open.",
+        "preparationHead": "05d16fa33487de73137298b59621b6f4d64df424",
+        "firstDeliverable": "Read current definitions, payload generation, codec accepted-value contract and direct restoration call sites. Present design/change/verification/reuse plan before edits, tests, producers, audits, staging or commits; wait for user confirmation. If live diagnosis is indispensable, propose minimum command, decision and stop boundary for separate diagnostic approval.",
+        "deliverable": "One session: independent complete-value restoration comparison for the two existing capacity audit fixtures. Resolve repeated DAG expansion where demonstrated, preserve full diagnostics and all denial/parity/artifact contracts, verify affected inputs and save an incomplete local checkpoint. Do not equate this cost reduction with proven 5s timeout resolution.",
+        "primaryFiles": [
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts",
+            "bytes": 50946,
+            "sha256": "ad92b7ee83e913deba26df8fdf2b3aa9cbdb1004bd5912599dbfee6bd310d544"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+            "bytes": 54020,
+            "sha256": "ba321badfb1fe6aab164fb87104bb7c1d9f9dae9d1eea78802e9117d66d58c97"
+          },
+          {
+            "path": "packages/calculation-application/src/productionAuditArtifacts.ts",
+            "bytes": 21235,
+            "sha256": "cb72825a6c52f962627f49ee88f793abc092f7e0e45e04b3e16f1e367a2378f6"
+          },
+          {
+            "path": "packages/calculation-application/src/productionAuditArtifacts.test.ts",
+            "bytes": 8474,
+            "sha256": "9e4c56f523cd9fad17d93373c5fe7baa921d98557e71358c212e86a585fa4d0c"
+          }
+        ],
+        "observedCallSites": [
+          {
+            "file": "productionBattlePointCapacityPreparationAudit.test.ts",
+            "lines": [
+              1489,
+              1491,
+              1496
+            ],
+            "fact": "Complete payload is compared against diagnostic decode and serialized artifact decode before assertions; writeProductionAuditArtifact publishes an envelope/receipt. This fixture currently has no readFile/diskRoundTrip comparison at that site."
+          },
+          {
+            "file": "productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+            "lines": [
+              1403,
+              1405,
+              1421
+            ],
+            "fact": "Complete payload is compared against diagnostic decode, serialized artifact decode and actual saved bytes after publication; all comparisons precede domain assertions."
+          }
+        ],
+        "designDecisionBoundary": "A focused value-comparison helper may be warranted by responsibility. Select its contract/module from code, not line reduction or mechanical prior plans. Codec/schema/envelope versions and encoding/decoding algorithms remain unchanged. Explicitly decide ordered Set/Map equality from the lossless transport contract: node isDeepStrictEqual alone does not establish insertion order. Account for interning that merges equal content without requiring original alias topology. Required live-owner identity remains a separate gate responsibility.",
+        "valueContract": [
+          "Independent original-memory versus decoded complete-value comparison; encode-decode-reencode equality is not sufficient.",
+          "Missing versus own undefined, null, finite supported numbers, strings/booleans, dense arrays, Set/Map contents and order, ordinary versus null-prototype objects and user tag-like properties must remain distinguishable as declared. Do not expand accepted types or silently substitute invalid values.",
+          "Any graph pair tracking is local to one comparison. Demonstrate nested differences below repeated shared subgraphs and unequal alias structures; do not cache across gate calls or mutation/restore, assume equal object identity proves reconstruction, or silently accept cycles.",
+          "Do not change when negative values are captured; full expected/actual, all denials, typed reason/checkPath/canonical first difference, pre-assertion declared publication and complete disk reconstruction/receipt remain required. Plan explicitly how committed fixture disk restoration is independently established without claiming its current in-memory check is disk evidence."
+        ],
+        "reuseReferences": [
+          "boundedUnits[52].consumerResponsibilityConvergence",
+          "boundedUnits[52].gateDesignInvestigation.liveDiagnostic",
+          "boundedUnits[52].gateDesignInvestigation.costMeasurements",
+          "boundedUnits[52].resumeGateAssessment"
+        ],
+        "verification": "Contract semantic/negative fixtures -> scoped diff review with Blocking resolved -> affected full two capacity files (original 240 tests, no exclusions) using existing generic runner/resources/timeouts -> complete restoration and bytes/SHA/receipt reconciliation. Choose bounded comparable before/after comparison measurements (same input/setup, ideally 3 repetitions) distinguishing saved interned replay from original live payload and profile-observed runs. No repeated whole quality for attribution. Reuse local58/control7 and runtime normal/capture/calculator-ranking evidence only where source and responsibility are unchanged; they are not success for changed restoration code.",
+        "deferred": [
+          "Capacity consumer value-proof/materialization redesign and migration of other consumers",
+          "Global codec/schema/encoding/decoding redesign",
+          "Production inventory read/parse lifecycle repair, runner/GC/scheduling/threshold/timeout adjustment",
+          "New family, completed units0..51 reopening, native noncommit semantics, recovery/retry/UI, HP arithmetic/writer changes, legacy cleanup, TSK08 whole closure and TSK09.1/09"
+        ],
+        "qualityBoundary": "README quality remains mandatory for product completion. Other known raw aggregation/HP inventory gates remain unresolved. This session targets one evidenced comparison cost, not all gate causes; do not retry whole quality or claim product closure without concrete resolved causes and final integrated counters/digests/receipts. Record outside-scope blockers and bounded next operation.",
+        "finish": "Update existing Task/evidence with decisions, final source/artifact identities, valid checks, unchanged protected units0..51 and consumer checkpoint, unmet quality/counter/digest gates and next operation; review/stage only scope, local incomplete checkpoint commit, no push.",
+        "timeBoundary": "At60min checkpoint in existing Task/evidence. At90min finish current atomic action and hand off; no additional quality retry, independent investigation or new family.",
+        "preparationVerification": {
+          "method": "Read-only code/artifact/JSON and byte/SHA reconciliation; no product tests, producer, audit, quality or live performance diagnosis executed. Documentation checks are recorded after update.",
+          "docsTests": "6/6 passed; docs integrity passed",
+          "protectedRecords": "All boundedUnits0..52 identical to preparation HEAD, including consumerResponsibilityConvergence",
+          "identityChecks": "Consumer finalSourceIdentity and saved capacity liveDiagnostic manifest/profile bytes/SHA matched",
+          "sourceExecution": "No source tests, producer, audit, quality or performance measurement in this preparation session",
+          "formatPolicy": "Default Prettier check passed; documentation exclusion retained without override",
+          "diffWhitespace": "git diff --check passed"
         }
       }
     },
@@ -19523,7 +19603,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Scope the existing mandatory-gate repair separately from resumeGateAssessment/gateDesignInvestigation with comparator, minimal commands and stop boundary. Reuse this frozen consumer checkpoint; do not reopen completed units or automatically migrate shared capacity/global codec/restoration/production read-parse lifecycle. After concrete cause resolution: affected checks -> README quality -> final integrated counter/digest/receipt reconciliation.",
+    "nextSession": "Next one session: capacityRestorationComparisonSession (independent complete-value restoration comparison in existing two capacity fixtures only). First source-based plan and confirmation, then scoped changes/checks/records/local incomplete checkpoint. Consumer checkpoint05d16fa is reusable; global codec/consumer/lifecycle migration and whole closure are deferred.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -19563,6 +19643,7 @@
       "Migration/redesign of older maximumFixed capacity consumers and global diagnostic codec/restoration infrastructure; recorded profiles justify separate scoped work, not implicit changes here.",
       "Production execution-semantics/HP inventory read-parse lifecycle repair or broad performance/GC/runner investigation."
     ],
-    "consumerCheckpointReference": "boundedUnits[52].consumerResponsibilityConvergence"
+    "consumerCheckpointReference": "boundedUnits[52].consumerResponsibilityConvergence",
+    "consumerCheckpointCommit": "05d16fa33487de73137298b59621b6f4d64df424"
   }
 }
