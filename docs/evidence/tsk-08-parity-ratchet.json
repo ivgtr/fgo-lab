@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Not selected; reconcile remaining Step2 coverage before separately scoping another bounded unit.",
+  "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -16847,8 +16847,8 @@
         {
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
-          "nextBoundedScope": "Not selected; reconcile remaining Step2 coverage before separately scoping another bounded unit.",
-          "nextScopeQualification": "Unit51 complete; no next family selected. Preserve separate evidence; do not reopen completed units/checkpoints."
+          "nextBoundedScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
+          "nextScopeQualification": "Read-only selectedAlly committed-forward audit scope chosen from current code and published declarations; original executable/commit/reader proof remains unverified. Not reopening sourceSelf maximumFixed or receive units."
         },
         {
           "stage": 3,
@@ -16857,7 +16857,7 @@
       ],
       "latestBoundedUnit": 51,
       "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary.",
-      "nextBoundedUnit": "Not selected; reconcile remaining Step2 coverage before separately scoping another bounded unit.",
+      "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history."
     },
@@ -16915,12 +16915,478 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "not_selected",
-      "completedUnit": 51,
-      "selectionEvidenceHistory": "9ef0998d52ca2028a1c9336b70a629e5cb0aff0a:docs/evidence/tsk-08-parity-ratchet.json#handoffPreparation.nextSession",
-      "nextOperation": "Reconcile remaining Step2 coverage; separately scope an uncovered bounded unit from current code and valid evidence. Do not restart units46-51/checkpoints or claim whole TSK08 closure.",
-      "taskStatus": "TSK-08 in_progress; TSK-09.1/09 blocked",
-      "push": false
+      "status": "read-only preparation; code-based plan first, implementation only after user confirmation",
+      "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
+      "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+      "priorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
+      "scope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
+      "selectionEvidence": {
+        "version": "20260920.3",
+        "master": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "physical": [
+          {
+            "servantId": "401100",
+            "skillId": "843551",
+            "slot": 2,
+            "occurrenceId": "591:0",
+            "operationIndex": 0,
+            "sign": 1,
+            "route": {
+              "target": "partyMember",
+              "contributionScope": "personal",
+              "eligibility": {
+                "kind": "anyRecipient",
+                "onMissing": "unsupported"
+              }
+            },
+            "traits": [
+              "buffTrait:3004",
+              "buffTrait:3043",
+              "buffTrait:2986"
+            ],
+            "requirement": {
+              "recipient": "partyMember",
+              "expression": {
+                "kind": "always"
+              }
+            }
+          },
+          {
+            "servantId": "500800",
+            "skillId": "323650",
+            "slot": 3,
+            "occurrenceId": "591:0",
+            "operationIndex": 0,
+            "sign": 1,
+            "route": {
+              "target": "partyMember",
+              "contributionScope": "personal",
+              "eligibility": {
+                "kind": "anyRecipient",
+                "onMissing": "unsupported"
+              }
+            },
+            "traits": [
+              "buffTrait:3004",
+              "buffTrait:3043",
+              "buffTrait:2986"
+            ],
+            "requirement": {
+              "recipient": "partyMember",
+              "expression": {
+                "kind": "always"
+              }
+            }
+          },
+          {
+            "servantId": "504400",
+            "skillId": "643550",
+            "slot": 3,
+            "occurrenceId": "3888:0",
+            "operationIndex": 0,
+            "sign": 1,
+            "route": {
+              "target": "partyMember",
+              "contributionScope": "personal",
+              "eligibility": {
+                "kind": "anyRecipient",
+                "onMissing": "unsupported"
+              }
+            },
+            "traits": [
+              "buffTrait:3004",
+              "buffTrait:3043",
+              "buffTrait:2986"
+            ],
+            "requirement": {
+              "recipient": "partyMember",
+              "expression": {
+                "kind": "any",
+                "requirements": [
+                  {
+                    "kind": "targetPredicate",
+                    "scope": "recipient",
+                    "predicate": {
+                      "kind": "classIdentity",
+                      "classId": "berserker"
+                    },
+                    "present": true
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "servantId": "505000",
+            "skillId": "2009650",
+            "slot": 1,
+            "occurrenceId": "591:0",
+            "operationIndex": 0,
+            "sign": 1,
+            "route": {
+              "target": "partyMember",
+              "contributionScope": "personal",
+              "eligibility": {
+                "kind": "anyRecipient",
+                "onMissing": "unsupported"
+              }
+            },
+            "traits": [
+              "buffTrait:3004",
+              "buffTrait:3043",
+              "buffTrait:2986"
+            ],
+            "requirement": {
+              "recipient": "partyMember",
+              "expression": {
+                "kind": "always"
+              }
+            }
+          },
+          {
+            "servantId": "603700",
+            "skillId": "409450",
+            "slot": 1,
+            "occurrenceId": "21561:0",
+            "operationIndex": 0,
+            "sign": -1,
+            "route": {
+              "target": "partyMember",
+              "contributionScope": "personal",
+              "eligibility": {
+                "kind": "anyRecipient",
+                "onMissing": "unsupported"
+              }
+            },
+            "traits": [
+              "buffTrait:3005",
+              "buffTrait:3044"
+            ],
+            "requirement": {
+              "recipient": "partyMember",
+              "expression": {
+                "kind": "always"
+              }
+            }
+          },
+          {
+            "servantId": "2800300",
+            "skillId": "2104450",
+            "slot": 1,
+            "occurrenceId": "591:0",
+            "operationIndex": 0,
+            "sign": 1,
+            "route": {
+              "target": "partyMember",
+              "contributionScope": "personal",
+              "eligibility": {
+                "kind": "anyRecipient",
+                "onMissing": "unsupported"
+              }
+            },
+            "traits": [
+              "buffTrait:3004",
+              "buffTrait:3043",
+              "buffTrait:2986"
+            ],
+            "requirement": {
+              "recipient": "partyMember",
+              "expression": {
+                "kind": "always"
+              }
+            }
+          }
+        ],
+        "formMemberships": [
+          {
+            "servantId": "401100",
+            "form": {
+              "actorId": "401100",
+              "limitCount": 0
+            },
+            "skillId": "843551",
+            "occurrenceId": "591:0",
+            "operationIndex": 0,
+            "sign": 1
+          },
+          {
+            "servantId": "500800",
+            "form": {
+              "actorId": "500800",
+              "limitCount": 0
+            },
+            "skillId": "323650",
+            "occurrenceId": "591:0",
+            "operationIndex": 0,
+            "sign": 1
+          },
+          {
+            "servantId": "504400",
+            "form": {
+              "actorId": "504400",
+              "limitCount": 0
+            },
+            "skillId": "643550",
+            "occurrenceId": "3888:0",
+            "operationIndex": 0,
+            "sign": 1
+          },
+          {
+            "servantId": "505000",
+            "form": {
+              "actorId": "505000",
+              "limitCount": 0
+            },
+            "skillId": "2009650",
+            "occurrenceId": "591:0",
+            "operationIndex": 0,
+            "sign": 1
+          },
+          {
+            "servantId": "603700",
+            "form": {
+              "actorId": "603700",
+              "limitCount": 0
+            },
+            "skillId": "409450",
+            "occurrenceId": "21561:0",
+            "operationIndex": 0,
+            "sign": -1
+          },
+          {
+            "servantId": "2800300",
+            "form": {
+              "actorId": "2800300",
+              "limitCount": 0
+            },
+            "skillId": "2104450",
+            "occurrenceId": "591:0",
+            "operationIndex": 0,
+            "sign": 1
+          }
+        ],
+        "qualification": "Published JSON read-only physical declarations/form skillIds membership; source getSkillsForActorForm uses these IDs. No strict schema parse or canonical execution; not selected/executable/applied/committed/reader success or future fixed expectations.",
+        "masterSchemaVersion": 56,
+        "physicalSignCounts": {
+          "positive": 5,
+          "negative": 1
+        },
+        "currentGap": "isMaximumFixedSelf/maximumFixedCanonical/maximumFixedInventory filter sourceSelf/direct; preparationOc modifierWrites capture has same restricted route. Units48/49 do not verify selectedAlly even though executeHpOperation already resolves that recipient.",
+        "symbols": [
+          {
+            "path": "packages/data-pipeline/src/executionSemantics.ts",
+            "symbols": [
+              "normalizeExecutionSemantics"
+            ],
+            "responsibility": "hpActions addMaxhp/subMaxhp and target ptOne -> selection selectedAlly canonical hpModifier/route; raw interpretation stays pipeline"
+          },
+          {
+            "path": "packages/master-data/src/index.ts",
+            "symbols": [
+              "effectExecutionOperationSchema",
+              "getSkillsForActorForm"
+            ],
+            "responsibility": "current strict schema and form-qualified skill membership"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationHp.ts",
+            "symbols": [
+              "recipients",
+              "executeHpOperation"
+            ],
+            "responsibility": "selectedAlly -> attacker, original modifier apply/receipt and recipient condition; no UI-selected arbitrary party actor"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "symbols": [
+              "executePreparationOc"
+            ],
+            "responsibility": "normal native operation/commit; capture only currently maximumFixed sourceSelf writes"
+          },
+          {
+            "path": "packages/battle-execution/src/hpResource.ts",
+            "symbols": [
+              "changeHpModifiers",
+              "maximumHp",
+              "hpModifierValue"
+            ],
+            "responsibility": "original max/current arithmetic and instance state; audit must not duplicate floor/clamp/sum"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "symbols": [
+              "PreparationHpAction",
+              "preparationHpActionsFor",
+              "HpCandidateObservation"
+            ],
+            "responsibility": "original HP action/candidate condition read/NP observations; inspect whether capture-only route observation is minimally needed"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.ts",
+            "symbols": [
+              "hpPreparationCanonicalFor",
+              "hpPreparationSource"
+            ],
+            "responsibility": "command/master/form/effect choice canonical population and original source adapter"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpMaximumFixedPreparationAudit.ts",
+            "symbols": [
+              "isMaximumFixedSelf",
+              "maximumFixedCanonical",
+              "auditMaximumFixed",
+              "maximumFixedInventory"
+            ],
+            "responsibility": "reuse reference model only if selected recipient identity/boundaries independently covered; do not relabel sourceSelf proof"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "symbols": [
+              "evaluateWithOrderedOperationEvents"
+            ],
+            "responsibility": "inspect existing request collection before executable/native success filtering and reuse actual selected execution, no duplicate writer replay"
+          }
+        ],
+        "identityReceipts": [
+          {
+            "path": "apps/web/public/master/manifest.json",
+            "bytes": 547,
+            "sha256": "064bf6200cb8d80cb411f8dd9638ac992f0becca57a75e215439f3c00374cc15"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-19-44-855Z-3-4103a0/manifest.json",
+            "bytes": 5818,
+            "sha256": "f4eb56232431443ad478a39df9f451d6dadc51b971fa291c4a70074fa2456f06"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/manifest.json",
+            "bytes": 9593,
+            "sha256": "6dc366a5d19e63fc52fa3f2eec4fa8fa744948fb4a9117fad812bb0fa99b2982"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-25-47-041Z-3-f518b0/manifest.json",
+            "bytes": 270570,
+            "sha256": "9c59b6fe2619dad8dc779c1c0ba7ed1dd348115f553fb9d9ec1b2f578b90a350"
+          },
+          {
+            "path": ".test-results/tsk-08-receive-attempt-20260927/final-reconciliation.json",
+            "bytes": 204567,
+            "sha256": "0f26ea615312278e582a9f17f36bd94b8a9ad792caaf40e13b94fed5059a8ff9"
+          },
+          {
+            "path": "packages/master-data/src/index.ts",
+            "bytes": 90475,
+            "sha256": "a49c71f85c310d44db14312e8cec66f10bcf3bafe16c1b38bf6ff74c731f6a3f"
+          },
+          {
+            "path": "packages/data-pipeline/src/executionSemantics.ts",
+            "bytes": 30447,
+            "sha256": "6706c558cab9c94fdd626fffd84a76db3337aba753a23d869baf03c332b739ae"
+          },
+          {
+            "path": "packages/data-pipeline/src/effectNormalization.ts",
+            "bytes": 78640,
+            "sha256": "6480dcd6369b56edbea5b246930002011ec4dddbc955804241cfea133b44f5e8"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationHp.ts",
+            "bytes": 18596,
+            "sha256": "012b72a0505a7acbbc42970f99cd6f9e9a92f3e02e7ade39780ec6ca6fce2622"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 56286,
+            "sha256": "68a5ce702270d096c6bd92469c740e7e5041dd684fec7a56bb5965ef0eabca6e"
+          },
+          {
+            "path": "packages/battle-execution/src/hpResource.ts",
+            "bytes": 9769,
+            "sha256": "0818b98808faa8091db07eeee105c6f213e13a88296351bf9c8f4c55ba91c3e8"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 8033,
+            "sha256": "ef351e8a5cd17863d78bdfb4b79fc54cbbebe64d72126a54040af6def1a3f567"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.ts",
+            "bytes": 42650,
+            "sha256": "80e5c33f6e5090eeeec25fba280b072c4d8f051c5590d664ec68859b4ea48642"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpMaximumFixedPreparationAudit.ts",
+            "bytes": 35767,
+            "sha256": "a6a8cbfc9294a621254cbebaa74c0870fb0635b4fe53309537354225e362ae44"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpMaximumFixedPreparationAudit.test.ts",
+            "bytes": 58457,
+            "sha256": "bb0a801a884ac01c1eec8fef344c95271235f02aa1dd40b0336a32102235ad84"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 89132,
+            "sha256": "931b65499cd0eab60eea704fe3c233860f55710b46e38de2f4a7351a8361677d"
+          },
+          {
+            "path": "packages/calculation-application/src/scenario.ts",
+            "bytes": 58849,
+            "sha256": "359e782342fe52dda4026df621efa8ccdca148fdcd5f8fc81db0175e0a71b3e1"
+          },
+          {
+            "path": "/tmp/tsk08-tools/pnpm",
+            "bytes": 730,
+            "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6"
+          }
+        ],
+        "unit51SourceIdentityMatch": true
+      },
+      "planMustDecide": [
+        "Choose responsibilities/files and existing maximumFixed consumer extension versus focused selectedAlly consumer from current definitions/references; preserve units48-51 identity/diagnostic contracts.",
+        "Show ordinary/capture canonical -> command/action/source/effect occurrence/operation -> selected recipient -> original resolved cell/value/modifier instance/full HP/receipt -> native committed state/reducer retention -> same selected preparation/application/direct results.",
+        "Expected population is canonical before activation/receipt/executable/native-success filters. Include excluded/notApplied/unreached/dead/actual0/no-reader/no-hpRatioLow/native-noncommit boundary observations, not changed forward success.",
+        "Use actual owner observation for HP changed classification; no multiplier/floor/clamp replay. Normal allocation/public serialized shape unchanged; only missing original-owner capture may be added minimally.",
+        "Demonstrate schema-legal increase/decrease, multiple writes/order, choice/value cell and recipient-condition applied/nonapplied boundaries with fixed form/traits/eligibility per case. Actual later HP condition and continuous hpRatioLow NP/input/result must belong to same selected execution, never a separate candidate or invented post-refusal NP.",
+        "Negatives by canonical/recipient identity, original write/value/reference/receipt, committed-retained state, actual reader/NP/input/result, population and artifact responsibilities. Verify typed reason/checkPath/canonical first difference for every failed check; include coherent HP/modifier/receipt forgery, wrong source/actor/route/selection/operation/cell/choice/form, missing/duplicate/order, stale/intermediate/foreign execution and success-filter population exclusion.",
+        "Declare/save complete diagnostics before assertions; verify canonical identity/full expected-actual/typed reason/checkPath/firstDifference, path/bytes/SHA256, strict lossless restoration; only necessary original-owner references, not whole execution-state DAG scans.",
+        "Close local Blocking and diff review before final affected audits and README quality. Compare relevant hot-path/counters/digests according to actual source changes; reuse valid prior evidence without unconditional8-shard regeneration. Update existing Task/evidence and scoped local commits, no push."
+      ],
+      "reuse": {
+        "units": [
+          46,
+          47,
+          48,
+          49,
+          50,
+          51
+        ],
+        "qualification": "Each remains its own proof contract. Unit48 sourceSelf committed and49 sourceSelf noncommit are references, not selectedAlly success. Unit50 published controls actual0 versus lowHP committed actual1677 and unit51 schema-legal changed noncommit derivative are distinct. Protected revision matrix04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4/eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 stay unchanged."
+      },
+      "excluded": "Native-noncommit isolation implementation, recovery/resend/retry/UI, damage-loop rollback; support/mystic/passive/NP writers; partyMember direct/all-party/partyOther/enemy/sourceSelf new coverage; other HP actions/rate/base/give/receive/noHealing, removal/expiry/constant; actor/form/traits/eligibility transitions, other HP gain/loss writers, percent/transfer/value-expression, failure classification changes, legacy cleanup, whole TSK08 closure, TSK09.1/09.",
+      "preApprovalBoundary": "Read current code/artifacts/canonical JSON and verify checksums; no product/test/document edits, source test/producer/audit/quality, stage/commit until staged plan is confirmed. If a new execution diagnostic is indispensable, first propose minimal command, decision and stopping boundary; diagnostic approval alone does not authorize implementation.",
+      "verificationThisPreparation": "Git/index/tracked/untracked clean at95cbab5; code/JSON/form membership and master/principal artifact/source/runner checksum read only. No new source tests/producer/audit/quality. Direct compiled-module import failed on extensionless dependency; tsx binary unavailable; no strict parsed/canonical execution success claimed. Documentation checks only before scoped record commit.",
+      "sessionBoundary": "8 CPU affinity0-7, production50%/4workers and existing timeout preserved; long commands per execution-efficiency requirements; checkpoint existing Task/evidence at60min, no new semantic family at90min.",
+      "runnerFallback": {
+        "condition": "pnpm external SQLite store fails before script starts",
+        "path": "/tmp/tsk08-tools/pnpm",
+        "bytes": 730,
+        "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6",
+        "operation": "Verify existence/content/bytes/SHA256, then same generic runner with existing node_modules; do not modify runner, thresholds or timeout."
+      },
+      "documentationVerification": {
+        "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm test:docs",
+        "passed": 6,
+        "failed": 0,
+        "integrity": "passed",
+        "diffWhitespace": "passed",
+        "formatPolicy": "Keep frontmatter/table structure; docs ignored by Prettier, no forced override",
+        "scope": "Four existing documentation records only; units0..51 unchanged; no new semantic execution claim"
+      },
+      "recordCommitPolicy": "Resolve this documentation preparation commit from Git history; no self-referential commit hash."
     },
     "completedScalarRecoveryPreparation": {
       "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
@@ -17179,7 +17645,7 @@
         }
       }
     },
-    "currentPreparationRecord": "Completed confirmed-plan receive noncommit unit[51]; source commit 60dea89944a884bbbe40464eb1ae7e65cb77ad4e; audit/quality/reconciliation passed. Prior planning/selection evidence retained at 9ef0998:handoffPreparation.nextSession.",
+    "currentPreparationRecord": "Read-only Step reconciliation at95cbab5 after completed receive noncommit[51]/product60dea89. Selected next one-session scope: maximumFixed partyMember/selectedAlly committed forward. See nextSession for direct-symbol/physical inventory/checksum evidence; implementation strategy waits for current-code plan and user confirmation.",
     "completedPreparationAttemptPreparation": {
       "name": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
       "productBaselineCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
@@ -17884,14 +18350,14 @@
     }
   },
   "remainingWorkSummary": {
-    "asOfPreparationCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
+    "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
       0,
       1,
       3
     ],
     "openStep": 2,
-    "nextSession": "Not selected; reconcile remaining Step2 coverage before separately scoping another bounded unit.",
+    "nextSession": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit; plan first and confirmation, then same unit through verification/records/scoped local commits.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -17924,8 +18390,8 @@
         "work": "Comparable3-run performance medians and counters/output;canonical contributor workflow;remaining old runner/CI/ranking/compatibility path cleanup;final UI/production/performance/restart acceptance."
       }
     ],
-    "qualification": "Receive changed-attempt native noncommit unit51 complete in approved scope; schema-legal derivative is not published rejection evidence. Other families and whole TSK08 remain separately bounded.",
+    "qualification": "Selection covers one existing recipient routing gap, not new HP semantics or full family reconciliation. Published6 declarations are candidates only; future executable/committed/reader counts must derive from canonical generation.",
     "asOfProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
-    "asOfPreparationBaseline": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1"
+    "asOfPreparationBaseline": "95cbab5fc811ccf20ec72c816f871cb97ab465ae"
   }
 }

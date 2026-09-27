@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.85"
+document_version: "1.7.86"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3476,4 +3476,23 @@ HEAD `9ef0998`／製品baseline `6c2add5`をcleanで照合し、現symbolに基�
 
 最終focused13 tests、影響audit4 files／25 tests、README必須quality（unit1444／production155／E2E29、retry0）が成功、warning／unexpected console／artifact verification errorsは0。quality中のsource4件を固定し、645 receiptsとsource identity、production counter／digestを照合してerror0。[46]〜[50]は別々の証拠を保持し変更していない。8shard無条件再生成なし。通常runtime／allocation／serialized shapeは不変のため新hot-path benchmarkは行わず、counter／digest一致と通常／capture parityを確認した。元control audit110262msに対し今回156954.75msはgateと完全diagnostic増分を含み、通常hot-pathの因果比較には使わない。
 
-pnpmはscript前に外部SQLite storeで失敗し、730 bytes／指定SHA-256一致の既存generic runnerへ切替。CPU affinity0-7、production50%／4workers、既存timeout／thresholdを維持した。source4件をlocal commit `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`へ保存。詳細・manifest／diagnostic receipt・counter／digest・初期失敗と解消の正本はevidence `boundedUnits[51]`。文書gateは6/6とintegrity・diff whitespace成功、結果記録は同unitの範囲に限定する。次unitは未選定で、完了済みforward計画やcheckpointは再開しない。TSK-08 `in_progress`、09.1／09 `blocked`、全体closureではなくpushなし。
+pnpmはscript前に外部SQLite storeで失敗し、730 bytes／指定SHA-256一致の既存generic runnerへ切替。CPU affinity0-7、production50%／4workers、既存timeout／thresholdを維持した。source4件をlocal commit `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`へ保存。詳細・manifest／diagnostic receipt・counter／digest・初期失敗と解消の正本はevidence `boundedUnits[51]`。文書gateは6/6とintegrity・diff whitespace成功、結果記録は同unitの範囲に限定する。この完了時点では次unit未選定（以下のread-only選定で更新）。完了済みforward計画やcheckpointは再開しない。TSK-08 `in_progress`、09.1／09 `blocked`、全体closureではなくpushなし。
+
+### Step整理とselectedAlly maximumFixedの1session handoff（2026-09-27）
+
+開始HEAD `95cbab5fc811ccf20ec72c816f871cb97ab465ae`、製品baseline `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`、index／tracked／untracked cleanを確認。今回の作業は次範囲のread-only調査と既存記録の更新で、製品source／test変更、新しいsource test／producer／audit／qualityは行っていない。
+
+| Step | 現在の成立範囲 | 残作業／次の境界 |
+| --- | --- | --- |
+| 0 | baseline／契約成立済み | 旧契約待ちを再開しない |
+| 1 | V41 request versionContext、V40保存と明示V41再計算成立済み | 既存identity有効なら再利用 |
+| 2 | fixed HP forward／noncommit[46]／[47]、sourceSelf maximumFixed forward／noncommit[48]／[49]、receive forward／noncommit[50]／[51]などの限定unit成立済み | 未達の中心。次はpartyMember／selectedAlly maximumFixed committed forwardだけ |
+| 3 | 改訂matrix／eligibility digest成立済み | evidenceの改訂digestを保持し、旧中間digestを期待値にしない |
+
+次の1sessionは攻撃役skillの`hpModifier/action:maximumFixed/sign:+1|-1/lifetime:active/route.target:partyMember/selection:selectedAlly/bounds:null..null/useCondition省略またはalways`に限定する。元ownerのselectedAlly recipientは攻撃役であり、任意party actorの選択UIやall-partyへ一般化しない。canonical command／form-qualified source／effect occurrence／choice／operation／value cellと元modifier instance・HP state・receipt、元native commit／reducer保持、同selected prepared／application／direct結果、実際の後続HP条件read／hpRatioLow NPとinput／resultを共有consumer／gateへ接続する。reader／NPがない元経路は境界として保持し、別candidateや架空の後段で補わない。actor form／class／traits／eligibility、初期HP・他modifier環境は各代表で固定する。
+
+read-only published JSON inventoryでは物理skill宣言6（sign+1が5、-1が1）、form skillIds membership6を確認。うち1件にはrecipient class条件がある。これらは候補選定の根拠だけでselected／適用／commit／reader成功や将来gateの固定件数ではない。master version20260920.3／schema56／SHA-256は先行unitと一致。`isMaximumFixedSelf`／`maximumFixedCanonical`／`maximumFixedInventory`と元`preparationOc`の`modifierWrites`はsourceSelf／direct限定であり、[48]の成功をselectedAllyの証拠へ読み替えない。`executeHpOperation`はselectedAlly→attackerの解決・条件評価・元HP適用を既に所有する。sourceと主artifact4点・runnerのbytes／SHA-256を照合した。正本はevidence `handoffPreparation.nextSession.selectionEvidence`。strict schema parse／canonical executionによる代表成功は今回未確認。
+
+最初の成果物は現code定義・canonical生成・直接consumerを調べた段階的実装計画。既存maximumFixed consumer拡張／専用consumer、capture-only最小観測の要否、期待母集団と責務別否定、通常／capture・calculator／ranking経路、完全diagnosticと局所／影響audit／README quality・counterを提示し、利用者確認を待つ。確認後は同unitを実装・検証・Task／evidence更新・対象限定local commitまで続け、通常の技術判断で再承認を求めない。要件意味論を作り直したりHP算術をauditへ複製したりしない。
+
+native非commit隔離の実装、recovery／retry／UI、他origin／recipient／selection／modifier action・lifetime／除去・expiry、form／traits／eligibility切替、他HP writer／percent／transfer／value-expression、failure分類修正、legacy、全体closureは対象外。既存8shardは具体的なidentity疑義なしに再生成せず、[46]〜[51]を別々の契約として再利用する。60分checkpoint・90分以降の新family停止と長時間commandは実行効率要件に従う。TSK-08 `in_progress`、09.1／09 `blocked`を維持し、pushなし。文書検証と対象限定記録commitで今回の準備を閉じる。
