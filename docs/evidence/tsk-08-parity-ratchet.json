@@ -17078,6 +17078,389 @@
             "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
           }
         }
+      },
+      "gateDesignInvestigation": {
+        "startedAt": "2026-09-27 08:47:57 UTC",
+        "head": "49092137163941257d167655b96e0a69875e6d91",
+        "authorization": "User requested investigation/design only this session, including re-evaluation of unit52 consumer; no implementation, no fallback-first shortcut; breaking design changes may be proposed. Current approval is not future implementation approval.",
+        "scope": "Existing5000ms quality failures and current selectedAlly committed-forward consumer architecture; no new HP semantics/family, no product/test/runner changes, no timeout/threshold/worker relaxation or test exclusion.",
+        "skill": "/home/ivgtr/.codex/skills/diagnostic-attribution/SKILL.md",
+        "evidence": {
+          "baselineComparison": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/baseline-comparison.json",
+            "bytes": 18475,
+            "sha256": "1af8e07f854475f3f39535c4cc06736edeb9066ada578bd359c9833d52c09703"
+          },
+          "baselineReader": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/baseline-comparison.py",
+            "bytes": 4407,
+            "sha256": "2ff4e3c785acd726f8fda9ac210b020b2b0edd75db4ef94ebb0ef28a91fef134"
+          },
+          "savedArtifactCost": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/artifact-cost.json",
+            "bytes": 6373,
+            "sha256": "076148b1bbf3e348b746cb01d5b4938410b7816078e10d33da4f167ce9affb22"
+          },
+          "costProbe": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/artifact-cost.mjs",
+            "bytes": 4184,
+            "sha256": "d26160fdb138aa596d11aa91b8bff80791d0e2fd9dd4739c3980f635b5c1e2a4"
+          },
+          "costLog": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/artifact-cost.log",
+            "bytes": 4104,
+            "sha256": "e397bf835cb8a088cdcfeba2c143e15db6ccca5544ddb3a2df254c1eec1f682e"
+          },
+          "profileSummary": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/profile-summary.json",
+            "bytes": 11413,
+            "sha256": "c88c9a71c1a5b14ba1a2fb3f17674a34140f52202475b8b0a0e18abacec33ffc"
+          },
+          "profileSummaryReader": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/profile-summary.py",
+            "bytes": 3685,
+            "sha256": "21c18ef9ff1ceeb21f9504150b3f8eb9b71bd2a8a43eecd1fbc13f599fee2f8e"
+          },
+          "profileCapture": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/cpu-capture.mjs",
+            "bytes": 920,
+            "sha256": "b9c0a3de960f2ab31ad2c90a168702516ab26e4c125d2fae00fca8552088c511"
+          },
+          "profileCaptureLog": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/cpu-capture.log",
+            "bytes": 43503,
+            "sha256": "0ac0f4961afd33c8c7b59a04364f33a31a77d3008210ed407eda86b7623e1be3"
+          },
+          "diagnosticReceipts": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/diagnostic-receipts.json",
+            "bytes": 1545,
+            "sha256": "2c2d73b661c6d515d4e74dc0451b63502490e66ddfc42c1c5ab26844e26f6116"
+          },
+          "firstProfileInvocationLog": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/cpu-diagnostic.log",
+            "bytes": 43481,
+            "sha256": "ba7a1641cac76e7118cc19caa3b2a155c2a99b014e3606b790d5eb53a049eac8"
+          }
+        },
+        "attribution": {
+          "classification": "unverified",
+          "baselineProduct": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+          "baselineQuality": ".test-results/2026-09-27T05-25-47-041Z-3-f518b0/manifest.json",
+          "currentHead": "49092137163941257d167655b96e0a69875e6d91",
+          "comparison": "Five archived runs,21 target receipts matched;13 direct source/config/lockfile inputs exactly match product baseline. Same recorded Node26.3.1/pnpm11.20.0/Vitest4.1.11. Capacity diagnostic bytes/SHA identical on success and timeout runs.",
+          "strongestClaim": "The capacity tasks already approach the original deadline at baseline (committed4816.47ms,attempt4873.59ms); their saved semantic evidence is unchanged in observed failing runs. No assertion-output drift demonstrated. This does not exclude shared preparation bundle/JIT/concurrency/environment timing influence.",
+          "limitations": "Recorded source receipts qualify the unit51 baseline quality whose manifest repository commit predates final product commit. No controlled baseline/current live task-phase comparison; no claim introduced/unchanged/unrelated or GC/scheduling causality."
+        },
+        "findings": [
+          {
+            "kind": "confirmed structure/cost; timeout causality incomplete",
+            "paths": [
+              "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts:491",
+              "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts:698",
+              "packages/calculation-application/src/productionScalarQuantityAudit.ts:18",
+              "packages/calculation-application/src/productionAuditArtifacts.ts:431"
+            ],
+            "mechanism": "Each denial constructs a complete value proof; gate checks recursively snapshot overlapping owner graphs; fixture stores full denial evidence. Codec interns content, but isDeepStrictEqual over reconstructed whole values repeatedly compares shared subgraphs. Original committed task performs in-memory and serialized deep restoration comparisons; attempt also reads disk and compares again.",
+            "savedEvidence": "Committed58 negatives/1731 interned nodes versus3716255 occurrence-expanded value visits; attempt28 negatives/1376 nodes versus2723095 visits. Saved codec replay deepEqual medians446.067ms/320.128ms. These are current isolated archive replay costs, not original gate stage timings.",
+            "designImplication": "Model values as bounded proof graphs and compare with per-invocation pair tracking; keep every semantic denial and full restoration check. Content interning must never establish live execution reference identity.",
+            "liveEvidence": "Original complete240-test CPU capture: diagnostic graph encoding28.11%-32.86%,deep restoration28.14%-30.44%,canonical snapshot13.53%-15.36% of whole worker samples. Archive replay had already interned values and understated live graph encode work; live proof construction produces repeated value-tree copies before output interning."
+          },
+          {
+            "kind": "confirmed lifecycle ownership gap; no runtime count inferred",
+            "paths": [
+              "packages/data-pipeline/src/executionSemanticsProduction.test.ts:49",
+              "packages/calculation-application/src/productionHpPaths.test.ts:36",
+              "packages/master-data/src/productionAudit.ts:22"
+            ],
+            "mechanism": "Execution-semantics file contains13 full read/JSON/strict-parse call sites inside separate tests. HP file shares one masterPromise but first timed cell-inventory case waits for readiness, then executes all7470 cells. Shared audit model counters do not account for these separately executed reads/parses.",
+            "savedEvidence": "Baseline shared data-pipeline parse3101.944ms; observed later shared model parses3136.941ms/2991.496ms. This is the measured shared model, not a timing decomposition of the failed occurrence/HP task. Saved HP inventory remains486 sources/7470 cells/digest1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55 across reached runs.",
+            "designImplication": "Give canonical inventory construction one explicit lifecycle owner per boundary; reuse immutable parsed/compiled inventory and retain measured failure propagation/counters. Merely moving await to beforeAll or hiding parse cost is not the proposed repair."
+          },
+          {
+            "kind": "unit52 design debt; no new scoped semantic Blocking established",
+            "paths": [
+              "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts:128",
+              "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts:196",
+              "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts:326",
+              "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts:417",
+              "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts:984"
+            ],
+            "mechanism": "One1111-line consumer owns declaration preflight, canonical selection, snapshot authority, legacy sourceSelf diagnostic expansion, dynamic string anchors/reason mapping, committed semantic checks, published aggregation and full successful check materialization. The complete value proof and live leaf reference anchors are different proof responsibilities.",
+            "designImplication": "Replace the uncommitted consumer API with explicit typed canonical expectation, observation/value proof, live ownership proof and audit result/diagnostic boundaries. Remove dependency on sourceSelf diagnostic shape within the new selectedAlly scope. Keep current original HP owner and minimal capture.",
+            "scopeRefinement": "Current canonical scope marks every other HP resource writer as boundary before inspectCommitted. Its n.writes/fixed-consumer chain support and unused fixedAfter fixture option are not exercised by in-scope selectedAlly representatives. In the redesigned unit52 proof, require forbidden extra writer evidence to fail or remain boundary instead of generalizing this chain. This is new uncommitted consumer responsibility cleanup, not prior-family legacy cleanup or HP semantic expansion."
+          }
+        ],
+        "costMeasurements": [
+          {
+            "file": "tsk-08-bp-capacity-intermediate-reconciled-identity-source-action.json",
+            "negativeCount": 58,
+            "encodedNodes": 1731,
+            "expandedValueVisits": 3716255,
+            "medianMs": {
+              "encodeMs": 5.562,
+              "decodeMs": 3.603,
+              "deepEqualMs": 446.067,
+              "serializeMs": 42.806,
+              "deserializeMs": 4.584,
+              "positiveProofSnapshotMs": 4.038
+            }
+          },
+          {
+            "file": "tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-modifier-values.json",
+            "negativeCount": 28,
+            "encodedNodes": 1376,
+            "expandedValueVisits": 2723095,
+            "medianMs": {
+              "encodeMs": 2.858,
+              "decodeMs": 1.789,
+              "deepEqualMs": 320.13,
+              "serializeMs": 27.111,
+              "deserializeMs": 3.879,
+              "positiveProofSnapshotMs": 1.842
+            }
+          },
+          {
+            "file": "tsk-08-selected-ally-maximum-fixed-increase-choice.json",
+            "negativeCount": 0,
+            "encodedNodes": 1297,
+            "expandedValueVisits": 118271,
+            "medianMs": {
+              "encodeMs": 2.85,
+              "decodeMs": 1.603,
+              "deepEqualMs": 14.177,
+              "serializeMs": 23.296,
+              "deserializeMs": 3.057,
+              "positiveProofSnapshotMs": 0.731
+            }
+          },
+          {
+            "file": "tsk-08-selected-ally-coherent-stale.json",
+            "negativeCount": 12,
+            "encodedNodes": 10990,
+            "expandedValueVisits": 1294477,
+            "medianMs": {
+              "encodeMs": 53.877,
+              "decodeMs": 22.053,
+              "deepEqualMs": 162.245,
+              "serializeMs": 360.665,
+              "deserializeMs": 86.61
+            }
+          }
+        ],
+        "costQualification": "8 CPU affinity0-7, existing environment unchanged; three sequential saved-codec replays only. Scalar snapshot extracted/transpiled unchanged. No writer/gate authority reconstructed, no product imports for execution, no source tests/audit/quality/performance suite. Serialized graph content interning changes alias sharing; saved replay timings cannot be projected as live test speedups. expandedValueVisits is graph-derived tree expansion, not measured deepEqual visitation count.",
+        "preferredDesign": {
+          "canonicalExpectation": "Keep hpPreparationCanonicalFor/getSkillsForActorForm as canonical source generators. Unit52 owns one immutable pre-evaluation declaration/choice ledger and scope contract; no activation/eligibility/native-success filter. Static preflight is a declaration join, not success evidence. Do not store full irrelevant executions or recanonicalize identical requests repeatedly solely to populate separate lists.",
+          "typedEvidence": "Create focused selectedAlly evidence/proof module in calculation-application, with explicit fields for command/form/source occurrence/operation/value cells, HP/modifier/receipt values and native/reducer/selected reader/NP/input/result links. Represent boundary dispositions exhaustively; malformed/missing evidence fails the audit rather than empty-list/value fallback. Product invalid/unsupported/native classification stays unchanged.",
+          "liveOwnership": "Separate raw reference anchors from canonical value proof and persisted codec. Keep necessary HP leaf owner anchors so same-valued reader/NP copies fail. Capture remains an observer immediately after original apply; no arithmetic, writer replay, inferred downstream or whole state graph identity requirement.",
+          "graphComparison": "Normalize accepted proof values once per audit invocation and compare shared graph pairs without repeated tree expansion. Expected authority snapshot remains immutable. Memoization must be local to one synchronous gate invocation, because committed denial fixtures mutate/restore original sources between invocations; global WeakMap caches would return stale proofs. Preserve typed reason/checkPath and canonical first difference; repeated failing paths must remain addressable even if equal subgraphs are skipped. Freeze complete actual denial values during the gate call, before the fixture restores its mutable source. Do not retain raw live values for lazy later diagnostic construction. Cache by object plus semantic-view kind if extraction uses different views; a single cross-view object cache can suppress fields.",
+          "restoration": "Artifact transport owns one complete encode/write/receipt/read/decode/restoration operation before semantic assertions. Prefer graph-aware restoration equality under the exact current accepted value contract (undefined versus missing, ordered Set/Map, null-prototype objects, keys/prototypes, cycle/invalid values); do not replace independent payload equality solely with re-encode equality, because encoder/decoder could share an error. Repeated per-task restoration work may only be removed when the remaining single disk roundtrip proves the same full payload and all declarations/receipts remain.",
+          "resultAndArtifact": "Use one shared complete value graph in checks/diagnostic, with full expected/actual values reachable by typed proof addresses. All successful checks and all failures remain reconstructible; no sampling, lazy failure-only payload, first-difference-only artifact, losing owner proof or numerical fallback. Preserve current artifact envelope/digest versions unless measured design necessity justifies a separately explicit contract migration. No codec replacement just for speculative speed. A shared immutable proof node table is built at gate time, not inferred later from successful results. Persist ownership-check outcomes separately because content interning deliberately merges equal values and cannot reconstruct runtime reference identity.",
+          "productionInventory": "Within data-pipeline, share strict parsed master/allEffects/operation-family inventory across the direct execution-semantics assertions. Application HP inventory owns its own canonical cell inventory and executes all cells through original HP owner. Give readiness/read/parse/compile explicit measured lifecycle assertions and error propagation; retain existing timeout/threshold coverage, account for setup work rather than move it outside budget. Do not implement a cross-worker mutable singleton, alternate cache file, alternate credentials or partial-schema parser. File/process isolation prevents claiming one package-wide parse merely from an imported Promise helper. First share within the directly affected suite/model; any cross-file consolidation needs explicit suite coverage/lifecycle ownership and measured counters, without weakening isolation or removing cases."
+        },
+        "implementationCandidates": {
+          "withinUnit52": [
+            "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts",
+            "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.test.ts",
+            "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "Focused selectedAlly proof/evidence module in same package if it clarifies actual responsibilities"
+          ],
+          "separatelyBoundedSharedGateRepair": [
+            "packages/calculation-application/src/productionAuditArtifacts.ts and its contract fixture if graph-aware restoration is selected",
+            "Capacity committed/attempt consumers and fixtures only when a measured call-local proof comparison repair needs their migration",
+            "Data-pipeline execution-semantics inventory fixture/owner for lifecycle consolidation",
+            "Application HP inventory fixture/owner only for explicit lifecycle/cell inventory integration"
+          ],
+          "notDefault": [
+            "No battle-execution capture rewrite without new evidence",
+            "No modification to prior HP46..51 semantic contracts",
+            "No suite exclusion/negative deletion/timeout relaxation/GC/runner configuration",
+            "No migration of every legacy audit family or broad cross-package master cache"
+          ]
+        },
+        "stagedPlan": [
+          {
+            "stage": 1,
+            "work": "Fix proof/restoration contract and affected boundary inventory before editing. Specify canonical evidence addresses, raw-owner anchors, malformed evidence behavior, complete negative identities and source/artifact authority. Current public diagnostic shape may be replaced for uncommitted unit52; no old API compatibility shim.",
+            "gate": "No HP arithmetic/ownership drift; boundary populations preserved; typed reason/checkPath/first difference/full diagnostic coverage mapped."
+          },
+          {
+            "stage": 2,
+            "work": "Use completed original-source240-test CPU profile and archived workload to select proof materialization/graph restoration as the first bounded shared gate repair. Preserve this baseline; additional original source diagnostics are unnecessary absent a concrete new question. For production lifecycle repair, define measured read/parse/compile/cell phases and shared inventory contract separately before implementation.",
+            "gate": "Profile proves dominant aggregate mechanism, not exact5000ms failure causality. Keep attribution unverified and do not run unchanged full quality. A before/after targeted repair comparison must use same inputs/worker/setup accounting; no readiness-only hook or invisible setup cost."
+          },
+          {
+            "stage": 3,
+            "work": "Implement immutable call-local shared value proof and graph-aware independent restoration in a bounded shared gate repair; separately replace unit52 consumer API with typed expectation/observation/ownership/result modules. Keep every denial and snapshot it before mutable source restoration. Implement measured strict production inventory lifecycle only under its separately explicit repair scope; no readiness-only hook. Review these effects separately rather than change all audit families at once.",
+            "gate": "Same canonical negative identity set and product outputs; same boundary counts; full lossless artifact and receipt completeness. Existing schema-legal same-valued copy denial remains mandatory. No automatic cache across mutable denial calls."
+          },
+          {
+            "stage": 4,
+            "work": "Run affected local/contract fixtures and unit52 existing55/control7 only where identities/responsibilities changed. Compare at least3 equivalent targeted before/after measurements under affinity0-7/4workers and unchanged timeout/thresholds; explain task/setup/candidate/request/counter effects.",
+            "gate": "Source-fixed scoped success, no unexplained regressions or test exclusions. Reuse unchanged prior family evidence; no unconditional8-shard regeneration."
+          },
+          {
+            "stage": 5,
+            "work": "After selected repair demonstrably resolves the gate mechanism and scoped Blocking is0, freeze integrated difference, run README quality once, reconcile final source/artifact/counter/digest and record scoped local product commit.",
+            "gate": "Any outside-scope/new failure stops dependent closure with evidence and revised bounded proposal; no unchanged quality retry. TSK-08 remains in_progress,09.1/09 blocked; no whole closure claim."
+          }
+        ],
+        "deferredDecision": "Specific graph comparator and production lifecycle implementation remain a future explicit bounded implementation scope; current research does not authorize source edits. Broader prior-family cleanup and codec format migration are not selected by default.",
+        "completionThisSession": "Investigation/design and original-source diagnostic CPU capture only. Product implementation unchanged/uncommitted; mandatory quality/counter/digest/product commit still incomplete. No push.",
+        "liveDiagnostic": {
+          "firstInvocation": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T09-00-24-191Z-4-4e1744/manifest.json",
+              "bytes": 63988,
+              "sha256": "c7996446bc82da5f404781abbe3000890bb6efbfabea01c1f6533f2f4b0fbfad"
+            },
+            "outcome": "240/240 tests passed; CPU profile files not generated. CLI root execArgv did not yield profiles for project workers; no CPU attribution inferred from this run."
+          },
+          "correctedInvocation": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T09-02-55-884Z-2-795b91/manifest.json",
+              "bytes": 64077,
+              "sha256": "a3c5092b03528e316617d066880fa2e7f1e15ff5191f09a37438398224cd6191"
+            },
+            "outcome": "240/240 original source tests passed, warnings0,245 artifact receipts/errors0. Three CPU profile files produced (parent plus two workers).",
+            "command": "taskset -c 0-7 node .test-results/tsk-08-unit52-gate-design-20260927/cpu-capture.mjs",
+            "runner": "Existing runCapturedTest from scripts/test-runner-lib.mjs; command-only Node --cpu-prof inherited by worker via installed Vitest resolveOptions; source/config/worker/timeout unchanged. Full two files, no -t or test exclusions.",
+            "qualification": "CPU-profile observer changes timing and two-file scheduling differs from full quality. Diagnostic pass is not mandatory-gate success or comparable-baseline attribution. No GC tuning or unrelated runtime investigation."
+          },
+          "profileReceipts": [
+            {
+              "path": ".test-results/tsk-08-unit52-gate-design-20260927/cpu-profiles/CPU.20260927.180255.10.0.001.cpuprofile",
+              "bytes": 834305,
+              "sha256": "c4f82ab897b59a7ee7649e652de3876b90d477ffa1f1066f4faaf54e8ed666f2"
+            },
+            {
+              "path": ".test-results/tsk-08-unit52-gate-design-20260927/cpu-profiles/CPU.20260927.180256.41.0.001.cpuprofile",
+              "bytes": 2302303,
+              "sha256": "8842e399b705070b987bdb7f9cd68774c92eb7b5d2449e52ccfbe6a1f9aa4938"
+            },
+            {
+              "path": ".test-results/tsk-08-unit52-gate-design-20260927/cpu-profiles/CPU.20260927.180256.42.0.001.cpuprofile",
+              "bytes": 1975666,
+              "sha256": "341a066955576c724e3d36681f48b320612cc89a7bd0b053c6f2d335019b7ca8"
+            }
+          ],
+          "sourceFrozen": "No product/source/test/config or documentation edits during either source diagnostic; retained six source hashes checked again before closing.",
+          "wholeWorkerCpuSampleCategories": [
+            {
+              "testFile": "file:///home/ivgtr/pj/fgo-lab/fgo-lab/packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+              "categories": {
+                "diagnosticGraphEncode": {
+                  "ms": 24259.33,
+                  "sharePercent": 32.86
+                },
+                "deepRestorationComparison": {
+                  "ms": 22469.88,
+                  "sharePercent": 30.44
+                },
+                "canonicalSnapshot": {
+                  "ms": 9988.99,
+                  "sharePercent": 13.53
+                },
+                "canonicalDifference": {
+                  "ms": 4823.41,
+                  "sharePercent": 6.53
+                },
+                "artifactSerialization": {
+                  "ms": 4312.34,
+                  "sharePercent": 5.84
+                },
+                "otherRuntimeOrImport": {
+                  "ms": 4007.36,
+                  "sharePercent": 5.43
+                },
+                "otherCapacityAuditOrFixture": {
+                  "ms": 1703.14,
+                  "sharePercent": 2.31
+                },
+                "artifactRestoration": {
+                  "ms": 1170.29,
+                  "sharePercent": 1.59
+                },
+                "idle": {
+                  "ms": 1091.47,
+                  "sharePercent": 1.48
+                }
+              }
+            },
+            {
+              "testFile": "file:///home/ivgtr/pj/fgo-lab/fgo-lab/packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts",
+              "categories": {
+                "deepRestorationComparison": {
+                  "ms": 14429.11,
+                  "sharePercent": 28.14
+                },
+                "diagnosticGraphEncode": {
+                  "ms": 14413.02,
+                  "sharePercent": 28.11
+                },
+                "canonicalSnapshot": {
+                  "ms": 7874.51,
+                  "sharePercent": 15.36
+                },
+                "canonicalDifference": {
+                  "ms": 4323.05,
+                  "sharePercent": 8.43
+                },
+                "artifactSerialization": {
+                  "ms": 3530.37,
+                  "sharePercent": 6.89
+                },
+                "otherRuntimeOrImport": {
+                  "ms": 3054.84,
+                  "sharePercent": 5.96
+                },
+                "otherCapacityAuditOrFixture": {
+                  "ms": 2137.91,
+                  "sharePercent": 4.17
+                },
+                "idle": {
+                  "ms": 969.07,
+                  "sharePercent": 1.89
+                },
+                "artifactRestoration": {
+                  "ms": 543.74,
+                  "sharePercent": 1.06
+                }
+              }
+            }
+          ],
+          "designDecision": "Complete worker profile confirms evidence construction/encode/deep restoration dominates: attempt graph encode32.86%,deep restoration30.44%,snapshot13.53%; committed28.11%,28.14%,15.36%. Prioritize immutable shared value-proof graph before codec and graph-aware restoration; preserve raw owner anchors independently. These are sampled full-worker categories, not failed task phase timings or exclusive native execution timing."
+        },
+        "documentationVerification": {
+          "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm test:docs",
+          "passed": 6,
+          "failed": 0,
+          "integrity": "passed on final result record",
+          "log": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/docs-final.log",
+            "bytes": 529,
+            "sha256": "49c3d7c53ea9e8206e2582a521defe3bc98300a5258972223229d925f405780b"
+          },
+          "formatPolicy": "Default Prettier honors docs/ exclusion; no forced formatting. Existing frontmatter/table layout preserved and registry versions reconciled.",
+          "formatLog": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/format.log",
+            "bytes": 66,
+            "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+          },
+          "diffWhitespace": "passed",
+          "sourceProtection": "Retained6 bytes/SHA and prior boundedUnits0..51 exactly unchanged from4909213 after source CPU diagnostics.",
+          "commitPolicy": "Research/documentation-only local commit; resolve identity from Git history. Product six files remain uncommitted; no push.",
+          "finalIntegrityLog": {
+            "path": ".test-results/tsk-08-unit52-gate-design-20260927/docs-integrity.log",
+            "bytes": 22,
+            "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+          }
+        },
+        "causeAnalysis": {
+          "mechanismConfirmed": "Overlapping source/value trees are snapshotted per check/denial before the artifact codec interns output; whole-value restoration comparisons revisit shared subgraphs. Original worker profiles put encoding plus restoration comparison above56% of samples. Separate production tests repeat strict parsing, with only shared-model-local counters.",
+          "designDriftInferred": "Correctness guards were added as complete generic snapshots/diagnostic inheritance, while source-derived population, live ownership, value proof and transport restoration remained coupled. Shared inventory requirements are implemented for measured models but not all adjacent direct test consumers. This is inferred from current responsibilities, not a claim about author intent.",
+          "detectionGapConfirmed": "Baseline tasks already nearly exhaust5000ms but succeed; original artifacts expose elapsed duration and full values without per-stage costs. Prior representative public execution timing does not measure audit proof materialization/restoration. Complete semantic receipt equality cannot establish timing provenance.",
+          "recurrenceScopeInferred": "The verified mechanism applies to the two profiled capacity fixtures and current selectedAlly consumer construction. Bound the chosen shared proof/restoration repair to these consumers and contract fixtures; other families require direct evidence before migration. Production lifecycle repair is separately scoped to direct execution-semantics/HP inventory paths."
+        }
       }
     }
   ],
@@ -17412,7 +17795,7 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "Unit52 resumed with user-approved plan; saved evidence/diff reconciliation complete; mandatory quality blocked without scoped repair, dependent product closure stopped.",
+      "status": "Unit52 consumer/gate design re-evaluated under explicit research-only request; preferred breaking design and bounded verification plan recorded, no implementation authorized in this session.",
       "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "priorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
@@ -17899,8 +18282,8 @@
         "sessionLimit": "60min checkpoint. At90min finish current atomic action and hand off; do not start another quality retry, family or investigation.",
         "finish": "On mandatory-gate success reconcile final identities, counters/digests and protected units; update existing Task/evidence and commit only scoped changes locally, no push. If blocked/time-limited, preserve differential checkpoint and never commit as completed product.",
         "preparationVerification": "Retained six-source and local55/control7 manifest bytes/SHA matched; protected boundedUnits0..51 unchanged; pnpm test:docs6/6 and docs integrity, git diff --check passed. No source validation/quality run.",
-        "latestAssessmentReference": "boundedUnits[52].resumeGateAssessment",
-        "nextOperation": "Follow resumeGateAssessment.revisedBoundedPlan; current plan confirmation fulfilled. No unchanged quality retry, no automatic unrelated fixture/GC repair."
+        "latestAssessmentReference": "boundedUnits[52].gateDesignInvestigation",
+        "nextOperation": "Use gateDesignInvestigation.stagedPlan in a future implementation session; scope specific shared gate repair explicitly. Current session is investigation/design only, not source implementation approval."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -18872,7 +19255,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Unit52 remains incomplete after approved resume review: retained six-source/local55/control7/affected19 receipts valid; mandatory quality still blocked. See boundedUnits[52].resumeGateAssessment for direct-path evidence and revised bounded gate scope decision before further execution; no new family.",
+    "nextSession": "Existing unit52 remains incomplete. Consumer proof/ownership/restoration and production lifecycle investigation is recorded in boundedUnits[52].gateDesignInvestigation; choose a measured bounded gate repair and implement the typed selectedAlly proof boundary in a future authorized session. Retain6 sources and valid local55/control7/affected19; quality/counter/digest/product commit remain pending.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",

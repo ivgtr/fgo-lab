@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.89"
+document_version: "1.7.90"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3531,3 +3531,19 @@ publishedは6宣言／12 selected、changed／connected／reader／NPは各0で�
 対象内の具体的な欠陥・原因解消が確認できなかったため、承認計画の停止条件を適用した。既存5000ms timeoutのraw集計／capacity否定／HP inventory失敗をgate障害として記録し、source test／audit／quality／性能計測は追加実行しない。GC、schedule、fixture変更、timeout／threshold緩和で成功を作らない。改訂した限定計画とartifact identityの正本はevidence `boundedUnits[52].resumeGateAssessment`。次の操作は既存timeoutの診断範囲・比較条件・最小command・停止境界を明示的に限定するscope判断であり、同条件のquality再試行ではない。原因解消後に影響検証、README quality、最終counter／digest／全receipt照合、対象限定製品local commitへ戻る。
 
 今回のlocal commitは未完了の文書checkpointだけとし、製品6ファイルは未commitで保持する。必須qualityと最終統合production counter／digest照合、製品完了commitは未達。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
+
+### unit52 consumerとgateの設計再評価（調査のみ、2026-09-27）
+
+利用者がこのsessionの実装を止め、既存gate障害に加えてunit52 consumerも設計レベルで再評価するよう指定した。互換fallbackや最短の局所補正を前提にせず、保持中の未commit consumer APIの置換も候補とする。製品source／test／runner／設定は変更していない。調査・設計・次の限定実装計画の正本はevidence `boundedUnits[52].gateDesignInvestigation`。
+
+保存5 run・21 target receiptの照合error0、直接13 source／設定／lockfileは製品baselineと同一。capacityの成功／timeout runはdiagnostic bytes／SHAも同一で、baselineからcommitted約4816ms／attempt約4874msと元5000ms上限に近い。変更由来の帰属は`unverified`のまま。保存artifactだけの8 CPU affinity再生では、committed58否定の1731 graph nodeは木への展開量約372万、attempt28否定の1376 nodeは約272万。deep比較1回の中央値は446ms／320msであった。実testのphase内訳・速度改善・timeout原因を証明する値ではないが、重なるsnapshot／proof／復元比較の構造を見直す根拠になる。
+
+原capacity2ファイルの全240 testsを元5秒timeout／4worker設定・8 CPU affinityで診断した。初回は240成功したがCLI指定からCPU profileを取得できず、計測成功とはしない。既存capture runnerへNode側のprofile指定を置く修正後も240成功、245 receipt照合error0、parentと2 workerのprofileを取得した。whole-worker CPU sampleではgraph encode約28〜33%、deep復元比較約28〜30%、snapshot約14〜15%で、値proofを複製・encode・照合する処理が支配的だった。保存再生は既にintern済みの値なので、元encodeのコストを過小評価していた。profile observerと2-file schedulingが異なるためquality成功や変更帰属へ読み替えない。実行中のsource／文書編集なし、GC／runner調整なし。
+
+productionの直接経路では、data-pipeline execution-semantics fileの個別test内に13のread／JSON／strict-parse call siteを確認した。既存shared modelのparse計測は約3秒で、そのcounterは別testのparseまで数えていない。HP inventoryは元7470 cell／486 source／digestを保存run間で保持している。静的call site数をruntime counterとせず、撤回済みbeforeAll readiness変更をそのまま再導入しない。
+
+推奨設計は、unit52のcanonical期待契約、typed実観測／値proof、生の必要leaf参照、検査結果／保存diagnosticを分離し、sourceSelf diagnostic shapeへの依存を外すこと。共有グラフの比較・復元はgate呼出し内だけで扱い、否定fixtureのin-place mutation／restoreをまたぐcacheは作らない。serialized内容のinterningで元実行の参照同一性を証明せず、同値reader／NP HP-copy否定を保持する。全否定、typed reason／checkPath／canonical first difference、完全expected／actual、assertion前の宣言保存・disk lossless復元を減らさない。production inventoryはread／parse／compileの明示的ownerと計測を持ち、単なる待機移動や部分schema parseでは解消しない。
+
+優先する変更機構は、gate中に完全なactual値proofをcall-localの共有グラフとして凍結し、codecへ渡す前の木への複製を避けること。source restore後にraw値を遅延取得する設計は証拠を書き換えるため採らない。単一objectの異なるsemantic viewも区別する。元HP leaf参照の検査は値graphから独立させる。現scopeは他HP writerを境界で除外するため、未commit consumerに残る固定HP writer連鎖の一般化も責務整理候補とする。対象外writerを成功へ接続せず、旧familyのcleanupやHP意味論追加へ広げない。
+
+次の実装sessionでは、正本の段階計画に従ってproof／restoration契約と取得済みprofileをbaselineとして固定し、確認した支配的な機構に対する共有gate修正とunit52 proof分離を別々にレビューする。production lifecycleは別に明示した修正範囲と計測契約で扱う。通常のqualityを診断目的で反復せず、対象内Blockingと影響fixtureを閉じ、具体的なgate解消後にREADME quality・最終counter／digest／receipt・製品local commitへ進む。今回は調査記録だけで、新しい実装承認ではない。unit52は未完了、保持6 sourceは未commit、TSK-08 `in_progress`、09.1／09 `blocked`、pushなし。
