@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.103"
+document_version: "1.7.104"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3758,3 +3758,16 @@ Publishedはgive宣言5（skill1／constant CE4）、対象skill owner1。元pro
 元HP ownerと影響unit／production12 files／391 tests、既存audit4 files／77 tests、最終give3は成功した。旧HP5完全artifactと既存receive／maximumFixed attempt19完全artifactはdecoded値・順序・bytes／SHA一致。新giveの完全artifactはassertionより先に保存し、container型／governing inputを含む30否定をtyped reason／first differenceへ接続した。標準pnpmの外部SQLite失敗はscript開始前で、指定shimの内容・730bytes／SHAを照合し同generic runnerを使用した。名前filterでpublished1成功／5skipになった試行はrunner contract失敗であり、成功gateへ合成せず現在の全6file検証へ戻る。最終HP6とworkspace／影響package typecheck、lint／formatは成功。既存391 run内のgive3は最終fixture／artifactで再検証し、既存388の成功は同責務で再利用した。Runner artifact verification error0、独立disk descriptor359／test-owned declared receipt339照合error0。詳細は上記checkpointを参照する。
 
 今回の1-run HP診断は正式3-run性能証拠ではなく、旧timeout帰属も決めない。全TSK-08 coverage／ratchet／diagnostic到達性／legacy削除／正式性能／README最終quality／統合counter・digest・全receiptは未達。giveの局所成功を製品closureへ読み替えず、依存するquality、native give noncommit、constant CEや別family、TSK-09.1／09は開始しない。次はgive native noncommitの現coverageを元ownerと既存fixtureへ読み取りで照合し、別の限定計画とする。対象内forward Blocking0の製品未完了local checkpointとして対象限定commitまで進め、pushしない。60分checkpoint／90分停止境界を維持する。
+
+
+### Step再照合とgive native noncommit監査の1セッション引継ぎ（2026-09-27）
+
+整理開始HEADは `ea7290d79230931ba802d6f735541f36ec25ecb1`、index／tracked／untracked clean。give committed forwardの対象11ファイルは同commitに保存済みで、未commit source依存はない。今回準備は現定義・直接生成／利用経路・Task gate・JSON・checksumの読み取りと既存正本の整理だけ。source test／producer／audit／quality／live計測／製品編集は行っていない。新しい実装指示正本は [parity evidence](../evidence/tsk-08-parity-ratchet.json) の `handoffPreparation.nextSession.giveNativeNoncommitSession`。先行forwardやinput lifecycle等の計画は履歴と成立証拠で、次作業の固定手順にしない。
+
+Step 0はbaseline／契約成立済み、Step 1はV41 versionContextとV40保持／明示V41再計算成立済み、Step 3は改訂matrix／eligibility digest成立済み。Step 2は未完了。units[0]〜[51]、unit52全既存checkpointをJSON完全一致で保全し、giveの局所接続も全製品closureへ読み替えない。TSK-08 `in_progress`、09.1／09 `blocked`を維持する。Task checklistの全ratchet・typed diagnostic／artifact到達性・legacy削除、Done gateの全inventory／parity／fail-closed、Contract closure matrixの正式性能／最終quality／統合counter・digest・全receiptは未達または統合未照合で、後続成功を合成して完了にしない。
+
+現 `preparationOc` は元native結果とattempted／returned HP、sourceEndsをcaptureし、noncommitのstructuralState／returnedはaction開始state、返却resourceMutationsは空になる。application rejection transportと共有 `hpPreparationSource` は元transition／hpActionsを運ぶ。give forward gateはwriter nativeにcommittedを要求し、noncommitをoutside-scopeとするため、positive changed-attempt隔離契約は未接続である。Receive native監査は既存owner／否定／persistenceの参照材料だが、同action consumer制限のコピーではgiveの別action gainを落とす。capture追加の要否とconsumer責務の配置は次workerが現codeから判断する。
+
+次sessionの範囲はactive/direct/sourceSelf attacker-skill giveと、同回復元のfixed/direct gain（sourceSelf／partyMember）のnative noncommit隔離だけ。A:同actionのgive append／gain後の拒否で当該action変更を残さない経路と、B:先行give actionがcommit済み、別gain actionが拒否され、先行modifierを保持し失敗gain HPだけを返却stateへ漏らさない経路を分ける。これらのstrict schema-legal代表の成立は実行未検証であり、計画で合法構成・元refusal step・必要な反証を決める。attemptedの実倍率readをcommitted read／NP消費に読み替えない。Published宣言5／owner1／攻撃候補0の境界と代表の非empty証拠を分け、別actor/default inputへ置換しない。
+
+最初の成果物は現コードから判断した設計・候補file・owner／lifetime・母集団・局所反証／影響検証・最小計測・TSK-08 closure可否・60／90分停止境界の計画。編集やsource実行前に利用者確認を待ち、確認後は同範囲の必要な実装・検証・記録・対象限定local commitまで続ける。通常判断で再承認を求めない。全義務が有効既存証拠とgive一family内の整理で成立し時間があれば最終quality／必要audit／正式性能へ進みTSK-08完了を目指す。別family／対象外owner変更／実装gap／未達gateが残れば依存qualityを開始せず製品未完了checkpointで終了する。domain recovery／UI retry、constant CE／passive／NP give、他HP family、入力lifecycle／共通codec／runner条件、無関係legacy整理を連鎖開始しない。60分checkpoint、90分はatomic action完了後引継ぎ、対象限定local commit、pushなし。

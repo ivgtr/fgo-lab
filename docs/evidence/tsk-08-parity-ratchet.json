@@ -19816,8 +19816,8 @@
         {
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open.",
-          "nextBoundedScope": "Give population/actual consumption coverage and,if needed,committed forward shared audit connection only;no native noncommit/recovery orconstant CE auditimplementation.",
-          "nextScopeQualification": "handoffPreparation.nextSession.giveCommittedForwardSession",
+          "nextBoundedScope": "give active/direct/sourceSelf attacker-skillのnative changed-attempt/noncommit隔離について、現coverageを照合し、必要な共有audit接続を一family・一sessionで実装/検証/記録/local commitする。既存意味論を拡張しない。",
+          "nextScopeQualification": "handoffPreparation.nextSession.giveNativeNoncommitSession",
           "activeUnit52ScopeReference": "boundedUnits[52]"
         },
         {
@@ -19827,15 +19827,16 @@
       ],
       "latestBoundedUnit": 51,
       "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary. See boundedUnits[52].consumerResponsibilityConvergence/capacityRestorationComparisonCheckpoint/committedCapacityMaterializationCheckpoint for retained scoped checkpoints,not product closure. Current outer attempt checkpoint:original177+5=182/control7 passed,old177 full values/bytes/SHA identical,1854 negatives/58824 failure checks,199 final attempt+control receipts/error0;published capacity selected0/excludedNp1 remains a distinct boundary.",
-      "nextBoundedUnit": "Current give committed forward checkpoint implemented;next separately bounded read-only native-noncommit coverage reconciliation/plan. No new semantic unit number predetermined.",
+      "nextBoundedUnit": "Give native noncommit coverage/necessary shared audit only;current-code plan first,confirmation then same-session local commit. No new unit number predetermined.",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "handoffPreparation.nextSession.giveCommittedForwardSession",
+      "nextScopeQualification": "handoffPreparation.nextSession.giveNativeNoncommitSession",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
       "asOfCurrentCheckpoint": "e081002b5f405c930b3c03c837c0b83781d14939",
-      "asOfGiveCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint"
+      "asOfGiveCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint",
+      "asOfGiveCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1"
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -19891,8 +19892,8 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "Next one-session authority is giveCommittedForwardSession. Planning from current code and user confirmation precede any implementation.",
-      "name": "Existing outer capacity attempt full-value proof and bounded gate slice",
+      "status": "Next one-session authority is giveNativeNoncommitSession. Current-code plan and user confirmation precede implementation.",
+      "name": "Give native changed-attempt/noncommit isolation coverage and shared audit",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "historicalPriorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
       "historicalScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
@@ -20639,8 +20640,8 @@
         "nextOperationReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint.nextOperation"
       },
       "historicalRootQualification": "Historical-prefixed plans remainhistory. productionAuditInputLifecycleSession wasconfirmedandexecuted;currentresultandnextlimitedoperationareownedby boundedUnits[52].productionAuditInputLifecycleCheckpoint.",
-      "currentCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-      "currentSessionReference": "handoffPreparation.nextSession.giveCommittedForwardSession",
+      "currentCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1",
+      "currentSessionReference": "handoffPreparation.nextSession.giveNativeNoncommitSession",
       "capacityAttemptMaterializationSession": {
         "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -21199,6 +21200,156 @@
           "boundedUnitsPreserved": "all0..52 exact JSON equality to e081002"
         },
         "implementationCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint"
+      },
+      "giveNativeNoncommitSession": {
+        "status": "read-only preparation complete;current code plan and user confirmation required before source execution or implementation",
+        "preparationHead": "ea7290d79230931ba802d6f735541f36ec25ecb1",
+        "giveCommittedForwardCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "purpose": "give active/direct/sourceSelf attacker-skillのnative changed-attempt/noncommit隔離について、現coverageを照合し、必要な共有audit接続を一family・一sessionで実装/検証/記録/local commitする。既存意味論を拡張しない。",
+        "authority": "このentryが次sessionの実装指示正本。giveCommittedForwardSessionと他のnextSession/historical計画は成立証拠/履歴であり固定手順ではない。",
+        "sourceIdentities": [
+          {
+            "path": "packages/battle-execution/src/preparationHp.ts",
+            "bytes": 19523,
+            "sha256": "50a16c5d86ca1d959c149b73ecb0a78b64269e304bb6991ec501506db4db35d2"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 10683,
+            "sha256": "e921411501fde7a085252d8add74d0fd70e75afc26db4b58ec24d15d49488ccf"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 58252,
+            "sha256": "705242f6079a983245f5e208b4caed4ab8d613c4d8b82bc9136512ced44aa988"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationAttemptObservation.ts",
+            "bytes": 3556,
+            "sha256": "89f866c7a9520786b769da74837e508024e87289fcc00f77a449b9ddba5df641"
+          },
+          {
+            "path": "packages/calculation-application/src/scenario.ts",
+            "bytes": 58849,
+            "sha256": "359e782342fe52dda4026df621efa8ccdca148fdcd5f8fc81db0175e0a71b3e1"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.ts",
+            "bytes": 42748,
+            "sha256": "eed65dc9d1458df4af30ad98944a575d538270cf958008b4246e9332a0e2f746"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpGivePreparationAudit.ts",
+            "bytes": 28486,
+            "sha256": "18102ca438cbca53e88bfaddc43df460ec88fc5f8fa2450377ba49d2694c505d"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpGivePreparationAudit.test.ts",
+            "bytes": 21337,
+            "sha256": "7c8517985835cbabf0b6dbbe12fa20ab248fc81e97c42aa589afb316c69eba7e"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPaths.test.ts",
+            "bytes": 26528,
+            "sha256": "50d128c506e78f6472d3c602ceedbe2b1dd607cf83341a41837bc276843677ac"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpReceivePreparationAttemptAudit.ts",
+            "bytes": 35067,
+            "sha256": "e5383d70ad2a448714b1c7a3f2685d3d817dceccc8e16b7bd06ecfe25bf0f259"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpReceivePreparationAttemptAudit.test.ts",
+            "bytes": 35036,
+            "sha256": "f71f8558af7bf5e83f9d97593d9095a8c61f8284d0f95e7e71fd0bd20a3c4efb"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "preparationReport": {
+          "performed": "現コードの定義/直接生成・利用経路、Task checklist/Done gate/Contract closure matrix、currentStage/remaining/closureReconciliation、既存JSON/source checksumを読んだ。source test/producer/audit/quality/live計測/製品編集は今回準備では未実施。",
+          "facts": [
+            {
+              "owner": "preparationHp.ts::executeHpOperation",
+              "fact": "observeGiveGainが元sourceActorのhpModifierValue readを取得する。倍率/transition算術は元owner。giveReadはtransfer/lossで生成されない。"
+            },
+            {
+              "owner": "preparationOc.ts::executePreparationOc/hpExecutionObservation.ts",
+              "fact": "giveWrites/giveGains/giveConsumptionsは既存capture有効時だけ保持。native/attempted/returnedとsourceEndsがある。noncommitではhpAction.returnedとstructuralStateがargs.state、resourceMutationsは空。新captureが必要かは計画で判断する。"
+            },
+            {
+              "owner": "scenario.ts::prepareCalculationScenario/productionHpPreparationAudit.ts::hpPreparationSource",
+              "fact": "application preparation rejection observationに元transition/native attemptが運ばれ、共有HP sourceが元hpActionsを取得する。typed rejection/ordered execution/damage inputの到達性は元transportで確認できる。"
+            },
+            {
+              "owner": "productionHpGivePreparationAudit.ts::giveCanonical/evaluateGivePreparationGate",
+              "fact": "別skill/actionの後続fixed sourceSelf/partyMember gainを扱う。writer nativeがnoncommitならgiveWriteMismatchとnativeNoncommitOutsideScope境界であり、positive changed-attempt隔離契約は提供しない。前回forward成功をnoncommit成功へ転用しない。"
+            },
+            {
+              "owner": "productionHpReceivePreparationAttemptAudit.ts/test.ts",
+              "fact": "既存native changed gain、unsupported/inputRequired、先行prefix保持、元returned/native state、reducer/transport/downstream拒否の証拠がある。ただしreceive selector/同writer-action consumerの制約をgiveへコピーすると別action消費を落とす。wrong-action give否定はgive positive証拠ではない。"
+            },
+            {
+              "owner": "published/giveCommittedForwardCheckpoint",
+              "fact": "宣言5=skill1/constant CE4。対象skill owner1の元planner攻撃候補0、request生成前除外1、実selected/reached/committed/consumed/read/NP0。published native失敗の存在も未確認で、strict合法代表とは分ける。"
+            }
+          ],
+          "designDecisiveDistinction": "A:同action内give append/後続gain後のnative拒否は当該actionのappend/HP変更を返却stateへ残さない。B:先行actionのgiveがcommit済みで別actionのgainがnative拒否される場合、先行modifier/prefixは保持し、失敗actionのgain HP変更だけを返却stateへ漏らさない。attempted実readをcommitted readやNP消費に読み替えない。A/Bの合法成立と必要な代表は次workerが現codeから計画し、実行前には未検証と扱う。",
+          "uncertainties": [
+            "実applicationで必要なstrict schema-legal代表の最小構成とnative refusal stepの対応。",
+            "既存capture/transportだけでsource/action/step/receipt/instance/returned prefixを証明できるか。",
+            "別actionのgain-only rejectionを拾うselection/authority責務を既存give側で拡張するか焦点の定まったattempt moduleに置くか。",
+            "全TSK08義務と既存有効証拠の対応。未照合は新runtime実装gapと断定しない。"
+          ]
+        },
+        "scope": [
+          "canonical宣言/available action/selected/reached/native outcome/append/実倍率read/changed attempted HP/returned retained HP/reducer/rejection transport/下流非生成を区別するgive native noncommit共有audit。",
+          "active/direct/sourceSelf attacker-skill giveと同source actorの固定direct gain(sourceSelf/partyMember)。別actionでattackerが受取る経路を含む。",
+          "先行committed prefixを保持するfailure isolation。元unsupported/inputRequiredと正常非適用/未到達/actual0/committed controlを区別し、writer数とconsumer数を混ぜない。",
+          "必要最小限の元capture/transport、application consumer/typed gate、既存artifact persistence、小型strict schema-legal代表/完全inventory、既存Task/evidence。候補file/設計は計画で決める。"
+        ],
+        "excluded": [
+          "HP算術/sign/bounds/truncation/clamp、writer transaction/commit/reducer/route/native failure分類、schema/parser/normalize/raw/master、scenario/portable/ranking policyの意味論変更。",
+          "give成功domain recovery/UI retry/damage rollback、constant CE/passive/NP give監査、他HP family/transfer/percent/base/maximum/receive/noHealing、form/actor switch、legacy cleanupの実装。",
+          "共通attempt authority/global codec/shared scalar、入力lifecycle、runner/suite登録/config/GC/timeout/threshold変更、完了済みunits0..51再開、TSK09.1/09開始。"
+        ],
+        "firstDeliverable": "編集/source実行より先に現定義・参照・直接経路から計画を提示して利用者確認を待つ。成立契約/具体的未接続、採る設計/候補file/代替案、A/B action順序とsource/recipient、capture/consumer/proof/artifact owner/lifetime/借用値/failure伝播、母集団と局所反証/影響suite/旧新完全比較、設計上必要な最小計測、TSK08全closure可否、成果物と60/90分境界を説明する。確認後は同範囲の必要作業/local commitまで続け通常判断で再承認を求めない。実行診断だけの承認を実装承認に読み替えない。",
+        "verification": [
+          "元application preparation→元HP owner append/read/attempted→native refusal→元returned/reducer保持→application rejection/下流非生成を早期に接続する。数値だけでなく同じsource/actor/action/operation/step/instance/receipt実参照を確認する。補助actor HPをattacker NPへ読み替えない。",
+          "Published全宣言/owner/候補生成/除外/native到達をinventory順序付きで別記し、非empty代表のnative outcomeと合成しない。前回published0を別actor/default inputへ置換しない。",
+          "source/recipient混同、give/receive、同値foreign instance、別action/順序、先行prefix消失、失敗HP/receipt漏出、unreached/actual0/正常除外、missing/duplicate/unmatched、stale/foreign retained state、下流捏造を同familyの小型反例で反証する。全組合せは増やさない。",
+          "変更責務から局所fixtureと影響suiteを選び、旧新完全decoded値/順序/件数/typed reason/first diff、実disk bytes/SHA/runner receiptと独立disk receiptを照合する。正当な新capture差は完全値対応と理由を記録する。巨大proof再decode/owner再実行/receiveの型名変更コピーを既定解にしない。",
+          "計算構造/capture/hot pathに影響する場合だけ元live phaseを同input/affinity/workers/予算でbaseline/candidate各1run診断する。判断が閉じれば反復せず、正式3run契約は別の有効証拠として照合する。"
+        ],
+        "reuse": {
+          "reference": "boundedUnits[52].giveCommittedForwardCheckpoint",
+          "commit": "ea7290d79230931ba802d6f735541f36ec25ecb1",
+          "validEvidence": "最終give3/HP6、既存関連388と影響audit77、旧HP5+audit19完全値/bytes/SHA一致、runner error0・独立disk359/test-owned receipt339 error0、静的検証/docs6。source/input/責務一致の範囲だけ再利用する。changed producer/capture/consumer/formatter/persistence責務は再検証する。",
+          "protected": "units0..51、unit52全既存consumer/復元比較/committed/attempt/inputLifecycle checkpoint、旧全240=235成功5失敗、HP486/7470 digest1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55、指定shared model1/1/1+6673/4194/2596/1489、matrix/eligibilityを保全。"
+        },
+        "closureDecision": "計画段階からTask checklist/Done gate/Contract closure matrix、remainingWorkSummaryと入力lifecycle closureReconciliationを現在のowner/証拠へ限定照合する。全義務が有効既存証拠+give一familyの整理で成立しBlocking0/時間余裕があるなら、承認後README最終quality/必要audit/正式性能/最終counter/digest/全receiptまで進みTSK08完了を目指す。別family/対象外owner変更/実装gap/未達coverageやgateが残れば依存quality/製品closureを開始せず未完了checkpointで終了する。局所give/quality成功だけで完了にしない。",
+        "recordsAndFinish": "新しい計画書を増やさず既存Task/evidenceへ結果/確定判断/source-input-artifact identity/有効成功失敗/全母集団/counter/digest/receipt/保護checkpoint/未達条件/次限定操作を記録する。対象差分だけreview/stage/local commit、pushしない。",
+        "timeBoundary": "1session。60分で既存Task/evidenceにcheckpoint、90分で現在atomic actionを終え引継ぐ。追加quality再試行/独立調査/次familyを開始しない。",
+        "environment": "affinity0-7、production50%=4workers/unit4workers、既存audit1worker/timeout/threshold維持。pnpmが外部SQLiteでscript開始前に失敗したら記録し、正本/tmp/tsk08-tools/pnpmの内容/730bytes/SHA7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6を照合して同genericrunner/既存node_modulesを使う。Productfallbackなし。",
+        "preparationExecution": {
+          "sourceTests": "not run",
+          "producerAuditQuality": "not run",
+          "liveMeasurements": "not run",
+          "productEdits": "none",
+          "checksums": "give final7 source and master identity match;11 direct-path source identities recorded"
+        },
+        "recordCommitPolicy": "このTask/evidence整理更新commitはGit履歴から解決し、handoff promptに実SHAを記載する。自己参照hash更新を繰り返さない。",
+        "preparationVerification": {
+          "documentation": "test:docs6/6 and integrity passed;source tests/producer/audit/quality/live measurements not run",
+          "format": "evidence JSON Prettier check passed",
+          "diff": "git diff --check passed",
+          "protectedEvidence": "all boundedUnits0..52 exactly equal to ea7290d",
+          "recordCommit": "resolve整理更新commit from Git history;prompt records actual SHA"
+        }
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -22170,7 +22321,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Give committed forward scoped checkpoint implemented;read-only reconcile and plan the next bounded native noncommit coverage obligation separately. No automatic next family implementation.",
+    "nextSession": "give active/direct/sourceSelf attacker-skillのnative changed-attempt/noncommit隔離について、現coverageを照合し、必要な共有audit接続を一family・一sessionで実装/検証/記録/local commitする。既存意味論を拡張しない。",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -22205,7 +22356,7 @@
     ],
     "qualification": "Original published6 declaration qualification belongs to retained selected-recipient unit52 scope. Current give5 declarations and original owner exclusion are separately recorded in giveCommittedForwardCheckpoint;neither declaration inventory implies selected/committed/reader/NP consumption. Whole product closure remains open.",
     "asOfProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
-    "asOfPreparationBaseline": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
+    "asOfPreparationBaseline": "ea7290d79230931ba802d6f735541f36ec25ecb1",
     "unit52DeferredGates": [
       "Outer capacity attempt proof ownership/call-local canonical duplication is now verified by final182/control7;see boundedUnits[52].capacityAttemptMaterializationCheckpoint. Remaining common/scalar/codec/production lifecycle consumers are not automatically migrated.",
       "Establishedoccurrence/HP5sgatespassedincurrentfinalproduction33/155 aftersuite-localstrictinputreuse;HPsourceunchanged. ThisisnotformalperformanceorTSK08closure;see boundedUnits[52].productionAuditInputLifecycleCheckpoint"
@@ -22215,11 +22366,12 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "handoffPreparation.nextSession.giveCommittedForwardSession",
+    "nextSessionReference": "handoffPreparation.nextSession.giveNativeNoncommitSession",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
     "capacityAttemptMaterializationCheckpointCommit": "f375eea18ed2184de2943f7303ada777dfc44f71",
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",
     "inputLifecycleCheckpointReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint",
-    "giveCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint"
+    "giveCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint",
+    "giveCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1"
   }
 }
