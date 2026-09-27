@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.94"
+document_version: "1.7.95"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3597,3 +3597,22 @@ committed fixtureはdecodeとserialize後decodeの完全比較・保存宣言を
 実装判断・最終source／artifact identity・反例・計測・差分レビュー・未達条件はevidence `boundedUnits[52].capacityRestorationComparisonCheckpoint`を正本とする。次は元capacity live payload生成／encode／比較とtask時間の帰属について、既存profile・失敗runを再利用した最小診断範囲を先に計画する。最小command・比較入力・判断・停止境界を限定せず診断を開始しない。同条件の240／quality反復、共有consumer／global codec／production lifecycleの暗黙の同時移行は行わない。
 
 今回も製品未完了のlocal checkpointである。影響240全成功、既知raw／HP inventory gate、README quality、最終counter／digest／全receipt、unit52製品closureは未達。Step0／1／3と完了済み[46]〜[51]を維持し、新familyなし。TSK-08 `in_progress`、09.1／09 `blocked`、60／90分停止境界、pushなしを継続する。
+
+### Step再照合とcommitted capacity実値proofの1セッション限定（2026-09-27）
+
+最新local checkpointは `c387c9f829238aaa5c95126a5a31cb900cdb905f`。開始時HEAD／index／tracked／untrackedはclean、consumer `05d16fa`と完全値復元比較の記録・source identityを維持した。全240の内訳はcommitted63（61成功2失敗）／attempt177（174成功3失敗）であり、各120ではない。保存artifact一致は失敗taskの成功へ読み替えない。
+
+| Step | 現在の成立範囲 | 次の扱い |
+| --- | --- | --- |
+| 0 | baseline／契約成立済み | 有効な証拠を再利用 |
+| 1 | V41 request versionContext、V40保存・明示V41再計算成立済み | 再開しない |
+| 2 | [46]〜[51]完了、unit52 consumerと復元比較は限定checkpoint済み、影響240・必須quality・最終counter／digest未達 | committed capacity実値proof生成・restore前保存責務だけを1セッションへ限定 |
+| 3 | 改訂matrix／eligibility digest成立済み | 正本identityを保持 |
+
+次はcommitted consumerと63-test fixtureだけを対象に、元live payloadのproof生成・snapshot／保存処理と失敗task時間の関係を現コードから判断する。`battlePointCapacityDiagnostic`はraw参照を返し、否定fixtureはgate後に完全diagnosticをstructuredCloneしてfinally restore前に取得する。gateは各checkのexpected／actual snapshotとowner全viewのsnapshotを持つ。共有scalar snapshotのcanonical射影（undefined→absent、Set／Map→array）と、raw diagnosticのlossless typed値は異なる契約であり、同じobjectだから同じsemantic viewとして共有してよいとは限らない。
+
+最初にコードから実装／限定計測／検証計画を提示して利用者確認を待ち、確認後は同範囲の必要な計測・修正・検証・記録・local checkpointまで続ける。旧WeakMap authorityの全面置換や共有graph導入を既定解とせず、元canonical契約・live参照・全否定・完全値proofを保つownerを選ぶ。追加実行は元committed intermediate-reconciledの失敗groupについて設計を左右する不確実性だけに限定し、setup／gate snapshot／否定値取得／encode／復元比較／write・readを区別する。保存interned再生や旧CPU profileを新live phase計測へ読み替えず、setupの予算外移動やタイミングだけの補正をしない。
+
+今回の読取準備では、installed Vitestがpromise完了時にも元timeoutを検査し、timeout stackにSTACK_TRACE_ERRORが残り得る実装を確認した。5秒超過reportと整合するが、特定phaseの原因帰属ではない。診断・source test・qualityは実行していない。読取根拠・source identity・証拠契約・候補file・停止境界の正本はevidence `handoffPreparation.nextSession.committedCapacityMaterializationSession`。
+
+attempt consumer／177 tests、global codec／共有scalar snapshot、production read／parse lifecycle、raw集計、runtime意味論を同時に変更しない。変更した責務の局所fixtureと差分レビュー後にcommitted全63 tests・完全artifact復元／receipt／否定identityを検証する。未変更の証拠は有効範囲で再利用するが、attempt174／177や全240の失敗を成功へ読み替えない。製品qualityと最終counter／digestは未達のまま、具体的な原因解消なしに全体qualityを反復しない。60分checkpoint／90分停止、新familyなし、TSK-08 `in_progress`、09.1／09 `blocked`、pushなしを維持する。

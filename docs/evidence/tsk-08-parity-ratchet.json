@@ -18143,7 +18143,7 @@
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
           "nextBoundedScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
-          "nextScopeQualification": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending."
+          "nextScopeQualification": "Next one session: committedCapacityMaterializationSession, committed consumer/63-task fixture only. First source-based implementation/measurement/verification plan and confirmation, then same bounded proof materialization work if justified. Attempt177/global codec/shared scalar/production lifecycle deferred; reuse c387c9f with failed gates preserved."
         },
         {
           "stage": 3,
@@ -18155,7 +18155,7 @@
       "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending.",
+      "nextScopeQualification": "Next one session: committedCapacityMaterializationSession, committed consumer/63-task fixture only. First source-based implementation/measurement/verification plan and confirmation, then same bounded proof materialization work if justified. Attempt177/global codec/shared scalar/production lifecycle deferred; reuse c387c9f with failed gates preserved.",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52
     },
@@ -18701,7 +18701,7 @@
         "finish": "On mandatory-gate success reconcile final identities, counters/digests and protected units; update existing Task/evidence and commit only scoped changes locally, no push. If blocked/time-limited, preserve differential checkpoint and never commit as completed product.",
         "preparationVerification": "Retained six-source and local55/control7 manifest bytes/SHA matched; protected boundedUnits0..51 unchanged; pnpm test:docs6/6 and docs integrity, git diff --check passed. No source validation/quality run.",
         "latestAssessmentReference": "boundedUnits[52].consumerResponsibilityConvergence; existing gate blockers remain resumeGateAssessment/gateDesignInvestigation",
-        "nextOperation": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending.",
+        "nextOperation": "Next one session: committedCapacityMaterializationSession, committed consumer/63-task fixture only. First source-based implementation/measurement/verification plan and confirmation, then same bounded proof materialization work if justified. Attempt177/global codec/shared scalar/production lifecycle deferred; reuse c387c9f with failed gates preserved.",
         "singleSessionScope": {
           "status": "Consumer responsibility convergence verified and checkpointed; unit52 product completion remains pending",
           "preparationHead": "13fe1a8a202c702584cd76d39c17637a8c33d7c4",
@@ -18819,6 +18819,74 @@
           "diffWhitespace": "git diff --check passed"
         },
         "resultReference": "boundedUnits[52].capacityRestorationComparisonCheckpoint"
+      },
+      "committedCapacityMaterializationSession": {
+        "status": "Read-only handoff preparation; first source-based implementation/verification plan and user confirmation. No live diagnostic or source changes in this preparation.",
+        "preparationHead": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
+        "deliverable": "One session, existing committed capacity consumer only: determine and, where evidence warrants, improve original live proof/value materialization and pre-restore diagnostic ownership. Preserve complete canonical/typed value/live-reference/denial/publication contracts; validate changed responsibility and save an incomplete local checkpoint. Do not promise whole timeout closure.",
+        "primaryFiles": [
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.ts",
+            "bytes": 42410,
+            "sha256": "8dabca14e988ee85d95904cb2f3087493c22a292024e39ab45cd6aaf0eebb691"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts",
+            "bytes": 51639,
+            "sha256": "31d4517925fab21afda401c1676b3681d50796bec01ac7ad8295111da47e956c"
+          },
+          {
+            "path": "packages/calculation-application/src/productionAuditDiagnosticEquality.ts",
+            "bytes": 4630,
+            "sha256": "bd7c3c1183854796cd37fb7f42e76b69f3b097cdc3f8ccd988929865338977c1"
+          },
+          {
+            "path": "packages/calculation-application/src/productionAuditArtifacts.ts",
+            "bytes": 21235,
+            "sha256": "cb72825a6c52f962627f49ee88f793abc092f7e0e45e04b3e16f1e367a2378f6"
+          },
+          {
+            "path": "packages/calculation-application/src/productionScalarQuantityAudit.ts",
+            "bytes": 38593,
+            "sha256": "e52668bedae69e46ca58376324b86e56364a13322f8af8613941ddf8af9e854d"
+          }
+        ],
+        "allowedChangeBoundary": "Committed capacity audit module and its63-test fixture, plus focused helper/semantic contract tests justified by responsibility. Read scalar/capacity-attempt/global codec only as contract/reference; do not edit shared scalar snapshot, attempt consumer/177 tests, codec/schema/encode/decode, product runtime/capture/runner/config.",
+        "readOnlyFindings": [
+          "Latest240 report contains committed63 tasks (61pass/2fail) and attempt177 tasks (174pass/3fail), not120 each. Committed failures are intermediate-reconciled identity-source-action5823.43ms and identity-receipt-state5810.98ms under original5000ms.",
+          "battlePointCapacityDiagnostic returns raw canonical+view references. Committed denial inspect captures gate and structuredClone(complete diagnostic) inside try before finally restore; its timing and full value contract are required.",
+          "Program authorities retain canonical snapshot(expected), owner snapshot(view(source)) and original live references. Each gate check snapshots expected and actual independently; final owner.downstream/capture/steps checks traverse complete semantic views again.",
+          "Shared scalar snapshot recursively builds canonical trees, mapping undefined to absent and Set/Map to arrays. This canonical comparison projection differs from raw lossless typed diagnostic transport; sharing must distinguish semantic views, not identify them by raw object alone.",
+          "New independent comparison handles acyclic graph sharing/order/cardinality in each comparison and committed disk restoration is present. Saved replay improvement does not measure current original live materialization/encode cost; old full-worker CPU profile is before comparison change.",
+          "Installed Vitest withTimeout checks elapsed again when test promise resolves and makeTimeoutError substitutes the captured STACK_TRACE_ERROR stack. This is consistent with over-budget task reports, not proof of a particular phase cause."
+        ],
+        "firstDeliverable": "Before edits/execution/staging/commit, inspect current definitions/canonical generation/gate/direct fixture and saved artifacts. Explain established contracts, concrete problem versus hypotheses, chosen design/alternatives, expected proof/live-reference ownership, candidate files, bounded phase measurement and verification/reuse/time limits; wait for user confirmation.",
+        "measurementBoundary": "Use only uncertainty that changes design. Plan minimum source-phase observation for original committed intermediate-reconciled failed groups, with original payload allocations preserved: setup/execution, gate snapshots/checks, denial capture/materialization, encode/serialize, decode/independent comparison, write/read. Do not substitute already interned replay for live payload or move setup outside budget. A diagnostic observation is not successful production validation. If confirmation authorizes diagnosis only, stop at diagnosis and do not infer implementation permission.",
+        "proofInvariants": [
+          "Capture complete immutable actual values within each gate/denial lifetime before restore; do not read live raw values later, replay writers, or cache across mutation/restore/calls.",
+          "Preserve canonical population/boundaries, committed counts, canonical expected values, all negative cases, typed reason/checkPath/canonical first difference, full expected/actual and complete declared artifact before assertions.",
+          "Keep original live owner/leaf identity checks separate from content interning and structural equality; deny same-valued owner copies where currently required.",
+          "Distinguish raw lossless typed transport from canonical projection; same object in different semantic views cannot share an inappropriate snapshot. Any graph sharing must preserve full accepted values and published evidence.",
+          "Keep independent memory/serialized/disk full-value restoration and receipt checks introduced by c387c9f; never replace them with encode-decode-reencode agreement. Do not silence Set/Map cardinality loss or expand codec accepted-value semantics."
+        ],
+        "verification": "Necessary semantic/denial/mutation-lifetime/graph fixtures and scoped Blocking review first. If committed code changes, run full committed fixture63 tasks under original timeout/resources and reconcile complete artifacts/receipts, boundaries and all negative identities with archived baseline. Attempt177 evidence is reused only if source/input/responsibility unaffected; prior174/177 is still failed evidence, not a pass. Contract12 and consumer58/control7 reuse only unchanged relevant responsibilities; rerun only affected checks. Use bounded comparable live before/after measurements where inputs changed, not unchanged whole240/quality repetition.",
+        "finish": "Update existing Task/evidence with decisions, final source/artifact identities, valid and failed checks, unchanged units0..51 and consumer/comparison checkpoints, remaining gates and next operation. Commit reviewed scope locally as product-incomplete checkpoint, no push.",
+        "deferred": [
+          "Attempt capacity consumer and177 tests migration",
+          "Global diagnostic codec/schema/encode/decode and shared scalar snapshot redesign",
+          "Production read/parse lifecycle and raw aggregation repairs",
+          "Runtime HP/BP arithmetic/writers/actions/routes/recovery/native noncommit changes",
+          "GC/runner/scheduling/timeout/threshold changes, denial deletion/test exclusion, legacy cleanup/new family/wholeTSK08 closure/TSK09.1/09"
+        ],
+        "qualityBoundary": "Full240 success, attempt gates, raw/HP inventory gates, README mandatory quality and final integrated counters/digests/all receipts remain unmet. Comparison-cost improvement does not prove timeout resolution. Do not repeat whole quality or claim product closure while concrete gate causes remain unresolved.",
+        "timeBoundary": "At60min checkpoint existing Task/evidence; at90min finish current atomic action and hand off. No additional quality retry/independent investigation/new family.",
+        "preparationVerification": {
+          "sourceExecution": "No source test/producer/audit/quality/live measurement; read-only code/JSON/artifact/hash preparation only.",
+          "docsTests": "6/6 passed; docs integrity passed",
+          "formatPolicy": "Default Prettier passed; docs exclusion maintained without override",
+          "diffWhitespace": "git diff --check passed",
+          "identities": "All boundedUnits0..52 unchanged; consumer final sources, capacity checkpoint source/artifacts and next-session input source byte/SHA matched"
+        }
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -19790,7 +19858,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending.",
+    "nextSession": "Next one session: committedCapacityMaterializationSession, committed consumer/63-task fixture only. First source-based implementation/measurement/verification plan and confirmation, then same bounded proof materialization work if justified. Attempt177/global codec/shared scalar/production lifecycle deferred; reuse c387c9f with failed gates preserved.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -19831,6 +19899,7 @@
       "Production execution-semantics/HP inventory read-parse lifecycle repair or broad performance/GC/runner investigation."
     ],
     "consumerCheckpointReference": "boundedUnits[52].consumerResponsibilityConvergence",
-    "consumerCheckpointCommit": "05d16fa33487de73137298b59621b6f4d64df424"
+    "consumerCheckpointCommit": "05d16fa33487de73137298b59621b6f4d64df424",
+    "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f"
   }
 }
