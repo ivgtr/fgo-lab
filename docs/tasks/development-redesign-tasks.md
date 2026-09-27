@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.106"
+document_version: "1.7.107"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3813,3 +3813,38 @@ TSK-08 checklistの全ratchet／typed diagnostics到達性／legacy固有coverag
 units[0]〜[51]とunit52全既存checkpointは完全保全。give native最終changed9／境界8／否定45、最終give3／HP6、関連391保持／audit77、独立disk370／test-owned receipt350 error0を元責務のまま参照し成功数を合成しない。旧全240は235成功5失敗の履歴。affinity0-7、production50%=4workers／unit4workers、audit1worker／既存timeout・thresholdを維持する。60分で既存Task／evidenceへcheckpoint、90分は現在のatomic action終了後に引継ぐ。対象限定local commit、pushなし。整理更新commitのSHAはGit履歴から解決して引継ぎpromptに記載する。
 
 今回準備の文書検証はdocs6/6／integrity、対象4文書Prettier、diff whitespace成功。全boundedUnitsとunit52全既存checkpointは開始HEADとdecoded完全一致。指定generic runner shimの内容・730bytes／SHAを照合した。製品コード・既存artifact・期待値・設定は変更していない。
+
+
+### 残存HP coverage照合・inventory接続 checkpoint（2026-09-28）
+
+開始HEAD `6804068a46c88c088683e9671459ae21e3fce5af`、index／tracked差分／untrackedはclean。現コードに基づく計画を提示し、利用者の「OK」後に同じcoverage責務だけを実装した。成果・source／input／artifact identity・全母集団・成功と失敗・再利用条件の正本は[parity evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpCoverageReconciliationCheckpoint`。旧`hpCoverageReconciliationSession`は準備・承認境界として保持し、結果正本への参照を追加した。
+
+`productionHpCoverage.ts`へ既存HP source列挙を抽出し、元effect／operation参照と列挙順を保持した。`productionHpPaths.test.ts`の同じprimitive loopから、canonical宣言identity・実binding・phase・旧cell位置・ordered receipt参照・donor receiptを新`hp-operation-coverage.json`へ接続した。旧inventory形式や計算は変更していない。新artifactは既存lossless artifact ownerを直接使い、専用codecやHP期待値生成器を追加していない。
+
+旧owner／skill／occurrence／operationIndexだけではNP variantの1組・8 cellsが曖昧だった。新identityは宣言originとcanonical NP variant ID／refを含み、同値でも別identityを保持する。primitive state数値からaction／amountを推測せず、元canonical operationの全値、requirement／selection／activation contractを借用する。typed gateはmissing／duplicate／unmatched、同値foreign source／operation、誤binding／phase／receipt、順序不一致を失敗へ伝播する。正常な空recipient receipt、receipt未観測、実read observer不在は別にする。
+
+完全母集団は486 sources／486 canonical operation declarations／7470 cells、54軸group。digest `1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55`、旧inventory15858817 bytes／SHA `e75e1a6df8f357761d3c18300b52c7194b6f64010578df1884ac7832089054b2`を保持した。全7470 cellsが旧recordsとidentity・順序・receiptで一致し、missing／duplicate／unmatchedは0。完全group identityはcheckpointの`completeComparison`へ記録した。
+
+| 母集団・契約 | 現在の分類 | 有効な証拠と未達境界 |
+| --- | --- | --- |
+| fixed／maximumFixed／receive／give／selected ally | 元scope内で実装・共有consumer接続済み | 完了済みunit・unit52 checkpointを元source／input／責務で再利用。今回のoperation predicate一致数は実selected・native成功数へ加算しない |
+| maximumRate／baseFixed／baseRate | runtime実装あり、Published宣言0 | schema-legal構造fixtureはidentity／資格の証拠。元ownerの数値fixtureやoutside-selectorをpositive共有native／read／recovery監査へ転用しない |
+| noHealing | 宣言1、primitive接続、generic明示selected参照3 | active／enemy／allEnemies。recipientの元read実装は保持。共有実read／recovery証拠は未接続。enemyという理由だけで製品対象外にしない |
+| transfer | 宣言2、primitive／donor receipt接続、generic明示selected参照12 | sourceSelf／gain／fixed。元donor境界・receive／give倍率迂回を保持。primitiveのdonor入力10000とgeneric入力は別context。native／実read／recovery全体は未達 |
+| percent | 宣言3、primitive接続 | skill loss1はgeneric明示selected参照6。NP gain2はgeneric context未観測であり、native試行0やunsupportedの証拠ではない |
+| constant／support／mystic code／NP、他recipient／lifetime／condition／removal | canonical軸とgeneric経路を照合、scoped proofの成立範囲は別 | removeHpModifiers198もprimitive証拠。outside-selectorやgeneric context欠落を製品除外へ読み替えない |
+| recovery／製品対象外／runtime gap | 元portable／入力修復のcontext証拠は保持、全体の判定は未達 | 新runtime gapや新製品除外は確定していない。domain recovery／rollback／UI retryを今回追加していない |
+
+既存4 generic consumerへの読取専用identity照合も保存した。486宣言中429に2952 scenario-context参照、211に1038明示selected-effect参照がある。context参照だけではavailable action／selectedを証明しない。残る57宣言も未観測であり正常除外とは断定しない。explicit selectedは元`selectedEffects` fieldとowner／skill／occurrence／operationを照合した参照で、native outcome／append／実read／NP消費は導出していない。sourceごとの全参照先はcheckpointの`consumerMapping`を正本とする。
+
+既存predicate一致はfixedSelf89／maximumFixedSelf12／receiveSelf6／giveSelf1／giveFixedGain103／selectedAllyMaximumFixed7で、重複を含むoperation資格だけである。maximumFixedSelf12にはskill9＋NP3、selected ally7にはskill6＋mystic code1があり、元checkpointのPublished6等と母集団を混ぜない。Published give5と元ownerのrequest生成前除外、schema-legal非empty代表、give forward／native noncommitの各成功は元責務のまま保持した。
+
+最終検証は小型identity fixture12件、HP paths全6件、影響package graph typecheck、対象3 TypeScript lint warning0が成功。HP最終runは `.test-results/2026-09-27T16-07-08-155Z-21-ef6310`、33.36秒、primitive case3135ms。旧HP5＋give2の7 artifactは完全decoded値・順序・件数・bytes／SHA一致、first differenceなし。新coverageの初期diagnostic graphと最終lossless直接形式もdecoded全値・順序が一致した。新artifact9437575 bytes／SHA `fd951501c6508cffd1258fedfc52df816848f9654a44dbacf2a19d87a1b1dcbe`。最終2 runのrunner artifact verification error0、独立manifest disk descriptor13／test-owned declared receipt3 error0。旧HP5のplain artifactは別の独立disk比較であり、declared receiptを後付けしていない。
+
+初回pnpmはformatter開始前に外部SQLite storeで失敗した。指定shimの内容・730 bytes／SHAを照合し、nested PATHを含め既存generic runnerへ切り替えた。小型fixtureの初期構築失敗2 runと修正中の型診断はcheckpointへ保持し、最終成功と合成していない。計算構造・元capture・製品hot pathは変更せず、性能diagnosticや正式3-run計測は実施していない。HP producerの2 runは異なる新artifact表現の機能検証であり、正式性能証拠ではない。
+
+TSK-08 checklist／Done gate／Contract closure matrixと入力lifecycle `closureReconciliation`を再照合した。今回coverage接続のBlockingは0だが、全native／実read／NP／recovery coverage、全ratchet／typed diagnostics到達性、legacy固有coverage、正式性能、README最終quality、統合counter／digest／全receiptは未達または未照合である。依存quality・製品closureを開始せず、製品未完了local checkpointとして閉じる。Step0／1／3成立、Step2未完了、TSK-08 `in_progress`、TSK-09.1／09 `blocked`を維持する。
+
+units[0]〜[51]とunit52全既存field／checkpointは開始HEADとdecoded完全一致で保全した。既存58／12／65・proof5／182・control7、give changed9／boundary8／negative45、関連391／audit77、disk370／declared350は元責務の成立証拠であり今回12／6へ加算しない。旧全240＝235成功5失敗は履歴のまま。shared1／1／1と6673／4194／2596／1489、matrix／eligibility digestも元責務で保持する。
+
+次の限定操作候補は、`consumerMapping`のtransfer2宣言／12 selected参照について、元HP snapshot・入力・donor／gain receipt境界と既存証拠を読取照合し、共有監査接続が必要かを決める計画である。transfer実装や新semanticsの指示ではなく、別familyを連鎖開始していない。60分checkpoint／90分atomic終了、affinity0-7／production50%=4workers／unit4workers／audit1workerと既存timeout／thresholdを保持する。対象限定local commit、pushなし。文書検証・最終差分確認結果は同checkpointへ追記する。

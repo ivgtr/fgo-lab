@@ -1,3 +1,8 @@
+import {
+  hpCoverageSources,
+  reconcileHpCoverage,
+  type HpCoverageObservation,
+} from './productionHpCoverage';
 import { auditGiveAttemptIsolation } from './productionHpGivePreparationAttemptAudit';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -81,147 +86,147 @@ async function artifact(name: string, data: unknown) {
       JSON.stringify(data, null, 2) + '\n',
     );
 }
-it('joins all production HP cells to source, recipient and observation time, and executes both actor bindings', async () => {
-  const master = await masterPromise;
-  const sources: {
-    owner: string;
-    skill: string;
-    origin: SourceEffect['origin'];
-    effect: MasterEffect;
-  }[] = [
-    ...master.servants.flatMap((a) => [
-      ...a.skills.flatMap((s) =>
-        s.effects
-          .filter(hpEffect)
-          .map((effect) => ({ owner: a.id, skill: s.id, origin: 'attacker' as const, effect })),
-      ),
-      ...a.passives.flatMap((s) =>
-        s.effects
-          .filter(hpEffect)
-          .map((effect) => ({ owner: a.id, skill: s.id, origin: 'passive' as const, effect })),
-      ),
-      ...getNoblePhantasmVariants(a).flatMap((n) =>
-        n.effects.filter(hpEffect).map((effect) => ({
-          owner: a.id,
-          skill: n.ref.noblePhantasmId,
-          origin: 'np' as const,
-          effect,
-        })),
-      ),
-    ]),
-    ...master.craftEssences.flatMap((ce) =>
-      ce.effects
-        .filter(hpEffect)
-        .map((effect) => ({ owner: ce.id, skill: ce.id, origin: 'craftEssence' as const, effect })),
-    ),
-    ...master.mysticCodes.flatMap((mc) =>
-      mc.skills.flatMap((s) =>
-        s.effects
-          .filter(hpEffect)
-          .map((effect) => ({ owner: mc.id, skill: s.id, origin: 'mysticCode' as const, effect })),
-      ),
-    ),
-  ];
-  const records: unknown[] = [];
-  const failures: string[] = [];
-  let cells = 0;
-  for (const record of sources)
-    for (const [operationIndex, operation] of record.effect.execution.entries()) {
-      if (!isHpOperation(operation)) continue;
-      const rows =
-        operation.kind === 'resourceMutation'
-          ? operation.amount
-          : operation.kind === 'hpModifier'
-            ? operation
-            : null;
-      for (const limitBreak of [false, true]) {
-        const values = rows ? (limitBreak ? rows.limitBreakValues : rows.values) : [[0]];
-        if (!values) continue;
-        for (const [valueSetIndex, row] of values.entries())
-          for (const [valueIndex, value] of row.entries()) {
-            if (value === null) continue;
-            for (const origin of [...new Set([record.origin, 'support' as const])]) {
-              const source: SourceEffect = {
-                phase: origin === 'np' ? 'beforeNpDamage' : 'attackerSkill',
-                origin,
-                sourceInstanceId: 'cell-source',
-                sourceId: record.owner,
-                sourceName: record.owner,
-                sourceTraits: [],
-                skillId: record.skill,
-                skillName: record.skill,
-                effect: record.effect,
-                valueSetIndex,
-                valueIndex,
-                limitBreak,
-                sourceEnabled: true,
-                enabledByDefault: true,
-                noblePhantasmVariant: null,
-                preparationStochasticOutcome: null,
-              };
-              const inputValues =
-                operation.kind === 'resourceMutation' && operation.amount.kind === 'hpTransfer'
-                  ? Object.fromEntries(operation.amount.inputKeys.map((k) => [k, 10000]))
-                  : {};
-              const result = executeHpOperation({
-                source,
-                operation,
-                state: {
-                  actors: {
-                    attacker: seedHp(11001, 500),
-                    'cell-source': seedHp(9001, 600),
-                    'enemy:0': seedHp(17001, 750),
+it(
+  'joins all production HP cells to source, recipient and observation time, and executes both actor bindings',
+  productionAuditTestOptions(['hp-operation-coverage.json']),
+  async ({ task }) => {
+    const master = await masterPromise;
+    const sources = hpCoverageSources(master);
+    const observations: HpCoverageObservation[] = [];
+    const records: unknown[] = [];
+    const failures: string[] = [];
+    let cells = 0;
+    for (const record of sources)
+      for (const [operationIndex, operation] of record.effect.execution.entries()) {
+        if (!isHpOperation(operation)) continue;
+        const rows =
+          operation.kind === 'resourceMutation'
+            ? operation.amount
+            : operation.kind === 'hpModifier'
+              ? operation
+              : null;
+        for (const limitBreak of [false, true]) {
+          const values = rows ? (limitBreak ? rows.limitBreakValues : rows.values) : [[0]];
+          if (!values) continue;
+          for (const [valueSetIndex, row] of values.entries())
+            for (const [valueIndex, value] of row.entries()) {
+              if (value === null) continue;
+              for (const origin of [...new Set([record.origin, 'support' as const])]) {
+                const source: SourceEffect = {
+                  phase: origin === 'np' ? 'beforeNpDamage' : 'attackerSkill',
+                  origin,
+                  sourceInstanceId: 'cell-source',
+                  sourceId: record.owner,
+                  sourceName: record.owner,
+                  sourceTraits: [],
+                  skillId: record.skill,
+                  skillName: record.skill,
+                  effect: record.effect,
+                  valueSetIndex,
+                  valueIndex,
+                  limitBreak,
+                  sourceEnabled: true,
+                  enabledByDefault: true,
+                  noblePhantasmVariant: null,
+                  preparationStochasticOutcome: null,
+                };
+                const inputValues =
+                  operation.kind === 'resourceMutation' && operation.amount.kind === 'hpTransfer'
+                    ? Object.fromEntries(operation.amount.inputKeys.map((k) => [k, 10000]))
+                    : {};
+                const result = executeHpOperation({
+                  source,
+                  operation,
+                  state: {
+                    actors: {
+                      attacker: seedHp(11001, 500),
+                      'cell-source': seedHp(9001, 600),
+                      'enemy:0': seedHp(17001, 750),
+                    },
+                    receipts: [],
                   },
-                  receipts: [],
-                },
-                values: inputValues,
-                actionId: 'cell',
-                valueSetIndex,
-              });
-              const identity = `${record.owner}/${record.skill}/${record.effect.occurrenceId}/${valueSetIndex}/${valueIndex}/${limitBreak}/${origin}`;
-              if (result.status !== 'applied') {
-                failures.push(`${identity}:${result.status}`);
-                continue;
+                  values: inputValues,
+                  actionId: 'cell',
+                  valueSetIndex,
+                });
+                const identity = `${record.owner}/${record.skill}/${record.effect.occurrenceId}/${valueSetIndex}/${valueIndex}/${limitBreak}/${origin}`;
+                if (result.status !== 'applied') {
+                  failures.push(`${identity}:${result.status}`);
+                  continue;
+                }
+                for (const actor of Object.values(result.state.actors))
+                  if (actor.kind === 'absolute')
+                    if (actor.current < 0 || actor.current > actor.maximum)
+                      failures.push(
+                        `${identity}:${actor.current.toString()}/${actor.maximum.toString()}`,
+                      );
+                observations.push({
+                  declaration: record,
+                  operationIndex,
+                  operation,
+                  source,
+                  state: result.state,
+                });
+                cells++;
+                records.push({
+                  owner: record.owner,
+                  skill: record.skill,
+                  occurrence: record.effect.occurrenceId,
+                  operationIndex,
+                  kind: operation.kind,
+                  recipient:
+                    operation.kind === 'resourceMutation'
+                      ? operation.recipient
+                      : operation.route.target,
+                  time: record.effect.gameActivation,
+                  origin,
+                  limitBreak,
+                  valueSetIndex,
+                  valueIndex,
+                  value,
+                  state: result.state,
+                });
               }
-              for (const actor of Object.values(result.state.actors))
-                if (actor.kind === 'absolute')
-                  if (actor.current < 0 || actor.current > actor.maximum)
-                    failures.push(
-                      `${identity}:${actor.current.toString()}/${actor.maximum.toString()}`,
-                    );
-              cells++;
-              records.push({
-                owner: record.owner,
-                skill: record.skill,
-                occurrence: record.effect.occurrenceId,
-                operationIndex,
-                kind: operation.kind,
-                recipient:
-                  operation.kind === 'resourceMutation'
-                    ? operation.recipient
-                    : operation.route.target,
-                time: record.effect.gameActivation,
-                origin,
-                limitBreak,
-                valueSetIndex,
-                valueIndex,
-                value,
-                state: result.state,
-              });
             }
-          }
+        }
       }
-    }
-  await artifact('hp-cell-inventory.json', {
-    master: master.version,
-    sources: sources.length,
-    cells,
-    digest: createHash('sha256').update(JSON.stringify(records)).digest('hex'),
-    records,
-  });
-  expect(failures).toEqual([]);
-  expect(cells).toBeGreaterThan(1000);
-});
+    await artifact('hp-cell-inventory.json', {
+      master: master.version,
+      sources: sources.length,
+      cells,
+      digest: createHash('sha256').update(JSON.stringify(records)).digest('hex'),
+      records,
+    });
+    const coverage = reconcileHpCoverage(sources, observations);
+    const payload = {
+      master: master.version,
+      primitiveDigest: createHash('sha256').update(JSON.stringify(records)).digest('hex'),
+      coverage,
+    };
+    const receipt = await writeProductionAuditArtifact(
+      task.meta,
+      'hp-operation-coverage.json',
+      payload,
+    );
+    const bytes = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-operation-coverage.json'),
+    );
+    expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
+      receipt.expectedBytes,
+      receipt.expectedSha256,
+    ]);
+    expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+    expect(coverage.gate.failures).toEqual([]);
+    expect([
+      coverage.gate.sources,
+      coverage.gate.declarations,
+      coverage.gate.expectedCells,
+      coverage.gate.observedCells,
+    ]).toEqual([486, 486, 7470, 7470]);
+    expect(failures).toEqual([]);
+    expect(cells).toBeGreaterThan(1000);
+  },
+);
 it('executes every HP-producing calculator actor across NP capacity, initial OC, level and portable boundaries', async () => {
   const master = await masterPromise;
   const versions = {
