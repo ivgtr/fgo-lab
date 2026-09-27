@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.101"
+document_version: "1.7.102"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3721,3 +3721,27 @@ TSK-08 closureは次のように照合した。詳細の現定義・参照はche
 今回familyのBlockingは0だが、全TSK-08 coverage／ratchet／diagnostic／legacy／正式性能／README quality／最終統合counter・digest・全receiptは未達であり、製品未完了local checkpointとして閉じる。units[0]〜[51]とunit52全既存フィールド／各checkpointはJSON完全一致で保全し、182／control7・199 receipt、committed65／proof5、consumer58、復元比較12を再実行していない。旧全240は235成功5失敗の履歴のまま。Step0／1／3成立、Step2未完了、TSK-08 `in_progress`、09.1／09 `blocked`を維持する。
 
 次は `hpModifier action give` 一ownerに限定した読み取り専用coverage照合とし、canonical宣言→既存hpResource／preparationHp→実applicationのwriter／reader／NP／native noncommit→共有audit selector／否定fixtureの対応を整理する。既存positive証拠・監査未接続・宣言境界・対象外・実装gapを分けてから必要な次unitを決め、今回の入力lifecycleや完了済みunitsを再開しない。通常pnpmの外部SQLite store失敗はscript開始前の環境障害として記録し、正本指定730bytes／SHA一致の `/tmp/tsk08-tools/pnpm` と既存node_modules／generic runnerで検証した。今回記録を含むcommitが対象限定local checkpointで、pushなし。60／90分の上限より前に終了し、新family／TSK-09作業／quality探索反復は行っていない。
+
+
+### Step再照合とgive committed forward監査の1セッション引継ぎ（2026-09-27）
+
+準備開始HEADは `e081002b5f405c930b3c03c837c0b83781d14939`、index／tracked／untrackedはclean。今回の作業は現定義・直接参照・published JSON・checksumの先行調査と記録整理だけで、source編集／source test／producer／audit／qualityは実行していない。実装指示の正本は [parity evidence](../evidence/tsk-08-parity-ratchet.json) の `handoffPreparation.nextSession.giveCommittedForwardSession`。前回input lifecycleの計画・実行checkpointは成立証拠として保持し、新作業の固定手順にはしない。
+
+| Step | 現状態 | 次sessionでの扱い |
+| --- | --- | --- |
+| 0 | baseline／契約成立済み | 再開しない |
+| 1 | V41 request versionContext、V40保持／明示V41再計算成立済み | 再開しない |
+| 2 | 未完了。units[0]〜[51]の成立証拠とunit52全checkpointを保全。input lifecycleと現在production155は成立 | give一familyのcoverage／実消費と必要なcommitted forward接続だけを計画から進める |
+| 3 | 改訂matrix／eligibility digest成立済み | source／input／責務一致の範囲で再利用。8shard再生成を既定にしない |
+
+先行調査ではcanonical give宣言がskill active/sourceSelf 1とCE constant/sourceSelf 4であることを確認した。1件のskill writerと同ownerのHP gainは別skill／別actionで、gain recipientはpartyMember。これらは宣言と候補消費の証拠だけで、selected／reached／committed／read／NP件数ではない。 当該skill give ownerには現publishedでHP条件／HP式readerとhpRatioLow NPの宣言がなく、非emptyのreader／NP接続は必要に応じて既存合法意味論のstrict schema-legal代表で確認する。これは宣言境界であり、実選択結果やgive unsupportedの判定ではない。IDは証拠identityであり、runtime／fixture選択へID・名前・label分岐を追加しない。
+
+現runtimeは `executeHpOperation` がreceiveをrecipient、giveを `sourceActor(source)` で読み、`hpModifierValue` がinstance／sign／bounds、`transitionHp` が倍率・truncation・clampを所有する。一方、`HpGainConsumption` はmutation.give／modifierState／resultを持つが詳細readはreceive.instances/valueで、`preparationOc` のobserveGainはattacker・固定direct/sourceSelf gainからreceive instancesがある消費だけを保持する。既存receiveCanonicalも同writer action内の後続固定sourceSelf gainに限定され、otherHpWriterOutsideConsumerを明示する。Receiveのgive否定fixtureはpositive give監査へ転用できない。Give runtime不具合は確認しておらず、既存captureで足りるか、元ownerの焦点の定まったcapture追加が必要かは次作業者が現コードから判断する。source／input identityとcanonical宣言は `.test-results/tsk-08-give-handoff-preparation-20260927/read-only-reconciliation.json` に保存した。
+
+次の1セッションはgive母集団→実消費のcoverage照合と、必要なactive/direct/sourceSelfのattacker-skill committed forward共有audit接続に限定する。別actionの同回復元HP固定gain、attacker受取HPの保持と実条件read／NPが関係する。Source actorとrecipient actorを分ける小型schema-legal反例を扱い、補助actorのHP更新をattacker NP消費へ読み替えない。constant CE4件は別境界として記録し、同時実装しない。Give native changed attempt／noncommit／rollback／domain recovery／UI retry、receive／noHealing／transfer／percent／maximum/base等の別familyやschema／normalize／算術／native failure変更へ広げない。
+
+最初の成果物はコードに基づく設計・候補file・責務・完全母集団・最小計測・局所反証／影響検証・TSK-08 closure可否・停止境界の計画とする。要件は確定済みだが解法は固定せず、編集やsource実行前に利用者確認を待つ。確認後は必要な限定実装・検証・記録・対象限定local commitまで同sessionで続け、通常の技術判断の再承認を求めない。既存receive moduleの機械的コピーや同skill consumer制限を既定解にせず、実生成／利用経路へ早期に代表を接続する。
+
+Input lifecycleの最終production33／155（occurrence14／HP5）、契約8、HP486／7470・exact digest・全5完全artifact、runner29／独立disk17 receipt error0は `boundedUnits[52].productionAuditInputLifecycleCheckpoint` に保持する。Attempt182／control7／199 receipt、committed65／proof5、consumer58、復元比較12とunits[0]〜[51]も同責務で再利用し、今回準備ではboundedUnits全体をJSON完全一致で保全した。旧全240は235成功5失敗の履歴のまま。Published capacity selected0／excludedNp1やgive宣言件数をnonempty実消費証拠へ読み替えない。
+
+TSK-08は引き続き `in_progress`、09.1／09は `blocked`。次sessionの初期計画からTaskチェックリスト／Done gate／Contract closure matrix、remainingWorkSummary、input lifecycle checkpoint.closureReconciliationを限定照合する。全義務が既存実装・有効証拠とgive一familyの整理で成立し、対象内Blocking0と時間が揃えばREADME quality／必要audit／正式性能／最終統合counter・digest・全receiptまで進みTSK-08完了を目指す。別family／実装gap／未達coverage・gateが残れば依存するqualityを開始せず製品未完了checkpointとし、09.1／09を開始しない。1-run診断を正式3-run契約の代用にしない。60分checkpoint／90分停止、affinity0-7／production50%=4workers／unit4workers、既存audit条件／timeout／thresholdを維持する。今回準備記録を含むcommitを整理更新commitとして参照し、次workerも対象限定local commitまで、pushなし。
