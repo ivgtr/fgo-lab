@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.84"
+document_version: "1.7.85"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3465,3 +3465,15 @@ HEAD／index／tracked／untrackedは製品`6c2add5`／記録`d1e5550`でclean�
 先行調査はcodeとcanonical JSON・既存artifactの読み取りのみ。latest quality／focused／control／reconciliationの4主receiptとmaster checksumを照合した。published物理skillの該当形状6、後続gain候補1は選定根拠で、実noncommit／consumer成功件数や将来gate期待値ではない。通常／captureのcanonical生成とschema-legal後続拒否をどう接続するか、既存consumer拡張／専用consumer・観測追加の要否は、次作業者が現symbolから段階計画を作って判断する。資料と責務・否定・証拠再利用条件の正本はevidence `handoffPreparation.nextSession`。計画を提示して利用者確認まで実装・source test／producer／audit／quality・stage／commitをしない。確認後は同unitを必要な検証・記録・対象限定local commitまで続け、pushしない。
 
 成功recovery／retry／UI、damage rollback、別modifier action／recipient／lifetime・除去、他HP writer／family、form／trait／eligibility切替、value-expression、failure分類修正、legacy、TSK-08全体closure、09.1／09は対象外。既存成功はidentityが有効な限り再利用し、8 shardの無条件再生成はしない。60分checkpointと90分以降の新family停止は実行効率要件に従う。未規定の製品意味論または実質的な契約衝突だけ影響作業を止め、根拠symbol・差分・改訂計画を示す。TSK-08 `in_progress`、09.1／09 `blocked`を維持する。
+
+### 限定receive changed-attempt隔離完了（2026-09-27）
+
+HEAD `9ef0998`／製品baseline `6c2add5`をcleanで照合し、現symbolに基づく段階計画への利用者確認を受けた。専用receive-attempt consumerでcanonical母集団、元append／gain transition／receipt、後続native拒否、action-start HP／modifier／receipt・先行prefix保持、同selected prepared／application／direct拒否と後段不生成を接続する。元owner変更・算術複製・writer再実行は不要。
+
+6 schema-legal changed代表（複数modifier／gain、choice、省略、元inputRequired、source-local resetを含む）と8境界、strict parsed-masterから後続拒否operationを追加した低HP代表1件を検証した。後者はpublished native拒否の証拠ではない。元resource transactionのstart wrapperコピーとgain modifier評価stateを区別し、元HP／prefix参照・owner入力／結果で照合した。実gainのHP changeが元native拒否より先に起き、attempted状態はreturned／reducerのaction-start HP／modifier／receiptへ漏れず、先行committed prefixが保持された。同selected command／executionの実prepared／application／direct拒否、通常／capture・calculator／ranking parity、拒否後の後段不生成を確認した。actual=0、未到達、非適用、before-native、nativeCommittedは成功から分離した。
+
+94否定fixtureの610失敗checkで、責務別typed reason／checkPath／canonical first differenceを確認した。完全diagnostic14点はassertion前に保存・宣言し、bytes／SHA-256と厳密lossless復元を確認。全execution-state DAGの重複参照走査はせず、完全な値証拠と必要owner参照を保持した。元published controlは42 expected／34 append／8 consumer link、actual=0／changed=0／isolated=0で、低HP changed代表と混同しない。件数は観測であり将来gateの固定期待値ではない。
+
+最終focused13 tests、影響audit4 files／25 tests、README必須quality（unit1444／production155／E2E29、retry0）が成功、warning／unexpected console／artifact verification errorsは0。quality中のsource4件を固定し、645 receiptsとsource identity、production counter／digestを照合してerror0。[46]〜[50]は別々の証拠を保持し変更していない。8shard無条件再生成なし。通常runtime／allocation／serialized shapeは不変のため新hot-path benchmarkは行わず、counter／digest一致と通常／capture parityを確認した。元control audit110262msに対し今回156954.75msはgateと完全diagnostic増分を含み、通常hot-pathの因果比較には使わない。
+
+pnpmはscript前に外部SQLite storeで失敗し、730 bytes／指定SHA-256一致の既存generic runnerへ切替。CPU affinity0-7、production50%／4workers、既存timeout／thresholdを維持した。source4件をlocal commit `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`へ保存。詳細・manifest／diagnostic receipt・counter／digest・初期失敗と解消の正本はevidence `boundedUnits[51]`。文書gateは6/6とintegrity・diff whitespace成功、結果記録は同unitの範囲に限定する。次unitは未選定で、完了済みforward計画やcheckpointは再開しない。TSK-08 `in_progress`、09.1／09 `blocked`、全体closureではなくpushなし。

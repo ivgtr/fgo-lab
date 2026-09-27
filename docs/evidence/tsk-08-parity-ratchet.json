@@ -242,7 +242,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Attacker-skill sourceSelf active receive modifier and separate later fixed HP gain changed-attempt native noncommit isolation",
+  "nextBoundedUnit": "Not selected; reconcile remaining Step2 coverage before separately scoping another bounded unit.",
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -16132,9 +16132,462 @@
         }
       ],
       "implementationCommit": "6c2add54623f134e4d352c0db97730958a7d2e2d"
+    },
+    {
+      "name": "Attacker-skill sourceSelf active receive modifier and separate later fixed HP gain changed-attempt native noncommit isolation",
+      "status": "completed scoped receive changed-attempt native noncommit isolation; not whole TSK-08 closure",
+      "baselineHead": "9ef0998d52ca2028a1c9336b70a629e5cb0aff0a",
+      "priorProductCommit": "6c2add54623f134e4d352c0db97730958a7d2e2d",
+      "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
+      "worktreeAtStart": "HEAD matched handoff; index/tracked/untracked clean",
+      "authorizedScope": "One session: attacker-skill hpModifier/action receive/sign+1/lifetime active/route.target sourceSelf/selection omitted or direct/bounds minimum0 maximum50000/useCondition omitted or always; same-skill separate later-effect fixed HP gain remains original consumer, not new writer. Actual original receive append and gain/receipt HP change precede a later schema-legal native noncommit; preserve action-start HP/modifier/receipts and any committed prefix, original reducer refusal and same selected command/execution prepared/application/direct refusal with downstream absent. Fixed actor/form/traits/eligibility/initial HP/other modifier environment per representative.",
+      "planConfirmation": "User confirmed the current-symbol staged plan with OK before source/test/document edits or execution.",
+      "changedFiles": [
+        "packages/calculation-application/src/productionHpReceivePreparationAttemptAudit.ts",
+        "packages/calculation-application/src/productionHpReceivePreparationAttemptAudit.test.ts",
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "scripts/test-suites.mjs"
+      ],
+      "ownership": {
+        "canonical": "receiveCanonical/getSkillsForActorForm over one pipeline-generated strict parsed fixture master; separate gain consumers and writer population precede success filters",
+        "original": "Existing receiveWrites/receiveConsumptions, original resolved modifier instances/value, transitionHp input/result and receipt slice; native/attempted/returned/sourceEnds and original reducer. No owner change/arithmetic replay.",
+        "consumer": "Focused receiveAttemptProgram/receiveAttemptDiagnostic/auditReceiveAttemptIsolation; frozen full scoped values and narrow original-owner reference anchors, no whole execution DAG reference traversal",
+        "transport": "Same prepared/scenario request -> evaluatePreparedCalculationScenario/evaluatePreparedCalculationResult -> identical rejection capture; normal/capture and calculator/ranking parity; downstream absent"
+      },
+      "flowClosure": {
+        "establishedSteps": [
+          0,
+          1,
+          3
+        ],
+        "openStep": 2,
+        "local": "6 real changed schema-legal representatives and 8 boundaries; original source reset distinguished from action-start isolation; retained committed prefix; strict published master derivative adds only later generated unsupported operation and is not published rejection evidence",
+        "boundaries": [
+          "consumerActualZero",
+          "consumerUnreached",
+          "writerUnreached",
+          "writerNotApplied",
+          "attemptBeforeNative",
+          "nativeCommitted",
+          "outsideScope"
+        ],
+        "review": "Original owner/normal allocation/public serialized shapes unchanged. Canonical writer/gain ordering correlated to original reached steps, independent of receipt/native-success filtering. Missing/duplicate/order, coherent forgery, stale/reference, reject origin/input, leakage, prefix, population and downstream negatives. No known within-scope Blocking after focused fixtures; final affected audit and mandatory quality passed."
+      },
+      "verification": {
+        "focused": {
+          "manifest": ".test-results/2026-09-27T05-19-44-855Z-3-4103a0/manifest.json",
+          "tests": 13,
+          "warnings": 0,
+          "status": "passed current source",
+          "diagnosticContract": "All complete diagnostics declared and saved before assertions; bytes/SHA256 and strict on-disk lossless restoration; every negative failure reason/checkPath/canonical first difference verified"
+        },
+        "priorControlIntegration": {
+          "manifest": ".test-results/2026-09-27T05-12-12-658Z-3-4d2e05/manifest.json",
+          "tests": 6,
+          "status": "passed earlier diagnostic shape; final audit required for latest responsibility groups"
+        },
+        "documentation": {
+          "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm test:docs",
+          "passed": 6,
+          "failed": 0,
+          "integrity": "passed",
+          "diffWhitespace": "passed",
+          "formatPolicy": "Docs excluded by repository Prettier configuration; no forced override",
+          "recordCommitPolicy": "Resolve final scoped documentation commit from Git history"
+        },
+        "typecheck": "passed focused current source",
+        "lint": "passed focused current source",
+        "sourceIdentities": [
+          {
+            "path": "packages/calculation-application/src/productionHpReceivePreparationAttemptAudit.ts",
+            "bytes": 35067,
+            "sha256": "e5383d70ad2a448714b1c7a3f2685d3d817dceccc8e16b7bd06ecfe25bf0f259"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpReceivePreparationAttemptAudit.test.ts",
+            "bytes": 35036,
+            "sha256": "f71f8558af7bf5e83f9d97593d9095a8c61f8284d0f95e7e71fd0bd20a3c4efb"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 89132,
+            "sha256": "931b65499cd0eab60eea704fe3c233860f55710b46e38de2f4a7351a8361677d"
+          },
+          {
+            "path": "scripts/test-suites.mjs",
+            "bytes": 3251,
+            "sha256": "60d11c5a711dde12d5c078d945028d2c37d8d0885c18f4d93756cb02cf22aa8e"
+          }
+        ],
+        "finalAudit": {
+          "manifest": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/manifest.json",
+          "files": 4,
+          "tests": 25,
+          "durationMs": 228730,
+          "warnings": 0,
+          "artifactVerificationErrors": 0
+        },
+        "quality": {
+          "manifest": ".test-results/2026-09-27T05-25-47-041Z-3-f518b0/manifest.json",
+          "unit": 1444,
+          "production": 155,
+          "e2e": 29,
+          "retry": 0,
+          "durationMs": 642350,
+          "warnings": 0,
+          "unexpectedConsole": 0,
+          "artifactVerificationErrors": 0,
+          "status": "passed frozen four-source identities"
+        },
+        "actual": {
+          "changed": [
+            {
+              "key": "changed",
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "isolated": 1
+            },
+            {
+              "key": "multiple",
+              "appended": 2,
+              "consumed": 4,
+              "changed": 4,
+              "isolated": 1
+            },
+            {
+              "key": "choice",
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "isolated": 1
+            },
+            {
+              "key": "omitted-always",
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "isolated": 1
+            },
+            {
+              "key": "input-required",
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "isolated": 1
+            },
+            {
+              "key": "source-reset",
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "isolated": 1
+            },
+            {
+              "key": "published-derived:0",
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "isolated": 1,
+              "qualification": "Schema-legal derivative with pipeline-generated later unsupported operation; not a published native rejection."
+            }
+          ],
+          "boundaries": [
+            {
+              "key": "actual-zero",
+              "isolated": 0,
+              "reasons": [
+                "consumerActualZero"
+              ]
+            },
+            {
+              "key": "zero-gain",
+              "isolated": 0,
+              "reasons": [
+                "consumerActualZero"
+              ]
+            },
+            {
+              "key": "consumer-unreached",
+              "isolated": 0,
+              "reasons": [
+                "consumerUnreached"
+              ]
+            },
+            {
+              "key": "consumer-absent",
+              "isolated": 0,
+              "reasons": [
+                "consumerUnreached"
+              ]
+            },
+            {
+              "key": "writer-unreached",
+              "isolated": 0,
+              "reasons": [
+                "writerUnreached"
+              ]
+            },
+            {
+              "key": "writer-not-applied",
+              "isolated": 0,
+              "reasons": [
+                "writerNotApplied"
+              ]
+            },
+            {
+              "key": "before-native",
+              "isolated": 0,
+              "reasons": [
+                "attemptBeforeNative"
+              ]
+            },
+            {
+              "key": "committed",
+              "isolated": 0,
+              "reasons": [
+                "nativeCommitted"
+              ]
+            },
+            {
+              "key": "original published controls",
+              "expected": 42,
+              "appended": 34,
+              "consumed": 8,
+              "changed": 0,
+              "isolated": 0,
+              "reasons": [
+                "outsideScope",
+                "nativeCommitted"
+              ]
+            }
+          ],
+          "negativeFixtures": 94,
+          "negativeFailedChecks": 610
+        },
+        "reconciliation": {
+          "path": ".test-results/tsk-08-receive-attempt-20260927/final-reconciliation.json",
+          "bytes": 204567,
+          "sha256": "0f26ea615312278e582a9f17f36bd94b8a9ad792caaf40e13b94fed5059a8ff9",
+          "errors": 0,
+          "verifiedReceipts": 645,
+          "strictLosslessDiagnostics": 14,
+          "priorUnits0Through50Unchanged": true
+        },
+        "artifactReceipts": [
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/manifest.json",
+            "bytes": 9593,
+            "sha256": "6dc366a5d19e63fc52fa3f2eec4fa8fa744948fb4a9117fad812bb0fa99b2982"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-25-47-041Z-3-f518b0/manifest.json",
+            "bytes": 270570,
+            "sha256": "9c59b6fe2619dad8dc779c1c0ba7ed1dd348115f553fb9d9ec1b2f578b90a350"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-changed.json",
+            "bytes": 5331135,
+            "sha256": "597c1e6bdf124e712b0b861d8945e220223731a133c03546b81625b638085981"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-boundaries.json",
+            "bytes": 5899552,
+            "sha256": "ca12a5a3de58e2108efdc967ed5d5caf35150199b8b0ec724b0dcc25f47fd6e7"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-published.json",
+            "bytes": 2471275,
+            "sha256": "e56618d594435c7fe88dae6cfd7cc6c4de8f987003cd1838fbdad46d1ce603d3"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-0.json",
+            "bytes": 1714811,
+            "sha256": "8e34bf8d620e0cab596d839c1c14b95e66cf1224a6055bdd31c82c82098b1195"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-1.json",
+            "bytes": 2584478,
+            "sha256": "5c11e55c908f5f73129085c03e9b2d2b6a8437bed02c93088282e2c982f8bab6"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-2.json",
+            "bytes": 2369135,
+            "sha256": "7464cc31a0432c2110fa9b265a62f79e4b184d61caf12e3b41cfa3f7f4936ec2"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-3.json",
+            "bytes": 1982988,
+            "sha256": "92f765f50c6f23e89607931605b2f6503782fbbaeb5a9922d9af14e671365517"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-4.json",
+            "bytes": 1991237,
+            "sha256": "27b7c4296328ae71272634d30dc6a95318a3ed55c7c14b4e8588c48bc5c7390e"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-5.json",
+            "bytes": 1839951,
+            "sha256": "547d86713d55573aa0965ba994789fce88b505377801a47051bad7f5d1032f6e"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-6.json",
+            "bytes": 2326936,
+            "sha256": "683a38781fffd638459bb3500faac6921dd826d29ebd63a308132c6198ea56ba"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-7.json",
+            "bytes": 1687780,
+            "sha256": "c81f09cf1e4c9c3033b1e2f0111d6d52d50c6a7403367fa53145767166591506"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-negatives-8.json",
+            "bytes": 2046608,
+            "sha256": "c6382e0af12b702cd701e8d1177b9461e23bf6e38cb23e6a455b944c7ecd7180"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/tsk-08-receive-attempt-population.json",
+            "bytes": 1683231,
+            "sha256": "12cc4516b5b173ddabfe6959c6e02bb020169a030890af7f1646ea65742768fe"
+          },
+          {
+            "path": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/production-preparation-hp-receive-attempt.json",
+            "bytes": 57634466,
+            "sha256": "f2df0f051dd84231a292be0eed294cd9472223ca2b0c502d7f499810c6297ae4"
+          }
+        ]
+      },
+      "evidenceReuse": {
+        "priorUnits": [
+          46,
+          47,
+          48,
+          49,
+          50
+        ],
+        "roles": {
+          "46": "Fixed HP committed forward and natural HP-reader proof; not receive noncommit evidence.",
+          "47": "Fixed HP original native noncommit/prefix/reducer refusal proof; not receive modifier consumption.",
+          "48": "maximumFixed committed native/reducer/selected proof; not receive arithmetic/changed classification.",
+          "49": "maximumFixed original native noncommit/reject-step/retained-prefix proof; not receive/gain attempt success.",
+          "50": "receive committed append/original later gain/selected result and capture ownership; noncommit remains a boundary."
+        },
+        "condition": "Reuse only matching canonical/source/semantic identities and artifact receipts. Four latest principal receipts matched in this preparation; unit50 reconciliation separately checked57 earlier receipts. Changed sources need fresh hashes/affected checks; saved production actual0 controls remain boundaries. No unconditional8-shard regeneration.",
+        "planningIdentity": "9ef0998:evidence.handoffPreparation.nextSession",
+        "principalReceipts": [
+          {
+            "path": ".test-results/2026-09-27T00-00-52-597Z-4-93aed3/manifest.json",
+            "bytes": 270568,
+            "sha256": "84ef4acfc24e1528d24b9ae12d283f3862f01384e81b5322747500b5d50a4348"
+          },
+          {
+            "path": ".test-results/2026-09-26T23-57-25-315Z-21-3dbbc4/manifest.json",
+            "bytes": 3553,
+            "sha256": "96e145f6c980f3c468922016bc835a77ea68629779d5b862a8642be9e785f452"
+          },
+          {
+            "path": ".test-results/2026-09-26T23-57-51-500Z-3-2b5e78/manifest.json",
+            "bytes": 5150,
+            "sha256": "49674e5bfbcd6b91a20690c56b9ec9a52a34522fb7758c700ef91474d2043341"
+          },
+          {
+            "path": ".test-results/tsk-08-receive-20260927/final-reconciliation.json",
+            "bytes": 36861,
+            "sha256": "28092d86c51b258787856d0904317876276c56f5c84e71e80515c0892a4d26e8"
+          }
+        ],
+        "originalControl": "Saved published consumption actual0 remains a boundary; low-HP committed gain and schema-legal noncommit derivative are separate witnesses."
+      },
+      "performance": {
+        "scope": "Only audit consumers/tests and opt-in suite registration changed; original HP/execution/application/calculator/ranking source identities remain baseline.",
+        "timing": "No new normal hot-path before/after benchmark: unchanged runtime source/allocation; normal/capture and same-scenario calculator/ranking parity tested. Compare final production counters/digests to unit50; report audit duration separately.",
+        "counterComparison": [
+          {
+            "artifact": "production-audit-calculation-application.json",
+            "before": {
+              "masterReadCount": 1,
+              "masterParseCount": 1,
+              "compileCount": 1,
+              "candidateCount": 6673,
+              "deduplicatedCandidateCount": 4194,
+              "damageRequestCount": 2596,
+              "distinctDamageRequestCount": 1489
+            },
+            "after": {
+              "masterReadCount": 1,
+              "masterParseCount": 1,
+              "compileCount": 1,
+              "candidateCount": 6673,
+              "deduplicatedCandidateCount": 4194,
+              "damageRequestCount": 2596,
+              "distinctDamageRequestCount": 1489
+            },
+            "beforeDigest": "7b8552ded1e134a0b35e12f0810f239fd64cc6db169b533f52ff662c47a2225f",
+            "afterDigest": "7b8552ded1e134a0b35e12f0810f239fd64cc6db169b533f52ff662c47a2225f",
+            "equal": true,
+            "digestEqual": true
+          },
+          {
+            "artifact": "production-audit-data-pipeline.json",
+            "before": {
+              "masterReadCount": 1,
+              "masterParseCount": 1,
+              "compileCount": 1,
+              "candidateCount": 0,
+              "damageRequestCount": 0
+            },
+            "after": {
+              "masterReadCount": 1,
+              "masterParseCount": 1,
+              "compileCount": 1,
+              "candidateCount": 0,
+              "damageRequestCount": 0
+            },
+            "beforeDigest": "f7f2610d809b52ae3f249b01ca22190879b36ead370ce619e4c006d7165455c8",
+            "afterDigest": "f7f2610d809b52ae3f249b01ca22190879b36ead370ce619e4c006d7165455c8",
+            "equal": true,
+            "digestEqual": true
+          }
+        ],
+        "auditTiming": {
+          "priorControlMs": 110262,
+          "finalControlMs": 156954.75,
+          "finalAffectedAuditMs": 228730,
+          "qualification": "Additive gate/full diagnostics workload, not comparable normal hot-path causal benchmark. No threshold/timeout changes."
+        }
+      },
+      "executionHistory": [
+        {
+          "command": "pnpm test:diagnostic / pnpm exec prettier",
+          "status": "script not started",
+          "reason": "External SQLite store ERR_SQLITE_ERROR unable to open database file; then switched to existing generic runner with unchanged node_modules.",
+          "runner": {
+            "path": "/tmp/tsk08-tools/pnpm",
+            "bytes": 730,
+            "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6"
+          }
+        },
+        {
+          "status": "early fixture/audit failures resolved",
+          "reasons": [
+            "OC stage rows and NP requirement raw script shape corrected",
+            "Strict canonical published serialization removed generated negative-zero bounds before fixture parse",
+            "Owner start wrapper copy and modifier evaluation state distinguished from HP/prefix references",
+            "Responsibility negative expectation fixed for value-equal stale reference and actually different eligibility"
+          ]
+        }
+      ],
+      "remaining": "No required work remains in this bounded unit; later Step2 coverage/families and whole TSK08 remain open; TSK09.1/09 blocked.",
+      "sessionBoundary": {
+        "startedAt": "2026-09-27T04:53:04Z",
+        "checkpointAt60Minutes": "Existing Task/evidence if session reaches 60 minutes",
+        "after90Minutes": "No new semantic family",
+        "completion": "Source gates and reconciliation completed before 60-minute boundary; no new semantic family."
+      },
+      "implementationCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e"
     }
   ],
-  "currentBoundedUnit": "Committed attacker-skill sourceSelf active receive HP modifier and separate later same-skill fixed HP gain consumption",
+  "currentBoundedUnit": "Attacker-skill sourceSelf active receive modifier and separate later fixed HP gain changed-attempt native noncommit isolation",
   "handoffPreparation": {
     "baselineHead": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
     "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
@@ -16375,7 +16828,7 @@
       }
     },
     "currentStageReconciliation": {
-      "asOfProductCommit": "6c2add54623f134e4d352c0db97730958a7d2e2d",
+      "asOfProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "historicalTable": "Task historical four-stage self-check remains historical; its contract-wait statements are superseded by later approved requirement/ADR and implemented units.",
       "stages": [
         {
@@ -16393,20 +16846,20 @@
         },
         {
           "stage": 2,
-          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Receive native noncommit isolation is not yet implemented/verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
-          "nextBoundedScope": "One session: attacker-skill hpModifier/action receive/sign+1/lifetime active/route.target sourceSelf/selection omitted or direct/bounds minimum0 maximum50000/useCondition omitted or always; same-skill separate later-effect fixed HP gain remains original consumer, not new writer. Actual original receive append and gain/receipt HP change precede a later schema-legal native noncommit; preserve action-start HP/modifier/receipts and any committed prefix, original reducer refusal and same selected command/execution prepared/application/direct refusal with downstream absent. Fixed actor/form/traits/eligibility/initial HP/other modifier environment per representative.",
-          "nextScopeQualification": "Read-only scope selection only. Native noncommit changed receive+gain proof requires schema-legal canonical representative and plan confirmation; published counts are not coverage expectations."
+          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
+          "nextBoundedScope": "Not selected; reconcile remaining Step2 coverage before separately scoping another bounded unit.",
+          "nextScopeQualification": "Unit51 complete; no next family selected. Preserve separate evidence; do not reopen completed units/checkpoints."
         },
         {
           "stage": 3,
           "current": "Matrix revision/remerge and eligibility reconciliation already recorded; latest revision matrix digest04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4 and eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 remain authoritative in their revision record. Old root or intermediate digest is historical, not a new current expectation."
         }
       ],
-      "latestBoundedUnit": 50,
-      "latestEvidence": "boundedUnits[50] receive committed forward complete:14 representatives(8 changed/6 boundaries),63 negatives, focused3/control5tests, quality1444/155/29retry0,warnings/console0. Original control42selected/34append/8consumed-links has actual0 and connected0 boundary; parsed-master low-HP actual1677 witness is separate. Counter/digest/source identities match; scoped product 6c2add54623f134e4d352c0db97730958a7d2e2d.",
-      "nextBoundedUnit": "Attacker-skill sourceSelf active receive modifier and separate later fixed HP gain changed-attempt native noncommit isolation",
+      "latestBoundedUnit": 51,
+      "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary.",
+      "nextBoundedUnit": "Not selected; reconcile remaining Step2 coverage before separately scoping another bounded unit.",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
-      "recordCommitPolicy": "Resolve the documentation preparation commit from Git history. Product baseline remains 6c2add54623f134e4d352c0db97730958a7d2e2d; source/test/producer/audit/quality not executed for this preparation."
+      "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -16462,214 +16915,12 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "name": "Attacker-skill sourceSelf active receive modifier and separate later fixed HP gain changed-attempt native noncommit isolation",
-      "status": "Requirements/invariants bounded by current implemented owners; first deliverable is code-based staged plan and user confirmation. No product implementation or new execution diagnostic performed in this preparation.",
-      "productBaselineCommit": "6c2add54623f134e4d352c0db97730958a7d2e2d",
-      "recordBaselineCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
-      "scope": "One session: attacker-skill hpModifier/action receive/sign+1/lifetime active/route.target sourceSelf/selection omitted or direct/bounds minimum0 maximum50000/useCondition omitted or always; same-skill separate later-effect fixed HP gain remains original consumer, not new writer. Actual original receive append and gain/receipt HP change precede a later schema-legal native noncommit; preserve action-start HP/modifier/receipts and any committed prefix, original reducer refusal and same selected command/execution prepared/application/direct refusal with downstream absent. Fixed actor/form/traits/eligibility/initial HP/other modifier environment per representative.",
-      "sourceFindingsAsOfCommit": "6c2add54623f134e4d352c0db97730958a7d2e2d",
-      "sourceFindings": [
-        {
-          "owner": "canonical writer/consumer population",
-          "symbols": [
-            "packages/master-data/src/index.ts:getSkillsForActorForm / effectExecutionOperationSchema",
-            "packages/data-pipeline/src/snapshotNormalization.ts:normalizeAtlasSnapshot",
-            "packages/data-pipeline/src/executionSemantics.ts:normalizeExecutionSemantics",
-            "packages/calculation-application/src/productionHpPreparationAudit.ts:hpPreparationCanonicalFor",
-            "packages/calculation-application/src/productionHpReceivePreparationAudit.ts:receiveCanonical / receiveSelection"
-          ],
-          "finding": "Public pipeline and strict parsed master generate schema-legal representatives. receiveCanonical identifies separate strictly later fixed gain and establishes writer population independently of receipt/activation/native success. Current forward audit classifies native noncommit as outsideCommittedReceive; it does not prove attempt isolation."
-        },
-        {
-          "owner": "original writer/consumer/native capture",
-          "symbols": [
-            "packages/battle-execution/src/hpResource.ts:hpModifierValue / changeHpModifiers / transitionHp",
-            "packages/battle-execution/src/preparationHp.ts:executeHpOperation / HpGainConsumption",
-            "packages/battle-execution/src/hpExecutionObservation.ts:PreparationHpAction",
-            "packages/battle-execution/src/preparationOc.ts:executePreparationOc"
-          ],
-          "finding": "Existing receiveWrites/receiveConsumptions retain original append, resolved instances/effective total and original gain transition result. sourceEnds retain source boundary/reset evidence; hpAction.native/attempted/returned preserve native refusal, attempted current state and original args.state on noncommit. commitStartHp is committed-only and must not be required on a rejected execution. A source reset or unreached/actual0 gain is not proof of changed attempted consumption."
-        },
-        {
-          "owner": "reducer and same-scenario refusal",
-          "symbols": [
-            "packages/battle-execution/src/preparationTransaction.ts:planPreparationResourceTransaction",
-            "packages/battle-execution/src/preparationSkillReducer.ts:reducePreparationSkillAction",
-            "packages/calculation-application/src/scenario.ts:prepareCalculationScenarioWithPolicy / evaluatePreparedCalculationScenario / evaluatePreparedCalculationResult",
-            "packages/calculation-application/src/productionHpPreparationAudit.ts:hpPreparationSource",
-            "packages/calculation-application/src/battlePointPreparationObservation.ts:battlePointPreparationRejectionObservationFor"
-          ],
-          "finding": "Resource rejection returns through rejectPreparation with original state. Existing rejection transport exposes original transitions, attempts and required-input occurrence; selected typed refusal must be correlated with the same prepared command, never replaced by a different candidate/rejection graph. No post-refusal HP reader/NP/input/result may be invented."
-        },
-        {
-          "owner": "existing audit responsibility choices",
-          "symbols": [
-            "packages/calculation-application/src/productionHpReceivePreparationAudit.ts:receiveProgram / receiveSource / receiveDiagnostic / auditReceive",
-            "packages/calculation-application/src/productionHpMaximumFixedAttemptAudit.ts:maximumFixedAttemptProgram / auditMaximumFixedAttemptIsolation",
-            "packages/calculation-application/src/productionHpPreparationAttemptAudit.ts",
-            "packages/calculation-application/src/productionHpMaximumFixedPreparationAttemptAudit.test.ts"
-          ],
-          "finding": "Existing attempt gates show owner-to-native reject-step/required-input and retained-prefix responsibilities. Choose extension versus focused receive-attempt consumer after reading current definitions/references; their writer/changed classification cannot be copied from maximum/current HP change to receive modifier/gain consumption. Complete frozen value proof plus narrowly owned reference anchors prevent coherent forgery without recursively walking whole execution DAG."
-        }
-      ],
-      "firstDeliverable": "Read current definitions/generation/use symbols and propose responsibilities/files, canonical fixture construction, original consumption/native refusal/retention/selected transport proof, typed negative responsibilities, artifact contract and final gates. Present plan and wait before implementation.",
-      "approvalBoundary": "Before plan confirmation: no product source/test/document edit, source test/producer/audit/quality, staging or commit. Read code/artifacts/canonical JSON and reconcile checksums. If a new execution diagnostic is truly necessary, first propose its minimum command, decision and stop boundary; diagnostic approval alone is not implementation approval. After plan confirmation finish this same unit with ordinary technical judgment, necessary verification/record update and scoped local commits; no push.",
-      "afterApproval": "Resolve within-scope blocking with focused fixtures/diff review before README quality and affected audit. Match final Task/evidence, declared artifact bytes/SHA/lossless restoration, changed-source receipts and applicable counter/hot-path comparisons on the same frozen diff. Only unspecified product semantics or substantive contract conflict stop affected work with symbols/difference/revised plan.",
-      "representativePolicy": "Generate schema-legal receive writer, separate later fixed gain and subsequent existing native refusal via public pipeline once; native trigger is not a new audited HP writer. Preserve actual original gain attempted/actual receipt and HP change before noncommit; no audit arithmetic/writer replay. Cover selected nondefault cell/choice, distinct occurrence/order and retained committed prefix where legal. Keep actual0/unreached/source-reset/committed/before-native boundaries separate. Do not require all refusal classifications if the scoped canonical path does not provide them; never repair classification in this unit.",
-      "negativeResponsibilities": [
-        "Canonical identity/address: wrong command/master/form/source/occurrence/choice/action/operation/actor/route/sign/bounds/lifetime/traits/eligibility/valueSetIndex/valueIndex/value/reference; missing/duplicate/reversed writer and gain consumer.",
-        "Original consumption: stale/other-execution/intermediate HP, forged consumer/receipt and coherent HP/modifier/receipt edits, actual0 counted as changed, wrong instance/receive total/mutation/result correspondence; do not recompute HP multiplier/floor/clamp.",
-        "Native refusal and rollback: reject step/operation/required-input/occurrence/native result mismatch; attempted state leaked into returned/reducer/application, committed prefix lost or replaced; source-level reset confused with action-start retention.",
-        "Population/result/artifact: successful-only filter exclusion, missing/duplicate/foreign request/source/transport, different refusal graph/candidate, fabricated post-refusal HP read/NP/input/calculated result, absent/truncated/nonlossless artifact. Each fixture verifies responsibility typed reason/checkPath/canonical first difference."
-      ],
-      "excluded": [
-        "Completed units[46]-[50] forward/noncommit proofs are preserved, not reopened; forward gain is not a new writer.",
-        "Successful recovery/resend/retry/UI, damage-loop rollback, other HP modifier actions/recipients/lifetimes/removal/expiry, passive/NP HP writer, percent/transfer/value-expression, actor/form/trait/eligibility switching, other semantic families.",
-        "Product failure/outcome reclassification, legacy cleanup, whole stale-mutation/TSK-08 closure, TSK-09.1/09 and push."
-      ],
-      "evidenceReuse": {
-        "priorUnits": [
-          46,
-          47,
-          48,
-          49,
-          50
-        ],
-        "roles": {
-          "46": "Fixed HP committed forward and natural HP-reader proof; not receive noncommit evidence.",
-          "47": "Fixed HP original native noncommit/prefix/reducer refusal proof; not receive modifier consumption.",
-          "48": "maximumFixed committed native/reducer/selected proof; not receive arithmetic/changed classification.",
-          "49": "maximumFixed original native noncommit/reject-step/retained-prefix proof; not receive/gain attempt success.",
-          "50": "receive committed append/original later gain/selected result and capture ownership; noncommit remains a boundary."
-        },
-        "condition": "Reuse only matching canonical/source/semantic identities and artifact receipts. Four latest principal receipts matched in this preparation; unit50 reconciliation separately checked57 earlier receipts. Changed sources need fresh hashes/affected checks; saved production actual0 controls remain boundaries. No unconditional8-shard regeneration.",
-        "verifiedPrincipalReceipts": [
-          {
-            "path": ".test-results/2026-09-27T00-00-52-597Z-4-93aed3/manifest.json",
-            "bytes": 270568,
-            "sha256": "84ef4acfc24e1528d24b9ae12d283f3862f01384e81b5322747500b5d50a4348"
-          },
-          {
-            "path": ".test-results/2026-09-26T23-57-25-315Z-21-3dbbc4/manifest.json",
-            "bytes": 3553,
-            "sha256": "96e145f6c980f3c468922016bc835a77ea68629779d5b862a8642be9e785f452"
-          },
-          {
-            "path": ".test-results/2026-09-26T23-57-51-500Z-3-2b5e78/manifest.json",
-            "bytes": 5150,
-            "sha256": "49674e5bfbcd6b91a20690c56b9ec9a52a34522fb7758c700ef91474d2043341"
-          },
-          {
-            "path": ".test-results/tsk-08-receive-20260927/final-reconciliation.json",
-            "bytes": 36861,
-            "sha256": "28092d86c51b258787856d0904317876276c56f5c84e71e80515c0892a4d26e8"
-          }
-        ]
-      },
-      "selectionEvidence": {
-        "master": {
-          "path": "apps/web/public/master/master.json",
-          "bytes": 32953998,
-          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
-        },
-        "manifest": {
-          "path": "apps/web/public/master/manifest.json",
-          "bytes": 547,
-          "sha256": "064bf6200cb8d80cb411f8dd9638ac992f0becca57a75e215439f3c00374cc15"
-        },
-        "masterDataVersion": "20260920.3",
-        "schemaVersion": 56,
-        "readOnlyInventory": {
-          "physicalSkillDeclarations": 6,
-          "withLaterFixedGain": 1,
-          "formQualifiedCandidate": {
-            "sourceId": "702400",
-            "skillId": "615650",
-            "occurrenceId": "492:0",
-            "operationIndex": 0,
-            "laterGains": [
-              {
-                "occurrenceId": "439:0",
-                "operationIndex": 0
-              }
-            ],
-            "actorForms": [
-              {
-                "actorId": "702400",
-                "limitCount": 0
-              }
-            ]
-          },
-          "qualification": "Physical JSON inventory/form membership and prior receiveInventory proof support scope selection only. No executable/commit/noncommit/consumer-success count or future gate expectation follows. Plan must generate its population from strict parsed master and actual canonical generation."
-        },
-        "sourceReceipts": [
-          {
-            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
-            "bytes": 8033,
-            "sha256": "ef351e8a5cd17863d78bdfb4b79fc54cbbebe64d72126a54040af6def1a3f567"
-          },
-          {
-            "path": "packages/battle-execution/src/hpResource.ts",
-            "bytes": 9769,
-            "sha256": "0818b98808faa8091db07eeee105c6f213e13a88296351bf9c8f4c55ba91c3e8"
-          },
-          {
-            "path": "packages/battle-execution/src/preparationHp.ts",
-            "bytes": 18596,
-            "sha256": "012b72a0505a7acbbc42970f99cd6f9e9a92f3e02e7ade39780ec6ca6fce2622"
-          },
-          {
-            "path": "packages/battle-execution/src/preparationOc.ts",
-            "bytes": 56286,
-            "sha256": "68a5ce702270d096c6bd92469c740e7e5041dd684fec7a56bb5965ef0eabca6e"
-          },
-          {
-            "path": "packages/battle-execution/src/preparationSkillReducer.ts",
-            "bytes": 4687,
-            "sha256": "ca2a064812c5518e2c4e3c9ebcf373d535774a2db119fda6093e534adb9ae9c8"
-          },
-          {
-            "path": "packages/calculation-application/src/productionHpReceivePreparationAudit.ts",
-            "bytes": 35801,
-            "sha256": "f6feacd7cf722495907e2339fadd95f4533288b92de1b262b1e5581ad4128b39"
-          },
-          {
-            "path": "packages/calculation-application/src/productionHpMaximumFixedAttemptAudit.ts",
-            "bytes": 41090,
-            "sha256": "d20bcfdf3f255338e8e14301c167b96217398492a532fc91db2cba7383bee8fb"
-          },
-          {
-            "path": "packages/calculation-application/src/productionHpMaximumFixedPreparationAttemptAudit.test.ts",
-            "bytes": 40611,
-            "sha256": "ca50e76eab9c65682f8b00d27fc6f63d95331535b1ca9da45a3596d6747853d8"
-          }
-        ],
-        "executionDiagnostics": "None run; inspected existing canonical JSON/owner source and completed artifacts only."
-      },
-      "sessionBoundary": "60-minute checkpoint in existing Task/evidence; after90 minutes no new semantic family. Preserve unresolved conditions and next command if stopped.",
-      "completionCondition": "Only this scoped receive native-noncommit isolation unit passes required focused/audit/quality and lossless diagnostics, same-diff record reconciliation/docs gates, scoped local commits. TSK-08 remains in_progress;09.1/09blocked.",
-      "preparationDocumentationGate": {
-        "commands": [
-          "Preserve repository Markdown table/frontmatter and canonical JSON indent2; git diff --check",
-          "pnpm test:docs"
-        ],
-        "scope": "Documentation-only Step reconciliation/read-only next-unit preparation; no source tests/producer/audit/quality. Final outcome recorded in preparation log.",
-        "status": "passed",
-        "docsTests": "6/6 and docs integrity passed",
-        "canonicalJsonRoundTrip": true,
-        "diffCheck": "passed",
-        "boundedUnits0Through50Unchanged": true,
-        "taskStatuses": {
-          "TSK-06.5": "done",
-          "TSK-06.47": "done",
-          "TSK-06.48": "done",
-          "TSK-07": "done",
-          "TSK-08": "in_progress",
-          "TSK-09.1": "blocked",
-          "TSK-09": "blocked"
-        }
-      },
-      "historicalCheckpointPolicy": "Old incomplete maximumFixed/receive-forward checkpoints are resolved historical records under completedReceiveForwardPreparation and completed boundedUnits; no active checkpoint is carried into this planned unit."
+      "status": "not_selected",
+      "completedUnit": 51,
+      "selectionEvidenceHistory": "9ef0998d52ca2028a1c9336b70a629e5cb0aff0a:docs/evidence/tsk-08-parity-ratchet.json#handoffPreparation.nextSession",
+      "nextOperation": "Reconcile remaining Step2 coverage; separately scope an uncovered bounded unit from current code and valid evidence. Do not restart units46-51/checkpoints or claim whole TSK08 closure.",
+      "taskStatus": "TSK-08 in_progress; TSK-09.1/09 blocked",
+      "push": false
     },
     "completedScalarRecoveryPreparation": {
       "name": "Scalar addQuantity rollback restored-value ordered NP consumption shared audit consumer closure",
@@ -16928,7 +17179,7 @@
         }
       }
     },
-    "currentPreparationRecord": "Read-only Step reconciliation after completed receive-forward unit[50]/product 6c2add54623f134e4d352c0db97730958a7d2e2d/record d1e55500b2dfdc4e5210df7c794fd2fe892186b1. Next scope is original receive and later gain changed attempt/native noncommit isolation; implementation strategy is deliberately left to code-based plan and user confirmation.",
+    "currentPreparationRecord": "Completed confirmed-plan receive noncommit unit[51]; source commit 60dea89944a884bbbe40464eb1ae7e65cb77ad4e; audit/quality/reconciliation passed. Prior planning/selection evidence retained at 9ef0998:handoffPreparation.nextSession.",
     "completedPreparationAttemptPreparation": {
       "name": "Attacker-skill fixed domain battlePoint preparation non-commit attempt isolation shared audit consumer closure",
       "productBaselineCommit": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
@@ -17640,7 +17891,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Attacker-skill sourceSelf active receive modifier and separate later fixed HP gain changed-attempt native noncommit isolation; code-based plan first, implementation after confirmation, one session through focused/audit/quality/records/scoped local commits.",
+    "nextSession": "Not selected; reconcile remaining Step2 coverage before separately scoping another bounded unit.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -17673,8 +17924,8 @@
         "work": "Comparable3-run performance medians and counters/output;canonical contributor workflow;remaining old runner/CI/ranking/compatibility path cleanup;final UI/production/performance/restart acceptance."
       }
     ],
-    "qualification": "Selected audit gap is receive native-noncommit isolation, not new product semantics. Read-only inventory cannot establish rejection/consumer success counts. Other families and whole TSK-08 remain separately bounded; next session must not combine them.",
-    "asOfProductCommit": "6c2add54623f134e4d352c0db97730958a7d2e2d",
+    "qualification": "Receive changed-attempt native noncommit unit51 complete in approved scope; schema-legal derivative is not published rejection evidence. Other families and whole TSK08 remain separately bounded.",
+    "asOfProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
     "asOfPreparationBaseline": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1"
   }
 }
