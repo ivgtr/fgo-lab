@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.82"
+document_version: "1.7.83"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3445,3 +3445,13 @@ Step 0（baseline／contracts）、Step 1（V41 request versionContextとV40保�
 最初の成果は現code symbolとpublished inventoryに基づく段階的実装計画で、consumer／owner観測／fixture責務、通常／capture経路、canonical identityとoperation order、actual receive consumption、native/reducer commit、same-selected result、expected population、検査別否定、declared lossless artifact、既存evidence再利用、counter／hot-path影響、gateと停止境界を示す。利用者確認前は次unitの製品source／test／文書編集、source test／producer／audit／quality、stage／commitを行わない。確認後は同じbounded unitを実装から必須gate・既存Task／evidence更新・範囲限定local commitまで継続し、通常の技術判断で再承認を求めない。
 
 Step選定のread-only root cause／direct symbols／checksumはevidence `handoffPreparation.nextSession.selectionEvidence`を正本とする。TSK-08は`in_progress`、TSK-09.1／09は`blocked`。このhandoffはHP recovery、maximumFixedの再開、またはTSK-08全体closureを許可しない。pushなし。
+
+### 限定receive committed-forward完了（2026-09-27）
+
+攻撃役skillのreceive sign+1／active／sourceSelf／directまたは省略／bounds0..50000／useCondition alwaysまたは省略をwriter母集団とし、別の後続effectの固定HP gainを元consumerとして接続した。焦点を絞ったconsumerがcanonical生成、元apply／append、receive解決instance・値と元transition／receipt、native commit、reducer保持、同一selected preparation／application／direct resultを対応付ける。算術のaudit複製・writer再実行・gainの新writer化・通常allocation／公開serialized shape変更はない。詳細とidentityの正本はevidence `boundedUnits[50]`。
+
+局所14代表（8 changed＋6境界）・63否定の3 tests、既存owner／transaction／architecture／maximumFixedの163 tests、元published controlの5 testsが成功。全1897否定失敗checkでtyped reason／checkPath／canonical first differenceを確認し、diagnosticはassertion前に完全保存・宣言、bytes／SHA-256と厳密lossless復元を検証した。元published controlの42 selected／34 append／8 consumer linkはfixed初期HPでactual=0、changed／connected=0の境界として保持し、成功件数にしない。parsed masterからの低HP代表では実gain actual1677と同じselected application／direct／ranking結果を確認。実行にないHP read／NP／calculated resultは生成していない。件数は観測であり将来gateの固定期待値ではない。
+
+必須qualityはunit 1444、production 155、E2E 29全成功、warning／unexpected console 0。source8件をquality中に固定し、production counter／digestはbaselineと一致、[46]〜[49]の証拠57 receiptsを照合して別々に保持した。8shard無条件再生成なし。normal／captureの局所benchmarkは公開結果同一、multiple normal中央値+19.48%を含む測定差を記録し、独立bundle／JITのため因果は断定しない。threshold緩和なし。外部SQLite storeでscript前に失敗したpnpmは内容・SHA照合済みgeneric runnerへ切替、8CPU affinity・production50%／4workers・既存timeoutを維持。診断参照DAGによる保存サイズ失敗は必要owner参照へ限定して解消し、完全な値証拠・fixtureは維持した。
+
+60分境界より前に既存handoffへcheckpointを記録し、同じunitの完了まで進めた。対象限定local product commitと結果記録commitで保存し、pushなし。TSK-08は`in_progress`、09.1／09は`blocked`を維持、次のsemantic familyは未選定。
