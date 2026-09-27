@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.112"
+document_version: "1.7.113"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3921,3 +3921,19 @@ Published明示依存557のうち残る条件10（attacker9／CE1）、hpRatioLo
 初期計画からchecklist／Done gate／Contract closure matrixとremainingWorkSummary、元input lifecycle closureReconciliationの全義務を有効証拠へ対応付ける。全ratchet、typed diagnostics／完全artifact到達、legacy固有coverage、正式3-run性能、README最終quality、統合counter／digest／全receiptを曖昧に閉じない。全義務が今回責務内で成立し対象内Blocking0かつ時間余裕がある場合にTSK-08完了を目指す。現準備時点では全体closureの根拠はないため、未達が残れば依存quality／製品closureを開始しない。60分で既存Task／evidenceへcheckpoint、90分では現在のatomic actionを終えて引き継ぐ。
 
 今回の整理は文書のみ。製品source test／producer／audit／quality／live計測は実施しない。文書gateと旧boundedUnits／旧sessionの完全保持を確認後、対象4文書のみlocal commitし、SHAはGit履歴から解決して依頼文に記載する。pushしない。
+
+### Published HP依存宣言と元production captureの限定接続（2026-09-28）
+
+開始HEAD `22f27afcb03b167d328216246df27ee18ab17ad2`、index／tracked／untrackedはclean。利用者の計画確認後、元control producerの同coverage責務だけを接続した。結果正本は[parity evidence](../evidence/tsk-08-parity-ratchet.json)の`boundedUnits[52].hpPublishedDependencyProofCheckpoint`。source13／input1／artifact4、Step3のmanifest／8shardsは開始時bytes／SHA一致。旧coverageのsource3件とtransferのsource1件は後続変更による不一致であり、最新checkpointの完全比較・disk identityを介して旧artifact保全を再利用する。旧sourceでの成功を現sourceの成功へ読み替えていない。
+
+`evaluateWithOrderedOperationEvents`の元prepared／calculationをfixedSelf等のselector前から元順序で保持し、共有557宣言のinventoryと専用`productionHpPublishedDependencyCoverage`へ接続した。元masterのeffect／operation／value、NP canonicalId／ref、source／instance／actor／recipient、operation／sequence／group、action／step／candidate indexを保持する。元WeakMap captureのowner・lifetimeを借用し、同値foreign inventory／prepared／calculation／candidate／binding、missing／duplicate／unmatched、順序・family・actor・recipient・detail不一致をtyped failureへ伝播する。新期待値生成器、owner再実行、fixedSelf selector拡張、capture／hot path／HP算術／transaction／native分類／scenario／portable／ranking／入力lifecycle変更はない。
+
+元3182request（calculated3161／unavailable2／unsupported19、元selected target3182）から478bindingを保存した。条件10のうちattacker9をcanonical condition90／実read90（true31／false59）へ接続し、CE1は未観測。hpRatioLow6のうち4variantをcanonical NP16／元NP評価16 consumedへ接続し、残2variantは未観測。valueExpression30のうち20cell宣言にeffect context160bindingがあり、元preparation sourceの選択cellは2宣言・16binding。conditionの元source選択90bindingと合わせた106bindingにnative committedが保持されるが、これは独立native action106件や全operation coverageではない。expressionのcontext／選択cell／resolved valueは実HP readではない。残value10、OC-rate25、expression実read、全native noncommit、成功recovery、available全母集団は未観測のまま。Published use-condition0／HP条件付きnpGauge0とschema-legal非empty fixtureは別に保持し、gauge更新をHP依存damage係数readへ読み替えない。
+
+最終局所11件と元control audit7件、対象package graph typecheck、対象3 source lint／format、docs6／integrityが成功。文書は既存format ignoreを保持し、JSON parse／registry・参照・diff whitespaceで確認した。小型fixtureはreader-only、同値cellの選択、正常なNP除外、未観測、曖昧leaf、foreign宣言・owner・capture、missing／duplicate／unmatched、family／actor／recipient／group／順序／detailを反証する。完全比較と最終manifest・receiptのidentityは結果正本を参照する。旧control全12 artifactの保存されたlossless値／encoded graph・順序・bytes／SHAを保持し、既存完全復元証拠と元testのround-tripを再利用する。巨大proof graphを再展開しない。初回sidecarから追加した元request表／candidate index以外の全decoded値・順序は一致する。
+
+計画確認前は読込・checksumのみ。初回pnpmは外部SQLite storeでscript開始前に失敗し、指定adapterの内容・730bytes／SHA一致後、nested PATHを含め同generic runnerへ切り替えた。初期fixture構築・型診断・正常除外fixtureの失敗と、ownerコピー／group／foreign宣言反証を追加する前の成功runは履歴として保持し、最終sourceの成功へ合成しない。
+
+今回対応のBlockingは0。TSK-08 checklistの全ratchet／typed diagnostics・完全artifact到達／legacy固有coverage、Done gateの全inventory／parity／fail-closed・damage差説明、Contract closure matrixの正式3-run性能／README最終quality／統合counter・digest・全receiptは未達または未照合。元input lifecycle closureReconciliationの8義務への対応は新checkpointから参照する。計算構造／capture／製品hot pathを変更していないため新live pairは不要で、audit runを正式性能へ読み替えない。依存quality・全体closureを開始せず、Step0／1／3成立、Step2未完了、TSK-08 in_progress、09.1／09 blockedを維持する。
+
+units0..51とunit52の全既存checkpointをdecoded完全一致で保持する。次は未観測のCE条件1／NP variant2／value残10・OC25と既存artifact／直接producer captureの読取照合に限定して次計画を決める。expression実read observer、support修復前capture、別family／recovery ownerが必要なら別の限定計画へ分離する。対象限定local checkpoint commitまで保存し、pushしない。60分のcheckpoint期限より前に今回の局所・影響・比較・文書gateを閉じ、追加quality・独立調査・別familyは開始しない。

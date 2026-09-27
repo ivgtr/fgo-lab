@@ -9,6 +9,12 @@ import {
   type SelectedAllyMaximumFixedSource,
 } from './productionHpSelectedAllyMaximumFixedPreparationAudit';
 import { createHash } from 'node:crypto';
+import { hpProofCoverageInventory } from './productionHpProofCoverage';
+import {
+  hpPublishedDependencyBindings,
+  reconcileHpPublishedDependencyCoverage,
+  type HpPublishedDependencyRequest,
+} from './productionHpPublishedDependencyCoverage';
 import {
   receiveCanonical,
   receiveSelection,
@@ -215,6 +221,7 @@ function loadProductionMaster() {
 }
 
 const scalarQuantityObservations: ScalarQuantitySource[] = [];
+const hpPublishedDependencyRequests: HpPublishedDependencyRequest[] = [];
 const hpRequests: {
   prepared: ReturnType<typeof prepareCalculationScenarioWithPolicy>;
   calculation: ReturnType<typeof evaluatePreparedCalculationScenario>;
@@ -275,10 +282,13 @@ function evaluateWithOrderedOperationEvents(
     preparation,
     true,
   );
+  const hpDependencyRequest: HpPublishedDependencyRequest = { prepared };
+  hpPublishedDependencyRequests.push(hpDependencyRequest);
   // Retain the declaration superset before evaluation; canonical choice resolution belongs to the gate.
   const maySelectAlly = selectedAllyMaximumFixedMaySelect(master, scenario);
   if (maySelectAlly) selectedAllyCanonicalRequests.push(prepared);
   const evaluated = evaluatePreparedCalculationScenario(prepared, versions);
+  hpDependencyRequest.calculation = evaluated;
   if (maySelectAlly) selectedAllyRequests.push({ prepared, calculation: evaluated, versions });
   // Request population is collected before any executable/native/activation filter.
   if (receiveCanonical(prepared)) {
@@ -603,6 +613,7 @@ describe('production master inventory ratchet', () => {
         'production-preparation-bp-capacity-attempt.json',
         'production-preparation-hp.json',
         'production-preparation-hp-attempt.json',
+        'production-hp-published-dependency.json',
       ]),
     },
     async ({ task }) => {
@@ -616,6 +627,7 @@ describe('production master inventory ratchet', () => {
         masterDataVersion: master.version,
       };
       maximumFixedPopulationComplete = false;
+      hpPublishedDependencyRequests.length = 0;
       receiveRequests.length = 0;
       receivePrograms.length = 0;
       receiveAttemptPrograms.length = 0;
@@ -1506,6 +1518,33 @@ describe('production master inventory ratchet', () => {
       }
 
       maximumFixedPopulationComplete = true;
+      const hpDependencyDeclarations = hpProofCoverageInventory(master);
+      const hpDependencyBindings = hpPublishedDependencyBindings(
+        hpDependencyDeclarations,
+        hpPublishedDependencyRequests,
+      );
+      const hpDependencyCoverage = reconcileHpPublishedDependencyCoverage(
+        hpDependencyDeclarations,
+        hpPublishedDependencyRequests,
+        hpDependencyBindings.bindings,
+      );
+      const hpDependencyReceipt = await writeProductionAuditArtifact(
+        task.meta,
+        'production-hp-published-dependency.json',
+        hpDependencyCoverage,
+      );
+      const hpDependencyBytes = await readFile(
+        resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-hp-published-dependency.json'),
+      );
+      expect([
+        hpDependencyBytes.length,
+        createHash('sha256').update(hpDependencyBytes).digest('hex'),
+      ]).toEqual([hpDependencyReceipt.expectedBytes, hpDependencyReceipt.expectedSha256]);
+      expect(
+        isDeepStrictEqual(decodeProductionAuditArtifact(hpDependencyBytes), hpDependencyCoverage),
+      ).toBe(true);
+      expect(hpDependencyCoverage.gate.failures).toEqual([]);
+      expect(hpDependencyCoverage.productClosure).toBe(false);
       const selectedExpectedIdentities = expectedUserControlIdentities.map((identity) => ({
         ...identity,
         profileKey:

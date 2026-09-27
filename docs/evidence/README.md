@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.123"
+document_version: "1.4.124"
 status: "Active"
 updated_at: "2026-09-28"
 ---
@@ -90,4 +90,4 @@ TSK-08の限定committed fixed HP forwardは元保持HP→実条件read／contin
 残存HP proof対応の限定checkpointは[parity evidence](tsk-08-parity-ratchet.json)の`boundedUnits[52].hpRemainingProofReconciliationCheckpoint`。明示canonical宣言557（writer486／条件10／HP value30／OC rate25／HP依存NP6、use-condition／HP条件付きgauge各0）と元fixedSelf schema-legal代表3binding、保護Published transfer2へのidentity joinを記録した。最終unit110／production7、113 artifact完全比較、give6／audit77保全、今回disk120／declared110のerror0。これは全native／実read／NP／成功recoveryやTSK-08 closureではない。修復前captureを持たないsupport経路などは未接続のまま保持し、正式性能／最終qualityは開始していない。旧全checkpointを保持し、TSK-08 in_progress、09.1／09 blocked。
 
 
-次の1セッション準備の指示正本は`handoffPreparation.nextSession.hpPublishedDependencyProofSession`。Step0／1／3成立、Step2未完了。`d91b128`の557宣言・限定3bindingと全旧artifact保持は既存checkpointとして再利用する。Published条件10／NP6／expression55の元producer／capture／proof接続は計画確認後に判断する。先行読取・source／input／artifact identity、observer不在と修復前capture欠落、全TSK-08 gateへの未達条件は同sessionの`preparationReport`を参照する。旧sessionは履歴と成立証拠であり、現行の固定手順ではない。
+Published HP依存接続の結果正本は`boundedUnits[52].hpPublishedDependencyProofCheckpoint`。計画確認後、元control3182requestから478bindingを接続し、attacker条件9／実read90、hpRatioLow4variant／元NP評価16 consumedを保存した。value20cellのcontextと選択2cellは実readではなく、CE条件1／NP残2／value残10・OC25／expression実read／成功recoveryは未観測。局所11／影響control7、旧control12 artifactと保護disk identityの完全保全は同checkpointを参照する。Step0／1／3成立、Step2未完了、TSK-08 in_progress、09.1／09 blocked。全ratchet／legacy／正式性能／最終quality／統合closureを開始していない。`handoffPreparation.nextSession.hpPublishedDependencyProofSession`は今回の承認・結果参照を保持し、`preparationReport`と旧sessionは履歴・成立証拠として残す。
