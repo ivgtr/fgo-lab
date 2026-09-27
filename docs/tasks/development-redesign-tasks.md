@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.83"
+document_version: "1.7.84"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3455,3 +3455,13 @@ Step選定のread-only root cause／direct symbols／checksumはevidence `handof
 必須qualityはunit 1444、production 155、E2E 29全成功、warning／unexpected console 0。source8件をquality中に固定し、production counter／digestはbaselineと一致、[46]〜[49]の証拠57 receiptsを照合して別々に保持した。8shard無条件再生成なし。normal／captureの局所benchmarkは公開結果同一、multiple normal中央値+19.48%を含む測定差を記録し、独立bundle／JITのため因果は断定しない。threshold緩和なし。外部SQLite storeでscript前に失敗したpnpmは内容・SHA照合済みgeneric runnerへ切替、8CPU affinity・production50%／4workers・既存timeoutを維持。診断参照DAGによる保存サイズ失敗は必要owner参照へ限定して解消し、完全な値証拠・fixtureは維持した。
 
 60分境界より前に既存handoffへcheckpointを記録し、同じunitの完了まで進めた。対象限定local product commitと結果記録commitで保存し、pushなし。TSK-08は`in_progress`、09.1／09は`blocked`を維持、次のsemantic familyは未選定。
+
+### Step整理と次の1session handoff（2026-09-27）
+
+HEAD／index／tracked／untrackedは製品`6c2add5`／記録`d1e5550`でcleanを確認。Step0はbaseline／契約、Step1はV41 request versionContext／V40保存と明示V41再計算、Step3は改訂matrix／eligibility digest成立済みを維持する。未達の中心はStep2。固定HP forward／native非commit[46]／[47]、maximumFixed forward／native非commit[48]／[49]、receive committed forward[50]は別々の成立範囲を保持する。[50]はquality1444／155／29、局所3／元control5成功。旧Step nextScopeのforward計画とmaximumFixed activeCheckpointは、完了済み履歴として整理し再開対象から外した。
+
+次の1sessionは同じ攻撃役skill receive sign+1／active／sourceSelf／selection directまたは省略／bounds0..50000／useCondition alwaysまたは省略の元modifier appendと別の後続fixed HP gainの実changed attemptから、後続の元native非commit、action-start HP／modifier／receiptと先行committed prefix保持、元reducer拒否、同selected command／executionのprepared／application／direct実拒否と後段不生成までを監査consumer／gateへ接続する。gainと拒否triggerを新HP writer母集団へ加えず、actor form／traits／eligibility・初期HP・対象外modifier環境は各代表で固定する。元ownerはreceiveWrites／receiveConsumptions／native／attempted／returned／sourceEndsを既に持ち、forward gateの`outsideCommittedReceive`に隔離証拠が未接続である。実装済み意味論の監査接続だけを扱う。
+
+先行調査はcodeとcanonical JSON・既存artifactの読み取りのみ。latest quality／focused／control／reconciliationの4主receiptとmaster checksumを照合した。published物理skillの該当形状6、後続gain候補1は選定根拠で、実noncommit／consumer成功件数や将来gate期待値ではない。通常／captureのcanonical生成とschema-legal後続拒否をどう接続するか、既存consumer拡張／専用consumer・観測追加の要否は、次作業者が現symbolから段階計画を作って判断する。資料と責務・否定・証拠再利用条件の正本はevidence `handoffPreparation.nextSession`。計画を提示して利用者確認まで実装・source test／producer／audit／quality・stage／commitをしない。確認後は同unitを必要な検証・記録・対象限定local commitまで続け、pushしない。
+
+成功recovery／retry／UI、damage rollback、別modifier action／recipient／lifetime・除去、他HP writer／family、form／trait／eligibility切替、value-expression、failure分類修正、legacy、TSK-08全体closure、09.1／09は対象外。既存成功はidentityが有効な限り再利用し、8 shardの無条件再生成はしない。60分checkpointと90分以降の新family停止は実行効率要件に従う。未規定の製品意味論または実質的な契約衝突だけ影響作業を止め、根拠symbol・差分・改訂計画を示す。TSK-08 `in_progress`、09.1／09 `blocked`を維持する。
