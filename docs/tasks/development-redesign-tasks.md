@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.95"
+document_version: "1.7.96"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3616,3 +3616,13 @@ committed fixtureはdecodeとserialize後decodeの完全比較・保存宣言を
 今回の読取準備では、installed Vitestがpromise完了時にも元timeoutを検査し、timeout stackにSTACK_TRACE_ERRORが残り得る実装を確認した。5秒超過reportと整合するが、特定phaseの原因帰属ではない。診断・source test・qualityは実行していない。読取根拠・source identity・証拠契約・候補file・停止境界の正本はevidence `handoffPreparation.nextSession.committedCapacityMaterializationSession`。
 
 attempt consumer／177 tests、global codec／共有scalar snapshot、production read／parse lifecycle、raw集計、runtime意味論を同時に変更しない。変更した責務の局所fixtureと差分レビュー後にcommitted全63 tests・完全artifact復元／receipt／否定identityを検証する。未変更の証拠は有効範囲で再利用するが、attempt174／177や全240の失敗を成功へ読み替えない。製品qualityと最終counter／digestは未達のまま、具体的な原因解消なしに全体qualityを反復しない。60分checkpoint／90分停止、新familyなし、TSK-08 `in_progress`、09.1／09 `blocked`、pushなしを維持する。
+
+### committed capacity保存責務の追加設計照合（2026-09-27）
+
+開始HEADは `c6b7850f95727aa2f4a4d646d78b424953dd27e1`、index／tracked／untrackedはclean。利用者指示により今回は調査と引継ぎ整備だけとし、source編集・live計測・source test／producer／audit／qualityは実行していない。Step0／1／3成立、Step2未完了、[46]〜[51]完了、unit52 consumer／復元比較checkpoint保全、TSK-08 `in_progress`／09.1・09 `blocked`を再照合した。
+
+追加確認と設計候補の正本はevidence `handoffPreparation.nextSession.committedCapacityMaterializationSession.sourceDesignReconciliation`。raw diagnosticのcanonical欄は変更可能なdownstream.expectedであり、authorityの固定canonical期待値とは別に保存する。通常否定のrestore前cloneだけでなく、population否定の完全 `{expected, observations}`、positive／rankingの取得時点、published内部gateも移行範囲に含める。canonical first differenceの再帰比較費用も残るため、proof生成の改善をtimeout解消へ読み替えない。
+
+次の作業者は固定要件と現コードから実装・限定計測・検証計画を提示し、利用者確認後に同じ1セッション範囲を続ける。固定期待契約、元live参照、完全typed実値、検査結果、保存を分ける設計を候補とし、raw参照diagnostic APIの置換を妨げる互換wrapper／fallbackは要求しない。不変typed表現や呼出し内共有は候補であり、既存unit52 helperの機械的共通化、全面graph化、clone削除は既定解にしない。全否定・canonical path・完全artifact・受理値の契約を保つ。canonical不一致後のmutable期待値使用を変更する場合は別の意味論判断であり、保存責務修正に暗黙に混ぜない。
+
+今回の成果はsource未変更の整理更新commitと次作業者向け依頼文であり、製品gate成功ではない。追加計測は元committed失敗2groupの設計上必要な問いに限定。変更時は局所反証・差分レビュー後に原committed63全件／完全復元／receiptを検証する。attempt177、global codec、共有scalar、runtime／runner／設定は対象外。60分checkpoint／90分停止、製品未完了local checkpoint、pushなしを維持する。

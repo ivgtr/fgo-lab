@@ -18821,7 +18821,7 @@
         "resultReference": "boundedUnits[52].capacityRestorationComparisonCheckpoint"
       },
       "committedCapacityMaterializationSession": {
-        "status": "Read-only handoff preparation; first source-based implementation/verification plan and user confirmation. No live diagnostic or source changes in this preparation.",
+        "status": "Read-only source design reconciliation complete; next worker must present a current-source implementation/measurement/verification plan and wait for user confirmation. No implementation or live measurement in this preparation.",
         "preparationHead": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
         "deliverable": "One session, existing committed capacity consumer only: determine and, where evidence warrants, improve original live proof/value materialization and pre-restore diagnostic ownership. Preserve complete canonical/typed value/live-reference/denial/publication contracts; validate changed responsibility and save an incomplete local checkpoint. Do not promise whole timeout closure.",
         "primaryFiles": [
@@ -18886,6 +18886,76 @@
           "formatPolicy": "Default Prettier passed; docs exclusion maintained without override",
           "diffWhitespace": "git diff --check passed",
           "identities": "All boundedUnits0..52 unchanged; consumer final sources, capacity checkpoint source/artifacts and next-session input source byte/SHA matched"
+        },
+        "sourceDesignReconciliation": {
+          "baselineHead": "c6b7850f95727aa2f4a4d646d78b424953dd27e1",
+          "authorization": "User changed this session to research only, then authorized Step reconciliation, existing Task/evidence updates and a local preparation commit plus a next-worker prompt. No source implementation, test/producer/audit/quality execution or live measurements.",
+          "startState": "HEAD c6b7850; index/tracked/untracked clean. Primary five source bytes/SHA match session.primaryFiles. Final restoration-comparison source identities and recorded manifests/reconciliation/measurement/profile file hashes match; historical pre-change fixture hashes remain historical, not current failures.",
+          "confirmedPaths": [
+            {
+              "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.ts",
+              "symbols": [
+                "view",
+                "battlePointCapacityDiagnostic",
+                "originalReferences",
+                "battlePointCapacityPreparationProgram",
+                "auditBattlePointCapacityPreparation",
+                "auditPublishedBattlePointCapacityPreparation"
+              ],
+              "finding": "Diagnostic canonical is the live mutable downstream.expected, not authority.canonical. Preserve observed canonical mutations separately from fixed expected authority. Gate checks reproject expected/actual per check and compare complete owner views; published audit calls the gate independently."
+            },
+            {
+              "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts",
+              "symbols": [
+                "run",
+                "inspect",
+                "missing-population/extra-population/duplicate-population",
+                "payload publication"
+              ],
+              "finding": "Normal denials clone complete diagnostic inside try before finally restore. Population denials instead publish complete {expected, observations}. Positive/ranking proof is currently read when building payload. A replacement must cover all these acquisition/publication paths without shrinking evidence or reusing proof across independent calls."
+            },
+            {
+              "path": "packages/master-data/src/productionAudit.ts",
+              "symbols": [
+                "firstValueDifference",
+                "firstCanonicalAuditDifference"
+              ],
+              "finding": "Canonical comparison recursively traverses values, arrays in index order and object keys in sorted order; changing snapshot generation alone does not remove this cost. Preserve existing first-difference identity/path/value contract; do not compare typed-proof implementation tags as canonical values."
+            },
+            {
+              "path": "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts",
+              "symbols": [
+                "valueSnapshotter",
+                "selectedAllyMaximumFixedValueProof",
+                "auditSelectedAllyMaximumFixed"
+              ],
+              "finding": "Existing unit52 consumer uses a typed frozen call-local proof and separate live anchors. Reference only: do not migrate it or promote its helper mechanically; the committed capacity transport and canonical projection have different existing contracts."
+            }
+          ],
+          "designRecommendation": {
+            "status": "Source-based candidate, not a mandated implementation or measured optimum. Next worker rejudges from current code and fixed requirements.",
+            "ownership": "Separate fixed canonical expectation, original live reference anchors, complete observed typed values, inspection outcome and publication. Gate owns capture within its call; publication consumes established proof without rereading live owners.",
+            "breakingChanges": "Replacing raw-reference diagnostic API is allowed within committed module/fixture; no compatibility wrapper, fallback or dual old/new runtime path is required. Preserve complete evidence and existing reasons/paths/populations rather than old API names.",
+            "typedValues": "Consider an immutable typed representation distinguishing undefined/null, ordinary/null-prototype objects, arrays, ordered Set/Map and cardinality. Native Set/Map Object.freeze alone is not immutable content. Representation must remain within existing accepted transport values and keep independent full raw typed restoration checks; existing codec stays unchanged.",
+            "sharing": "Only justified call-local same-semantic-view original-object sharing; distinguish canonical projection from raw typed proof and live reference authority. Do not content-intern distinct original Set members/Map keys during proof acquisition. No cross-call cache or default whole shared graph.",
+            "coverage": "Capture all observations including unmatched/duplicate identities before filtering; preserve special population-denial full envelope, positive/ranking and published-call lifetime. Full observed mutable canonical is not replaced by fixed expected canonical.",
+            "separateSemanticChange": "Gate records canonical.contract mismatch but continues using mutable p.expected. Altering governing expectation/control flow is a separate semantic decision, not silently bundled into proof-publication repair. Record a concrete blocking finding and bounded next operation if changing it proves necessary."
+          },
+          "uncertainties": [
+            "Current original live phase costs and causes of the two committed timeout failures remain unmeasured. Old worker profile and saved interned replay do not establish current phase attribution.",
+            "Select representation/sharing only after accounting for capture, projection, comparison and transport costs. A new proof layer may add allocations; API ownership improvement alone does not prove performance improvement."
+          ],
+          "nextMeasurement": "After plan confirmation only: original committed intermediate-reconciled identity-source-action and identity-receipt-state groups; retain original payload allocation/setup timing, affinity0-7/production50% and5000ms. Separate setup/execution, canonical snapshot/check, denial proof, encode/serialize, decode/independent comparison and write/read. Stop when design uncertainty is answered; diagnosis is not product-gate success.",
+          "preservation": "Source unchanged; boundedUnits0..52, consumer checkpoint05d16fa and restoration comparison checkpointc387c9f unchanged. Step0/1/3 established, Step2 open, units46..51 not reopened. TSK08 in_progress,09.1/09 blocked. No new family/whole quality retry/product closure/push.",
+          "recordCommitPolicy": "Resolve this preparation commit from Git history for these existing records; do not self-reference a commit hash inside its own content.",
+          "verification": {
+            "sourceExecution": "None; read-only code/JSON/checksum investigation only. Preparation validation is docs integrity, default format with docs exclusion retained, whitespace and protected source/evidence identity checks.",
+            "docsTests": "node --test scripts/docs-integrity.test.mjs:6/6 passed",
+            "docsIntegrity": "node scripts/docs-integrity.mjs: passed after correcting registry self-version; initial mismatch recorded as corrected preparation defect",
+            "defaultFormat": "node node_modules/prettier/bin/prettier.cjs --check .: passed; docs exclusion preserved, no ignore override",
+            "protectedIdentity": "boundedUnits0..52/currentStageReconciliation/remainingWorkSummary exactly equal to c6b7850; primary five source bytes/SHA unchanged",
+            "diffWhitespace": "git diff --check: passed"
+          }
         }
       }
     },
