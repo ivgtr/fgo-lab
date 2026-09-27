@@ -228,10 +228,10 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "Next one-session bounded receive + separate later fixed gain native-noncommit isolation is selected but not implemented; plan/user confirmation required. Whole Step2/TSK08 closure remains open.",
+    "Step2 unit52 consumer responsibility convergence is checkpointed with local58/control7; mandatory quality and final integrated counter/digest/receipt/product completion remain pending. Existing5000ms attribution is unverified; separately bound gate repair before dependent closure.",
     "Other HP modifier/lifecycle/percent/transfer/recipient/actor/expression and domain recovery or other mutation paths require current canonical inventory and owner-to-consumer coverage reconciliation, then separately bounded units for actual gaps. Excluded paths are not automatically missing product semantics; distinguish already-implemented owner behavior, missing audit connection, declared boundary, and out-of-product scope.",
     "Whole TSK-08 parity/unsupported/invalid/partial-commit/inert-control/stale-mutation and typed diagnostic/artifact closure remains unclaimed; reuse completed units and matrix evidence where identities/governing semantics remain valid. Legacy aggregate auditor/old loader/scan/candidate-list/duplicate fixture cleanup must be reconciled with current actual symbols before removal.",
-    "TSK-08 in_progress;TSK-09.1/09 blocked. Step0/1/3 established; Step2 completed units through[50] retained. Old checkpoints are resolved history."
+    "TSK-08 in_progress;TSK-09.1/09 blocked. Step0/1/3 established; Step2 completed units through[51] retained. Unit52 consumer checkpoint is not unit52 product completion or whole closure."
   ],
   "statusInvariants": {
     "TSK-06.5": "done",
@@ -16588,7 +16588,7 @@
     },
     {
       "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
-      "status": "in_progress; scoped implementation/local55/control7 verified; mandatory quality incomplete; stopped at user scope correction",
+      "status": "in_progress; consumer responsibility convergence/local58/control7 verified; incomplete local checkpoint; mandatory quality/counter/digest/product closure pending",
       "baselineHead": "210e6eea84fbdba420ca7715c42fd1dd73433ed6",
       "priorProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "priorRecordCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
@@ -16610,7 +16610,7 @@
         "consumer": "Focused owner-snapshot/value/reference audit; reuse hpPreparationSource and maximumFixedDiagnostic formatter only. No writer replay, HP formula, whole-state DAG reference traversal, alternate recipient selection or new public serialized shape."
       },
       "flowClosure": {
-        "status": "Local fixtures and scoped diff review complete; final audit/quality/receipt reconciliation pending",
+        "status": "Scoped consumer responsibility slice verified, Blocking0 within slice; unit52 final audit/quality/counter/digest/product closure remains incomplete. See consumerResponsibilityConvergence.",
         "forward": "canonical command/master/form/source/effect occurrence/choice/operation/value cells -> selected attacker original append/full HP/receipt -> native commit/retained reducer prefix -> same selected ordered seed/read/continuous hpRatioLow context/evaluation/input/result and prepared/application/direct facade",
         "boundaries": "Nonapplication, no change, actual0 receipt, dead, no reader/no NP, refusal/unreached remain canonical population boundaries. Native-noncommit isolation/recovery out of scope; do not create absent downstream.",
         "fixedEnvironment": "Actor class predicates/form/traits/eligibility/initial HP and outside modifier environment fixed per strict schema-legal representative; master actor environment and commitStartHp owner identity captured."
@@ -17461,6 +17461,238 @@
           "detectionGapConfirmed": "Baseline tasks already nearly exhaust5000ms but succeed; original artifacts expose elapsed duration and full values without per-stage costs. Prior representative public execution timing does not measure audit proof materialization/restoration. Complete semantic receipt equality cannot establish timing provenance.",
           "recurrenceScopeInferred": "The verified mechanism applies to the two profiled capacity fixtures and current selectedAlly consumer construction. Bound the chosen shared proof/restoration repair to these consumers and contract fixtures; other families require direct evidence before migration. Production lifecycle repair is separately scoped to direct execution-semantics/HP inventory paths."
         }
+      },
+      "consumerResponsibilityConvergence": {
+        "status": "Scoped consumer responsibility convergence verified; incomplete local checkpoint, not unit52 product completion",
+        "startedAt": "2026-09-27 09:30:17 UTC",
+        "baselineHead": "ab832068c0c71c434aa82f7b3aaaed1788340206",
+        "researchCommit": "13fe1a8a202c702584cd76d39c17637a8c33d7c4",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "authorization": "User confirmed the current-source implementation/verification/checkpoint plan with OK. No push; no new family or deferred gate implementation.",
+        "startReconciliation": "HEAD ab83206, index empty, tracked4/untracked2; all six retained bytes/SHA matched scopeCorrection.retainedSourceIdentity. Initial local55/control7 manifests and research artifacts/profiles matched. No unrelated source difference at start.",
+        "decisions": {
+          "canonicalExpectation": "Explicit immutable identity/index/tagged canonical contract in Program; original declaration/choice generation and pre-evaluation request ledger unchanged. No hidden WeakMap authority or compatibility API.",
+          "actualValues": "Each gate captures complete typed frozen value graphs for every observation before inspection, including unmatched identities. No delayed owner reads after restore and no actual-value cache across calls. Original immutable expected values remain the fixed comparison contract.",
+          "semanticViews": "The focused consumer owns its declared value projection, independently of sourceSelf maximumFixedDiagnostic. Projections happen before gate-local object-identity memoization, so raw effect and metadata-filtered effect views remain distinct. Values retain undefined/null/finite numbers/dense arrays/Map/Set/null-prototype object semantics; unsupported values fail closed within the existing codec acceptance boundary.",
+          "liveOwners": "Original selection/prepared/master/transition/native/write/HP/receipt/reader/NP leaf anchors stay separate from values. Serialized content interning never proves live identity; same-valued reader/NP HP copies remain rejected. No whole-state reference traversal.",
+          "checks": "Explicit typed structural roles own reason classification; checkPath only identifies the check. All full expected/actual checks and canonical first differences remain. Verified source canonical drives boundary accounting, after in-place selection identity/index/canonical changes have been denied.",
+          "diagnostics": "Gate results own complete immutable expected/actual proof values. Published inventory also returns typed copied value declarations without live master-operation references. Control saves the gate proof directly instead of rereading owners after inspection. Existing codec, declarations, pre-assertion saves, disk decode and independent complete payload equality remain.",
+          "moduleBoundary": "Keep the focused consumer module; no extraction solely to reduce lines, no new package/global codec or restoration comparator migration. Kept battle-execution capture and suite registration exactly at retained identities; no concrete capture/registration defect established.",
+          "hpOwner": "Original recipient resolution/apply/append/value-cell/HP/receipt/native transaction/reducer/ordered read/continuous hpRatioLow NP/input/result owners are unchanged; no HP arithmetic, writer replay, synthetic reader/NP or new semantics."
+        },
+        "verification": {
+          "local": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T09-48-53-345Z-21-872531/manifest.json",
+              "bytes": 16392,
+              "sha256": "d35ddc0f317cf30d3b3fb53ef89e97add59e826d9ec73fabe15d521d589ceff0"
+            },
+            "tests": 58,
+            "warnings": 0,
+            "durationMs": 60096,
+            "scope": "Original55 unchanged plus immutable proof lifetime/unmatched population, semantic-view sharing/lossless typed value probes, and in-place selection authority/published declaration lifetime guards. All existing denial first differences and full diagnostics retained; normal/capture and calculator/ranking/prepared/application/direct parity pass."
+          },
+          "control": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T09-51-28-245Z-74-37bc70/manifest.json",
+              "bytes": 5552,
+              "sha256": "fa6e6f3e2f70ee5196a8bc485e776b35eb48dd2ca2fa108a194dccbd5478b2ba"
+            },
+            "tests": 7,
+            "warnings": 0,
+            "durationMs": 141550,
+            "scope": "Whole original production master control audit with final source; no test filtering, writer replay, timeout or threshold changes."
+          },
+          "reconciliation": {
+            "path": ".test-results/tsk-08-unit52-consumer-20260927/reconciliation.json",
+            "bytes": 49586,
+            "sha256": "d1b978d9bc0eb9073705f1b41633a7b3b29278a8747f012bd098c78e6e2d56e8"
+          },
+          "reconciliationScript": {
+            "path": ".test-results/tsk-08-unit52-consumer-20260927/reconcile.mjs",
+            "bytes": 7165,
+            "sha256": "a5b8f5fbcd5f331848635de8b07eef7cf00ff827705e92d603268161951265b7"
+          },
+          "receipts": 139,
+          "receiptErrors": 0,
+          "preservedNegativeCells": 1270,
+          "preservedNegativeShards": 36,
+          "original55SourcePrefixUnchanged": true,
+          "protectedUnits0Through51Unchanged": true,
+          "scopedDiskRestoration": {
+            "payloads": 59,
+            "contract": "58 local declared payloads plus selectedAlly control payload are saved before assertions, read from disk, decoded, and deeply compared against the original complete in-memory payload. Receipt bytes/SHA also verified. Re-encode equality is not restoration evidence."
+          },
+          "publishedPopulation": {
+            "declarations": 6,
+            "selected": 12,
+            "changed": 0,
+            "connected": 0,
+            "readers": 0,
+            "nps": 0,
+            "failures": 0,
+            "boundaries": {
+              "notApplied": 2,
+              "noOrderedHpReader": 2,
+              "noHpRatioLowNp": 2,
+              "outsideScope:otherHpWriter": 10
+            }
+          },
+          "sourceChecks": {
+            "lint": {
+              "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm exec eslint <five scoped TypeScript files> --max-warnings=0",
+              "status": "passed",
+              "log": {
+                "path": ".test-results/tsk-08-unit52-consumer-20260927/lint.log",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              }
+            },
+            "typecheck": {
+              "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm typecheck",
+              "status": "passed",
+              "log": {
+                "path": ".test-results/tsk-08-unit52-consumer-20260927/typecheck.log",
+                "bytes": 59,
+                "sha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+              }
+            },
+            "format": {
+              "command": "scoped pnpm exec prettier --check on six retained source files",
+              "status": "passed",
+              "log": {
+                "path": ".test-results/tsk-08-unit52-consumer-20260927/source-format.log",
+                "bytes": 66,
+                "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+              }
+            }
+          },
+          "diffReview": {
+            "blockingWithinScopedConsumer": 0,
+            "scope": "Canonical declaration/choice -> immutable expected/actual proof -> independent live leaf identity -> commit/reducer/selected readers/NP/facade -> before-assertion disk diagnostic. In-place mutation/restore and unmatched population guards added; recovery/retry/UI/native noncommit isolation remain outside the authorized slice. No changes to HP meaning, failure classifications, capture, thresholds, runner or worker configuration."
+          },
+          "reuse": "Initial local55/control7 are historical proof-construction evidence, not final-difference success. Unchanged sourceSelf/receive tasks19 and protected units0..51 retain their original qualifications. Existing baseline/current public execution performance is reusable only because the execution/capture/runtime source and inputs are unchanged by this consumer-only slice. Capacity240 profiles are design evidence, not a quality substitute.",
+          "performanceQualification": "Final local58 wall60.10s/control7 wall141.55s recorded for their actual inputs; earlier local55 wall89.591s/control7 wall154.995s are single archived runs with different proof/test inputs. No comparable3-run performance claim or five-second timeout repair/causal attribution is made. Consumer remains reachable only through two opt-in audit fixtures; no production damage/candidate structure changed."
+        },
+        "finalSourceIdentity": [
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 9336,
+            "sha256": "c4a4d0d190a91f943d1436e2ac2dda7f7cfb66af7fbddbf16f259c254f5191b7",
+            "unchangedFromRetained": true
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 56680,
+            "sha256": "00817a72569c54225d04a3e73a9d2f4227b673ae8e5f40c7d755eee849d99551",
+            "unchangedFromRetained": true
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts",
+            "bytes": 49554,
+            "sha256": "2012256949797544bc8598a0dfbcaa84799a32c8d9853df809ce0ace733763d6",
+            "unchangedFromRetained": false
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.test.ts",
+            "bytes": 48106,
+            "sha256": "f607d8f0d13915f6060b370d2d2b1766d98948655d735d37a1fa853144eada8d",
+            "unchangedFromRetained": false
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 93254,
+            "sha256": "2575c3262c881ad5f1da59a5415b89853f633c1fee8f1a15533d90e71793e683",
+            "unchangedFromRetained": false
+          },
+          {
+            "path": "scripts/test-suites.mjs",
+            "bytes": 3354,
+            "sha256": "cf844584fd7b2bf5159c51cbe60eeec3c7d14944fca3a09312aa878e2a1971ca",
+            "unchangedFromRetained": true
+          }
+        ],
+        "execution": {
+          "affinity": "0-7 (8 CPUs)",
+          "workers": "Existing audit project maxWorkers1; ordinary production50%=4 preserved. No worker override or concurrent source edits during validation.",
+          "timeouts": "All original timeouts/thresholds unchanged",
+          "nativePnpm": "Initial pnpm diagnostic failed before script start with external SQLite unable to open database file. Generic runner content/730bytes/SHA256 7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6 matched before switching; no product fallback.",
+          "history": [
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T09-33-39-032Z-21-34d48a/manifest.json",
+                "bytes": 15741,
+                "sha256": "2c3e53db47bfef94fc737c8877e2c82e52660792776b5fb05ee263efa0b0673d"
+              },
+              "result": "Intermediate55 passed; before new proof contract/selection guards, not final source."
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T09-36-21-734Z-3-025927/manifest.json",
+                "bytes": 16080,
+                "sha256": "7d52cc1c6fed1e511139f85efb4aed14cfe161e5834fc69934af71abbbd1090d"
+              },
+              "result": "56 passed/1 failed; new probe used NaN/-0 outside existing diagnostic codec acceptance, so artifact missing. Corrected fixture and explicit local snapshot acceptance; no codec extension."
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T09-38-48-594Z-3-29d608/manifest.json",
+                "bytes": 16162,
+                "sha256": "09275ea91884d9907ee13670b7a780c38290609a032b40eccf14e2948a2428fe"
+              },
+              "result": "56 passed/1 failed; new probe incorrectly assumed write-after HP and seed HP were the same object. Corrected sharing probe to actual calculation input identity; no HP owner change."
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T09-40-38-502Z-3-93812c/manifest.json",
+                "bytes": 16157,
+                "sha256": "9c43b7ffdffe0085b785ff791ef5fe34b9bbde2254d3c45822d836b0072fc4cd"
+              },
+              "result": "Intermediate57 passed, before final selection authority and published declaration guard."
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T09-42-06-751Z-3-85d999/manifest.json",
+                "bytes": 5551,
+                "sha256": "a0cf63679350e93691cd8d73e28c8868d999ef545209597b256835dca0f2537f"
+              },
+              "result": "Intermediate control7 passed; final changed responsibilities rerun in final control manifest."
+            }
+          ]
+        },
+        "causeAnalysis": {
+          "mechanismConfirmed": "Canonical contract, snapshot values and live reference authority were coupled through a hidden WeakMap/sourceSelf diagnostic and path-based reason inference. Moving identity into immutable expectations requires explicit validation of live selection metadata; published declarations must not leak master-operation references.",
+          "designDriftInferred": "Audit evidence shape acted as the authority for several responsibilities; inferred from old Program/authorities/Diagnostic/inspectProof/direct control consumer, not author intent.",
+          "detectionGapConfirmed": "Existing55 covered value/reference/HP-copy denials but not explicit proof lifetime across restore/calls, selection metadata in-place replacement, or post-gate published declaration mutation.",
+          "recurrenceScope": "Only existing selectedAlly consumer and its two direct audit consumers; new three fixtures cover these responsibility boundaries. Shared capacity/global codec and production lifecycle defects are separately deferred."
+        },
+        "remainingGates": [
+          "README mandatory quality remains Blocking: known5000ms failures and unverified attribution in resumeGateAssessment/gateDesignInvestigation; no concrete cause resolved in this slice and no quality retry.",
+          "Final integrated production runtime counters, matrix/eligibility/damage digest and all-receipt product closure remain pending. Current control manifests have no runtimeCounters; unchanged revision digests are not fresh final proof.",
+          "Unit52 product completion commit and whole Step2/TSK08 closure remain unclaimed."
+        ],
+        "nextOperation": "Scope the existing mandatory-gate repair separately from resumeGateAssessment/gateDesignInvestigation with comparator, minimal commands and stop boundary. Reuse this frozen consumer checkpoint; do not reopen completed units or automatically migrate shared capacity/global codec/restoration/production read-parse lifecycle. After concrete cause resolution: affected checks -> README quality -> final integrated counter/digest/receipt reconciliation.",
+        "checkpointPolicy": "Target-limited local checkpoint of six retained source files plus canonical documentation; resolve resulting commit from Git history. Not product completion; TSK-08 in_progress, TSK-09.1/09 blocked; no push.",
+        "sessionBoundary": "Completed within60min; no60min checkpoint or90min stop triggered. Keep the same60/90min boundaries for resumed work.",
+        "documentationVerification": {
+          "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm test:docs",
+          "passed": 6,
+          "failed": 0,
+          "integrity": "passed; final record-only metadata checked again with docs-integrity",
+          "log": {
+            "path": ".test-results/tsk-08-unit52-consumer-20260927/docs.log",
+            "bytes": 527,
+            "sha256": "251eb8e298e7961a8dd731bb5c4c85179899902a689af27acdb4b48997fedcf5"
+          },
+          "formatPolicy": "Default Prettier check honors docs/ exclusion; existing frontmatter/table layout retained, no forced ignore bypass",
+          "formatLog": {
+            "path": ".test-results/tsk-08-unit52-consumer-20260927/format.log",
+            "bytes": 66,
+            "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+          },
+          "diffWhitespace": "passed",
+          "sourceProtection": "Final six source identities and protected units0..51 match the source-fixed reconciliation after documentation updates"
+        }
       }
     }
   ],
@@ -17725,7 +17957,7 @@
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
           "nextBoundedScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
-          "nextScopeQualification": "Unit52 remains incomplete. Next one-session slice is consumer typed value-proof/live-owner/persisted-diagnostic responsibility convergence; shared capacity diagnostic and production lifecycle gate repairs are deferred, not implicit scope. See nextSession.resumeUnit52.singleSessionScope."
+          "nextScopeQualification": "Consumer responsibility convergence is verified within unit52. Mandatory quality/counter/digest/product closure remain open; shared capacity/global codec/restoration and production lifecycle repairs require separate bounded scope. See consumerResponsibilityConvergence."
         },
         {
           "stage": 3,
@@ -17737,7 +17969,7 @@
       "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "Unit52 remains incomplete. Next one-session slice is consumer typed value-proof/live-owner/persisted-diagnostic responsibility convergence; shared capacity diagnostic and production lifecycle gate repairs are deferred, not implicit scope. See nextSession.resumeUnit52.singleSessionScope.",
+      "nextScopeQualification": "Consumer responsibility convergence is verified within unit52. Mandatory quality/counter/digest/product closure remain open; shared capacity/global codec/restoration and production lifecycle repairs require separate bounded scope. See consumerResponsibilityConvergence.",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52
     },
@@ -17795,7 +18027,7 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "Unit52 consumer/gate design re-evaluated under explicit research-only request; preferred breaking design and bounded verification plan recorded, no implementation authorized in this session.",
+      "status": "Existing unit52 consumer convergence verified/local58/control7; incomplete source checkpoint. Known mandatory gates and final counter/digest/product closure remain pending.",
       "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "priorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
@@ -18269,8 +18501,8 @@
       "recordCommitPolicy": "Step reconciliation/handoff preparation is docs-only; resolve this preparation commit from Git history. Implementation source remains uncommitted until mandatory completion gates pass.",
       "resumeUnit52": {
         "checkpointRecordCommit": "72e16c48dd8875e01a485b8517b192ae0530445d",
-        "worktreeDependency": "Six scoped implementation files remain uncommitted (two untracked); this handoff requires this worktree, not a clean clone. Do not reset or discard. Source identities in boundedUnits[52].scopeCorrection.retainedSourceIdentity.",
-        "goal": "Converge existing unit52 consumer proof responsibilities in one session, first source-based plan and user confirmation, then bounded implementation/verification and scoped checkpoint. Full unit52 completion remains conditional on mandatory quality and final reconciliation; no new family.",
+        "worktreeDependency": "Six retained source files are included in this local checkpoint; resolve the commit from Git history. Final source identity is boundedUnits[52].consumerResponsibilityConvergence.finalSourceIdentity. Archived ignored artifacts still require their recorded local paths.",
+        "goal": "Reuse the verified consumer checkpoint; unit52 product completion remains blocked on separately scoped mandatory-gate repair and final integrated counter/digest/receipt reconciliation.",
         "planQuestions": [
           "Which existing responsibilities actually require changes on current six-file difference? Keep valid completed coverage instead of rebuilding the consumer.",
           "Which current gate failure has a demonstrated direct connection to this unit? Identify minimum diagnostic/change and evidence reuse, without assuming scheduling or GC is the cause.",
@@ -18282,10 +18514,10 @@
         "sessionLimit": "60min checkpoint. At90min finish current atomic action and hand off; do not start another quality retry, family or investigation.",
         "finish": "On mandatory-gate success reconcile final identities, counters/digests and protected units; update existing Task/evidence and commit only scoped changes locally, no push. If blocked/time-limited, preserve differential checkpoint and never commit as completed product.",
         "preparationVerification": "Retained six-source and local55/control7 manifest bytes/SHA matched; protected boundedUnits0..51 unchanged; pnpm test:docs6/6 and docs integrity, git diff --check passed. No source validation/quality run.",
-        "latestAssessmentReference": "boundedUnits[52].gateDesignInvestigation",
-        "nextOperation": "Use resumeUnit52.singleSessionScope for the next session; read gateDesignInvestigation as supporting evidence. Consumer proof convergence is the selected slice; shared capacity diagnostic repair and production lifecycle repair are separately deferred.",
+        "latestAssessmentReference": "boundedUnits[52].consumerResponsibilityConvergence; existing gate blockers remain resumeGateAssessment/gateDesignInvestigation",
+        "nextOperation": "Scope the existing mandatory-gate repair separately from resumeGateAssessment/gateDesignInvestigation with comparator, minimal commands and stop boundary. Reuse this frozen consumer checkpoint; do not reopen completed units or automatically migrate shared capacity/global codec/restoration/production read-parse lifecycle. After concrete cause resolution: affected checks -> README quality -> final integrated counter/digest/receipt reconciliation.",
         "singleSessionScope": {
-          "status": "Planned one-session partial convergence of existing unit52; not product completion or a new family.",
+          "status": "Consumer responsibility convergence verified and checkpointed; unit52 product completion remains pending",
           "preparationHead": "13fe1a8a202c702584cd76d39c17637a8c33d7c4",
           "firstDeliverable": "Read current definitions, canonical generation, direct consumer and retained differences; present source-based design/implementation/verification plan and wait for user confirmation before any edits, execution diagnostic, tests or commit. Existing recommendations are evidence, not a mandatory design.",
           "deliverable": "Separate unit52 canonical expectation, immutable typed actual value proof, live original-owner anchors, checks and complete persisted diagnostics. Resolve concrete responsibility defects in the retained consumer, preserving HP semantics and all boundaries/negatives. Validate affected local/audit paths and save a scoped checkpoint with final identities and remaining gates.",
@@ -18317,7 +18549,8 @@
             "retainedSources": "Six byte/SHA identities unchanged from scopeCorrection.retainedSourceIdentity",
             "protectedRecords": "All boundedUnits unchanged from preparation HEAD13fe1a8",
             "execution": "No new product/source test, producer, audit or quality run during this handoff preparation"
-          }
+          },
+          "resultReference": "boundedUnits[52].consumerResponsibilityConvergence"
         }
       }
     },
@@ -19290,7 +19523,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Existing unit52 consumer proof responsibility convergence only, as nextSession.resumeUnit52.singleSessionScope. Plan from current code and wait for confirmation, then bounded implementation/validation/scoped checkpoint. Known shared capacity and production lifecycle gates remain separate work; quality/counter/digest/product completion remain pending. Preserve six retained files and identity-valid evidence.",
+    "nextSession": "Scope the existing mandatory-gate repair separately from resumeGateAssessment/gateDesignInvestigation with comparator, minimal commands and stop boundary. Reuse this frozen consumer checkpoint; do not reopen completed units or automatically migrate shared capacity/global codec/restoration/production read-parse lifecycle. After concrete cause resolution: affected checks -> README quality -> final integrated counter/digest/receipt reconciliation.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -19329,6 +19562,7 @@
     "unit52DeferredGates": [
       "Migration/redesign of older maximumFixed capacity consumers and global diagnostic codec/restoration infrastructure; recorded profiles justify separate scoped work, not implicit changes here.",
       "Production execution-semantics/HP inventory read-parse lifecycle repair or broad performance/GC/runner investigation."
-    ]
+    ],
+    "consumerCheckpointReference": "boundedUnits[52].consumerResponsibilityConvergence"
   }
 }

@@ -42,6 +42,7 @@ export const PRODUCTION_TEST_INCLUDES = [
 // Exhaustive user-control and all-owner sweeps have an explicit, opt-in suite.
 // Keep the ordinary production inventory test small enough for every quality run.
 export const AUDIT_TEST_INCLUDES = [
+  'packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.test.ts',
   'packages/calculation-application/src/productionMasterControlAudit.test.ts',
   'packages/calculation-application/src/productionHpMaximumFixedPreparationAttemptAudit.test.ts',
   'packages/calculation-application/src/productionHpReceivePreparationAudit.test.ts',

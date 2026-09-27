@@ -1,4 +1,8 @@
-import { preparationHpScope, type PreparationHpAction } from './hpExecutionObservation';
+import {
+  preparationHpScope,
+  captureSelectedAllyMaximumFixedWrite,
+  type PreparationHpAction,
+} from './hpExecutionObservation';
 import {
   preparationAttemptScope,
   preparationBattlePointScope,
@@ -910,6 +914,16 @@ export function executePreparationOc(args: {
               modifiers: (result.state.modifiers ?? []).slice(hpBefore.modifiers?.length ?? 0),
               receipts: result.state.receipts.slice(hpBefore.receipts.length),
             });
+          if (hpAction && operation.kind === 'hpModifier')
+            captureSelectedAllyMaximumFixedWrite(
+              hpAction,
+              source,
+              operation,
+              operationIndex,
+              hpBefore,
+              result.state,
+              receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+            );
           if (
             hpAction &&
             source.origin === 'attacker' &&

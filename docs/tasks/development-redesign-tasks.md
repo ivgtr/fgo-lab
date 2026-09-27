@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.91"
+document_version: "1.7.92"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3557,3 +3557,12 @@ Step 0（baseline／契約）、Step 1（V41 request versionContext・V40保存�
 共有capacity consumer／codec／復元基盤の移行とproduction inventoryのread／parse lifecycle修正まで同時に行わない。取得済みprofileはこれらを別途限定する根拠として保存し、今回のconsumer修正だけで既存5秒timeoutが解消すると断定しない。全否定・完全diagnostic・独立したlossless復元・同値HP-copy拒否を維持し、call間cacheやrestore後の遅延snapshotで証拠を縮小しない。
 
 この限定成果をunit52製品完了と呼ばない。README必須qualityは免除せず、具体的な原因解消なしに反復しない。対象外gateが未解消なら依存する最終closureを止め、限定成果・未達gate・次の操作を既存Task／evidenceへ保存してlocal checkpointとする。全必須gateと最終照合が成立した場合だけ製品完了commitへ進む。60分checkpoint／90分停止、保持6ファイルと無関係差分の保全、pushなしは継続する。
+
+
+### unit52 consumer責務整理checkpoint（製品未完了、2026-09-27）
+
+利用者が現コードからの計画を確認し、既存unit52 consumerの責務整理・検証・対象限定local checkpointを承認した。canonical期待identity／index／値契約、元ownerのlive参照、呼出し内のimmutable typed実値proof、typed検査結果と完全保存diagnosticを分離した。sourceSelf formatterと隠れたWeakMap authorityへの依存、文字列pathによるreason推測を外し、未照合identityも完全値として取得する。semantic viewを作ってから呼出し内で値を共有し、serialized interningと元HP leaf参照を区別する。元HP意味論・算術・writer／reader／NP経路、capture2ファイル、suite登録は変更していない。
+
+責務境界の反例としてrestore後の値不変性・gate間非共有・異なるsemantic view・受理済み値のlossless保存復元、live selectionのidentity／index／canonicalのin-place変更、published宣言の元operation変更を追加した。境界判定は検査済みcanonicalを使い、返す宣言もlive参照から切り離す。元55 testsのsource prefixはbyte／SHA一致のまま、最終局所58 testsとcontrol audit7 tests、source lint／format／root typecheckが成功した。局所manifestは`.test-results/2026-09-27T09-48-53-345Z-21-872531/manifest.json`、controlは`.test-results/2026-09-27T09-51-28-245Z-74-37bc70/manifest.json`。139 receipt照合error0、既存1,270否定identity・全代表境界・published6宣言／12selected／changed0を維持し、protected units[0]〜[51]は不変である。独立したdisk復元比較とassertion前保存を維持し、re-encode一致を復元証明にしていない。設計判断・最終source／artifact identity・検証の正本はevidence `boundedUnits[52].consumerResponsibilityConvergence`。
+
+今回の成果は製品完了を意味しないsource込みのlocal checkpointであり、commit identityはGit履歴で解決する。既存5秒timeoutの原因帰属はunverifiedのまま、共有capacity／global codec・復元基盤／production read・parse lifecycleは変更せず、qualityを再試行していない。README必須quality、最終統合counter／digest／全receipt照合、unit52製品完了は未達。次は既存gate障害の修正範囲・比較条件・最小command・停止境界を別途限定し、具体的な原因解消後に最終closureへ進む。Step0／1／3、完了済み[46]〜[51]を再開せず、新familyを開始しない。60／90分境界を維持し、TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。

@@ -42,6 +42,8 @@ export interface PreparationHpAction {
     modifiers: readonly HpModifierInstance[];
     receipts: HpState['receipts'];
   }[];
+  /** Selected recipient writes stay separate from the sourceSelf evidence contract. */
+  selectedAllyMaximumFixedWrites?: NonNullable<PreparationHpAction['modifierWrites']>;
   /** Kept separate from maximumFixed writes to preserve existing diagnostic scopes. */
   receiveWrites?: NonNullable<PreparationHpAction['modifierWrites']>;
   receiveConsumptions?: {
@@ -68,6 +70,41 @@ export interface PreparationHpAction {
   attempted?: PreNoblePhantasmState;
   returned?: PreNoblePhantasmState;
 }
+/** Observe only original applied writes; all HP semantics remain with executeHpOperation. */
+export function captureSelectedAllyMaximumFixedWrite(
+  action: PreparationHpAction,
+  source: SourceEffect,
+  operation: SourceEffect['effect']['execution'][number],
+  operationIndex: number,
+  before: HpState,
+  after: HpState,
+  valueSetIndex: number,
+): void {
+  if (
+    source.origin !== 'attacker' ||
+    operation.kind !== 'hpModifier' ||
+    operation.action !== 'maximumFixed' ||
+    operation.lifetime !== 'active' ||
+    operation.route.target !== 'partyMember' ||
+    operation.selection !== 'selectedAlly' ||
+    operation.bounds.minimum !== null ||
+    operation.bounds.maximum !== null ||
+    (operation.useCondition !== undefined && operation.useCondition.kind !== 'always')
+  )
+    return;
+  (action.selectedAllyMaximumFixedWrites ??= []).push({
+    source,
+    operationIndex,
+    operation,
+    valueSetIndex,
+    valueIndex: source.valueIndex,
+    before,
+    after,
+    modifiers: (after.modifiers ?? []).slice(before.modifiers?.length ?? 0),
+    receipts: after.receipts.slice(before.receipts.length),
+  });
+}
+
 const scopes = new WeakMap<PreparationExecutionContext, PreparationHpAction[]>();
 const transitions = new WeakMap<PreparationTransitionResult, readonly PreparationHpAction[]>();
 export function beginPreparationHpCapture(context: PreparationExecutionContext) {

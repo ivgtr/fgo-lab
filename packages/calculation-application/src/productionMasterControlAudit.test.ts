@@ -1,3 +1,13 @@
+import {
+  selectedAllyMaximumFixedMaySelect,
+  selectedAllyMaximumFixedSelection,
+  selectedAllyMaximumFixedProgram,
+  selectedAllyMaximumFixedSource,
+  auditPublishedSelectedAllyMaximumFixed,
+  type SelectedAllyMaximumFixedSelection,
+  type SelectedAllyMaximumFixedProgram,
+  type SelectedAllyMaximumFixedSource,
+} from './productionHpSelectedAllyMaximumFixedPreparationAudit';
 import { createHash } from 'node:crypto';
 import {
   receiveCanonical,
@@ -212,6 +222,16 @@ const hpRequests: {
 const hpAttemptSelections: HpPreparationSelection[] = [];
 const hpAttemptPrograms: HpPreparationAttemptProgram[] = [];
 const hpAttemptObservations: HpPreparationAttemptSource[] = [];
+// Scope-complete canonical request ledger, recorded before evaluation/success filtering.
+const selectedAllyCanonicalRequests: ReturnType<typeof prepareCalculationScenarioWithPolicy>[] = [];
+const selectedAllyRequests: {
+  versions: VersionContext;
+  prepared: ReturnType<typeof prepareCalculationScenarioWithPolicy>;
+  calculation: ReturnType<typeof evaluatePreparedCalculationScenario>;
+}[] = [];
+const selectedAllySelections: SelectedAllyMaximumFixedSelection[] = [];
+const selectedAllyPrograms: SelectedAllyMaximumFixedProgram[] = [];
+const selectedAllyObservations: SelectedAllyMaximumFixedSource[] = [];
 const maximumFixedRequests: {
   prepared: ReturnType<typeof prepareCalculationScenarioWithPolicy>;
   calculation: ReturnType<typeof evaluatePreparedCalculationScenario>;
@@ -255,7 +275,11 @@ function evaluateWithOrderedOperationEvents(
     preparation,
     true,
   );
+  // Retain the declaration superset before evaluation; canonical choice resolution belongs to the gate.
+  const maySelectAlly = selectedAllyMaximumFixedMaySelect(master, scenario);
+  if (maySelectAlly) selectedAllyCanonicalRequests.push(prepared);
   const evaluated = evaluatePreparedCalculationScenario(prepared, versions);
+  if (maySelectAlly) selectedAllyRequests.push({ prepared, calculation: evaluated, versions });
   // Request population is collected before any executable/native/activation filter.
   if (receiveCanonical(prepared)) {
     receiveRequests.push({ prepared, calculation: evaluated });
@@ -596,6 +620,11 @@ describe('production master inventory ratchet', () => {
       receivePrograms.length = 0;
       receiveAttemptPrograms.length = 0;
       receiveObservations.length = 0;
+      selectedAllyCanonicalRequests.length = 0;
+      selectedAllyRequests.length = 0;
+      selectedAllySelections.length = 0;
+      selectedAllyPrograms.length = 0;
+      selectedAllyObservations.length = 0;
       maximumFixedRequests.length = 0;
       maximumFixedSelections.length = 0;
       maximumFixedPrograms.length = 0;
@@ -1814,6 +1843,65 @@ describe('production master inventory ratchet', () => {
           resolve(
             process.env['FGO_TEST_ARTIFACT_DIR']!,
             'production-preparation-hp-maximum-fixed.json',
+          ),
+        ),
+      ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
+      expect(
+        isDeepStrictEqual(decodeProductionAuditDiagnostic(savedMaximumFixed), maximumFixedProof),
+      ).toBe(true);
+
+      expect(maximumFixedPopulationComplete).toBe(true);
+      expect(maximumFixedGate.status, JSON.stringify(maximumFixedGate.firstDifference)).toBe(
+        'passed',
+      );
+    },
+  );
+
+  it(
+    'connects original selectedAlly maximumFixed controls through the shared consumer with complete diagnostics',
+    {
+      timeout: 60_000,
+      ...productionAuditTestOptions(['production-preparation-hp-selected-ally-maximum-fixed.json']),
+    },
+    async ({ task }) => {
+      // Reuse the original selected controls, owner captures and one parsed master; never reexecute.
+      const master = await loadProductionMaster();
+      // Fix expectations from original controls; the gate captures immutable actual proofs in this call.
+      // The canonical ledger and immutable prepared/evaluated owners were retained before filtering.
+      for (const request of selectedAllyRequests) {
+        const selection = selectedAllyMaximumFixedSelection(
+          request.prepared,
+          request.calculation,
+          selectedAllySelections.length,
+        );
+        if (!selection) continue; // Canonical choice selected no writer; never an execution-success filter.
+        const direct = evaluatePreparedCalculationResult(request.prepared, request.versions);
+        selectedAllySelections.push(selection);
+        selectedAllyPrograms.push(selectedAllyMaximumFixedProgram(selection, direct));
+        selectedAllyObservations.push(selectedAllyMaximumFixedSource(selection, direct));
+      }
+      const maximumFixedGate = auditPublishedSelectedAllyMaximumFixed(
+        master,
+        selectedAllyRequests,
+        selectedAllySelections,
+        selectedAllyPrograms,
+        selectedAllyObservations,
+        selectedAllyCanonicalRequests,
+      );
+      const maximumFixedProof = {
+        originalControlPopulation: { expected: true, actual: maximumFixedPopulationComplete },
+        gate: maximumFixedGate,
+      };
+      await writeProductionAuditArtifact(
+        task.meta,
+        'production-preparation-hp-selected-ally-maximum-fixed.json',
+        encodeProductionAuditDiagnostic(maximumFixedProof),
+      );
+      const savedMaximumFixed = decodeProductionAuditArtifact(
+        await readFile(
+          resolve(
+            process.env['FGO_TEST_ARTIFACT_DIR']!,
+            'production-preparation-hp-selected-ally-maximum-fixed.json',
           ),
         ),
       ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
