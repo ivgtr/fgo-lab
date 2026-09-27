@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.107"
+document_version: "1.7.108"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3848,3 +3848,13 @@ TSK-08 checklist／Done gate／Contract closure matrixと入力lifecycle `closur
 units[0]〜[51]とunit52全既存field／checkpointは開始HEADとdecoded完全一致で保全した。既存58／12／65・proof5／182・control7、give changed9／boundary8／negative45、関連391／audit77、disk370／declared350は元責務の成立証拠であり今回12／6へ加算しない。旧全240＝235成功5失敗は履歴のまま。shared1／1／1と6673／4194／2596／1489、matrix／eligibility digestも元責務で保持する。
 
 次の限定操作候補は、`consumerMapping`のtransfer2宣言／12 selected参照について、元HP snapshot・入力・donor／gain receipt境界と既存証拠を読取照合し、共有監査接続が必要かを決める計画である。transfer実装や新semanticsの指示ではなく、別familyを連鎖開始していない。60分checkpoint／90分atomic終了、affinity0-7／production50%=4workers／unit4workers／audit1workerと既存timeout／thresholdを保持する。対象限定local commit、pushなし。文書検証・最終差分確認結果は同checkpointへ追記する。
+
+### Step再照合とtransfer証拠接続の1セッション準備（2026-09-28）
+
+整理のbaselineは`51aad93b7212c1697738d43f9f4614bfa89d1117`、開始時HEAD／index／tracked／untrackedはclean。Step 0／1／3成立、Step 2未完了、TSK-08 in_progress、TSK-09.1／09 blockedを維持する。完了済みunits[0]〜[51]を再開しない。HP coverage checkpointのsource3／input1／artifact3のbytes／SHAはすべて一致した。今回の先行調査はコード・文書・JSON・既存artifact読込とchecksum照合のみで、source test／producer／audit／quality／live計測／製品編集は行っていない。
+
+次sessionの実装指示正本は`handoffPreparation.nextSession.hpTransferEvidenceReconciliationSession`。transfer2宣言／12明示selected参照について、元owner・native preparation・donor／gain receipt・既存consumer／proofの対応を計画し、必要なら同じcoverage責務の接続を行う。実装追加の決め打ちではない。12既存actionはHP before／afterとattacker／donor receiptを保存するが、donorはすべて0、native transitionはnull。非empty donor・clamp・先行writer後のsnapshot・連続状態は既存hpExecution fixtureの別証拠である。selectedや数値一致からnative outcome／実read／NP／recoveryを導出しない。元transferはreceive／give倍率observerを通らないため、give監査の機械的転用を避け、借用参照・lifetime・直接生成／利用経路から設計する。詳細なidentity、候補source、既存artifact、判断を左右する未照合事項は同sessionのpreparationReportへ集約した。
+
+最初の成果物は現コードに基づく実装・検証・TSK-08 closure可否の計画で、編集・source実行前に提示して利用者確認を待つ。確認後は同じ範囲で必要な実装・検証・既存正本更新・対象限定local commitまで進め、pushしない。別family forward／native noncommit／成功recoveryを連鎖開始しない。全体のratchet／typed diagnostic／artifact到達／legacy照合／正式性能／最終quality／統合counter・digest・全receiptは未達または未照合であり、今回準備だけでTSK-08 closureを見込む根拠はない。初期計画からchecklist／Done gate／Contract closure matrixと入力lifecycle closureReconciliationを照合し、全義務が同責務内で成立しBlocking0かつ時間余裕があれば完了を目指す。未達が残れば依存するquality／製品closureを開始せずcheckpointで終了する。60分で記録、90分でatomic actionを終えて引き継ぐ。
+
+整理更新の文書gateは変更4文書のPrettier、docs 6／6・integrity、参照／registry version、git diff checkが成功。全boundedUnits（最新HP checkpointを含む0〜52）とunresolvedのdecoded値をbaselineと完全比較して保持を確認した。runner shimの内容・730bytes・SHAを照合し既存generic runnerで文書gateだけを実行した。local整理commitはGit履歴から解決し、引継ぎpromptに実SHAを記す。
