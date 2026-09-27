@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.116"
+document_version: "1.4.117"
 status: "Active"
 updated_at: "2026-09-28"
 ---
@@ -83,3 +83,5 @@ TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ig
 TSK-08の限定committed fixed HP forwardは元保持HP→実条件read／continuous hpRatioLow NP／resultの共有consumer・gateまで完了。6 changed代表／7境界／1606否定／104完全診断、quality1295／155／29（retry0）、audit3、warning／console0。製品commit `6d571bdd9a43e34566e23fcde35aa5fbd386faca` と詳細・receiptは[既存parity evidence](tsk-08-parity-ratchet.json)の先行boundedUnits[46]を参照。TSK-08はin_progress、09.1／09はblocked、HP recovery／全体closureは対象外。
 
 固定HP changed attempt→元native非commit→action-start HP／先行committed prefix保持→元reducer／同selected scenario実prepared・application typed拒否と後段不生成の限定unitは完了。製品 `e95c971a39e05ef7f7bbcbb8871b9296c80ceeed`。7 changed・7境界／891否定／64完全diagnostic、quality1359／155／29 retry0、audit3、warning／console0。全宣言receiptと保護397件の差分責務・counter／digestを照合しerror0。詳細は[既存parity evidence](tsk-08-parity-ratchet.json)最新bounded unit。TSK-08 in_progress、09.1／09 blockedを維持し、HP recovery／stale-mutation全体／TSK-08全体のclosureではない。
+
+次の1セッションは残存HPのowner-to-consumer coverage照合と必要なinventory接続だけに限定する。実装指示の正本はparity evidence `handoffPreparation.nextSession.hpCoverageReconciliationSession`。give native結果commitは`0e8ada48`。計画提示・利用者確認前はsource実行／編集を行わず、未達familyを連鎖実装しない。
