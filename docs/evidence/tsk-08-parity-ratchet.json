@@ -18420,9 +18420,10 @@
         },
         {
           "stage": 2,
-          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
-          "nextBoundedScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
-          "nextScopeQualification": "Next one session: committedCapacityMaterializationSession, committed consumer/63-task fixture only. First source-based implementation/measurement/verification plan and confirmation, then same bounded proof materialization work if justified. Attempt177/global codec/shared scalar/production lifecycle deferred; reuse c387c9f with failed gates preserved."
+          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Attempt177 remains174/177 and remaining raw/HP/full quality gates are unresolved.",
+          "nextBoundedScope": "Existing outer capacity attempt full-value proof acquisition/canonical duplication and original177 fixture,published control path;not a new product semantic unit.",
+          "nextScopeQualification": "Next one session: capacityAttemptMaterializationSession;current-source plan and confirmation first,then bounded outer attempt work. Preserve a842b91/05d16fa/c387c9f;common gate/scalar/codec/runtime/raw/HP outside scope.",
+          "activeUnit52ScopeReference": "boundedUnits[52]"
         },
         {
           "stage": 3,
@@ -18430,13 +18431,14 @@
         }
       ],
       "latestBoundedUnit": 51,
-      "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary.",
-      "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
+      "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary. See boundedUnits[52].consumerResponsibilityConvergence/capacityRestorationComparisonCheckpoint/committedCapacityMaterializationCheckpoint for retained scoped checkpoints,not product closure.",
+      "nextBoundedUnit": "Existing unit52 gate slice only;no new semantic bounded unit selected.",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "Next one session: committedCapacityMaterializationSession, committed consumer/63-task fixture only. First source-based implementation/measurement/verification plan and confirmation, then same bounded proof materialization work if justified. Attempt177/global codec/shared scalar/production lifecycle deferred; reuse c387c9f with failed gates preserved.",
+      "nextScopeQualification": "Next one session: capacityAttemptMaterializationSession;current-source plan and confirmation first,then bounded outer attempt work. Preserve a842b91/05d16fa/c387c9f;common gate/scalar/codec/runtime/raw/HP outside scope.",
       "latestCompletedBoundedUnit": 51,
-      "activeBoundedUnit": 52
+      "activeBoundedUnit": 52,
+      "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190"
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -18492,12 +18494,12 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "Existing unit52 consumer convergence verified/local58/control7; incomplete source checkpoint. Known mandatory gates and final counter/digest/product closure remain pending.",
-      "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
+      "status": "Existing unit52 scoped checkpoints committed;active next session is capacityAttemptMaterializationSession. Mandatory whole quality/final counters/digests/product closure remain pending.",
+      "name": "Existing outer capacity attempt full-value proof and bounded gate slice",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
-      "priorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
-      "scope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
-      "selectionEvidence": {
+      "historicalPriorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
+      "historicalScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
+      "historicalSelectionEvidence": {
         "version": "20260920.3",
         "master": {
           "path": "apps/web/public/master/master.json",
@@ -18922,7 +18924,7 @@
         ],
         "unit51SourceIdentityMatch": true
       },
-      "planMustDecide": [
+      "historicalPlanMustDecide": [
         "Choose responsibilities/files and existing maximumFixed consumer extension versus focused selectedAlly consumer from current definitions/references; preserve units48-51 identity/diagnostic contracts.",
         "Show ordinary/capture canonical -> command/action/source/effect occurrence/operation -> selected recipient -> original resolved cell/value/modifier instance/full HP/receipt -> native committed state/reducer retention -> same selected preparation/application/direct results.",
         "Expected population is canonical before activation/receipt/executable/native-success filters. Include excluded/notApplied/unreached/dead/actual0/no-reader/no-hpRatioLow/native-noncommit boundary observations, not changed forward success.",
@@ -18932,7 +18934,7 @@
         "Declare/save complete diagnostics before assertions; verify canonical identity/full expected-actual/typed reason/checkPath/firstDifference, path/bytes/SHA256, strict lossless restoration; only necessary original-owner references, not whole execution-state DAG scans.",
         "Close local Blocking and diff review before final affected audits and README quality. Compare relevant hot-path/counters/digests according to actual source changes; reuse valid prior evidence without unconditional8-shard regeneration. Update existing Task/evidence and scoped local commits, no push."
       ],
-      "reuse": {
+      "historicalReuse": {
         "units": [
           46,
           47,
@@ -18943,9 +18945,9 @@
         ],
         "qualification": "Each remains its own proof contract. Unit48 sourceSelf committed and49 sourceSelf noncommit are references, not selectedAlly success. Unit50 published controls actual0 versus lowHP committed actual1677 and unit51 schema-legal changed noncommit derivative are distinct. Protected revision matrix04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4/eligibility68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759 stay unchanged."
       },
-      "excluded": "Native-noncommit isolation implementation, recovery/resend/retry/UI, damage-loop rollback; support/mystic/passive/NP writers; partyMember direct/all-party/partyOther/enemy/sourceSelf new coverage; other HP actions/rate/base/give/receive/noHealing, removal/expiry/constant; actor/form/traits/eligibility transitions, other HP gain/loss writers, percent/transfer/value-expression, failure classification changes, legacy cleanup, whole TSK08 closure, TSK09.1/09.",
+      "historicalExcluded": "Native-noncommit isolation implementation, recovery/resend/retry/UI, damage-loop rollback; support/mystic/passive/NP writers; partyMember direct/all-party/partyOther/enemy/sourceSelf new coverage; other HP actions/rate/base/give/receive/noHealing, removal/expiry/constant; actor/form/traits/eligibility transitions, other HP gain/loss writers, percent/transfer/value-expression, failure classification changes, legacy cleanup, whole TSK08 closure, TSK09.1/09.",
       "preApprovalBoundary": "Read current code/artifacts/canonical JSON and verify checksums; no product/test/document edits, source test/producer/audit/quality, stage/commit until staged plan is confirmed. If a new execution diagnostic is indispensable, first propose minimal command, decision and stopping boundary; diagnostic approval alone does not authorize implementation.",
-      "verificationThisPreparation": "Git/index/tracked/untracked clean at95cbab5; code/JSON/form membership and master/principal artifact/source/runner checksum read only. No new source tests/producer/audit/quality. Direct compiled-module import failed on extensionless dependency; tsx binary unavailable; no strict parsed/canonical execution success claimed. Documentation checks only before scoped record commit.",
+      "historicalVerificationThisPreparation": "Git/index/tracked/untracked clean at95cbab5; code/JSON/form membership and master/principal artifact/source/runner checksum read only. No new source tests/producer/audit/quality. Direct compiled-module import failed on extensionless dependency; tsx binary unavailable; no strict parsed/canonical execution success claimed. Documentation checks only before scoped record commit.",
       "sessionBoundary": "8 CPU affinity0-7, production50%/4workers and existing timeout preserved; long commands per execution-efficiency requirements; checkpoint existing Task/evidence at60min, no new semantic family at90min.",
       "runnerFallback": {
         "condition": "pnpm external SQLite store fails before script starts",
@@ -18954,7 +18956,7 @@
         "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6",
         "operation": "Verify existence/content/bytes/SHA256, then same generic runner with existing node_modules; do not modify runner, thresholds or timeout."
       },
-      "documentationVerification": {
+      "historicalDocumentationVerification": {
         "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm test:docs",
         "passed": 6,
         "failed": 0,
@@ -18963,7 +18965,7 @@
         "formatPolicy": "Keep frontmatter/table structure; docs ignored by Prettier, no forced override",
         "scope": "Four existing documentation records only; units0..51 unchanged; no new semantic execution claim"
       },
-      "recordCommitPolicy": "Step reconciliation/handoff preparation is docs-only; resolve this preparation commit from Git history. Implementation source remains uncommitted until mandatory completion gates pass.",
+      "recordCommitPolicy": "This preparation is documentation-only;resolve its commit from Git history. Next confirmed implementation may create a scoped product-incomplete local checkpoint,without push or whole closure claim.",
       "resumeUnit52": {
         "checkpointRecordCommit": "72e16c48dd8875e01a485b8517b192ae0530445d",
         "worktreeDependency": "Six retained source files are included in this local checkpoint; resolve the commit from Git history. Final source identity is boundedUnits[52].consumerResponsibilityConvergence.finalSourceIdentity. Archived ignored artifacts still require their recorded local paths.",
@@ -19238,6 +19240,171 @@
         },
         "resultReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
         "nextOperationReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint.nextOperation"
+      },
+      "historicalRootQualification": "Historical-prefixed root fields retain the prior selectedAlly preparation context only. Active authority is capacityAttemptMaterializationSession;source/checkpoints are already committed. Historical worktree/quality/graph recommendations are not new instructions.",
+      "currentCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
+      "currentSessionReference": "handoffPreparation.nextSession.capacityAttemptMaterializationSession",
+      "capacityAttemptMaterializationSession": {
+        "status": "Read-only preparation complete; first deliverable is a current-source implementation/measurement/verification plan, then wait for user confirmation before source execution/edits.",
+        "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
+        "deliverable": "One session, existing outer capacity attempt consumer and177-task fixture: clarify complete observed value-proof ownership/lifetime and reduce demonstrated duplicate generation where justified. Validate final source and published control path; retain unresolved gates and create product-incomplete local checkpoint. Do not promise timeout/whole product closure.",
+        "primaryFiles": [
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.ts",
+            "bytes": 20267,
+            "sha256": "0acbe5e33ce2ecdc0b2419c629cd0d948116367f8e21ee39495bac66479a244d"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+            "bytes": 54153,
+            "sha256": "a0ec4dffaa4b1e0946f1b3201938d3efe5bd258923f919010c7488361d86749d"
+          }
+        ],
+        "readOnlyReferences": [
+          {
+            "path": "packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.ts",
+            "bytes": 35295,
+            "sha256": "378c8cd765d2522d34a1ce64b4d6a347801077c1b3591f985a1de7fa78537c5b"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityProof.ts",
+            "bytes": 6296,
+            "sha256": "cd280d760b24d69b76be4a9b3645105ee123668bf67dbd0116f9ed3029bcdaa3"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityProof.test.ts",
+            "bytes": 5144,
+            "sha256": "6f34af7be866bee1db47384d1653cc0d1262d49c80d9577dbf654702ef9404b3"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.ts",
+            "bytes": 43533,
+            "sha256": "cba20eee74e50a78617630c2744d928c860e79114f8ed633c0795a3c06981bce"
+          },
+          {
+            "path": "packages/calculation-application/src/productionAuditArtifacts.ts",
+            "bytes": 21235,
+            "sha256": "cb72825a6c52f962627f49ee88f793abc092f7e0e45e04b3e16f1e367a2378f6"
+          },
+          {
+            "path": "packages/calculation-application/src/productionAuditDiagnosticEquality.ts",
+            "bytes": 4630,
+            "sha256": "bd7c3c1183854796cd37fb7f42e76b69f3b097cdc3f8ccd988929865338977c1"
+          },
+          {
+            "path": "packages/calculation-application/src/productionScalarQuantityAudit.ts",
+            "bytes": 38593,
+            "sha256": "e52668bedae69e46ca58376324b86e56364a13322f8af8613941ddf8af9e854d"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 93254,
+            "sha256": "2575c3262c881ad5f1da59a5415b89853f633c1fee8f1a15533d90e71793e683"
+          }
+        ],
+        "allowedChangeBoundary": "Outer capacity attempt audit module and177-test fixture; focused helper/semantic fixture only if responsibility requires it. Existing committed proof/helper is a reference or an unchanged reusable implementation only after proving contract fit, not a mandatory design. Common attempt gate,shared scalar,global codec,committed consumer/control source,runtime/capture/runner/config are read-only. No implicit widening when their cost dominates.",
+        "sourceDesignReconciliation": {
+          "facts": [
+            "battlePointCapacityAttemptDiagnostic returns view references, not detached proof. view includes mutable program.selection and rejection.program.expected,complete capture/steps/calculation,and every prepared field except master. Preserve this existing master exclusion and forbidden extra prepared/observation fields.",
+            "Attempt add differs from committed inspect: cloneSource clones{capture,steps} together,result separately and resolved separately; it keeps original program anchors and attaches cloned capture to cloned prepared/calculation/result. mutate operates on that clone,which is retained without finally restore. Do not invent a pre-restore mechanism or delete/hoist clones/attach calls as an optimization.",
+            "Ordinary negative gate is evaluated before obtaining its raw diagnostic; publication happens later. Establish immutable values within that original observation invocation before caller changes or releases it,without writer replay or call cache. Newly captured proof must retain the exact denial values and original clone identity topology.",
+            "Population proof is{selections,expected:expected.map(p=>p.selection),observations:observations.map(diagnostic)}; unlike committed population it is not the full program envelope. Keep all three fields,unmatched/duplicate observations and order/cardinality. Do not expand into unrelated master/program graphs or reduce to matched observations.",
+            "Positive proof is freshly acquired at payload creation. Ranking currently publishes gate+result,without a separate diagnostic proof field. Published audit independently calls outer gate; missing-published-declaration negative stores the complete published result. Preserve these timing/field contracts rather than mechanically matching committed payload.",
+            "Outer authority has fixed selection/owner snapshots and original rejection/timeline references. Outer check independently scalar-projects expected/actual,then calls auditBattlePointPreparationAttemptObservations and copies every common failure with the existing identity mapping. Outer capacity.owner and timeline/writer checks add further complete comparisons.",
+            "Common attempt factory/gate has its own WeakMap authority,contract/owner snapshots,live prepared/calculation/result anchors and capacity=true branches. It is shared with fixed-BP attempt paths and is a separate owner. Time the common call from the outer module; do not edit/replace it in this session.",
+            "A direct published consumer exists in productionMasterControlAudit.test.ts: constructs selected population/program/source and writes production-preparation-bp-capacity-attempt.json before asserting status. Outer published gate changes affect this evidence; old control7 alone is not final-source success for that responsibility."
+          ],
+          "candidateDecisions": "Rejudge immutable typed proof and canonical call-local identity sharing from current code/measurement. Preserve partial SourceProof,selection and observation semantic views,live anchors,and the master-excluded view. Existing committed capture/materialization/projection helper is usable unchanged only if these contracts fit; no mechanical common extraction/WeakMap replacement/shared graph default.",
+          "uncertainties": [
+            "No current original-live phase attribution for the three attempt failures. Whole-worker CPU profile and saved-interned replay do not locate current attempt cost.",
+            "Cost may primarily belong to cloneSource,common gate,outer projection,first canonical comparison,encode/serialization or restoration. New proof capture/materialization adds allocations. Outer repair may leave177 timeout gates unresolved.",
+            "No final-source published control7 run at a842b91 for changed committed/attempt capacity responsibilities; archived control7 remains valid only for unchanged responsibilities. Next affected control run can check both current capacity paths,without reopening HP consumer source."
+          ]
+        },
+        "existingEvidence": {
+          "committedCheckpoint": {
+            "commit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
+            "reference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
+            "finalSourceTests": "Original63+2 lifetime/population=65 passed; proof5 passed; original63 complete values/bytes/SHA identical,1491 negatives/5623 failure checks,75 receipts/error0. Lint/typecheck/default format/docs passed.",
+            "qualification": "Scoped checkpoint,not whole quality/Step2 closure. Reuse unchanged responsibilities; do not claim changed published control success from archived control7."
+          },
+          "latestAttempt": "Historical240 run: committed61/63,attempt174/177; committed subsequently65/65 at a842b91,attempt not rerun. Three prior-capacity-fixed-commit failures remain missing-write6166.129515ms,state-modifier-identity5043.941100ms,state-modifier-values7581.739417ms under5000ms.",
+          "manifest": {
+            "path": ".test-results/2026-09-27T10-22-02-217Z-2-0e4ea9/manifest.json",
+            "bytes": 63796,
+            "sha256": "86a9b434508cb10ac2e1459e4231997bb61278433f64e8d1238a9e0ce0964010"
+          },
+          "failedArtifacts": [
+            {
+              "path": ".test-results/2026-09-27T10-22-02-217Z-2-0e4ea9/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-missing-write.json",
+              "bytes": 1297397,
+              "sha256": "a1cfa88d41aa064aa42cb3bd601a896929ae3d86a1217638884149c7cd528fc8"
+            },
+            {
+              "path": ".test-results/2026-09-27T10-22-02-217Z-2-0e4ea9/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-modifier-identity.json",
+              "bytes": 1134497,
+              "sha256": "36a338a5fcaa86bade4e0288bf82f5788806aa6504a5a9e8114618a3c703a71c"
+            },
+            {
+              "path": ".test-results/2026-09-27T10-22-02-217Z-2-0e4ea9/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-modifier-values.json",
+              "bytes": 1129779,
+              "sha256": "4e922f128ebbe0c653b3edd9c6ea11feb4d5fc7285c9d6fb7dfa2e9275eca05c"
+            }
+          ],
+          "savedProofQualification": "Each failed-group artifact has28 negatives and true memory/serialized flags. Archived complete saved values/receipts match earlier profile. This does not prove all failed-task assertions ran; real disk comparison remains required."
+        },
+        "firstDeliverable": "Before source edits/execution,explain established contracts,actual ownership gap versus load hypotheses,fixed expectations/live references/full typed observed values/results/publication and lifetimes,all direct fixture/published-control paths,chosen design/candidate files/rejected alternatives,artifact compatibility,minimum diagnostic inputs/command/decision/stop condition,focused counterexamples,affected verification/reuse and60/90min limits. Wait for user confirmation,then proceed autonomously within that same scope through necessary measurement/implementation/verification/records/local commit.",
+        "minimumMeasurement": {
+          "command": "taskset -c 0-7 pnpm test:diagnostic -- --suite=unit packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts -t 'isolates capacity attempt prior-capacity-fixed-commit (missing-write|state-modifier-identity|state-modifier-values)$'",
+          "phases": "Original setup/execution/program construction; original cloneSource/mutation; outer snapshot and canonical comparison; complete common-gate call timed from outer caller; immutable acquisition/materialization; encode/serialize;decode/independent memory+serialized+disk comparison;write/read. Keep original allocations and setup budget. Record counters before first await to avoid contamination after timeout.",
+          "boundary": "After plan confirmation only,and only uncertainty that changes design. One comparable original-live baseline/candidate pair first; add runs only for a named unresolved decision. Filtered runner may report contract_failure for skipped tests even if selected assertions pass; never claim it as required suite success. Write spans include serialization/scheduling and may include next-task CPU after timeout; do not attribute them to pure disk cost. No saved-interned replay or3-run/whole240 performance claim."
+        },
+        "proofInvariants": [
+          "Complete values fixed inside their original gate/negative observation lifetime; no rereading live objects later,writer replay,cross-call cache or silent fallback.",
+          "Keep canonical selected populations,reached/changed/modifier-only/notApplicable/beforeAttempt/committed boundaries,all native outcomes(inputRequired/unsupported/invalid and retained prior commits),typed reasons/checkPaths/canonical first difference and full expected/actual.",
+          "Separate fixed canonical authority,mutable observed selection/canonical values,original live owner/leaf identity and raw typed versus canonical semantic views. Do not replace observed tampering with fixed expectation or compare proof tags canonically.",
+          "Sharing only by original object identity within one invocation and one semantic view; no content interning of distinct equal Set members/Map keys. Native Set/Map Object.freeze does not fix contents.",
+          "Preserve exact diagnostic envelope fields and master exclusion,all unknown/forbidden fields already observed,partial missing transport,unmatched/duplicate observations. Invalid values are rejected,not ignored/converted/supplemented.",
+          "Maintain complete declared artifact before assertions,independent memory/serialized/actual disk full-value restoration,bytes/SHA/receipts and denial identities. Re-encode agreement is not restoration;existing codec cardinality-loss counterexample remains rejected."
+        ],
+        "verification": "Necessary focused mutation/lifetime/partial-transport/population/semantic-view/live-copy/cardinality fixtures and scoped Blocking review first. If outer attempt code changes,run original177 all plus added semantic tests on final uninstrumented source,unchanged5000ms/affinity0-7/unit4workers,with full artifacts/receipts/negative identities/boundaries compared to historical177. Run affected productionMasterControlAudit.test.ts full7 at unchanged audit conditions for current published capacity paths after local source stabilizes; no source edits or narrowed published population. Reuse committed65/proof5,comparison contracts12,HP consumer58 and other established evidence only where source/input/responsibility unchanged. Do not reuse old control7 as new outer-gate success.",
+        "qualityBoundary": "If attempt/common/raw/HP known gates remain unmet,record failures/qualification and stop dependent whole240/README quality/final counters/digests/product closure. No same-condition whole quality retry. This session cannot fix common gate/global codec/production lifecycle/runtime outside boundary.",
+        "finish": "Update existing Task/evidence with decisions,final source/artifact identity,valid and failed checks,protected units0..51 and unit52 consumer/restoration/committed checkpoints,remaining gates and next bounded action. Review/stage only scoped diff;product-incomplete local checkpoint commit,no push. If177/control gate remains failing,call work incomplete and preserve exact evidence.",
+        "deferred": [
+          "Common preparation attempt owner/fixed BP consumer/shared scalar/global codec changes",
+          "Committed consumer/proof helper or selectedAlly consumer redesign",
+          "Raw aggregation/HP inventory production read-parse lifecycle",
+          "Runtime HP/BP arithmetic/writers/actions/routes/recovery/native failure semantics",
+          "GC/runner/scheduling/timeout/threshold changes,test exclusion/negative deletion/legacy cleanup/newfamily/wholeTSK08/TSK09.1/09"
+        ],
+        "timeBoundary": "At60min checkpoint existing Task/evidence;at90min finish current atomic action and hand off. No additional quality retry/independent investigation/new family. Ordinary judgment inside confirmed scope needs no renewed approval.",
+        "preparationVerification": {
+          "execution": "Read-only source/JSON/hash investigation and documentation checks only; no source test/producer/audit/quality/live measurements or implementation.",
+          "startState": "HEAD a842b91,index/tracked/untracked clean.",
+          "committedCheckpointIdentitiesChecked": 23,
+          "identityErrors": 0,
+          "protectedEvidence": "All boundedUnits0..52 unchanged;current stage/handoff metadata updated only.",
+          "docs": {
+            "tests": 6,
+            "failed": 0,
+            "integrity": "passed; final record-only update rechecked",
+            "log": {
+              "path": ".test-results/tsk-08-attempt-preparation-20260927/docs.log",
+              "bytes": 528,
+              "sha256": "c5691e9b3fe610fa4de467bf808b8df8a3bdef82cedaa789367d7a78ebab13e8"
+            }
+          },
+          "format": {
+            "status": "passed; default prettier --check .; docs exclusion retained,no forced override",
+            "log": {
+              "path": ".test-results/tsk-08-attempt-preparation-20260927/format.log",
+              "bytes": 66,
+              "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+            }
+          },
+          "diffWhitespace": "git diff --check passed",
+          "sourceProtection": "Primary/reference hashes match; all boundedUnits0..52 and resume/consumer/restoration/committed checkpoint/session records equal to a842b91. Only registry/Task/evidence metadata changed."
+        }
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -20209,7 +20376,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Committed proof responsibility checkpoint verified (original63 plus2 semantic fixtures and5 proof contracts); reuse it. Separately scope remaining attempt/raw/HP known gates before further diagnosis or implementation. Whole240/README quality/final counters/digests/product closure remain unmet.",
+    "nextSession": "Next one session: capacityAttemptMaterializationSession;current-source plan and confirmation first,then bounded outer attempt work. Preserve a842b91/05d16fa/c387c9f;common gate/scalar/codec/runtime/raw/HP outside scope.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -20246,12 +20413,14 @@
     "asOfProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
     "asOfPreparationBaseline": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "unit52DeferredGates": [
-      "Migration/redesign of older maximumFixed capacity consumers and global diagnostic codec/restoration infrastructure; recorded profiles justify separate scoped work, not implicit changes here.",
+      "Existing outer capacity attempt consumer is next bounded scope;common attempt owner,shared scalar/global codec,production lifecycle and remaining consumers are deferred. See capacityAttemptMaterializationSession;no automatic migration or whole timeout claim.",
       "Production execution-semantics/HP inventory read-parse lifecycle repair or broad performance/GC/runner investigation."
     ],
     "consumerCheckpointReference": "boundedUnits[52].consumerResponsibilityConvergence",
     "consumerCheckpointCommit": "05d16fa33487de73137298b59621b6f4d64df424",
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
-    "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint"
+    "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
+    "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
+    "nextSessionReference": "handoffPreparation.nextSession.capacityAttemptMaterializationSession"
   }
 }

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.97"
+document_version: "1.7.98"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3640,3 +3640,24 @@ canonical projectionはtyped保存と分け、authority生成時／各gate呼出
 計測を外した最終sourceで元committed63＋追加lifetime／population2の全65 testsが成功し、proof契約5も成功した。旧失敗2taskは約1482／1515ms。元63保存artifactは全てbytes／SHA・独立した完全decoded値が一致し、1,491否定／5,623失敗check・母集団・境界・メモリ／serialize後／実disk復元・assertion前保存を維持した。75 receipt照合error0、source lint／root typecheck成功。protected units[0]〜[51]、consumer `05d16fa`、復元比較 `c387c9f` の既存記録と対象外sourceは不変である。
 
 これは製品未完了の対象限定local checkpointであり、pushしない。Step0／1／3成立、Step2未完了、[46]〜[51]完了、TSK-08 `in_progress`／TSK-09.1・09 `blocked`を維持する。attempt174／177と歴史的全240の235成功5失敗はそのまま残す。raw集計／HP inventory、README quality、最終counter／digest／全receipt統合、unit52／製品closureは未達。次は残る既知gateについて責務・比較入力・最小command・停止境界を別に限定し、今回のproofや既存checkpointを再開しない。60分checkpoint／90分停止を維持し、具体的原因解消なしに全240／qualityを反復しない。
+
+### Step再照合とcapacity attempt保存責務の1セッション引継ぎ（2026-09-27）
+
+開始HEAD `a842b918b2f2c62035f5b4c3af21941e59ed7190`、index／tracked／untrackedはclean。committed checkpointの記録済みsource／artifact等23件のbytes／SHAを照合し不一致0。今回の作業は読み取り調査と既存正本の整理更新だけであり、source編集・test／producer／audit／quality・live計測は行っていない。既存unit52各checkpointとboundedUnits[0]〜[52]は不変である。
+
+| Step | 現在の成立範囲 | 次の扱い |
+| --- | --- | --- |
+| 0 | baseline／契約成立済み | 再開しない |
+| 1 | V41 request versionContext、V40保存・明示V41再計算成立済み | 現定義を照合、有効証拠を再利用 |
+| 2 | 未完了。[46]〜[51]完了、unit52 consumer58／control7・復元比較・committed65／proof5は限定checkpoint | 次の1sessionは既存outer capacity attempt consumerと177件fixtureの証拠取得責務。共通gate／raw／HPは同時修正しない |
+| 3 | 改訂matrix／eligibility digest成立済み | 正本digestを維持 |
+
+次の正本はevidence `handoffPreparation.nextSession.capacityAttemptMaterializationSession`。現コードの読取結果、主対象／read-only参照source identity、旧失敗3groupのartifact identity、計画・計測・検証・停止境界を集約した。nextSessionの古いselectedAlly root計画は`historical`接頭辞の項目へ整理し、現在の実装指示との混同を除いた。
+
+attempt否定はcommittedのin-place mutation／finally restoreとは異なり、`cloneSource`したcapture／steps・result・resolvedを変更して保持する。cloneとWeakMap capture attachの元identity構造・予算内位置を維持する。population proofも完全programではなく `{selections, expected: selection[], observations: diagnostic[]}`。preparedのmaster除外とそれ以外の完全／禁止extra fieldを保持し、positiveのpayload時取得、rankingの既存gate＋result、published内部gateとmissing declaration完全結果を扱う。committed実装を機械的に移植しない。
+
+outer gateは共通 `auditBattlePointPreparationAttemptObservations` を呼び、その全failureを既存identity対応で保持する。共通ownerには別authority／seal／live参照があり固定BP attemptと共有するため、今回の変更対象にはしない。承認後の元live計測はprior-capacity-fixed-commitのmissing-write／state-modifier-identity／state-modifier-valuesだけとし、clone・outer snapshot／比較・共通gate呼出し全体・proof・transport／復元を分ける。主要費用が共通owner等なら暗黙に拡張せず、未達条件と次の限定操作を残す。
+
+現committedは元63＋追加2／proof5成功、元63 artifact完全値・bytes／SHA一致を保全する。attemptの最新証拠は174／177、旧失敗3groupは約6166／5044／7582ms。保存artifactが完全でも全assertion到達とはしない。直接published consumerの`productionMasterControlAudit.test.ts`も確認したため、outer attempt変更後は原177全件と必要な小型反証の後、現capacity公開経路の影響検証としてcontrol全7を既存条件で行う。旧control7だけを新しいcapacity sourceの成功へ転用しない。control source・committed sourceの移行は含めない。
+
+作業者は編集・source実行前に現定義から実装・限定計測・検証計画を提示し、利用者確認後に同じ範囲の必要な修正・検証・記録・製品未完了local checkpoint commitまで進める。要件は確定済みとして、解法・helper利用は現コードと根拠で再判断する。full177／control gateが残れば未完了を正確に記録し、全240／quality／最終counter・digest・製品closureへ進まない。TSK-08 `in_progress`、09.1／09 `blocked`、60分checkpoint／90分停止、8 CPU affinity・既存worker／timeout／threshold、pushなしを維持する。
