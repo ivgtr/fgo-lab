@@ -871,6 +871,20 @@ export function executePreparationOc(args: {
                   valueIndex: source.valueIndex,
                   consumption,
                 });
+              else if (
+                hpBefore.modifiers?.some(
+                  (instance) =>
+                    instance.actor === consumption.give.actor &&
+                    instance.operation.action === 'give',
+                )
+              )
+                (hpAction.giveExcludedConsumptions ??= []).push({
+                  source,
+                  operationIndex,
+                  valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+                  valueIndex: source.valueIndex,
+                  consumption,
+                });
             };
           const result = executeHpOperation(hpArguments);
           if (result.status !== 'applied') {

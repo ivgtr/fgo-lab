@@ -228,7 +228,7 @@
     "a new producer, generator, compatibility path, or semantic owner is required"
   ],
   "unresolved": [
-    "e081002 final-source production33/155 including occurrence14/HP5 and input contract8 remain retained scoped evidence,not current whole-source acceptance. Current give checkpoint retains existing388 from related391 run,affectedAudit77,final give3/HP6,static checks and complete artifact/receipt comparisons. Whole coverage/ratchet/legacy/formal performance/README quality/final integrated counters/digests/all receipts remain pending.",
+    "Give native noncommit checkpoint has9 changed/8 boundary/45 negative representatives,final give3/HP6,retained related391 tests andaffectedAudit77;full protected artifact comparisons and370 independent disk/350 test-owned receipt checks error0. Docs6/integrity,format,typecheck,lint passed;target-only checkpoint commit resolves from Git history,no push. Whole other-family coverage/ratchet/legacy/formal performance/README quality/final integrated counters,digests/all receipts remain pending;see boundedUnits[52].giveNativeNoncommitCheckpoint. Preserve all prior successes/failures with original identities/responsibilities.",
     "Other HP modifier/lifecycle/percent/transfer/recipient/actor/expression and domain recovery or other mutation paths require current canonical inventory and owner-to-consumer coverage reconciliation, then separately bounded units for actual gaps. Excluded paths are not automatically missing product semantics; distinguish already-implemented owner behavior, missing audit connection, declared boundary, and out-of-product scope.",
     "Whole TSK-08 parity/unsupported/invalid/partial-commit/inert-control/stale-mutation and typed diagnostic/artifact closure remains unclaimed; reuse completed units and matrix evidence where identities/governing semantics remain valid. Legacy aggregate auditor/old loader/scan/candidate-list/duplicate fixture cleanup must be reconciled with current actual symbols before removal.",
     "TSK-08 in_progress;TSK-09.1/09 blocked. Step0/1/3 established; Step2 completed units through[51] retained. Unit52 consumer checkpoint is not unit52 product completion or whole closure."
@@ -19553,6 +19553,1367 @@
           }
         ],
         "remainingLocalCheckpointWork": "対象差分のstage／local commitのみ。commit identityはこのcheckpointを含むGit履歴から解決し、製品未完了statusを保持する。"
+      },
+      "giveNativeNoncommitCheckpoint": {
+        "status": "scoped give native noncommit shared audit implemented/verified;product incomplete local checkpoint",
+        "baselineHead": "e010e18733d2bdf5e71f71ad231300fda592e88f",
+        "startedAt": "2026-09-27T14:44:15Z",
+        "authorization": "Current-code plan presented before edits/source execution;user replied OK;authorized same-session scoped implementation/verification/records/local commit;no push.",
+        "authority": "handoffPreparation.nextSession.giveNativeNoncommitSession",
+        "changedFiles": [
+          "packages/battle-execution/src/hpExecutionObservation.ts",
+          "packages/battle-execution/src/preparationOc.ts",
+          "packages/calculation-application/src/productionHpGivePreparationAttemptAudit.ts",
+          "packages/calculation-application/src/productionHpGivePreparationAttemptAudit.test.ts",
+          "packages/calculation-application/src/productionHpPaths.test.ts"
+        ],
+        "finalSourceIdentities": [
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 10869,
+            "sha256": "94d04b0adf09e5b571d8ee0c39ffd4b56fef46d1c6e1983f27ac6aef398f7c0f"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 58824,
+            "sha256": "31053213a6abfd996ec323555c0a944907dceee528160c8d871e582f2667c938"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpGivePreparationAttemptAudit.ts",
+            "bytes": 32114,
+            "sha256": "29f1fad919eeb3ab5a32aa122fabc6789d40d7c1b252bd809171a1adc49620c5"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpGivePreparationAttemptAudit.test.ts",
+            "bytes": 23284,
+            "sha256": "a6f1d6aa2940d84b2d10efb6176472b9af99484237418a896f3a2091dc0a2f52"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPaths.test.ts",
+            "bytes": 28275,
+            "sha256": "5ee8b7dccdbe058599a219d65afe36b8ed78d7450cf1678cc1d586089f2887af"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "ownership": {
+          "semanticOwners": "HP arithmetic/condition resolution/append/gain remain preparationHp/hpResource;native transaction and returned resourceMutations remain preparationOc;reducer and scenario rejection transport unchanged.",
+          "capture": "Original PreparationHpAction giveWrites/giveGains/giveConsumptions/native/attempted/returned/sourceEnds plus original PreparationOcAttempt stepOrigins/reached. Only empty actual give reads with a prior source give instance get a separate giveExcludedConsumptions field;the positive consumption payload remains unchanged.",
+          "lifetime": "WeakMap context capture is attached to the original transition and scope removed on finish;attempt authority is WeakMap-keyed by one program per original execution. Proof is materialized once,borrowed references are compared separately. No owner replay,no proof decode in gate,no global codec/common attempt authority migration.",
+          "consumer": "productionHpGivePreparationAttemptAudit selects the rejected gain action and canonical earlier writers. Same-action append is tentative;different-action writer must be originally committed and retained. Actual owner-filtered instances are used,not inferred declared instances.",
+          "persistence": "Existing writeProductionAuditArtifact/encodeProductionAuditDiagnostic before assertions;test-owned receipt checked with actual disk restoration;runner descriptors and independent disk checks remain separate. Save/receipt failure remains failure.",
+          "observerAbsent": "No new allocation or branch outside the existing hpAction-enabled give callback;normal unobserved execution owners and arithmetic unchanged."
+        },
+        "decisions": [
+          "A rolls back the failed action give append and changed HP;B retains earlier committed give instance/prefix and rolls back only the later failed gain action.",
+          "An interrupted source may lack sourceEnd:attempted state is linked to the last original reached write/sourceEnd by native step order,not a fabricated source-end snapshot.",
+          "Party gain carries attacker and seeded support recipient in original receipt order. Sequential recipients read updated owner state;auxiliary HP is never counted as attacker NP consumption.",
+          "Multiple gain receipts stay distinct;earlier gains are not incorrectly required to equal the last gain actor state. Source/actor/action/operation/step/instance/receipt references and full population are checked.",
+          "A conditional give can be retained but absent from the actual owner read. Empty read is captured separately and classified giveReadExcluded,not missing,actual-zero,positive consumption or native unsupported.",
+          "No schema/parser/normalize/raw/master,HP formula/sign/bounds/truncation/clamp,writer commit/reducer/native classification,scenario/portable/ranking policy,shared scalar/global codec/common attempt authority/input lifecycle/runner/suite configuration changes."
+        ],
+        "population": {
+          "changed": [
+            {
+              "key": "A-self",
+              "status": "passed",
+              "selected": 1,
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 74,
+              "failures": 0
+            },
+            {
+              "key": "A-owner-filtered-instances",
+              "status": "passed",
+              "selected": 1,
+              "appended": 2,
+              "consumed": 1,
+              "changed": 1,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 84,
+              "failures": 0
+            },
+            {
+              "key": "A-interrupted-source",
+              "status": "passed",
+              "selected": 1,
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 74,
+              "failures": 0
+            },
+            {
+              "key": "B-two-gains",
+              "status": "passed",
+              "selected": 1,
+              "appended": 1,
+              "consumed": 2,
+              "changed": 2,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 94,
+              "failures": 0
+            },
+            {
+              "key": "A-party",
+              "status": "passed",
+              "selected": 1,
+              "appended": 1,
+              "consumed": 2,
+              "changed": 2,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 87,
+              "failures": 0
+            },
+            {
+              "key": "B-self",
+              "status": "passed",
+              "selected": 1,
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 78,
+              "failures": 0
+            },
+            {
+              "key": "B-party",
+              "status": "passed",
+              "selected": 1,
+              "appended": 1,
+              "consumed": 2,
+              "changed": 2,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 91,
+              "failures": 0
+            },
+            {
+              "key": "A-input",
+              "status": "passed",
+              "selected": 1,
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 74,
+              "failures": 0
+            },
+            {
+              "key": "B-input",
+              "status": "passed",
+              "selected": 1,
+              "appended": 1,
+              "consumed": 1,
+              "changed": 1,
+              "excludedReads": 0,
+              "isolated": 1,
+              "checks": 78,
+              "failures": 0
+            }
+          ],
+          "boundaries": [
+            {
+              "key": "before-writer",
+              "status": "passed",
+              "boundaries": [
+                {
+                  "identity": "hpGive:0:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:1:useSkillSlot\",\"give-attempt-skill-1\",\"give:0\",0]]",
+                  "reason": "writerUnreached"
+                }
+              ],
+              "consumed": 0,
+              "changed": 0,
+              "excludedReads": 0,
+              "isolated": 0,
+              "checks": 49,
+              "failures": 0
+            },
+            {
+              "key": "writer-disabled",
+              "status": "passed",
+              "boundaries": [
+                {
+                  "identity": "hpGive:1:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:1:useSkillSlot\",\"give-attempt-skill-1\",\"give:0\",0]]",
+                  "reason": "writerNotApplied"
+                }
+              ],
+              "consumed": 0,
+              "changed": 0,
+              "excludedReads": 0,
+              "isolated": 0,
+              "checks": 54,
+              "failures": 0
+            },
+            {
+              "key": "before-gain",
+              "status": "passed",
+              "boundaries": [
+                {
+                  "identity": "hpGive:2:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:1:useSkillSlot\",\"give-attempt-skill-1\",\"give:0\",0]]",
+                  "reason": "consumerUnreached"
+                }
+              ],
+              "consumed": 0,
+              "changed": 0,
+              "excludedReads": 0,
+              "isolated": 0,
+              "checks": 59,
+              "failures": 0
+            },
+            {
+              "key": "give-read-excluded",
+              "status": "passed",
+              "boundaries": [
+                {
+                  "identity": "hpGive:3:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:1:useSkillSlot\",\"give-attempt-skill-1\",\"give:0\",0]]",
+                  "reason": "giveReadExcluded"
+                }
+              ],
+              "consumed": 0,
+              "changed": 1,
+              "excludedReads": 1,
+              "isolated": 0,
+              "checks": 74,
+              "failures": 0
+            },
+            {
+              "key": "actual-zero",
+              "status": "passed",
+              "boundaries": [
+                {
+                  "identity": "hpGive:4:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:1:useSkillSlot\",\"give-attempt-skill-1\",\"give:0\",0]]",
+                  "reason": "consumerActualZero"
+                }
+              ],
+              "consumed": 1,
+              "changed": 0,
+              "excludedReads": 0,
+              "isolated": 0,
+              "checks": 74,
+              "failures": 0
+            },
+            {
+              "key": "full-hp",
+              "status": "passed",
+              "boundaries": [
+                {
+                  "identity": "hpGive:5:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:1:useSkillSlot\",\"give-attempt-skill-1\",\"give:0\",0]]",
+                  "reason": "consumerActualZero"
+                }
+              ],
+              "consumed": 1,
+              "changed": 0,
+              "excludedReads": 0,
+              "isolated": 0,
+              "checks": 74,
+              "failures": 0
+            },
+            {
+              "key": "committed",
+              "status": "passed",
+              "boundaries": [
+                {
+                  "identity": "hpGive:6:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:1:useSkillSlot\",\"give-attempt-skill-1\",\"give:0\",0]]",
+                  "reason": "nativeCommitted"
+                }
+              ],
+              "consumed": 1,
+              "changed": 1,
+              "excludedReads": 0,
+              "isolated": 0,
+              "checks": 56,
+              "failures": 0
+            },
+            {
+              "key": "capture-absent",
+              "status": "passed",
+              "boundaries": [
+                {
+                  "identity": "hpGive:7:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:1:useSkillSlot\",\"give-attempt-skill-1\",\"give:0\",0]]",
+                  "reason": "attemptBeforeNative"
+                }
+              ],
+              "consumed": 0,
+              "changed": 0,
+              "excludedReads": 0,
+              "isolated": 0,
+              "checks": 20,
+              "failures": 0
+            }
+          ],
+          "negative": {
+            "count": 45,
+            "failed": 45,
+            "failedChecks": 90,
+            "typedReasons": [
+              "giveAttemptProofMismatch",
+              "giveAttemptPopulationMismatch",
+              "giveAttemptMissing",
+              "giveAttemptIdentityMismatch",
+              "giveAttemptDownstreamGenerated",
+              "giveAttemptAppendMismatch",
+              "giveAttemptRetainedMismatch",
+              "giveAttemptConsumptionMismatch",
+              "giveAttemptBoundaryMismatch",
+              "giveAttemptNativeMismatch"
+            ],
+            "firstDifferences": 45,
+            "semanticCases": [
+              {
+                "key": "semantic:missing-append",
+                "reasons": [
+                  "giveAttemptAppendMismatch",
+                  "giveAttemptRetainedMismatch",
+                  "giveAttemptConsumptionMismatch",
+                  "giveAttemptBoundaryMismatch"
+                ]
+              },
+              {
+                "key": "semantic:duplicate-append",
+                "reasons": [
+                  "giveAttemptAppendMismatch",
+                  "giveAttemptRetainedMismatch"
+                ]
+              },
+              {
+                "key": "semantic:wrong-append-cell",
+                "reasons": [
+                  "giveAttemptAppendMismatch"
+                ]
+              },
+              {
+                "key": "semantic:source-recipient",
+                "reasons": [
+                  "giveAttemptConsumptionMismatch",
+                  "giveAttemptIdentityMismatch"
+                ]
+              },
+              {
+                "key": "semantic:equal-foreign-instance",
+                "reasons": [
+                  "giveAttemptIdentityMismatch",
+                  "giveAttemptConsumptionMismatch"
+                ]
+              },
+              {
+                "key": "semantic:wrong-order",
+                "reasons": [
+                  "giveAttemptConsumptionMismatch",
+                  "giveAttemptIdentityMismatch"
+                ]
+              },
+              {
+                "key": "semantic:failed-hp-leak",
+                "reasons": [
+                  "giveAttemptNativeMismatch",
+                  "giveAttemptRetainedMismatch"
+                ]
+              },
+              {
+                "key": "semantic:prefix-loss",
+                "reasons": [
+                  "giveAttemptNativeMismatch",
+                  "giveAttemptRetainedMismatch"
+                ]
+              },
+              {
+                "key": "semantic:missing-read",
+                "reasons": [
+                  "giveAttemptConsumptionMismatch",
+                  "giveAttemptBoundaryMismatch"
+                ]
+              },
+              {
+                "key": "semantic:duplicate-read",
+                "reasons": [
+                  "giveAttemptConsumptionMismatch",
+                  "giveAttemptIdentityMismatch"
+                ]
+              },
+              {
+                "key": "semantic:unmatched-read",
+                "reasons": [
+                  "giveAttemptConsumptionMismatch"
+                ]
+              },
+              {
+                "key": "semantic:unmatched-gain",
+                "reasons": [
+                  "giveAttemptRetainedMismatch",
+                  "giveAttemptConsumptionMismatch"
+                ]
+              },
+              {
+                "key": "semantic:missing-native",
+                "reasons": [
+                  "giveAttemptBoundaryMismatch"
+                ]
+              },
+              {
+                "key": "semantic:wrong-step",
+                "reasons": [
+                  "giveAttemptNativeMismatch"
+                ]
+              },
+              {
+                "key": "missing-excluded-read",
+                "reasons": [
+                  "giveAttemptConsumptionMismatch",
+                  "giveAttemptBoundaryMismatch"
+                ]
+              },
+              {
+                "key": "duplicate-excluded-read",
+                "reasons": [
+                  "giveAttemptConsumptionMismatch"
+                ]
+              }
+            ]
+          },
+          "published": {
+            "declarations": [
+              [
+                "skill",
+                "502000",
+                "active",
+                "sourceSelf"
+              ],
+              [
+                "craftEssence",
+                "9309030",
+                "constant",
+                "sourceSelf"
+              ],
+              [
+                "craftEssence",
+                "9401400",
+                "constant",
+                "sourceSelf"
+              ],
+              [
+                "craftEssence",
+                "9403250",
+                "constant",
+                "sourceSelf"
+              ],
+              [
+                "craftEssence",
+                "9404410",
+                "constant",
+                "sourceSelf"
+              ]
+            ],
+            "eligible": [
+              {
+                "owner": "502000",
+                "form": {
+                  "actorId": "502000",
+                  "limitCount": 0
+                },
+                "writer": "2274150",
+                "gains": []
+              }
+            ],
+            "records": [
+              {
+                "owner": "502000",
+                "profileCount": 0,
+                "plans": 25,
+                "candidates": 0,
+                "disposition": "excludedNoAttackCandidate"
+              }
+            ],
+            "gate": {
+              "status": "passed",
+              "selected": 0,
+              "appended": 0,
+              "excludedReads": 0,
+              "consumed": 0,
+              "changed": 0,
+              "isolated": 0,
+              "boundaries": [],
+              "checks": [
+                {
+                  "identity": "hpGiveAttempt:population",
+                  "reason": "giveAttemptPopulationMismatch",
+                  "path": "requests",
+                  "expected": {
+                    "type": "number",
+                    "value": 0
+                  },
+                  "actual": {
+                    "type": "number",
+                    "value": 0
+                  }
+                },
+                {
+                  "identity": "hpGiveAttempt:population",
+                  "reason": "giveAttemptPopulationMismatch",
+                  "path": "observations",
+                  "expected": {
+                    "type": "array",
+                    "values": []
+                  },
+                  "actual": {
+                    "type": "array",
+                    "values": []
+                  }
+                },
+                {
+                  "identity": "hpGiveAttempt:population",
+                  "reason": "giveAttemptPopulationMismatch",
+                  "path": "requestUnique",
+                  "expected": {
+                    "type": "number",
+                    "value": 0
+                  },
+                  "actual": {
+                    "type": "number",
+                    "value": 0
+                  }
+                },
+                {
+                  "identity": "hpGiveAttempt:population",
+                  "reason": "giveAttemptPopulationMismatch",
+                  "path": "expectedUnique",
+                  "expected": {
+                    "type": "number",
+                    "value": 0
+                  },
+                  "actual": {
+                    "type": "number",
+                    "value": 0
+                  }
+                },
+                {
+                  "identity": "hpGiveAttempt:population",
+                  "reason": "giveAttemptPopulationMismatch",
+                  "path": "observationUnique",
+                  "expected": {
+                    "type": "number",
+                    "value": 0
+                  },
+                  "actual": {
+                    "type": "number",
+                    "value": 0
+                  }
+                }
+              ],
+              "failures": [],
+              "firstDifference": null
+            }
+          }
+        },
+        "counterDefinitions": {
+          "appended": "Original captured give modifier append instances,including prior committed and current tentative writers;not writer declaration count.",
+          "consumed": "Original nonempty give reads for targeted gain action,per recipient receipt.",
+          "excludedReads": "Original empty give reads after condition filtering,per recipient receipt.",
+          "changed": "Original successful gain receipt HP changes for targeted action,including excluded-read and committed controls;does not imply give consumption or isolation.",
+          "isolated": "Positive changed noncommit representative with actual nonempty give read and all owner/prefix/transport/downstream checks passing;not NP consumption."
+        },
+        "verification": {
+          "finalHpAndForward": {
+            "manifest": ".test-results/2026-09-27T15-04-56-230Z-21-b6f431/manifest.json",
+            "files": 3,
+            "tests": 12,
+            "warnings": 0,
+            "status": "passed final consumer/capture and HP6/forward3;new give3 producer subsequently extended with six append anti-corruption cases and superseded by finalGive"
+          },
+          "related": {
+            "manifest": ".test-results/2026-09-27T15-05-55-071Z-3-049b29/manifest.json",
+            "files": 13,
+            "tests": 394,
+            "warnings": 0,
+            "status": "passed;391 retained related/forward tests remain valid;new give3 producer superseded by finalGive. Do not synthesize run success counts."
+          },
+          "finalGive": {
+            "manifest": ".test-results/2026-09-27T15-11-05-080Z-21-0b3c92/manifest.json",
+            "files": 1,
+            "tests": 3,
+            "warnings": 0,
+            "status": "passed final fixture producer;9 changed/8 boundaries/45 negatives with90 failed checks and45 typed first differences;16 stable-proof-independent semantic cases;no owner replay"
+          },
+          "affectedAudit": {
+            "manifest": ".test-results/2026-09-27T15-09-33-542Z-3-3be222/manifest.json",
+            "files": 4,
+            "tests": 77,
+            "warnings": 0,
+            "durationSeconds": 126.41,
+            "status": "passed final capture source;existing1worker/timeouts/thresholds unchanged"
+          },
+          "hpComparison": {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/hp-comparison.json",
+            "files": 6,
+            "completeDecodedEqual": 6,
+            "bytesShaEqual": 6,
+            "firstDifference": null,
+            "scope": "old HP5 plus original published give coverage payload"
+          },
+          "forwardComparison": {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/give-comparison.json",
+            "files": 3,
+            "completeDecodedEqual": 3,
+            "bytesShaEqual": 3,
+            "firstDifference": null
+          },
+          "static": {
+            "typecheck": "final affected package graph passed;typecheck.log",
+            "lint": "final five TypeScript files passed zero warnings;lint.log",
+            "format": "final nine changed files passed;format.log",
+            "documentation": "docs6/6 andintegrity passed;docs.log;final record-only status/receipt metadata uses same validated registry/source responsibility"
+          },
+          "receipts": {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/final-receipts.json",
+            "runs": 4,
+            "independentDiskDescriptors": 370,
+            "testOwnedDeclaredReceipts": 350,
+            "errors": 0,
+            "runnerArtifactVerificationErrors": 0,
+            "responsibility": "Independent disk bytes/SHA against runner-owned manifest descriptors and separately test-owned declared receipts; does not replace or merge these owners."
+          },
+          "retainedAuditComparison": {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/retained-audit-comparison.json",
+            "files": 19,
+            "completeDecodedEqual": 19,
+            "bytesShaEqual": 19,
+            "firstDifference": null
+          },
+          "retainedRelatedComparison": {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/related-comparison.json",
+            "files": 256,
+            "completeDecodedEqual": 256,
+            "bytesShaEqual": 256,
+            "firstDifference": null,
+            "qualification": "All old related declared artifacts except the two old superseded give producer artifacts;final three give artifacts checked separately against final forward checkpoint. This is not a synthesized test success count."
+          },
+          "finalAttemptComparison": {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/attempt-final-comparison.json",
+            "positive9AndBoundary8": "complete decoded/order/bytes/SHA identical",
+            "negative": "39 retained records completely decoded/order identical;6 explicit append negatives added,45 total;bytes differ for this justified extension",
+            "firstDifference": null
+          }
+        },
+        "performance": {
+          "kind": "one diagnostic pair only;not formal three-run acceptance",
+          "baseline": {
+            "run": ".test-results/2026-09-27T14-57-42-632Z-21-dc872c",
+            "phases": [
+              {
+                "name": "joins all production HP cells to source, recipient and observation time, and executes both actor bindings",
+                "durationMs": 2704.7629
+              },
+              {
+                "name": "executes every HP-producing calculator actor across NP capacity, initial OC, level and portable boundaries",
+                "durationMs": 8118.999110000001
+              },
+              {
+                "name": "preserves all HP reader profile ranking policies, level/OC and owned basis through the same application",
+                "durationMs": 11383.216904
+              },
+              {
+                "name": "executes every HP craft-essence normal/LB cell with the live HP reader population",
+                "durationMs": 6045.300384000002
+              },
+              {
+                "name": "executes every selectable HP support skill before an HP-dependent damage reader, including repair and portable replay",
+                "durationMs": 1156.1232990000026
+              }
+            ],
+            "totalMs": 29408.402597000004
+          },
+          "candidate": {
+            "run": ".test-results/2026-09-27T15-02-36-368Z-3-4e7ef6",
+            "phases": [
+              {
+                "name": "joins all production HP cells to source, recipient and observation time, and executes both actor bindings",
+                "durationMs": 2772.373095
+              },
+              {
+                "name": "executes every HP-producing calculator actor across NP capacity, initial OC, level and portable boundaries",
+                "durationMs": 9392.788376
+              },
+              {
+                "name": "preserves all HP reader profile ranking policies, level/OC and owned basis through the same application",
+                "durationMs": 12621.027989
+              },
+              {
+                "name": "executes every HP craft-essence normal/LB cell with the live HP reader population",
+                "durationMs": 5593.071482000003
+              },
+              {
+                "name": "executes every selectable HP support skill before an HP-dependent damage reader, including repair and portable replay",
+                "durationMs": 1053.2623969999986
+              }
+            ],
+            "totalMs": 31432.523339000003
+          },
+          "ratio": 1.0688279730707468,
+          "conditions": "same master bytes/schema,affinity0-7,unit4/production50%=4workers,original timeouts/thresholds,same command filters;synthetic unit fixtures extended while five production live phase inputs unchanged",
+          "limitation": "Published give native request population zero;pair does not measure positive synthetic native refusal cost or establish formal timing attribution. Later final12 run validates consumer source changes and is not substituted as a favorable diagnostic candidate."
+        },
+        "systematicReview": {
+          "guide": "docs/guides/systematic-review-guidelines.md §§3.4/3.5/8/9",
+          "confirmedMechanism": "Committed give gate requires writer committed and records nativeNoncommitOutsideScope;it does not provide positive changed-attempt isolation. Original give observer dropped empty filtered reads,so missing and normal exclusion could not be proved separately.",
+          "inferredMismatch": "Reusing same-action receive consumer restriction would miss gain-only rejected action B;canonical give already lists cross-action consumers. Dedicated give attempt gate uses that ordered relationship.",
+          "detectionBoundary": "Published skill owner has no attack candidate;declarations/published0 cannot prove native refusal. Earlier forward and wrong-action receive negatives do not establish positive give noncommit.",
+          "recurrenceGuard": "Original rejected gain action plus prior writer identity/step/reference/prefix/receipt checks;interrupted source,multiple gain,party actor,filtered instance/empty read and small stable-proof/semantic anti-corruption fixtures.",
+          "flowClosure": "Scoped A/B native unsupported/inputRequired/returned reducer rejection/downstream absence connected;whole HP/product path union unclaimed."
+        },
+        "protectedEvidence": {
+          "units0Through51": "unchanged full decoded objects",
+          "unit52ExistingCheckpoints": "unchanged full decoded objects;only this new checkpoint appended",
+          "hpInventory": "486 sources/7470 cells digest1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55",
+          "sharedModel": "1/1/1 and6673/4194/2596/1489 retained in their original responsibility,not whole read/parse counts",
+          "history": "old240 remains235 success5 failure;consumer58/restoration12/committed65/proof5/attempt182/control7/inputLifecycle/giveForward checkpoints retained without reinterpreting history"
+        },
+        "closureDecision": {
+          "TSK08": "in_progress",
+          "TSK091And09": "blocked",
+          "wholeProductComplete": false,
+          "reason": "Other family/path coverage and full ratchet/diagnostic/legacy/formal performance/final quality/integrated counter,digest,all receipt obligations remain unverified or unmet outside this give-only session. No evidence that all duties can close by a give-only edit.",
+          "notStarted": [
+            "dependent README quality",
+            "formal three-run gates",
+            "new eight-shard matrix",
+            "other family implementation",
+            "TSK09.1/09"
+          ],
+          "nextOperation": "Read-only bounded reconciliation of remaining declared/selected/reached/native/reader/recovery populations against current owners and existing evidence;choose the next actual gap before implementation,without reopening completed units."
+        },
+        "sessionBoundary": "60min checkpoint/90min finish current atomic action and hand off;no independent new family or quality retry;local target-only commit,no push.",
+        "recordCommitPolicy": "Resolve this checkpoint implementation/documentation commit from Git history;avoid recursive self-referencing commit hash updates.",
+        "executionHistory": {
+          "initialPnpmFailure": "External SQLite store failed before repository script start;no source test/producer/audit executed by that command. First preliminary typecheck used inherited0-11 affinity and failed;it is not timing evidence. All test/live/acceptance commands use affinity0-7 thereafter.",
+          "shim": {
+            "path": "/tmp/tsk08-tools/pnpm",
+            "bytes": 730,
+            "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6"
+          },
+          "failedRuns": [
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-49-40-433Z-3-446b78/manifest.json",
+                "bytes": 3481,
+                "sha256": "9cedbd50d5ad73e58e575fe844ed6cbd54cb41c4d6ba9dd64a6fd47b839511c5"
+              },
+              "outcome": "artifact_failure",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 0,
+                  "failed": 3,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 3594
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-50-10-645Z-21-986533/manifest.json",
+                "bytes": 3575,
+                "sha256": "7911f1533637e92a2e302350cc1978e404e388d81b0259dc4a3b11351ae61552"
+              },
+              "outcome": "test_failure",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 0,
+                  "failed": 3,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 4660
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-52-03-532Z-21-3a58b7/manifest.json",
+                "bytes": 3575,
+                "sha256": "891e8ec89c6774651a23e8f74b1d145ca99c5f2e51a024ebb783eb2fedfe98f0"
+              },
+              "outcome": "test_failure",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 2,
+                  "failed": 1,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 5108
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-52-43-625Z-21-6098a3/manifest.json",
+                "bytes": 3482,
+                "sha256": "d3e994f722e77e21b24da35ebf7fd412a46dd26247760a101fba38d6d6a38905"
+              },
+              "outcome": "artifact_failure",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 0,
+                  "failed": 3,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 3536
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-53-13-565Z-21-bb5232/manifest.json",
+                "bytes": 3482,
+                "sha256": "423d3ec47571da1a6d01247d5e1d7f2ed4b59e7c06d5e7b9f023e2fab3de77d7"
+              },
+              "outcome": "artifact_failure",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 1,
+                  "failed": 2,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 3674
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-54-06-977Z-21-6dfff9/manifest.json",
+                "bytes": 3573,
+                "sha256": "bf2c059f382b4f16c20aca37c29c35e0978295ad9572316597d8d27e86aaec6e"
+              },
+              "outcome": "test_failure",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 2,
+                  "failed": 1,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 5754
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-55-44-227Z-21-ea8716/manifest.json",
+                "bytes": 3576,
+                "sha256": "d94d06da4b579fd7797d9791de696d6f8b9550b5d9df862925a9b9329e992967"
+              },
+              "outcome": "test_failure",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 1,
+                  "failed": 2,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 5755
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T15-00-48-088Z-21-80d74b/manifest.json",
+                "bytes": 3576,
+                "sha256": "0d189423705e50425ef98ba5f7095ceaf492d38e53f475063083798cbf442313"
+              },
+              "outcome": "test_failure",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 2,
+                  "failed": 1,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 6303
+            }
+          ],
+          "successfulRuns": [
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-50-31-540Z-4-e85ae8/manifest.json",
+                "bytes": 3565,
+                "sha256": "9e81750fdc1331d4f6f2c7ac3a50a7ef5be1c550f0c99d43de5f3fc8e601aad2"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 4561
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-56-26-115Z-21-0ba038/manifest.json",
+                "bytes": 3567,
+                "sha256": "ca7ef4888162176dce13b7cbdc57b1f1acb26fa0bda881f615929efcca7d8c75"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 5956
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T14-57-42-632Z-21-dc872c/manifest.json",
+                "bytes": 4823,
+                "sha256": "1c939cc977a11bbf5a3b8b63933fdd725168b6e7cf3ba85dd098b58eff7cd8ee"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 37836
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T15-01-57-366Z-21-fbd3f4/manifest.json",
+                "bytes": 3567,
+                "sha256": "2a88e5bbf87ae90552c0e0162caa1be8d2e05d4c8a074f21bfa9597ad6ee1d27"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 6263
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T15-02-36-368Z-3-4e7ef6/manifest.json",
+                "bytes": 4822,
+                "sha256": "03f43126f4a0886f2f34781ae8cba8d9f41a932b7d18a801f293f5fa1d2d1f8e"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 39987
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T15-04-56-230Z-21-b6f431/manifest.json",
+                "bytes": 4823,
+                "sha256": "5ae9cfc1bb4f388e370203c5f10a049073b6a927a02ae80a633e64768e77be40"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 37202
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T15-05-55-071Z-3-049b29/manifest.json",
+                "bytes": 63275,
+                "sha256": "8334ba2bb75e16bb1836a033fa87136d1374aff659dfadd5d0dfe2a09669411c"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 394,
+                  "passed": 394,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 187135
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T15-09-33-542Z-3-3be222/manifest.json",
+                "bytes": 21050,
+                "sha256": "3011b3ff763b01ff71aa93f19c94a8fa8dedbc4ecb1704586f3e701362834d16"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 77,
+                  "passed": 77,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 126414
+            },
+            {
+              "manifest": {
+                "path": ".test-results/2026-09-27T15-11-05-080Z-21-0b3c92/manifest.json",
+                "bytes": 3567,
+                "sha256": "cad8cfe071ed68ad5afa682549aeb56bdebfda8d0218d458fba647457e9c7eeb"
+              },
+              "outcome": "success",
+              "counts": {
+                "files": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "tests": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "todo": 0
+                },
+                "warnings": 0,
+                "unexpectedObservations": 0,
+                "allowedObservations": 0,
+                "correlatedObservations": 0,
+                "infrastructureObservations": 0
+              },
+              "durationMs": 7590
+            }
+          ],
+          "failedStaticAttempts": "Preliminary missing transport fields,union flatMap inference,optional capture/narrowing and unnecessary nullish/type assertions were corrected;final graph typecheck/lint passed. Failed tests arose from fixture native refusal reason/pre-state wrapper identity/declared NP versus actual selection/absent auxiliary actor/per-recipient owner state and initial excluded-read consumer linkage. No native classification,threshold or old expected successful values changed."
+        },
+        "artifactIdentities": [
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/hp-comparison.json",
+            "bytes": 2664,
+            "sha256": "513264ed1e4b9f83bccdc7a87424198d83283e59ec706ed5840d65d7ffd32ce8"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/give-comparison.json",
+            "bytes": 1434,
+            "sha256": "16589ae7f3b460aa1f9e0e12dbd33570ae4a388a04ad354512a1786abe707041"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/retained-audit-comparison.json",
+            "bytes": 8413,
+            "sha256": "0fc753317e178461158055377a6b08f504f1810c7f463aa65bc7c6ce8980b124"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/related-comparison.json",
+            "bytes": 111155,
+            "sha256": "d401c489ec8e61cfdc96570c27d5db7ad2c11878b7935a299ad4eb1a3751c5c4"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/attempt-final-comparison.json",
+            "bytes": 2241,
+            "sha256": "a76aaf97e7d4bd651f37804869fd64b5d91ef41598d43a9571fdb38c97fd18eb"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/final-receipts.json",
+            "bytes": 177242,
+            "sha256": "7de5f370ec3e0c3b3809238afac651ee708dbe7285c1ebe030b746736e22ac79"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/population-performance.json",
+            "bytes": 15720,
+            "sha256": "084e66db2be6d53cb12e12df3e0ff03ac42564445acb52206f5ab81f22324f9d"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/typecheck.log",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/lint.log",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/affected-audit.log",
+            "bytes": 185,
+            "sha256": "68aaa584b42d2d1f3bdc8d28f0d1290ca88413e0f827cd5f372412da582ab357"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/final-give.log",
+            "bytes": 1123,
+            "sha256": "09ac6f274ccc1086cb9f5b1a8408d89ba7aee22c207542a6d34499a7b7573da8"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/compare.mjs",
+            "bytes": 2495,
+            "sha256": "2b737ca960b61b57f1f04733cee2f543017ebb746a72658b4e8b3412572860d0"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/attempt-comparison.mjs",
+            "bytes": 2028,
+            "sha256": "7b5f6f0490b6976c9c04eecbaf1b225367ea1d1592da3827163fc715961d15a2"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/summarize.mjs",
+            "bytes": 3810,
+            "sha256": "4395a02fcd273febab9851b714133c9739ef0a09792f9700ab0991923693551a"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/docs.log",
+            "bytes": 525,
+            "sha256": "f8436f5c6ef78e4028b585238fae81ccff72acde3449560a3c6864169f3fac6c"
+          },
+          {
+            "path": ".test-results/tsk-08-give-native-noncommit-20260928/format.log",
+            "bytes": 66,
+            "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+          }
+        ],
+        "verifiedArtifactDescriptors": [
+          {
+            "path": ".test-results/2026-09-27T15-04-56-230Z-21-b6f431/manifest.json",
+            "bytes": 4823,
+            "sha256": "5ae9cfc1bb4f388e370203c5f10a049073b6a927a02ae80a633e64768e77be40"
+          },
+          {
+            "path": ".test-results/2026-09-27T15-05-55-071Z-3-049b29/manifest.json",
+            "bytes": 63275,
+            "sha256": "8334ba2bb75e16bb1836a033fa87136d1374aff659dfadd5d0dfe2a09669411c"
+          },
+          {
+            "path": ".test-results/2026-09-27T15-09-33-542Z-3-3be222/manifest.json",
+            "bytes": 21050,
+            "sha256": "3011b3ff763b01ff71aa93f19c94a8fa8dedbc4ecb1704586f3e701362834d16"
+          },
+          {
+            "path": ".test-results/2026-09-27T15-11-05-080Z-21-0b3c92/manifest.json",
+            "bytes": 3567,
+            "sha256": "cad8cfe071ed68ad5afa682549aeb56bdebfda8d0218d458fba647457e9c7eeb"
+          }
+        ],
+        "localCheckpointGate": {
+          "scopedBlocking": 0,
+          "productBlockingOrUnverified": "Whole remaining obligations outside this scope remain open;do not claim TSK08 done.",
+          "pending": [],
+          "finish": "Final scoped source/verification/record review complete;target-only local commit is this checkpoint commit resolved from Git history;no push."
+        },
+        "completedAt": "2026-09-27T15:20:00Z"
       }
     }
   ],
@@ -19815,8 +21176,8 @@
         },
         {
           "stage": 2,
-          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open.",
-          "nextBoundedScope": "give active/direct/sourceSelf attacker-skillのnative changed-attempt/noncommit隔離について、現coverageを照合し、必要な共有audit接続を一family・一sessionで実装/検証/記録/local commitする。既存意味論を拡張しない。",
+          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open. Current give native noncommit A/B shared audit is implemented with separate filtered empty-read capture;final give3/HP6/related391 retained/audit77 and full comparisons/370 disk+350 declared receipt error0 verified;not whole closure.",
+          "nextBoundedScope": "After scoped give checkpoint,read-only owner-to-consumer/population reconciliation of remaining whole-TSK08 obligations;no next family implementation started.",
           "nextScopeQualification": "handoffPreparation.nextSession.giveNativeNoncommitSession",
           "activeUnit52ScopeReference": "boundedUnits[52]"
         },
@@ -19836,7 +21197,8 @@
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
       "asOfCurrentCheckpoint": "e081002b5f405c930b3c03c837c0b83781d14939",
       "asOfGiveCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint",
-      "asOfGiveCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1"
+      "asOfGiveCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1",
+      "asOfGiveNativeCheckpointReference": "boundedUnits[52].giveNativeNoncommitCheckpoint"
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -21202,7 +22564,7 @@
         "implementationCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint"
       },
       "giveNativeNoncommitSession": {
-        "status": "read-only preparation complete;current code plan and user confirmation required before source execution or implementation",
+        "status": "plan confirmed;scoped give native noncommit implemented/verified;product incomplete local checkpoint;resultReference is current,preparation instructions remain historical",
         "preparationHead": "ea7290d79230931ba802d6f735541f36ec25ecb1",
         "giveCommittedForwardCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1",
         "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
@@ -21349,7 +22711,8 @@
           "diff": "git diff --check passed",
           "protectedEvidence": "all boundedUnits0..52 exactly equal to ea7290d",
           "recordCommit": "resolve整理更新commit from Git history;prompt records actual SHA"
-        }
+        },
+        "resultReference": "boundedUnits[52].giveNativeNoncommitCheckpoint"
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -22321,7 +23684,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "give active/direct/sourceSelf attacker-skillのnative changed-attempt/noncommit隔離について、現coverageを照合し、必要な共有audit接続を一family・一sessionで実装/検証/記録/local commitする。既存意味論を拡張しない。",
+    "nextSession": "Read-only bounded reconciliation of remaining declared/selected/reached/native/reader/recovery populations against current owners and existing evidence;choose the next actual gap before implementation,without reopening completed units.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -22372,6 +23735,7 @@
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",
     "inputLifecycleCheckpointReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint",
     "giveCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint",
-    "giveCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1"
+    "giveCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1",
+    "giveNativeCheckpointReference": "boundedUnits[52].giveNativeNoncommitCheckpoint"
   }
 }

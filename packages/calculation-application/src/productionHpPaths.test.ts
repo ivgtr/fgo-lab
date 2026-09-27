@@ -1,3 +1,4 @@
+import { auditGiveAttemptIsolation } from './productionHpGivePreparationAttemptAudit';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -586,7 +587,7 @@ it('executes every selectable HP support skill before an HP-dependent damage rea
 
 it(
   'reconciles all published give declarations with selected native preparation and distinct damage-reader boundaries',
-  productionAuditTestOptions(['hp-give-coverage.json']),
+  productionAuditTestOptions(['hp-give-coverage.json', 'hp-give-native-noncommit-coverage.json']),
   async ({ task }) => {
     const master = await masterPromise,
       declarations = giveInventory(master);
@@ -676,6 +677,46 @@ it(
         payload,
       ),
     ).toBe(true);
+    // Reuse this exact declared/profile/planner population; no alternative actor or request producer.
+    const attemptGate = auditGiveAttemptIsolation({ requests: [], expected: [], observations: [] });
+    const attemptPayload = {
+      declarations,
+      eligible: payload.eligible,
+      records,
+      gate: attemptGate,
+      qualification:
+        'Published owner excluded before request generation; zero selected/reached/native/actual-read/changed/isolation. This is a declaration boundary, not unsupported or a native refusal. Strict schema-legal nonempty evidence is separate.',
+    };
+    const attemptReceipt = await writeProductionAuditArtifact(
+      task.meta,
+      'hp-give-native-noncommit-coverage.json',
+      encodeProductionAuditDiagnostic(attemptPayload),
+    );
+    const attemptBytes = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-give-native-noncommit-coverage.json'),
+    );
+    expect([attemptBytes.length, createHash('sha256').update(attemptBytes).digest('hex')]).toEqual([
+      attemptReceipt.expectedBytes,
+      attemptReceipt.expectedSha256,
+    ]);
+    expect(
+      isDeepStrictEqual(
+        decodeProductionAuditDiagnostic(
+          decodeProductionAuditArtifact(attemptBytes) as ReturnType<
+            typeof encodeProductionAuditDiagnostic
+          >,
+        ),
+        attemptPayload,
+      ),
+    ).toBe(true);
+    expect(attemptGate.failures).toEqual([]);
+    expect([
+      attemptGate.selected,
+      attemptGate.appended,
+      attemptGate.consumed,
+      attemptGate.changed,
+      attemptGate.isolated,
+    ]).toEqual([0, 0, 0, 0, 0]);
     expect(
       declarations.map((d) => [d.origin, d.operation.lifetime, d.operation.route.target]),
     ).toEqual([

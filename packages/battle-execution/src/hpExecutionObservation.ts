@@ -63,6 +63,8 @@ export interface PreparationHpAction {
     valueIndex: number;
     consumption: HpGiveGainConsumption;
   }[];
+  /** Original empty give read after owner condition filtering; separate from positive consumption. */
+  giveExcludedConsumptions?: NonNullable<PreparationHpAction['giveConsumptions']>;
   sourceEnds: {
     source: SourceEffect;
     step: number;

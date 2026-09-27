@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.104"
+document_version: "1.7.105"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-27"
+updated_at: "2026-09-28"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -3771,3 +3771,20 @@ Step 0はbaseline／契約成立済み、Step 1はV41 versionContextとV40保持
 次sessionの範囲はactive/direct/sourceSelf attacker-skill giveと、同回復元のfixed/direct gain（sourceSelf／partyMember）のnative noncommit隔離だけ。A:同actionのgive append／gain後の拒否で当該action変更を残さない経路と、B:先行give actionがcommit済み、別gain actionが拒否され、先行modifierを保持し失敗gain HPだけを返却stateへ漏らさない経路を分ける。これらのstrict schema-legal代表の成立は実行未検証であり、計画で合法構成・元refusal step・必要な反証を決める。attemptedの実倍率readをcommitted read／NP消費に読み替えない。Published宣言5／owner1／攻撃候補0の境界と代表の非empty証拠を分け、別actor/default inputへ置換しない。
 
 最初の成果物は現コードから判断した設計・候補file・owner／lifetime・母集団・局所反証／影響検証・最小計測・TSK-08 closure可否・60／90分停止境界の計画。編集やsource実行前に利用者確認を待ち、確認後は同範囲の必要な実装・検証・記録・対象限定local commitまで続ける。通常判断で再承認を求めない。全義務が有効既存証拠とgive一family内の整理で成立し時間があれば最終quality／必要audit／正式性能へ進みTSK-08完了を目指す。別family／対象外owner変更／実装gap／未達gateが残れば依存qualityを開始せず製品未完了checkpointで終了する。domain recovery／UI retry、constant CE／passive／NP give、他HP family、入力lifecycle／共通codec／runner条件、無関係legacy整理を連鎖開始しない。60分checkpoint、90分はatomic action完了後引継ぎ、対象限定local commit、pushなし。
+
+
+### Give native noncommit共有監査の限定checkpoint（2026-09-28）
+
+開始HEADは整理更新`e010e18733d2bdf5e71f71ad231300fda592e88f`、index／tracked差分／untrackedは空。正本giveNativeNoncommitSessionの11 sourceとmasterのbytes／SHAを照合し、現コードに基づく計画を提示して利用者の「OK」を得た後に実装した。結果正本は[parity evidence](../evidence/tsk-08-parity-ratchet.json)の`boundedUnits[52].giveNativeNoncommitCheckpoint`。同sessionの対象限定local commitとし、pushしない。
+
+共有`giveCanonical`／`giveSource`と元HP／attempt captureを借用する専用`productionHpGivePreparationAttemptAudit`を追加した。Aは同actionのappend／gain後のnative拒否で当該変更を返却しない。Bは先行give actionのcommit済みinstance／prefixを保持し、別actionの失敗gain変更だけを隔離する。同source内の途中拒否、複数gain、sourceSelfとpartyMember、attackerと実補助actor、元unsupported／inputRequiredを区別する。giveの使用条件で除外されたinstanceを宣言から実readへ読み替えず、元ownerが空列で行ったgive readだけを`giveExcludedConsumptions`へ保存する最小captureを追加した。positive consumptionとの別責務であり、通常のobserver不在経路にallocationを追加しない。HP算術／sign／bounds／truncation／clamp、transaction／commit／reducer／route／native分類、schema／raw／master、ranking意味論は変更していない。
+
+proofは元実行単位で一度保持し、借用参照と完全値を別に検査する。元source／actor／action／operation／step／instance／receipt、returned／reducerの先行prefix、application rejectionの同一transport、下流ordered／damage input／HP reader／NP／projection／contribution非生成を監査する。missing／duplicate／unmatched、同値foreign instance、source／recipient混同、失敗HP／receipt漏出、prefix消失、stale状態、拒否step・下流捏造の小型反証と、安定proofに依存しないsemantic反証を持つ。元owner再実行でproofを作らず、global codec／共通attempt authority／receive型名置換コピーは追加しない。
+
+Published宣言5＝active skill/sourceSelf1＋constant CE/sourceSelf4、available owner1、元profile／plannerのNP1〜5×OC1〜5候補0、request生成前除外1を保全する。同じ母集団からnative noncommit監査のselected／reached／read／isolation0を別artifactへ保存し、非empty strict schema-legal代表と合成しない。別actorのdefault inputや攻撃NPへ置換していない。HP486 sources／7470 cells、digest`1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55`、指定shared model1／1／1・6673／4194／2596／1489、units[0]〜[51]とunit52全既存checkpointを保護する。
+
+最終give3／HP6／forward3の12/12、関連394/394、影響audit77/77、対象型検査／lintが成功した。関連run内のgive3はappend反証追加前のproducerであり、既存391の成立と最終give3を別記し成功数を合成しない。strict changed9／境界8／否定45（90 failed checks、45 first differences、16 semantic反証）が成立。旧HP5＋give宣言artifactの6、最終forward3、既存関連256、audit19は完全decoded値・順序・bytes／SHA一致、first differenceなし。新give positive9／境界8も完全値・bytes一致、旧否定39の完全値・順序を保ち6反証を追加した表現差だけを記録した。最終4runのrunner artifact verification error0、独立disk descriptor370／test-owned declared receipt350照合error0。最終docs6／integrity、対象9ファイルformat、diff reviewも成功。対象限定local checkpoint commitは本commitとしてGit履歴から解決し、pushしない。初回pnpmは外部SQLite storeでscript開始前に失敗し、指定shimの730 bytes／SHAを照合して同generic runnerへ切り替えた。fixtureの拒否分類／開始wrapper同一性／補助actor seed／source中断・複数recipientの観測境界、追加captureのconsumer結線、型・lintの試行失敗は完全manifestとともにevidenceへ残す。成功数を合成せず、最終差分への有効性を記録する。
+
+同じmaster・affinity0-7・unit4／production4 workers・元予算でのlive5 phase各1run診断は合計29.408秒→31.433秒（+6.88%）。正式3-run契約や退行の因果帰属ではなく、published native give0を非empty性能証拠にしない。後続の最終12runを有利なcandidateとして置換していない。元capture経路以外の性能測定やthreshold緩和は行わない。
+
+TSK-08全体は未完了。Step0／1／3と完了済みunitsを再開せず、Step2、全family／path coverage、全ratchet／typed diagnostics到達性、legacy固有coverage照合、正式3-run性能、README最終quality、統合counter／digest／全receiptを未達のまま残す。give以外の義務は今回の一family内で閉じられないため、依存quality／製品closureや別family実装を開始しない。TSK-08`in_progress`、TSK-09.1／09`blocked`を維持する。次は既存remainingWorkSummary／input lifecycle closureReconciliationに残る母集団とowner-to-consumer対応の限定読み取り照合から、新しい対象の計画を決める。60分checkpoint／90分atomic action終了境界を維持する。
