@@ -18158,6 +18158,635 @@
           "frontmatterTables": "Preserved; Task1.7.97/registry1.5.130 consistent",
           "recordOnlyUpdate": "Source/test inputs and final artifact identities unchanged after documentation verification; final docs integrity rechecked."
         }
+      },
+      "capacityAttemptMaterializationCheckpoint": {
+        "status": "Scoped outer capacity attempt proof responsibility verified,Blocking0 within slice;final182/control7 passed. Product closure remains incomplete.",
+        "startedAt": "2026-09-27T12:13:06Z",
+        "baselineHead": "5fef367dfe3a7637ec87b6ef581fb707d0693464",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "authorization": "User confirmed current-source implementation/measurement/verification plan; same outer attempt scope through records and product-incomplete local commit,no push.",
+        "startReconciliation": "HEAD5fef367,index/tracked/untracked clean;primary2/reference8/old manifest+3 failed artifacts14 recorded bytes/SHA matched. Existing implementations are committed.",
+        "decisions": [
+          "Outer WithProof entry captures diagnostics[] or complete three-field population before matching/checking,returns gate and immutable typed valueProof separately;gate-only callers share inspectCapacityAttempts,not a legacy fallback. Raw diagnostic API replaced by explicit ValueProof acquisition.",
+          "Reuse existing capacity proof helper unchanged after typed contract fit: absent/nullObject/ordered Set+Map,original-object identity within capture,distinct equal objects,invalid values/cycles rejection. Materialization reads only established proof,never owners/writers.",
+          "Ordinary negatives keep cloneSource capture+steps/result/resolved allocation,original program anchors and capture attach at original budget location; acquire proof inside that call and materialize only at publication. Population keeps selections/selection-only expected/all ordered observations.",
+          "Positive acquires proof freshly at payload construction;ranking stays gate+result. Published invokes gate independently and retains its complete result contract;missing declaration result captured and fully materialized. Control source unchanged.",
+          "Call-local canonical snapshotter replaces independent outer projections only in fixed program authority,inspect and published scopes. Public selection generation retains original mutable scalar projection;observed selection/canonical tampering stays visible. Typed proof/canonical/authority/live identity remain separate;no call cache,content interning,WeakMap replacement/shared graph/clone hoist/writer replay.",
+          "Diagnostic view retains master-only prepared exclusion and all other observed extra fields/partial transport. Existing authority,common failure mapping,native outcomes/prior commits/boundaries/reasons/checkPaths/complete values unchanged."
+        ],
+        "measurement": {
+          "command": "taskset -c 0-7 pnpm test:diagnostic -- --suite=unit packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts -t 'isolates capacity attempt prior-capacity-fixed-commit (missing-write|state-modifier-identity|state-modifier-values)$'",
+          "environmentFailure": {
+            "status": "Native pnpm ERR_SQLITE_ERROR unable to open database file before scripts; no baseline task executed by native invocation.",
+            "log": {
+              "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/baseline.log",
+              "bytes": 2749,
+              "sha256": "0db23aa6bfe0cf4b1e606e3aea841b192c1d81c2c3f31c65f4578cfb05ef4a60"
+            },
+            "genericRunner": {
+              "path": "/tmp/tsk08-tools/pnpm",
+              "bytes": 730,
+              "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6"
+            },
+            "qualification": "Contents,730bytes and required SHA checked; PATH-selected unchanged generic runner uses existing node_modules."
+          },
+          "baseline": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T12-14-29-593Z-4-8563fd/manifest.json",
+              "bytes": 8868,
+              "sha256": "6fbcbb4c64844abaf20b8b6c4ff2610d545b31f86519d78ca56e858c5332fe63"
+            },
+            "log": {
+              "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/baseline-generic.log",
+              "bytes": 42497,
+              "sha256": "ada05dc3548b0d4cc5185ffe8860804d93e3102b2f9c4de43240afc6a0fdbf00"
+            },
+            "sync": [
+              {
+                "spec": "prior-capacity-fixed-commit",
+                "group": "missing-write",
+                "syncMs": 4511.850972,
+                "phases": {
+                  "outerSnapshot": {
+                    "count": 7714,
+                    "ms": 211.4048020000107
+                  },
+                  "outerComparison": {
+                    "count": 3849,
+                    "ms": 107.13600200000178
+                  },
+                  "commonGate": {
+                    "count": 32,
+                    "ms": 478.3325069999987
+                  },
+                  "setupExecutionPrograms": {
+                    "count": 1,
+                    "ms": 169.3225030000001
+                  },
+                  "cloneSource": {
+                    "count": 28,
+                    "ms": 15.842499999999745
+                  },
+                  "mutation": {
+                    "count": 28,
+                    "ms": 0.4866999999997006
+                  },
+                  "encode": {
+                    "count": 1,
+                    "ms": 1163.224718
+                  },
+                  "decodeDiagnostic": {
+                    "count": 2,
+                    "ms": 7.200400000000172
+                  },
+                  "independentComparison": {
+                    "count": 2,
+                    "ms": 2395.5288390000005
+                  },
+                  "serialize": {
+                    "count": 1,
+                    "ms": 43.28820000000087
+                  },
+                  "decodeArtifact": {
+                    "count": 1,
+                    "ms": 6.084600000000137
+                  }
+                }
+              },
+              {
+                "spec": "prior-capacity-fixed-commit",
+                "group": "state-modifier-identity",
+                "syncMs": 4585.472939,
+                "phases": {
+                  "setupExecutionPrograms": {
+                    "count": 1,
+                    "ms": 0.0020000000004074536
+                  },
+                  "cloneSource": {
+                    "count": 28,
+                    "ms": 18.22240000000238
+                  },
+                  "mutation": {
+                    "count": 28,
+                    "ms": 0.38720000000193977
+                  },
+                  "outerSnapshot": {
+                    "count": 7498,
+                    "ms": 193.89820299996063
+                  },
+                  "outerComparison": {
+                    "count": 3750,
+                    "ms": 51.795101000017894
+                  },
+                  "commonGate": {
+                    "count": 29,
+                    "ms": 450.01050699999996
+                  },
+                  "encode": {
+                    "count": 1,
+                    "ms": 1237.164514
+                  },
+                  "decodeDiagnostic": {
+                    "count": 2,
+                    "ms": 6.722899999998845
+                  },
+                  "independentComparison": {
+                    "count": 2,
+                    "ms": 2577.710814
+                  },
+                  "serialize": {
+                    "count": 1,
+                    "ms": 34.450299999998606
+                  },
+                  "decodeArtifact": {
+                    "count": 1,
+                    "ms": 3.843300000000454
+                  }
+                }
+              },
+              {
+                "spec": "prior-capacity-fixed-commit",
+                "group": "state-modifier-values",
+                "syncMs": 4736.840627999998,
+                "phases": {
+                  "setupExecutionPrograms": {
+                    "count": 1,
+                    "ms": 0.002899999999499414
+                  },
+                  "cloneSource": {
+                    "count": 28,
+                    "ms": 16.172499999998763
+                  },
+                  "mutation": {
+                    "count": 28,
+                    "ms": 0.1739000000015949
+                  },
+                  "outerSnapshot": {
+                    "count": 7498,
+                    "ms": 192.81220200002463
+                  },
+                  "outerComparison": {
+                    "count": 3750,
+                    "ms": 54.84100099999523
+                  },
+                  "commonGate": {
+                    "count": 29,
+                    "ms": 414.27020099999754
+                  },
+                  "encode": {
+                    "count": 1,
+                    "ms": 1392.126107
+                  },
+                  "decodeDiagnostic": {
+                    "count": 2,
+                    "ms": 4.39770000000135
+                  },
+                  "independentComparison": {
+                    "count": 2,
+                    "ms": 2614.177117000001
+                  },
+                  "serialize": {
+                    "count": 1,
+                    "ms": 31.69380000000092
+                  },
+                  "decodeArtifact": {
+                    "count": 1,
+                    "ms": 4.63589999999931
+                  }
+                }
+              }
+            ],
+            "outcome": "3 selected tasks timed out;0pass/3fail/174skip. Instrumented observation,not mandatory suite success."
+          },
+          "candidate": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T12-16-26-463Z-5-2aa83c/manifest.json",
+              "bytes": 9225,
+              "sha256": "54bea8a049b8bdefb2f550b603a77dae4f4786716a4ab6c88fd11850ef4b1521"
+            },
+            "log": {
+              "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/candidate-generic.log",
+              "bytes": 39339,
+              "sha256": "eb576b904856f27cdebe6e3c9a6416e148df780b91467051a642b88f15f70ea8"
+            },
+            "sync": [
+              {
+                "spec": "prior-capacity-fixed-commit",
+                "group": "missing-write",
+                "syncMs": 2723.870399,
+                "phases": {
+                  "outerSnapshot": {
+                    "count": 7714,
+                    "ms": 59.93290000000002
+                  },
+                  "outerComparison": {
+                    "count": 3849,
+                    "ms": 93.41469999999208
+                  },
+                  "commonGate": {
+                    "count": 32,
+                    "ms": 518.625500000001
+                  },
+                  "setupExecutionPrograms": {
+                    "count": 1,
+                    "ms": 166.92679999999996
+                  },
+                  "cloneSource": {
+                    "count": 28,
+                    "ms": 16.636999999999716
+                  },
+                  "mutation": {
+                    "count": 28,
+                    "ms": 0.5917000000004009
+                  },
+                  "proofCapture": {
+                    "count": 29,
+                    "ms": 52.04309999999987
+                  },
+                  "materialize": {
+                    "count": 29,
+                    "ms": 32.456000000000586
+                  },
+                  "encode": {
+                    "count": 1,
+                    "ms": 657.6711
+                  },
+                  "decodeDiagnostic": {
+                    "count": 2,
+                    "ms": 7.8245999999999185
+                  },
+                  "independentComparison": {
+                    "count": 2,
+                    "ms": 1133.1341989999996
+                  },
+                  "serialize": {
+                    "count": 1,
+                    "ms": 50.78409999999985
+                  },
+                  "decodeArtifact": {
+                    "count": 1,
+                    "ms": 6.7500999999997475
+                  }
+                }
+              },
+              {
+                "spec": "prior-capacity-fixed-commit",
+                "group": "state-modifier-identity",
+                "syncMs": 2302.637175,
+                "phases": {
+                  "setupExecutionPrograms": {
+                    "count": 1,
+                    "ms": 0.002199999999902502
+                  },
+                  "cloneSource": {
+                    "count": 28,
+                    "ms": 15.675598999997419
+                  },
+                  "mutation": {
+                    "count": 28,
+                    "ms": 0.28940000000329746
+                  },
+                  "proofCapture": {
+                    "count": 29,
+                    "ms": 39.43620000000101
+                  },
+                  "outerSnapshot": {
+                    "count": 7498,
+                    "ms": 43.649498999971
+                  },
+                  "outerComparison": {
+                    "count": 3750,
+                    "ms": 25.26279999999315
+                  },
+                  "commonGate": {
+                    "count": 29,
+                    "ms": 415.32139599999846
+                  },
+                  "materialize": {
+                    "count": 29,
+                    "ms": 25.490099999998165
+                  },
+                  "encode": {
+                    "count": 1,
+                    "ms": 557.9200940000001
+                  },
+                  "decodeDiagnostic": {
+                    "count": 2,
+                    "ms": 3.9434000000001106
+                  },
+                  "independentComparison": {
+                    "count": 2,
+                    "ms": 1127.1375879999996
+                  },
+                  "serialize": {
+                    "count": 1,
+                    "ms": 34.32289899999978
+                  },
+                  "decodeArtifact": {
+                    "count": 1,
+                    "ms": 3.6162999999996828
+                  }
+                }
+              },
+              {
+                "spec": "prior-capacity-fixed-commit",
+                "group": "state-modifier-values",
+                "syncMs": 2393.582074,
+                "phases": {
+                  "setupExecutionPrograms": {
+                    "count": 1,
+                    "ms": 0.0027999999992971425
+                  },
+                  "cloneSource": {
+                    "count": 28,
+                    "ms": 15.412900000001173
+                  },
+                  "mutation": {
+                    "count": 28,
+                    "ms": 0.1651000000010754
+                  },
+                  "proofCapture": {
+                    "count": 29,
+                    "ms": 36.09850000000097
+                  },
+                  "outerSnapshot": {
+                    "count": 7498,
+                    "ms": 51.04379900000367
+                  },
+                  "outerComparison": {
+                    "count": 3750,
+                    "ms": 31.602900000013506
+                  },
+                  "commonGate": {
+                    "count": 29,
+                    "ms": 407.63269500000024
+                  },
+                  "materialize": {
+                    "count": 29,
+                    "ms": 26.63010000000031
+                  },
+                  "encode": {
+                    "count": 1,
+                    "ms": 636.8961929999996
+                  },
+                  "decodeDiagnostic": {
+                    "count": 2,
+                    "ms": 4.947599999997692
+                  },
+                  "independentComparison": {
+                    "count": 2,
+                    "ms": 1136.3003879999997
+                  },
+                  "serialize": {
+                    "count": 1,
+                    "ms": 31.01759899999888
+                  },
+                  "decodeArtifact": {
+                    "count": 1,
+                    "ms": 4.639900000000125
+                  }
+                }
+              }
+            ],
+            "outcome": "3 selected assertions passed,174 skipped;runner contract_failure for skips/temporary console observations. Not mandatory suite success."
+          },
+          "qualification": "One original-live baseline/candidate pair;shared setup first-task cost169/167ms versus later cache hits preserved;setup/execution/program combined,not individually attributed. Outer snapshot/comparison/common whole call/proof/materialize/encode/decode/independent comparison distinguished. Synchronous aggregates detached before first await. Async write includes serialization/scheduling and timeout contamination risk;not pure I/O. No saved-interned replay or whole-suite/3-run performance claim. Measured candidate preceded selection-only mutability correction;performance numbers are candidate observation,not final-source performance proof. No second live diagnostic because correction restores original selection generation and does not change the demonstrated outer duplication decision.",
+          "finding": "Outer snapshot cost falls~193-211ms to44-60ms. Added capture+materialize63-85ms. Encode1163-1392ms to558-658ms and two pre-await independent comparisons2396-2614ms to1127-1136ms. Retaining call-local canonical sharing reduces duplicate objects downstream without changing codec/comparison/common owner. No additional diagnostic run needed."
+        },
+        "verification": {
+          "focusedSemantic": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T12-19-33-510Z-21-c888b6/manifest.json",
+              "bytes": 3095,
+              "sha256": "5ca829722cdbc29e3104677028f24e8535aaa28b525cfdcdf0bf81fe0ad6f426"
+            },
+            "assertionsPassed": 5,
+            "skipped": 177,
+            "qualification": "Filtered runner contract_failure; final unfiltered182 still required."
+          },
+          "earlyArtifactComparison": "Baseline and candidate three original groups: complete decoded values/bytes/SHA identical3 each,84 negatives/4751 failed checks;saved failed baseline does not prove assertion completion. This early check preceded final177 reconciliation;authoritative final result is verification.reconciliation.",
+          "correctedIssues": [
+            "Initial semantic expected structuredClone normalized null prototype; independent expected typed null prototype restored explicitly.",
+            "Initial copy fixture asserted program anchor path rather than source transport.prepared; corrected to existing source identity contract.",
+            "Restored existing Mutable-to-source test cast boundary;initial typecheck/lint errors corrected.",
+            "Scoped review found initial candidate shared snapshotter froze public selection.writers;restored original mutable scalar projection and added nested writers mutation assertion. Pre-correction182 passed but is not final-source evidence;rerun final182 justified by actual source/fixture correction,not same-condition repetition."
+          ],
+          "preCorrectionFullAttempt": {
+            "passed": 182,
+            "failed": 0,
+            "qualification": "Earlier source froze public selection writers;not final-source success. Final182 remains required.",
+            "manifest": {
+              "path": ".test-results/2026-09-27T12-21-56-913Z-4-e5392f/manifest.json",
+              "bytes": 48042,
+              "sha256": "6b292c7d4e717ca8ed32efec05b6c1bbb2a354e4bdcd7a183e521f1188f294c4"
+            }
+          },
+          "attempt": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T12-24-10-999Z-4-337e08/manifest.json",
+              "bytes": 48042,
+              "sha256": "2b69b949ea2e75ac28e5ed292786b37179a3b9b49d46afbbdc04f8d1de7d9d9a"
+            },
+            "log": {
+              "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/final-attempt-corrected.log",
+              "bytes": 33413,
+              "sha256": "26f08c39297dd625e6a67db51ace83e3d028184420f49187a8692e040c611d7e"
+            },
+            "originalTests": 177,
+            "addedSemanticFixtures": 5,
+            "passed": 182,
+            "failed": 0,
+            "skipped": 0,
+            "warnings": 0,
+            "durationMs": 68148,
+            "finalSourceUninstrumented": true,
+            "originalFailedTaskFinalDurationsMs": {
+              "missing-write": 2802.426314999997,
+              "state-modifier-identity": 2952.6432880000066,
+              "state-modifier-values": 3016.2366879999972
+            },
+            "scope": "Unchanged5000ms/affinity0-7/unit4workers. Full original fixtures assert memory/serialized/actual-disk independent complete restoration before all original denial/outcome assertions. New five test proof lifetime,mutable observed selection+canonical,partial/population/semantic view/live copy/Set+Map cardinality/invalid proof forms.",
+            "qualification": "Final scoped attempt success;historical240 remains235pass/5fail. Not whole240 success,common/raw/HP closure or whole-suite performance claim."
+          },
+          "reconciliation": {
+            "report": {
+              "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/reconciliation.json",
+              "bytes": 5096,
+              "sha256": "f4849eb8f8e84c6c95a112969787b3addea02e4261a96bd0c991ba285febaf23"
+            },
+            "script": {
+              "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/reconcile.mjs",
+              "bytes": 4977,
+              "sha256": "ca7c58de89d5b2de17a1bebc5dbb8dcbdee925e3a70a1f9ad30693cd1f056039"
+            },
+            "receipts": 182,
+            "receiptErrors": 0,
+            "originalArtifacts": 177,
+            "identicalBytesSha": 177,
+            "independentCompleteDecodedComparisons": 177,
+            "negativeIdentities": 1854,
+            "failedChecks": 58824,
+            "boundaries": {
+              "changedCapacity": 81,
+              "modifierOnly": 32,
+              "notApplicable": 48,
+              "beforeAttempt": 16
+            },
+            "protectedUnits0to51": "unchanged",
+            "protectedUnit52Checkpoints": "consumer/restoration/committed/resume/gateDesign unchanged",
+            "protectedSources": "All read-only references,committed fixture,master-data canonical comparison and consumer source bytes identical to5fef367."
+          },
+          "sourceChecks": {
+            "lint": {
+              "status": "passed",
+              "log": {
+                "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/lint-final.log",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              }
+            },
+            "rootTypecheck": {
+              "status": "passed",
+              "log": {
+                "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/typecheck-final.log",
+                "bytes": 59,
+                "sha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+              }
+            },
+            "format": {
+              "status": "passed",
+              "log": {
+                "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/format.log",
+                "bytes": 66,
+                "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+              },
+              "qualification": "Default prettier --check .;docs exclusion retained,no forced override."
+            }
+          },
+          "reuse": "Committed65/proof5,comparison12,consumer58 and prior normal/capture parity evidence reused only for unchanged responsibilities. Changed outer attempt owns final182 evidence;published control uses new affected run,not old7.",
+          "control": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T12-27-10-052Z-4-e50bd6/manifest.json",
+              "bytes": 5633,
+              "sha256": "574fa5ec052b3369bee53f2e84d9d65d87f5411ff8b1fbdd8b08eee1febb6e33"
+            },
+            "log": {
+              "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/control.log",
+              "bytes": 2018,
+              "sha256": "168ab3d128a417ecbf008395a601687b794f6ad8feb01c9bf8e82f3eda058e1b"
+            },
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "warnings": 0,
+            "durationMs": 139619,
+            "scope": "Full original published master control audit,affinity0-7/audit1worker/unchanged180000ms;source and population not filtered or migrated. Current committed and attempt published paths saved before assertion.",
+            "reconciliation": {
+              "report": {
+                "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/control-reconciliation.json",
+                "bytes": 1988,
+                "sha256": "fa7e22e0f2ef04364f2c99ae24313b9807f1e31d8f7d59758c98442e9005f47f"
+              },
+              "script": {
+                "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/control-reconcile.mjs",
+                "bytes": 2455,
+                "sha256": "e40fe9813e7e14a2878dd37ba1d23a4700bada09bafc541680c6531b9c9b8833"
+              },
+              "receipts": 17,
+              "receiptErrors": 0,
+              "published": [
+                {
+                  "path": "production-preparation-bp-capacity.json",
+                  "status": "passed",
+                  "gateStatus": "passed",
+                  "failures": 0,
+                  "boundaries": 0,
+                  "completeSavedValueMatchesArchived": true,
+                  "identicalBytesSha": true,
+                  "receipt": {
+                    "path": "production-preparation-bp-capacity.json",
+                    "format": "json",
+                    "allowEmpty": false,
+                    "bytes": 1865,
+                    "sha256": "a8dbf42932c698919192f95992d6dd02f1b75a288f8b48d15b66f51135e82e4c"
+                  }
+                },
+                {
+                  "path": "production-preparation-bp-capacity-attempt.json",
+                  "status": "passed",
+                  "gateStatus": "passed",
+                  "failures": 0,
+                  "boundaries": 0,
+                  "completeSavedValueMatchesArchived": true,
+                  "identicalBytesSha": true,
+                  "receipt": {
+                    "path": "production-preparation-bp-capacity-attempt.json",
+                    "format": "json",
+                    "allowEmpty": false,
+                    "bytes": 1678,
+                    "sha256": "d9f2bde629eae89f6bb0ccff0f25f46a8a53c8aad30b3dbe28736fe8706d2359"
+                  }
+                }
+              ]
+            },
+            "qualification": "Published capacity skill declarations/selections/boundaries are0 for both gates;excludedNp1 unchanged. This verifies current empty-population/control integration,not nonzero production capacity execution. Original177 fixture and new semantic fixture verify nonempty published gate/denials. Archived control values/bytes match both saved capacity results;oldcontrol7 is not changed-responsibility success."
+          }
+        },
+        "systematicReview": {
+          "status": "Scoped final delta review,Blocking0;final182 and affected control7 successful. Remaining raw/HP/full quality gates are outside this slice and remain Blocking for product closure.",
+          "matrix": [
+            "Normal clone denial:original allocation/topology+capture attach preserved;immutable acquisition before check;complete denied values retained.",
+            "Population alternate path:all three fields/unmatched/duplicate/order/cardinality captured before matching.",
+            "Positive/ranking projection:positive payload-time proof;ranking existing envelope;no authority replacement.",
+            "Published/control:independent gate and complete before-assertion save;final control7/17 receipts passed. Actual published capacity population0/excludedNp1 unchanged;nonempty semantic published fixture remains separate.",
+            "Recovery/runtime:unchanged native classification and retained prior commits;no new execution writer/cache path."
+          ],
+          "causeAnalysis": {
+            "mechanism": "Raw view returned mutable values;scalar snapshot independently unfolded shared objects at every outer check.",
+            "implementationGapInference": "Evidence acquisition lived in fixture/payload storage instead of outer observation lifetime;separate check snapshots lost sharing although semantic view was identical.",
+            "priorDetection": "Existing negative fixtures retained clones and tested transport restoration,not post-acquisition mutation and detached-proof ownership.",
+            "recurrenceScope": "Direct ordinary/population/positive/published capture and separate control consumer only;common/scalar/codec/HP remain independent owners."
+          }
+        },
+        "remainingGates": [
+          "Existing raw occurrence aggregation and HP production inventory5000ms failures remain unverified/unresolved at their own owners. Common attempt/shared scalar/global codec remain read-only and no blanket success claim is made.",
+          "README mandatory quality,final integrated production counters/digests/all-receipt closure,unit52 product completion and wholeTSK08 remain unmet. Historical240 remains235pass/5fail;no synthetic all240 success or unchanged quality retry.",
+          "TSK08 in_progress,TSK09.1/09 blocked;Step0/1/3 established,Step2 open;units46..51 complete and all protected checkpoints preserved."
+        ],
+        "nextOperation": "Reuse final attempt182/control7 plus committed65/proof5 and05d16fa/c387c9f. Next separately bounded plan should address one remaining original-live raw aggregation or HP production inventory owner,starting with saved failure/source input identities and minimum phase-attribution question. Do not automatically edit common/scalar/codec/runtime,rerun whole240/quality,or reopen completed units. Final integrated counters/digests/quality require concrete remaining-gate cause resolution.",
+        "sessionBoundary": "Started12:13:06UTC;finished within60min checkpoint/90min ceiling. No GC/runner/schedule/timeout/threshold changes,clone hoist/test exclusion/newfamily/quality retry. Affinity0-7,unit4workers,production50%,audit1worker retained.",
+        "finalSourceIdentity": [
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.ts",
+            "bytes": 21822,
+            "sha256": "c76b959c574fd9a004c92dd8d2999026721578ecdbf08acc52529150540e8afa"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+            "bytes": 64756,
+            "sha256": "3677261c3110278b836d0d6ca31995105ebeb56bae8657cc265a936afe3288ca"
+          }
+        ],
+        "checkpointPolicy": "Review/stage only two attempt source files and existing Task/evidence/navigation records;product-incomplete local checkpoint,no push. Resolve checkpoint commit from Git history;record cannot include its own content hash.",
+        "execution": {
+          "finalAttempt": "success182,unfiltered/uninstrumented",
+          "affectedPublishedControl": "success7,unfiltered/unchanged audit conditions",
+          "quality": "not run;raw/HP known gates and product closure remain Blocking",
+          "diffWhitespace": "git diff --check passed",
+          "worktreeScope": "Only two primary source files and existing documentation records/navigation;no unrelated changes,push or new plan file."
+        },
+        "documentationVerification": {
+          "tests": 6,
+          "failed": 0,
+          "integrity": "passed;final record-only update rechecked with docs-integrity",
+          "log": {
+            "path": ".test-results/tsk-08-capacity-attempt-materialization-20260927/docs.log",
+            "bytes": 527,
+            "sha256": "d508c6f1372e926d5f5a21bac4d88e6927c6b0779c31a4f4ec2691f1c665c46f"
+          },
+          "format": "Default format success reused;source/input unchanged after run and docs exclusion retained."
+        },
+        "completedAt": "2026-09-27T12:34:20+00:00"
       }
     }
   ],
@@ -18420,9 +19049,9 @@
         },
         {
           "stage": 2,
-          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Attempt177 remains174/177 and remaining raw/HP/full quality gates are unresolved.",
-          "nextBoundedScope": "Existing outer capacity attempt full-value proof acquisition/canonical duplication and original177 fixture,published control path;not a new product semantic unit.",
-          "nextScopeQualification": "Next one session: capacityAttemptMaterializationSession;current-source plan and confirmation first,then bounded outer attempt work. Preserve a842b91/05d16fa/c387c9f;common gate/scalar/codec/runtime/raw/HP outside scope.",
+          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;remaining raw/HP/full quality gates are unresolved.",
+          "nextBoundedScope": "Separately planned original-live attribution for one remaining raw aggregation or HP production inventory owner;not a new semantic unit or common/scalar/codec migration.",
+          "nextScopeQualification": "Outer capacity attempt session verified final182/control7 as a scoped checkpoint;reuse a842b91/05d16fa/c387c9f and current result. Separately plan one remaining raw aggregation or HP production inventory owner;common/scalar/codec/runtime remain outside,no whole240/quality retry.",
           "activeUnit52ScopeReference": "boundedUnits[52]"
         },
         {
@@ -18431,11 +19060,11 @@
         }
       ],
       "latestBoundedUnit": 51,
-      "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary. See boundedUnits[52].consumerResponsibilityConvergence/capacityRestorationComparisonCheckpoint/committedCapacityMaterializationCheckpoint for retained scoped checkpoints,not product closure.",
+      "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary. See boundedUnits[52].consumerResponsibilityConvergence/capacityRestorationComparisonCheckpoint/committedCapacityMaterializationCheckpoint for retained scoped checkpoints,not product closure. Current outer attempt checkpoint:original177+5=182/control7 passed,old177 full values/bytes/SHA identical,1854 negatives/58824 failure checks,199 final attempt+control receipts/error0;published capacity selected0/excludedNp1 remains a distinct boundary.",
       "nextBoundedUnit": "Existing unit52 gate slice only;no new semantic bounded unit selected.",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "Next one session: capacityAttemptMaterializationSession;current-source plan and confirmation first,then bounded outer attempt work. Preserve a842b91/05d16fa/c387c9f;common gate/scalar/codec/runtime/raw/HP outside scope.",
+      "nextScopeQualification": "Outer capacity attempt session verified final182/control7 as a scoped checkpoint;reuse a842b91/05d16fa/c387c9f and current result. Separately plan one remaining raw aggregation or HP production inventory owner;common/scalar/codec/runtime remain outside,no whole240/quality retry.",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190"
@@ -18494,7 +19123,7 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "Existing unit52 scoped checkpoints committed;active next session is capacityAttemptMaterializationSession. Mandatory whole quality/final counters/digests/product closure remain pending.",
+      "status": "Existing unit52 consumer/restoration/committed and current outer attempt checkpoints verified;mandatory whole quality/final counters/digests/product closure remain pending.",
       "name": "Existing outer capacity attempt full-value proof and bounded gate slice",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "historicalPriorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
@@ -19243,9 +19872,9 @@
       },
       "historicalRootQualification": "Historical-prefixed root fields retain the prior selectedAlly preparation context only. Active authority is capacityAttemptMaterializationSession;source/checkpoints are already committed. Historical worktree/quality/graph recommendations are not new instructions.",
       "currentCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-      "currentSessionReference": "handoffPreparation.nextSession.capacityAttemptMaterializationSession",
+      "currentSessionReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
       "capacityAttemptMaterializationSession": {
-        "status": "Read-only preparation complete; first deliverable is a current-source implementation/measurement/verification plan, then wait for user confirmation before source execution/edits.",
+        "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
         "deliverable": "One session, existing outer capacity attempt consumer and177-task fixture: clarify complete observed value-proof ownership/lifetime and reduce demonstrated duplicate generation where justified. Validate final source and published control path; retain unresolved gates and create product-incomplete local checkpoint. Do not promise timeout/whole product closure.",
         "primaryFiles": [
@@ -19404,7 +20033,9 @@
           },
           "diffWhitespace": "git diff --check passed",
           "sourceProtection": "Primary/reference hashes match; all boundedUnits0..52 and resume/consumer/restoration/committed checkpoint/session records equal to a842b91. Only registry/Task/evidence metadata changed."
-        }
+        },
+        "resultReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
+        "sourceIdentityQualification": "primaryFiles are read-only preparation baseline identities;final source identities and valid verification belong to resultReference."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -20376,7 +21007,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Next one session: capacityAttemptMaterializationSession;current-source plan and confirmation first,then bounded outer attempt work. Preserve a842b91/05d16fa/c387c9f;common gate/scalar/codec/runtime/raw/HP outside scope.",
+    "nextSession": "Outer capacity attempt session verified final182/control7 as a scoped checkpoint;reuse a842b91/05d16fa/c387c9f and current result. Separately plan one remaining raw aggregation or HP production inventory owner;common/scalar/codec/runtime remain outside,no whole240/quality retry.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -20413,7 +21044,7 @@
     "asOfProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
     "asOfPreparationBaseline": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "unit52DeferredGates": [
-      "Existing outer capacity attempt consumer is next bounded scope;common attempt owner,shared scalar/global codec,production lifecycle and remaining consumers are deferred. See capacityAttemptMaterializationSession;no automatic migration or whole timeout claim.",
+      "Outer capacity attempt proof ownership/call-local canonical duplication is now verified by final182/control7;see boundedUnits[52].capacityAttemptMaterializationCheckpoint. Remaining common/scalar/codec/production lifecycle consumers are not automatically migrated.",
       "Production execution-semantics/HP inventory read-parse lifecycle repair or broad performance/GC/runner investigation."
     ],
     "consumerCheckpointReference": "boundedUnits[52].consumerResponsibilityConvergence",
@@ -20421,6 +21052,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "handoffPreparation.nextSession.capacityAttemptMaterializationSession"
+    "nextSessionReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint.nextOperation",
+    "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint"
   }
 }

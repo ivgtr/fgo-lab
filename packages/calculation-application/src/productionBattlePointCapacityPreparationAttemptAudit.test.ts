@@ -16,11 +16,17 @@ import {
   battlePointCapacityAttemptProgram,
   battlePointCapacityAttemptSelection,
   battlePointCapacityAttemptSource,
-  battlePointCapacityAttemptDiagnostic,
+  battlePointCapacityAttemptValueProof,
   auditBattlePointCapacityPreparationAttempts,
+  auditBattlePointCapacityPreparationAttemptsWithProof,
   auditPublishedBattlePointCapacityPreparationAttempts,
   type BattlePointCapacityAttemptSource,
 } from './productionBattlePointCapacityPreparationAttemptAudit';
+import {
+  captureBattlePointCapacityValue,
+  materializeBattlePointCapacityValue,
+  type BattlePointCapacityValueProof,
+} from './productionBattlePointCapacityProof';
 import { type BattlePointPreparationAttemptFailureReason } from './productionBattlePointPreparationAttemptAudit';
 import {
   productionAuditTestOptions,
@@ -738,7 +744,8 @@ for (const spec of specs)
           reason: BattlePointPreparationAttemptFailureReason;
           path: string;
           gate: ReturnType<typeof auditBattlePointCapacityPreparationAttempts>;
-          proof: unknown;
+          proof: BattlePointCapacityValueProof;
+          envelope: 'observation' | 'population' | 'published';
         }[] = [];
         const add = (
           name: string,
@@ -749,19 +756,14 @@ for (const spec of specs)
           if (!accepts(name)) return;
           const s = cloneSource(positive.source);
           mutate(s);
-          negatives.push({
-            name,
-            reason,
-            path,
-            gate: auditBattlePointCapacityPreparationAttempts({
-              selections: [positive.selection],
-              expected: [positive.program],
-              observations: [s as unknown as BattlePointCapacityAttemptSource],
-            }),
-            proof: battlePointCapacityAttemptDiagnostic(
-              s as unknown as BattlePointCapacityAttemptSource,
-            ),
+          const { gate, valueProof } = auditBattlePointCapacityPreparationAttemptsWithProof({
+            selections: [positive.selection],
+            expected: [positive.program],
+            observations: [s as unknown as BattlePointCapacityAttemptSource],
+            evidence: 'diagnostics',
           });
+          // The gate acquired this clone's complete values before its lifetime ends.
+          negatives.push({ name, reason, path, gate, proof: valueProof, envelope: 'observation' });
         };
         // Grouped counterexamples follow the original capture; no writer is replayed.
         const actionIndex = positive.source.rejection.capture!.transitions.length - 1;
@@ -778,20 +780,19 @@ for (const spec of specs)
           observations: BattlePointCapacityAttemptSource[],
         ) => {
           if (!accepts(name)) return;
+          const { gate, valueProof } = auditBattlePointCapacityPreparationAttemptsWithProof({
+            selections,
+            expected,
+            observations,
+            evidence: 'population',
+          });
           negatives.push({
             name,
             reason: 'attemptPopulationMismatch',
             path,
-            gate: auditBattlePointCapacityPreparationAttempts({
-              selections,
-              expected,
-              observations,
-            }),
-            proof: {
-              selections,
-              expected: expected.map((p) => p.selection),
-              observations: observations.map(battlePointCapacityAttemptDiagnostic),
-            },
+            gate,
+            proof: valueProof,
+            envelope: 'population',
           });
         };
         if (family === 'missing') {
@@ -1383,7 +1384,8 @@ for (const spec of specs)
               failures: missingDeclarations.failures,
               firstDifference: missingDeclarations.firstDifference,
             },
-            proof: missingDeclarations,
+            proof: captureBattlePointCapacityValue(missingDeclarations),
+            envelope: 'published',
           });
         }
         const payload = {
@@ -1393,12 +1395,20 @@ for (const spec of specs)
           missingPublished,
           positive: {
             gate: positive.gate,
-            proof: battlePointCapacityAttemptDiagnostic(positive.source),
+            proof: materializeBattlePointCapacityValue(
+              battlePointCapacityAttemptValueProof(positive.source),
+            ),
             result: positive.result,
           },
           normal: { result: normal.result, calculation: normal.calculation },
           ranking: { gate: ranking.gate, result: ranking.result },
-          negatives,
+          negatives: negatives.map(({ proof, envelope, ...negative }) => ({
+            ...negative,
+            proof:
+              envelope !== 'observation'
+                ? materializeBattlePointCapacityValue(proof)
+                : (materializeBattlePointCapacityValue(proof) as unknown[])[0],
+          })),
         };
         const diagnostic = encodeProductionAuditDiagnostic(payload);
         const roundTrip = equalProductionAuditDiagnosticValues(
@@ -1479,3 +1489,251 @@ for (const spec of specs)
         );
       },
     );
+
+// Independent expected envelope: raw typed values, not a canonical projection or proof round trip.
+function observedAttemptValues(source: Parameters<typeof battlePointCapacityAttemptValueProof>[0]) {
+  const rejection = source.rejection;
+  return {
+    selection: source.program?.selection,
+    canonical: rejection?.program?.expected,
+    capture: rejection?.capture,
+    steps: source.steps,
+    prepared:
+      rejection?.prepared &&
+      Object.fromEntries(Object.entries(rejection.prepared).filter(([key]) => key !== 'master')),
+    calculation: rejection?.calculation,
+  };
+}
+function proofFixture() {
+  const spec = specs[0]!;
+  return run(fixtureMaster(spec), spec);
+}
+
+it('fixes capacity attempt denial values before later owner and materialization mutations', () => {
+  const original = proofFixture();
+  const source = cloneSource(original.source);
+  const observation = source as unknown as BattlePointCapacityAttemptSource;
+  const leaf = { absent: undefined, values: [1, 2] };
+  const extra = {
+    leaf,
+    again: leaf,
+    copy: { absent: undefined, values: [1, 2] },
+    set: new Set([leaf]),
+    map: new Map([[leaf, undefined]]),
+    nullObject: Object.assign(Object.create(null) as object, { absent: undefined }),
+    tag: { kind: 'array', items: [1] },
+  };
+  Reflect.set(source.rejection.prepared, 'forbiddenObserved', extra);
+  original.program.selection.canonicalIdentity += ':observed-tampering';
+  expect(
+    Reflect.set(original.program.selection.writers as object, '0', { forbiddenWriter: undefined }),
+  ).toBe(true);
+  Reflect.set(original.program.rejection.expected, 'forbiddenCanonical', undefined);
+  const expected = structuredClone([observedAttemptValues(observation)]);
+  // structuredClone intentionally normalizes null prototypes; restore the expected typed field explicitly.
+  Object.setPrototypeOf(
+    Reflect.get(Reflect.get(expected[0]!.prepared!, 'forbiddenObserved'), 'nullObject'),
+    null,
+  );
+  const { gate, valueProof } = auditBattlePointCapacityPreparationAttemptsWithProof({
+    selections: [original.selection],
+    expected: [original.program],
+    observations: [observation],
+    evidence: 'diagnostics',
+  });
+  const selectionFailure = gate.failures.find((f) => f.checkPath === 'capacity.selection');
+  expect(selectionFailure?.reason).toBe('attemptCanonicalMismatch');
+  expect(selectionFailure?.expected).not.toEqual(selectionFailure?.actual);
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(valueProof), expected),
+  ).toBe(true);
+  const frozen = new WeakSet();
+  const checkFrozen = (value: unknown): void => {
+    if (value === null || typeof value !== 'object' || frozen.has(value)) return;
+    frozen.add(value);
+    expect(Object.isFrozen(value)).toBe(true);
+    for (const child of Object.values(value)) checkFrozen(child);
+  };
+  checkFrozen(valueProof);
+  leaf.values[0] = 9;
+  extra.set.clear();
+  extra.map.clear();
+  expect(
+    Reflect.set(original.program.selection.writers as object, '0', { later: 'modified' }),
+  ).toBe(true);
+  original.program.selection.writers = [];
+  Reflect.deleteProperty(original.program.rejection.expected, 'forbiddenCanonical');
+  Reflect.deleteProperty(source.rejection.prepared, 'forbiddenObserved');
+  source.steps.length = 0;
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(valueProof), expected),
+  ).toBe(true);
+  const materialized = materializeBattlePointCapacityValue(valueProof) as { steps: unknown[] }[];
+  materialized[0]!.steps.length = 0;
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(valueProof), expected),
+  ).toBe(true);
+  expect(equalProductionAuditDiagnosticValues(materialized, expected)).toBe(false);
+  expect(
+    equalProductionAuditDiagnosticValues(
+      materializeBattlePointCapacityValue(battlePointCapacityAttemptValueProof(observation)),
+      expected[0],
+    ),
+  ).toBe(false);
+});
+
+it('retains complete partial capacity attempt transport without substituting fixed authority', () => {
+  const original = proofFixture();
+  const observations = [
+    {},
+    {
+      program: original.program,
+      rejection: { program: original.program.rejection },
+      steps: [undefined],
+    },
+  ];
+  const expected = structuredClone(observations.map(observedAttemptValues));
+  const { gate, valueProof } = auditBattlePointCapacityPreparationAttemptsWithProof({
+    selections: [original.selection],
+    expected: [original.program],
+    observations,
+    evidence: 'diagnostics',
+  });
+  expect(gate.status).toBe('failed');
+  expect(gate.failures.some((f) => f.checkPath === 'transport.preparedObject')).toBe(true);
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(valueProof), expected),
+  ).toBe(true);
+  const encoded = encodeProductionAuditDiagnostic(materializeBattlePointCapacityValue(valueProof));
+  expect(
+    equalProductionAuditDiagnosticValues(decodeProductionAuditDiagnostic(encoded), expected),
+  ).toBe(true);
+  Reflect.set(observations[1]!.rejection!, 'capture', original.source.rejection.capture);
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(valueProof), expected),
+  ).toBe(true);
+});
+
+it('fixes all three capacity attempt population fields including ordered duplicate and unmatched observations', () => {
+  const original = proofFixture();
+  const unmatched = {
+    ...original.source,
+    program: { ...original.program, canonicalIdentity: 'unmatched-capacity-attempt' },
+  };
+  const input = {
+    selections: [original.selection, { ...original.selection }],
+    expected: [original.program],
+    observations: [unmatched, original.source, original.source],
+    evidence: 'population' as const,
+  };
+  const expected = structuredClone({
+    selections: input.selections,
+    expected: input.expected.map((p) => p.selection),
+    observations: input.observations.map(observedAttemptValues),
+  });
+  const { gate, valueProof } = auditBattlePointCapacityPreparationAttemptsWithProof(input);
+  expect(
+    gate.failures.filter((f) => f.reason === 'attemptPopulationMismatch').map((f) => f.checkPath),
+  ).toEqual([
+    'capacity.population.selections',
+    'capacity.population.observations',
+    'capacity.population.unique',
+  ]);
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(valueProof), expected),
+  ).toBe(true);
+  input.selections.length = 0;
+  input.expected.length = 0;
+  input.observations.reverse();
+  input.observations.length = 1;
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(valueProof), expected),
+  ).toBe(true);
+});
+
+it('keeps capacity attempt typed proof, live copy authority and separate published calls distinct', () => {
+  const original = proofFixture();
+  const proof = battlePointCapacityAttemptValueProof(original.source);
+  const expected = structuredClone(observedAttemptValues(original.source));
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(proof), expected),
+  ).toBe(true);
+  const copiedPrepared = { ...original.source.rejection.prepared };
+  attachBattlePointPreparationRejectionObservation(
+    copiedPrepared,
+    original.source.rejection.capture!,
+  );
+  const copied = {
+    ...original.source,
+    rejection: { ...original.source.rejection, prepared: copiedPrepared },
+  };
+  expect(
+    equalProductionAuditDiagnosticValues(
+      observedAttemptValues(copied),
+      observedAttemptValues(original.source),
+    ),
+  ).toBe(true);
+  const copyGate = auditBattlePointCapacityPreparationAttemptsWithProof({
+    selections: [original.selection],
+    expected: [original.program],
+    observations: [copied],
+    evidence: 'diagnostics',
+  }).gate;
+  expect(
+    copyGate.failures.some(
+      (f) => f.reason === 'attemptIdentityMismatch' && f.checkPath === 'transport.prepared',
+    ),
+  ).toBe(true);
+  const published = () =>
+    auditPublishedBattlePointCapacityPreparationAttempts(
+      original.master,
+      [original.selection],
+      [original.program],
+      [original.source],
+    );
+  expect(published().status).toBe('passed');
+  original.program.selection.writers = [];
+  const changed = published();
+  expect(changed.status).toBe('failed');
+  expect(changed.gate.failures.some((f) => f.checkPath === 'capacity.selection')).toBe(true);
+  expect(
+    equalProductionAuditDiagnosticValues(materializeBattlePointCapacityValue(proof), expected),
+  ).toBe(true);
+});
+
+it('preserves distinct equal capacity attempt Set members and Map keys and rejects codec cardinality loss', () => {
+  const original = proofFixture();
+  const first = { value: 1 },
+    second = { value: 1 };
+  Reflect.set(original.source.rejection.prepared, 'forbiddenContainers', {
+    set: new Set([first, second]),
+    map: new Map([
+      [first, 'first'],
+      [second, 'second'],
+    ]),
+  });
+  const expected = structuredClone(observedAttemptValues(original.source));
+  const proof = battlePointCapacityAttemptValueProof(original.source);
+  const restored = materializeBattlePointCapacityValue(proof);
+  expect(equalProductionAuditDiagnosticValues(restored, expected)).toBe(true);
+  expect(
+    equalProductionAuditDiagnosticValues(
+      decodeProductionAuditDiagnostic(encodeProductionAuditDiagnostic(restored)),
+      expected,
+    ),
+  ).toBe(false);
+  const input = {
+    selections: [original.selection],
+    expected: [original.program],
+    observations: [original.source],
+    evidence: 'diagnostics' as const,
+  };
+  Reflect.set(input, 'evidence', 'unknown');
+  expect(() => auditBattlePointCapacityPreparationAttemptsWithProof(input)).toThrow(
+    'invalid_capacity_attempt_proof_evidence',
+  );
+  Reflect.set(original.source.rejection.prepared, 'forbiddenInvalidValue', NaN);
+  expect(() => battlePointCapacityAttemptValueProof(original.source)).toThrow(
+    'invalid_capacity_proof_number',
+  );
+});

@@ -18,7 +18,12 @@ import {
   type BattlePointPreparationAttemptFailure,
 } from './productionBattlePointPreparationAttemptAudit';
 import { battlePointCapacityCanonicalInventory } from './productionBattlePointCapacityPreparationAudit';
-import { scalarQuantitySnapshot as snapshot } from './productionScalarQuantityAudit';
+import {
+  battlePointCapacityCanonicalSnapshotter,
+  captureBattlePointCapacityValue,
+  type BattlePointCapacityValueProof,
+} from './productionBattlePointCapacityProof';
+import { scalarQuantitySnapshot } from './productionScalarQuantityAudit';
 import type { CalculationExecution, PreparedCalculationScenario } from './scenario';
 
 export interface BattlePointCapacityAttemptSelection {
@@ -58,8 +63,8 @@ export function battlePointCapacityAttemptSelection(
   );
   if (!expected || !writers?.length) return null;
   return {
-    canonicalIdentity: `tsk-08:preparation-bp-capacity-attempt:${canonicalAuditDigest([{ identity: 'selection', value: snapshot([expected, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
-    writers: snapshot(writers),
+    canonicalIdentity: `tsk-08:preparation-bp-capacity-attempt:${canonicalAuditDigest([{ identity: 'selection', value: scalarQuantitySnapshot([expected, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
+    writers: scalarQuantitySnapshot(writers),
   };
 }
 
@@ -109,6 +114,7 @@ export function battlePointCapacityAttemptProgram(
   if (!rejection) throw new TypeError('capacity_attempt_canonical_program_missing');
   const program = { canonicalIdentity: selection.canonicalIdentity, selection, rejection };
   const source = battlePointCapacityAttemptSource(program);
+  const snapshot = battlePointCapacityCanonicalSnapshotter();
   authorities.set(program, {
     selection: snapshot(selection),
     owner: snapshot(view(source)),
@@ -128,17 +134,49 @@ export function battlePointCapacityAttemptSource(
       rejection.capture?.transitions.map((t) => preparationBattlePointStepsFor(t.result)) ?? [],
   };
 }
-export function battlePointCapacityAttemptDiagnostic(source: SourceProof): unknown {
-  return view(source);
+/** Fix complete observed values now; publication must not reread mutable owners. */
+export function battlePointCapacityAttemptValueProof(
+  source: SourceProof,
+): BattlePointCapacityValueProof {
+  return captureBattlePointCapacityValue(view(source));
 }
 
 type Failure = BattlePointPreparationAttemptFailure;
 type Reason = Failure['reason'];
-export function auditBattlePointCapacityPreparationAttempts(input: {
+type CapacityAttemptInput = {
   selections: readonly BattlePointCapacityAttemptSelection[];
   expected: readonly BattlePointCapacityAttemptProgram[];
   observations: readonly SourceProof[];
-}) {
+};
+
+/** Gate-only callers retain their result contract and independent invocation. */
+export function auditBattlePointCapacityPreparationAttempts(input: CapacityAttemptInput) {
+  return inspectCapacityAttempts(input);
+}
+
+/** Acquire every observation before matching, including unmatched and duplicate population. */
+export function auditBattlePointCapacityPreparationAttemptsWithProof(
+  input: CapacityAttemptInput & {
+    evidence: 'diagnostics' | 'population';
+  },
+) {
+  const evidence: unknown = input.evidence;
+  if (evidence !== 'diagnostics' && evidence !== 'population')
+    throw new TypeError('invalid_capacity_attempt_proof_evidence');
+  const valueProof = captureBattlePointCapacityValue(
+    evidence === 'population'
+      ? {
+          selections: input.selections,
+          expected: input.expected.map((p) => p.selection),
+          observations: input.observations.map(view),
+        }
+      : input.observations.map(view),
+  );
+  return { gate: inspectCapacityAttempts(input), valueProof };
+}
+
+function inspectCapacityAttempts(input: CapacityAttemptInput) {
+  const snapshot = battlePointCapacityCanonicalSnapshotter();
   const failures: Failure[] = [];
   const boundaries: {
     canonicalIdentity: string;
@@ -499,6 +537,7 @@ export function auditPublishedBattlePointCapacityPreparationAttempts(
   programs: readonly BattlePointCapacityAttemptProgram[],
   observations: readonly BattlePointCapacityAttemptSource[],
 ) {
+  const snapshot = battlePointCapacityCanonicalSnapshotter();
   const inventory = battlePointCapacityCanonicalInventory(master);
   const gate = auditBattlePointCapacityPreparationAttempts({
     selections,
