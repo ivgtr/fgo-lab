@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   receiveCanonical,
   receiveSelection,
@@ -10,6 +11,12 @@ import {
   type ReceiveSource,
 } from './productionHpReceivePreparationAudit';
 import { evaluatePreparedCalculationResult } from './scenario';
+import {
+  receiveAttemptProgram,
+  auditReceiveAttemptIsolation,
+  receiveAttemptDiagnostic,
+  type ReceiveAttemptProgram,
+} from './productionHpReceivePreparationAttemptAudit';
 import {
   maximumFixedCanonical,
   maximumFixedSelection,
@@ -215,6 +222,7 @@ const maximumFixedObservations: MaximumFixedSource[] = [];
 let maximumFixedPopulationComplete = false;
 const receiveRequests: ReceiveRequest[] = [];
 const receivePrograms: ReceiveProgram[] = [];
+const receiveAttemptPrograms: ReceiveAttemptProgram[] = [];
 const receiveObservations: ReceiveSource[] = [];
 const hpSelections: HpPreparationSelection[] = [];
 const hpPrograms: HpPreparationProgram[] = [];
@@ -254,6 +262,17 @@ function evaluateWithOrderedOperationEvents(
     const selection = receiveSelection(prepared, evaluated, receivePrograms.length)!;
     const direct = evaluatePreparedCalculationResult(prepared, versions);
     receivePrograms.push(receiveProgram(selection, direct));
+    receiveAttemptPrograms.push(
+      receiveAttemptProgram(
+        selection,
+        {
+          kind: 'boundary',
+          actionIndex: selection.canonical.writers[0]!.actionIndex,
+          boundary: selection.canonical.scopeBoundaries.length ? 'outsideScope' : 'nativeCommitted',
+        },
+        direct,
+      ),
+    );
     receiveObservations.push(receiveSource(selection, direct));
   }
   if (maximumFixedCanonical(prepared))
@@ -575,6 +594,7 @@ describe('production master inventory ratchet', () => {
       maximumFixedPopulationComplete = false;
       receiveRequests.length = 0;
       receivePrograms.length = 0;
+      receiveAttemptPrograms.length = 0;
       receiveObservations.length = 0;
       maximumFixedRequests.length = 0;
       maximumFixedSelections.length = 0;
@@ -1840,6 +1860,52 @@ describe('production master inventory ratchet', () => {
       expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(saved), proof)).toBe(true);
       expect(maximumFixedPopulationComplete).toBe(true);
       expect(gate.status, JSON.stringify(gate.firstDifference)).toBe('passed');
+    },
+  );
+
+  it(
+    'retains the original receive control request population in the attempt gate',
+    {
+      timeout: 60_000,
+      ...productionAuditTestOptions(['production-preparation-hp-receive-attempt.json']),
+    },
+    async ({ task }) => {
+      const gate = auditReceiveAttemptIsolation({
+        requests: receiveRequests,
+        expected: receiveAttemptPrograms,
+        observations: receiveObservations,
+      });
+      const proof = {
+        originalControlPopulation: { expected: true, actual: maximumFixedPopulationComplete },
+        gate,
+        proofs: receiveObservations.map(receiveAttemptDiagnostic),
+      };
+      const receipt = await writeProductionAuditArtifact(
+        task.meta,
+        'production-preparation-hp-receive-attempt.json',
+        encodeProductionAuditDiagnostic(proof),
+      );
+      const bytes = await readFile(
+        resolve(
+          process.env['FGO_TEST_ARTIFACT_DIR']!,
+          'production-preparation-hp-receive-attempt.json',
+        ),
+      );
+      expect(bytes.length).toBe(receipt.expectedBytes);
+      expect(createHash('sha256').update(bytes).digest('hex')).toBe(receipt.expectedSha256);
+      expect(
+        isDeepStrictEqual(
+          decodeProductionAuditDiagnostic(
+            decodeProductionAuditArtifact(bytes) as ReturnType<
+              typeof encodeProductionAuditDiagnostic
+            >,
+          ),
+          proof,
+        ),
+      ).toBe(true);
+      expect(maximumFixedPopulationComplete).toBe(true);
+      expect(gate.status, JSON.stringify(gate.firstDifference)).toBe('passed');
+      expect(gate.isolated).toBe(0);
     },
   );
 
