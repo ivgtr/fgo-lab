@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.124"
+document_version: "1.4.125"
 status: "Active"
 updated_at: "2026-09-28"
 ---
@@ -91,3 +91,5 @@ TSK-08の限定committed fixed HP forwardは元保持HP→実条件read／contin
 
 
 Published HP依存接続の結果正本は`boundedUnits[52].hpPublishedDependencyProofCheckpoint`。計画確認後、元control3182requestから478bindingを接続し、attacker条件9／実read90、hpRatioLow4variant／元NP評価16 consumedを保存した。value20cellのcontextと選択2cellは実readではなく、CE条件1／NP残2／value残10・OC25／expression実read／成功recoveryは未観測。局所11／影響control7、旧control12 artifactと保護disk identityの完全保全は同checkpointを参照する。Step0／1／3成立、Step2未完了、TSK-08 in_progress、09.1／09 blocked。全ratchet／legacy／正式性能／最終quality／統合closureを開始していない。`handoffPreparation.nextSession.hpPublishedDependencyProofSession`は今回の承認・結果参照を保持し、`preparationReport`と旧sessionは履歴・成立証拠として残す。
+
+残るPublished HP依存proofの次session準備は[parity evidence](tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.hpPublishedDependencyRemainderSession`。`74daed5`現checkpointのsource15／input1／artifact6／manifest2の24 identityを再照合し、旧準備source13中の後続変更1件を区別した。元3182requestのCE選択なし、残value owner不在、NP／OC owner存在とvariant／cell未接続を記録。Step0／1／3成立、Step2・TSK-08全体未完了、09.1／09 blocked。読込・checksumのみでsource test／producer／audit／quality／live計測は行っていない。次は現コードから計画を提示して利用者確認後に同coverage責務だけを進める。

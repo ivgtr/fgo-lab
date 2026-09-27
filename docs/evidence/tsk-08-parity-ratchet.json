@@ -231,7 +231,8 @@
     "Give native noncommit checkpoint has9 changed/8 boundary/45 negative representatives,final give3/HP6,retained related391 tests andaffectedAudit77;full protected artifact comparisons and370 independent disk/350 test-owned receipt checks error0. Docs6/integrity,format,typecheck,lint passed;target-only checkpoint commit0e8ada48d6b93b4ca8e5073d48e768f2bd494e02,no push. Whole other-family coverage/ratchet/legacy/formal performance/README quality/final integrated counters,digests/all receipts remain pending;see boundedUnits[52].giveNativeNoncommitCheckpoint. Preserve all prior successes/failures with original identities/responsibilities.",
     "HP canonical486／7470とowner-to-consumer参照はunit52.hpCoverageReconciliationCheckpointで照合済み。全native／実read／NP／recoveryは未達。Published maximumRate／baseFixed／baseRate0とnoHealing／transfer／percent／origin／recipient／lifetime／phaseを別分類し、新runtime gapや製品除外を推測していない。transfer候補計画は完了済み履歴。次の正本はhandoffPreparation.nextSession.hpPublishedDependencyProofSession。 Transfer2／default12＋nonempty12の元native／retained selected HP seedはboundedUnits[52].hpTransferEvidenceReconciliationCheckpointで接続済み。Published HP read／HP-dependent NP各0と未観測のnative noncommit／成功recoveryを全closureへ読み替えない。 Current boundedUnits[52].hpRemainingProofReconciliationCheckpoint preserves originalHP7/coverage/transfer/fixed104 andgive6/audit77;explicit557 declarations are not whole runtime reader proof. Supportpre-repair capture is absent;no new observer/family/recovery audit was added. Published control request/captureの限定対応はboundedUnits[52].hpPublishedDependencyProofCheckpointで成立。CE条件1/NP残2/value残10・OC25/expression実read/成功recoveryは未観測。次操作は同checkpoint.nextOperation。",
     "Whole TSK-08 parity/unsupported/invalid/partial-commit/inert-control/stale-mutation and typed diagnostic/artifact closure remains unclaimed; reuse completed units and matrix evidence where identities/governing semantics remain valid. Legacy aggregate auditor/old loader/scan/candidate-list/duplicate fixture cleanup must be reconciled with current actual symbols before removal.",
-    "TSK-08 in_progress;TSK-09.1/09 blocked. Step0/1/3 established; Step2 completed units through[51] retained. Unit52 consumer checkpoint is not unit52 product completion or whole closure."
+    "TSK-08 in_progress;TSK-09.1/09 blocked. Step0/1/3 established; Step2 completed units through[51] retained. Unit52 consumer checkpoint is not unit52 product completion or whole closure.",
+    "Read-only preparation at 74daed5: remaining CE1/NP variants2/value10/OC-rate25 in retained original sidecar; CE none selected in 3182 requests, value owner absent, NP/OC owner presence alone not variant/cell/read proof. Exact identities and next plan boundary: handoffPreparation.nextSession.hpPublishedDependencyRemainderSession. TSK08 whole ratchet/legacy/formal performance/final quality/integrated closure remain open."
   ],
   "statusInvariants": {
     "TSK-06.5": "done",
@@ -22956,8 +22957,8 @@
         {
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open. Current give native noncommit A/B shared audit is implemented with separate filtered empty-read capture;final give3/HP6/related391 retained/audit77 and full comparisons/370 disk+350 declared receipt error0 verified;not whole closure. HPcanonical486/7470/54groups andgenericconsumerreferences verified;seehpCoverageReconciliationCheckpoint;notnative/read/recoveryorwholeclosure. Transfer2 declarations/24 original native operations andretained selectedHP seeds nowconnected;old selected12/HP7/give6/audit77 artifacts retained. ActualHP read/HP-dependentNP0 inthesePublishedcases isnotNP causality/recoveryclosure. See boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint. Explicit HP dependency557 and scoped fixedSelf3 correspondence verified at d91b128;whole native/read/NP/recovery remains open. Published元control3182request/478bindingsの対応を接続。attacker条件9/read90、NP4variant/evaluation16 consumed、expression20 context/selected2cell。CE1/NP2variant/残value10・OC25/expression実read/成功recoveryは未観測。See boundedUnits[52].hpPublishedDependencyProofCheckpoint.",
-          "nextBoundedScope": "CE条件1／NP variant2／value残10・OC25と既存artifact／直接producer captureの読取identity照合に限定して次計画を決める。expression実read observer・support修復前capture・別family／recovery ownerが必要なら別の限定計画へ分離し、今回の未観測を0／unsupported／製品対象外へ変換しない。",
-          "nextScopeQualification": "boundedUnits[52].hpPublishedDependencyProofCheckpoint.nextOperation",
+          "nextBoundedScope": "残るCE条件1／HP依存NP variant2／value-expression10cell／OC-rate25cellを、既存元request・capture・artifactと宣言identityで再照合する。既存責務内の接続だけを計画確認後に実装し、observer／native／recovery等の別ownerを要する場合は未達として止める。",
+          "nextScopeQualification": "handoffPreparation.nextSession.hpPublishedDependencyRemainderSession",
           "activeUnit52ScopeReference": "boundedUnits[52]",
           "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint"
         },
@@ -22971,7 +22972,7 @@
       "nextBoundedUnit": "unit52 remaining coverage: read-only reconciliation and separate bounded plan; no chained family implementation",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "boundedUnits[52].hpPublishedDependencyProofCheckpoint.nextOperation",
+      "nextScopeQualification": "handoffPreparation.nextSession.hpPublishedDependencyRemainderSession",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -23790,7 +23791,7 @@
       },
       "historicalRootQualification": "Historical-prefixed plans remainhistory. productionAuditInputLifecycleSession wasconfirmedandexecuted;currentresultandnextlimitedoperationareownedby boundedUnits[52].productionAuditInputLifecycleCheckpoint.",
       "currentCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
-      "currentSessionReference": "handoffPreparation.nextSession.hpPublishedDependencyProofSession",
+      "currentSessionReference": "handoffPreparation.nextSession.hpPublishedDependencyRemainderSession",
       "capacityAttemptMaterializationSession": {
         "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -25233,6 +25234,227 @@
         "resultReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint",
         "authorization": "利用者OK後に同coverage責務の実装・検証・正本更新・local commit。",
         "nextOperationReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint.nextOperation"
+      },
+      "hpPublishedDependencyRemainderSession": {
+        "status": "prepared_read_only_awaiting_code_based_plan_and_user_confirmation",
+        "baselineHead": "74daed540f6152f529940d0c12c2447dcc38164e",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "objective": "Published HP依存宣言と既存production producerが直接生成・保持するrequest／capture／proofの残る対応を同coverage責務内で収束し、TSK-08全体closureを有効証拠で判定する。新HP意味論・別familyを追加しない。",
+        "authority": "このentryが次sessionの指示正本。hpPublishedDependencyProofSessionと旧remaining／coverage／transfer／give／input lifecycle sessionは履歴・成立証拠であって固定手順ではない。",
+        "firstDeliverable": "現コードの生成・利用経路から設計候補、所有者・lifetime、反証／検証、TSK-08 checklist／Done gate／Contract closure matrixと入力lifecycle8義務の有効証拠・未達、全体closure可否、60／90分境界を提示し利用者確認を待つ。",
+        "preApprovalBoundary": "HEAD／index／tracked／untracked確認とコード・文書・JSON・既存artifactの読込／checksumだけ。編集、source test／producer／audit／quality／live計測、stage／commitはしない。不可欠な実行診断は最小command・比較入力・得る判断・停止境界を事前提示し、診断だけの承認を実装承認へ読み替えない。",
+        "afterConfirmation": "承認された同coverage責務の必要接続・焦点の小型反証・影響suite・旧新artifact完全比較・既存Task／evidence更新・対象限定local commitまで同sessionで進める。通常の技術判断で再承認を求めず、pushしない。",
+        "sourceIdentities": [
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+            "bytes": 22202,
+            "sha256": "3bae81bc1d9befd7b419280c1448ca2856ddfc9d8cfeca92dba77f9b5a260e66"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts",
+            "bytes": 13643,
+            "sha256": "121ff41663b438238e57c9ec69fff137958874cd408e2dfc8b9c87ef47483d75"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 95072,
+            "sha256": "a52d1c198444c451b64d6ac159923904fa812e57d54bd1b3cb0cdad0649ad452"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpProofCoverage.ts",
+            "bytes": 16310,
+            "sha256": "8f747131fef90897e774b85aa2cb55a8df5d9223a2efbe550241a1aee4b9e41d"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpProofCoverage.test.ts",
+            "bytes": 9357,
+            "sha256": "2cf122c722783fa73e12d872c6b3170306174b0e6f3940e4e37b8806fb21f778"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.ts",
+            "bytes": 42748,
+            "sha256": "eed65dc9d1458df4af30ad98944a575d538270cf958008b4246e9332a0e2f746"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.test.ts",
+            "bytes": 36860,
+            "sha256": "f154cdf9197d0d843316a527adefa44bb3e4ee76334fc32affbd3399492232f0"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPaths.test.ts",
+            "bytes": 35442,
+            "sha256": "b14366d41ab6cb08bfe888b4e1f0138601c9e1bd4c5d861c0048ebf06cc05319"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 11298,
+            "sha256": "29797680d4bbc8893ad2505dc45087ca6d0575902316bc945bb130d8f65da0a2"
+          },
+          {
+            "path": "packages/battle-execution/src/condition.ts",
+            "bytes": 12423,
+            "sha256": "00021befc635886213cdc387ff3dc6fc4dc0b11b243c42a88c58644698cecdf2"
+          },
+          {
+            "path": "packages/battle-execution/src/npDamageOperation.ts",
+            "bytes": 12646,
+            "sha256": "2710028d77337600f2569f246bb5d945cb216c7c58418deca880208ebc59a524"
+          },
+          {
+            "path": "packages/battle-execution/src/npDamageExecution.ts",
+            "bytes": 3100,
+            "sha256": "f734cf503df19abf92b0e0fd60628d6610748a4b2b8d0ebae6af2b61575f00e7"
+          },
+          {
+            "path": "packages/battle-execution/src/candidateOperationContext.ts",
+            "bytes": 8594,
+            "sha256": "32102096b57006d0ce6c6ac8b92b698af0627008a97b27cd276b7c69f5132304"
+          },
+          {
+            "path": "packages/battle-execution/src/projection.ts",
+            "bytes": 19350,
+            "sha256": "5c72129466ec3dbf39372cb529cb3cbe18c0cb67eb1ba965913a919b0d9b518d"
+          },
+          {
+            "path": "packages/battle-execution/src/ocState.ts",
+            "bytes": 17371,
+            "sha256": "0c805f2325d1f0cc8e3cfd0dc32b26914496f12bf5dce5aa221d9aade496411f"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "existingArtifactIdentities": [
+          {
+            "path": ".test-results/tsk-08-hp-published-dependency-20260928/compare.mjs",
+            "bytes": 9060,
+            "sha256": "3418b98ec397ab42cde90882ec834c8bacc44a25866770c455e3f7780f59d9bf"
+          },
+          {
+            "path": ".test-results/tsk-08-hp-published-dependency-20260928/complete-comparison.json",
+            "bytes": 136622,
+            "sha256": "f3fdefa5dbc7f82664d69f2ea0b2e2e32e371e8a0c8a39b944d903749fd5bcc6"
+          },
+          {
+            "path": ".test-results/tsk-08-hp-published-dependency-20260928/start-identities.json",
+            "bytes": 14845,
+            "sha256": "708f8e218be1d09d077cef52f784ed8aa241266d4e5c95daa37d8be456c7dab3"
+          },
+          {
+            "path": ".test-results/2026-09-27T18-54-35-290Z-3-bcc7a2/production-hp-published-dependency.json",
+            "bytes": 12632419,
+            "sha256": "3838ffe1c1a018c8008ac40a140e53a66688ba130aaf303f7f85afb8c960947a"
+          },
+          {
+            "path": ".test-results/2026-09-27T18-54-02-871Z-14-83b74c/hp-published-dependency-fixture.json",
+            "bytes": 100365,
+            "sha256": "8657d31d184caeb1f9d79e920593a5fc2c01f0a39f9a2ff4ac5e31ad1bae4b21"
+          },
+          {
+            "path": ".test-results/2026-09-27T18-54-02-871Z-14-83b74c/hp-published-dependency-negatives.json",
+            "bytes": 1395613,
+            "sha256": "9f4ed8f0815223003d97494bd09b4ed6e30fb8300456557a52356a8bd3eb1a75"
+          },
+          {
+            "path": ".test-results/2026-09-27T18-54-02-871Z-14-83b74c/manifest.json",
+            "bytes": 3387,
+            "sha256": "fcbd17cb6752e08838c7e495bf94a67101480da340bc6b4c55d569624dbda899"
+          },
+          {
+            "path": ".test-results/2026-09-27T18-54-35-290Z-3-bcc7a2/manifest.json",
+            "bytes": 5825,
+            "sha256": "e3d8c9bcbda227e9645da2ead1462278fd1bebbdff8f5d36fe968b197b7e8916"
+          }
+        ],
+        "preparationReport": {
+          "mode": "read_only_code_document_json_artifact_and_checksum;no_source_execution_producer_audit_quality_live",
+          "start": "HEAD 74daed5; index/tracked/untracked clean",
+          "stepReconciliation": "Step0 baseline/contracts, Step1 V41 request marker with V40 preservation/explicit V41 recomputation, Step3 revised matrix/eligibility established; Step2 open. units0..51 remain complete; unit52 checkpoints scoped. TSK08 in_progress; TSK09.1/09 blocked.",
+          "currentCheckpointIdentity": {
+            "sourcesChanged": 3,
+            "sourcesOwner": 12,
+            "input": 1,
+            "artifacts": 6,
+            "finalManifests": 2,
+            "matched": 24,
+            "errors": 0
+          },
+          "historicalPreparationMismatch": [
+            {
+              "historical": {
+                "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+                "bytes": 93254,
+                "sha256": "2575c3262c881ad5f1da59a5415b89853f633c1fee8f1a15533d90e71793e683"
+              },
+              "current": {
+                "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+                "bytes": 95072,
+                "sha256": "a52d1c198444c451b64d6ac159923904fa812e57d54bd1b3cb0cdad0649ad452"
+              },
+              "impact": "Historical preparation identity only; use the current checkpoint and final comparison for reuse."
+            }
+          ],
+          "existingSidecar": {
+            "path": ".test-results/2026-09-27T18-54-35-290Z-3-bcc7a2/production-hp-published-dependency.json",
+            "bytes": 12632419,
+            "sha256": "3838ffe1c1a018c8008ac40a140e53a66688ba130aaf303f7f85afb8c960947a"
+          },
+          "existingSidecarFindings": {
+            "requests": 3182,
+            "bindings": 478,
+            "declarations": 71,
+            "unconnected": {
+              "craftEssenceCondition": 1,
+              "hpRatioLowVariants": 2,
+              "valueExpressionCells": 10,
+              "ocRateExpressionCells": 25
+            },
+            "craftEssenceRequestValues": "All 3182 original request scenarios have craftEssence=null; no original CE selection proof in this population.",
+            "missingValueOwner": "The remaining 10 value-expression cells share one attacker owner absent from original request attackers; this is a population boundary, not a product exclusion.",
+            "remainingNpOwners": "The two remaining NP variant owners occur in 2 and 4 original attacker requests, but those variant canonical/selected/evaluation stages are not connected.",
+            "ocRateOwner": "The OC-rate owner occurs in 10 original attacker requests, without selected-cell or actual-read proof.",
+            "qualification": "These counts describe the retained original control artifact, not all available actions or all product executions. Declaration/effect/cell, available, selected, reached, native, append, actual read, NP and recovery remain distinct."
+          },
+          "directOwners": [
+            "productionMasterControlAudit.evaluateWithOrderedOperationEvents retains original prepared/calculation before family selectors; productionHpPublishedDependencyCoverage borrows these and existing WeakMap captures.",
+            "battle-execution condition observes actual attackerHpPermille reads; NP capture has consumed/excluded/missing/invalid distinctions.",
+            "projection.resolveModifierValue and ocState.rateValue read HP directly without recording a matching condition/NP observer event; resolved value is not actual-read proof.",
+            "productionHpPaths support repair recomputes and retains final success; it does not preserve a same-identity pre-repair native/read/NP proof."
+          ],
+          "stage3Reuse": "Prior hpPublishedDependencyProofSession.preparationReport.matrixIdentityChecks matched the current revision manifest and eight shards; no identity doubt or regeneration in this preparation.",
+          "reusableCheckpoint": "boundedUnits[52].hpPublishedDependencyProofCheckpoint and its final unit11/control7, old control12 full comparison, disk407 protected descriptors, final disk25/declared15 receipts at the recorded source/input/artifact identities.",
+          "uncertaintiesForPlan": [
+            "Whether the CE/NP/value/OC remainder is present in any other existing original producer/capture with exact canonical identity and comparable input lifecycle.",
+            "Whether available/selected/reached/native/append proof can be joined without new owner execution or observer, and how legitimate absence is represented.",
+            "Whether any expression actual-read, pre-repair recovery, native noncommit or full TSK08 gate requires another owner and therefore must remain open."
+          ]
+        },
+        "planMustExplain": [
+          "Complete population: writer486, condition10, hpRatioLow6, valueExpression30, ocRateExpression25, Published modifier use-condition0 and HP-conditioned npGauge0; primitive digest 1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55. Preserve canonicalId/ref/source/actor/action/operation/step/instance/recipient/receipt order, duplicate/missing/unmatched and normal exclusion/unobserved distinctions.",
+          "Which existing producer/capture/artifact fields prove each stage, which only prove context or resolved value, and whether to extend existing inventory/typed gate/focused module. Do not assume fixedSelf selector expansion, owner rerun, expectation generator or giant proof re-decode.",
+          "Owner and lifetime of producer, prepared/capture, consumer, proof and artifact; borrowed reference identity and typed failure propagation. HP-conditioned NP gauge update and HP-dependent damage coefficient read are separate obligations.",
+          "Small falsifiers for foreign equal identity, wrong family/actor/recipient, order, missing/duplicate/unmatched, declaration-vs-reach, actual read-vs-normal exclusion. Reuse valid fixture and protected evidence.",
+          "Map every TSK08 checklist/Done gate/Contract closure matrix and input-lifecycle closureReconciliation obligation to valid existing evidence, in-scope completion condition or explicit gap; identify full closure blockers before any dependent quality."
+        ],
+        "implementationBoundary": "Only same HP proof coverage responsibility: shared inventory/typed gate, existing producer/artifact field connection, small identity falsifiers. Preserve all existing checkpoint and product semantics. New observer, native family/recovery owner, runtime gap or out-of-scope owner requires recording evidence and a separate bounded operation; no chained implementation.",
+        "verification": "After confirmation, select local fixtures and impacted suites from changed responsibility. Compare old/new complete decoded values, order/count, typed reason, first difference, disk bytes/SHA and receipts. Keep runner verification, independent disk descriptor and test-owned declaration separate. Reuse old valid evidence; do not rerun eight shards without identity doubt. Only if computation/capture/hot path changes, run relevant original live phase with identical input/affinity/workers/budget baseline/candidate once for diagnosis; do not substitute for formal 3-run gate.",
+        "closureDecision": "If all TSK08 obligations genuinely close with valid existing evidence plus this same coverage responsibility, no in-scope Blocking and time remain, complete required affected audit, formal performance, README quality and integrated counter/digest/all receipts before a TSK08 completion commit. Current evidence does not support whole closure. If any coverage, legacy, formal performance, quality, separate family or owner gap remains, stop at product-incomplete local checkpoint without dependent quality or completion claim.",
+        "sessionBoundary": "8 CPU affinity0-7; production50%=4workers/unit4workers; audit1worker and existing timeout/threshold. At 60 minutes write existing Task/evidence checkpoint; at 90 minutes finish current atomic action and hand off, without new quality retry, independent investigation or family.",
+        "runnerFallback": {
+          "path": "/tmp/tsk08-tools/pnpm",
+          "bytes": 730,
+          "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6",
+          "condition": "pnpmが外部SQLite storeでscript前失敗した時のみ内容/bytes/SHAを照合、nested PATHも設定し同generic runnerへ切替。製品fallbackは追加しない。"
+        },
+        "recordCommitPolicy": "Update existing Task/evidence and registry/index only. Review/stage only target files; local commit, no push. Resolve preparation commit SHA from Git history in handoff prompt.",
+        "documentationVerification": {
+          "initialPnpm": "pnpm test:docs failed before script at external SQLite store [ERR_SQLITE_ERROR]; no product test ran.",
+          "runnerFallback": "Verified /tmp/tsk08-tools/pnpm content, 730 bytes, SHA-256 7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6; PATH propagated to nested runner.",
+          "result": "same package test:docs generic script: six tests passed, docs integrity passed; JSON parse and git diff --check passed.",
+          "protected": "boundedUnits[0..52], old hpPublishedDependencyProofSession, old hpRemainingProofReconciliationSession and Step3 record decoded equal to baseline."
+        }
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -26204,7 +26426,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "CE条件1／NP variant2／value残10・OC25と既存artifact／直接producer captureの読取identity照合に限定して次計画を決める。expression実read observer・support修復前capture・別family／recovery ownerが必要なら別の限定計画へ分離し、今回の未観測を0／unsupported／製品対象外へ変換しない。",
+    "nextSession": "残るCE条件1／HP依存NP variant2／value-expression10cell／OC-rate25cellを、既存元request・capture・artifactと宣言identityで再照合する。既存責務内の接続だけを計画確認後に実装し、observer／native／recovery等の別ownerを要する場合は未達として止める。",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -26249,7 +26471,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint.nextOperation",
+    "nextSessionReference": "handoffPreparation.nextSession.hpPublishedDependencyRemainderSession",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
     "capacityAttemptMaterializationCheckpointCommit": "f375eea18ed2184de2943f7303ada777dfc44f71",
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",

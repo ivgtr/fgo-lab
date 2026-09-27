@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.113"
+document_version: "1.7.114"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3937,3 +3937,13 @@ Published明示依存557のうち残る条件10（attacker9／CE1）、hpRatioLo
 今回対応のBlockingは0。TSK-08 checklistの全ratchet／typed diagnostics・完全artifact到達／legacy固有coverage、Done gateの全inventory／parity／fail-closed・damage差説明、Contract closure matrixの正式3-run性能／README最終quality／統合counter・digest・全receiptは未達または未照合。元input lifecycle closureReconciliationの8義務への対応は新checkpointから参照する。計算構造／capture／製品hot pathを変更していないため新live pairは不要で、audit runを正式性能へ読み替えない。依存quality・全体closureを開始せず、Step0／1／3成立、Step2未完了、TSK-08 in_progress、09.1／09 blockedを維持する。
 
 units0..51とunit52の全既存checkpointをdecoded完全一致で保持する。次は未観測のCE条件1／NP variant2／value残10・OC25と既存artifact／直接producer captureの読取照合に限定して次計画を決める。expression実read observer、support修復前capture、別family／recovery ownerが必要なら別の限定計画へ分離する。対象限定local checkpoint commitまで保存し、pushしない。60分のcheckpoint期限より前に今回の局所・影響・比較・文書gateを閉じ、追加quality・独立調査・別familyは開始しない。
+
+### Step再照合と残るPublished HP依存proofの1セッション準備（2026-09-28）
+
+開始HEAD `74daed540f6152f529940d0c12c2447dcc38164e`、index／tracked／untrackedはclean。Step 0のbaseline／契約、Step 1のV41 marker・V40保持／明示再計算、Step 3の改訂matrix／eligibilityは成立済み。Step 2とTSK-08全体は未完了で、完了units[0]〜[51]を再開しない。TSK-09.1／09はblockedを維持する。直近`hpPublishedDependencyProofCheckpoint`の変更source3／元owner source12／input1／artifact6／最終manifest2の24 identityは現diskと一致した。旧準備`hpPublishedDependencyProofSession.sourceIdentities`のcontrol audit 1件だけは後続実装で旧SHAから変わったため、その旧source成功を現sourceの成功へ直接転用しない。今回の準備は読込とchecksumのみで、source test／producer／audit／quality／live計測は行っていない。
+
+既存sidecarの完全値を読み取り、未接続はCE条件1、HP依存NP variant2、value-expression10cell、OC-rate25cellと照合した。3182元requestのcraftEssenceは全件`null`でCE条件の元選択を示さない。value残10cellのownerは元requestのattackerに存在しない。NP残2variantのownerには各2／4requestがあるが、variantのcanonical／selected／評価へは接続されていない。OC-rate ownerには10requestがあるが、該当cellの選択・実readは未証明。これらは現control母集団と現在の対応の事実であり、未観測を0／unsupported／製品対象外へ分類しない。元condition／NP captureと異なり`projection.resolveModifierValue`／`ocState.rateValue`のHP readは現在のobserverへ直接残らない。実read証明に新observerや別ownerが必要かを、次作業者が現コードから判断する。
+
+次の実装指示正本は[parity evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.hpPublishedDependencyRemainderSession`。まず現コードの生成・利用経路、宣言／request／capture／proof／artifact identity、正常除外と未観測、Task checklist／Done gate／Contract closure matrixと入力lifecycleの8義務を照合した設計・検証・TSK-08 closure可否の計画を提示し、利用者確認を待つ。確認前は編集と実行診断をせず、必要な最小診断は比較入力・判断・停止境界を先に提示する。確認後は承認された同coverage責務の必要接続、焦点の小型反証、影響suite、旧新artifact完全比較、既存Task／evidence更新、対象限定local commitまで同sessionで進める。旧selector拡張・元owner再実行・新期待値生成器・巨大proof再decodeを既定案にしない。
+
+expression実read observer、support修復前capture、新native／recovery owner、別familyや対象外ownerの変更が必要なら根拠・未達条件・次の限定操作を記録して止める。全ratchet、legacy固有coverage、正式性能、README最終quality、統合counter／digest／全receiptを既存有効証拠と同責務で閉じられ、対象内Blocking 0かつ時間余裕がある場合だけTSK-08完了を目指す。現時点で全体closureの根拠はない。未達があれば依存quality／製品closureは始めず製品未完了checkpointとする。60分で既存正本へcheckpoint、90分では現在のatomic actionを終えて引き継ぐ。整理commitは文書だけ、pushなし。
