@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.86"
+document_version: "1.7.87"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3496,3 +3496,13 @@ read-only published JSON inventoryでは物理skill宣言6（sign+1が5、-1が1
 最初の成果物は現code定義・canonical生成・直接consumerを調べた段階的実装計画。既存maximumFixed consumer拡張／専用consumer、capture-only最小観測の要否、期待母集団と責務別否定、通常／capture・calculator／ranking経路、完全diagnosticと局所／影響audit／README quality・counterを提示し、利用者確認を待つ。確認後は同unitを実装・検証・Task／evidence更新・対象限定local commitまで続け、通常の技術判断で再承認を求めない。要件意味論を作り直したりHP算術をauditへ複製したりしない。
 
 native非commit隔離の実装、recovery／retry／UI、他origin／recipient／selection／modifier action・lifetime／除去・expiry、form／traits／eligibility切替、他HP writer／percent／transfer／value-expression、failure分類修正、legacy、全体closureは対象外。既存8shardは具体的なidentity疑義なしに再生成せず、[46]〜[51]を別々の契約として再利用する。60分checkpoint・90分以降の新family停止と長時間commandは実行効率要件に従う。TSK-08 `in_progress`、09.1／09 `blocked`を維持し、pushなし。文書検証と対象限定記録commitで今回の準備を閉じる。
+
+### selectedAlly maximumFixed committed forwardの実装checkpoint（2026-09-27）
+
+現codeからの段階計画を利用者が確認した後、selectedAlly専用consumerとcapture専用の最小観測を実装した。元HP算術・recipient解決・transaction・reducer意味論、通常allocation、既存[46]〜[51]の別々の契約を保持する。対象sourceは6ファイル。canonical評価前母集団から元write／HP／receipt／commit／保持、同selected結果と実HP read／continuous hpRatioLow NPを接続し、reader／NPなし・actual0・非適用・未到達・native非commitは境界として保持した。
+
+最終局所55 testsとcontrol audit7 testsが成功（warning0）。責務別否定は完全diagnosticをassertion前に宣言・保存し、typed reason／checkPath／first difference・厳密lossless復元を確認した。同値reader／NP HP-copyの参照不足も必要leafだけで補正済み。通常／capture・calculator／ranking parityと対象hot-path測定を記録。source／artifact identity、失敗と成功runの別々のreceipt、既存成功の再利用条件の正本はevidence `boundedUnits[52]`。
+
+必須qualityは未達。既存5秒timeoutの失敗が続いた後、既存HP fixture readiness補正とGC調査へ広げた点は、利用者の指摘を受け範囲逸脱として停止した。fixture変更はHEADと同一に撤回、GC設定は採用しない。60分checkpointは保存済みだが、同unitのgate継続が1sessionの収束範囲を超えた。これ以上のquality再実行・独立調査は行わない。
+
+今回の終了は文書checkpointのlocal commitだけとし、対象内実装6ファイルは未commitで保持する。必須quality・最終counter／digest／receipt照合・製品完了commitは未達であり、unit52を完了と呼ばない。再開はまずgate解消を1sessionへ収める限定計画を提示し、確認後に進める。既存[46]〜[51]や旧checkpointを再開せず、他familyへ広げない。TSK-08 `in_progress`、09.1／09 `blocked`、pushなし。

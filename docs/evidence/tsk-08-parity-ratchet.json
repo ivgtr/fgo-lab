@@ -16585,9 +16585,391 @@
         "completion": "Source gates and reconciliation completed before 60-minute boundary; no new semantic family."
       },
       "implementationCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e"
+    },
+    {
+      "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
+      "status": "in_progress; scoped implementation/local55/control7 verified; mandatory quality incomplete; stopped at user scope correction",
+      "baselineHead": "210e6eea84fbdba420ca7715c42fd1dd73433ed6",
+      "priorProductCommit": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+      "priorRecordCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
+      "worktreeAtStart": "HEAD/index/tracked/untracked clean; selectionEvidence19 receipts bytes/SHA-256 matched",
+      "authorizedScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
+      "planConfirmation": "User confirmed staged code-based plan with OK before source/test/document edits or execution. Same unit continues through scoped local commit; no push.",
+      "changedFiles": [
+        "packages/battle-execution/src/hpExecutionObservation.ts",
+        "packages/battle-execution/src/preparationOc.ts",
+        "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts",
+        "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.test.ts",
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "scripts/test-suites.mjs"
+      ],
+      "ownership": {
+        "canonical": "Existing hpPreparationCanonicalFor/getSkillsForActorForm; independent pre-evaluation request ledger, selection choice and cells. Focused selectedAlly consumer; sourceSelf predicates/gates/diagnostic contracts unchanged.",
+        "hp": "Original executeHpOperation/recipients/changeHpModifiers; selectedAlly resolves only attacker; original arithmetic/condition/native transaction/reducer semantics unchanged.",
+        "capture": "Capture-only helper in hpExecutionObservation, invoked after original applied HpOperation and only with existing hpAction/hpModifier. Same exact selectedAlly attacker source/operation/value cells/before/after/modifier/receipt slices; separate optional array. Execution function carries no appended observation construction body.",
+        "consumer": "Focused owner-snapshot/value/reference audit; reuse hpPreparationSource and maximumFixedDiagnostic formatter only. No writer replay, HP formula, whole-state DAG reference traversal, alternate recipient selection or new public serialized shape."
+      },
+      "flowClosure": {
+        "status": "Local fixtures and scoped diff review complete; final audit/quality/receipt reconciliation pending",
+        "forward": "canonical command/master/form/source/effect occurrence/choice/operation/value cells -> selected attacker original append/full HP/receipt -> native commit/retained reducer prefix -> same selected ordered seed/read/continuous hpRatioLow context/evaluation/input/result and prepared/application/direct facade",
+        "boundaries": "Nonapplication, no change, actual0 receipt, dead, no reader/no NP, refusal/unreached remain canonical population boundaries. Native-noncommit isolation/recovery out of scope; do not create absent downstream.",
+        "fixedEnvironment": "Actor class predicates/form/traits/eligibility/initial HP and outside modifier environment fixed per strict schema-legal representative; master actor environment and commitStartHp owner identity captured."
+      },
+      "verification": {
+        "earlierLocal": {
+          "manifest": {
+            "path": ".test-results/2026-09-27T06-14-56-206Z-3-09e323/manifest.json",
+            "bytes": 14081,
+            "sha256": "033d3344ac87ebaf281757dd2b5269caac2ff54361efc5ce0084329fcc101226"
+          },
+          "passed": 48,
+          "qualification": "Before final added master-environment/unreached fixture and commitStartHp reference checks; not final frozen-source success."
+        },
+        "pending": [
+          "Mandatory quality on scoped six-source final difference; production counter/digest and final receipt reconciliation",
+          "Product completion and scoped product commit (not authorized as complete until mandatory gates pass)"
+        ],
+        "localSource": {
+          "manifest": {
+            "path": ".test-results/2026-09-27T07-29-47-338Z-23-afe900/manifest.json",
+            "bytes": 15737,
+            "sha256": "99e92bbd78a3b716134915b51a55d2cb5998891746dc723cc8a8deb8766d3271"
+          },
+          "tests": 55,
+          "warnings": 0,
+          "scope": "Final same-valued reader/NP context HP-owner anchor denials, original strict schema-legal forward/boundary representatives, complete declared before-assertion diagnostics/lossless restore, typed first differences and original-source/normal-capture/calculator-ranking parity."
+        },
+        "finalControl": {
+          "manifest": {
+            "path": ".test-results/2026-09-27T07-37-08-510Z-4-17802b/manifest.json",
+            "bytes": 5596,
+            "sha256": "d72490b23dc4a7fa4325b1f48d11e8ff4a80fbfd7ec8881a06c59cbbb19d7caf"
+          },
+          "tests": 7,
+          "warnings": 0,
+          "durationMs": 154995,
+          "firstControlMs": 58212.146365,
+          "artifactVerificationErrors": 0,
+          "status": "Passed exact final audit/context HP-owner references; original timeout unchanged"
+        },
+        "reusedAffectedFixtures": {
+          "manifest": {
+            "path": ".test-results/2026-09-27T06-35-41-346Z-4-37bb91/manifest.json",
+            "bytes": 22265,
+            "sha256": "14fe7495f9d4e229ab666c07339d8730de3f288c6d160d34125c9ca71d7a6d6d"
+          },
+          "files": 3,
+          "tests": 19,
+          "qualification": "Only three unchanged direct sourceSelf maximumFixed-attempt/receive-forward/receive-attempt files are reused as passing tasks; aggregate manifest failed its control task and is not a whole-gate success. Capture extraction preserves original selectedAlly-only condition and slices; original sourceSelf/receive writer paths and all three consumers remain unchanged. Original published HP/maximumFixed/receive/attempt controls pass on final source in finalControl; prior units remain separate."
+        },
+        "scopedReview": {
+          "blocking": 0,
+          "status": "Concrete same-valued reader/NP HP-copy gap resolved; all55 local and finalControl7 pass. Canonical pre-evaluation superset and same-native/reducer/selected original reader/continuous NP/input/result links; complete values/necessary owner references; no HP arithmetic/writer replay or new semantics; original contract fixtures reused only within valid identity/responsibility."
+        },
+        "productionTimeoutDiagnostic": {
+          "manifest": {
+            "path": ".test-results/2026-09-27T07-22-11-003Z-3-36699f/manifest.json",
+            "bytes": 2850,
+            "sha256": "3d370972f15df44fd5765020b128dd651bfa410bf8394789a8302f02c4ef4b46"
+          },
+          "tests": 14,
+          "taskMs": 2203.6886859999995,
+          "warnings": 0,
+          "qualification": "Whole unchanged file passed in isolated diagnostic; direct path only master-data strict parse/typed operation aggregation, not changed HP execution/consumer. Scheduling-sensitive timing is an inference; causal attribution unverified, no failure classification changes. Does not replace full mandatory quality."
+        },
+        "contextHpReferenceGap": {
+          "before": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/reference-gap-before.json",
+            "bytes": 788348,
+            "sha256": "03fc6a7c96da98f88082084c03e471d154fd7fd004200a4d625b6081dfe925a7"
+          },
+          "after": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/reference-gap-after.json",
+            "bytes": 721192,
+            "sha256": "0903005eb688f13283d5edfd6b53c948046c5d55fd508abe293e8f686de850d3"
+          },
+          "producerBefore": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/reference-probe-before.mjs",
+            "bytes": 2566,
+            "sha256": "31ce4e34758090da10986d7d55d2b4d8b171836b29780b8624a8552fec818bde"
+          },
+          "producerAfter": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/reference-probe-after.mjs",
+            "bytes": 2564,
+            "sha256": "2aa0624ec2fd5b443d77b94104d4313902e1920ea76af114dd75f14e6a511254"
+          },
+          "beforeCompiledOwner": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/reference-probe-before-bundle.mjs",
+            "bytes": 1458665,
+            "sha256": "f84acd64ecb721f7a2b93a4a30d8b5f3488e7aec32ecd0af936769c1ea241d00"
+          },
+          "fixtureBundle": {
+            "path": "/tmp/tsk08-selected-ally-fixture.mjs",
+            "bytes": 869777,
+            "sha256": "9ba97c27893ae2f6a69a6e92f951ffdec904da5121213f6d2e4e89cda52d1efc"
+          },
+          "consumerBefore": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/reference-gap-consumer-before.ts",
+            "bytes": 38911,
+            "sha256": "d64724534895086c39ebe58893b9ae1daad20c17f3b3fce37405c634125d702f"
+          },
+          "beforeSourceLedger": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/before-context-hp-owner-source.json",
+            "bytes": 1143,
+            "sha256": "361c77e7dbca398bd19b471d64c8f02de194de9aeac7bbd12c2ad746f602d7b8"
+          },
+          "finding": "Isolated schema-legal original execution: same-valued reader state.hp clone passed old audit with0 failures. Typed audit now rejects original reader/NP context HP-owner replacement through necessary leaf anchors only; no whole-state DAG walk or HP arithmetic/semantics change. New declared lossless fixture covers reader and NP separately; source test/mandatory gate pending.",
+          "status": "Resolved: full55 and final control7 pass; necessary original HP leaf anchors only; fixture stores typed reason/checkPath/canonical first differences and full expected/actual context values losslessly."
+        },
+        "priorFinalControlBeforeHpOwnerAnchors": {
+          "manifest": {
+            "path": ".test-results/2026-09-27T07-11-15-579Z-3-44175c/manifest.json",
+            "bytes": 5596,
+            "sha256": "1aedf67df4506e049cc24518bb459fcafd278d59abdd6c17bd55179e2c6bc779"
+          },
+          "tests": 7,
+          "durationMs": 154203,
+          "firstControlMs": 58488.6576,
+          "warnings": 0,
+          "artifactVerificationErrors": 0,
+          "status": "passed final extracted-capture source; original timeout unchanged"
+        },
+        "capacityTimeoutDiagnostic": {
+          "manifest": {
+            "path": ".test-results/2026-09-27T07-47-34-232Z-3-a0f16e/manifest.json",
+            "bytes": 18573,
+            "sha256": "41290ecaae82b5c3f6bbe88f0818e8e12753418dda4cade2bc37d30bc952295a"
+          },
+          "tests": 63,
+          "taskMs": 3992.2704019999983,
+          "warnings": 0,
+          "qualification": "Whole existing unchanged file successful; isolated scheduling differs from full quality, does not replace mandatory quality. Timing-sensitive environment inference only; source/core ownership unchanged."
+        },
+        "hpPathFixtureBootstrap": {
+          "source": "packages/calculation-application/src/productionHpPaths.test.ts",
+          "change": "Await existing shared strict masterPromise in beforeAll; no individual test body/assertion/execution or dataset change. Existing hook/test timeouts and4 production workers unchanged. Master read/strict parse still performed once, errors propagate; no fallback. This is bounded HP direct validation fixture readiness, not a new semantic family.",
+          "manifest": {
+            "path": ".test-results/2026-09-27T08-02-46-800Z-21-94b9a8/manifest.json",
+            "bytes": 2838,
+            "sha256": "88c7aa49d0e744c3d88ecc6c439582c5e55d1168cf585bae146d93667ba22733"
+          },
+          "tests": 5,
+          "warnings": 0,
+          "baselineTaskMs": 3629.72566,
+          "failedQualityTaskMs": 5513.273041,
+          "status": "Withdrawn after user scope correction; source exactly restored to HEAD; local diagnostic is historical only, not scoped completion evidence."
+        },
+        "checkpointReconciliation": "Previous boundedUnits[0..51] exactly unchanged; final local55/control7 manifest bytes/SHA verified; retained six-source bytes/SHA recorded. Full final receipt/counter/digest reconciliation remains incomplete.",
+        "documentationCheckpoint": "pnpm test:docs passed6/6 and docs integrity; existing frontmatter/table format retained; no product completion claim."
+      },
+      "evidenceReuse": {
+        "priorUnits": [
+          46,
+          47,
+          48,
+          49,
+          50,
+          51
+        ],
+        "roles": "46 fixed HP committed;47 fixed HP noncommit;48 sourceSelf maximumFixed forward;49 sourceSelf maximumFixed noncommit;50 receive committed (published actual0 vs lowHP actual1677 separate);51 receive changed native noncommit. None relabelled as selectedAlly proof.",
+        "condition": "Matching identity/responsibility/receipts reusable; changed source gets fresh hashes and affected checks. Existing8 shards not regenerated absent concrete doubt; units0..51 unchanged.",
+        "planningReceiptsVerified": 19,
+        "errors": 0,
+        "matrixDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+      },
+      "performance": {
+        "receipt": {
+          "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/performance.json",
+          "bytes": 4615,
+          "sha256": "278ec03fb628586c6e19bba27c2633a9f9aae660dc4c17eff3e1e3e306df80a2"
+        },
+        "producer": {
+          "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/performance.mjs",
+          "bytes": 4447,
+          "sha256": "118ac76d4ded1f06a9411c2c2b5ad8d512d7722a1fd7a0fd5e7a01f29702f209"
+        },
+        "log": {
+          "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/performance.log",
+          "bytes": 885,
+          "sha256": "3b8aa0d6ff44a550a8a55b88274e935c2f876b31f24236828b862bdf693e5196"
+        },
+        "scope": "Independent bundled baseline60dea899/current runtime graphs, shared strict schema-legal representative masters (increase-choice/multiple-order/committed-prefix), ordinary/capture7 alternating warmed batches100; complete public calculation observables equal.",
+        "limits": "Final extracted capture: normal median -5.24%,+11.00%,-0.41%; capture-8.86%,+5.50%,-1.62%. All public observables equal. Independent module/JIT/timing variation limit causal attribution; no threshold changes. Final production counters/digests pending.",
+        "earlierInlineCapture": {
+          "receipt": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/earlier-inline-performance.json",
+            "bytes": 4635,
+            "sha256": "5dee94b8ff15d5b0be893c00a288e5055368c1d83441186ff9d4b34e2a1483fe"
+          },
+          "producer": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/performance.mjs",
+            "bytes": 4447,
+            "sha256": "118ac76d4ded1f06a9411c2c2b5ad8d512d7722a1fd7a0fd5e7a01f29702f209"
+          },
+          "log": {
+            "path": ".test-results/tsk-08-selected-ally-maximum-fixed-20260927/earlier-inline-performance.log",
+            "bytes": 886,
+            "sha256": "fd74d5bdc026c38b5cd762f734f0b4468b37e0ce03b89f812d82e5392e93db8f"
+          },
+          "scope": "Independent bundled baseline60dea899/current runtime graphs, shared strict schema-legal representative masters (increase-choice/multiple-order/committed-prefix), ordinary/capture7 alternating warmed batches100; complete public calculation observables equal.",
+          "limits": "Normal median -2.94%,+5.30%,+7.82%; capture+2.99%,+1.96%,+0.17%. Normal allocation/public shape unchanged; new capture guarded branch and optional owner records. Independent module/JIT effects limit causal attribution; no threshold changes. Final counters/digests pending.",
+          "qualification": "Earlier inline capture source only; preserved artifact snapshots. Final extracted capture source receives a fresh measurement."
+        }
+      },
+      "executionHistory": [
+        {
+          "command": "pnpm test:diagnostic -- productionHpSelectedAllyMaximumFixedPreparationAudit",
+          "outcome": "Script not started; external pnpm SQLite unable to open database file; switched only after generic runner content/730bytes/SHA256 verified."
+        },
+        {
+          "command": "fallback diagnostic without --suite=audit",
+          "artifact": ".test-results/2026-09-27T06-02-57-108Z-5-06f958",
+          "outcome": "No files: explicitly registered audit fixture; corrected invocation, not exclusion change."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T06-03-07-354Z-3-492c88",
+          "outcome": "New fixture import spelling corrected; no success claim."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T06-03-41-097Z-3-b11c29",
+          "outcome": "Recipient applied fixture lacked canonical class predicate; made fixed fixture predicate explicit; no product class/condition semantics change."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T06-07-13-792Z-4-c67dcf",
+          "outcome": "Negative generator walked excluded Atlas metadata/full state fields and mismapped NP variant ref. Generator now covers complete declared semantic proof with correct original-source paths; all meaningful denials retained, existing negatives untouched."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T06-22-20-295Z-3-fd9135",
+          "outcome": "Initial full affected audit77 passed/1 failed; first shared-control task61897.9ms exceeded original60000ms. Complete unrelated request execution graphs were unnecessarily retained by the new producer; canonical-scoped pre-evaluation ledger now retains only declared selectedAlly writer requests, never activation/executable/commit successes. Concurrent read-only reconciliation also limits causal timing attribution; final gate run serialized. No timeout/threshold changes."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T06-29-40-682Z-22-f7b491",
+          "outcome": "Focused -t missing-owner fixture asserted successfully, but whole-file artifact declaration contract rejected52 skipped tests (contract_failure). Not a successful whole gate; final unfiltered53 diagnostic succeeded."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T06-35-41-346Z-4-37bb91",
+          "outcome": "Second serialized affected audit78 passed/1 failed; shared-control generation61651.88ms exceeded original60000ms. Original sourceSelf/receive gates and new selectedAlly gate passed. Added shared canonical declaration/form/skill-slot preflight, equivalent to initial-form canonical enumeration, before per-request canonical scan; no activation/receipt/native/eligibility outcome filter. Existing timeout/threshold unchanged. Only directly affected control suite reruns; unaffected passing audit fixtures reused."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T06-53-09-691Z-3-9e26b8",
+          "outcome": "Single affected control suite6 passed/1 failed; generation62302.04ms with original60000ms. SelectedAlly gate2219 checks/failures0; other control gates passed. Defer new complete owner/proof/selection snapshot construction from shared generation to the new gate, retaining original canonical ledger, prepared/evaluation/version owners before any success filter. No operation rerun. Final affected control run pending."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T06-57-45-669Z-3-819d72",
+          "outcome": "Deferred-proof control6 passed/1 failed; generation60608.36ms remained over original60000ms. Other gates passed. Shared generation now retains declaration superset only before evaluation; detailed canonical choice scan and proof construction both happen in scoped gate. Independent expected ledger is canonicalized before any activation/receipt/native-success filtering; no writer replay. No threshold or test exclusions."
+        },
+        {
+          "command": "control declaration-ledger audit before corrected variable rename",
+          "outcome": "Typecheck found old selectedAllyCanonical reference; prematurely started audit immediately interrupted exit130. Corrected to declaration maySelectAlly, then standalone tsc -b and scoped eslint succeeded. Not counted as successful evidence."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T07-03-03-354Z-4-01b9d6",
+          "outcome": "Declaration-superset ledger control6 passed/1 failed; first61960.53ms over original60000ms. All downstream gates still pass. Extracted capture-only selectedAlly record construction from original execution function to hpExecutionObservation owner; original capture guard/source/operation/value cells/before/after/modifier/receipt slices preserved. No HP semantics or ordinary allocations; new local/full control checks and latest hot-path measurement required."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T07-15-10-316Z-4-05dd7d",
+          "outcome": "First mandatory quality stopped: unit1444 passed, production154 passed/1 failed. Unchanged data-pipeline raw-occurrence typed-operation inventory task5046.37ms exceeded original5000ms with STACK_TRACE_ERROR; prior baseline3059.19ms passed. No semantic assertions failed; source/config/timeout unchanged. Full quality success not claimed."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T07-23-13-993Z-4-0ebe44",
+          "outcome": "Second quality interrupted exit130 before source edits after concrete same-valued reader/NP context HP-reference gap identified. Not a successful gate. No timeouts/thresholds/tests relaxed or removed."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T07-32-24-055Z-3-7d35c4",
+          "outcome": "Final reference audit six tasks pass including new selectedAlly published gate; original shared-control generation62335.75ms exceeds60000ms. Its direct generation/capture/preflight code and inputs are unchanged from58488.66ms pass; only late audit anchors gained two context HP leaves. Current whole audit not labelled success; same frozen source rerun to resolve observed timing variation. No threshold/timeout changes."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T07-40-34-632Z-4-a66034",
+          "outcome": "Third quality stopped: unit1443 passed/1 failed. Existing capacity denial intermediate-reconciled identity-source-action5103.51ms exceeded original5000ms. Its whole63-test file passed isolated on unchanged source; first quality unit1444 also passed. No semantic assertion failure, test exclusion, timeout or threshold change. Same final source/config full quality rerun required; no new semantic family."
+        },
+        {
+          "artifact": ".test-results/2026-09-27T07-50-26-325Z-4-9d119d",
+          "outcome": "Fourth quality: unit1444 pass; production154 pass/1 fails. HP cell/actor-binding inventory5513.27ms over existing5000ms. Existing shared strict masterPromise initialization was still pending inside first timed test. Await its completion in beforeAll; original read/strict parse/execution/assertions/counts maintained, no timeout/config changes or exclusions."
+        }
+      ],
+      "remaining": [
+        "Mandatory quality on scoped six-source final difference; production counter/digest and final receipt reconciliation",
+        "Product completion and scoped product commit (not authorized as complete until mandatory gates pass)"
+      ],
+      "sessionBoundary": {
+        "startedAt": "2026-09-27 05:59:19 UTC",
+        "cpuAffinity": "0-7",
+        "productionWorkers": "50% /4workers",
+        "timeouts": "unchanged",
+        "checkpoint": "Existing Task/evidence updated with54 local successes, two control-timeout failures, equivalent declaration preflight fix, pending final control/quality/reconciliation/local commits. Same family only; no new family after90min.",
+        "push": "prohibited",
+        "checkpointAt": "2026-09-27 06:54 UTC (before60-minute boundary)",
+        "at90Minutes": "No new semantic family or independent investigation; continue same frozen unit mandatory gate/reconciliation/scoped result commit. Checkpoint already persisted before60min.",
+        "scopeCorrection": "Stopped after user correction; no new investigation. Record scoped successes and incomplete mandatory gates; docs-only checkpoint commit, six scoped implementation files remain uncommitted."
+      },
+      "diagnosticAttribution": {
+        "skill": "/home/ivgtr/.codex/skills/diagnostic-attribution/SKILL.md",
+        "baselineProduct": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "baselineArtifact": ".test-results/2026-09-27T05-21-50-072Z-4-ed4544/manifest.json",
+        "baselineFirstControlMs": 59029.019283999995,
+        "currentArtifact": ".test-results/2026-09-27T06-53-09-691Z-3-9e26b8/manifest.json",
+        "currentFirstControlMs": 62302.037867,
+        "signature": "First productionMasterControlAudit known-candidate control task Error: STACK_TRACE_ERROR, elapsed>60000ms, test_failure exit1; six remaining tasks pass",
+        "classification": "unverified",
+        "qualification": "Existing baseline passed at59.03s. Baseline4-file versus current1-file scheduling and unmeasured environmental variation prevent strict unchanged/causal attribution; passing baseline is not waived and current failure remains Blocking. Timing/code-responsibility correction reviewed; final gate required."
+      },
+      "scopeCorrection": {
+        "reason": "User requested return to one-session bounded scope; repeated unrelated timeout/GC investigation exceeded convergence scope.",
+        "withdrawnSource": {
+          "path": "packages/calculation-application/src/productionHpPaths.test.ts",
+          "bytes": 21886,
+          "sha256": "e4cc53fff9d9321df862ed31706678e830d6ff4f67c9dac166d46ad69b6fac3c"
+        },
+        "retainedSourceIdentity": [
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 9336,
+            "sha256": "c4a4d0d190a91f943d1436e2ac2dda7f7cfb66af7fbddbf16f259c254f5191b7"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 56680,
+            "sha256": "00817a72569c54225d04a3e73a9d2f4227b673ae8e5f40c7d755eee849d99551"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.ts",
+            "bytes": 39035,
+            "sha256": "627a7acbf4d9c60e23ecdcdfabf1f618a59e7fd9864daec535985be317c1c572"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.test.ts",
+            "bytes": 39978,
+            "sha256": "6bf7ccf9cf0d630e4c14703b3a8dbc639df11b9e8d8a007ac9cce7f1b87f9481"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 93366,
+            "sha256": "aa8690874aae3355bcd9731d1bfee246c1cb0dbb3f448edd35a33b3f487c50fc"
+          },
+          {
+            "path": "scripts/test-suites.mjs",
+            "bytes": 3354,
+            "sha256": "cf844584fd7b2bf5159c51cbe60eeec3c7d14944fca3a09312aa878e2a1971ca"
+          }
+        ],
+        "qualityLatest": {
+          "path": ".test-results/2026-09-27T08-04-59-722Z-5-fafbf2/manifest.json",
+          "bytes": 246142,
+          "sha256": "eb9b04219123e72e45c07550567207bb4567a81ba93a59fab9845ed8d590f499"
+        },
+        "qualityLatestResult": "unit1442 passed/2 existing capacity tests exceeded unchanged 5000ms timeout (5014.894741/5080.32107); production/E2E not reached; mandatory quality not passed.",
+        "discardedGcDiagnostic": {
+          "path": ".test-results/2026-09-27T08-17-48-488Z-3-4686d4/manifest.json",
+          "bytes": 18573,
+          "sha256": "eeb969aaffdd47c30295a79015b7ba420e19d57cd7862d5353bf52474c0828ec"
+        },
+        "gcQualification": "Isolated63 tests passed with command-only NODE_OPTIONS=--max-semi-space-size=64; outside bounded investigation, not adopted, not full quality success; runner/config unchanged.",
+        "stop": "No further quality/performance/legacy investigation this session. Retain scoped source uncommitted; commit existing documentation checkpoint only. No push."
+      }
     }
   ],
-  "currentBoundedUnit": "Attacker-skill sourceSelf active receive modifier and separate later fixed HP gain changed-attempt native noncommit isolation",
+  "currentBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
   "handoffPreparation": {
     "baselineHead": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
     "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
@@ -16848,7 +17230,7 @@
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
           "nextBoundedScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
-          "nextScopeQualification": "Read-only selectedAlly committed-forward audit scope chosen from current code and published declarations; original executable/commit/reader proof remains unverified. Not reopening sourceSelf maximumFixed or receive units."
+          "nextScopeQualification": "Unit52 scoped implementation and local55/control7 passed; mandatory quality incomplete. User scope correction stopped broader timeout/GC work; six source files retained uncommitted. Units46-51 remain complete and separate."
         },
         {
           "stage": 3,
@@ -16859,7 +17241,8 @@
       "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary.",
       "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
-      "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history."
+      "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
+      "nextScopeQualification": "Unit52 approved and in progress; final gates/records pending; not whole TSK-08 closure."
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -16915,7 +17298,7 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "read-only preparation; code-based plan first, implementation only after user confirmation",
+      "status": "Unit52 implementation checkpoint; mandatory gates incomplete; broader timeout fixes require separately bounded plan and confirmation.",
       "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "priorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
@@ -18357,7 +18740,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit; plan first and confirmation, then same unit through verification/records/scoped local commits.",
+    "nextSession": "Resume unit52 only after a bounded gate-resolution plan; local55/control7 evidence retained, mandatory quality/counter/digest/final reconciliation/product commit incomplete. Do not resume completed46-51 or expand to unrelated fixture/GC fixes.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
