@@ -229,7 +229,7 @@
   ],
   "unresolved": [
     "Give native noncommit checkpoint has9 changed/8 boundary/45 negative representatives,final give3/HP6,retained related391 tests andaffectedAudit77;full protected artifact comparisons and370 independent disk/350 test-owned receipt checks error0. Docs6/integrity,format,typecheck,lint passed;target-only checkpoint commit0e8ada48d6b93b4ca8e5073d48e768f2bd494e02,no push. Whole other-family coverage/ratchet/legacy/formal performance/README quality/final integrated counters,digests/all receipts remain pending;see boundedUnits[52].giveNativeNoncommitCheckpoint. Preserve all prior successes/failures with original identities/responsibilities.",
-    "HP canonical486／7470とowner-to-consumer参照はunit52.hpCoverageReconciliationCheckpointで照合済み。全native／実read／NP／recoveryは未達。Published maximumRate／baseFixed／baseRate0とnoHealing／transfer／percent／origin／recipient／lifetime／phaseを別分類し、新runtime gapや製品除外を推測していない。transfer候補計画は完了済み履歴。次の正本はhandoffPreparation.nextSession.hpRemainingProofReconciliationSession。 Transfer2／default12＋nonempty12の元native／retained selected HP seedはboundedUnits[52].hpTransferEvidenceReconciliationCheckpointで接続済み。Published HP read／HP-dependent NP各0と未観測のnative noncommit／成功recoveryを全closureへ読み替えない。",
+    "HP canonical486／7470とowner-to-consumer参照はunit52.hpCoverageReconciliationCheckpointで照合済み。全native／実read／NP／recoveryは未達。Published maximumRate／baseFixed／baseRate0とnoHealing／transfer／percent／origin／recipient／lifetime／phaseを別分類し、新runtime gapや製品除外を推測していない。transfer候補計画は完了済み履歴。次の正本はhandoffPreparation.nextSession.hpRemainingProofReconciliationSession。 Transfer2／default12＋nonempty12の元native／retained selected HP seedはboundedUnits[52].hpTransferEvidenceReconciliationCheckpointで接続済み。Published HP read／HP-dependent NP各0と未観測のnative noncommit／成功recoveryを全closureへ読み替えない。 Current boundedUnits[52].hpRemainingProofReconciliationCheckpoint preserves originalHP7/coverage/transfer/fixed104 andgive6/audit77;explicit557 declarations are not whole runtime reader proof. Supportpre-repair capture is absent;no new observer/family/recovery audit was added.",
     "Whole TSK-08 parity/unsupported/invalid/partial-commit/inert-control/stale-mutation and typed diagnostic/artifact closure remains unclaimed; reuse completed units and matrix evidence where identities/governing semantics remain valid. Legacy aggregate auditor/old loader/scan/candidate-list/duplicate fixture cleanup must be reconciled with current actual symbols before removal.",
     "TSK-08 in_progress;TSK-09.1/09 blocked. Step0/1/3 established; Step2 completed units through[51] retained. Unit52 consumer checkpoint is not unit52 product completion or whole closure."
   ],
@@ -21641,6 +21641,489 @@
         "recordCommitPolicy": "対象9fileだけlocal commit。実SHAはGit履歴から解決して最終回答へ記載。pushなし。",
         "localCheckpointGate": "必要な局所／影響／完全比較／type／lint／format／docs／identity／scope review成功、今回接続Blocking0。対象9fileのみlocal commitし実SHAをGit履歴から解決する。製品quality／全体closureは未達のまま。",
         "completedAt": "2026-09-27T17:13:06Z"
+      },
+      "hpRemainingProofReconciliationCheckpoint": {
+        "status": "scoped HP explicit-declaration inventory and existing fixedSelf/transfer proof correspondence verified;product incomplete local checkpoint",
+        "baselineHead": "02555fe7e24ac19ad700185e16a00aab093c4fc9",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "startedAt": "2026-09-27T17:46:28Z",
+        "authority": "handoffPreparation.nextSession.hpRemainingProofReconciliationSession",
+        "authorization": "User confirmed the current-code plan with OK;coverage-only implementation,verification,existing-record update and target-only local commit authorized;no push.",
+        "startReconciliation": {
+          "head": "02555fe7e24ac19ad700185e16a00aab093c4fc9",
+          "indexTrackedUntracked": "clean",
+          "sessionIdentityVerification": {
+            "source": 8,
+            "input": 1,
+            "artifacts": 7,
+            "allBytesShaMatch": true
+          },
+          "priorIdentityQualification": "Old coverage/give source identities differ at hpExecutionObservation/preparationOc/HP paths because of the recorded transfer addition. Artifacts remain exact. Old runs are reused only for their original proof responsibility,not current-source whole success."
+        },
+        "changedFiles": [
+          "packages/calculation-application/src/productionHpProofCoverage.ts",
+          "packages/calculation-application/src/productionHpProofCoverage.test.ts",
+          "packages/calculation-application/src/productionHpPreparationAudit.test.ts",
+          "packages/calculation-application/src/productionHpPaths.test.ts"
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "unchangedOwners": [
+          {
+            "path": "packages/battle-execution/src/condition.ts",
+            "bytes": 12423,
+            "sha256": "00021befc635886213cdc387ff3dc6fc4dc0b11b243c42a88c58644698cecdf2"
+          },
+          {
+            "path": "packages/battle-execution/src/npDamageOperation.ts",
+            "bytes": 12646,
+            "sha256": "2710028d77337600f2569f246bb5d945cb216c7c58418deca880208ebc59a524"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 11298,
+            "sha256": "29797680d4bbc8893ad2505dc45087ca6d0575902316bc945bb130d8f65da0a2"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpTransferEvidence.ts",
+            "bytes": 15052,
+            "sha256": "29b41025e371945a36bc74dfa5170e3270f06941a88b243eba462f95fdcb4c21"
+          },
+          {
+            "path": "packages/calculation-application/src/hpExecution.test.ts",
+            "bytes": 47898,
+            "sha256": "73a056ab3443eabb95ae5da72ecf04eadb1e12b311187a95a74867b97bd615e4"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.ts",
+            "bytes": 42748,
+            "sha256": "eed65dc9d1458df4af30ad98944a575d538270cf958008b4246e9332a0e2f746"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAttemptAudit.ts",
+            "bytes": 29763,
+            "sha256": "8c3c8011ce92829a770960f4eb73746e229d5ba9c13c06935ec9333c3e4c9426"
+          }
+        ],
+        "ownership": {
+          "producer": "Existing productionHpPaths shared strict parsed master produces the explicit canonical declaration sidecar inside the existing primitive test. Existing fixed HP test borrows its already-evaluated program/gate for one schema-legal representative. No extra owner execution or master parse.",
+          "inventory": "productionHpProofCoverage inventories all five canonical origins and full NP canonicalId/ref,including reader-only effects,nested requirement paths,normal/LB HP expressions,OC HP rate expressions,HP-conditioned gauge declarations andhpRatioLow damage declarations. This is explicit canonical dependency inventory,not all implicit runtime HP reads.",
+          "capture": "Existing WeakMap/request/program lifetimes and all runtime owners are unchanged. Bindings borrow canonical writer/requirement/damage and original candidate read/NP objects;no allocation added to observer-absent hot paths.",
+          "consumer": "Correspondence stage/identity/reference/order gate and original fixedSelf gate stay separate. The adapter never broadens the fixed selector and rejects an original failed gate or outside scope.",
+          "proof": "New module is not independent native proof authority. Original fixedSelf proof owns native/retained/read/NP checks;the sidecar links selectedWriter/actualConditionRead/npEvaluation only. Published transfer2 join borrows protected persisted native24/selected-seed evidence with SHA identity. No all-family or recovery proof is supplied.",
+          "artifact": "Existing lossless writeProductionAuditArtifact supplies two additional sidecars/declared receipts. Old104 fixed andoldHP7+coverage+transfer fields/artifacts remain exact. No global codec/runner/suite configuration change.",
+          "failure": "Typed missing/duplicate/unmatched/foreignDeclaration/foreignReference/bindingMismatch/orderMismatch propagate to firstDifference. Original gate failure/outsideProofScope/unmatchedDeclaration fail the outer adapter. A passing correspondence gate with unobserved rows never implies productClosure."
+        },
+        "population": {
+          "explicitCanonicalDeclarations": 557,
+          "declarationCounts": {
+            "writer": 486,
+            "condition": 10,
+            "modifierUseCondition": 0,
+            "valueExpression": 30,
+            "ocRateExpression": 25,
+            "hpConditionedNpGauge": 0,
+            "hpRatioLow": 6
+          },
+          "qualification": "Declaration counts only;not available/selected/reached/native/append/actual-read/HP/NP/recovery counts. Published modifierUseCondition/hpConditionedNpGauge declarations0 are distinct from schema-legal nonempty fixtures. Implicit native modifier reads and recovery are not enumerated as newly observed readers.",
+          "primitiveSources": 486,
+          "primitiveCells": 7470,
+          "axisGroups": 54,
+          "primitiveDigest": "1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55",
+          "fixedRepresentative": {
+            "population": "schemaLegalFixedSelfRepresentative",
+            "bindings": [
+              {
+                "stage": "selectedWriter",
+                "actor": "attacker",
+                "sourceInstanceId": "attacker:fixture-saber",
+                "position": 0,
+                "sequence": null,
+                "operationId": "preparation:0:useSkillSlot",
+                "group": null,
+                "disposition": "selected",
+                "family": "fixedSelf",
+                "proofIdentity": "hp:0:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:0:useSkillSlot\",\"hp-skill-0\",\"hp-write-0:0\",0]]",
+                "declaration": {
+                  "origin": "attacker",
+                  "owner": "fixture-saber",
+                  "skill": "hp-skill-0",
+                  "variant": null,
+                  "occurrence": "hp-write-0:0",
+                  "path": "execution.0",
+                  "kind": "writer"
+                }
+              },
+              {
+                "stage": "actualConditionRead",
+                "actor": "attacker",
+                "sourceInstanceId": "np:[\"fixture-saber\",0,\"fixture-np\"]",
+                "position": 0,
+                "sequence": 0,
+                "operationId": "np:np:[\"fixture-saber\",0,\"fixture-np\"]:np:[\"fixture-saber\",0,\"fixture-np\"]:hp-reader:0:modifier:attackBuff",
+                "group": 0,
+                "disposition": "read",
+                "family": "fixedSelf",
+                "proofIdentity": "hp:0:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:0:useSkillSlot\",\"hp-skill-0\",\"hp-write-0:0\",0]]",
+                "declaration": {
+                  "origin": "np",
+                  "owner": "fixture-saber",
+                  "skill": "fixture-np",
+                  "variant": {
+                    "canonicalId": "2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574",
+                    "ref": {
+                      "actorFormId": {
+                        "actorId": "fixture-saber",
+                        "limitCount": 0
+                      },
+                      "noblePhantasmId": "fixture-np"
+                    }
+                  },
+                  "occurrence": "hp-reader:0",
+                  "path": "requirement.expression",
+                  "kind": "condition"
+                }
+              },
+              {
+                "stage": "npEvaluation",
+                "actor": "attacker",
+                "sourceInstanceId": "np:[\"fixture-saber\",0,\"fixture-np\"]",
+                "position": 0,
+                "sequence": 1,
+                "operationId": "np:[\"fixture-saber\",0,\"fixture-np\"]:fixture-damage:damage",
+                "group": 1,
+                "disposition": "consumed",
+                "family": "fixedSelf",
+                "proofIdentity": "hp:0:[[\"fixture-saber\",{\"actorId\":\"fixture-saber\",\"limitCount\":0},\"preparation:0:useSkillSlot\",\"hp-skill-0\",\"hp-write-0:0\",0]]",
+                "declaration": {
+                  "origin": "np",
+                  "owner": "fixture-saber",
+                  "skill": "fixture-np",
+                  "variant": {
+                    "canonicalId": "2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574",
+                    "ref": {
+                      "actorFormId": {
+                        "actorId": "fixture-saber",
+                        "limitCount": 0
+                      },
+                      "noblePhantasmId": "fixture-np"
+                    }
+                  },
+                  "occurrence": null,
+                  "path": "damage.0",
+                  "kind": "hpRatioLow"
+                }
+              }
+            ],
+            "ownerArtifact": "tsk-08-hp-gain-continuous-ratio-positive.json"
+          },
+          "publishedTransferJoin": [
+            {
+              "identity": {
+                "origin": "attacker",
+                "owner": "204300",
+                "skill": "885550",
+                "variant": null,
+                "occurrence": "7414:0",
+                "operationIndex": 0
+              },
+              "matched": 1,
+              "fullOperationEqual": true,
+              "selectedExpectations": 12,
+              "observedOperations": 12,
+              "artifact": {
+                "path": ".test-results/2026-09-27T16-58-22-636Z-3-b6818d/hp-transfer-evidence.json",
+                "bytes": 652291,
+                "sha256": "a3e7d70f398095d43de0c804fba5fcf95cbea19b58958ccffdbc1ef2651107f3"
+              },
+              "qualification": "Original native24/selected seed evidence remains owned by the transfer checkpoint. This declaration join supplies no new actual read, NP causality, noncommit or recovery proof."
+            },
+            {
+              "identity": {
+                "origin": "attacker",
+                "owner": "403600",
+                "skill": "674650",
+                "variant": null,
+                "occurrence": "3966:0",
+                "operationIndex": 0
+              },
+              "matched": 1,
+              "fullOperationEqual": true,
+              "selectedExpectations": 12,
+              "observedOperations": 12,
+              "artifact": {
+                "path": ".test-results/2026-09-27T16-58-22-636Z-3-b6818d/hp-transfer-evidence.json",
+                "bytes": 652291,
+                "sha256": "a3e7d70f398095d43de0c804fba5fcf95cbea19b58958ccffdbc1ef2651107f3"
+              },
+              "qualification": "Original native24/selected seed evidence remains owned by the transfer checkpoint. This declaration join supplies no new actual read, NP causality, noncommit or recovery proof."
+            }
+          ]
+        },
+        "decisions": [
+          "A focused coverage module was chosen rather than extending the orchestrator or widening family selectors. Runtime arithmetic/transaction/routes/native classification/scenario/portable/ranking semantics remain unchanged.",
+          "Existing artifacts alone do not close support recovery: the original generic loop overwrites pre-repair execution and saves initial status plus final records. Source-fact fulfillment and inputRequired repair cannot be merged into one successful native recovery proof.",
+          "Existing fixedSelf proof can supply a live borrowed identity connection within its original scope. Its schema-legal representative is not proof for Published condition10/NP6/value-expression55 populations.",
+          "Primitive declarations and generic context429/selected211 mappings do not supply native/read/NP/recovery stages. Missing observation remains unobserved;selector exclusion is not product exclusion.",
+          "Published transfer2/native24 retained proof is fully preserved andjoined to new writer declarations by full canonical identity andcomplete operation value. Actual HP read/HP-dependent NP0 remains limited to those requests.",
+          "New observer,capture of previously discarded recovery stages,new family forward/noncommit/recovery owner implementation would cross the session boundary. These gaps are recorded,not implemented or reclassified.",
+          "No eight-shard regeneration,legacy cleanup,input lifecycle change,threshold/timeout/GC/config/runner change or whole-quality acceptance was started."
+        ],
+        "verification": {
+          "finalUnit": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T17-59-46-124Z-3-307f72/manifest.json",
+              "bytes": 26736,
+              "sha256": "32378b81e547a0b6c6d57de60d76c36fcaa7a7e9a84d14a78b5c4b10cb026a73"
+            },
+            "files": 2,
+            "tests": 110,
+            "warnings": 0,
+            "scope": "new6 structural fixtures and existing fixed104. New adapter uses existing schema-legal selected writer/read/consumed NP3 references;missing/foreign/failed owner/outside scope4 adapter negatives."
+          },
+          "retainedLocal": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T17-55-03-343Z-3-3fe437/manifest.json",
+              "bytes": 27088,
+              "sha256": "fc0ad3276caa9353ae510aa12dda1c66189e30411d3e1e1548d4b69f44298ce4"
+            },
+            "files": 4,
+            "tests": 140,
+            "warnings": 0,
+            "qualification": "Earlier compact run:fixed104/new6/HP coverage12/HP execution18. HP coverage andHP execution sources are unchanged;not combined with later110 to claim a larger successful run."
+          },
+          "finalHpProduction": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T18-00-24-160Z-3-314c18/manifest.json",
+              "bytes": 3922,
+              "sha256": "886a1935f3268371a9acf57e2363c95888b7aac93a6f63dc08444f10b1519353"
+            },
+            "files": 1,
+            "tests": 7,
+            "warnings": 0,
+            "scope": "All original production HP phases plus two sidecars; original assertions,timeouts,workers preserved."
+          },
+          "completeComparison": {
+            "artifact": {
+              "path": ".test-results/tsk-08-hp-proof-20260928/complete-comparison.json",
+              "bytes": 238411,
+              "sha256": "eebf67d010d03518070a2b2dcff31939d02a0fcf5b2d1716812077b2624a0e73"
+            },
+            "comparisons": 113,
+            "completeDecodedEqual": 113,
+            "bytesShaEqual": 113,
+            "oldFixed": 104,
+            "oldHp": 7,
+            "oldCoverage": 1,
+            "oldTransfer": 1,
+            "firstDifference": null,
+            "errors": 0,
+            "qualification": "Complete lossless envelopes/diagnostic graph values and order compared without huge proof graph re-expansion. Exact bytes plus prior saved lossless-restoration proof preserve all negative reasons and values."
+          },
+          "protectedGiveAudit": {
+            "give": 6,
+            "audit": 77,
+            "independentOldDiskIdentityChecks": 166,
+            "errors": 0,
+            "qualification": "Both baseline/candidate descriptors from the original complete comparison are exact. Reuse that complete-value proof;do not rerun unchanged owners."
+          },
+          "receipts": {
+            "runs": 2,
+            "independentManifestDiskDescriptors": 120,
+            "testOwnedDeclaredReceipts": 110,
+            "runnerVerificationErrors": 0,
+            "diskErrors": 0,
+            "declaredErrors": 0,
+            "qualification": "New two-run receipt population only. Legacy HP5 plain writers stay independent disk comparisons,not retroactive declared receipts."
+          },
+          "static": {
+            "format": "Final changed4 source passed",
+            "typecheck": "node node_modules/typescript/bin/tsc -b --pretty false passed final source",
+            "lint": "Changed4 TypeScript files passed,warning0",
+            "diffWhitespace": "passed"
+          }
+        },
+        "artifactIdentities": [
+          {
+            "path": ".test-results/tsk-08-hp-proof-20260928/compare.mjs",
+            "bytes": 7137,
+            "sha256": "227be2a223801c19576f6eab944228025c3ebcda0eea8c8cc6f7415875343250"
+          },
+          {
+            "path": ".test-results/tsk-08-hp-proof-20260928/complete-comparison.json",
+            "bytes": 238411,
+            "sha256": "eebf67d010d03518070a2b2dcff31939d02a0fcf5b2d1716812077b2624a0e73"
+          },
+          {
+            "path": ".test-results/2026-09-27T18-00-24-160Z-3-314c18/hp-proof-coverage.json",
+            "bytes": 1688747,
+            "sha256": "6b97ed72df42079ca3ebc2dbc49ee94e25c8e2dbc3f60549f315fa1e71d6df6c"
+          },
+          {
+            "path": ".test-results/2026-09-27T17-59-46-124Z-3-307f72/hp-fixed-proof-correspondence.json",
+            "bytes": 2845519,
+            "sha256": "ffe051bca91acaa44799443723d70a330e064fdf489cbebd075b32ec4e51a0c0"
+          }
+        ],
+        "performance": {
+          "qualification": "No calculation structure,capture orobserver-absent hot path changed. Extra suite-local declaration/sidecar work is not native performance evidence. Formal3-run contracts remain unverified;no new live diagnostic pair or formal runs.",
+          "unitFinalSeconds": 20.68,
+          "hpProductionFinalSeconds": 25.57,
+          "counterPolicy": "Original shared1/1/1 and6673/4194/2596/1489 evidence preserved at original responsibility;not all-suite read/parse counters."
+        },
+        "systematicReview": {
+          "guide": "docs/guides/systematic-review-guidelines.md §§3.4–3.6,8–9",
+          "inScopeBlocking": 0,
+          "scope": "Coverage correspondence only;no canonical state/outcome orruntime writer change. Existing fixedSelf forward/native bounds retained.",
+          "counterexamples": [
+            "missing/duplicate/unmatched",
+            "same-valued foreign declaration/capture",
+            "wrong family/actor/instance/operation/group",
+            "binding order",
+            "condition read versus NP exclusion",
+            "reader-only effects/nested polarity",
+            "normal/LB value expression",
+            "schema-legal HP-conditioned gauge/modifier-use/OC-expression declarations",
+            "original failed gate/outside scope"
+          ],
+          "causeAnalysis": {
+            "mechanism": "Generic records preserve final numerical outcomes/selection,but discard pre-repair execution anddo not carry complete original native/read/NP proof identity.",
+            "ownershipInference": "Treating primitive orfinal generic records as wholeproof would conflate declaration/context/selection with execution proof;current code does not justify that conclusion.",
+            "detectionBoundary": "Existing transfer request set hasactual read/NP0 andbounded fixedSelf selector;these cannot certify other reader/recovery populations.",
+            "recurrenceScope": "Explicit canonical HP dependency declarations anddirect proof interfaces only;missing observer/family/recovery capture stays a documented next boundary."
+          }
+        },
+        "inputLifecycleClosureReconciliation": [
+          {
+            "obligation": "Current production input lifecycle and established occurrence/HP gates",
+            "originalReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint.closureReconciliation",
+            "judgment": "Retained at original source/input/responsibility. This session supplies no broader success classification."
+          },
+          {
+            "obligation": "Complete HP primitive operation population",
+            "originalReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint.closureReconciliation",
+            "judgment": "Established primitive486/7470/digest and all original HP fields preserved;557 explicit canonical dependency declarations inventoried. Not whole native/read/NP/recovery proof."
+          },
+          {
+            "obligation": "Fixed/maximumFixed/receive and other completed mutation slices",
+            "originalReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint.closureReconciliation",
+            "judgment": "Retained at original source/input/responsibility. This session supplies no broader success classification."
+          },
+          {
+            "obligation": "Remaining HP actions/lifetimes/recipients and alternate/recovery paths",
+            "originalReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint.closureReconciliation",
+            "judgment": "Scoped correspondence connected: schema-legal fixedSelf writer/read/NP3 borrowed bindings and original Published transfer2 declaration join. Other proof connection remains unobserved;support pre-repair execution is not retained. New observer/family/recovery owner work is outside this session."
+          },
+          {
+            "obligation": "Whole parity/unsupported/invalid/partial-commit/inert-control/stale-mutation ratchets and diagnostics reachability",
+            "originalReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint.closureReconciliation",
+            "judgment": "Original scoped evidence preserved;new correspondence failures/firstDifference/complete artifacts and receipts verified. Whole ratchet/population/typed diagnostic reachability remains unverified."
+          },
+          {
+            "obligation": "Legacy aggregate auditor/old loader/scan/candidate-list/duplicate-fixture removal",
+            "originalReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint.closureReconciliation",
+            "judgment": "Whole unique coverage/removal remains unverified;no unrelated deletion or cleanup was started."
+          },
+          {
+            "obligation": "Formal performance and final acceptance",
+            "originalReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint.closureReconciliation",
+            "judgment": "Unmet. No runtime/capture/hot-path modification,so no new diagnostic live pair;formal3-run applicability and README final quality/integrated acceptance remain pending. Dependent product closure not started."
+          },
+          {
+            "obligation": "Declared boundary and product-excluded behavior",
+            "originalReference": "boundedUnits[52].productionAuditInputLifecycleCheckpoint.closureReconciliation",
+            "judgment": "Retained at original source/input/responsibility. This session supplies no broader success classification."
+          }
+        ],
+        "closureDecision": {
+          "tsk08": "in_progress",
+          "step0_1_3": "established",
+          "step2": "open",
+          "tsk09_1_09": "blocked",
+          "productClosure": false,
+          "reasons": [
+            "Remaining native/read/NP/recovery proof is unconnected;Published explicit declaration coverage is not whole execution coverage.",
+            "Whole ratchets,typed diagnostics/fullartifact reachability,legacy unique coverage,formal3-run performance,README final quality andintegrated allcounter/digest/receipt acceptance remain unmet orunverified."
+          ],
+          "dependentQualityStarted": false,
+          "checklistDoneGateContractMatrix": "Sole inventory foundation retained;scoped identity/first diff/full persistence verified. TS-AUDIT/RK-AUDIT wholepopulation,TS-OUT/TS-ART allproducer reachability,RK-PERF/TS-PERF正式3-run andDX-HANDOFF README quality remain pending."
+        },
+        "protectedEvidence": "units0..51 and every original unit52 checkpoint/key retain exact decoded values. Old240=235success5failure andall prior scoped counters/receipts remain historical;no cross-run success aggregation.",
+        "executionHistory": [
+          {
+            "action": "ordinary pnpm test:diagnostic",
+            "result": "Failed before script with external SQLite store ERR_SQLITE_ERROR;not a source test result.",
+            "runner": {
+              "path": "/tmp/tsk08-tools/pnpm",
+              "bytes": 730,
+              "sha256": "7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6"
+            }
+          },
+          {
+            "action": "filtered verbose fixed representative",
+            "manifest": {
+              "path": ".test-results/2026-09-27T17-52-16-852Z-3-d68750/manifest.json",
+              "bytes": 3420,
+              "sha256": "694f81e230cea299088c6922ec0fd4508da9db273850ccf325086b541be77774"
+            },
+            "result": "assertion1 passed/skipped103,butrunner outcome contract_failure due output.truncated. Not accepted as successful verification;replaced by compact affected source suites."
+          },
+          {
+            "action": "new structural fixture diagnostic",
+            "manifest": {
+              "path": ".test-results/2026-09-27T17-53-30-368Z-3-e015b4/manifest.json",
+              "bytes": 2877,
+              "sha256": "8ce05fb7fa02914f27e927afece4c6245099b42bd1dac01376a939a929313c66"
+            },
+            "result": "6 passed at earlier source;later declaration/stage changes covered by final110."
+          },
+          {
+            "action": "static",
+            "result": "Earlier lint detected two unnecessary narrow-union conditionals;corrected without broadening family. Final changed-source lint/typecheck/format passed."
+          },
+          {
+            "action": "intermediate production",
+            "result": "7 passed at each intermediate source;final frozen-source production7 is the accepted evidence. No success totals combined."
+          }
+        ],
+        "nextOperation": "Read-only bounded join of Published condition10/hpRatioLow6/value-expression55 declarations to existing original production request/capture/proof producers. Retain explicit NP gauge/use-condition Published0 versus nonempty schema-legal fixtures. If proof is unavailable or requires new observer/family/recovery owner,record the exact gap andprepare a separate bounded plan;do not chain implementation.",
+        "sessionBoundary": "Completed scoped source gates andfull comparisons before60 minutes. Record/review/doc gates/target-onlylocal commit next;no push. At90 minutes finish currentatomic action without newquality retries oranotherfamily.",
+        "documentationVerification": {
+          "status": "passed final changed4 documents",
+          "commands": [
+            "node node_modules/prettier/bin/prettier.cjs --check <changed8>",
+            "PATH=/tmp/tsk08-tools:$PATH /tmp/tsk08-tools/pnpm test:docs",
+            "git diff --check"
+          ],
+          "result": "format passed;docs6/6 andintegrity passed;allhistoricalboundedUnits andunit52keys exact;source/input/artifact identity preserved. Documentation-result-only update does not change source/test/input/settings."
+        },
+        "recordCommitPolicy": "Target-only local checkpoint commit;SHA resolved from Git history,not self-referential JSON. No push.",
+        "finalSourceIdentities": [
+          {
+            "path": "packages/calculation-application/src/productionHpProofCoverage.ts",
+            "bytes": 16310,
+            "sha256": "8f747131fef90897e774b85aa2cb55a8df5d9223a2efbe550241a1aee4b9e41d"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpProofCoverage.test.ts",
+            "bytes": 9357,
+            "sha256": "2cf122c722783fa73e12d872c6b3170306174b0e6f3940e4e37b8806fb21f778"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPreparationAudit.test.ts",
+            "bytes": 36860,
+            "sha256": "f154cdf9197d0d843316a527adefa44bb3e4ee76334fc32affbd3399492232f0"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPaths.test.ts",
+            "bytes": 35442,
+            "sha256": "b14366d41ab6cb08bfe888b4e1f0138601c9e1bd4c5d861c0048ebf06cc05319"
+          }
+        ],
+        "completedAt": "2026-09-27T18:06:31Z"
       }
     }
   ],
@@ -21904,9 +22387,10 @@
         {
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open. Current give native noncommit A/B shared audit is implemented with separate filtered empty-read capture;final give3/HP6/related391 retained/audit77 and full comparisons/370 disk+350 declared receipt error0 verified;not whole closure. HPcanonical486/7470/54groups andgenericconsumerreferences verified;seehpCoverageReconciliationCheckpoint;notnative/read/recoveryorwholeclosure. Transfer2 declarations/24 original native operations andretained selectedHP seeds nowconnected;old selected12/HP7/give6/audit77 artifacts retained. ActualHP read/HP-dependentNP0 inthesePublishedcases isnotNP causality/recoveryclosure. See boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint.",
-          "nextBoundedScope": "残存HP reader／NP／native noncommit／recoveryと既存proofの直接参照を現コードから照合し、同じcoverage責務内で必要な監査接続・検証とTSK-08 closure可否の計画を提示する。利用者確認後に同scopeをlocal commitまで続け、別family実装を連鎖開始しない。",
+          "nextBoundedScope": "Read-only bounded join of Published condition10/hpRatioLow6/value-expression55 declarations to existing original production request/capture/proof producers. Retain explicit NP gauge/use-condition Published0 versus nonempty schema-legal fixtures. If proof is unavailable or requires new observer/family/recovery owner,record the exact gap andprepare a separate bounded plan;do not chain implementation.",
           "nextScopeQualification": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint",
-          "activeUnit52ScopeReference": "boundedUnits[52]"
+          "activeUnit52ScopeReference": "boundedUnits[52]",
+          "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint"
         },
         {
           "stage": 3,
@@ -23796,7 +24280,7 @@
         "executionCheckpointReference": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint"
       },
       "hpRemainingProofReconciliationSession": {
-        "status": "prepared_read_only_plan_confirmation_required",
+        "status": "implemented_verified_scoped_product_incomplete_checkpoint",
         "name": "残存HP reader／NP／native noncommit／recoveryの既存proof対応と全体closure判断",
         "baselineHead": "1cc348209ff3953512f120772e0482bf18f4ef70",
         "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
@@ -23955,7 +24439,14 @@
             "通常pnpmはformatter開始前に外部SQLite store ERR_SQLITE_ERROR。内容/730bytes/SHA照合済み指定shimと既存node_modulesへ切替。",
             "最初のdocs6/6後integrityはevidence index registry版の更新漏れで失敗。registryを現frontmatter版へ修正し再実行成功。"
           ]
-        }
+        },
+        "planConfirmation": {
+          "answer": "OK",
+          "scope": "Current-code coverage-only plan;local commit,no push",
+          "resultCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint"
+        },
+        "resultCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint",
+        "nextOperation": "Read-only bounded join of Published condition10/hpRatioLow6/value-expression55 declarations to existing original production request/capture/proof producers. Retain explicit NP gauge/use-condition Published0 versus nonempty schema-legal fixtures. If proof is unavailable or requires new observer/family/recovery owner,record the exact gap andprepare a separate bounded plan;do not chain implementation."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -24927,11 +25418,11 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "残存HP reader／NP／native noncommit／recoveryと既存proofの直接参照を現コードから照合し、同じcoverage責務内で必要な監査接続・検証とTSK-08 closure可否の計画を提示する。利用者確認後に同scopeをlocal commitまで続け、別family実装を連鎖開始しない。",
+    "nextSession": "Read-only bounded join of Published condition10/hpRatioLow6/value-expression55 declarations to existing original production request/capture/proof producers. Retain explicit NP gauge/use-condition Published0 versus nonempty schema-legal fixtures. If proof is unavailable or requires new observer/family/recovery owner,record the exact gap andprepare a separate bounded plan;do not chain implementation.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
-        "detail": "HP486／7470のidentity・primitive coverageとgeneric consumer参照を照合済み。unit52.hpCoverageReconciliationCheckpointを参照。54group、context429／明示selected211宣言は全native／実read／NP／recoveryを証明しない。実audit gapは別の限定計画で扱い、新supported behaviorや同scenario recoveryを追加しない。 transfer2／native24／retained selected HP seedの限定接続はboundedUnits[52].hpTransferEvidenceReconciliationCheckpoint。全read／NP／recoveryを証明しない。"
+        "detail": "HP486／7470のidentity・primitive coverageとgeneric consumer参照を照合済み。unit52.hpCoverageReconciliationCheckpointを参照。54group、context429／明示selected211宣言は全native／実read／NP／recoveryを証明しない。実audit gapは別の限定計画で扱い、新supported behaviorや同scenario recoveryを追加しない。 transfer2／native24／retained selected HP seedの限定接続はboundedUnits[52].hpTransferEvidenceReconciliationCheckpoint。全read／NP／recoveryを証明しない。 Current explicit canonicalHP dependency557=writer486/condition10/value30/OC-rate25/hpRatioLow6,use-condition0/HP-conditioned gauge0;schema-legal fixedSelf3 correspondence andPublishedtransfer2 join verified. See boundedUnits[52].hpRemainingProofReconciliationCheckpoint. Whole native/read/NP/recovery stillunconnected."
       },
       {
         "work": "Whole ratchet and diagnostic/artifact closure",
@@ -24984,6 +25475,7 @@
     "hpCoverageCheckpointReference": "boundedUnits[52].hpCoverageReconciliationCheckpoint",
     "asOfHpCoverageCheckpointCommit": "51aad93b7212c1697738d43f9f4614bfa89d1117",
     "hpTransferCheckpointReference": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint",
-    "hpTransferCheckpointCommit": "1cc348209ff3953512f120772e0482bf18f4ef70"
+    "hpTransferCheckpointCommit": "1cc348209ff3953512f120772e0482bf18f4ef70",
+    "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint"
   }
 }

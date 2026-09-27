@@ -3,6 +3,11 @@ import {
   reconcileHpCoverage,
   type HpCoverageObservation,
 } from './productionHpCoverage';
+import {
+  HP_PROOF_DECLARATION_KINDS,
+  hpProofCoverageInventory,
+  reconcileHpProofCoverage,
+} from './productionHpProofCoverage';
 import { auditGiveAttemptIsolation } from './productionHpGivePreparationAttemptAudit';
 import {
   isSelfHpTransfer,
@@ -96,7 +101,7 @@ async function artifact(name: string, data: unknown) {
 }
 it(
   'joins all production HP cells to source, recipient and observation time, and executes both actor bindings',
-  productionAuditTestOptions(['hp-operation-coverage.json']),
+  productionAuditTestOptions(['hp-operation-coverage.json', 'hp-proof-coverage.json']),
   async ({ task }) => {
     const master = await masterPromise;
     const sources = hpCoverageSources(master);
@@ -233,6 +238,42 @@ it(
     ]).toEqual([486, 486, 7470, 7470]);
     expect(failures).toEqual([]);
     expect(cells).toBeGreaterThan(1000);
+    const declarations = hpProofCoverageInventory(master);
+    const proofCoverage = reconcileHpProofCoverage(declarations, [], []);
+    const proofPayload = {
+      master: master.version,
+      writerPopulation: declarations.filter((d) => d.identity.kind === 'writer').length,
+      declarationCounts: Object.fromEntries(
+        HP_PROOF_DECLARATION_KINDS.map((kind) => [
+          kind,
+          declarations.filter((d) => d.identity.kind === kind).length,
+        ]),
+      ),
+      declarations: declarations.map(({ identity, effect, operation, value }) => ({
+        identity,
+        operation,
+        value,
+        requirement: effect?.requirement ?? null,
+      })),
+      proofCoverage,
+      qualification:
+        'Complete canonical declaration inventory, including readers without HP writers. This producer retains primitive cells only; native/read/NP/recovery proof is not inferred from them or generic records.',
+    };
+    const proofReceipt = await writeProductionAuditArtifact(
+      task.meta,
+      'hp-proof-coverage.json',
+      proofPayload,
+    );
+    const proofBytes = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-proof-coverage.json'),
+    );
+    expect([proofBytes.length, createHash('sha256').update(proofBytes).digest('hex')]).toEqual([
+      proofReceipt.expectedBytes,
+      proofReceipt.expectedSha256,
+    ]);
+    expect(isDeepStrictEqual(decodeProductionAuditArtifact(proofBytes), proofPayload)).toBe(true);
+    expect(proofPayload.writerPopulation).toBe(486);
+    expect(proofCoverage.gate.failures).toEqual([]);
   },
 );
 it('executes every HP-producing calculator actor across NP capacity, initial OC, level and portable boundaries', async () => {

@@ -17,6 +17,7 @@ import {
   auditHpPreparation,
   auditPublishedHpPreparation,
 } from './productionHpPreparationAudit';
+import { hpProofCoverageInventory, fixedSelfHpProofCoverage } from './productionHpProofCoverage';
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
@@ -341,7 +342,12 @@ for (const spec of specs)
   for (const group of groups)
     it(
       `committed fixed HP ${spec.name} ${group}`,
-      productionAuditTestOptions([`tsk-08-hp-${spec.name}-${group}.json`]),
+      productionAuditTestOptions([
+        `tsk-08-hp-${spec.name}-${group}.json`,
+        ...(spec === specs[0] && group === 'positive'
+          ? ['hp-fixed-proof-correspondence.json']
+          : []),
+      ]),
       async ({ task }) => {
         let entry = shared.get(spec);
         if (!entry) {
@@ -355,6 +361,78 @@ for (const spec of specs)
           shared.set(spec, entry);
         }
         const { master, positive, normal, ranking } = entry;
+        if (spec === specs[0] && group === 'positive') {
+          const declarations = hpProofCoverageInventory(master);
+          const correspondence = fixedSelfHpProofCoverage(
+            declarations,
+            positive.program,
+            positive.gate,
+          );
+          expect(correspondence.failures).toEqual([]);
+          expect(correspondence.passed).toBe(true);
+          expect(
+            correspondence.correspondence.bindings.some((b) => b.stage === 'actualConditionRead'),
+          ).toBe(true);
+          expect(
+            correspondence.correspondence.bindings.some(
+              (b) => b.stage === 'npEvaluation' && b.disposition === 'consumed',
+            ),
+          ).toBe(true);
+          const missing = fixedSelfHpProofCoverage([], positive.program, positive.gate);
+          const foreign = fixedSelfHpProofCoverage(
+            declarations.map((declaration) => ({
+              ...declaration,
+              effect: declaration.effect ? structuredClone(declaration.effect) : null,
+              operation: declaration.operation ? structuredClone(declaration.operation) : null,
+              value: structuredClone(declaration.value),
+            })),
+            positive.program,
+            positive.gate,
+          );
+          const failedOwner = fixedSelfHpProofCoverage(declarations, positive.program, {
+            ...positive.gate,
+            status: 'failed',
+          });
+          const outside = fixedSelfHpProofCoverage(
+            declarations,
+            {
+              ...positive.program,
+              selection: {
+                ...positive.selection,
+                canonical: {
+                  ...positive.selection.canonical,
+                  scopeBoundaries: ['otherHpWriter'],
+                },
+              },
+            },
+            positive.gate,
+          );
+          for (const negative of [missing, foreign, failedOwner, outside])
+            expect(negative.passed).toBe(false);
+          expect(missing.failures.some((f) => f.reason === 'unmatchedDeclaration')).toBe(true);
+          expect(foreign.failures.some((f) => f.reason === 'unmatchedDeclaration')).toBe(true);
+          expect(failedOwner.failures.some((f) => f.reason === 'ownerGateFailed')).toBe(true);
+          expect(outside.failures.some((f) => f.reason === 'outsideProofScope')).toBe(true);
+          const proofPayload = {
+            ownerArtifact: `tsk-08-hp-${spec.name}-${group}.json`,
+            input: {
+              masterVersion: master.version,
+              population: 'schemaLegalFixedSelfRepresentative',
+            },
+            correspondence,
+            negatives: { missing, foreign, failedOwner, outside },
+          };
+          const receipt = await writeProductionAuditArtifact(
+            task.meta,
+            'hp-fixed-proof-correspondence.json',
+            proofPayload,
+          );
+          const bytes = await readFile(
+            `${process.env['FGO_TEST_ARTIFACT_DIR']}/hp-fixed-proof-correspondence.json`,
+          );
+          expect(bytes.length).toBe(receipt.expectedBytes);
+          expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), proofPayload)).toBe(true);
+        }
         const negatives: {
           name: string;
           path: string;

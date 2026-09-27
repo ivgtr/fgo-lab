@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.110"
+document_version: "1.7.111"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3887,3 +3887,20 @@ Published transfer2宣言をcommand由来の期待母集団から照合し、元
 TSK-08 checklist／Done gate／Contract closure matrix、remainingWorkSummary、入力lifecycle closureReconciliationを初期計画から全義務へ照合する。全ratchet／typed diagnosticsと完全artifact到達、legacy固有coverage、正式3-run性能、最終quality、統合counter／digest／全receiptは未達または未照合であり、現準備時点では全体closureを見込む根拠はない。全義務が有効既存証拠と今回coverage責務内の整理で成立し、対象内Blocking0かつ時間余裕があれば、確認後の同sessionで必要な影響audit／正式性能／README最終quality／最終統合照合まで進みTSK-08完了commitを目指す。未達coverage・gate、別family、対象外owner、実装gapが残れば依存quality／製品closureを開始せず製品未完了checkpointで終了する。legacy全件整理やTSK-09.1／09をこのsessionへ連鎖しない。計算構造／capture／hot pathに影響する場合だけ同条件1-run pairを限定診断し、正式3-runの代替にしない。旧成功・否定境界・全既存checkpointを保護し、8shardの無条件再生成や成功数のrun横断合成をしない。60分でcheckpoint、90分で現在のatomic actionを終え引継ぎ、対象限定local commit、pushなし。
 
 整理対象4文書のformat、docs6／6・integrity、diff whitespaceと全boundedUnits／旧transfer sessionのdecoded完全保持を確認した。通常pnpmのscript前SQLite store失敗は指定shim照合後に切替。初回integrityのevidence index版参照漏れは修正し、再実行成功。製品source実行・最終quality・正式性能は行っていない。整理commitのSHAはGit履歴から解決し、次作業者の依頼文に記載する。
+
+
+### 残存HP proof対応の限定checkpoint（2026-09-28）
+
+開始HEADは`02555fe7e24ac19ad700185e16a00aab093c4fc9`、index／tracked／untrackedはclean。今回sessionのsource8／input1／artifact7のbytes／SHA一致を読取で確認し、現コードに基づく計画を提示した後、利用者の`OK`でcoverage責務内の実装・検証・正本更新・対象限定local commitへ進んだ。詳細正本は[parity evidence](../evidence/tsk-08-parity-ratchet.json)の`boundedUnits[52].hpRemainingProofReconciliationCheckpoint`。旧sessionやunits[0]〜[51]は再開していない。
+
+`productionHpProofCoverage.ts`へ、明示canonical HP依存宣言のinventoryと、元fixedSelf program／gateを借用する限定対応gateを集約した。現masterは557宣言（writer486、条件leaf10、HP value expression30、OC rate expression25、hpRatioLow6、modifier use-condition0、HP条件付きNP gauge0）。これは暗黙のnative HP readを含む全runtime reader件数や、available／selected／reached／native／append／実read／HP／NP／recovery件数ではない。reader-only effect、nested polarity、NP canonicalId／ref、normal／LB位置を保持し、HP条件付きgaugeとHP依存damage係数を分ける。Published0の2種類にはschema-legal非empty fixtureがあり、0宣言を未観測の実行0へ読み替えない。
+
+既存fixedSelf代表の元selected writer／実condition read／consumed NPを3bindingで接続した。これはschema-legal代表であり、Published条件10／NP6／expression55の全proofではない。元native／retained HPの証明は既存forward ownerに留め、sidecarは元artifactを参照する。missing／duplicate／unmatched、同値foreign宣言・capture、誤family／actor／instance／operation／group、順序、read対NP正常除外、元gate失敗・対象外scopeを小型集合で反証した。Published transfer2は保護artifactの全canonical identity／operation値へjoinし、元native24／selected HP seedを元checkpointの責務で再利用する。transfer request集合の実HP read／HP依存NP各0は全read／NP／noncommit／recoveryの成立証拠ではない。
+
+support経路はsource fact充足と入力修復・再計算・portable replayを持つが、修復前executionを上書きして初期statusと最終recordsを保存する。既存artifactだけでは修復前後のnative／実read／NPを同一identityで接続できない。新observer、失われた修復段階のcapture、別familyのnative noncommit／成功recovery owner実装は今回境界を越えるため実装せず、未達条件として残す。元owner再実行、新期待値生成器、巨大proof再展開、schema／算術／transaction／route／native分類／scenario／portable／ranking／入力lifecycle／runner／suite設定の変更はない。observer不在hot pathへのallocation追加もない。
+
+最終sourceのcompact unit110（新6＋既存fixed104）、production HP7が成功、warning0。先行compact140のうち変更されていないHP coverage12／HP execution18は元責務で再利用し、run間で成功数を合算しない。旧HP7＋coverage1＋transfer1＋fixed104の113 artifactは完全lossless値・順序・bytes／SHA一致、first differenceなし。give6／audit77は既存完全比較のbaseline／candidate166 disk identityを照合して保全した。今回2runの独立manifest disk120／test-owned declared receipt110／runner verificationはerror0。旧plain HP5へdeclared receiptを後付けしない。詳細なmanifest／disk／SHAとcounterは上記checkpointと`.test-results/tsk-08-hp-proof-20260928/complete-comparison.json`を参照する。通常pnpmのscript前SQLite失敗は指定shim内容／730bytes／SHA照合後にnested PATHを含め同generic runnerへ切替。filtered verbose代表はassertion1成功でもoutput打切りでrunner契約失敗だったため、成功証拠にせずcompact最終suiteで置換した。最終sourceのformat／typecheck／lintも成功した。
+
+今回対応gateのBlockingは0だが、全native／実read／NP／成功recovery coverageは未達。TSK-08 checklistの全ratchet／typed diagnostics・完全artifact到達／legacy固有coverage、Done gateの全inventory／parity／fail-closed、Contract closure matrixの正式3-run性能／README最終quality／統合counter・digest・全receiptも未達または未照合である。元input lifecycle `closureReconciliation`の全義務への今回判断は新checkpointから対応表で参照し、旧checkpointの値は完全保持した。計算構造／capture／hot pathを変えていないため新live pairは不要で、正式性能の代用はしていない。依存quality・製品closure・別familyを開始せず、Step0／1／3成立、Step2未完了、TSK-08 `in_progress`、09.1／09 `blocked`を維持する。次の限定操作はPublished条件10／hpRatioLow6／expression55と既存元production producer／capture／proofの読取identity照合であり、必要observer／owner変更が判明したら別の限定計画へ分離する。
+
+60分前に限定source gate・全比較を完了し、既存Task／evidence記録、文書gate、対象限定local checkpoint commitで終了する。units[0]〜[51]とunit52全既存keyのdecoded値、旧240＝235成功5失敗、既存shared1／1／1・6673／4194／2596／1489と各checkpointのcounter／receiptは元責務で保持する。pushはしない。commit SHAはGit履歴から解決する。
