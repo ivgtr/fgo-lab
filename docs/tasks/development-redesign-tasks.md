@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.111"
+document_version: "1.7.112"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3904,3 +3904,20 @@ support経路はsource fact充足と入力修復・再計算・portable replay�
 今回対応gateのBlockingは0だが、全native／実read／NP／成功recovery coverageは未達。TSK-08 checklistの全ratchet／typed diagnostics・完全artifact到達／legacy固有coverage、Done gateの全inventory／parity／fail-closed、Contract closure matrixの正式3-run性能／README最終quality／統合counter・digest・全receiptも未達または未照合である。元input lifecycle `closureReconciliation`の全義務への今回判断は新checkpointから対応表で参照し、旧checkpointの値は完全保持した。計算構造／capture／hot pathを変えていないため新live pairは不要で、正式性能の代用はしていない。依存quality・製品closure・別familyを開始せず、Step0／1／3成立、Step2未完了、TSK-08 `in_progress`、09.1／09 `blocked`を維持する。次の限定操作はPublished条件10／hpRatioLow6／expression55と既存元production producer／capture／proofの読取identity照合であり、必要observer／owner変更が判明したら別の限定計画へ分離する。
 
 60分前に限定source gate・全比較を完了し、既存Task／evidence記録、文書gate、対象限定local checkpoint commitで終了する。units[0]〜[51]とunit52全既存keyのdecoded値、旧240＝235成功5失敗、既存shared1／1／1・6673／4194／2596／1489と各checkpointのcounter／receiptは元責務で保持する。pushはしない。commit SHAはGit履歴から解決する。
+
+
+### Step再照合とPublished HP依存proof接続の1セッション準備（2026-09-28）
+
+今回の開始HEADは`d91b1281c2283f8743b90d0315f115d09250aa75`、index／tracked／untrackedはclean。Step0はbaseline／契約成立、Step1はV41 request marker・V40保持／明示再計算成立、Step3は改訂matrix／eligibility成立、Step2は未完了。完了units[0]〜[51]を再開せず、unit52の限定checkpointを製品closureへ読み替えない。TSK-08 `in_progress`、TSK-09.1／09 `blocked`を維持する。
+
+次の指示正本は[parity evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.hpPublishedDependencyProofSession`。旧remaining proof sessionは`d91b128`で限定実装・検証済みの履歴であり、固定手順ではない。今回の先行調査はコード・文書・JSON・既存artifactの読込とchecksum照合だけ。直前checkpointのsource4／元owner7／input1／artifact4／最終manifest2のidentityは一致。Step3の現revision manifestと8shardsもdisk bytes／SHA一致を確認し、再生成していない。今回source13とinput／artifactの再開用identity、直接経路、設計の未確定事項は新sessionの`preparationReport`を正本とする。
+
+Published明示依存557のうち残る条件10（attacker9／CE1）、hpRatioLow6（4actorの6variant）、value expression30（3effectの各10level cell）、OC rate expression25（1NP effectの25cell）を元producer／capture／proofへ照合する範囲とする。effect／cell／宣言とavailable／selected／reached／native／append／実read／評価件数を区別する。Published use-condition0／HP条件付きNP gauge0はschema-legal非empty fixtureや未観測実行と分ける。
+
+`productionMasterControlAudit`の元prepareはcaptureを有効にしてpreparedを保持するが、HP監査配列への取り込みはfixedSelf writer selector内に限られる。元condition／NP captureの借用をselector前からcoverage ledgerへ接続できるかは計画で判断する。reader-only sourceへ現fixedSelf adapterの成立証拠を拡張しない。`projection.resolveModifierValue`と`ocState.rateValue`は元HPを直接読むが、現condition／NP observerへ直接保存しない。resolved valueだけで完全な実read proofとせず、新observerが必要なら境界外として止める。support修復前capture欠落も残り、source fact充足とinput repairを同一成功recoveryへ合成しない。
+
+最初の成果物は現コードに基づく設計・検証・全TSK-08 closure可否の計画。利用者確認前は読込／checksumだけに限定する。確認後は同coverage責務の必要実装・小型反証・影響suite・旧新artifact完全比較・既存正本更新・対象限定local commitまで同sessionで進める。既存producer接続、借用参照の整理、焦点を絞ったmoduleの要否を再判断し、旧解法を固定しない。新observer、別family／recovery owner、runtime gap、対象外ownerが必要なら根拠・未達条件・次の限定操作を記録する。新計画書、元owner再実行、新期待値生成器、巨大proof再展開、製品意味論変更は既定解にしない。
+
+初期計画からchecklist／Done gate／Contract closure matrixとremainingWorkSummary、元input lifecycle closureReconciliationの全義務を有効証拠へ対応付ける。全ratchet、typed diagnostics／完全artifact到達、legacy固有coverage、正式3-run性能、README最終quality、統合counter／digest／全receiptを曖昧に閉じない。全義務が今回責務内で成立し対象内Blocking0かつ時間余裕がある場合にTSK-08完了を目指す。現準備時点では全体closureの根拠はないため、未達が残れば依存quality／製品closureを開始しない。60分で既存Task／evidenceへcheckpoint、90分では現在のatomic actionを終えて引き継ぐ。
+
+今回の整理は文書のみ。製品source test／producer／audit／quality／live計測は実施しない。文書gateと旧boundedUnits／旧sessionの完全保持を確認後、対象4文書のみlocal commitし、SHAはGit履歴から解決して依頼文に記載する。pushしない。
