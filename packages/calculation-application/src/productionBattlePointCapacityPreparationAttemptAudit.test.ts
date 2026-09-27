@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { isDeepStrictEqual } from 'node:util';
+import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import fixture from '../../test-fixtures/master/fixture.json';
@@ -1401,9 +1401,12 @@ for (const spec of specs)
           negatives,
         };
         const diagnostic = encodeProductionAuditDiagnostic(payload);
-        const roundTrip = isDeepStrictEqual(decodeProductionAuditDiagnostic(diagnostic), payload);
+        const roundTrip = equalProductionAuditDiagnosticValues(
+          decodeProductionAuditDiagnostic(diagnostic),
+          payload,
+        );
         const encoded = serializeProductionAuditArtifact(diagnostic);
-        const savedRoundTrip = isDeepStrictEqual(
+        const savedRoundTrip = equalProductionAuditDiagnosticValues(
           decodeProductionAuditDiagnostic(
             decodeProductionAuditArtifact(encoded) as typeof diagnostic,
           ),
@@ -1419,7 +1422,7 @@ for (const spec of specs)
           encoded: diagnostic,
         });
         const savedBytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, file));
-        const diskRoundTrip = isDeepStrictEqual(
+        const diskRoundTrip = equalProductionAuditDiagnosticValues(
           decodeProductionAuditDiagnostic(
             (decodeProductionAuditArtifact(savedBytes) as { encoded: typeof diagnostic }).encoded,
           ),

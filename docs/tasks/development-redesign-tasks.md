@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.93"
+document_version: "1.7.94"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3585,3 +3585,15 @@ committed fixtureはdecodeとserialize後decodeの完全比較・保存宣言を
 共有capacity consumerのproof生成移行、global codec形式／encode・decode変更、production read／parse lifecycleは同時に扱わない。局所契約fixtureとBlocking差分レビュー後に原capacity 2 file全240 testsの影響検証・完全artifact復元／receipt照合を行う。比較前後の計測は同入力・同条件へ限定し、保存済みinterned再生と実payloadの費用を区別する。未変更consumer58／control7や実行parityは責務と入力が一致する範囲だけ再利用し、変更した復元比較の成功へ読み替えない。
 
 次の正本はevidence `handoffPreparation.nextSession.capacityRestorationComparisonSession`（読取調査のsource identity・観測call site・証拠・境界を保存）。README必須qualityは製品完了条件のままで、他の既知gate未解消時は依存する最終closureを止める。原因解消なしの全体quality反復、新family、完了済みunits[0]〜[51]再開、TSK-08全体closureは行わない。60分で既存Task／evidenceへcheckpoint、90分で現在のatomic actionを終えて引継ぎ。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、製品未完了、pushなしを維持する。
+
+### capacity完全値復元比較checkpoint（影響240未達、2026-09-27）
+
+利用者が現コードからの計画を確認し、capacity既存2 fixtureの完全値復元比較だけを承認した。比較責務を焦点の定まったhelperへ置き、値契約・cycleを検証してから呼出し内のobject-pair追跡で共有graphを比較する。Set／Mapは順序・件数も検査し、missing／own undefined、null-prototypeを区別する。元alias topologyとlive owner参照同一性を混同せず、call間cacheはない。committed側に実disk再読込・完全比較を追加し、両fixtureの元decode／serialize後比較も維持した。global codec／consumer proof生成／HP実行／runner／timeoutは変更していない。
+
+局所比較6＋既存artifact契約6 tests、対象lint／最終source root typecheck／default Prettierが成功した。原capacity 2 file全240 testsは235成功・5失敗、warning0、所要129.82秒。失敗は元5000msを超えるtaskでreportはSTACK_TRACE_ERRORを示すが、費用と原因の帰属は未確定であり、全件成功とはしない。局所manifestは`.test-results/2026-09-27T10-21-49-976Z-2-510632/manifest.json`、影響240は`.test-results/2026-09-27T10-22-02-217Z-2-0e4ea9/manifest.json`。252 receipt照合error0、全240 capacity artifactは原profile成功runとbytes／SHA一致し、完全decoded値比較も一致した。これは保存証拠の不変性であり、失敗5件が全assertionへ到達した成功証拠ではない。元否定生成・payload生成prefix、protected[0]〜[51]とconsumer checkpointは不変。
+
+同条件の保存interned payload比較3回では、committed中央値452.16→8.57ms、attempt341.34→4.16ms。独立に構築した共有DAGでも比較負荷低減を確認したが、元live payload生成／encodeや失敗taskのphase計測ではなく、quality成功・timeout解消へ読み替えない。既存codecが同値の別objectをSet要素／Map keyとしてinternして件数を失う可能性は反例で検出可能とした。今回の240保存payloadに損失は観測していない。codec修正へ広げず、比較で損失を許容しない。
+
+実装判断・最終source／artifact identity・反例・計測・差分レビュー・未達条件はevidence `boundedUnits[52].capacityRestorationComparisonCheckpoint`を正本とする。次は元capacity live payload生成／encode／比較とtask時間の帰属について、既存profile・失敗runを再利用した最小診断範囲を先に計画する。最小command・比較入力・判断・停止境界を限定せず診断を開始しない。同条件の240／quality反復、共有consumer／global codec／production lifecycleの暗黙の同時移行は行わない。
+
+今回も製品未完了のlocal checkpointである。影響240全成功、既知raw／HP inventory gate、README quality、最終counter／digest／全receipt、unit52製品closureは未達。Step0／1／3と完了済み[46]〜[51]を維持し、新familyなし。TSK-08 `in_progress`、09.1／09 `blocked`、60／90分停止境界、pushなしを継続する。

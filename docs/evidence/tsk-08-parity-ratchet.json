@@ -17693,6 +17693,192 @@
           "diffWhitespace": "passed",
           "sourceProtection": "Final six source identities and protected units0..51 match the source-fixed reconciliation after documentation updates"
         }
+      },
+      "capacityRestorationComparisonCheckpoint": {
+        "status": "Independent complete-value comparison implemented; contract12 pass and final full240 attempted235pass/5fail. Incomplete local checkpoint, not product closure.",
+        "startedAt": "2026-09-27T10:19:22Z",
+        "preparationHead": "516f1ca7444825502514297156bc8c2452d2ad3e",
+        "consumerCheckpoint": "05d16fa33487de73137298b59621b6f4d64df424",
+        "authorization": "User confirmed current source-based plan with OK; parent implementation/review/validation only.",
+        "decisions": [
+          "Focused calculation-application comparison helper validates declared acyclic values then compares ordered content with successful object-pair tracking per invocation. Missing/own undefined/null and ordinary/null prototype remain distinct; object property enumeration order and writable/configurable flags are not value equality. No same-object shortcut before validation, no cross-call caches.",
+          "Original alias topology is not required after content interning; live owner identity remains solely a gate responsibility. Set/Map order and cardinality are required. Existing codec may collapse distinct equal object members/keys: a dedicated counterexample now rejects such loss instead of matching re-encode. Codec not changed; all current240 payload bytes match original baseline, so no observed loss in this population.",
+          "Reject unsupported values/cycles/accessors/hidden or symbol properties/sparse arrays. Set/Map instance properties and array subclass prototypes are rejected as not independently lossless in the current transport rather than ignored. No accepted type expansion/fallback.",
+          "Both capacity fixtures keep in-memory decode and serialized decode comparisons; committed additionally reads actual saved envelope and independently compares complete decoded values before domain assertions. All payloads/denials/checks/publication/receipts preserved.",
+          "Global codec/schema/encoding/decoding, consumer proof construction, HP semantics/live reference gates, capture/runner/timeout/workers and production read/parse remain unchanged."
+        ],
+        "finalSourceIdentity": [
+          {
+            "path": "packages/calculation-application/src/productionAuditDiagnosticEquality.ts",
+            "bytes": 4630,
+            "sha256": "bd7c3c1183854796cd37fb7f42e76b69f3b097cdc3f8ccd988929865338977c1"
+          },
+          {
+            "path": "packages/calculation-application/src/productionAuditDiagnosticEquality.test.ts",
+            "bytes": 5621,
+            "sha256": "4ec1e8bbd9e1ea4e685e50c9a43fa88d1001b0584f10054624974b0d9bd47861"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts",
+            "bytes": 51639,
+            "sha256": "31d4517925fab21afda401c1676b3681d50796bec01ac7ad8295111da47e956c"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+            "bytes": 54153,
+            "sha256": "a0ec4dffaa4b1e0946f1b3201938d3efe5bd258923f919010c7488361d86749d"
+          }
+        ],
+        "preservedFixtureGeneration": [
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts",
+            "scope": "All spec/group loops, payload generation and negatives before diagnostic encode, excluding import changes",
+            "sha256": "a5baba113358cf552e4db879380a80ff9ad95fead36d0ab0b6a932a89eaf2662"
+          },
+          {
+            "path": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+            "scope": "All spec/group loops, payload generation and negatives before diagnostic encode, excluding import changes",
+            "sha256": "c558b445cfb0f9cd8e831ffb49e61804ace7aa271dba2161cd143371cfaec81a"
+          }
+        ],
+        "verification": {
+          "contracts": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T10-21-49-976Z-2-510632/manifest.json",
+              "bytes": 3372,
+              "sha256": "56455f7b4e64842fbd90ba98750b494121fc94591569992b07c95ea3d744e9b2"
+            },
+            "tests": 12,
+            "warnings": 0,
+            "scope": "New comparison6 plus existing artifact contract6; independent handwritten value expectations, mutation/cache lifetime, ordered/cardinality loss, invalid/cycles, depth24 DAG and complete disk comparison."
+          },
+          "capacity": {
+            "manifest": {
+              "path": ".test-results/2026-09-27T10-22-02-217Z-2-0e4ea9/manifest.json",
+              "bytes": 63796,
+              "sha256": "86a9b434508cb10ac2e1459e4231997bb61278433f64e8d1238a9e0ce0964010"
+            },
+            "tests": 240,
+            "passed": 235,
+            "failed": 5,
+            "warnings": 0,
+            "durationMs": 129825,
+            "artifactErrors": 0,
+            "failures": [
+              {
+                "name": "isolates capacity attempt prior-capacity-fixed-commit missing-write",
+                "durationMs": 6166.1295150000005,
+                "reportedError": "STACK_TRACE_ERROR; elapsed exceeds unchanged5000ms. Underlying timeout/cost attribution remains unverified; no semantic mismatch reported in saved artifact verification."
+              },
+              {
+                "name": "isolates capacity attempt prior-capacity-fixed-commit state-modifier-identity",
+                "durationMs": 5043.941100000011,
+                "reportedError": "STACK_TRACE_ERROR; elapsed exceeds unchanged5000ms. Underlying timeout/cost attribution remains unverified; no semantic mismatch reported in saved artifact verification."
+              },
+              {
+                "name": "isolates capacity attempt prior-capacity-fixed-commit state-modifier-values",
+                "durationMs": 7581.73941699999,
+                "reportedError": "STACK_TRACE_ERROR; elapsed exceeds unchanged5000ms. Underlying timeout/cost attribution remains unverified; no semantic mismatch reported in saved artifact verification."
+              },
+              {
+                "name": "connects committed capacity intermediate-reconciled identity-source-action",
+                "durationMs": 5823.433450999997,
+                "reportedError": "STACK_TRACE_ERROR; elapsed exceeds unchanged5000ms. Underlying timeout/cost attribution remains unverified; no semantic mismatch reported in saved artifact verification."
+              },
+              {
+                "name": "connects committed capacity intermediate-reconciled identity-receipt-state",
+                "durationMs": 5810.979174,
+                "reportedError": "STACK_TRACE_ERROR; elapsed exceeds unchanged5000ms. Underlying timeout/cost attribution remains unverified; no semantic mismatch reported in saved artifact verification."
+              }
+            ],
+            "qualification": "Failed run is not final affected-suite success; passed235 tasks only have valid task-success evidence. Saved240 artifacts complete/unchanged is separate evidence, not proof failed tasks reached all assertions."
+          },
+          "checks": {
+            "scopedEslint": "passed after default WeakSet generic cleanup",
+            "rootTypecheck": "passed on final source",
+            "defaultPrettier": "passed, docs exclusion retained",
+            "diffWhitespace": "passed"
+          },
+          "reconciliation": {
+            "report": {
+              "path": ".test-results/tsk-08-capacity-restoration-20260927/reconciliation.json",
+              "bytes": 1778,
+              "sha256": "73e239c7b99d6e5f4fabec332de81485c6259b238a502e6bf8df09cba0ccf21f"
+            },
+            "script": {
+              "path": ".test-results/tsk-08-capacity-restoration-20260927/reconcile.mjs",
+              "bytes": 3280,
+              "sha256": "a471a62343a5db2305dc01464dd70f1efe4a24726c361d79e2d8920c9a1009d4"
+            },
+            "receiptCount": 252,
+            "identicalPriorCapacityArtifacts": 240,
+            "savedCompleteValueComparisons": 240,
+            "protectedUnits0to51": "unchanged",
+            "consumerResponsibilityConvergence": "unchanged",
+            "qualification": "Saved artifacts compared with original profiled artifacts by bytes/SHA and independent decoded complete values; original live-memory restoration is checked by source fixtures, not inferred from archive re-encoding."
+          },
+          "reuse": "Consumer local58/control7 and unchanged execution normal/capture/calculator-ranking evidence retained under original responsibility/source identities. Not rerun or claimed as changed comparison240 success."
+        },
+        "measurement": {
+          "report": {
+            "path": ".test-results/tsk-08-capacity-restoration-20260927/measurement.json",
+            "bytes": 2097,
+            "sha256": "2a1c4fdde0568604d95c1f8118bd76de17c4854285441bf47bf0b868b5cbcc64"
+          },
+          "script": {
+            "path": ".test-results/tsk-08-capacity-restoration-20260927/measure.mjs",
+            "bytes": 2472,
+            "sha256": "5ffc8aae4b212f711ce72621abbb2e6e9201faa2aee5373bdcc8e92925ab8432"
+          },
+          "medians": [
+            {
+              "kind": "already interned saved payload, independently decoded twice",
+              "path": ".test-results/2026-09-27T05-25-47-041Z-3-f518b0/unit/tsk-08-bp-capacity-intermediate-reconciled-identity-source-action.json",
+              "oldMedianMs": 452.159981,
+              "newMedianMs": 8.565799999999967
+            },
+            {
+              "kind": "already interned saved payload, independently decoded twice",
+              "path": ".test-results/2026-09-27T05-25-47-041Z-3-f518b0/unit/tsk-08-bp-capacity-attempt-prior-capacity-fixed-commit-state-modifier-values.json",
+              "oldMedianMs": 341.34058600000026,
+              "newMedianMs": 4.162699000000202
+            },
+            {
+              "kind": "independently constructed synthetic shared DAG depth18; no codec and no product execution",
+              "path": null,
+              "oldMedianMs": 141.5015940000003,
+              "newMedianMs": 0.0466999999998734
+            }
+          ],
+          "qualification": "Single process sequential three comparison repetitions. Saved replay has content interning and does not reconstruct original live proof allocations. Synthetic graph is a semantic/cost probe only. Not original task timing, quality pass or timeout attribution."
+        },
+        "systematicReview": {
+          "scope": "Complete-value restoration owner, codec producer and two direct consumers; graph/time/container axes reviewed. Contract fixtures and unchanged negative-generation prefix cover direct semantics; no product state/outcome changes.",
+          "blocking": "Affected full240 remains failed5; no local comparison semantic/receipt mismatch observed. Causes and all mandatory gates are not closed."
+        },
+        "execution": {
+          "affinity": "0-7",
+          "workers": "Production50%/4 under8 CPUs; unit default4 unchanged",
+          "timeoutMs": 5000,
+          "fallback": "Previously recorded external SQLite pre-script failure; existing verified /tmp/tsk08-tools/pnpm730bytes SHA7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6 reused, generic runner and node_modules unchanged.",
+          "reconciliationToolFailure": "Initial read-only script git-show buffer hit ENOBUFS; raised only script subprocess output buffer, then reconciliation passed. Product runner unchanged.",
+          "quality": "Not run; no unchanged full240 retry, no source edits during tests."
+        },
+        "remainingGates": [
+          "Full affected capacity240 success (5 over-budget failed tasks in this run)",
+          "Existing raw aggregation/HP inventory5s gate failures and unverified attribution",
+          "README mandatory quality and final integrated production counters/digests/all-receipt reconciliation",
+          "Unit52 product completion and wholeTSK08 closure"
+        ],
+        "nextOperation": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending.",
+        "checkpointPolicy": "Local incomplete checkpoint only, stage reviewed scope/no push. Resolve commit identity from Git history.",
+        "sessionBoundary": "Completed bounded work within60min; no new family or independent investigation. 60min checkpoint/90min atomic-action stop maintained.",
+        "documentationVerification": {
+          "docsTests": "6/6 passed; docs integrity passed",
+          "diffWhitespace": "passed",
+          "frontmatterTables": "Preserved/versioned registry updated",
+          "formatPolicy": "Default Prettier passed with docs exclusion; no override"
+        }
       }
     }
   ],
@@ -17957,7 +18143,7 @@
           "stage": 2,
           "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure.",
           "nextBoundedScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
-          "nextScopeQualification": "Next one session: capacityRestorationComparisonSession (independent complete-value restoration comparison in existing two capacity fixtures only). First source-based plan and confirmation, then scoped changes/checks/records/local incomplete checkpoint. Consumer checkpoint05d16fa is reusable; global codec/consumer/lifecycle migration and whole closure are deferred."
+          "nextScopeQualification": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending."
         },
         {
           "stage": 3,
@@ -17969,7 +18155,7 @@
       "nextBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "Next one session: capacityRestorationComparisonSession (independent complete-value restoration comparison in existing two capacity fixtures only). First source-based plan and confirmation, then scoped changes/checks/records/local incomplete checkpoint. Consumer checkpoint05d16fa is reusable; global codec/consumer/lifecycle migration and whole closure are deferred.",
+      "nextScopeQualification": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending.",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52
     },
@@ -18515,7 +18701,7 @@
         "finish": "On mandatory-gate success reconcile final identities, counters/digests and protected units; update existing Task/evidence and commit only scoped changes locally, no push. If blocked/time-limited, preserve differential checkpoint and never commit as completed product.",
         "preparationVerification": "Retained six-source and local55/control7 manifest bytes/SHA matched; protected boundedUnits0..51 unchanged; pnpm test:docs6/6 and docs integrity, git diff --check passed. No source validation/quality run.",
         "latestAssessmentReference": "boundedUnits[52].consumerResponsibilityConvergence; existing gate blockers remain resumeGateAssessment/gateDesignInvestigation",
-        "nextOperation": "Next one session: capacityRestorationComparisonSession (independent complete-value restoration comparison in existing two capacity fixtures only). First source-based plan and confirmation, then scoped changes/checks/records/local incomplete checkpoint. Consumer checkpoint05d16fa is reusable; global codec/consumer/lifecycle migration and whole closure are deferred.",
+        "nextOperation": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending.",
         "singleSessionScope": {
           "status": "Consumer responsibility convergence verified and checkpointed; unit52 product completion remains pending",
           "preparationHead": "13fe1a8a202c702584cd76d39c17637a8c33d7c4",
@@ -18554,7 +18740,7 @@
         }
       },
       "capacityRestorationComparisonSession": {
-        "status": "Read-only preparation; implementation requires a source-based plan and user confirmation. Existing unit52 consumer checkpoint is complete within its scope; product gates remain open.",
+        "status": "Independent complete-value comparison implemented; contract12 pass and final full240 attempted235pass/5fail. Incomplete local checkpoint, not product closure.",
         "preparationHead": "05d16fa33487de73137298b59621b6f4d64df424",
         "firstDeliverable": "Read current definitions, payload generation, codec accepted-value contract and direct restoration call sites. Present design/change/verification/reuse plan before edits, tests, producers, audits, staging or commits; wait for user confirmation. If live diagnosis is indispensable, propose minimum command, decision and stop boundary for separate diagnostic approval.",
         "deliverable": "One session: independent complete-value restoration comparison for the two existing capacity audit fixtures. Resolve repeated DAG expansion where demonstrated, preserve full diagnostics and all denial/parity/artifact contracts, verify affected inputs and save an incomplete local checkpoint. Do not equate this cost reduction with proven 5s timeout resolution.",
@@ -18631,7 +18817,8 @@
           "sourceExecution": "No source tests, producer, audit, quality or performance measurement in this preparation session",
           "formatPolicy": "Default Prettier check passed; documentation exclusion retained without override",
           "diffWhitespace": "git diff --check passed"
-        }
+        },
+        "resultReference": "boundedUnits[52].capacityRestorationComparisonCheckpoint"
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -19603,7 +19790,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Next one session: capacityRestorationComparisonSession (independent complete-value restoration comparison in existing two capacity fixtures only). First source-based plan and confirmation, then scoped changes/checks/records/local incomplete checkpoint. Consumer checkpoint05d16fa is reusable; global codec/consumer/lifecycle migration and whole closure are deferred.",
+    "nextSession": "Do not repeat unchanged full240 or quality. First plan a separately bounded attribution of original capacity live payload construction/encode versus comparison and task timing, reusing saved profiles and this failure run. Propose minimum command/input/comparator and stop boundary before any new live diagnostic. No implicit consumer/global codec/lifecycle migration; other known gates and final integrated closure remain pending.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",

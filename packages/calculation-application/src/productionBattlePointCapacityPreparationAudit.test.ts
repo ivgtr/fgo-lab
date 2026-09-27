@@ -1,5 +1,7 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
-import { isDeepStrictEqual } from 'node:util';
+import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -1487,9 +1489,12 @@ for (const spec of specs)
           missingPublished,
         };
         const diagnostic = encodeProductionAuditDiagnostic(payload);
-        const roundTrip = isDeepStrictEqual(decodeProductionAuditDiagnostic(diagnostic), payload);
+        const roundTrip = equalProductionAuditDiagnosticValues(
+          decodeProductionAuditDiagnostic(diagnostic),
+          payload,
+        );
         const encoded = serializeProductionAuditArtifact(diagnostic);
-        const savedRoundTrip = isDeepStrictEqual(
+        const savedRoundTrip = equalProductionAuditDiagnosticValues(
           decodeProductionAuditDiagnostic(
             decodeProductionAuditArtifact(encoded) as typeof diagnostic,
           ),
@@ -1507,6 +1512,19 @@ for (const spec of specs)
             encoded: diagnostic,
           },
         );
+        const savedBytes = await readFile(
+          resolve(
+            process.env['FGO_TEST_ARTIFACT_DIR']!,
+            `tsk-08-bp-capacity-${spec.name}-${testGroup}.json`,
+          ),
+        );
+        const diskRoundTrip = equalProductionAuditDiagnosticValues(
+          decodeProductionAuditDiagnostic(
+            (decodeProductionAuditArtifact(savedBytes) as { encoded: typeof diagnostic }).encoded,
+          ),
+          payload,
+        );
+        expect(diskRoundTrip).toBe(true);
         expect(roundTrip).toBe(true);
         expect(savedRoundTrip).toBe(true);
         for (const negative of checks) {
