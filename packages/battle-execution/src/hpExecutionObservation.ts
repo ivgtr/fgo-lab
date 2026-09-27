@@ -8,6 +8,7 @@ import type { ContributionApplicationPolicy } from './executionTypes';
 import type { SourceEffect } from './sourceCollection';
 import type { HpState, HpModifierInstance } from './hpResource';
 import type { HpGainConsumption, HpGiveGainConsumption } from './preparationHp';
+import type { executeHpOperation } from './preparationHp';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type {
   PreNoblePhantasmState,
@@ -30,6 +31,16 @@ export interface PreparationHpAction {
     before: HpState;
     after: HpState;
     receipts: HpState['receipts'];
+  }[];
+  /** Original transfer operation result and append boundaries; capture-only borrowed references. */
+  transferOperations?: {
+    source: SourceEffect;
+    operationIndex: number;
+    step: number;
+    before: HpState;
+    result: ReturnType<typeof executeHpOperation>;
+    receipts: HpState['receipts'];
+    donorReceipts: NonNullable<HpState['donorReceipts']>;
   }[];
   modifierWrites?: {
     source: SourceEffect;

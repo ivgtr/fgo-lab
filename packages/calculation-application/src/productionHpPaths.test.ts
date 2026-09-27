@@ -4,6 +4,12 @@ import {
   type HpCoverageObservation,
 } from './productionHpCoverage';
 import { auditGiveAttemptIsolation } from './productionHpGivePreparationAttemptAudit';
+import {
+  isSelfHpTransfer,
+  hpTransferObservations,
+  reconcileHpTransferEvidence,
+  type HpTransferRequest,
+} from './productionHpTransferEvidence';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -28,6 +34,8 @@ import {
   createDefaultResolvedScenario,
   calculateScenario,
   calculateScenarioWithPolicy,
+  prepareCalculationScenarioWithPolicy,
+  evaluatePreparedCalculationScenario,
 } from './scenario';
 import {
   currentCalculationVersionContext,
@@ -746,5 +754,120 @@ it(
       expect(record.profileCount).toBe(0);
       expect(record.plans.every((plan) => plan.candidates.length === 0)).toBe(true);
     }
+  },
+);
+
+it(
+  'connects all published self transfer declarations to original native preparation and ordered donor appends',
+  productionAuditTestOptions(['hp-transfer-evidence.json']),
+  async ({ task }) => {
+    const master = await masterPromise;
+    const sources = hpCoverageSources(master);
+    const declarations = sources.filter(
+      (source) => source.origin === 'attacker' && source.effect.execution.some(isSelfHpTransfer),
+    );
+    const requests: HpTransferRequest[] = [];
+    const cases: unknown[] = [];
+    const versions = {
+      ...currentCalculationVersionContext(master),
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP' as const,
+      masterDataLocale: 'ja-JP' as const,
+    };
+    for (const declaration of declarations) {
+      const actor = master.servants.find((actor) => actor.id === declaration.owner);
+      if (!actor) throw new Error('transfer_declared_actor_missing');
+      const base = createDefaultResolvedScenario(master, undefined, actor);
+      for (const level of [...new Set([base.attacker.level, 90])])
+        for (const [npLevel, initialOvercharge] of [
+          [1, 1],
+          [2, 2],
+          [5, 3],
+        ] as const)
+          for (const inputMode of ['defaultZero', 'explicitNonempty'] as const) {
+            const scenario = {
+              ...base,
+              attacker: { ...base.attacker, level, npLevel },
+              initialOvercharge,
+              attackerHpPermille: 500,
+              canonicalInputValues: {
+                ...base.canonicalInputValues,
+                ...(inputMode === 'explicitNonempty'
+                  ? Object.fromEntries(
+                      declaration.effect.inputDefinitions
+                        .filter((input) => input.kind === 'transferDonor')
+                        .map((input) => [
+                          input.key,
+                          {
+                            kind: 'integer' as const,
+                            value:
+                              input.actorIndex === 0 ? 4001 : input.actorIndex === 1 ? 1001 : 0,
+                          },
+                        ]),
+                    )
+                  : {}),
+              },
+            };
+            const prepared = prepareCalculationScenarioWithPolicy(
+              scenario,
+              master,
+              { kind: 'calculator' },
+              {},
+              true,
+            );
+            const calculation = evaluatePreparedCalculationScenario(prepared, versions);
+            requests.push({ prepared, calculation });
+            cases.push({
+              owner: declaration.owner,
+              skill: declaration.skill,
+              occurrence: declaration.effect.occurrenceId,
+              level,
+              npLevel,
+              initialOvercharge,
+              inputMode,
+              inputs: scenario.canonicalInputValues,
+            });
+            const ordinary = calculateScenario(scenario, master, versions);
+            expect(calculation.result).toEqual(ordinary.result);
+            expect(calculation.appliedPreparationActions).toEqual(
+              ordinary.appliedPreparationActions,
+            );
+            const portable = executePortableCalculation(
+              createCalculatorPortableRequest(scenario, currentCalculationVersionContext(master)),
+              master,
+            );
+            expect(portable.status).toBe('executed');
+            if (portable.status === 'executed')
+              expect(portable.execution.result).toEqual(calculation.result);
+          }
+    }
+    const observations = hpTransferObservations(requests);
+    const evidence = reconcileHpTransferEvidence(sources, requests, observations);
+    const payload = { master: master.version, cases, evidence };
+    const receipt = await writeProductionAuditArtifact(
+      task.meta,
+      'hp-transfer-evidence.json',
+      payload,
+    );
+    const bytes = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-transfer-evidence.json'),
+    );
+    expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
+      receipt.expectedBytes,
+      receipt.expectedSha256,
+    ]);
+    expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+    expect(evidence.gate.failures).toEqual([]);
+    expect([declarations.length, requests.length, observations.length]).toEqual([2, 24, 24]);
+    expect(
+      evidence.rows.every(
+        (row) => row.native?.status === 'committed' && row.result.status === 'applied',
+      ),
+    ).toBe(true);
+    expect(
+      evidence.rows.filter((row) => row.donorReceipts.some((receipt) => receipt.snapshot > 0)),
+    ).toHaveLength(12);
   },
 );

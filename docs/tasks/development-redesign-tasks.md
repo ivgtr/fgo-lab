@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.108"
+document_version: "1.7.109"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3858,3 +3858,17 @@ units[0]〜[51]とunit52全既存field／checkpointは開始HEADとdecoded完全
 最初の成果物は現コードに基づく実装・検証・TSK-08 closure可否の計画で、編集・source実行前に提示して利用者確認を待つ。確認後は同じ範囲で必要な実装・検証・既存正本更新・対象限定local commitまで進め、pushしない。別family forward／native noncommit／成功recoveryを連鎖開始しない。全体のratchet／typed diagnostic／artifact到達／legacy照合／正式性能／最終quality／統合counter・digest・全receiptは未達または未照合であり、今回準備だけでTSK-08 closureを見込む根拠はない。初期計画からchecklist／Done gate／Contract closure matrixと入力lifecycle closureReconciliationを照合し、全義務が同責務内で成立しBlocking0かつ時間余裕があれば完了を目指す。未達が残れば依存するquality／製品closureを開始せずcheckpointで終了する。60分で記録、90分でatomic actionを終えて引き継ぐ。
 
 整理更新の文書gateは変更4文書のPrettier、docs 6／6・integrity、参照／registry version、git diff checkが成功。全boundedUnits（最新HP checkpointを含む0〜52）とunresolvedのdecoded値をbaselineと完全比較して保持を確認した。runner shimの内容・730bytes・SHAを照合し既存generic runnerで文書gateだけを実行した。local整理commitはGit履歴から解決し、引継ぎpromptに実SHAを記す。
+
+### HP transfer evidence接続の限定checkpoint（2026-09-28）
+
+開始HEADは`2df44ef2e47b9d7ac512d13e9aa5e5bdf33c970b`、index／tracked／untrackedはclean。計画提示前は読込とchecksum照合だけを行い、利用者のOK後に同じtransfer coverage責務を実装・検証した。結果正本は[evidence](../evidence/tsk-08-parity-ratchet.json)の`boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint`。今回の実行指示は`hpTransferEvidenceReconciliationSession`で、旧give／入力lifecycle sessionの手順は固定解として使っていない。
+
+Published transfer2宣言をcommand由来の期待母集団から照合し、元default-zero12件と明示nonempty12件のnative commit／元HP operation適用／donor append／retained selected HP seedを接続した。既存HP captureと共通attemptのsource・operation・step・native参照を借用し、個別operationの元result／receipt append範囲だけをcapture有効時に追加する。HP算術・native failure分類・transaction・scenario／portable／ranking意味論は不変。新期待値生成器、監査内の元owner再実行、give倍率observerへの転用、通常経路の新collection allocationはない。
+
+旧selected12件のHP after／attacker receipt／donor receiptは新native参照と完全一致した。旧public transition=nullからnative statusを生成していない。Published24ケースのHP条件read／HP依存NP observationは各0であり、NP因果・native noncommit・成功recoveryを証明しない。support context40／88はattacker selectedと区別する。局所の先行heal後snapshot、alive floor、receiver clamp、同action連続transferを同gateへ接続した。未selected宣言は期待0／観測0として未観測を明示し、正常除外やunsupportedへ自動分類しない。局所製品unsupportedでも実selectedのretained HP参照を監査し、gate成功をcalculatedへ変換しない。
+
+最終局所30件、既存関連259件、HP production7件、影響audit77件がそれぞれ成功し、warning／unexpected observation0。17否定代表／34検査別失敗／17 typed first differenceを宣言artifactに保存した。旧HP7、give6、既存audit77 artifactの全値・順序・bytes／SHAは一致し、HP486／7470／54groupとprimitive digestを保持した。今回5manifestの独立disk descriptor369／test-owned receipt344はerror0。過去runの成功数や全製品receipt数へ合成しない。型／lint／source書式／差分レビューが成功した。元6 phaseは同input・affinity0–7・4workersの1-runペアで29.288秒→29.326秒（約+0.13%）、新transfer phaseは0.362秒。新case先行runは順序が異なるため性能比較から除外し、正式3-run性能を代替しない。
+
+今回接続のBlockingは0。TSK-08 checklist／Done gate／Contract closure matrix、remainingWorkSummary、入力lifecycle closureReconciliationには、全native／read／NP／recovery coverage、全ratchet／diagnostic到達、legacy固有coverage、正式性能、README最終quality、統合counter／digest／全receiptが残る。依存quality・製品closure・別familyを開始せず、Step0／1／3成立、Step2未完了、TSK-08 in_progress、09.1／09 blockedを維持する。units0..51とunit52全既存keyは開始HEADのdecoded値と完全一致で保持した。60分前に必要な局所・影響gateを閉じ、既存4文書の記録・文書gate・対象9fileのlocal commitで終了する。pushなし。次は既存inventoryと直接reader／proof参照から未観測coverageを限定読取照合し、次計画を別途決める。
+
+記録更新後の変更4文書Prettier、docs6／6・integrity、参照／registry、diff whitespace、全既存checkpoint decoded値と最終source／input／artifact identityの照合も成功した。以後は対象9fileのstage差分を照合してlocal checkpoint commitを作り、そのSHAをGit履歴から解決する。製品quality／全体closureは未達のままで、pushしない。

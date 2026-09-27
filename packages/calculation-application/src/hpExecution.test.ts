@@ -1,4 +1,18 @@
 import { applyCanonicalInputCommand } from './canonicalInputs';
+import { hpCoverageSources } from './productionHpCoverage';
+import {
+  productionAuditTestOptions,
+  writeProductionAuditArtifact,
+  decodeProductionAuditArtifact,
+} from './productionAuditArtifacts';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
+import {
+  hpTransferObservations,
+  reconcileHpTransferEvidence,
+} from './productionHpTransferEvidence';
 import { describe, expect, it } from 'vitest';
 import {
   masterSnapshotSchema,
@@ -11,6 +25,8 @@ import {
   createDefaultResolvedScenario,
   resolveScenarioPreparationOutcome,
   calculateScenario,
+  prepareCalculationScenarioWithPolicy,
+  evaluatePreparedCalculationScenario,
 } from './scenario';
 import {
   createCalculatorPortableRequest,
@@ -21,6 +37,27 @@ import { SCHEMA_VERSION } from '@fgo-lab/schema';
 const base = masterSnapshotSchema.parse(fixture);
 const values = (n: number) =>
   [Array<number>(10).fill(n), [], [], [], []] as [number[], number[], number[], number[], number[]];
+function transferEvidence(
+  master: ReturnType<typeof masterSnapshotSchema.parse>,
+  scenario: ReturnType<typeof createDefaultResolvedScenario>,
+  versions: Parameters<typeof calculateScenario>[2],
+) {
+  const prepared = prepareCalculationScenarioWithPolicy(
+    scenario,
+    master,
+    { kind: 'calculator' },
+    {},
+    true,
+  );
+  const calculation = evaluatePreparedCalculationScenario(prepared, versions);
+  const requests = [{ prepared, calculation }];
+  const sources = hpCoverageSources(master);
+  const observations = hpTransferObservations(requests);
+  const evidence = reconcileHpTransferEvidence(sources, requests, observations);
+  expect(evidence.gate.failures).toEqual([]);
+  expect(calculation.result).toEqual(calculateScenario(scenario, master, versions).result);
+  return { sources, requests, observations, evidence };
+}
 function effect(id: string, execution: EffectExecutionOperation[]): MasterEffect {
   return masterEffectSchema.parse({
     id,
@@ -516,68 +553,232 @@ describe('HP initial intent through common preparation and recovery', () => {
     expect(portable.status, JSON.stringify(portable.status === 'executed' ? null : portable)).toBe(
       'executed',
     );
+    const proof = transferEvidence(master, repaired, versions);
+    expect(proof.evidence.rows).toHaveLength(1);
+    expect(proof.evidence.rows[0]!.donorReceipts[0]!.snapshot).toBe(2500);
   });
-  it('distinguishes donor snapshot, attempted gain, receiver clamp and sequential remaining HP', () => {
-    const transfer = effect('transfer', [
-      {
-        kind: 'resourceMutation',
-        resource: 'hp',
-        direction: 'gain',
-        unit: 'fixed',
-        recipient: 'sourceSelf',
-        subjectId: null,
-        amount: {
-          kind: 'hpTransfer',
-          donors: 'allEnemies',
-          inputKeys: ['donor:0', 'donor:1', 'donor:2'],
-          values: values(3000),
-          child: 'unconditionalUnresistedDisjoint',
+  it(
+    'distinguishes donor snapshot, attempted gain, receiver clamp and sequential remaining HP',
+    productionAuditTestOptions(['hp-transfer-identity.json']),
+    async ({ task }) => {
+      const transfer = effect('transfer', [
+        {
+          kind: 'resourceMutation',
+          resource: 'hp',
+          direction: 'gain',
+          unit: 'fixed',
+          recipient: 'sourceSelf',
+          subjectId: null,
+          amount: {
+            kind: 'hpTransfer',
+            donors: 'allEnemies',
+            inputKeys: ['donor:0', 'donor:1', 'donor:2'],
+            values: values(3000),
+            child: 'unconditionalUnresistedDisjoint',
+          },
         },
-      },
-    ]);
-    transfer.inputDefinitions = [0, 1, 2].map((actorIndex) => ({
-      kind: 'transferDonor',
-      resource: 'enemyHp',
-      actorIndex,
-      key: `donor:${actorIndex}`,
-      owner: 'field',
-      label: 'absorbable HP',
-      description: 'initial available HP',
-      minimum: 0,
-      maximum: 10000,
-      step: 1,
-      defaultValue: 0,
-      defaultReason: 'none',
-    }));
-    const { master, scenario } = setup(
-      [transfer, { ...transfer, id: 'next', occurrenceId: 'next' }],
-      900,
-    );
-    scenario.canonicalInputValues = {
-      'donor:0': { kind: 'integer', value: 4001, origin: 'witness' },
-      'donor:1': { kind: 'integer', value: 1001, origin: 'witness' },
-    };
-    const r = resolveScenarioPreparationOutcome(scenario, master);
-    expect(r.status).toBe('executable');
-    if (r.status !== 'executable') throw new Error(r.status);
-    const hp = r.formExecution.state.hp!;
-    expect(
-      hp.receipts.filter((x) => x.actor === 'attacker').map((x) => [x.attempted, x.actual]),
-    ).toEqual([
-      [4000, 1100],
-      [1000, 0],
-    ]);
-    expect(
-      hp.donorReceipts?.map((x) => [x.snapshot, x.calculatedGain, x.actualLoss, x.remaining]),
-    ).toEqual([
-      [4001, 3000, 3000, 1001],
-      [1001, 1000, 1000, 1],
-      [0, 0, 0, 0],
-      [1001, 1000, 1000, 1],
-      [1, 0, 0, 1],
-      [0, 0, 0, 0],
-    ]);
-  });
+      ]);
+      transfer.inputDefinitions = [0, 1, 2].map((actorIndex) => ({
+        kind: 'transferDonor',
+        resource: 'enemyHp',
+        actorIndex,
+        key: `donor:${actorIndex}`,
+        owner: 'field',
+        label: 'absorbable HP',
+        description: 'initial available HP',
+        minimum: 0,
+        maximum: 10000,
+        step: 1,
+        defaultValue: 0,
+        defaultReason: 'none',
+      }));
+      const { master, scenario, versions } = setup(
+        [transfer, { ...transfer, id: 'next', occurrenceId: 'next' }],
+        900,
+      );
+      scenario.canonicalInputValues = {
+        'donor:0': { kind: 'integer', value: 4001, origin: 'witness' },
+        'donor:1': { kind: 'integer', value: 1001, origin: 'witness' },
+      };
+      const r = resolveScenarioPreparationOutcome(scenario, master);
+      expect(r.status).toBe('executable');
+      if (r.status !== 'executable') throw new Error(r.status);
+      const hp = r.formExecution.state.hp!;
+      expect(
+        hp.receipts.filter((x) => x.actor === 'attacker').map((x) => [x.attempted, x.actual]),
+      ).toEqual([
+        [4000, 1100],
+        [1000, 0],
+      ]);
+      expect(
+        hp.donorReceipts?.map((x) => [x.snapshot, x.calculatedGain, x.actualLoss, x.remaining]),
+      ).toEqual([
+        [4001, 3000, 3000, 1001],
+        [1001, 1000, 1000, 1],
+        [0, 0, 0, 0],
+        [1001, 1000, 1000, 1],
+        [1, 0, 0, 1],
+        [0, 0, 0, 0],
+      ]);
+      const proof = transferEvidence(master, scenario, versions);
+      expect(proof.evidence.rows).toHaveLength(2);
+      expect(proof.evidence.unobserved).toContain('transferToNpCausality');
+      const first = proof.observations[0]!;
+      const negatives: {
+        expectedReason: string;
+        gate: ReturnType<typeof reconcileHpTransferEvidence>['gate'];
+      }[] = [];
+      const negative = (
+        observations: typeof proof.observations,
+        reason: string,
+        sources = proof.sources,
+      ) => {
+        const gate = reconcileHpTransferEvidence(sources, proof.requests, observations).gate;
+        negatives.push({ expectedReason: reason, gate });
+        expect(gate.passed).toBe(false);
+        expect(gate.failures.some((failure) => failure.reason === reason)).toBe(true);
+      };
+      negative(proof.observations.slice(1), 'missingObservation');
+      negative([...proof.observations, first], 'duplicateObservation');
+      negative([{ ...first, requestIndex: 99 }, proof.observations[1]!], 'unmatchedObservation');
+      negative([...proof.observations].reverse(), 'orderMismatch');
+      negative(
+        [{ ...first, operation: structuredClone(first.operation) }, proof.observations[1]!],
+        'canonicalIdentityMismatch',
+      );
+      negative(
+        [{ ...first, source: { ...first.source } }, proof.observations[1]!],
+        'foreignReference',
+      );
+      negative(
+        [
+          { ...first, source: { ...first.source, origin: 'support', sourceInstanceId: 'foreign' } },
+          proof.observations[1]!,
+        ],
+        'canonicalIdentityMismatch',
+      );
+      negative(
+        [{ ...first, operation: gain(3000) }, proof.observations[1]!],
+        'canonicalIdentityMismatch',
+      );
+      negative(
+        [
+          { ...first, operation: { ...gain(3000), recipient: 'partyOther' } },
+          proof.observations[1]!,
+        ],
+        'canonicalIdentityMismatch',
+      );
+      negative(
+        [{ ...first, before: structuredClone(first.before) }, proof.observations[1]!],
+        'foreignReference',
+      );
+      negative([{ ...first, step: first.step + 1 }, proof.observations[1]!], 'nativeTraceMismatch');
+      const withoutNative = { ...first.action };
+      delete withoutNative.native;
+      negative(
+        [{ ...first, action: withoutNative }, proof.observations[1]!],
+        'nativeTraceMismatch',
+      );
+      negative(
+        [
+          { ...first, receipts: [{ ...first.receipts[0]!, actor: 'foreign' }] },
+          proof.observations[1]!,
+        ],
+        'receiptAppendMismatch',
+      );
+      negative(
+        [{ ...first, donorReceipts: [...first.donorReceipts].reverse() }, proof.observations[1]!],
+        'donorOrderMismatch',
+      );
+      negative(proof.observations, 'duplicateDeclaration', [...proof.sources, proof.sources[0]!]);
+      negative(proof.observations, 'canonicalIdentityMismatch', []);
+      const calculation = proof.requests[0]!.calculation;
+      const target =
+        'executionObservation' in calculation
+          ? calculation.executionObservation.targetExecution
+          : undefined;
+      if (
+        !target ||
+        target.selection !== 'selected' ||
+        !target.candidateState ||
+        !('executionObservation' in calculation)
+      )
+        throw new Error('transfer_fixture_selected_capture_missing');
+      const foreignCalculation = {
+        ...calculation,
+        executionObservation: {
+          ...calculation.executionObservation,
+          targetExecution: { ...target, candidateState: { ...target.candidateState } },
+        },
+      };
+      const consumerGate = reconcileHpTransferEvidence(
+        proof.sources,
+        [{ prepared: proof.requests[0]!.prepared, calculation: foreignCalculation }],
+        proof.observations,
+      ).gate;
+      negatives.push({ expectedReason: 'retainedHpMismatch', gate: consumerGate });
+      expect(consumerGate.failures.some((failure) => failure.reason === 'retainedHpMismatch')).toBe(
+        true,
+      );
+      const unselectedScenario = {
+        ...scenario,
+        preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
+      };
+      const unselectedPrepared = prepareCalculationScenarioWithPolicy(
+        unselectedScenario,
+        master,
+        { kind: 'calculator' },
+        {},
+        true,
+      );
+      const unselectedRequests = [
+        {
+          prepared: unselectedPrepared,
+          calculation: evaluatePreparedCalculationScenario(unselectedPrepared, versions),
+        },
+      ];
+      const unselected = reconcileHpTransferEvidence(
+        proof.sources,
+        unselectedRequests,
+        hpTransferObservations(unselectedRequests),
+      );
+      expect(unselected.gate.failures).toEqual([]);
+      expect(unselected.expected).toEqual([]);
+      expect(unselected.rows).toEqual([]);
+      expect(
+        unselected.declarations.map((declaration) => declaration.selectedExpectations),
+      ).toEqual([0, 0]);
+      expect(proof.evidence.rows.every((row) => row.native?.status === 'committed')).toBe(true);
+      expect(
+        proof.observations.every(
+          ({ action }) =>
+            !action.giveConsumptions?.length &&
+            !action.giveExcludedConsumptions?.length &&
+            !action.receiveConsumptions?.length,
+        ),
+      ).toBe(true);
+      const payload = {
+        evidence: proof.evidence,
+        negatives,
+        unselected,
+        readQualification:
+          'Transfer bypasses receive/give observers; absence is not an observed empty multiplier read or successful recovery.',
+      };
+      const receipt = await writeProductionAuditArtifact(
+        task.meta,
+        'hp-transfer-identity.json',
+        payload,
+      );
+      const bytes = await readFile(
+        resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-transfer-identity.json'),
+      );
+      expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
+        receipt.expectedBytes,
+        receipt.expectedSha256,
+      ]);
+      expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+    },
+  );
 });
 
 it('preserves the exhaustive legal optimum after a heal shifts an HP condition boundary', async () => {

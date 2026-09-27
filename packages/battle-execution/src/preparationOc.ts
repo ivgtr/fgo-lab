@@ -738,6 +738,7 @@ export function executePreparationOc(args: {
       }
       if (isHpOperation(operation)) {
         if (args.context.planningOnly) continue;
+        const hpStep = steps.length;
         steps.push((ocState) => {
           if (!source.sourceEnabled || activation.get(source.effect)?.procOutcome === 'failure')
             return { kind: 'skip', outcome: 'notApplicable' };
@@ -887,6 +888,26 @@ export function executePreparationOc(args: {
                 });
             };
           const result = executeHpOperation(hpArguments);
+          if (
+            hpAction &&
+            operation.kind === 'resourceMutation' &&
+            operation.amount.kind === 'hpTransfer'
+          )
+            (hpAction.transferOperations ??= []).push({
+              source,
+              operationIndex,
+              step: hpStep,
+              before: hpBefore,
+              result,
+              receipts:
+                result.status === 'applied'
+                  ? result.state.receipts.slice(hpBefore.receipts.length)
+                  : [],
+              donorReceipts:
+                result.status === 'applied'
+                  ? (result.state.donorReceipts ?? []).slice(hpBefore.donorReceipts?.length ?? 0)
+                  : [],
+            });
           if (result.status !== 'applied') {
             if (result.status === 'inputRequired') {
               requiredInput = result.requiredInput;
