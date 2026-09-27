@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.101"
+document_version: "1.4.102"
 status: "Active"
 updated_at: "2026-09-27"
 ---
@@ -57,7 +57,7 @@ updated_at: "2026-09-27"
 | [tsk-07-outcome-closure](tsk-07-outcome-closure.json) | Complete | machine-readable: five typed outcome presentation、numeric-row boundary、exact AttackProfile normal-calculator recovery、typed invalid reset/reload、unsupported／policy-unavailable non-recovery、focused consumer checks | TSK-07 | `3ec65cd` baseline／no new commit |
 | [tsk-07-responsive-accessibility-closure](tsk-07-responsive-accessibility-closure.json) | Complete | machine-readable: desktop／390px／320px responsive containment、accessible names／roles／keyboard／focus、five-outcome recovery presentation、stale/cache identity preservation、integrated quality evidence | TSK-07 | `b9c323a` baseline／no new commit |
 | [tsk-08-parity-diagnostics](tsk-08-parity-diagnostics.json) | Active | machine-readable: typed calculator／ranking／portable parity failure reason、canonical identity／first diff、bounded summary、declared artifact checksum reachability | TSK-08 | `34828ea` baseline／no new commit |
-| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: bounded-unit契約・完全diagnostic・checksum・再利用条件。[46]〜[51]完了を別々に保持、selectedAlly maximumFixed forward[52]は未完了checkpoint。 | TSK-08 | baseline製品`60dea89`／handoff`210e6ee`。局所55・control7成功、必須quality未達。範囲外fixture変更撤回・GC不採用、対象source6ファイル未commit。checkpoint`72e16c4`、Step再照合・再開計画境界はnextSession.resumeUnit52。準備commitはGit履歴参照。TSK-08 in_progress、09.1／09 blocked。 |
+| [tsk-08-parity-ratchet](tsk-08-parity-ratchet.json) | Active | machine-readable: bounded-unit契約・完全diagnostic・checksum・再利用条件。[46]〜[51]完了を別々に保持、selectedAlly maximumFixed forward[52]は未完了checkpoint。 | TSK-08 | baseline製品`60dea89`／handoff`210e6ee`。局所55・control7成功、必須quality未達。範囲外fixture変更撤回・GC不採用、対象source6ファイル未commit。checkpoint`72e16c4`／再開HEAD`e9a0a6c`。承認計画で176 receipt／56 diagnostic照合error0、対象内修正根拠なしでquality再試行停止。未達gateと改訂限定計画はboundedUnits[52].resumeGateAssessment。記録commitはGit履歴参照。TSK-08 in_progress、09.1／09 blocked。 |
 | [tsk-08-shared-audit-model](tsk-08-shared-audit-model.json) | Active | machine-readable: TSK-06.5 source reference、data-pipeline／calculation-application boundary model、full matrix first-difference gate、artifact reachability | TSK-08 | `5d82e38` baseline／no new commit |
 | [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／historical closure had no commit; current baseline `197ff30` |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Complete | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 final closure | `49efe62`／TSK-06.48 complete |

@@ -16967,7 +16967,118 @@
         "gcQualification": "Isolated63 tests passed with command-only NODE_OPTIONS=--max-semi-space-size=64; outside bounded investigation, not adopted, not full quality success; runner/config unchanged.",
         "stop": "No further quality/performance/legacy investigation this session. Retain scoped source uncommitted; commit existing documentation checkpoint only. No push."
       },
-      "handoffPreparation": "Read-only retained6-source/local55/control7 manifest checksum reconciliation passed; Step0/1/3 established, Step2 unit52 remains incomplete. Next scope in handoffPreparation.nextSession.resumeUnit52."
+      "handoffPreparation": "Read-only retained6-source/local55/control7 manifest checksum reconciliation passed; Step0/1/3 established, Step2 unit52 remains incomplete. Next scope in handoffPreparation.nextSession.resumeUnit52.",
+      "resumeGateAssessment": {
+        "startedAt": "2026-09-27 08:40:04 UTC",
+        "baselineHead": "e9a0a6c5db82f8c1de7bae6386c5b1f41ada7ece",
+        "authorization": "User confirmed current-code staged closure plan with OK; ordinary technical decisions authorized, no push. Plan explicitly stops dependent closure on an outside-scope gate without a concrete resolved cause.",
+        "worktree": "Index empty; tracked4/untracked2 scoped source retained exactly at checkpoint bytes/SHA-256; no product source/test/runner/config edits.",
+        "reconciliation": {
+          "path": ".test-results/tsk-08-unit52-resume-20260927/reconciliation.json",
+          "bytes": 64694,
+          "sha256": "ff56da28ccf1c931c152f113b32bbe80367cbb3112716b31ca3ce1a9487145aa"
+        },
+        "reconciliationScript": {
+          "path": ".test-results/tsk-08-unit52-resume-20260927/reconcile.mjs",
+          "bytes": 4040,
+          "sha256": "c4385bd6d0421358ec42346ce68207af48b235f064d89778c56327dc2587b81f"
+        },
+        "verified": {
+          "receipts": 176,
+          "receiptErrors": 0,
+          "losslessDiagnostics": 56,
+          "diagnosticErrors": 0,
+          "priorUnits0Through51": "Exactly unchanged from handoff HEAD; baseline existing units0..50 unchanged, unit51 post-baseline record retained.",
+          "master": "Published master bytes/SHA-256 match selectionEvidence; version20260920.3/schema56 unchanged.",
+          "reusedSuccess": "Local55/control7 and unchanged three sourceSelf/receive tasks19; failed79-task aggregate remains test_failure, not whole-gate success."
+        },
+        "publishedPopulation": {
+          "declarations": 6,
+          "selected": 12,
+          "changed": 0,
+          "connected": 0,
+          "readers": 0,
+          "nps": 0,
+          "failures": 0,
+          "boundaries": {
+            "notApplied": 2,
+            "noOrderedHpReader": 2,
+            "noHpRatioLowNp": 2,
+            "outsideScope:otherHpWriter": 10
+          },
+          "meaning": "Original fixed control population is boundary evidence, not changed committed-forward success or future fixed expected counts."
+        },
+        "sourceReview": {
+          "blockingWithinScopedForward": 0,
+          "canonical": "Static form/skill-slot declaration superset retained before evaluation; choice-resolved canonical writers include nonapplication/unreached/native-noncommit. MaySelect never filters on activation, eligibility, receipt or commit.",
+          "hpOwner": "preparationHp::recipients resolves selectedAlly to attacker; executeHpOperation/changeHpModifiers remain authoritative. New capture runs only after original applied HP operation, under hpAction capture and hpModifier guards. No arithmetic/replay/new semantics.",
+          "consumer": "Necessary canonical/owner/value/reference checks preserve native/reducer/selected prepared/application/direct and actual later HP/continuous NP links; absent readers/NP/dead/actual0 retained as boundaries.",
+          "runtimeReachability": "Focused consumer imported only by two audit fixtures, which are excluded from ordinary unit/production quality suites. Capacity fixture generated operations are battlePointCapacityModifier/resourceMutation battlePoint, not hpModifier; new capture helper is not invoked there. Raw typed-operation inventory only reads/parses/aggregates canonical JSON, not changed HP execution. HP inventory original masterPromise wait remains within first test; readiness patch is withdrawn and not proposed again.",
+          "limits": "These direct paths do not prove zero bundle/JIT/environment timing influence. Timeout causal attribution remains unverified; no GC/scheduling diagnosis or source-failure reclassification."
+        },
+        "gateBlockers": [
+          {
+            "artifact": ".test-results/2026-09-27T07-15-10-316Z-4-05dd7d",
+            "file": "packages/data-pipeline/src/executionSemanticsProduction.test.ts",
+            "task": "maps every raw occurrence to a typed operation family",
+            "durationMs": 5046.36953
+          },
+          {
+            "artifact": ".test-results/2026-09-27T08-04-59-722Z-5-fafbf2",
+            "file": "packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts",
+            "task": "prior-capacity-fixed-commit state-modifier-values",
+            "durationMs": 5014.894740999996
+          },
+          {
+            "artifact": ".test-results/2026-09-27T08-04-59-722Z-5-fafbf2",
+            "file": "packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts",
+            "task": "intermediate-reconciled identity-source-action",
+            "durationMs": 5080.321070000002
+          },
+          {
+            "artifact": ".test-results/2026-09-27T07-50-26-325Z-4-9d119d",
+            "file": "packages/calculation-application/src/productionHpPaths.test.ts",
+            "task": "joins all production HP cells to source, recipient and observation time, and executes both actor bindings",
+            "durationMs": 5513.273041
+          }
+        ],
+        "gateDecision": "Original5000ms timeouts; Vitest failure task names/durations and bytes/SHA matched saved receipts. No concrete defect/repair demonstrated within unit52. Mandatory quality remains Blocking. Do not rerun unchanged full quality or modify unrelated capacity/raw/HP fixtures, GC, runner, worker counts, timeouts or thresholds.",
+        "execution": "Saved-artifact checksum and existing lossless codec only. No new source test, writer/production producer, audit, quality or performance run; no8-shard regeneration. Documentation verification follows this record.",
+        "revisedBoundedPlan": "Stop dependent final quality/production completion/commit here. Next operation is a separately explicit, bounded gate-diagnosis scope decision for the existing5000ms failures, with comparator, minimal command, target files and stop boundary fixed before execution. Existing isolated successes and GC run must not be repeated as substitutes. Once a concrete cause is resolved, resume frozen unit52 at affected checks -> README quality -> final integrated counter/digest/receipt reconciliation -> scoped product local commit; preserve current six-file difference and all boundary/negative evidence.",
+        "remaining": "Mandatory quality, final integrated production counter/digest/all-receipt reconciliation and product completion commit. Current audits have no runtimeCounters and cannot establish final production counters. Revised matrix/eligibility records are unchanged, not newly regenerated proof.",
+        "checkpointCommitPolicy": "Documentation-only incomplete gate checkpoint; resolve local commit from Git history. Six product files remain uncommitted; TSK-08 in_progress and TSK-09.1/09 blocked; no push.",
+        "documentationVerification": {
+          "command": "PATH=/tmp/tsk08-tools:$PATH taskset -c 0-7 pnpm test:docs",
+          "passed": 6,
+          "failed": 0,
+          "integrity": "passed on final result record",
+          "log": {
+            "path": ".test-results/tsk-08-unit52-resume-20260927/docs.log",
+            "bytes": 532,
+            "sha256": "47bc1e201609b44e1b7153f77dbaae50697635212972841317e03d173a343516"
+          },
+          "nativePnpm": {
+            "outcome": "Script not started; external SQLite unable to open database file; unchanged generic runner content/730bytes/SHA256 checked before fallback.",
+            "log": {
+              "path": ".test-results/tsk-08-unit52-resume-20260927/docs-native.log",
+              "bytes": 2749,
+              "sha256": "0db23aa6bfe0cf4b1e606e3aea841b192c1d81c2c3f31c65f4578cfb05ef4a60"
+            }
+          },
+          "formatPolicy": "Default Prettier check honors docs/ exclusion; no forced ignore bypass. Existing frontmatter/table layout preserved by scoped diff review.",
+          "formatLog": {
+            "path": ".test-results/tsk-08-unit52-resume-20260927/format.log",
+            "bytes": 66,
+            "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+          },
+          "diffWhitespace": "passed",
+          "finalIntegrityLog": {
+            "path": ".test-results/tsk-08-unit52-resume-20260927/docs-final-integrity.log",
+            "bytes": 22,
+            "sha256": "129b0d2fdae17887003f5e9a2869b932e73a10422d1935de9dd42fe1f2bb3d31"
+          }
+        }
+      }
     }
   ],
   "currentBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
@@ -17301,7 +17412,7 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "handoff ready; plan first, user confirmation required before implementation or source validation",
+      "status": "Unit52 resumed with user-approved plan; saved evidence/diff reconciliation complete; mandatory quality blocked without scoped repair, dependent product closure stopped.",
       "name": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "priorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
@@ -17787,7 +17898,9 @@
         "failedGateBoundary": "Do not repeat full quality without changed input or a concrete resolved cause. A failure outside the agreed direct scope is a gate blocker, not implicit permission to broaden fixes: record identity/results and revised bounded proposal; stop dependent closure, never claim completion.",
         "sessionLimit": "60min checkpoint. At90min finish current atomic action and hand off; do not start another quality retry, family or investigation.",
         "finish": "On mandatory-gate success reconcile final identities, counters/digests and protected units; update existing Task/evidence and commit only scoped changes locally, no push. If blocked/time-limited, preserve differential checkpoint and never commit as completed product.",
-        "preparationVerification": "Retained six-source and local55/control7 manifest bytes/SHA matched; protected boundedUnits0..51 unchanged; pnpm test:docs6/6 and docs integrity, git diff --check passed. No source validation/quality run."
+        "preparationVerification": "Retained six-source and local55/control7 manifest bytes/SHA matched; protected boundedUnits0..51 unchanged; pnpm test:docs6/6 and docs integrity, git diff --check passed. No source validation/quality run.",
+        "latestAssessmentReference": "boundedUnits[52].resumeGateAssessment",
+        "nextOperation": "Follow resumeGateAssessment.revisedBoundedPlan; current plan confirmation fulfilled. No unchanged quality retry, no automatic unrelated fixture/GC repair."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -18759,7 +18872,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Unit52 final-gate closure only; read current code/diff and failed artifacts, propose bounded staged plan and wait for confirmation. Reuse valid local55/control7, no new semantic family or unrelated fixture/GC repair.",
+    "nextSession": "Unit52 remains incomplete after approved resume review: retained six-source/local55/control7/affected19 receipts valid; mandatory quality still blocked. See boundedUnits[52].resumeGateAssessment for direct-path evidence and revised bounded gate scope decision before further execution; no new family.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",

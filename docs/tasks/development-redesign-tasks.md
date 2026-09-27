@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.88"
+document_version: "1.7.89"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-27"
@@ -3521,3 +3521,13 @@ native非commit隔離の実装、recovery／retry／UI、他origin／recipient�
 次作業者は保持差分の定義・canonical生成・直接consumerと既存失敗artifactを読み、変更要否、証拠再利用、必要な局所診断、必須gateを1sessionへ収める段階計画を提示して利用者確認を待つ。確認後は同unitを必要な修正・検証・記録・対象限定local commitまで続ける。失敗原因は未確定であり、GC／fixture補正を既定解にしない。具体的な解消根拠なしに全体qualityを反復せず、無関係な失敗の修正を暗黙のscopeへ足さない。範囲外gate障害は記録し改訂した限定計画へ切り戻す。
 
 60分でcheckpoint、90分では現在のatomic actionを終えて引き継ぎ、quality再試行や独立調査を開始しない。詳細正本はevidence `handoffPreparation.nextSession.resumeUnit52`。このhandoffは同worktreeの未commit／untracked sourceを必要とし、clean cloneだけでは実装差分を復元できない。旧unitの再開・新family・全体closureは対象外。TSK-08 `in_progress`、09.1／09 `blocked`、pushなし。
+
+### unit52再開照合と必須gate停止（未完了、2026-09-27）
+
+HEAD `e9a0a6c`、index空、tracked4／untracked2の保持6ファイルを照合し、現codeと既存失敗artifactに基づく段階計画を利用者がOKで承認した。再開後も製品source／test／runner／設定は変更せず、局所55／control7と未変更の影響fixture19の証拠を再利用した。176 receiptのbytes／SHA-256、56完全diagnosticの既存codecによる厳密再encode照合はerror0。失敗79-task aggregateは全成功へ読み替えない。既存[0]〜[51]の記録はhandoff HEADと同一。
+
+publishedは6宣言／12 selected、changed／connected／reader／NPは各0である。非適用と対象外HP writerを含む元経路の境界証拠であり、changed committed-forward成功や将来の固定期待値ではない。専用consumerのimportはaudit fixtureだけ。capacity失敗fixtureはHP modifierを生成せず、追加capture helperの呼出しへ到達しない。raw typed-operation集計はcanonical JSONを読み、変更HP実行を呼ばない。HP inventoryの元masterPromise待機は既存経路として保持し、撤回済みreadiness修正を再導入しない。これらはbundle／JIT／環境の時間影響まで否定する証明ではなく、timeout原因の帰属は未確定のままである。
+
+対象内の具体的な欠陥・原因解消が確認できなかったため、承認計画の停止条件を適用した。既存5000ms timeoutのraw集計／capacity否定／HP inventory失敗をgate障害として記録し、source test／audit／quality／性能計測は追加実行しない。GC、schedule、fixture変更、timeout／threshold緩和で成功を作らない。改訂した限定計画とartifact identityの正本はevidence `boundedUnits[52].resumeGateAssessment`。次の操作は既存timeoutの診断範囲・比較条件・最小command・停止境界を明示的に限定するscope判断であり、同条件のquality再試行ではない。原因解消後に影響検証、README quality、最終counter／digest／全receipt照合、対象限定製品local commitへ戻る。
+
+今回のlocal commitは未完了の文書checkpointだけとし、製品6ファイルは未commitで保持する。必須qualityと最終統合production counter／digest照合、製品完了commitは未達。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
