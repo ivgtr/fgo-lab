@@ -24,7 +24,7 @@ import {
   decodeProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
-function setup(excluded = false, repeated = false) {
+function setup(excluded = false, repeated = false, alternateNp = false, selectedStandard = false) {
   const master = masterSnapshotSchema.parse(fixture);
   const actor = master.servants[0]!;
   const effect = masterEffectSchema.parse({
@@ -130,6 +130,21 @@ function setup(excluded = false, repeated = false) {
           for (const row of damage.parametersByOvercharge)
             for (const parameter of row) parameter.targetId = 1000;
       }
+  if (alternateNp) {
+    const group = actor.noblePhantasmVariantGroups[0]!;
+    const base = group.variants[0]!;
+    group.variants.push({
+      ...structuredClone(base),
+      canonicalId: 'fixture-alternate-np',
+      ref: { ...base.ref, noblePhantasmId: 'fixture-alternate-np' },
+    });
+    if (selectedStandard && base.kind === 'attack')
+      base.damage = base.damage.map((damage) => ({
+        ...damage,
+        kind: 'standard' as const,
+        rawFunctionType: 'damageNp',
+      }));
+  }
   master.servants = [actor];
   master.craftEssences = [];
   master.mysticCodes = [];
@@ -310,6 +325,81 @@ it('keeps normal NP exclusion and absent request stages distinct from consumptio
     absent.declarations.every((d) => d.stages.every((s) => s.observation === 'unobserved')),
   ).toBe(true);
   expect(absent.productClosure).toBe(false);
+});
+
+it('proves an unselected NP variant through the original selected sibling and its NP capture', () => {
+  const f = setup(false, false, true);
+  const ledger = f.reconcile();
+  expect(ledger.gate.failures).toEqual([]);
+  const variants = ledger.declarations.filter((d) => d.identity.kind === 'hpRatioLow');
+  expect(variants).toHaveLength(2);
+  const selected = variants.find((d) => d.npVariantSelections[0]?.disposition === 'selected');
+  const other = variants.find(
+    (d) => d.npVariantSelections[0]?.disposition === 'otherVariantSelected',
+  );
+  expect(selected).toBeDefined();
+  expect(other?.npVariantSelections).toMatchObject([
+    {
+      requestIndex: 0,
+      disposition: 'otherVariantSelected',
+      selectedVariant: selected?.identity.variant,
+    },
+  ]);
+  const proof = other?.npVariantSelections[0];
+  expect(proof && 'canonicalBinding' in proof && 'evaluationBinding' in proof).toBe(true);
+  expect(other?.stages.find((stage) => stage.stage === 'canonicalNp')?.observation).toBe(
+    'connected',
+  );
+  expect(other?.stages.find((stage) => stage.stage === 'npEvaluation')?.observation).toBe(
+    'unobserved',
+  );
+
+  const withoutEvaluation = f.borrowed.bindings.filter(
+    (binding) => binding.stage !== 'npEvaluation',
+  );
+  const incomplete = f.reconcile(withoutEvaluation);
+  expect(incomplete.gate.failures.map((failure) => failure.reason)).toContain('missingBinding');
+  expect(
+    incomplete.declarations.find(
+      (d) =>
+        d.identity.kind === 'hpRatioLow' &&
+        d.identity.variant?.canonicalId === selected?.identity.variant?.canonicalId,
+    )?.npVariantSelections[0]?.disposition,
+  ).toBe('unobserved');
+
+  if (f.prepared.status !== 'executable' || !f.prepared.resolved.noblePhantasmVariant)
+    throw new Error('fixture_selected_variant_missing');
+  const forged = {
+    ...f.prepared,
+    resolved: {
+      ...f.prepared.resolved,
+      noblePhantasmVariant: {
+        ...f.prepared.resolved.noblePhantasmVariant,
+        canonicalId: 'foreign-variant',
+      },
+    },
+  };
+  expect(
+    reconcileHpPublishedDependencyCoverage(
+      f.declarations,
+      [{ prepared: forged, calculation: f.calculation }],
+      [],
+    ).gate.failures.map((failure) => failure.reason),
+  ).toContain('npVariantSelectionMismatch');
+});
+
+it('keeps a selected standard NP outside HP evaluation proof without rejecting a valid variant', () => {
+  const f = setup(false, false, true, true);
+  const ledger = f.reconcile();
+  expect(ledger.gate.failures).toEqual([]);
+  const hpVariant = ledger.declarations.find((d) => d.identity.kind === 'hpRatioLow');
+  expect(hpVariant?.npVariantSelections).toMatchObject([
+    {
+      requestIndex: 0,
+      disposition: 'unobserved',
+      reason: 'selectedVariantHasNoHpDeclaration',
+    },
+  ]);
 });
 
 it('rejects incomplete requests and equal foreign request/candidate capture owners', () => {

@@ -22913,6 +22913,157 @@
         },
         "nextOperation": "Separate bounded owner-to-consumer decision for the missing CE/value scenario population and remaining NP/OC variant/cell selection; establish whether a new expression read observer or recovery/native owner is required before any implementation. Preserve successful original request/fixture/artifact identities and do not infer product exclusion from this control population.",
         "recordCommitPolicy": "Local target-only commit, no push. Commit SHA resolved from Git after commit."
+      },
+      "hpPublishedNpVariantSelectionCheckpoint": {
+        "status": "scoped_unit_complete_product_incomplete",
+        "baselineHead": "3de18ce295bd7cce93721ccb19ac772de7eb501d",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "authorization": "User confirmed code-based NP variant-selection coverage plan before edits; no push.",
+        "sourceIdentities": [
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+            "bytes": 27267,
+            "sha256": "8e8afa7a502e5cfa2b7f882f1e51a864971e30b36cfba0313fcca34817317f12"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts",
+            "bytes": 17377,
+            "sha256": "118edafb553de4d85f2d89cc836fff7802f1c0388f3a09b8ec1c6fbf1c0aa1d4"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "ownerAndBoundary": {
+          "producer": "Original productionMasterControlAudit.evaluateWithOrderedOperationEvents request ledger, 3182 requests before family selectors; no owner replay.",
+          "inventory": "Shared hpProofCoverageInventory, 557 declarations including 486 writers.",
+          "canonicalJoin": "NP damage declaration identity is matched to the original executeNpDamage sourceInstanceId generated from typed variant ref, and to the original damage object; prepared.resolved selected variant is assessed separately. Two-variant fixture exposed the previous selected-ref-to-all-operations unmatchedCanonical error.",
+          "capture": "Existing selected target candidate and borrowed NP observation; selected sibling requires exactly one original canonical NP binding and one NP evaluation on the same operation.",
+          "consumer": "productionHpPublishedDependencyCoverage keeps declaration/canonical/selected/evaluated separate. For the six remaining owner requests, the other selected variant is proven; the declared variant is normally nonselected, not HP-read, unsupported, or product-excluded. A schema-legal selected standard NP with no HP declaration stays unobserved.",
+          "artifact": "Existing production audit writer and lossless codec; npVariantSelections is an added declaration field. Existing request, binding and other stage order remains unchanged.",
+          "failure": "Missing/duplicate/unmatched/foreign/family/actor/recipient/order checks remain; selected variant mismatch and conflicting evaluation are typed npVariantSelectionMismatch. Absent target/proof remains unobserved.",
+          "excluded": "CE condition1 and value-expression10 have no direct original owner request; OC-rate25 cell selection/read is unproven. No new observer, HP semantics, runtime execution family, owner replay, support repair, native or recovery claim."
+        },
+        "population": {
+          "requests": 3182,
+          "bindings": 478,
+          "writerDeclarations": 486,
+          "dependencyDeclarations": 71,
+          "npSelectedRequestEvents": 16,
+          "npOtherVariantSelectedRequestEvents": 6,
+          "npRemainingDeclaredVariantsNormallyNonselected": 2,
+          "ceConditionDirectOwnerAbsent": 1,
+          "valueExpressionDirectOwnerAbsentCells": 10,
+          "ocRateOwnerPresentReadUnprovenCells": 25,
+          "productClosure": false
+        },
+        "verification": {
+          "unit": {
+            "manifest": {
+              "path": ".test-results/2026-09-28T03-29-38-603Z-20-4740b5/manifest.json",
+              "bytes": 3305,
+              "sha256": "433d7cf95137cb7add18fc852c2737f282d6929d6ca17f3e9346a459e25ef768"
+            },
+            "tests": 7,
+            "warnings": 0
+          },
+          "controlAudit": {
+            "manifest": {
+              "path": ".test-results/2026-09-28T03-29-45-333Z-3-425bad/manifest.json",
+              "bytes": 5825,
+              "sha256": "41a78e5c61ca2ca8cdcfb70f8cf6d20ecc2f6c425f81a36f739720201e49286f"
+            },
+            "tests": 7,
+            "warnings": 0,
+            "firstTestMs": 53091,
+            "previousFirstTestMs": 59204,
+            "timeoutMs": 60000,
+            "durationMs": 136890,
+            "previousDurationMs": 155380,
+            "interpretation": "Observed first test 6.113s faster and full run 18.490s faster. Single-run timing does not isolate a cause; no timeout/threshold change. Audit-side classification only, no computation/capture/product hot path change, so no live baseline/candidate pair or formal performance claim."
+          },
+          "completeComparison": {
+            "artifact": {
+              "path": ".test-results/tsk-08-hp-np-variant-20260928/complete-comparison.json",
+              "bytes": 4495,
+              "sha256": "cdf39516902e83c144730db3863b7d26c97d43a56f4f248c187708308b19be17"
+            },
+            "oldDecodedValuesAndOrderEqualAfterAddedFieldRemoved": true,
+            "firstDifference": null,
+            "unchangedOtherControlArtifacts": 12,
+            "diskDescriptors": 25,
+            "testOwnedReceipts": 15,
+            "receiptErrors": []
+          },
+          "sidecar": {
+            "path": ".test-results/2026-09-28T03-29-45-333Z-3-425bad/production-hp-published-dependency.json",
+            "bytes": 12657917,
+            "sha256": "b89da79356410fa596553a2e387cfeaabe3ad5bd25b474449e5393d8cbd6402e"
+          },
+          "static": "Final source: calculation-application tsc -b passed; focused ESLint warnings0; Prettier check passed; docs tests6/6 and docs integrity passed; validate:evidence production10/10 passed. No README final quality, formal performance, or whole audit gate attempted."
+        },
+        "inputLifecycleClosureReconciliation": [
+          {
+            "index": 0,
+            "decision": "Original input lifecycle and occurrence/HP gates retained at valid recorded identities; no product input owner change."
+          },
+          {
+            "index": 1,
+            "decision": "HP486/7470 and shared digest unchanged; NP selection proof is not whole state-transition coverage."
+          },
+          {
+            "index": 2,
+            "decision": "Completed mutation slices and units0..51 retained; no selector or action family change."
+          },
+          {
+            "index": 3,
+            "decision": "NP2 variants have normal nonselection in six original owner requests, with selected sibling canonical/NP evaluation proof. CE1/value10 lack original owner requests; OC25 lack selected-cell/read proof; native noncommit/recovery remain unverified."
+          },
+          {
+            "index": 4,
+            "decision": "Local typed selection gate, old/new full artifact and receipt checks pass; whole ratchets and diagnostic reachability remain unverified."
+          },
+          {
+            "index": 5,
+            "decision": "Legacy aggregate/old loader/scan/candidate/duplicate fixture cleanup and unique coverage remain unverified."
+          },
+          {
+            "index": 6,
+            "decision": "Formal 3-run performance, README final quality, integrated counter/digest/all receipts remain unmet or unverified; no dependent quality started."
+          },
+          {
+            "index": 7,
+            "decision": "Declaration, canonical operation, direct request, selected variant, candidate NP evaluation and normal nonselection are separate; no CE projection success, support repair, native/read/recovery claim is composed."
+          }
+        ],
+        "tsk08ClosureReconciliation": {
+          "checklist": {
+            "soleInventoryProducer": "retained",
+            "allRatchets": "open whole population",
+            "typedDiagnosticsCompleteArtifact": "scoped typed negative/full artifact/receipt verified; whole reachability open",
+            "legacyCleanup": "open unique coverage and references"
+          },
+          "doneGate": {
+            "damageDifferences": "old sidecar and other control product artifacts unchanged except added selection field; full explanation not integrated",
+            "firstCanonicalDifference": "local typed first difference verified; whole digest mismatch path open",
+            "boundedFullResults": "local complete artifact passed; whole failures open",
+            "inventoryParityFailClosed": "scoped audit passed; final integrated production/calculator/ranking gate open",
+            "soleProducer": "retained"
+          },
+          "contractMatrix": {
+            "TS-AUDIT-001": "control audit7 passed; whole production gate open",
+            "TS-OUT-001": "local typed negatives passed; whole diagnostics open",
+            "TS-ART-001": "disk25/test-owned15 with zero errors; whole receipts open",
+            "RK-AUDIT-001": "matrix/eligibility and completed units retained; whole policy/parity/fail-closed open",
+            "RK-PERF-001": "formal before/after three-run open",
+            "TS-PERF-002": "formal before/after three-run open",
+            "DX-HANDOFF-001": "scoped checkpoint/local commit planned; README final quality open"
+          }
+        },
+        "closureDecision": "One confirmed NP coverage unit passed with local Blocking0. Whole TSK-08 remains in_progress; Step2 open, TSK-09.1/09 blocked. Do not start dependent quality or product closure.",
+        "nextOperation": "Separately determine the original owner/capture lifetime for CE condition1 and value-expression10, and selected-cell/actual-read observation for OC-rate25. Decide observer/owner need from direct producer/consumer code; keep distinct families/native/recovery out of scope until separately authorized."
       }
     }
   ],
@@ -26681,11 +26832,11 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "次sessionは残るPublished HP依存の元producer母集団・variant/cell選択・実read証拠を現コードから計画し、利用者確認後に1つのHP proof coverage単位だけ実装・検証・local commitまで進める。CE1/value10には元ledger owner requestなし、NP2/OC25はownerありでも選択/実read未観測。TSK-08全体closureは全義務の有効証拠でのみ判断する。",
+    "nextSession": "NP残2variantは元owner request計6で他variantの選択とNP評価を原参照から証明し正常な非選択へ分類済み。次はCE条件1/value-expression10の元owner/capture母集団、OC-rate25の選択cell/実read observer必要性を別の限定計画で判断する。TSK-08全ratchet/legacy/正式性能/最終quality/統合receiptは未達。",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
-        "detail": "HP486／7470のidentity・primitive coverageとgeneric consumer参照を照合済み。unit52.hpCoverageReconciliationCheckpointを参照。54group、context429／明示selected211宣言は全native／実read／NP／recoveryを証明しない。実audit gapは別の限定計画で扱い、新supported behaviorや同scenario recoveryを追加しない。 transfer2／native24／retained selected HP seedの限定接続はboundedUnits[52].hpTransferEvidenceReconciliationCheckpoint。全read／NP／recoveryを証明しない。 Current explicit canonicalHP dependency557=writer486/condition10/value30/OC-rate25/hpRatioLow6,use-condition0/HP-conditioned gauge0;schema-legal fixedSelf3 correspondence andPublishedtransfer2 join verified. See boundedUnits[52].hpRemainingProofReconciliationCheckpoint. Whole native/read/NP/recovery stillunconnected. Published control request/capture接続はboundedUnits[52].hpPublishedDependencyProofCheckpoint。元3182requestで条件9/read90、NP4variant/evaluation16、expression20context/selected2cell。全closureではない。"
+        "detail": "HP486／7470のidentity・primitive coverageとgeneric consumer参照を照合済み。unit52.hpCoverageReconciliationCheckpointを参照。54group、context429／明示selected211宣言は全native／実read／NP／recoveryを証明しない。実audit gapは別の限定計画で扱い、新supported behaviorや同scenario recoveryを追加しない。 transfer2／native24／retained selected HP seedの限定接続はboundedUnits[52].hpTransferEvidenceReconciliationCheckpoint。全read／NP／recoveryを証明しない。 Current explicit canonicalHP dependency557=writer486/condition10/value30/OC-rate25/hpRatioLow6,use-condition0/HP-conditioned gauge0;schema-legal fixedSelf3 correspondence andPublishedtransfer2 join verified. See boundedUnits[52].hpRemainingProofReconciliationCheckpoint. Whole native/read/NP/recovery stillunconnected. Published control request/capture接続はboundedUnits[52].hpPublishedDependencyProofCheckpoint。元3182requestで条件9/read90、NP4variant/evaluation16、expression20context/selected2cell。全closureではない。 NP2 variantの元owner6はboundedUnits[52].hpPublishedNpVariantSelectionCheckpointで正常な非選択を証明。CE1/value10/OC25、全read/native/recoveryは未接続。"
       },
       {
         "work": "Whole ratchet and diagnostic/artifact closure",
@@ -26741,6 +26892,7 @@
     "hpTransferCheckpointCommit": "1cc348209ff3953512f120772e0482bf18f4ef70",
     "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint",
     "asOfPublishedDependencyCheckpointReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint",
-    "asOfPublishedDependencyRemainderCheckpointReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint"
+    "asOfPublishedDependencyRemainderCheckpointReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint",
+    "asOfHpNpVariantSelectionCheckpointReference": "boundedUnits[52].hpPublishedNpVariantSelectionCheckpoint"
   }
 }

@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import type { BattleOperation, ConditionExpression, SourceEffect } from '@fgo-lab/battle-execution';
 import { hpCandidateObservationFor } from '@fgo-lab/battle-execution/preparation-audit';
-import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
+import { getNoblePhantasmVariants, noblePhantasmVariantKey } from '@fgo-lab/master-data';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
 import { hpProofCoverageInventory, type HpProofDeclaration } from './productionHpProofCoverage';
 import type { PreparedCalculationScenario, CalculationExecution } from './scenario';
@@ -49,7 +49,8 @@ export type HpPublishedDependencyReason =
   | 'foreignDeclaration'
   | 'foreignReference'
   | 'bindingMismatch'
-  | 'orderMismatch';
+  | 'orderMismatch'
+  | 'npVariantSelectionMismatch';
 interface Failure {
   reason: HpPublishedDependencyReason;
   path: string;
@@ -206,11 +207,10 @@ export function hpPublishedDependencyBindings(
           (d) =>
             d.identity.kind === 'hpRatioLow' &&
             d.identity.owner === operation.source.sourceId &&
-            variantMatches(d, ref) &&
-            d.value === operation.damage &&
-            (prepared.status !== 'executable' ||
-              d.identity.variant?.canonicalId ===
-                prepared.resolved.noblePhantasmVariant?.canonicalId),
+            d.identity.variant !== null &&
+            operation.source.sourceInstanceId ===
+              `np:${noblePhantasmVariantKey(d.identity.variant.ref)}` &&
+            d.value === operation.damage,
         ),
         path,
       );
@@ -545,6 +545,93 @@ export function reconcileHpPublishedDependencyCoverage(
     'npEvaluation',
   ];
   const directOwners = directScenarioOwnerIndex(requests);
+  const npBindings = new Map<string, { canonical: number[]; evaluations: number[] }>();
+  observed.forEach((binding, index) => {
+    if (binding.declaration.identity.kind !== 'hpRatioLow') return;
+    const key = JSON.stringify([binding.declaration.identity, binding.requestIndex]);
+    const entry = npBindings.get(key) ?? { canonical: [], evaluations: [] };
+    if (binding.stage === 'canonicalNp') entry.canonical.push(index);
+    if (binding.stage === 'npEvaluation') entry.evaluations.push(index);
+    npBindings.set(key, entry);
+  });
+  const npSelection = (declaration: HpProofDeclaration, requestIndex: number) => {
+    const { prepared } = requests[requestIndex]!;
+    if (prepared.status !== 'executable')
+      return { requestIndex, disposition: 'unobserved' as const, reason: 'notExecutable' as const };
+    const selected = prepared.resolved.noblePhantasmVariant;
+    if (!selected)
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: 'noSelectedVariant' as const,
+      };
+    if (prepared.executionObservation?.targetExecution?.selection !== 'selected')
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: 'targetNotSelected' as const,
+      };
+    const owner = prepared.master.servants.find((actor) => actor.id === declaration.identity.owner);
+    if (!owner || !getNoblePhantasmVariants(owner).includes(selected)) {
+      fail('npVariantSelectionMismatch', `requests.${requestIndex}.selectedVariant`);
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: 'foreignSelectedVariant' as const,
+      };
+    }
+    const selectedDeclarations = declarations.filter(
+      (candidate) =>
+        candidate.identity.kind === 'hpRatioLow' &&
+        candidate.identity.owner === declaration.identity.owner &&
+        candidate.identity.variant?.canonicalId === selected.canonicalId &&
+        variantMatches(candidate, selected.ref),
+    );
+    if (selectedDeclarations.length !== 1) {
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason:
+          selectedDeclarations.length === 0
+            ? ('selectedVariantHasNoHpDeclaration' as const)
+            : ('ambiguousSelectedNpDeclaration' as const),
+      };
+    }
+    const selectedDeclaration = selectedDeclarations[0]!;
+    if (selectedDeclaration !== declaration) {
+      const ownKey = JSON.stringify([declaration.identity, requestIndex]);
+      if (npBindings.get(ownKey)?.evaluations.length) {
+        fail('npVariantSelectionMismatch', `requests.${requestIndex}.npEvaluation`);
+        return {
+          requestIndex,
+          disposition: 'unobserved' as const,
+          reason: 'conflictingEvaluation' as const,
+        };
+      }
+    }
+    const selectedKey = JSON.stringify([selectedDeclaration.identity, requestIndex]);
+    const proof = npBindings.get(selectedKey);
+    if (
+      proof?.canonical.length !== 1 ||
+      proof.evaluations.length !== 1 ||
+      observed[proof.canonical[0]!]!.operation !== observed[proof.evaluations[0]!]!.operation
+    )
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: 'selectedNpProofMissing' as const,
+      };
+    return {
+      requestIndex,
+      disposition:
+        selectedDeclaration === declaration
+          ? ('selected' as const)
+          : ('otherVariantSelected' as const),
+      selectedVariant: selectedDeclaration.identity.variant,
+      canonicalBinding: proof.canonical[0]!,
+      evaluationBinding: proof.evaluations[0]!,
+    };
+  };
   return {
     requestCount: requests.length,
     requests: requests.map(({ prepared, calculation }, index) => ({
@@ -565,6 +652,12 @@ export function reconcileHpPublishedDependencyCoverage(
         operation: d.operation,
         directScenarioOwnerRequests:
           directOwners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? [],
+        npVariantSelections:
+          d.identity.kind === 'hpRatioLow'
+            ? (directOwners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? []).map(
+                (requestIndex) => npSelection(d, requestIndex),
+              )
+            : [],
         stages: stages.map((stage) => {
           const indices = observed.flatMap((b, index) =>
             b.declaration === d && b.stage === stage ? [index] : [],
