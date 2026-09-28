@@ -23374,6 +23374,183 @@
         "closureDecision": "TSK-08 remains in_progress, Step2 open, TSK-09.1/09 blocked. Scoped 10-cell owner/capture/cell-selection and normal no-native-step proof succeeds; actual HP read is unobserved and impacted audit first test fails unchanged timeout. Dependent quality/product closure not started. Product-incomplete local checkpoint only.",
         "nextLimitedOperation": "At the same source/input identity, trace selected support addModifier OperationResult and recipient eligibility against the pre-disposition resolveModifierValue call. Plan a narrow actual-read attempted-versus-consumed observer only if this path requires it; keep CE, another family, native/recovery and runtime semantic changes separate. Independently diagnose the 60s audit runtime without relaxing its limit before claiming full gate. No automatic eight-shard regeneration.",
         "recordCommitPolicy": "Local target-only checkpoint commit; resolve SHA from Git history; no push."
+      },
+      "hpPublishedSupportValueReadCheckpoint": {
+        "status": "support_value_read_attempt_and_committed_consumption_proved_product_incomplete",
+        "baselineHead": "ef0e398c494c89c51157a105eda256daae2dae38",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "authorization": "User approved the presented bounded plan with OK after requesting a remaining-task summary; no push.",
+        "sourceIdentities": [
+          {
+            "path": "packages/battle-execution/src/candidateExecution.ts",
+            "bytes": 15658,
+            "sha256": "970dbf492cd123067772cd1184d318bdfd4e4b66cbf29569c1958c571dabcd2e"
+          },
+          {
+            "path": "packages/battle-execution/src/candidateOperationContext.ts",
+            "bytes": 8702,
+            "sha256": "8b0bf91732d5508ec28b3643e9b241b4ec6488f438f2a25ca45e71d5d4b5cd21"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 13035,
+            "sha256": "b9128c26f9461c4dc4a2faddf4a8c834c0115900c98ec54e7d9e9dd1e7f95514"
+          },
+          {
+            "path": "packages/battle-execution/src/projection.ts",
+            "bytes": 19491,
+            "sha256": "738cb18eb455b2268888cdcd836f1c7e330b7ac5d493ab7178af3f494548fe3f"
+          },
+          {
+            "path": "packages/battle-execution/src/engineAudit.test.ts",
+            "bytes": 13484,
+            "sha256": "8f2e0c30bd2e9bd56bc3026a4c5d1452c6696fcc2b534690ead51a642867225e"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+            "bytes": 39084,
+            "sha256": "8d0ceee618b10db445d2a266038ca25da26bb59ea1ceff57198c4896501e0804"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 106489,
+            "sha256": "bf36cf8bda66d1dfdafdc1e3e5bf05a80be9ab93851aa107dac34cc32c1315f3"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "artifactIdentities": [
+          {
+            "path": ".test-results/2026-09-28T09-00-44-667Z-2-57cd54/manifest.json",
+            "bytes": 3191,
+            "sha256": "a2d5c60344fe2a8f87e8764a1361b8bdcfb29b78bf1efe8869c9afb02a28aafc"
+          },
+          {
+            "path": ".test-results/2026-09-28T09-00-44-667Z-2-57cd54/production-hp-support-value-expression.json",
+            "bytes": 182616,
+            "sha256": "9ae4d64b2fcd9c1d57a5a8adf8d5338d693df8415ec84130bb1d1235efc0857a"
+          },
+          {
+            "path": ".test-results/2026-09-28T09-00-44-667Z-2-57cd54/oc-support-dispositions.json",
+            "bytes": 90287,
+            "sha256": "03e72c9ece70fe4534bb4555ea3241a69ffcce47a24dc501baad9ae7bc6e2644"
+          },
+          {
+            "path": ".test-results/tsk-08-support-read-20260928/complete-comparison.json",
+            "bytes": 995,
+            "sha256": "e79346b9a7d0a951ce9fd3179763c25e6a7d4b399513e15ee6ff1d881a13e1f3"
+          }
+        ],
+        "retainedIdentity": "Handoff source7/input1/retained support artifact8/projection artifact1/old control artifact6 matched disk before editing. Old preparation source2 hashes are historical after previous implementation. New source7 identities above; input and old artifacts unchanged. Old control 3182 requests/488 bindings have no new current-source complete sidecar because first audit test previously timed out.",
+        "ownership": {
+          "declaration": "Existing hpProofCoverageInventory sole 557 declarations; canonical master effect/operation references select ten value-expression cells structurally. No ID runtime branch or new expected-value generator.",
+          "producer": "Existing original support projection test owns five original/withInputs/selected request calls, prepared/calculation references, and their preparation/candidate captures. Required-input repair calls are separate owners.",
+          "observer": "Audit-only candidate capture records physical HP quantity read attempt at resolveModifierValue before disposition, including null/value. The same original operation/result reference, sequence, group and before-state are retained in the candidate WeakMap; no product-state field or second HP evaluator.",
+          "consumer": "Existing hpPublishedDependencyBindings joins selected preparation source/cell to same compiled support operation, candidate result and group event. It validates reference, source identity, order, family, actor, recipient, selected cell, final event and group outcome before persisting values. The existing typed gate checks missing/duplicate/unmatched/foreign/altered bindings.",
+          "lifetime": "WeakMap capture belongs to each original candidate audit owner and is borrowed until reconciliation. Sidecar stores checked values/identity and test-owned receipt, not live references."
+        },
+        "population": {
+          "sharedDeclarations": 557,
+          "targetDeclarations": 10,
+          "requestCount": 5,
+          "requestPhases": [
+            "original",
+            "withInputs",
+            "selected",
+            "withInputs",
+            "selected"
+          ],
+          "expressionContexts": 50,
+          "selectedPreparationCells": 5,
+          "normalOtherCellNonselections": 45,
+          "actualValueReadBindings": 5,
+          "selectedCellPath": "execution.0.valueExpressions.0.9",
+          "selectedReadInputPermille": 1000,
+          "selectedResolvedValue": 0,
+          "operationOutcome": "applied",
+          "contributionIncluded": true,
+          "modifierAppended": true,
+          "transaction": "committed",
+          "consumed": true,
+          "preparationNativeSteps": 0,
+          "preparationNativeOutcome": "notApplicable",
+          "recovery": "unobserved",
+          "qualification": "Five requests select one level-10 cell, not all ten levels. The other nine cells have normal nonselection evidence only. Runtime read/consumption and preparation native reach are distinct."
+        },
+        "verification": {
+          "unit": "Focused coverage9 plus engine audit8 passed on final code; engine rollback fixture records attempted HP read and append while group rolls back and final operation outcome is unsupported.",
+          "production": "Final-source productionHpPaths 7 passed, manifest .test-results/2026-09-28T09-04-33-898Z-2-25a6cb.",
+          "support": "Final original-owner support test 1 passed in 7.908s at affinity0-7. Generic diagnostic runner reports contract_failure solely for six intentionally skipped audit tests. Manifest artifactVerification errors0, test-owned disk receipts6/6 match; no full audit success claim.",
+          "static": "tsc -b, target ESLint zero warnings, target Prettier check, diff check; final docs gate recorded separately.",
+          "comparison": "Old retained support artifact equals fresh HEAD baseline bytes/SHA. Old/new fully decoded contents, order, counts and containers are equal after removing only five new actualValueRead bindings, stage indices and selection actualRead fields. First difference null. Descriptor artifact identity above; old55/new60 bindings, typed failures[] and firstDifference null.",
+          "projectionArtifact": "Old/new oc-support-dispositions.json bytes90287 and SHA03e72c9ece70fe4534bb4555ea3241a69ffcce47a24dc501baad9ae7bc6e2644 equal.",
+          "performance": "Same master/input, CPU affinity0-7, audit1 worker and unchanged budget: fresh HEAD baseline support live test8.959s and first candidate8.490s, each one run. Final-source support verification7.908s is a separate run after a local refactor. These single-run timings neither establish causality nor satisfy formal before/after three-run performance. Prior whole audit 60.100/61.968s timeout pair and full 64.757/66.683s timeouts remain; no timeout relaxation/retry.",
+          "runner": "Normal pnpm failed before script in external SQLite store. Verified /tmp/tsk08-tools/pnpm content,730 bytes,SHA256 7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6; used nested PATH with same generic runner."
+        },
+        "closureReconciliation": {
+          "taskChecklist": [
+            "Sole TSK-06.5 inventory/digest producer remains; new unit binds ten existing declarations without another semantic producer.",
+            "Whole parity/unsupported/invalid/partial-commit/inert-control/stale-mutation ratchets remain unverified.",
+            "Scoped typed valueReadMismatch, canonical identity, first difference and complete receipted artifact pass; all failure paths remain unverified.",
+            "Legacy loader/scan/candidate-list/duplicate-fixture unique coverage and removal remain unverified."
+          ],
+          "doneGate": [
+            "This support operation read/consumption is explained by canonical source, cell, ordered operation and HP rule; all damage differences remain unclosed.",
+            "Scoped first difference null; digest mismatch to first canonical difference across all production remains unverified.",
+            "Scoped bounded output and complete artifact/receipt verified; massive failure completeness remains unverified.",
+            "Production inventory/parity/fail-closed final gate remains open, with known first-audit 60s timeout and other coverage gaps.",
+            "TSK-06.5 remains sole semantic producer; candidate and damage values not regenerated."
+          ],
+          "contractMatrix": {
+            "TS-AUDIT-001": "Scoped support test passes and production HP7 passes; full impacted audit remains unverified after prior 60s timeout.",
+            "TS-OUT-001": "Scoped typed reason/falsifiers and generic unit coverage pass; whole intentional-failure reachability remains unverified.",
+            "TS-ART-001": "Old/new support complete decoded comparison and test-owned6/6 receipt pass; whole audit sidecar/all receipts unavailable.",
+            "RK-AUDIT-001": "Step3 matrix/eligibility reused at matching identity; full policy/parity/fail-closed integration remains open.",
+            "RK-PERF-001": "Formal before/after three-run ranking not performed.",
+            "TS-PERF-002": "Only one same-input support live-phase pair; formal before/after three-run production gate not performed.",
+            "DX-HANDOFF-001": "Existing Task/evidence checkpoint updated; README final quality withheld while product Blocking remains."
+          },
+          "inputLifecycleEight": [
+            {
+              "obligation": 1,
+              "status": "Current source/input identity and original support request lifecycle connected for this path; new full original control sidecar unavailable."
+            },
+            {
+              "obligation": 2,
+              "status": "486/7470 primitive inventory and 557 dependency declarations reused; ten support cells have one selected/read cell and nine normally unselected cells, not all transitions."
+            },
+            {
+              "obligation": 3,
+              "status": "Completed fixed/maximumFixed/receive and units0..51 reused only at retained identities; not reopened."
+            },
+            {
+              "obligation": 4,
+              "status": "This support recipient read and commit proved; other HP actions/lifetimes/recipients and native/recovery paths remain unverified."
+            },
+            {
+              "obligation": 5,
+              "status": "Scoped typed gate and complete artifact pass; whole ratchets/diagnostic reachability open."
+            },
+            {
+              "obligation": 6,
+              "status": "Legacy aggregate/loader/scan/candidate/fixture reconciliation open."
+            },
+            {
+              "obligation": 7,
+              "status": "Formal performance, README final quality, integrated counter/digest/all receipts open."
+            },
+            {
+              "obligation": 8,
+              "status": "CE owner and other family separate; normal nonselection, preparation notApplicable, runtime physical read, committed consumption and recovery unobserved remain distinct."
+            }
+          ]
+        },
+        "closureDecision": "This ten-cell support unit has five original-request physical HP reads and committed modifier consumptions for one selected level-10 cell, plus 45 normal other-cell nonselections. Scoped Blocking0; Step2 and TSK-08 remain in_progress because other owner/native/recovery, full audit, ratchets, legacy, formal performance and final quality are not closed. TSK-09.1/09 stay blocked. No dependent quality or product closure run.",
+        "nextLimitedOperation": "Reconcile the remaining HP proof owners and native/recovery gaps against the existing checklist, starting with CE condition craftEssence owner as a separate bounded unit; independently resolve the first control audit 60s runtime without relaxing the limit before full closure. Do not automatically regenerate Step3 shards or rerun completed units.",
+        "recordCommitPolicy": "Commit this product-incomplete checkpoint locally with only target code/Task/evidence/registry files; no push."
       }
     }
   ],
@@ -26514,7 +26691,8 @@
         ],
         "performanceAndClosure": "Keep control audit first-test 60-second limit. Previous successful 52.680/53.091 seconds versus current full audit timeout 64.757/66.683 and same-input affinity0-7 before/after 60.100/61.968 timeout; do not assign sole causality to the change. If calculation structure/capture/hot path changes, one baseline and candidate live-phase run each on same input, affinity0-7, production4/unit4/audit1 workers and same budget; this is not formal three-run performance. Only if all obligations have valid evidence plus this unit, in-scope Blocking0 and time remains, run needed audit/formal three-run/README final quality/integrated counters,digests,all receipts and pursue TSK-08 closure. Otherwise product-incomplete checkpoint; TSK-09.1/09 remain blocked.",
         "sessionBoundary": "At 60 minutes checkpoint in existing canon; at 90 minutes finish atomic action and hand off. No additional quality retries, independent investigation or family expansion.",
-        "recordCommitPolicy": "Resolve this documentation preparation commit from Git history; do not self-reference its hash."
+        "recordCommitPolicy": "Resolve this documentation preparation commit from Git history; do not self-reference its hash.",
+        "resultReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint"
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -27486,11 +27664,11 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Current support ten-cell selection proof is product-incomplete. Next session plans the same original support operation actual-read coverage first and waits for confirmation; see handoffPreparation.nextSession.hpSupportValueReadSession. CE, other families and native/recovery remain separate. Audit timeout and whole closure gates remain open.",
+    "nextSession": "Support ten-cell selected operation actual HP read and committed consumption are proved for five original requests; nine cells have 45 normal nonselections. See boundedUnits[52].hpPublishedSupportValueReadCheckpoint. Step2/TSK-08 remain open for CE separate owner, other native/recovery and whole audit/ratchet/legacy/formal performance/final quality gates; TSK-09.1/09 blocked.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
-        "detail": "HP canonical writer486/7470 and 54 groups, explicit HP dependency557 (writer486/condition10/value30/OC-rate25/hpRatioLow6), transfer2 and schema-legal fixedSelf3 are recorded in boundedUnits[52] checkpoints. Original control 3182 requests/488 bindings precede the support result. NP2 remaining variants have normal nonselection proof; OC25 has one selected cell and 240 normal other-cell nonselections, with no downstream rate read on those terminal actions. Current support value-expression ten cells have original support five requests, five selected level-10 preparation cells and 45 normal other-cell nonselections; native step0/notApplicable and physical HP read unobserved. See boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint. CE condition one cell belongs to another craftEssence owner. Whole actual-read/native/recovery, audit timeout, ratchets, legacy, formal performance and final quality remain open."
+        "detail": "HP canonical writer486/7470 and 54 groups, explicit HP dependency557, transfer2 and schema-legal fixedSelf3 are retained. Original control3182 requests/488 bindings precede support. NP and OC selection proof remains scoped. Support value-expression ten cells have five original-request actual HP read and committed consumption events on one selected level-10 cell plus45 normal nonselections; preparation native0/notApplicable is separate. CE condition one cell is a craftEssence owner. Whole native/recovery/other-owner, first audit timeout, ratchets, legacy, formal performance and final quality remain open; see boundedUnits[52].hpPublishedSupportValueReadCheckpoint."
       },
       {
         "work": "Whole ratchet and diagnostic/artifact closure",
@@ -27549,6 +27727,7 @@
     "asOfPublishedDependencyRemainderCheckpointReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint",
     "asOfHpNpVariantSelectionCheckpointReference": "boundedUnits[52].hpPublishedNpVariantSelectionCheckpoint",
     "asOfOcRateSelectionCheckpointReference": "boundedUnits[52].hpPublishedOcRateSelectionCheckpoint",
-    "asOfSupportValueCheckpointReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint"
+    "asOfSupportValueCheckpointReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint",
+    "asOfSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint"
   }
 }

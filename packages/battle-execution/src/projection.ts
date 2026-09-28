@@ -89,6 +89,7 @@ export function selectionGroupsForCondition(
 export function resolveModifierValue(
   operation: Extract<BattleOperation, { kind: 'addModifier' }>,
   state: ExecutableBattleState,
+  observeHpRead?: (read: { permille: number | null; value: number | null }) => void,
 ): number | null {
   const expression = operation.valueExpression;
   if (!expression) return operation.valuePermille;
@@ -116,8 +117,9 @@ export function resolveModifierValue(
     expression.quantitySource.kind === 'attackerHpPermille'
       ? state.quantities.attackerHpPermille
       : hpPermille(state.hp?.actors[expression.quantitySource.actorId]);
-  if (hp === null) return null;
-  return evaluateHpValueExpression(expression, hp);
+  const value = hp === null ? null : evaluateHpValueExpression(expression, hp);
+  observeHpRead?.({ permille: hp, value });
+  return value;
 }
 
 export function createOperationProjection(

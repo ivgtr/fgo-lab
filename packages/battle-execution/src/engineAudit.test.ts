@@ -11,6 +11,7 @@ import { compareCandidateResults } from './candidateComparison';
 import { prepareCandidateExecution } from './candidatePreparation';
 import { validateCandidateSelections } from './candidateSelectionValidation';
 import { resolveCandidateSelections } from './candidateSelection';
+import { hpCandidateObservationFor } from './hpExecutionObservation';
 
 const operation: BattleOperation = {
   operationId: 'operation:attack',
@@ -222,6 +223,15 @@ describe('public ordered execution audit parity', () => {
   });
 
   it('rolls back a partially attempted transaction and keeps recovery order with audit parity', () => {
+    const hpOperation: BattleOperation = {
+      ...operation,
+      valueExpression: {
+        kind: 'inverseHpLinear',
+        basePermille: 100,
+        bonusAtZeroHpPermille: 300,
+        quantitySource: { kind: 'attackerHpPermille' },
+      },
+    };
     const missing: BattleOperation = {
       ...operation,
       operationId: 'missing',
@@ -234,7 +244,7 @@ describe('public ordered execution audit parity', () => {
       order: 3,
       source: { ...operation.source, transactionGroupId: 'recovery' },
     };
-    const plan = prepared([operation, missing, recovery]);
+    const plan = prepared([hpOperation, missing, recovery]);
     const audited = executeOrderedScenarioWithAuditObservation(plan, inputs);
     expect(audited.execution).toEqual(executeOrderedScenario(plan, inputs));
     expect(audited.execution.operations.map(({ outcome }) => outcome)).toEqual([
@@ -252,6 +262,18 @@ describe('public ordered execution audit parity', () => {
       },
       { outcome: 'committed', operationIds: ['recovery'] },
     ]);
+    const read = hpCandidateObservationFor(audited.observation.candidateState)?.valueReads[0];
+    expect(read).toMatchObject({
+      operation: hpOperation,
+      operationSequence: 0,
+      operationGroupIndex: 0,
+      permille: 1000,
+      value: 100,
+      contributionIncluded: true,
+      modifierAppended: true,
+    });
+    expect(read?.result.outcome).toBe('applied');
+    expect(audited.observation.candidateState?.executionGroups[0]?.outcome).toBe('rolledBack');
     expect(audited.observation.operationEvents.map(({ operationId }) => operationId)).toEqual([
       operation.operationId,
       'missing',

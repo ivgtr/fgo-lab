@@ -2327,11 +2327,67 @@ describe('production master inventory ratchet', () => {
         ),
       ).toHaveLength(supportHpRequests.length);
       expect(
+        supportSelections
+          .filter((selection) => selection.disposition === 'selectedCellNoNativeStep')
+          .every(
+            (selection) =>
+              'actualRead' in selection &&
+              typeof selection.actualRead === 'object' &&
+              selection.actualRead.consumed,
+          ),
+      ).toBe(true);
+      expect(
         supportSelections.filter((selection) => selection.disposition === 'otherCellSelected'),
       ).toHaveLength(9 * supportHpRequests.length);
       expect(
         supportHpCoverage.bindings.filter((binding) => binding.stage === 'selectedPreparationCell'),
       ).toHaveLength(supportHpRequests.length);
+      const valueReads = supportHpCoverage.bindings.filter(
+        (binding) => binding.stage === 'actualValueRead',
+      );
+      expect(valueReads).toHaveLength(supportHpRequests.length);
+      expect(
+        valueReads.every(
+          (binding) =>
+            binding.operation?.kind === 'addModifier' &&
+            binding.operation.source.origin === 'support' &&
+            binding.operation.source.sourceId === '300900' &&
+            binding.operation.source.skillId === '49650' &&
+            binding.operation.source.effectOccurrenceId === '23498:0',
+        ),
+      ).toBe(true);
+      expect(
+        hpDeclarations.every(
+          (declaration) =>
+            declaration.operation?.kind === 'damageModifier' &&
+            declaration.operation.route.eligibility.kind === 'requiredRecipient' &&
+            declaration.operation.route.eligibility.recipient === 'attacker',
+        ),
+      ).toBe(true);
+      expect(
+        valueReads.map((binding) => ({
+          path: binding.declaration.path,
+          actor: binding.actor,
+          recipient: binding.recipient,
+          detail: binding.detail,
+        })),
+      ).toEqual(
+        Array.from({ length: supportHpRequests.length }, () => ({
+          path: 'execution.0.valueExpressions.0.9',
+          actor: 'attacker',
+          recipient: 'partyMember',
+          detail: {
+            selectedCellPath: 'execution.0.valueExpressions.0.9',
+            permille: 1000,
+            resolvedValue: 0,
+            operationOutcome: 'applied',
+            contributionIncluded: true,
+            modifierAppended: true,
+            transaction: 'committed',
+            consumed: true,
+          },
+        })),
+      );
       expect(
         supportHpCoverage.bindings
           .filter((binding) => binding.stage === 'selectedPreparationCell')
@@ -2378,6 +2434,28 @@ describe('production master inventory ratchet', () => {
           reasons(
             supportHpBindings.bindings.map((binding) =>
               binding === selectedBinding ? (changed as typeof selectedBinding) : binding,
+            ),
+          ),
+        ).not.toEqual([]);
+      const selectedRead = supportHpBindings.bindings.find(
+        (binding) => binding.stage === 'actualValueRead',
+      )!;
+      expect(reasons(supportHpBindings.bindings.filter((b) => b !== selectedRead))).toContain(
+        'missingBinding',
+      );
+      expect(reasons([...supportHpBindings.bindings, selectedRead])).toContain('duplicateBinding');
+      for (const changed of [
+        { ...selectedRead, reference: { ...selectedRead.reference } },
+        { ...selectedRead, declaration: hpDeclarations[0]! },
+        { ...selectedRead, actor: 'support' },
+        { ...selectedRead, recipient: 'sourceSelf' },
+        { ...selectedRead, detail: { ...selectedRead.detail, transaction: 'rolledBack' } },
+        { ...selectedRead, detail: { ...selectedRead.detail, consumed: false } },
+      ])
+        expect(
+          reasons(
+            supportHpBindings.bindings.map((binding) =>
+              binding === selectedRead ? changed : binding,
             ),
           ),
         ).not.toEqual([]);

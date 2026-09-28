@@ -19,6 +19,7 @@ type Stage =
   | 'expressionContext'
   | 'selectedPreparationCell'
   | 'actualConditionRead'
+  | 'actualValueRead'
   | 'npEvaluation';
 export interface HpPublishedDependencyBinding {
   family: 'publishedDependency';
@@ -52,6 +53,7 @@ export type HpPublishedDependencyReason =
   | 'foreignReference'
   | 'bindingMismatch'
   | 'orderMismatch'
+  | 'valueReadMismatch'
   | 'npVariantSelectionMismatch';
 interface Failure {
   reason: HpPublishedDependencyReason;
@@ -158,7 +160,7 @@ export function hpPublishedDependencyBindings(
         fail('foreignDeclaration', `declarations.${index}.owner`);
     });
   }
-  requests.forEach(({ prepared, calculation }, requestIndex) => {
+  requests.forEach(({ prepared, calculation, ownerScope }, requestIndex) => {
     if (!calculation) {
       fail('requestOwnerMismatch', `requests.${requestIndex}.calculation`);
       return;
@@ -496,6 +498,81 @@ export function hpPublishedDependencyBindings(
         }),
       ),
     );
+    if (ownerScope === 'supportProjection')
+      candidates.forEach((captured) => {
+        const candidate = hpCandidateObservationFor(captured.candidateState);
+        candidate?.valueReads.forEach((read, position) => {
+          if (
+            !dependencies.some(
+              (declaration) =>
+                declaration.identity.kind === 'valueExpression' &&
+                sourceMatches(declaration, read.operation.source, null),
+            )
+          )
+            return;
+          const operation = ordered?.operations[read.operationSequence];
+          const group = captured.candidateState?.executionGroups[read.operationGroupIndex];
+          const event =
+            'operationEvents' in captured
+              ? captured.operationEvents[read.operationSequence]
+              : undefined;
+          const selected = bindings.filter(
+            (binding) =>
+              binding.requestIndex === requestIndex &&
+              binding.stage === 'selectedPreparationCell' &&
+              binding.sourceInstanceId === read.operation.source.sourceInstanceId &&
+              binding.declaration.identity.kind === 'valueExpression' &&
+              sourceMatches(binding.declaration, read.operation.source, null),
+          );
+          if (
+            !operation ||
+            operation !== read.operation ||
+            read.result.operation !== operation ||
+            event?.operationId !== operation.operationId ||
+            event.operationOutcome !==
+              (group?.outcome === 'rolledBack' ? 'unsupported' : read.result.outcome) ||
+            !group?.operationIds.includes(operation.operationId) ||
+            selected.length !== 1
+          ) {
+            fail('valueReadMismatch', `requests.${requestIndex}.valueReads.${position}`);
+            return;
+          }
+          const declaration = selected[0]!.declaration;
+          const committed = group.outcome === 'committed';
+          const consumed =
+            committed &&
+            read.result.outcome === 'applied' &&
+            read.contributionIncluded &&
+            read.modifierAppended &&
+            group.appliedOperationIds.includes(operation.operationId);
+          push(
+            declaration,
+            {
+              stage: 'actualValueRead',
+              position,
+              operation,
+              sequence: read.operationSequence,
+              group: read.operationGroupIndex,
+              sourceInstanceId: operation.source.sourceInstanceId,
+              actor: 'attacker',
+              actionId: null,
+              actionIndex: null,
+              reference: read,
+              detail: {
+                selectedCellPath: declaration.identity.path,
+                permille: read.permille,
+                resolvedValue: read.value,
+                operationOutcome: read.result.outcome,
+                contributionIncluded: read.contributionIncluded,
+                modifierAppended: read.modifierAppended,
+                transaction: group.outcome,
+                consumed,
+              },
+            },
+            captured.candidateIndex,
+          );
+        });
+      });
   });
   return { bindings, failures };
 }
@@ -566,6 +643,7 @@ export function reconcileHpPublishedDependencyCoverage(
     'expressionContext',
     'selectedPreparationCell',
     'actualConditionRead',
+    'actualValueRead',
     'npEvaluation',
   ];
   const directOwners = directScenarioOwnerIndex(requests);
@@ -779,6 +857,15 @@ export function reconcileHpPublishedDependencyCoverage(
       detail.native.status === 'committed' &&
       detail.native.outcomes.length > 0 &&
       detail.native.outcomes.every((outcome) => outcome.outcome === 'notApplicable');
+    const reads = observed.flatMap((candidate, readIndex) =>
+      candidate.requestIndex === requestIndex &&
+      candidate.stage === 'actualValueRead' &&
+      candidate.declaration === declaration
+        ? [{ candidate, readIndex }]
+        : [],
+    );
+    if (reads.length > 1) fail('valueReadMismatch', `requests.${requestIndex}.supportValueRead`);
+    const read = reads.length === 1 ? reads[0]! : null;
     return {
       requestIndex,
       disposition: noNativeStep
@@ -790,7 +877,21 @@ export function reconcileHpPublishedDependencyCoverage(
       reached,
       nativeStatus: detail.native.status,
       appendedActions: detail.appendedActions.length,
-      actualRead: 'unobserved' as const,
+      actualRead: read
+        ? {
+            status: 'attempted' as const,
+            binding: read.readIndex,
+            ...(read.candidate.detail as {
+              permille: number | null;
+              resolvedValue: number | null;
+              operationOutcome: string;
+              contributionIncluded: boolean;
+              modifierAppended: boolean;
+              transaction: 'committed' | 'rolledBack';
+              consumed: boolean;
+            }),
+          }
+        : ('unobserved' as const),
       recovery: 'unobserved' as const,
     };
   };

@@ -2,8 +2,15 @@ import {
   applyObservedNpDamage,
   evaluateObservedCondition,
   beginHpCandidateCapture,
+  captureHpValueRead,
+  resolveObservedModifierValue,
 } from './hpExecutionObservation';
-import type { ExecutionIssue, OperationResult } from './contracts';
+import type {
+  ExecutableBattleState,
+  ExecutionIssue,
+  OperationResult,
+  BattleOperation,
+} from './contracts';
 import { markerOperationDisposition, applyOrderedMarkerMutation } from './markerExecution';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
 import {
@@ -53,6 +60,24 @@ import {
   type PendingMutationAuditEvent,
   type CandidateExecutionWithAudit,
 } from './candidateStateAudit';
+
+function appendModifier(
+  state: ExecutableBattleState,
+  operation: Extract<BattleOperation, { kind: 'addModifier' }>,
+  value: number,
+): void {
+  state.modifiers = [
+    ...state.modifiers,
+    {
+      operationId: operation.operationId,
+      source: operation.source,
+      modifier: operation.modifier,
+      valuePermille: value,
+      card: operation.card,
+      order: operation.order,
+    },
+  ];
+}
 
 export function executeOrderedScenarioCandidates(
   prepared: PreparedOrderedScenario,
@@ -165,7 +190,12 @@ function executeOrderedScenarioCandidateInternal(
         operationSequence,
         groupIndex,
       );
-      const resolvedModifierValue = modifierValue(operation, state);
+      const observedValue = hpCapture
+        ? resolveObservedModifierValue(operation, state, hpCapture)
+        : undefined;
+      const resolvedModifierValue = observedValue
+        ? observedValue.value
+        : modifierValue(operation, state);
       const decisionConditionSatisfied = userConditionMet(operation, condition, choice, state);
       const localConditionSatisfied =
         decisionConditionSatisfied || activation.assumesLocalCondition;
@@ -242,17 +272,7 @@ function executeOrderedScenarioCandidateInternal(
             });
           if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (operation.kind === 'addModifier' && contributionIncluded)
-          candidateState.modifiers = [
-            ...candidateState.modifiers,
-            {
-              operationId: operation.operationId,
-              source: operation.source,
-              modifier: operation.modifier,
-              valuePermille: resolvedModifierValue!,
-              card: operation.card,
-              order: operation.order,
-            },
-          ];
+          appendModifier(candidateState, operation, resolvedModifierValue!);
         else if (operation.kind === 'changeModifierRate' && contributionIncluded)
           candidateState.modifierRates = {
             ...candidateState.modifierRates,
@@ -318,22 +338,29 @@ function executeOrderedScenarioCandidateInternal(
         }
       }
       if (issue) groupIssues.push(issue);
-      results.push(
-        createOperationResult({
-          operation,
-          outcome,
-          code,
-          condition,
-          choice,
-          state,
-          decisions,
-          resolvedModifierValue,
-          activeDecisionSource: activeDecisionSourceInstances.has(
-            operation.source.sourceInstanceId,
-          ),
-          attackerClass,
-          issue,
-        }),
+      const result = createOperationResult({
+        operation,
+        outcome,
+        code,
+        condition,
+        choice,
+        state,
+        decisions,
+        resolvedModifierValue,
+        activeDecisionSource: activeDecisionSourceInstances.has(operation.source.sourceInstanceId),
+        attackerClass,
+        issue,
+      });
+      results.push(result);
+      captureHpValueRead(
+        hpCapture,
+        operation,
+        result,
+        operationSequence,
+        groupIndex,
+        state,
+        observedValue,
+        contributionIncluded,
       );
     }
     if (groupIssues.length === 0) {

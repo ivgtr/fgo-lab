@@ -46,8 +46,11 @@ export function includedByPolicy(
 export function modifierValue(
   operation: BattleOperation,
   state: ExecutableBattleState,
+  observeHpRead?: (read: { permille: number | null; value: number | null }) => void,
 ): number | null {
-  return operation.kind === 'addModifier' ? resolveModifierValue(operation, state) : null;
+  return operation.kind === 'addModifier'
+    ? resolveModifierValue(operation, state, observeHpRead)
+    : null;
 }
 
 export function userConditionMet(

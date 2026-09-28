@@ -1,6 +1,6 @@
 import { appendConditionReadAudit, observeScalarNp } from './candidateStateAudit';
 import type { MutableCandidateStateAudit } from './candidateStateAudit';
-import { evaluateConditionAgainstKnownFacts } from './candidateOperationContext';
+import { evaluateConditionAgainstKnownFacts, modifierValue } from './candidateOperationContext';
 import { operationConditionResult } from './operationResult';
 import { applyNoblePhantasmDamage } from './npDamageExecution';
 import type { EffectDecision, BattleOperation } from './contracts';
@@ -188,6 +188,17 @@ export interface HpNpEvaluation {
 }
 export interface HpCandidateObservation {
   seed: { hp: HpState | undefined; permille: number | null };
+  valueReads: {
+    operation: Extract<BattleOperation, { kind: 'addModifier' }>;
+    result: OperationResult;
+    operationSequence: number;
+    operationGroupIndex: number;
+    state: ExecutableBattleState;
+    permille: number | null;
+    value: number | null;
+    contributionIncluded: boolean;
+    modifierAppended: boolean;
+  }[];
   reads: {
     operationId: string;
     operationSequence: number;
@@ -211,6 +222,7 @@ const candidates = new WeakMap<object, HpCandidateObservation>();
 export function beginHpCandidateCapture(owner: object, state: ExecutableBattleState) {
   const observation: HpCandidateObservation = {
     seed: { hp: state.hp, permille: state.quantities.attackerHpPermille },
+    valueReads: [],
     reads: [],
     nps: [],
   };
@@ -219,6 +231,49 @@ export function beginHpCandidateCapture(owner: object, state: ExecutableBattleSt
 }
 export function hpCandidateObservationFor(owner: object | undefined) {
   return owner ? candidates.get(owner) : undefined;
+}
+
+export function resolveObservedModifierValue(
+  operation: BattleOperation,
+  state: ExecutableBattleState,
+  observation: HpCandidateObservation | undefined,
+) {
+  let read: { permille: number | null; value: number | null } | undefined;
+  const value = modifierValue(
+    operation,
+    state,
+    observation ? (event) => (read = event) : undefined,
+  );
+  return { value, read, state, modifierCountBefore: state.modifiers.length };
+}
+
+export function captureHpValueRead(
+  observation: HpCandidateObservation | undefined,
+  operation: BattleOperation,
+  result: OperationResult,
+  sequence: number,
+  group: number,
+  after: ExecutableBattleState,
+  observed: ReturnType<typeof resolveObservedModifierValue> | undefined,
+  contributionIncluded: boolean,
+) {
+  if (!observation || !observed?.read || operation.kind !== 'addModifier') return;
+  const { read, state, modifierCountBefore } = observed;
+  observation.valueReads.push({
+    operation,
+    result,
+    operationSequence: sequence,
+    operationGroupIndex: group,
+    state,
+    ...read,
+    contributionIncluded,
+    modifierAppended:
+      result.outcome === 'applied' &&
+      contributionIncluded &&
+      after.modifiers.length === modifierCountBefore + 1 &&
+      after.modifiers.at(-1)?.operationId === operation.operationId &&
+      after.modifiers.at(-1)?.valuePermille === read.value,
+  });
 }
 
 export function observeHpNp(
