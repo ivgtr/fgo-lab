@@ -199,6 +199,14 @@ it(
     ).toBe(true);
     const expressionRows = ledger.declarations.filter((d) => d.identity.kind === 'valueExpression');
     expect(expressionRows).toHaveLength(10);
+    expect(expressionRows.every((d) => isDeepStrictEqual(d.directScenarioOwnerRequests, [0]))).toBe(
+      true,
+    );
+    expect(
+      ledger.declarations
+        .filter((d) => d.identity.kind === 'hpRatioLow')
+        .every((d) => isDeepStrictEqual(d.directScenarioOwnerRequests, [0])),
+    ).toBe(true);
     expect(
       expressionRows.filter((d) =>
         d.stages.some(
@@ -297,6 +305,7 @@ it('keeps normal NP exclusion and absent request stages distinct from consumptio
   const absent = reconcileHpPublishedDependencyCoverage(f.declarations, [], []);
   expect(absent.gate.passed).toBe(true);
   expect(absent.requestCount).toBe(0);
+  expect(absent.declarations.every((d) => d.directScenarioOwnerRequests.length === 0)).toBe(true);
   expect(
     absent.declarations.every((d) => d.stages.every((s) => s.observation === 'unobserved')),
   ).toBe(true);

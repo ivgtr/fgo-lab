@@ -1545,6 +1545,32 @@ describe('production master inventory ratchet', () => {
       ).toBe(true);
       expect(hpDependencyCoverage.gate.failures).toEqual([]);
       expect(hpDependencyCoverage.productClosure).toBe(false);
+      const unconnectedHpDependencies = (kind: string) =>
+        hpDependencyCoverage.declarations.filter(
+          (declaration) =>
+            declaration.identity.kind === kind &&
+            declaration.stages.every((stage) => stage.observation === 'unobserved'),
+        );
+      expect(
+        unconnectedHpDependencies('condition')
+          .filter((declaration) => declaration.identity.origin === 'craftEssence')
+          .map((declaration) => declaration.directScenarioOwnerRequests.length),
+      ).toEqual([0]);
+      expect(
+        unconnectedHpDependencies('hpRatioLow')
+          .map((declaration) => declaration.directScenarioOwnerRequests.length)
+          .sort((a, b) => a - b),
+      ).toEqual([2, 4]);
+      expect(
+        unconnectedHpDependencies('valueExpression').map(
+          (declaration) => declaration.directScenarioOwnerRequests.length,
+        ),
+      ).toEqual(Array(10).fill(0));
+      expect(
+        unconnectedHpDependencies('ocRateExpression').map(
+          (declaration) => declaration.directScenarioOwnerRequests.length,
+        ),
+      ).toEqual(Array(25).fill(10));
       const selectedExpectedIdentities = expectedUserControlIdentities.map((identity) => ({
         ...identity,
         profileKey:

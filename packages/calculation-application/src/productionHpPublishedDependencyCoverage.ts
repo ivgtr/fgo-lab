@@ -91,6 +91,26 @@ const recipient = (declaration: HpProofDeclaration) => {
       : (declaration.effect?.requirement.recipient ?? null);
 };
 
+/** Scenario ownership is weaker than canonical selection or an execution read. */
+function directScenarioOwnerIndex(requests: readonly HpPublishedDependencyRequest[]) {
+  const owners = new Map<string, number[]>();
+  const add = (origin: HpProofDeclaration['identity']['origin'], owner: string, index: number) => {
+    const key = JSON.stringify([origin, owner]);
+    const indices = owners.get(key);
+    if (indices) indices.push(index);
+    else owners.set(key, [index]);
+  };
+  requests.forEach(({ prepared }, index) => {
+    const scenario = prepared.scenario;
+    if (scenario.mode !== 'resolved') return;
+    for (const origin of ['attacker', 'passive', 'np'] as const)
+      add(origin, scenario.attacker.servantId, index);
+    if (scenario.craftEssence) add('craftEssence', scenario.craftEssence.craftEssenceId, index);
+    if (scenario.mysticCode) add('mysticCode', scenario.mysticCode.mysticCodeId, index);
+  });
+  return owners;
+}
+
 /** Borrow existing captures only. A canonical context is neither selection nor an actual HP read. */
 export function hpPublishedDependencyBindings(
   declarations: readonly HpProofDeclaration[],
@@ -524,6 +544,7 @@ export function reconcileHpPublishedDependencyCoverage(
     'actualConditionRead',
     'npEvaluation',
   ];
+  const directOwners = directScenarioOwnerIndex(requests);
   return {
     requestCount: requests.length,
     requests: requests.map(({ prepared, calculation }, index) => ({
@@ -542,6 +563,8 @@ export function reconcileHpPublishedDependencyCoverage(
         identity: d.identity,
         value: d.value,
         operation: d.operation,
+        directScenarioOwnerRequests:
+          directOwners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? [],
         stages: stages.map((stage) => {
           const indices = observed.flatMap((b, index) =>
             b.declaration === d && b.stage === stage ? [index] : [],
@@ -571,7 +594,7 @@ export function reconcileHpPublishedDependencyCoverage(
       'successfulRecoveryCoverage',
     ],
     qualification:
-      'Correspondence within the original control producer requests only. Declaration, selected cell, reached step, native action, append, actual read and NP evaluation are distinct; absent stages are not zero, unsupported or product exclusion.',
+      'Correspondence within the original control producer requests only. Direct scenario owner is not variant or cell selection. Declaration, selected cell, reached step, native action, append, actual read and NP evaluation are distinct; absent stages are not zero, unsupported or product exclusion.',
     productClosure: false as const,
     gate: { passed: failures.length === 0, failures, firstDifference: failures[0] ?? null },
   };

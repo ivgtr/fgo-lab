@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.114"
+document_version: "1.7.115"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3947,3 +3947,11 @@ units0..51とunit52の全既存checkpointをdecoded完全一致で保持する�
 次の実装指示正本は[parity evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.hpPublishedDependencyRemainderSession`。まず現コードの生成・利用経路、宣言／request／capture／proof／artifact identity、正常除外と未観測、Task checklist／Done gate／Contract closure matrixと入力lifecycleの8義務を照合した設計・検証・TSK-08 closure可否の計画を提示し、利用者確認を待つ。確認前は編集と実行診断をせず、必要な最小診断は比較入力・判断・停止境界を先に提示する。確認後は承認された同coverage責務の必要接続、焦点の小型反証、影響suite、旧新artifact完全比較、既存Task／evidence更新、対象限定local commitまで同sessionで進める。旧selector拡張・元owner再実行・新期待値生成器・巨大proof再decodeを既定案にしない。
 
 expression実read observer、support修復前capture、新native／recovery owner、別familyや対象外ownerの変更が必要なら根拠・未達条件・次の限定操作を記録して止める。全ratchet、legacy固有coverage、正式性能、README最終quality、統合counter／digest／全receiptを既存有効証拠と同責務で閉じられ、対象内Blocking 0かつ時間余裕がある場合だけTSK-08完了を目指す。現時点で全体closureの根拠はない。未達があれば依存quality／製品closureは始めず製品未完了checkpointとする。60分で既存正本へcheckpoint、90分では現在のatomic actionを終えて引き継ぐ。整理commitは文書だけ、pushなし。
+
+### Published HP依存の元request owner対応checkpoint（2026-09-28）
+
+開始HEAD `7a3c0a5899c6720164e5e718346cfffa7f03ee13`、index／tracked／untrackedはclean。利用者確認後、元control producerの3182 requestと共有557宣言に対し、direct scenario ownerのrequest indexを既存coverage sidecarへ追加した。ownerの存在をvariant／cell選択、実read、NP評価へ昇格させず、元478 bindingと各stageは不変。未接続CE条件1とvalue10cellのdirect owner requestは0、NP残2variantは各2／4、OC-rate25cellは各10である。これは当該control母集団の境界であり、unsupported／製品対象外の証拠ではない。新observer、別family、元owner再実行、HP意味論変更は行っていない。
+
+局所unit5、元control audit7、typecheck／対象lint・formatが通過した。最終auditの第1 testは既存60秒timeoutに対し59.204秒で、最初の実行には60.048秒のtimeoutがあった。上限は変更していない。旧sidecar／fixture／否定artifactの既存decoded値・順序は追加field以外一致し、旧control artifact12件のbytes／SHAも一致した。新2runのrunner・disk25・test-owned receipt15に不一致はない。source／input／artifact identity、失敗履歴、旧新完全比較とTSK-08 checklist／Done gate／Contract closure matrix・入力lifecycle8義務の対応は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpPublishedDependencyRemainderCheckpoint`を正本とする。
+
+今回責務のBlockingは0だが、CE／valueの元request母集団、NP／OCのvariant・cell選択、expression実read、全native noncommit／成功recoveryは未達。全ratchet、typed診断・完全artifact到達、legacy固有coverage、正式3-run性能、README最終quality、統合counter／digest／全receiptも未達または未照合のため、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。依存quality・製品closureは開始しない。次は別の限定計画で元producer母集団と必要observer／ownerを判断する。今回の成果は対象限定local commitとし、pushしない。
