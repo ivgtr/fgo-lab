@@ -24003,13 +24003,14 @@
         },
         {
           "stage": 2,
-          "current": "Step 2 remains open. Completed units[0]..[51] and retained unit52 proofs remain separate. Support ten-cell proof establishes five actual HP reads and committed consumptions on one selected level-10 cell plus 45 normal nonselections; preparation native is notApplicable and recovery unobserved. Current-source control audit now passes 8/8 within unchanged first-test 60s and publishes its full 3182-request/488-binding sidecar with 14/14 receipts. This closes the timeout/artifact path only, not CE/other owner/native/recovery or whole ratchet closure. See boundedUnits[52].controlAuditArtifactCheckpoint.",
-          "nextBoundedScope": "One separately owned Published CE attacker-HP condition proof: connect its original craftEssence scenario request and existing execution capture to the shared declaration/typed gate, after a code-based plan and user confirmation. Do not chain other HP families, native/recovery, legacy cleanup or dependent quality. Aim at TSK-08 completion only if every remaining obligation independently has valid evidence and in-scope Blocking0.",
-          "nextScopeQualification": "handoffPreparation.nextSession.ceConditionOwnerSession",
+          "current": "Step 2 remains open. Completed units[0]..[51] and retained unit52 proofs are separate. CE condition original-owner proof at 95b5b3c adds four prepared/captured requests and eight bindings to the current control sidecar: 3186 requests/496 bindings/71 non-writer declarations, audit8/8 with first test32.297s<60s, 14/14 receipts. CE physical HP501 false/nonconsumed and HP500 true/committed are distinguished. Prior support ten-cell proof has five actual reads/commits on one selected cell and 45 normal nonselections, with preparation native notApplicable and recovery unobserved. Other HP owner/action/lifetime/recipient/native/recovery and whole ratchet/legacy/formal/final gates remain open. See boundedUnits[52].ceConditionOwnerCheckpoint and remainingWorkSummary.",
+          "nextBoundedScope": "Plan from current producer/capture/consumer code and retained evidence which one remaining HP owner or native/recovery path is a genuine unclosed Step2 obligation. Present the one-session implementation/verification boundary and whole-TSK08 closure mapping for user confirmation before any edit/test. After confirmation implement only the selected coherent unit; if all global obligations independently close, consider final gates, otherwise leave a product-incomplete checkpoint.",
+          "nextScopeQualification": "handoffPreparation.nextSession.postCeStepReconciliationSession",
           "activeUnit52ScopeReference": "boundedUnits[52]",
           "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint",
           "hpSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint",
-          "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint"
+          "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
+          "ceConditionOwnerCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint"
         },
         {
           "stage": 3,
@@ -24018,14 +24019,14 @@
       ],
       "latestBoundedUnit": 51,
       "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary. See boundedUnits[52].consumerResponsibilityConvergence/capacityRestorationComparisonCheckpoint/committedCapacityMaterializationCheckpoint for retained scoped checkpoints,not product closure. Current outer attempt checkpoint:original177+5=182/control7 passed,old177 full values/bytes/SHA identical,1854 negatives/58824 failure checks,199 final attempt+control receipts/error0;published capacity selected0/excludedNp1 remains a distinct boundary.",
-      "nextBoundedUnit": "unit52 Published CE HP condition original-owner/capture proof; current-code plan and confirmation first",
+      "nextBoundedUnit": "unit52 post-CE Step2 remaining HP owner/native/recovery reconciliation and one bounded proof; current-code plan and confirmation first",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "handoffPreparation.nextSession.ceConditionOwnerSession",
+      "nextScopeQualification": "handoffPreparation.nextSession.postCeStepReconciliationSession",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-      "asOfCurrentCheckpoint": "d91b1281c2283f8743b90d0315f115d09250aa75",
+      "asOfCurrentCheckpoint": "95b5b3ca58faa691ec745cca990f82f7ac58c68a",
       "asOfGiveCheckpointReference": "boundedUnits[52].giveCommittedForwardCheckpoint",
       "asOfGiveCheckpointCommit": "ea7290d79230931ba802d6f735541f36ec25ecb1",
       "asOfGiveNativeCheckpointReference": "boundedUnits[52].giveNativeNoncommitCheckpoint",
@@ -24094,8 +24095,8 @@
       "implementationReference": "boundedUnits[40]: Committed addQuantity scalar ordered NP consumption shared audit consumer closure"
     },
     "nextSession": {
-      "status": "Next one-session authority is giveNativeNoncommitSession. Current-code plan and user confirmation precede implementation.",
-      "name": "Give native changed-attempt/noncommit isolation coverage and shared audit",
+      "status": "Post-CE Step2 remaining owner planning; code-based plan and user confirmation precede implementation.",
+      "name": "One bounded remaining HP owner or native/recovery proof, with conditional TSK-08 closure",
       "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
       "historicalPriorCompletionRecord": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
       "historicalScope": "One session: origin attacker skill; hpModifier/action maximumFixed/sign+1|-1/lifetime active/route.target partyMember/selection selectedAlly/bounds minimum:null maximum:null/useCondition omitted or always. Original selectedAlly recipient resolves to attacker; do not generalize selection or enumerate party actors. Fixed actor/form/traits/class/eligibility, initial HP and outside-scope HP modifier environment per representative. Connect canonical selection and original modifier append/current+maximum HP/receipt through native commit/reducer retention and same selected command/execution prepared/application/direct result, actual later HP condition read and hpRatioLow NP where that execution provides them; preserve no-reader/no-NP boundaries.",
@@ -24842,8 +24843,8 @@
         "nextOperationReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint.nextOperation"
       },
       "historicalRootQualification": "Historical-prefixed plans remainhistory. productionAuditInputLifecycleSession wasconfirmedandexecuted;currentresultandnextlimitedoperationareownedby boundedUnits[52].productionAuditInputLifecycleCheckpoint.",
-      "currentCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
-      "currentSessionReference": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
+      "currentCheckpointCommit": "95b5b3ca58faa691ec745cca990f82f7ac58c68a",
+      "currentSessionReference": "handoffPreparation.nextSession.postCeStepReconciliationSession",
       "capacityAttemptMaterializationSession": {
         "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -26963,6 +26964,19 @@
         "performanceBoundary": "Only if calculation structure, capture or product hot path changes, use the same input and affinity0-7, production4/unit4/audit1 workers and budget for one baseline/candidate live-phase diagnostic each. This does not replace formal before/after three-run contracts. The control first-test limit stays 60000ms. The current pnpm-workspace setting requires dependency synchronization to a writable /tmp store on drift; use ordinary pnpm after synchronization and do not revive the historical shim fallback.",
         "sessionBoundary": "At 60 minutes checkpoint in existing Task/evidence; at 90 minutes finish the current atomic action and hand off. Do not start another family, an extra quality retry or an independent investigation.",
         "executionCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint"
+      },
+      "postCeStepReconciliationSession": {
+        "status": "read-only Step reconciliation and one-session scope preparation; no new source test/producer/audit/quality/live timing or implementation in this preparation",
+        "preparationHead": "95b5b3ca58faa691ec745cca990f82f7ac58c68a",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "stepDecision": "Step0 baseline/contracts, Step1 V41 version marker with V40 retention and explicit V41 recomputation, and Step3 revised matrix/eligibility remain established at their recorded identities. Step2 and TSK-08 in_progress; TSK-09.1/09 blocked. CE owner unit at boundedUnits[52].ceConditionOwnerCheckpoint is complete locally and cannot be the next unit.",
+        "verifiedIdentity": "Clean HEAD/index/tracked/untracked at preparation. CE checkpoint source3/master1/current manifest+sidecar2 bytes/SHA match disk. Current control sidecar has 3186 requests, 496 bindings, 71 non-writer declaration rows; gate passed/failures0/firstDifference null. Existing Step3 eight shards have no new identity doubt and were not regenerated.",
+        "scopeReconciliation": "Current control sidecar has two all-stage-unobserved hpRatioLow rows with direct requests, each explicitly otherVariantSelected; 24 all-stage-unobserved OC-rate rows are other-cell selections in the retained OC proof. Ten attacker value-expression rows lack direct control requests, but the separate support original-request proof already establishes five selected-cell physical reads/committed consumptions and 45 other-cell nonselections. None of these row counts alone proves a missing product behavior or whole HP coverage. Published CE one condition row is now connected. Remaining Step2 obligations are original owner/action/lifetime/recipient and native/noncommit/recovery coverage reconciliation; whole ratchets, legacy and final gates are separate.",
+        "firstDeliverable": "From current code and valid identities, map TSK-08 checklist/Done gate/Contract closure matrix and productionAuditInputLifecycleCheckpoint.closureReconciliation eight obligations to established evidence, an actual gap, or a separate owner. Identify one highest-value directly owned remaining HP path for a single session; show producer, capture lifetime, consumer, typed declaration/operation join, change candidates, local falsifiers, affected suite, artifact comparison and performance impact. Present the plan to the user and wait for confirmation. Before confirmation do read-only inspection/checksums only; if execution diagnosis is indispensable state minimal command, comparison input, decision and stop boundary first.",
+        "afterConfirmation": "Implement and verify the confirmed one coherent owner/path only using the shared inventory, ledger, typed gate and manifest/artifact owner. Distinguish declaration/available action/selected/reached/native attempt/physical read/committed consumption/normal exclusion/transactional rejection/recovery. Fail closed on missing/duplicate/unmatched/foreign/order/typed first difference. Reuse completed units and matched artifacts; do not regenerate Step3 shards without an identity issue. Compare complete decoded old/new artifacts, order/counts/typed reason/first difference, bytes/SHA and all receipts. Update existing Task/evidence and make a scoped local checkpoint commit, no push.",
+        "conditionalClosure": "Aim to complete TSK-08 only if every checklist, Done gate, Contract matrix and lifecycle obligation has valid current evidence, in-scope Blocking0 and time for required affected audit, formal before/after three-run performance, README quality and integrated counters/digests/all receipts. One HP proof or a successful test count cannot imply that. If another family/native/recovery/legacy or global gate remains, do not start dependent quality; document the gap and next limited operation in existing Task/evidence, commit product-incomplete checkpoint, keep TSK-09.1/09 blocked.",
+        "performanceAndRunner": "For calculation structure/capture/product hot-path changes only, diagnose same-input affinity0-7 production4/unit4/audit1 worker live phases with one baseline/candidate run at the same budget; not a substitute for formal three runs. Preserve control first-test 60000ms. Confirm current pnpm workspace/dependency setting; no historical shim fallback.",
+        "sessionBoundary": "Checkpoint existing Task/evidence by 60 minutes; at 90 minutes finish the current atomic action and hand off. Do not chain another family or optional quality retries."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -27934,11 +27948,11 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Published CE attacker-HP condition owner/capture proof is complete at boundedUnits[52].ceConditionOwnerCheckpoint. Separate HP owners/native/recovery, whole ratchets/legacy, formal performance, README quality and integrated closure remain open. Step2 and TSK-08 in_progress; TSK-09.1/09 blocked.",
+    "nextSession": "Step0/1/3 remain established; CE condition original-owner/capture proof completed at 95b5b3c and current control sidecar is 3186 requests/496 bindings with 14/14 receipts. Step2 and TSK-08 remain open. Next session must plan from current code one genuine remaining HP owner/native/recovery gap, obtain user confirmation, then implement/verify only that unit; see handoffPreparation.nextSession.postCeStepReconciliationSession. Whole ratchet/legacy/formal performance/README quality/integrated closure remain separate. TSK-09.1/09 blocked.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
-        "detail": "HP canonical writer486/7470 and 54 groups, explicit HP dependency557, transfer2 and schema-legal fixedSelf3 are retained. Current-source control3182 requests/488 bindings and complete sidecar/14 receipts pass after the 60s test-owner split; this does not broaden support read coverage. NP and OC selection proof remains scoped. Support ten cells have five original-request actual HP read and committed consumption events on one selected level-10 cell plus45 normal nonselections; preparation native0/notApplicable is separate. CE condition one cell is a craftEssence owner. Whole native/recovery/other-owner, ratchets, legacy, formal performance and final quality remain open; see boundedUnits[52].controlAuditArtifactCheckpoint."
+        "detail": "HP canonical writer486/7470 and 54 groups, explicit HP dependency557, transfer2 and schema-legal fixedSelf3 are retained. Current-source control3186 requests/496 bindings and complete sidecar/14 receipts pass; CE original owner has four selected physical reads (two false at501/nonconsumed, two true at500/committed). NP two all-stage-unobserved rows are otherVariantSelected; OC-rate24 are other-cell selections; support value-expression ten-cell proof has five original physical reads/committed consumptions on one selected cell plus45 normal nonselections. These scoped proofs do not close other HP owner/action/lifetime/recipient native/noncommit/recovery or whole mutation coverage. See boundedUnits[52].ceConditionOwnerCheckpoint and productionAuditInputLifecycleCheckpoint.closureReconciliation."
       },
       {
         "work": "Whole ratchet and diagnostic/artifact closure",
@@ -27979,7 +27993,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "boundedUnits[52].ceConditionOwnerCheckpoint",
+    "nextSessionReference": "handoffPreparation.nextSession.postCeStepReconciliationSession",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
@@ -28001,6 +28015,7 @@
     "asOfOcRateSelectionCheckpointReference": "boundedUnits[52].hpPublishedOcRateSelectionCheckpoint",
     "asOfSupportValueCheckpointReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint",
     "asOfSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint",
-    "ceConditionOwnerCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint"
+    "ceConditionOwnerCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint",
+    "ceConditionOwnerCheckpointCommit": "95b5b3ca58faa691ec745cca990f82f7ac58c68a"
   }
 }
