@@ -27463,7 +27463,38 @@
         "afterConfirmation": "Implement only demonstrated direct gaps within existing matrix/gate/artifact or true legacy owner; use focused counterexamples and affected checks, compare full artifacts and receipts, update existing Task/evidence and make a scoped local commit. If all required obligations have same-final-identity Verified or reasoned Not applicable evidence, no TSK-08 Deferred/Blocking, and time remains, run applicable formal before/after 3-run performance, required affected audit, README quality and integrated counters/digests/all receipts toward completion.",
         "stopBoundary": "If separate HP/native/recovery owner, new game semantics, distinct family or unique legacy coverage needs independent work, record precise owner, evidence, unmet condition and next limited operation in existing Task/evidence, then stop with a product-incomplete checkpoint. Do not require read/recovery without downstream consumer, revive per-HP-action audit expansion, regenerate eight shards without concrete identity doubt, create a new generator/artifact authority, use historical pnpm shim fallback, relax first-control-test 60s limit, start dependent TSK-09 work or push. Checkpoint by 60 minutes; finish current atomic action at 90 minutes.",
         "currentPnpm": "pnpm-workspace.yaml verifyDepsBeforeRun: error; packageManager pnpm@11.20.0",
-        "sourceOfTruth": "AGENTS.md, README.md, docs/README.md, docs/requirements/development-execution-efficiency-requirements.md, relevant docs/guides/systematic-review-guidelines.md, docs/tasks/development-redesign-tasks.md TSK-08 and latest handoffs, docs/evidence/tsk-08-parity-ratchet.json relevant checkpoint keys"
+        "sourceOfTruth": "AGENTS.md, README.md, docs/README.md, docs/requirements/development-execution-efficiency-requirements.md, relevant docs/guides/systematic-review-guidelines.md, docs/tasks/development-redesign-tasks.md TSK-08 and latest handoffs, docs/evidence/tsk-08-parity-ratchet.json relevant checkpoint keys",
+        "approvedSessionResult": {
+          "status": "product_incomplete_checkpoint_separate_owner_boundary",
+          "startHead": "a9f7c88cd7d7603e64d1cd9a684c761b4f60d076",
+          "identity": "Start index, tracked diff and untracked clean. The source, two manifests and eight diagnostic artifacts in postHpOperationClosureSession.resultCheckpoint match current disk bytes and SHA-256 (11/11). Old 20/20 and new 9/9 manifest receipts match disk bytes and SHA-256; both artifactVerification.errors arrays are empty. Old run 943 tests and new run 5 tests are different populations. Existing complete decoded comparison remains valid: preparation observations and intentional failures 3 to 4 with prior order and values retained, final outcome and inert control identical, parity differs only at elapsedMs.",
+          "directPathReconciliation": {
+            "parity": "compareProductionParity executionNotExecutable/canonicalMismatch; evaluateProductionParityGate parityFailure/matrixMismatch; fixture original comparison and full parity artifact, single/merge manifest gates. Final integrated identity not certified.",
+            "unsupportedInvalid": "evaluateProductionFinalOutcomeGate finalProfileStatusPresent/finalProfileOutcomeIdentityMismatch and productionFinalOutcomeShardDifference; complete final-outcome artifact and single/merge gates. Final integrated identity not certified.",
+            "partialCommit": "The existing fixture mutation-before inconsistency reaches preparationResourceCommitMismatch, production:fixture-condition:profile:fixture-profile:preparation:action:1, valid true/false and the complete preparation artifact. No reimplementation needed.",
+            "inertControl": "auditProductionUserControlObservations owns typed reasons/first differences; the intentional fixture artifact and productionMasterControlAudit.test.ts production-inert-control-production.json own original observations and complete result. Final integrated identity not certified.",
+            "staleMutation": "The original stale NP receipt and discontinuous resource observations reach preparationReceiptMismatch/preparationResourceSequenceMismatch and the complete preparation artifact. Existing scalar/HP read and recovery artifacts are separate scoped proofs; whole original-ledger consumer join not certified.",
+            "boundedAndComplete": "scripts/test-runner-lib.mjs bounds summary lines and retains manifest artifact path; productionAuditArtifacts.ts writes declared lossless artifacts once with receipt bytes/SHA. Single and merge scripts save failure manifest with typed gates and full condition-record receipts. No new artifact owner is justified."
+          },
+          "legacyOwner": "Data-pipeline audit-oc-planning-baseline.mjs joins four raw exports/function metadata with published master and records raw OC, rate and writer partitions; audit-oc-normalized-master.ts checks raw 167 occurrences/632 cells with numeric and lifetime equality. audit-oc-normalization.mjs consumes the baseline inventory to check published normalized cells and writers. Current resourceProductionAudit.ts/ocProductionAudit.ts, application one-read-per-test-file loaders and ranking policy candidateInventory have different inputs/assertions. No equivalent replacement for unique raw coverage was found; checklist4 remains Deferred to the data-pipeline owner. Do not delete by quantityConditions/loadProductionMaster name.",
+          "closure": {
+            "checklist1": "Verified at matching retained producer/master identity; final identity reconfirmation pending",
+            "checklist2": "Local six-class gates/artifacts identified; whole final identity ratchet and native/recovery consumer join unmet",
+            "checklist3": "Typed reason/identity/first difference and full local artifacts exist; integrated bounded/complete receipt acceptance unmet",
+            "checklist4": "Deferred: data-pipeline unique raw OC coverage and replacement decision",
+            "doneGate": "Final damage/digest/inventory/parity/fail-closed and all-receipt acceptance unmet",
+            "TS-AUDIT-001/RK-AUDIT-001": "Shared producer and common HP proof reusable; final affected production audit unmet",
+            "TS-OUT-001/TS-ART-001": "Local intentional failure and receipts verified; full integrated output/artifacts unmet",
+            "RK-PERF-001/TS-PERF-002": "Formal applicable before/after three-run evidence unmet; no product hot path changed in this checkpoint",
+            "DX-HANDOFF-001": "Task/evidence checkpoint; README final quality unmet",
+            "inputLifecycle1to3": "Retained only at matching source/input/owner identity",
+            "inputLifecycle4and8": "Common HP operation/read/transaction proof retained; separate native/recovery owner whole consumer coverage unverified; no read/recovery required without downstream consumer",
+            "inputLifecycle5": "Local six-class reachability only; final identity population ratchet unmet",
+            "inputLifecycle6": "Deferred: unique data-pipeline raw cell coverage decision",
+            "inputLifecycle7": "Formal applicable performance and final acceptance unmet"
+          },
+          "nextLimitedOperation": "Data-pipeline owner must decide whether raw baseline/normalized-master scripts can be retired while retaining all unique raw cell and published join assertions. Separately reconcile only native/recovery paths with downstream consumers, then revisit six-class same-final-identity gates. Stop before dependent quality, formal performance, TSK-09 work and eight-shard regeneration until TSK-08 Deferred/Blocking is zero. No push."
+        }
       }
     },
     "completedScalarRecoveryPreparation": {
