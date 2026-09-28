@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.130"
+document_version: "1.7.131"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4149,6 +4149,16 @@ checklist①は既存単一producerを同identityで再利用、②③と入力l
 | --- | --- | --- |
 | 1. legacyの正確な削除対象 | 旧loader・scan・candidate list・重複fixtureの定義、直接caller、入力母集団、固有assertionを一行ずつ記録する。raw OC baseline／normalized-master／normalizationのraw・公開cell／writer監査、現行package inventory、test内共有readを別物として扱う | 同じ入力・assertionを現ownerが保持する旧経路だけ削除する。固有coverageを持つ経路は保持し、checklist④の「削除」との適用判断をこのTaskに明示する。literalな削除義務と両立しなければDeferredのままownerへ渡す。名称だけで削除・完了判定しない |
 | 2. 六失敗クラスとconsumer境界 | parity、unsupported、invalid、partial commit、inert control、stale mutationを各一行で、正常production母集団／0件ratchet、元入力、意図的反例、typed gate／reason、canonical identity／first difference、bounded summary、完全decode artifact、receiptへ結ぶ | 既存80条件matrix／eligibility、共通HP operation／read／transaction、partial commit artifactを一致するidentityで再利用する。native／recoveryは後続consumerのある元requestだけを評価し、非選択・未到達・reject・別実行の修復を混同しない。直接の欠落のみ既存ownerで修正する |
-| 3. 同一最終identityの受入 | 1と2でTSK-08のDeferred／Blockingが0になってからsource／master／inputを固定し、共有inventory・digest、80条件、calculator／ranking parity、fail-closed、first diff、bounded／完全結果、全receiptのdisk bytes／SHA-256を照合する | 必要な影響audit、変更内容に適用される正式変更前後各3run性能gate、README最終`pnpm quality`を各一度実施する。構造・capture・製品hot pathが変わらなければ性能contractごとに非適用理由と不変identityを記録する。検証中のidentity変更は影響結果だけ無効化する |
+| 3. 同一最終identityの受入 | 1と2でTSK-08のDeferred／Blockingが0になってからsource／master／inputを固定し、共有inventory・digest、80条件、calculator／ranking parity、fail-closed、first diff、bounded／完全結果、全receiptのdisk bytes／SHA-256を照合する | 必要な影響audit、matrixで`Apply`の`RK-PERF-001`／`TS-PERF-002`正式変更前後各3run、README最終`pnpm quality`を各一度実施する。検証中のidentity変更は影響結果だけ無効化する |
 
 判定1・2が済むまでREADME最終qualityやTSK-09系を開始しない。8 shardsは具体的なidentity疑義がある場合だけ再生成する。これはchecklist／Done gate／Contract matrix／入力lifecycle8義務を緩める計画ではなく、各義務へ必要な証拠を一度ずつ対応付ける順序である。前回の製品未完了判定は維持し、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。計画のみの更新で製品test／監査／計測は実行しない。詳細な判定文は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence`を参照する。pushしない。
+
+### TSK-08 実装前の設計決定（2026-09-28）
+
+legacyの分類単位はfile名でなく**入力母集団と固有assertion**とする。raw OC planning baseline（四raw exportと公開masterの結合）、normalized-master（167 occurrence／632 cellのraw数値・期間・回数）、その公開正規化consumerはdata-pipeline固有証拠として保持する。現行resource／OC inventory、test内で一回共有するmaster read、ranking policy由来candidate inventoryも現行ownerである。歴史上の13回load／反復projectionは削除済み。checklist④を閉じるには、残る旧loader／scan／candidate list／重複fixtureを定義・直接caller・入力・assertionで列挙し、同一の現行代替があるものだけ削除する。削除対象が0ならその全件根拠を記録し、固有raw証拠を削除済みと偽らない。
+
+HPの監査対象はaction別の分岐表でなく、既存canonical宣言と元request参照を結ぶ**一つの遷移モデル**で定める。選択は`notSelected`または`selected(step, reach: unreached／skipped／attempted)`、attemptは元operation statusとnative transaction `rejected／committed`を保持し、適用済みcommitだけが保持instance／receiptのwriter参照を供給できる。consumerは`noDownstreamConsumer／consumerNotReached／physicalRead(value, consumed)`で区別する。これは段階間の制約を持つ監査上の状態であり、HP actionやrecipient名のswitchではない。source instance・operation index・step・actor／recipient・保持されたinstance／receipt参照でidentityを照合する。capture欠落、ownerの曖昧さ、矛盾した遷移はtyped failureとfirst differenceにし、通常の非選択や数値fallbackに変換しない。rejectは元stateを保持する。recoveryは元requestの続きのcommitではなく、入力commandとowner identityで元の失敗へ結ぶ別requestであり、修復後requestが後続consumerへ到達する場合だけread／消費を要求する。既存`reconcileHpOperationEvidence`は元control request 3186件を結ぶ一方、support projectionの`original`／`repairAttempt`／`withInputs`／`selected`は別台帳で、phase名だけでは元requestとの関係を証明しない。必要な明示linkはapplication／audit ledger ownerに置き、個別HP actionのselectorを増やさない。
+
+性能は現Contract matrixの`Apply`を維持し、`RK-PERF-001`と`TS-PERF-002`の正式な変更前後各3runをTSK-08完了条件とする。現在の単位で計算構造・capture・製品hot pathを変えた場合の各1run診断は原因判定だけで、正式gateの代用にしない。製品baseline `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`と候補に対し、同master／入力・CPU affinity 0–7・production4／unit4／audit1 workers・同予算の比較commandを測定前に固定する。同じ入力で比較不能なら別入力へ代替せず、baseline契約のBlockingとして解決する。
+
+この設計でまだ実装前に埋めるものは、旧定義の全件表、後続consumerを持つ元／修復requestの有限な遷移表と代表反例、性能比較command／入力identityである。表が確定するまで新しいHP audit分岐やlegacy削除を始めない。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence.preimplementationDesignDecision`。今回の更新は設計のみで、checklist②〜④やDone gateの完了は主張しない。Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
