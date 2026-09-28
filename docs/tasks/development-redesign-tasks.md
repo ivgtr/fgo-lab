@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.134"
+document_version: "1.7.135"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-28"
+updated_at: "2026-09-29"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -4183,3 +4183,11 @@ HPの有限な反証表は、①owner文脈からの通常非選択、②選択�
 consumer判定は準備の結果で段階を分ける。resolved requestの準備がrejected／invalidなら`orderedScenario`はnullで、元captureのaction／returned stateを照合してそのrequestを終了し、後続readを要求しない。manual executableもplanを持たない。resolved executableでplanがある場合だけ、順序付き`operations`、選択variantとcanonical consumer宣言、実readを使い、consumerなし・予定されたが未到達・物理read（非消費／消費）を分ける。selectedAllyの`no-reader`はHP条件effectを除き、`no-np`はdamage kindをstandardへ変える別々の反例である。readが空であること自体をconsumerなしの証拠にしない。capture欠落、曖昧なedge、矛盾した状態はtyped failure＋first differenceにする。
 
 legacy checklist④の文言は「旧loader、scan、candidate list、重複fixtureを削除する」で、file名を指定していない。現在の限定検索では並行runtime producerは見つからず、TSK-00 baseline、raw OC三script、現行inventory、test内共有readにはそれぞれ固有assertionまたはcallerがある。`executionSemanticsProduction.test.ts`の旧13回read／反復射影はcommit `e081002`でsuite単位の`createSuiteAuditInput`へ置換済みと現コードで確認した。別のraw servant／equip HP条件testは固有証拠として残る。各候補の定義・直接caller・入力母集団・固有assertionを最終表にして、保持する証拠を旧経路と混同せず適用判断するまで④は未達のままとする。今回も調査のみで、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence.preimplementationDesignDecision.requestAndConsumerModelRefinement`。pushなし。
+
+### Step確認と一セッション引継ぎcheckpoint（2026-09-29）
+
+開始HEAD `83653520d2bbaa7e7ae8be0b0d586bad02d844de`、index／tracked／untrackedはclean。`d0328ff`以降のcommitはTask／evidence／registryだけで、Step 0のbaseline／契約、Step 1のV41 marker・V40履歴保持／明示V41再計算、Step 3の改訂matrix／eligibilityの製品sourceを変更していない。Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。共通HP checkpointのsource7・公開master1・candidate manifest1・operation artifact1を現disk bytes／SHA-256で10/10一致、直近partial commit checkpointのsource1・manifest2・完全診断artifact8を11/11一致と再確認した。既存21件およびpartial commit旧20／新9件のreceipt一致は該当保存sessionの証拠として再利用する。今回source test・producer・audit・quality・live性能・8 shards再生成は実行していない。
+
+次作業者は現コードから一セッション計画を**最初の成果物として提示し、利用者確認を待つ**。legacy候補の定義／caller／入力／固有assertion、六失敗クラスの元入力からtyped gate・first difference・bounded／完全artifact・receiptまで、監査専用の修復edgeとconsumer段階を照合する。変更候補とowner、代表反証、影響suite、旧新完全decode値・順序・件数とdisk bytes／SHA-256・全receipt、性能条件、全checklist／Done gate／Contract matrix／入力lifecycle8義務、停止境界を一枚の計画にまとめる。確認後は承認された同じ限定単位を実装・局所／影響検証・既存Task／evidence更新・対象限定local commitまで進める。partial commit artifact、共通HP proof、80条件matrix／eligibilityと完了unitsはidentityと意味が一致する範囲で再利用し、別HP action／recipient監査へ戻らない。
+
+別native／recovery owner、新ゲーム意味論、別family、保持すべき固有raw coverageに独立作業が必要なら、その根拠・未達条件・次の限定操作を既存正本へ残して製品未完了checkpointで止める。全TSK-08義務が同一最終identityで成立しDeferred／Blockingが0、時間が残る場合だけ、必要な影響audit、`Apply`の正式変更前後各3run性能、README最終qualityと統合counter／digest／全receiptを行い完了を目指す。現段階ではchecklist②〜④、Done gate最終照合、Contract最終gate、入力lifecycle④〜⑧が未達または未照合であり、単一fixtureの成功を全体完了としない。60分で既存正本にcheckpoint、90分で現在のatomic actionを終えて引き継ぎ、pushしない。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.postModelStepCheckHandoff`。
