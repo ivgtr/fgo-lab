@@ -23175,7 +23175,7 @@
         },
         {
           "stage": 2,
-          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open. Current give native noncommit A/B shared audit is implemented with separate filtered empty-read capture;final give3/HP6/related391 retained/audit77 and full comparisons/370 disk+350 declared receipt error0 verified;not whole closure. HPcanonical486/7470/54groups andgenericconsumerreferences verified;seehpCoverageReconciliationCheckpoint;notnative/read/recoveryorwholeclosure. Transfer2 declarations/24 original native operations andretained selectedHP seeds nowconnected;old selected12/HP7/give6/audit77 artifacts retained. ActualHP read/HP-dependentNP0 inthesePublishedcases isnotNP causality/recoveryclosure. See boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint. Explicit HP dependency557 and scoped fixedSelf3 correspondence verified at d91b128;whole native/read/NP/recovery remains open. Published元control3182request/478bindingsの対応を接続。attacker条件9/read90、NP4variant/evaluation16 consumed、expression20 context/selected2cell。CE1/NP2variant/残value10・OC25/expression実read/成功recoveryは未観測。See boundedUnits[52].hpPublishedDependencyProofCheckpoint.",
+          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open. Current give native noncommit A/B shared audit is implemented with separate filtered empty-read capture;final give3/HP6/related391 retained/audit77 and full comparisons/370 disk+350 declared receipt error0 verified;not whole closure. HPcanonical486/7470/54groups andgenericconsumerreferences verified;seehpCoverageReconciliationCheckpoint;notnative/read/recoveryorwholeclosure. Transfer2 declarations/24 original native operations andretained selectedHP seeds nowconnected;old selected12/HP7/give6/audit77 artifacts retained. ActualHP read/HP-dependentNP0 inthesePublishedcases isnotNP causality/recoveryclosure. See boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint. Explicit HP dependency557 and scoped fixedSelf3 correspondence verified at d91b128;whole native/read/NP/recovery remains open. Published元control3182request/478bindingsの対応を接続。attacker条件9/read90、NP4variant/evaluation16 consumed、expression20 context/selected2cell。CE1/NP2variant/残value10・OC25/expression実read/成功recoveryは未観測。See boundedUnits[52].hpPublishedDependencyProofCheckpoint. Latest 76330ca owner-index checkpoint connects direct scenario owner requests only (CE1/value10 absent; NP2 2/4, OC25 each10 owner requests). No new variant/cell selection or actual expression HP read; see boundedUnits[52].hpPublishedDependencyRemainderCheckpoint.",
           "nextBoundedScope": "残るCE条件1／HP依存NP variant2／value-expression10cell／OC-rate25cellを、既存元request・capture・artifactと宣言identityで再照合する。既存責務内の接続だけを計画確認後に実装し、observer／native／recovery等の別ownerを要する場合は未達として止める。",
           "nextScopeQualification": "handoffPreparation.nextSession.hpPublishedDependencyRemainderSession",
           "activeUnit52ScopeReference": "boundedUnits[52]",
@@ -23191,7 +23191,7 @@
       "nextBoundedUnit": "unit52 remaining coverage: read-only reconciliation and separate bounded plan; no chained family implementation",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "handoffPreparation.nextSession.hpPublishedDependencyRemainderSession",
+      "nextScopeQualification": "handoffPreparation.nextSession.hpPublishedDependencyOwnerPathSession",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -23205,7 +23205,8 @@
       "asOfHpTransferEvidenceCheckpointReference": "boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint",
       "asOfHpTransferEvidenceCheckpointCommit": "1cc348209ff3953512f120772e0482bf18f4ef70",
       "asOfHpRemainingProofCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
-      "asOfPublishedDependencyCheckpointReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint"
+      "asOfPublishedDependencyCheckpointReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint",
+      "asOfPublishedDependencyRemainderCheckpointReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint"
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -24010,7 +24011,7 @@
       },
       "historicalRootQualification": "Historical-prefixed plans remainhistory. productionAuditInputLifecycleSession wasconfirmedandexecuted;currentresultandnextlimitedoperationareownedby boundedUnits[52].productionAuditInputLifecycleCheckpoint.",
       "currentCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
-      "currentSessionReference": "handoffPreparation.nextSession.hpPublishedDependencyRemainderSession",
+      "currentSessionReference": "handoffPreparation.nextSession.hpPublishedDependencyOwnerPathSession",
       "capacityAttemptMaterializationSession": {
         "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -25675,6 +25676,40 @@
           "protected": "boundedUnits[0..52], old hpPublishedDependencyProofSession, old hpRemainingProofReconciliationSession and Step3 record decoded equal to baseline."
         },
         "resultReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint"
+      },
+      "hpPublishedDependencyOwnerPathSession": {
+        "status": "prepared_read_only_awaiting_code_based_plan_and_user_confirmation",
+        "name": "hpPublishedDependencyOwnerPathSession",
+        "baselineHead": "76330ca2168c1cdad31605b6d53ae0620332e0f5",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "authority": "This entry is the next session instruction source. Prior hpPublishedDependencyRemainderSession and boundedUnits[52] checkpoints are evidence/history, not fixed implementation steps.",
+        "objective": "Within one session, determine from current producer/capture/consumer code how the remaining Published HP dependency declarations can be connected to original canonical selection and proof, implement only one coherent HP proof coverage slice after user confirms the plan, and decide whether all TSK-08 obligations genuinely close. Do not add HP game semantics or another execution family.",
+        "firstDeliverable": "Present code-based design, verification and whole-TSK-08 closure feasibility before editing; wait for user confirmation. Include producer/request/capture/proof/artifact owner and lifetime, identity join, normal exclusion vs unobserved, selected/reached/read/NP distinction, small falsifiers, valid evidence and gaps.",
+        "preConfirmationBoundary": "Read HEAD/index/tracked/untracked, code/docs/JSON/artifacts and verify checksums only. No edits, source test, producer, audit, quality, live measurement, stage or commit. If execution diagnosis is indispensable, first state minimal command, compared inputs, decision obtained and stop boundary. Diagnosis approval is not implementation approval.",
+        "afterConfirmation": "Continue in the same session through the approved coherent HP proof coverage slice, focused semantic fixtures and impacted suites, exact old/new decoded artifact/order/count/typed reason/first difference/disk bytes/SHA/receipts comparison, existing Task/evidence update and target-only local commit; no push. Routine technical decisions need no second approval.",
+        "readOnlyPreparation": {
+          "start": "HEAD 76330ca; index/tracked/untracked clean",
+          "identityReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint.sourceIdentities/inputIdentity/verification unit and audit manifests, completeComparison.artifact and sidecar",
+          "identityMatched": "source3/input1/artifact4 = 8; zero missing or mismatch at preparation. Historical 24 identities belong to prior source set and must not be silently promoted to current.",
+          "sourceTestsOrProducer": "not run in this preparation",
+          "directCodeFacts": [
+            "productionMasterControlAudit.evaluateWithOrderedOperationEvents retains prepared before family selectors and attaches one evaluation in the 3182 request ledger; productionHpPublishedDependencyCoverage reads borrowed original capture and writes the 71-declaration/478-binding sidecar.",
+            "productionMasterControlAudit separately evaluates CE and mystic-code user projections through calculateScenario (near line 2240), outside the original retained prepared/capture ledger; its success is not CE HP read proof.",
+            "CE condition1 and value-expression10 have zero direct scenario owner requests in the retained ledger; hpRatioLow remaining2 have 2/4 owner requests and OC-rate25 each10, without selected variant/cell or actual read proof.",
+            "projection.resolveModifierValue and ocState.rateValue resolve HP expression values without the existing HP read observer; resolved values do not prove a read. Support repair-after-success cannot be combined with a missing pre-repair capture."
+          ]
+        },
+        "planMustDecide": [
+          "For CE/value absence and NP/OC owner-present cases, which original producer path, selected source/variant/cell and canonical operation identities exist, which are missing, and which can be borrowed without rerunning an owner or creating an expectation generator.",
+          "Whether an observer or another owner is truly necessary. Scope one coherent HP dependency proof slice for this session; if another family/native/recovery owner or product behavior is required, record evidence and next bounded operation without chaining it.",
+          "How typed gate and existing artifact encode absence, normal exclusion, selected/reached/native/append/actual HP read/NP evaluation separately, including duplicate/missing/unmatched, equal foreign identity, wrong family/actor/recipient and order counterexamples.",
+          "Map TSK-08 checklist/Done gate/Contract closure matrix and productionAuditInputLifecycleCheckpoint.closureReconciliation eight obligations to valid existing evidence, in-scope completion condition or explicit gap. Do not infer whole ratchet, diagnostics reachability, legacy cleanup, formal performance, final quality or integrated receipts from local success."
+        ],
+        "verificationBoundary": "Reuse boundedUnits[52].hpPublishedDependencyRemainderCheckpoint valid unit5/control7, old decoded and 12 unchanged artifact comparisons, disk25/test-owned15 receipts at recorded identities. The prior audit first test was 59.204s against 60s and one prior run timed out; keep timeout/threshold and explain any runtime change. No eight-shard regeneration absent identity doubt. If computation/capture/product hot path changes, diagnose original live phase at identical input, affinity0-7, production4/unit4/audit1 workers and budget with baseline/candidate one run each; not formal three-run performance.",
+        "closureDecision": "Aim for TSK-08 completion only if all checklist, Done gate, contract matrix and eight input-lifecycle obligations close with valid evidence and no in-scope Blocking, and time remains for required affected audit, formal before/after three-run performance, README final quality, integrated counter/digest/all receipts. Otherwise do not start dependent quality or claim completion; create a product-incomplete checkpoint and local commit. TSK-09.1/09 remain blocked.",
+        "sessionBoundary": "At 60 minutes update existing Task/evidence checkpoint; at 90 minutes finish the current atomic action and hand off. Do not start extra quality retry, unrelated investigation or another family. Keep 8 CPU affinity0-7, production4/unit4/audit1 workers and existing timeout/threshold.",
+        "runnerFallback": "Only if pnpm fails before script at external SQLite store: inspect /tmp/tsk08-tools/pnpm contents, 730 bytes, SHA-256 7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6, then set nested PATH and use the same generic runner.",
+        "recordCommitPolicy": "Update existing Task/evidence/registry only, with any in-scope implementation files. Review and stage target files, local commit, no push. Resolve this preparation commit SHA from Git history in the final handoff prompt; do not self-reference it inside this JSON."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -26646,7 +26681,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "元3182 requestとの直接scenario owner対応は接続済み。CE条件1/value10にはowner requestなし、NP残2は各2/4、OC25は各10 owner requestだがvariant/cell選択と実readは未観測。次は別の限定計画でproducer母集団・必要observer/ownerを判断する。TSK-08全体のratchet/legacy/正式性能/最終quality/統合receiptは未達。",
+    "nextSession": "次sessionは残るPublished HP依存の元producer母集団・variant/cell選択・実read証拠を現コードから計画し、利用者確認後に1つのHP proof coverage単位だけ実装・検証・local commitまで進める。CE1/value10には元ledger owner requestなし、NP2/OC25はownerありでも選択/実read未観測。TSK-08全体closureは全義務の有効証拠でのみ判断する。",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -26691,7 +26726,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint.nextOperation",
+    "nextSessionReference": "handoffPreparation.nextSession.hpPublishedDependencyOwnerPathSession",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
     "capacityAttemptMaterializationCheckpointCommit": "f375eea18ed2184de2943f7303ada777dfc44f71",
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.115"
+document_version: "1.7.116"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3955,3 +3955,11 @@ expression実read observer、support修復前capture、新native／recovery owne
 局所unit5、元control audit7、typecheck／対象lint・formatが通過した。最終auditの第1 testは既存60秒timeoutに対し59.204秒で、最初の実行には60.048秒のtimeoutがあった。上限は変更していない。旧sidecar／fixture／否定artifactの既存decoded値・順序は追加field以外一致し、旧control artifact12件のbytes／SHAも一致した。新2runのrunner・disk25・test-owned receipt15に不一致はない。source／input／artifact identity、失敗履歴、旧新完全比較とTSK-08 checklist／Done gate／Contract closure matrix・入力lifecycle8義務の対応は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpPublishedDependencyRemainderCheckpoint`を正本とする。
 
 今回責務のBlockingは0だが、CE／valueの元request母集団、NP／OCのvariant・cell選択、expression実read、全native noncommit／成功recoveryは未達。全ratchet、typed診断・完全artifact到達、legacy固有coverage、正式3-run性能、README最終quality、統合counter／digest／全receiptも未達または未照合のため、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。依存quality・製品closureは開始しない。次は別の限定計画で元producer母集団と必要observer／ownerを判断する。今回の成果は対象限定local commitとし、pushしない。
+
+### Step再確認と次のPublished HP依存proof単位の引継ぎ準備（2026-09-28）
+
+開始HEAD `76330ca2168c1cdad31605b6d53ae0620332e0f5`、index／tracked／untrackedはclean。Step 0のbaseline／契約、Step 1のV41 request marker・V40保持／明示V41再計算、Step 3の改訂matrix／eligibilityは成立済み。Step 2は未完了で、完了units[0]〜[51]を再開しない。TSK-08 `in_progress`、TSK-09.1／09 `blocked`。直近owner対応checkpointのsource3／input1／artifact4の8 identityは現diskと一致した。旧24 identityは変更前sourceを含む履歴であり現sourceの検証へ代入しない。今回の準備はコード・正本・既存artifactの読込とchecksumのみで、source test／producer／audit／quality／live計測は実行していない。
+
+元control ledgerには3182 requestがselector前から保持される。一方、同audit fileのCE／mystic-code user projection経路は`calculateScenario`で別に評価され、元prepared／capture ledgerへ保存されない。CE経路の成功をCE HP proofへ合成できない。残るCE条件1・value-expression10cellは元ledgerの直接owner requestが0、HP依存NP残2variantは各2／4、OC-rate25cellは各10のowner requestを持つが、variant／cell選択や実HP readの証拠ではない。`projection.resolveModifierValue`と`ocState.rateValue`の値解決も既存observerへ実readを残さない。direct symbol、母集団・artifact identity、TSK-08全義務の未達は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.hpPublishedDependencyOwnerPathSession`と`boundedUnits[52].hpPublishedDependencyRemainderCheckpoint`を参照する。
+
+次の1セッションは、残るPublished HP依存について現コードからproducer／capture／canonical selection／proofの接続方法を**最初に計画し利用者確認を待つ**。確認後は承認された一つのHP proof coverage単位を局所実装・反証・影響suite・完全artifact比較・既存正本更新・対象限定local commitまで続ける。新HP意味論や別familyを連鎖しない。TSK-08全checklist／Done gate／Contract closure matrixと入力lifecycle8義務を初期計画で照合し、全義務が有効証拠と同単位で閉じ、対象内Blocking 0かつ時間が残る場合だけ正式性能・README最終quality・統合照合へ進み完了を目指す。未達なら依存qualityを始めず製品未完了checkpointへ収束する。60分で既存正本にcheckpoint、90分で現在のatomic actionを終えて引き継ぐ。pushしない。
