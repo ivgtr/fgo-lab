@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.133"
+document_version: "1.7.134"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4175,3 +4175,11 @@ HPの有限な反証表は、①owner文脈からの通常非選択、②選択�
 この設計で実装前に残るのは、legacy全定義・callerの最終表、7遷移へ実在の元／修復request参照と代表反例を割り当てること、正式性能のbaseline／candidate実行環境が同条件で起動することの確認である。表が確定するまで新しいHP audit分岐やlegacy削除を始めない。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence.preimplementationDesignDecision`。今回の更新は設計のみで、checklist②〜④やDone gateの完了は主張しない。Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
 
 追加の読取照合では、共通HP operation artifactのsource 7件、公開master、candidate manifest／artifact、manifest receipt 21件を現diskのbytes／SHA-256と一致確認した。元control request 3186件に対し、operation 2195件は全件到達・attempt・native commit、通常非選択は宣言×request 374組。実際のcandidate read 126件には非消費12件がある。元入力にnative reject／選択後未到達は現れず、support projection 5 requestにも`repairAttempt`はない。`hpExecution.test.ts`は共通`reconcileHpOperationEvidence`へrejectと修復前後2 requestを渡し、transactionとwriter→read参照を検証済み。ただし実際の入力command／前request参照は同gateへ渡さず、隣接する2件が修復関係にあることは監査上未証明。局所fixtureにはmaximumFixedの`writer-unreached`とnative reject／prefix保持、selectedAllyの`native-unreached`・`no-reader`・`no-np`、receive／giveのrejectとread未到達がある。`HpPublishedDependencyRequest`の`requestPhase`／`ownerScope`も元request・commandへの参照を持たず、`productionHpPaths.test.ts`は修復後の最終scenarioを保存する。次は既存の元preparation／actionと順序付きconsumer planを監査台帳で参照できるかを確認し、監査専用の最小の前request・command linkとtyped consumer dispositionを確定する。拒否・invalid時の`orderedScenario`はnullであり、consumerの不存在をread欠落から推測しない。旧経路の全件定義・callerとchecklist④の削除文言の照合も未了。現成果は調査checkpointであり、製品source test／audit／正式性能／最終qualityは実施していない。
+
+### TSK-08 request／consumer境界の追加調査（2026-09-29）
+
+`hpExecution.test.ts`の修復反例は、初回の`applyCanonicalInputCommand`後も`inputRequired`なら2つ目のcommandを適用する。途中の結果は評価しているが、共通HP監査へ渡すのは元requestと最終requestだけである。監査上の修復関係は、**1 commandごとに前後の評価済みrequestを結ぶedge**として表す。producerが実際に適用したcommandを監査台帳へ保持し、各前requestの`inputRequired`・要求されたinput定義、同じmaster／policy、現行`applyCanonicalInputCommand`による正確なscenario遷移と順序を照合する。途中requestを飛ばすlink、phase名からの推測、値の補完は認めない。これは監査専用の関係で、damageやHP actionのruntime分岐を追加しない。
+
+consumer判定は準備の結果で段階を分ける。resolved requestの準備がrejected／invalidなら`orderedScenario`はnullで、元captureのaction／returned stateを照合してそのrequestを終了し、後続readを要求しない。manual executableもplanを持たない。resolved executableでplanがある場合だけ、順序付き`operations`、選択variantとcanonical consumer宣言、実readを使い、consumerなし・予定されたが未到達・物理read（非消費／消費）を分ける。selectedAllyの`no-reader`はHP条件effectを除き、`no-np`はdamage kindをstandardへ変える別々の反例である。readが空であること自体をconsumerなしの証拠にしない。capture欠落、曖昧なedge、矛盾した状態はtyped failure＋first differenceにする。
+
+legacy checklist④の文言は「旧loader、scan、candidate list、重複fixtureを削除する」で、file名を指定していない。現在の限定検索では並行runtime producerは見つからず、TSK-00 baseline、raw OC三script、現行inventory、test内共有readにはそれぞれ固有assertionまたはcallerがある。`executionSemanticsProduction.test.ts`の旧13回read／反復射影はcommit `e081002`でsuite単位の`createSuiteAuditInput`へ置換済みと現コードで確認した。別のraw servant／equip HP条件testは固有証拠として残る。各候補の定義・直接caller・入力母集団・固有assertionを最終表にして、保持する証拠を旧経路と混同せず適用判断するまで④は未達のままとする。今回も調査のみで、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence.preimplementationDesignDecision.requestAndConsumerModelRefinement`。pushなし。
