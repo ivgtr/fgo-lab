@@ -169,6 +169,9 @@ export function executePreparationOc(args: {
         actionId: args.actionId,
         start: args.state,
         sources: args.sources,
+        steps: [],
+        operations: [],
+        modifierReads: [],
         writes: [],
         sourceEnds: [],
       }
@@ -741,10 +744,33 @@ export function executePreparationOc(args: {
         if (args.context.planningOnly) continue;
         const hpStep = steps.length;
         steps.push((ocState) => {
-          if (!source.sourceEnabled || activation.get(source.effect)?.procOutcome === 'failure')
+          if (!source.sourceEnabled || activation.get(source.effect)?.procOutcome === 'failure') {
+            hpAction?.steps.push({
+              source,
+              operation,
+              operationIndex,
+              step: hpStep,
+              decision: 'skipped',
+            });
             return { kind: 'skip', outcome: 'notApplicable' };
-          if (!current.hp)
+          }
+          if (!current.hp) {
+            hpAction?.steps.push({
+              source,
+              operation,
+              operationIndex,
+              step: hpStep,
+              decision: 'missingHpState',
+            });
             return { kind: 'reject', status: 'unsupported', reason: 'missingHpState' };
+          }
+          hpAction?.steps.push({
+            source,
+            operation,
+            operationIndex,
+            step: hpStep,
+            decision: 'attempted',
+          });
           const receipt = args.npUse
             ? ocState.receipts.find((receipt) => receipt.actionId === args.actionId)
             : null;
@@ -756,6 +782,12 @@ export function executePreparationOc(args: {
             values: args.context.canonicalInputValues ?? {},
             actionId: args.actionId,
             valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+            ...(hpAction
+              ? {
+                  observeModifierRead: (read) =>
+                    hpAction.modifierReads.push({ source, operationIndex, step: hpStep, read }),
+                }
+              : {}),
             modifierCondition: (instance) => {
               const condition = compileEffectCondition(
                 {
@@ -889,6 +921,14 @@ export function executePreparationOc(args: {
                 });
             };
           const result = executeHpOperation(hpArguments);
+          hpAction?.operations.push({
+            source,
+            operation,
+            operationIndex,
+            step: hpStep,
+            before: hpBefore,
+            result,
+          });
           if (
             hpAction &&
             operation.kind === 'resourceMutation' &&

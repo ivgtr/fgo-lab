@@ -104,7 +104,7 @@ const recipient = (declaration: HpProofDeclaration) => {
 };
 
 /** Scenario ownership is weaker than canonical selection or an execution read. */
-function directScenarioOwnerIndex(requests: readonly HpPublishedDependencyRequest[]) {
+export function directScenarioOwnerIndex(requests: readonly HpPublishedDependencyRequest[]) {
   const owners = new Map<string, number[]>();
   const supportOwners = new Map<string, number[]>();
   const add = (origin: HpProofDeclaration['identity']['origin'], owner: string, index: number) => {

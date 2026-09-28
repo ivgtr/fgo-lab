@@ -114,6 +114,15 @@ export function executeHpOperation(args: {
   valueSetIndex: number;
   observeGain?: ((consumption: HpGainConsumption) => void) | undefined;
   observeGiveGain?: ((consumption: HpGiveGainConsumption) => void) | undefined;
+  observeModifierRead?:
+    | ((read: {
+        action: 'receive' | 'give' | 'noHealing';
+        actor: string;
+        instances: readonly HpModifierInstance[];
+        value: number;
+        state: HpState;
+      }) => void)
+    | undefined;
   unresolvedCondition?: CanonicalInputDefinition | null;
   modifierCondition?: (instance: HpModifierInstance) => {
     outcome: boolean | null;
@@ -389,9 +398,16 @@ export function executeHpOperation(args: {
                   modifierState,
                   id,
                   'receive',
-                  args.observeGain || args.observeGiveGain
+                  args.observeGain || args.observeGiveGain || args.observeModifierRead
                     ? (instances, value) => {
                         receiveRead = { instances, value };
+                        args.observeModifierRead?.({
+                          action: 'receive',
+                          actor: id,
+                          instances,
+                          value,
+                          state: modifierState,
+                        });
                       }
                     : undefined,
                 ),
@@ -403,14 +419,36 @@ export function executeHpOperation(args: {
                   modifierState,
                   sourceActor(source),
                   'give',
-                  args.observeGiveGain
+                  args.observeGiveGain || args.observeModifierRead
                     ? (instances, value) => {
                         giveRead = { actor: sourceActor(source), instances, value };
+                        args.observeModifierRead?.({
+                          action: 'give',
+                          actor: sourceActor(source),
+                          instances,
+                          value,
+                          state: modifierState,
+                        });
                       }
                     : undefined,
                 ),
           noHealing:
-            operation.direction === 'gain' && hpModifierValue(modifierState, id, 'noHealing') > 0,
+            operation.direction === 'gain' &&
+            hpModifierValue(
+              modifierState,
+              id,
+              'noHealing',
+              args.observeModifierRead
+                ? (instances, value) =>
+                    args.observeModifierRead!({
+                      action: 'noHealing',
+                      actor: id,
+                      instances,
+                      value,
+                      state: modifierState,
+                    })
+                : undefined,
+            ) > 0,
         };
         const result = transitionHp(actor, mutation);
         if (args.observeGain && receiveRead)

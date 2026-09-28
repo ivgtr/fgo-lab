@@ -10,6 +10,7 @@ import {
 } from './productionHpSelectedAllyMaximumFixedPreparationAudit';
 import { createHash } from 'node:crypto';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
+import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
 import {
   noHealingSelection,
   noHealingProgram,
@@ -226,6 +227,7 @@ function loadProductionMaster() {
   productionMaster ??= readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
     (content) => masterSnapshotSchema.parse(JSON.parse(content)),
   );
+
   return productionMaster;
 }
 
@@ -2765,6 +2767,33 @@ describe('production master inventory ratchet', () => {
         expect(negative.failures.some((failure) => failure.reason === reason)).toBe(true);
         expect(negative.firstDifference).not.toBeNull();
       }
+    },
+  );
+
+  it(
+    'joins original requests to every selected HP operation attempt',
+    productionAuditTestOptions(['production-hp-operation-evidence.json']),
+    async ({ task }) => {
+      const declarations = hpProofCoverageInventory(await loadProductionMaster());
+      const evidence = reconcileHpOperationEvidence(declarations, hpPublishedDependencyRequests);
+      const receipt = await writeProductionAuditArtifact(
+        task.meta,
+        'production-hp-operation-evidence.json',
+        evidence,
+      );
+      const bytes = await readFile(
+        resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-hp-operation-evidence.json'),
+      );
+      expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
+        receipt.expectedBytes,
+        receipt.expectedSha256,
+      ]);
+      expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), evidence)).toBe(true);
+      expect(evidence.gate.failures).toEqual([]);
+      expect(evidence.requestCount).toBe(3186);
+      expect(evidence.rows.some((row) => row.attempted && row.transaction === 'committed')).toBe(
+        true,
+      );
     },
   );
 

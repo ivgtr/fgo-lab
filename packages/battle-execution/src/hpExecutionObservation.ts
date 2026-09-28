@@ -8,7 +8,7 @@ import type { ContributionApplicationPolicy } from './executionTypes';
 import type { SourceEffect } from './sourceCollection';
 import type { HpState, HpModifierInstance } from './hpResource';
 import type { HpGainConsumption, HpGiveGainConsumption } from './preparationHp';
-import type { executeHpOperation } from './preparationHp';
+import type { executeHpOperation, HpOperation } from './preparationHp';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type {
   PreNoblePhantasmState,
@@ -25,6 +25,32 @@ export interface PreparationHpAction {
   actionId: string;
   start: PreNoblePhantasmState;
   sources: readonly SourceEffect[];
+  /** One decision for each reached native HP step, before any operation result is filtered. */
+  steps: {
+    source: SourceEffect;
+    operation: HpOperation;
+    operationIndex: number;
+    step: number;
+    decision: 'skipped' | 'missingHpState' | 'attempted';
+  }[];
+  /** Every reached HP operation, including rejected results; borrowed from the original owner. */
+  operations: {
+    source: SourceEffect;
+    operation: HpOperation;
+    operationIndex: number;
+    step: number;
+    before: HpState;
+    result: ReturnType<typeof executeHpOperation>;
+  }[];
+  /** Ordered physical gain-multiplier reads, including empty and rejected reads. */
+  modifierReads: {
+    source: SourceEffect;
+    operationIndex: number;
+    step: number;
+    read: Parameters<
+      NonNullable<Parameters<typeof executeHpOperation>[0]['observeModifierRead']>
+    >[0];
+  }[];
   writes: {
     source: SourceEffect;
     operationIndex: number;

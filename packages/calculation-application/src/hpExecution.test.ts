@@ -1,5 +1,9 @@
 import { applyCanonicalInputCommand } from './canonicalInputs';
 import { hpCoverageSources } from './productionHpCoverage';
+import { hpProofCoverageInventory } from './productionHpProofCoverage';
+import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
+import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
+import { preparationHpActionsFor } from '@fgo-lab/battle-execution/preparation-audit';
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
@@ -167,6 +171,186 @@ const npGain: EffectExecutionOperation = {
   amount: { kind: 'fixed', values: values(1000) },
 };
 describe('HP initial intent through common preparation and recovery', () => {
+  it('keeps ordered HP operation attempts separate from native transaction and later reads', () => {
+    const { master, scenario, versions } = setup([effect('ordered-hp', [loss(100), gain(50)])]);
+    const prepared = prepareCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    const calculation = evaluatePreparedCalculationScenario(prepared, versions);
+    const declarations = hpProofCoverageInventory(master);
+    const evidence = reconcileHpOperationEvidence(declarations, [{ prepared, calculation }]);
+    expect(evidence.gate.failures).toEqual([]);
+    expect(evidence.rows.filter((row) => row.attempted).map((row) => row.operationIndex)).toEqual([
+      0, 1,
+    ]);
+    expect(evidence.rows.filter((row) => row.attempted).map((row) => row.transaction)).toEqual([
+      'committed',
+      'committed',
+    ]);
+    expect(evidence.modifierReads.map((read) => read.action)).toEqual([
+      'receive',
+      'give',
+      'noHealing',
+    ]);
+    expect(evidence.modifierReads.every((read) => read.consumed)).toBe(true);
+    const transition = battlePointPreparationRejectionObservationFor(prepared)?.transitions[0];
+    const action = transition && preparationHpActionsFor(transition.result)?.[0];
+    if (!action) throw new TypeError('hp_fixture_capture_missing');
+    const original = action.operations[0]!;
+    action.operations[0] = { ...original, step: original.step + 1 };
+    expect(
+      reconcileHpOperationEvidence(declarations, [{ prepared, calculation }]).gate.failures.map(
+        (failure) => failure.reason,
+      ),
+    ).toContain('operationOrderMismatch');
+    action.operations[0] = original;
+    action.operations.splice(0, 1);
+    expect(
+      reconcileHpOperationEvidence(declarations, [{ prepared, calculation }]).gate.failures.map(
+        (failure) => failure.reason,
+      ),
+    ).toContain('stepDecisionMismatch');
+    action.operations.unshift(original);
+    const firstRead = action.modifierReads[0]!;
+    const secondRead = action.modifierReads[1]!;
+    action.modifierReads[0] = secondRead;
+    action.modifierReads[1] = firstRead;
+    expect(
+      reconcileHpOperationEvidence(declarations, [{ prepared, calculation }]).gate.failures.map(
+        (failure) => failure.reason,
+      ),
+    ).toContain('modifierReadOrderMismatch');
+    action.modifierReads[0] = firstRead;
+    action.modifierReads[1] = secondRead;
+  });
+
+  it('links a retained HP modifier to the later physical gain read by instance', () => {
+    const modifier = effect('read-source', [
+      {
+        kind: 'hpModifier',
+        action: 'receive',
+        sign: 1,
+        bounds: { minimum: 0, maximum: 50000 },
+        values: values(300),
+        traits: [],
+        lifetime: 'active',
+        route: {
+          target: 'sourceSelf',
+          contributionScope: 'personal',
+          eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+        },
+      },
+    ]);
+    const { master, scenario, versions } = setup([modifier, effect('reader', [gain(100)])]);
+    const prepared = prepareCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    const calculation = evaluatePreparedCalculationScenario(prepared, versions);
+    const evidence = reconcileHpOperationEvidence(hpProofCoverageInventory(master), [
+      { prepared, calculation },
+    ]);
+    expect(evidence.gate.failures).toEqual([]);
+    expect(evidence.modifierReads.find((read) => read.action === 'receive')).toMatchObject({
+      writerOperations: [{ actionIndex: 0, operationIndex: 0 }],
+      consumed: true,
+    });
+  });
+
+  it('captures modifier removal before a later empty physical read', () => {
+    const route = {
+      target: 'sourceSelf' as const,
+      contributionScope: 'personal' as const,
+      eligibility: { kind: 'anyRecipient' as const, onMissing: 'unsupported' as const },
+    };
+    const { master, scenario, versions } = setup([
+      effect('add-remove-read', [
+        {
+          kind: 'hpModifier',
+          action: 'receive',
+          sign: 1,
+          bounds: { minimum: 0, maximum: 50000 },
+          values: values(300),
+          traits: ['buffTrait:1'],
+          lifetime: 'active',
+          route,
+        },
+        { kind: 'removeHpModifiers', selection: 'direct', route, traits: ['buffTrait:1'] },
+        gain(100),
+      ]),
+    ]);
+    const prepared = prepareCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    const calculation = evaluatePreparedCalculationScenario(prepared, versions);
+    const evidence = reconcileHpOperationEvidence(hpProofCoverageInventory(master), [
+      { prepared, calculation },
+    ]);
+    expect(evidence.gate.failures).toEqual([]);
+    expect(evidence.rows.filter((row) => row.attempted).map((row) => row.operationIndex)).toEqual([
+      0, 1, 2,
+    ]);
+    expect(evidence.modifierReads.find((read) => read.action === 'receive')).toMatchObject({
+      instanceIds: [],
+      writerOperations: [],
+      consumed: true,
+    });
+  });
+
+  it('records a rejected HP attempt without treating it as a committed write', () => {
+    const unsupported = effect('conditional-maximum-attempt', [
+      loss(100),
+      {
+        kind: 'hpModifier',
+        action: 'maximumFixed',
+        sign: 1,
+        bounds: { minimum: null, maximum: null },
+        values: values(5000),
+        traits: ['buffMaxHpUp'],
+        lifetime: 'active',
+        route: {
+          target: 'sourceSelf',
+          contributionScope: 'personal',
+          eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+        },
+        useCondition: {
+          kind: 'quantity',
+          quantity: 'attackerHpPermille',
+          comparison: 'atLeast',
+          value: 500,
+        },
+      },
+    ]);
+    const { master, scenario, versions } = setup([unsupported], 500);
+    const prepared = prepareCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    const calculation = evaluatePreparedCalculationScenario(prepared, versions);
+    const evidence = reconcileHpOperationEvidence(hpProofCoverageInventory(master), [
+      { prepared, calculation },
+    ]);
+    expect(evidence.gate.failures).toEqual([]);
+    expect(evidence.rows.filter((row) => row.attempted)).toMatchObject([
+      { operationIndex: 0, operationStatus: 'applied', transaction: 'rejected' },
+      { operationIndex: 1, operationStatus: 'unsupported', transaction: 'rejected' },
+    ]);
+  });
+
   it('keeps an unresolved heal modifier explicit until consumed, then repairs from initial input', () => {
     const modifier = effect('uncertain-heal', [
       {
@@ -226,6 +410,41 @@ describe('HP initial intent through common preparation and recovery', () => {
           key: next.key,
           value: present,
         });
+      }
+      if (present === 0) {
+        const originalPrepared = prepareCalculationScenarioWithPolicy(
+          consumed.scenario,
+          consumed.master,
+          { kind: 'calculator' },
+          {},
+          true,
+        );
+        const repairedPrepared = prepareCalculationScenarioWithPolicy(
+          repaired,
+          consumed.master,
+          { kind: 'calculator' },
+          {},
+          true,
+        );
+        const originalCalculation = evaluatePreparedCalculationScenario(
+          originalPrepared,
+          consumed.versions,
+        );
+        const repairedCalculation = evaluatePreparedCalculationScenario(
+          repairedPrepared,
+          consumed.versions,
+        );
+        const evidence = reconcileHpOperationEvidence(hpProofCoverageInventory(consumed.master), [
+          { prepared: originalPrepared, calculation: originalCalculation },
+          { prepared: repairedPrepared, calculation: repairedCalculation },
+        ]);
+        expect(evidence.gate.failures).toEqual([]);
+        expect(
+          evidence.rows.some((row) => row.requestIndex === 0 && row.transaction === 'rejected'),
+        ).toBe(true);
+        expect(
+          evidence.rows.some((row) => row.requestIndex === 1 && row.transaction === 'committed'),
+        ).toBe(true);
       }
       const execution = resolveScenarioPreparationOutcome(repaired, consumed.master);
       expect(

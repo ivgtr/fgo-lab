@@ -23904,6 +23904,169 @@
         },
         "blocking": "Scoped forward owner has no blocking. Actual noHealing later enemy gain read/consumption, native noncommit and recovery are not established by this run. Other HP owners, whole ratchets/typed diagnostics, legacy, formal performance, README quality and integrated counters/digests/all receipts remain open. Step0/1/3 established; Step2 and TSK-08 in_progress; TSK-09.1/09 blocked.",
         "nextLimitedOperation": "Stop selecting the next HP action/recipient as a standalone audit family. First test one shared HP evidence model against the current canonical HpOperation/HpActorState unions and the direct producer/consumer paths: typed declaration and available command, selected/reached native operation, ordered attempted/returned state and receipts, physical HP reads and committed consumption, explicit normal nonselection, transactional rejection, and separately invoked recovery. Derive proof obligations from the semantic transition/read boundary, not the product of action × lifetime × recipient or unobserved-row counts. Reuse current inventory/digest, original request ledger, captures and typed gate; determine which existing family-specific captures are projections of a common event and which require a genuine distinct rule. Use representative schema-legal counterexamples and inventory counts to falsify the model before any broad implementation. Do not add another per-owner module or infer missing product behavior from an absent read/recovery in an execution that has no such consumer. Preserve Step3 shards without an identity issue; do not begin quality/closure. No push."
+      },
+      "hpOperationModelCheckpoint": {
+        "status": "bounded shared operation/read/transaction model verified at current source; TSK-08 not closed",
+        "startHead": "ca9ffe88b9c035c955f40338aa8240508676c73a",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "sourceIdentity": [
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 14962,
+            "sha256": "9554db957716e98dda3ad4f4602a694976c04ab5c96e73827be2466872ae304f"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationHp.ts",
+            "bytes": 20830,
+            "sha256": "e3899f1cc22e8248952bb394c8a1324d12ffa7c847e13a7c8bd91323fc5dff5d"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 61000,
+            "sha256": "4dc434a6b0693e8671794fe5b534d074565be72d38807b012b8930f0f2b29cf2"
+          },
+          {
+            "path": "packages/calculation-application/src/hpExecution.test.ts",
+            "bytes": 56134,
+            "sha256": "0b7457afdfc1f02678fb9a4e73de1c60cda388c4ad6042c4144f39e4a2f23abd"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+            "bytes": 40307,
+            "sha256": "57c425e48c15cdb6cf8c15816fad4c4b0cfe4eaebd398ded1102849a44ae9a21"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpOperationEvidence.ts",
+            "bytes": 21808,
+            "sha256": "54b8bc269a50df61e9329b8cf2aa1fc05cfb19a99a27da321459dcd6fec7e66b"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 117976,
+            "sha256": "b8c16dda55abf374c3d3c552a901e203707520a873ec4bb1a423c0a6faf1c460"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "artifactIdentity": {
+          "baselineManifest": {
+            "path": "/tmp/fgo-tsk08-capture-baseline-ca9ffe88/.test-results/2026-09-28T12-19-05-702Z-15-3bfc89/manifest.json",
+            "bytes": 6307,
+            "sha256": "97153662ab81de70be834c0ea503e1538df7eb1a47efa2cde95320da688c74a7"
+          },
+          "candidateManifest": {
+            "path": ".test-results/2026-09-28T12-35-38-891Z-15-72db5b/manifest.json",
+            "bytes": 6563,
+            "sha256": "122654e7aa0d55408d147fe54f80feacc4a0aff0f71410920175bf471a74c3f1"
+          },
+          "operationEvidence": {
+            "path": ".test-results/2026-09-28T12-35-38-891Z-15-72db5b/production-hp-operation-evidence.json",
+            "bytes": 3745246,
+            "sha256": "9a80a78a9f8452c09ef2165b5b2e49ec7fbd8c21c1f9257bc44c791e24b20390"
+          }
+        },
+        "owner": "battle-execution original executeHpOperation/HP-step and modifier reads; calculation-application original request ledger/shared writer inventory, existing candidate read capture and productionAuditArtifacts owner",
+        "model": "Canonical writer identity + request/action/sourceInstance/operationIndex/step; owner context is distinct from selected step, reached decision, HP operation result, native commit/reject, physical modifier/candidate read and committed consumption. Writer-to-read is reference-only via retained modifier instance or HP receipt. Recovery is a second request, never mutation of the first. No downstream consumer means no read/recovery obligation.",
+        "population": {
+          "originalRequests": 3186,
+          "writerDeclarations": 486,
+          "availableOperations": 2195,
+          "selectedOperations": 2195,
+          "reachedAttempts": 2195,
+          "committedOperations": 2195,
+          "operationRows": 2195,
+          "preparationModifierReads": 2113,
+          "candidateReads": 126,
+          "normalOwnerContextNonselection": 374,
+          "unresolvedOwnerContext": 0,
+          "selectedWriterDeclarations": 303,
+          "ownerContextUnselectedDeclarations": 42,
+          "noOwnerContextDeclarations": 141,
+          "initialPassiveReceiveInstancesWithoutSameRequestWriter": 14
+        },
+        "falsifiers": [
+          "schema-legal ordered fixed loss+gain",
+          "receive modifier append to later physical gain read by original instance",
+          "removeHpModifiers to empty later read",
+          "applied HP step followed by unsupported native step rolls back both",
+          "original inputRequired request and separately prepared repaired request remain distinct",
+          "missing attempt capture, wrong native step and swapped modifier-read order reach typed failure/first difference"
+        ],
+        "artifactComparison": {
+          "commonArtifactCount": 20,
+          "byteShaIdenticalCommonCount": 18,
+          "byteShaIdenticalProductionCount": 16,
+          "runSpecificDifferent": [
+            "stdout.log",
+            "vitest.json"
+          ],
+          "newArtifact": "production-hp-operation-evidence.json",
+          "completeDecoded": "All 16 common production artifacts have exactly equal disk bytes/SHA, which preserves every decoded value, order and count. New artifact fully decodes equal to test-owned payload; 486 declaration rows, 2195 operation rows, 2113 preparation reads, 126 candidate reads and gate failures0/firstDifference null.",
+          "baselineDiskReceipts": "20/20 bytes/SHA, artifactVerification.errors empty",
+          "candidateDiskReceipts": "21/21 bytes/SHA, artifactVerification.errors empty"
+        },
+        "performance": {
+          "environment": "same published master/input, CPU affinity 0-7, audit1 worker, same timeout/budget, pnpm 11.20.0 verifyDepsBeforeRun:error unchanged",
+          "baselineHead": "ca9ffe88b9c035c955f40338aa8240508676c73a",
+          "baselineFirstTestMs": 33224,
+          "candidateFirstTestMs": 31122,
+          "firstTestLimitMs": 60000,
+          "baselineFileMs": 142430,
+          "candidateFileMs": 139130,
+          "fileComparisonQualification": "baseline 9 tests versus candidate 10; full-file timing is descriptive only",
+          "formalBeforeAfterThreeRuns": "unmet; this one-run pair is diagnostic only",
+          "baselinePreparation": "isolated git archive in /tmp; frozen lockfile install; offline attempt failed because idb tarball absent, then normal frozen install succeeded; no pnpm setting/shim change"
+        },
+        "verification": {
+          "audit": "10/10 final candidate; baseline 9/9",
+          "productionHpPaths": "7/7",
+          "calculationHpUnit": "22/22",
+          "battleExecutionUnit": "78/78",
+          "typecheck": "passed",
+          "targetLintFormat": "passed",
+          "runner": "59/59",
+          "docs": "6/6 and docs integrity passed",
+          "finalQuality": "not started because TSK-08 obligations remain"
+        },
+        "closureReconciliation": {
+          "checklist1": "Verified previously; sole TSK-06.5 producer/shared inventory unchanged at matching master identity.",
+          "checklist2": "Shared HP operation/read/transaction join connected for original control ledger and schema-legal forward/reject/recovery. Whole six-class ratchet remains unmet.",
+          "checklist3": "Current typed gate and artifact owner used; full failure-class reachability and integrated receipts remain unmet.",
+          "checklist4": "Legacy loader/scan/candidate-list/duplicate-fixture definition/reference/unique coverage inventory and cleanup remain unmet.",
+          "doneGate": "Actual scoped HP numerical/transaction differences have governing owner and ordered witness; whole damage/digest/diagnostic/inventory/parity/fail-closed final-identity acceptance remains unmet.",
+          "TS-AUDIT-001/RK-AUDIT-001": "Scoped audit and inventory passed; full matrix/parity/fail-closed final gate remains unmet.",
+          "TS-OUT-001/TS-ART-001": "New complete artifact and all local receipts pass; six failure classes and integrated receipt/first-difference reachability remain unmet.",
+          "RK-PERF-001/TS-PERF-002": "One same-input diagnostic pair recorded; formal before/after three-run gate remains unmet.",
+          "DX-HANDOFF-001": "Task/evidence checkpoint in progress; README final quality unmet.",
+          "inputLifecycle1": "Established current input/gate evidence reused at same master identity.",
+          "inputLifecycle2": "Established 486-source/7470-cell primitive inventory retained; current shared writer declaration count 486 is a different population.",
+          "inputLifecycle3": "Completed mutation slices reused only within their identity and owner boundary.",
+          "inputLifecycle4": "Common operation capture reaches all selected original-control HP steps; other ledger/consumer semantic transitions not certified by this scoped proof.",
+          "inputLifecycle5": "Whole ratchet and diagnostics reachability unmet.",
+          "inputLifecycle6": "Legacy cleanup unmet.",
+          "inputLifecycle7": "Formal performance/final quality/integrated acceptance unmet.",
+          "inputLifecycle8": "Native committed and schema-legal rejected/repaired separate-request transitions verified locally; full alternate/recovery owner coverage remains unverified. No read/recovery demanded for requests without downstream consumer."
+        },
+        "remaining": [
+          "six failure-class ratchet and diagnostics reachability",
+          "legacy reference/unique-coverage cleanup",
+          "formal applicable before/after three-run performance",
+          "README final quality and all final-identity receipts/counter/digests",
+          "separate native/recovery owner proof only where a real downstream consumer exists"
+        ],
+        "nextLimitedOperation": "Use existing productionParityDiagnostics/matrix/artifact owner to classify the six failure classes and legacy definition/reference/unique coverage before any dependent quality. If a separate semantic owner appears, record its exact boundary and stop; do not resume action-by-action HP audits or regenerate Step3 shards without identity doubt.",
+        "taskStatus": {
+          "step0": "established",
+          "step1": "established",
+          "step2": "in_progress",
+          "step3": "established",
+          "TSK-08": "in_progress",
+          "TSK-09.1": "blocked",
+          "TSK-09": "blocked"
+        }
       }
     }
   ],
