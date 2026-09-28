@@ -23885,12 +23885,13 @@
         },
         {
           "stage": 2,
-          "current": "Step 2 remains open. Completed units[0]..[51] and retained unit52 proofs remain separate. Latest support value-expression ten-cell checkpoint proves five original-request physical HP reads and committed consumptions for the selected level-10 cell, plus 45 normal nonselections for nine other cells. Preparation native step0/notApplicable and recovery unobserved remain distinct. Current-source full control audit first test still times out at its 60-second limit; no new complete control sidecar/all receipts. See boundedUnits[52].hpPublishedSupportValueReadCheckpoint.",
-          "nextBoundedScope": "Reconcile all TSK-08 obligations against valid evidence and current owners, then plan the bounded control audit timeout/current-source complete-sidecar path from code. After user confirmation, diagnose and fix that direct path within one session; stop at distinct CE/native/recovery/legacy owners and record their minimum next operations. Whole TSK-08 completion only if every gate independently closes.",
-          "nextScopeQualification": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
+          "current": "Step 2 remains open. Completed units[0]..[51] and retained unit52 proofs remain separate. Support ten-cell proof establishes five actual HP reads and committed consumptions on one selected level-10 cell plus 45 normal nonselections; preparation native is notApplicable and recovery unobserved. Current-source control audit now passes 8/8 within unchanged first-test 60s and publishes its full 3182-request/488-binding sidecar with 14/14 receipts. This closes the timeout/artifact path only, not CE/other owner/native/recovery or whole ratchet closure. See boundedUnits[52].controlAuditArtifactCheckpoint.",
+          "nextBoundedScope": "One separately owned Published CE attacker-HP condition proof: connect its original craftEssence scenario request and existing execution capture to the shared declaration/typed gate, after a code-based plan and user confirmation. Do not chain other HP families, native/recovery, legacy cleanup or dependent quality. Aim at TSK-08 completion only if every remaining obligation independently has valid evidence and in-scope Blocking0.",
+          "nextScopeQualification": "handoffPreparation.nextSession.ceConditionOwnerSession",
           "activeUnit52ScopeReference": "boundedUnits[52]",
           "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint",
-          "hpSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint"
+          "hpSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint",
+          "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint"
         },
         {
           "stage": 3,
@@ -23899,10 +23900,10 @@
       ],
       "latestBoundedUnit": 51,
       "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary. See boundedUnits[52].consumerResponsibilityConvergence/capacityRestorationComparisonCheckpoint/committedCapacityMaterializationCheckpoint for retained scoped checkpoints,not product closure. Current outer attempt checkpoint:original177+5=182/control7 passed,old177 full values/bytes/SHA identical,1854 negatives/58824 failure checks,199 final attempt+control receipts/error0;published capacity selected0/excludedNp1 remains a distinct boundary.",
-      "nextBoundedUnit": "unit52 TSK-08 closure reconciliation and control audit/current-source sidecar path; current-code plan and confirmation first",
+      "nextBoundedUnit": "unit52 Published CE HP condition original-owner/capture proof; current-code plan and confirmation first",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
+      "nextScopeQualification": "handoffPreparation.nextSession.ceConditionOwnerSession",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -26783,6 +26784,66 @@
         "remainingOwners": "CE condition one cell is a separate craftEssence owner; other HP native/recovery and alternate paths, whole ratchets/typed diagnostics, legacy unique coverage, formal performance, final quality, integrated counters/digests/all receipts remain independent until proven. Reuse valid units0..51, NP/OC selection, support read, Step3 eight shards when identities hold.",
         "closureDecision": "Aim for TSK-08 complete only if every checklist, Done gate, contract and eight input-lifecycle obligations has valid current evidence, in-scope Blocking0 and time remain. Then run necessary affected audit, formal before/after three-run performance, README final quality and integrated counter/digest/all-receipt reconciliation. Otherwise no dependent quality or product closure; update existing Task/evidence and make a product-incomplete local commit. No push.",
         "sessionBoundary": "At 60 minutes checkpoint in existing Task/evidence; at 90 minutes finish current atomic action and hand off. No new family or independent quality retries."
+      },
+      "ceConditionOwnerSession": {
+        "status": "prepared_docs_only; current-code plan and user confirmation required before execution or implementation",
+        "preparationHead": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "stepDecision": "Step0 baseline/contracts, Step1 V41 marker with V40 retention/explicit recomputation, and Step3 revised matrix/eligibility remain established. Step2 and TSK-08 in_progress; TSK-09.1/09 blocked.",
+        "preparationKind": "Read-only current-code and retained-artifact scope selection. No source test, producer, audit, quality, live timing, product edit or new artifact was run in this preparation.",
+        "verifiedIdentity": {
+          "head": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
+          "worktree": "clean at preparation",
+          "retainedControlManifest": {
+            "path": ".test-results/2026-09-28T09-53-29-188Z-2-fbe8ef/manifest.json",
+            "bytes": 6056,
+            "sha256": "43602b329b90978971c09c8ff68541a4f954873efbdd73c6096e8a6dd6f0ea6e"
+          },
+          "retainedControlSidecar": {
+            "path": ".test-results/2026-09-28T09-53-29-188Z-2-fbe8ef/production-hp-published-dependency.json",
+            "bytes": 13253020,
+            "sha256": "14b3b9d8a6e1176973fda896056561947eb1868539e4868ab04b126a10a4a855"
+          },
+          "master": {
+            "path": "apps/web/public/master/master.json",
+            "bytes": 32953998,
+            "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+          },
+          "source": [
+            {
+              "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+              "bytes": 107095,
+              "sha256": "4171ed03e6e6d268c240fcb9d79a934c7ce790477dfca66685c5e8e75fde6d46"
+            },
+            {
+              "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+              "bytes": 39084,
+              "sha256": "8d0ceee618b10db445d2a266038ca25da26bb59ea1ceff57198c4896501e0804"
+            },
+            {
+              "path": "packages/calculation-application/src/productionHpProofCoverage.ts",
+              "bytes": 16310,
+              "sha256": "8f747131fef90897e774b85aa2cb55a8df5d9223a2efbe550241a1aee4b9e41d"
+            },
+            {
+              "path": "packages/battle-execution/src/auxiliarySources.ts",
+              "bytes": 7466,
+              "sha256": "5b0fc34e9fce9c567bbc5ae37e9b24a14047c822011088c9b90f89730586a4a2"
+            },
+            {
+              "path": "packages/calculation-application/src/hpConditionGolden.test.ts",
+              "bytes": 6975,
+              "sha256": "1e704e51c11bef4de1f267fafbfa2b3b07ab623612e9ba312874ba3cf86798e6"
+            }
+          ]
+        },
+        "scopeEvidence": "The shared 557-declaration inventory contains one Published craftEssence requirement.expression attackerHpPermille atMost500 condition (owner9307920, occurrence21041:0). The retained current control sidecar has directScenarioOwnerRequests[] and every stage unobserved for that declaration; its 3182 original scenarios have craftEssence=null. Existing hpConditionGolden test shows normal/LB HP 1000,501,500,1 calculated outcomes, and productionHpPaths has CE normal/LB calculator/portable coverage, but neither proves the original prepared/capture lifecycle in the shared ledger. The separate CE/mystic-code projection audit uses calculateScenario without retaining its original prepared/capture. auxiliarySources constructs typed craftEssence source and productionHpPublishedDependencyCoverage already indexes typed craftEssence scenario owners.",
+        "firstDeliverable": "From current code, identify the original CE request producer, preparation/candidate capture lifetime, canonical declaration join and proof consumer. Present an implementation/verification plan with owner responsibility, selected/reached/read versus normal nonselection, typed failure and transactional boundaries, impact/performance, and every TSK-08 checklist/Done gate/Contract matrix plus input-lifecycle eight-obligation closure classification. Wait for user confirmation. Before it, only HEAD/index/tracked/untracked checks and code/docs/JSON/artifact reads/checksums; no edits or execution. If an execution diagnosis is indispensable, first state its minimal command, comparison input, decision and stop boundary. Diagnosis approval alone is not implementation approval.",
+        "afterConfirmation": "Implement only one coherent CE condition original-owner/capture/typed-gate/artifact connection if the code-based plan supports it. Borrow the original operation and observation, keep the shared inventory and existing manifest/artifact owner, preserve source order and fail closed on missing/duplicate/unmatched/foreign/altered identity. Verify condition boundary and ordinary nonselection separately from selected/reached/physical HP read, applied operation and transaction; do not infer native/recovery. Run necessary focused fixtures and affected suites, compare complete old/new decoded values/order/counts/typed reason/first difference, bytes/SHA and all receipts, then update the existing Task/evidence and commit only scoped files locally. If a different semantic owner or new HP game rule is required, record the evidence and smallest next action and stop rather than chaining implementation.",
+        "closurePolicy": "Aim for TSK-08 completion only if all checklist, Done gate, Contract matrix and input-lifecycle eight obligations have valid current evidence, in-scope Blocking0 and time for required affected audit, formal before/after three-run performance, README final quality and integrated counters/digests/all receipts. The current CE unit alone cannot imply whole closure. Otherwise make a product-incomplete checkpoint without dependent quality. Keep TSK-09.1/09 blocked and do not push.",
+        "excluded": "Other HP owner/action/lifetime/recipient, native/noncommit/recovery, other selection family, legacy cleanup, HP game semantics, runner redesign and TSK-09.1/09. Reuse units0..51, retained NP/OC/support/control proofs and Step3 eight shards at matching identity; do not regenerate them without a concrete mismatch.",
+        "performanceBoundary": "Only if calculation structure, capture or product hot path changes, use the same input and affinity0-7, production4/unit4/audit1 workers and budget for one baseline/candidate live-phase diagnostic each. This does not replace formal before/after three-run contracts. The control first-test limit stays 60000ms. The current pnpm-workspace setting requires dependency synchronization to a writable /tmp store on drift; use ordinary pnpm after synchronization and do not revive the historical shim fallback.",
+        "sessionBoundary": "At 60 minutes checkpoint in existing Task/evidence; at 90 minutes finish the current atomic action and hand off. Do not start another family, an extra quality retry or an independent investigation."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -27754,7 +27815,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "The current-source control audit timeout and complete-sidecar path are locally closed by boundedUnits[52].controlAuditArtifactCheckpoint. Next bounded work belongs to a separate CE/HP native/recovery owner or remaining whole ratchet/legacy obligation; formal performance, README quality and integrated closure wait for all Blocking to clear. TSK-08 remains in_progress and TSK-09.1/09 blocked.",
+    "nextSession": "One bounded Published CE attacker-HP condition original-owner/capture proof, beginning with a current-code plan and user confirmation; see handoffPreparation.nextSession.ceConditionOwnerSession. The current-source control timeout/full-sidecar path is closed locally by boundedUnits[52].controlAuditArtifactCheckpoint. Separate native/recovery/other owner, whole ratchet/legacy, formal performance, README quality and integrated closure wait for their own valid evidence. TSK-08 remains in_progress and TSK-09.1/09 blocked.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -27799,8 +27860,9 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
+    "nextSessionReference": "handoffPreparation.nextSession.ceConditionOwnerSession",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
+    "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
     "capacityAttemptMaterializationCheckpointCommit": "f375eea18ed2184de2943f7303ada777dfc44f71",
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",

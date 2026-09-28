@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.123"
+document_version: "1.7.124"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4035,3 +4035,11 @@ pnpmの反復SQLite障害はテストの問題ではない。既存`node_modules
 現source・同masterで影響audit fileは8/8成功、第1 test32.206秒、artifact test22.614秒、warning0、manifest artifact error0。全14宣言／receiptが一意でdisk bytes／SHAと一致した。missing／duplicate／unmatched、参照・順序、typed first difference、HP非commit拒否の既存局所fixture3 fileも80/80成功。旧新control sidecarはrequest3182／binding488／unobserved5、順序、gate failure0／first difference nullが一致。新しい`actualValueRead`未観測stage71件だけを除けば完全decoded envelopeは一致し、他の共通production artifact12件はbytesも一致する。`tsc -b`、対象ESLint／Prettier、差分checkが成功。artifactとchecksum、TSK-08 checklist／Done gate／Contract closure matrix・入力lifecycle8義務の分類は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].controlAuditArtifactCheckpoint`を正本とする。
 
 この限定経路のBlockingは0だが、CE craftEssence owner、別HP action／lifetime／recipientとnative／recovery、全ratchet・typed failure到達、legacy固有coverage、正式前後各3run性能、README最終quality、統合counter／digest／全receiptは未達または未照合。Step 0／1／3は成立、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`。依存quality／製品closureは開始しない。次は別ownerまたは未達義務を一単位として選ぶ。今回の成果は対象限定local checkpoint commitとし、pushしない。
+
+### Step再確認とPublished CE HP条件owner次単位準備（2026-09-28）
+
+開始HEAD `b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f`、index／tracked／untrackedはclean。Step 0のbaseline／契約、Step 1のV41 marker・V40保持／明示再計算、Step 3の改訂matrix／eligibilityは維持される。Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`。直近control audit manifest／sidecar、master inputは記録bytes／SHAと現diskが一致。第1 test32.206秒を含む影響audit8/8と全14 receiptは前sessionの同identityで成立済みであり、この準備ではsource test／producer／audit／quality／live計測を再実行していない。
+
+次の一単位は、共有557宣言中のPublished CE `craftEssence` owner 1件に限定する。現sidecarでは`requirement.expression`のattacker HP≤500条件について直接owner requestは空で、全stage未観測。元control3182 scenarioのcraftEssenceは全て`null`。一方、既存HP goldenはnormal／LB・HP1000／501／500／1の計算結果を、production HP pathsはCEのcalculator／portable経路を検証している。別のCE／mystic-code control testは`calculateScenario`を実行するが元prepared／captureを保持しない。したがって数値testの存在を元request→選択→実readの共有audit証拠へ読み替えない。CE原producer、元captureのlifetime、typed identity joinと実read／非選択の区別は、次作業者が現コードから設計判断する。特定IDへのruntime分岐や第二の期待値生成器は設けない。
+
+次sessionは最初に、現コードの直接生成／利用経路、変更候補、局所反証、影響suite、性能条件、TSK-08 checklist／Done gate／Contract closure matrixと入力lifecycle8義務の成立・未達を計画として利用者へ提示して確認を待つ。確認前は読込・checksumのみ。確認後はこのCE ownerの一単位を必要な実装・検証・既存Task／evidence更新・対象限定local commitまで進める。別HP owner、native／recovery、legacy整理を連鎖しない。全義務が有効証拠で成立し対象内Blocking0、時間余裕がある場合だけ必要な正式性能・README最終quality・統合照合に進みTSK-08完了を目指す。未達が残れば製品未完了checkpointで止める。60分で既存正本へcheckpoint、90分では現在のatomic actionを終えて引き継ぐ。詳細正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.ceConditionOwnerSession`。pushしない。

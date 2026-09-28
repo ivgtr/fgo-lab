@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.129"
+document_version: "1.4.130"
 status: "Active"
 updated_at: "2026-09-28"
 ---
@@ -101,3 +101,5 @@ Published support HP value-expression10 cellの元owner／capture限定結果は
 次sessionの限定準備は同evidenceの`handoffPreparation.nextSession.hpSupportValueReadSession`。現コードでHP値解決はoperation dispositionより前、modifier追加とgroup commitは後段であり、projectionの`applied`を実HP readやtransaction確定の証拠と扱わない。直近support source2／input1／artifact8と旧control artifact6の現disk identityを照合済み。旧準備source2は変更済みの履歴identity。まずコードに基づく設計・TSK-08 closure可否を提示して確認を待ち、確認後にsupport十cellの一単位だけ同sessionで進める。監査60秒上限と製品未完了の停止境界は維持する。
 
 現sourceのcontrol audit timeoutと完全artifact到達の限定結果は[parity evidence](tsk-08-parity-ratchet.json) `boundedUnits[52].controlAuditArtifactCheckpoint`。第1 testの元request・gate値を保ち、二つの大きいHP diagnosticの保存と完全decodeを直後のtestへ分けた。影響audit8/8、元control3182 request／488 binding、新sidecar、artifact全14 receiptのdisk bytes／SHAが一致し、既存60秒上限内で通過した。support実readは選択1 cellの元5 requestだけで、CE別owner・native／recovery、全ratchet、legacy、正式性能、最終quality、統合closureは未達。TSK-08は`in_progress`、09.1／09は`blocked`を維持する。
+
+Step再確認と次の一単位の準備は同evidence `handoffPreparation.nextSession.ceConditionOwnerSession`。Step 0／1／3は維持、Step 2は未完了。現sidecarのCE HP条件1件は元owner requestが空で全stage未観測だが、既存のCE数値golden／calculator・portable testは元prepared・captureの共有audit接続を証明しない。次作業者は現コードのCE ownerから計画を提示し利用者確認を待った後、一つのowner経路だけ実装・検証する。別HP owner・native／recovery・legacyは連鎖せず、全義務が有効に閉じた場合だけTSK-08完了を判定する。
