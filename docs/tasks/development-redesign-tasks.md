@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.129"
+document_version: "1.7.130"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4140,3 +4140,15 @@ legacyはdata-pipelineの`audit-oc-planning-baseline.mjs`が四raw export・func
 checklist①は既存単一producerを同identityで再利用、②③と入力lifecycle⑤は局所経路あり・全体ratchet／統合receipt未達、④と⑥は上記Deferred。Done gateの全damage差分・最初のcanonical差分・bounded／完全結果・最終inventory／parity／fail-closedは統合未達。`TS-AUDIT-001`／`RK-AUDIT-001`は最終影響audit、`TS-OUT-001`／`TS-ART-001`は全体出力／artifact、`RK-PERF-001`／`TS-PERF-002`は適用される正式変更前後各3run、`DX-HANDOFF-001`はREADME最終qualityが未達。入力lifecycle①〜③はsource／input／owner一致の既存証拠、④⑧は別native／recovery consumer境界の全体証拠が未達、⑦は正式性能・最終受入未達。Step 0／1／3は維持。TSK-08にDeferredと未達が残るためStep 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。依存qualityへ進まない。
 
 次の限定操作はdata-pipeline ownerがraw baseline／normalized-masterの現行契約・caller・全固有cell／公開join assertionの代替を決め、証拠を保持して廃止可能な定義だけを判定すること。その後、後続consumerのあるnative／recovery境界と六クラスの同一最終identityを再照合する。今回の判断・identity・全義務対応の正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.afterPartialCommitCheckpoint.approvedSessionResult`。対象限定local文書checkpointとし、pushしない。
+
+### TSK-08 完了までの判定順序（計画の明確化、2026-09-28）
+
+製品実装より先に、未達を次の三つの判定へ縮める。前段の判定で別ownerの独立作業が確定したら、その根拠と次の限定操作をこのTask／evidenceへ残して停止する。「全production母集団」は正常経路のshared inventory／matrixで、「失敗時の挙動」は意図的なschema-legal反例で確認する。両者を混ぜて各profileへ失敗を注入しない。
+
+| 順序 | 判定するもの | 閉じる証拠／次へ進む条件 |
+| --- | --- | --- |
+| 1. legacyの正確な削除対象 | 旧loader・scan・candidate list・重複fixtureの定義、直接caller、入力母集団、固有assertionを一行ずつ記録する。raw OC baseline／normalized-master／normalizationのraw・公開cell／writer監査、現行package inventory、test内共有readを別物として扱う | 同じ入力・assertionを現ownerが保持する旧経路だけ削除する。固有coverageを持つ経路は保持し、checklist④の「削除」との適用判断をこのTaskに明示する。literalな削除義務と両立しなければDeferredのままownerへ渡す。名称だけで削除・完了判定しない |
+| 2. 六失敗クラスとconsumer境界 | parity、unsupported、invalid、partial commit、inert control、stale mutationを各一行で、正常production母集団／0件ratchet、元入力、意図的反例、typed gate／reason、canonical identity／first difference、bounded summary、完全decode artifact、receiptへ結ぶ | 既存80条件matrix／eligibility、共通HP operation／read／transaction、partial commit artifactを一致するidentityで再利用する。native／recoveryは後続consumerのある元requestだけを評価し、非選択・未到達・reject・別実行の修復を混同しない。直接の欠落のみ既存ownerで修正する |
+| 3. 同一最終identityの受入 | 1と2でTSK-08のDeferred／Blockingが0になってからsource／master／inputを固定し、共有inventory・digest、80条件、calculator／ranking parity、fail-closed、first diff、bounded／完全結果、全receiptのdisk bytes／SHA-256を照合する | 必要な影響audit、変更内容に適用される正式変更前後各3run性能gate、README最終`pnpm quality`を各一度実施する。構造・capture・製品hot pathが変わらなければ性能contractごとに非適用理由と不変identityを記録する。検証中のidentity変更は影響結果だけ無効化する |
+
+判定1・2が済むまでREADME最終qualityやTSK-09系を開始しない。8 shardsは具体的なidentity疑義がある場合だけ再生成する。これはchecklist／Done gate／Contract matrix／入力lifecycle8義務を緩める計画ではなく、各義務へ必要な証拠を一度ずつ対応付ける順序である。前回の製品未完了判定は維持し、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。計画のみの更新で製品test／監査／計測は実行しない。詳細な判定文は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence`を参照する。pushしない。
