@@ -26698,6 +26698,7 @@
       },
       "tsk08ClosureReconciliationSession": {
         "status": "prepared_docs_only; current-code plan and user confirmation required before diagnosis, source tests or implementation",
+        "runnerPreparation": "2026-09-28 pnpm11 diagnosis and repair: installed workspace state had enableGlobalVirtualStore=false while the run setting differed; installed and wanted lockfiles differed, and the wanted lockfile failed frozen install against calculation-application/package.json. Default verify-deps-before-run=install then tried an install before tests and failed at the external SQLite store. pnpm-workspace.yaml now sets enableGlobalVirtualStore=false and verifyDepsBeforeRun=error; the lockfile importer was corrected and pnpm install --offline --store-dir=/tmp/tsk08-pnpm-store synchronized existing node_modules. Ordinary pnpm exec and test:docs succeeded. Do not repeat the known SQLite failure or use the shim to hide dependency drift. Older fallback instructions are historical. On a future dependency change use pnpm install with a writable store as in README, review the lockfile diff, then use ordinary pnpm. Recheck only when node_modules, lockfile or pnpm configuration changes.",
         "preparationHead": "4bfb4cd08c4aad05c7081af6b6e1f547231370a8",
         "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
         "stepDecision": "Step0 baseline/contracts, Step1 V41 marker with V40 retention/explicit recomputation, Step3 revised matrix/eligibility established. Step2 and TSK-08 in_progress; TSK-09.1/09 blocked.",

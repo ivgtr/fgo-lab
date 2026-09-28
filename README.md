@@ -13,6 +13,8 @@ pnpm dev
 
 Node.js 24以上、pnpm 11を対象とします。`pnpm build`はNext.jsの本番成果物を`apps/web/.next`へ生成し、`pnpm preview`で本番サーバーを起動します。
 
+`pnpm`は実行前にlockfileと`node_modules`の整合を確認し、不一致なら理由を表示して停止します。依存関係の変更後は`pnpm install`でlockfileとインストール済み依存関係を同期してください。書き込み可能な領域がリポジトリと`/tmp`だけの開発環境では、`pnpm install --store-dir=/tmp/fgo-lab-pnpm-store`を使います。CIでは同期済みlockfileを`--frozen-lockfile`で検証します。SQLite storeへの書き込み失敗をテスト失敗として扱わず、storeの場所と依存状態を確認してください。
+
 ## デプロイ
 
 VercelプロジェクトのRoot Directoryを`apps/web`に設定してデプロイします。ワークスペース内パッケージを参照するため、Root Directory設定の「Include source files outside of the Root Directory」を有効にします。フレームワークはNext.jsとして自動検出されます。
