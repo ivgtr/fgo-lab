@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.132"
+document_version: "1.7.133"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4173,3 +4173,5 @@ HPの監査対象はaction別の分岐表でなく、既存canonical宣言と元
 HPの有限な反証表は、①owner文脈からの通常非選択、②選択後未到達／skipped、③attempt後native rejectと元state保持、④適用commitと保持writer参照、⑤consumerなし／未到達、⑥実read後の非消費／消費、⑦元requestのinputRequiredと入力command後の別request、の7遷移とする。これらはaction×recipient全組合せではない。元control台帳3186件と共通HP proofを再利用する。support projectionの現fixtureには`original, withInputs, selected, withInputs, selected`の5 requestが保存され、`repairAttempt`はこの入力で観測されていない。phase名から元requestとのlinkを推測せず、⑦は明示linkを持つ小さいschema-legal反例で確かめる。欠落や曖昧さは監査失敗であり、別の保存先や値で補わない。
 
 この設計で実装前に残るのは、legacy全定義・callerの最終表、7遷移へ実在の元／修復request参照と代表反例を割り当てること、正式性能のbaseline／candidate実行環境が同条件で起動することの確認である。表が確定するまで新しいHP audit分岐やlegacy削除を始めない。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence.preimplementationDesignDecision`。今回の更新は設計のみで、checklist②〜④やDone gateの完了は主張しない。Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
+
+追加の読取照合では、共通HP operation artifactのsource 7件、公開master、candidate manifest／artifact、manifest receipt 21件を現diskのbytes／SHA-256と一致確認した。元control request 3186件に対し、operation 2195件は全件到達・attempt・native commit、通常非選択は宣言×request 374組。実際のcandidate read 126件には非消費12件がある。元入力にnative reject／選択後未到達は現れず、support projection 5 requestにも`repairAttempt`はない。`hpExecution.test.ts`は共通`reconcileHpOperationEvidence`へrejectと修復前後2 requestを渡し、transactionとwriter→read参照を検証済み。ただし実際の入力command／前request参照は同gateへ渡さず、隣接する2件が修復関係にあることは監査上未証明。局所fixtureにはmaximumFixedの`writer-unreached`とnative reject／prefix保持、selectedAllyの`native-unreached`・`no-reader`・`no-np`、receive／giveのrejectとread未到達がある。`HpPublishedDependencyRequest`の`requestPhase`／`ownerScope`も元request・commandへの参照を持たず、`productionHpPaths.test.ts`は修復後の最終scenarioを保存する。次は既存の元preparation／actionと順序付きconsumer planを監査台帳で参照できるかを確認し、監査専用の最小の前request・command linkとtyped consumer dispositionを確定する。拒否・invalid時の`orderedScenario`はnullであり、consumerの不存在をread欠落から推測しない。旧経路の全件定義・callerとchecklist④の削除文言の照合も未了。現成果は調査checkpointであり、製品source test／audit／正式性能／最終qualityは実施していない。
