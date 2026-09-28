@@ -23813,11 +23813,12 @@
         },
         {
           "stage": 2,
-          "current": "Step 2 remains open. Completed units[0]..[51] and retained unit52 proofs remain separate. Latest support value-expression target ten-cell checkpoint has original support owner five requests, five selected level-10 preparation cells and 45 normal other-cell nonselections; target native step0/notApplicable, physical HP read unobserved. Projection disposition says applied but is a different layer. Current-source control audit first test timed out at existing 60 seconds and a new full sidecar/receipts are unavailable. See boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint; whole TSK-08 gates remain open.",
-          "nextBoundedScope": "Plan and, after user confirmation, implement only support value-expression ten-cell original request/capture/selected-operation/actual-read coverage if current owner path supports it; otherwise record exact unmet conditions and next bounded operation. CE, other family, native/recovery and runtime gap are separate.",
-          "nextScopeQualification": "handoffPreparation.nextSession.hpSupportValueReadSession",
+          "current": "Step 2 remains open. Completed units[0]..[51] and retained unit52 proofs remain separate. Latest support value-expression ten-cell checkpoint proves five original-request physical HP reads and committed consumptions for the selected level-10 cell, plus 45 normal nonselections for nine other cells. Preparation native step0/notApplicable and recovery unobserved remain distinct. Current-source full control audit first test still times out at its 60-second limit; no new complete control sidecar/all receipts. See boundedUnits[52].hpPublishedSupportValueReadCheckpoint.",
+          "nextBoundedScope": "Reconcile all TSK-08 obligations against valid evidence and current owners, then plan the bounded control audit timeout/current-source complete-sidecar path from code. After user confirmation, diagnose and fix that direct path within one session; stop at distinct CE/native/recovery/legacy owners and record their minimum next operations. Whole TSK-08 completion only if every gate independently closes.",
+          "nextScopeQualification": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
           "activeUnit52ScopeReference": "boundedUnits[52]",
-          "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint"
+          "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint",
+          "hpSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint"
         },
         {
           "stage": 3,
@@ -23826,10 +23827,10 @@
       ],
       "latestBoundedUnit": 51,
       "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary. See boundedUnits[52].consumerResponsibilityConvergence/capacityRestorationComparisonCheckpoint/committedCapacityMaterializationCheckpoint for retained scoped checkpoints,not product closure. Current outer attempt checkpoint:original177+5=182/control7 passed,old177 full values/bytes/SHA identical,1854 negatives/58824 failure checks,199 final attempt+control receipts/error0;published capacity selected0/excludedNp1 remains a distinct boundary.",
-      "nextBoundedUnit": "unit52 support value-expression actual-read coverage plan first; scoped implementation after confirmation only",
+      "nextBoundedUnit": "unit52 TSK-08 closure reconciliation and control audit/current-source sidecar path; current-code plan and confirmation first",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "handoffPreparation.nextSession.hpSupportValueReadSession",
+      "nextScopeQualification": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -23845,7 +23846,8 @@
       "asOfHpRemainingProofCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
       "asOfPublishedDependencyCheckpointReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint",
       "asOfPublishedDependencyRemainderCheckpointReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint",
-      "asOfSupportValueCheckpointReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint"
+      "asOfSupportValueCheckpointReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint",
+      "asOfSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint"
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -24650,7 +24652,7 @@
       },
       "historicalRootQualification": "Historical-prefixed plans remainhistory. productionAuditInputLifecycleSession wasconfirmedandexecuted;currentresultandnextlimitedoperationareownedby boundedUnits[52].productionAuditInputLifecycleCheckpoint.",
       "currentCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
-      "currentSessionReference": "handoffPreparation.nextSession.hpSupportValueReadSession",
+      "currentSessionReference": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
       "capacityAttemptMaterializationSession": {
         "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -26693,6 +26695,20 @@
         "sessionBoundary": "At 60 minutes checkpoint in existing canon; at 90 minutes finish atomic action and hand off. No additional quality retries, independent investigation or family expansion.",
         "recordCommitPolicy": "Resolve this documentation preparation commit from Git history; do not self-reference its hash.",
         "resultReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint"
+      },
+      "tsk08ClosureReconciliationSession": {
+        "status": "prepared_docs_only; current-code plan and user confirmation required before diagnosis, source tests or implementation",
+        "preparationHead": "4bfb4cd08c4aad05c7081af6b6e1f547231370a8",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "stepDecision": "Step0 baseline/contracts, Step1 V41 marker with V40 retention/explicit recomputation, Step3 revised matrix/eligibility established. Step2 and TSK-08 in_progress; TSK-09.1/09 blocked.",
+        "verifiedIdentity": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint source7/input1/artifact4: every recorded bytes/SHA matches present disk at preparation. Older preparation source hashes changed during previous implementation and remain historical. Current-source complete control sidecar/all receipts do not exist.",
+        "validLocalProof": "Support value-expression ten-cell unit: five original-request actual HP reads and committed modifier consumptions for one selected level-10 cell; 45 normal nonselections for nine other cells. Native step0/notApplicable and recovery unobserved. Other family/owner/read closure does not follow.",
+        "firstDeliverable": "Read current producer, audit capture, consumer, typed gate, artifact and test code. Present owner/responsibility, direct-path change and verification plan; map every TSK-08 checklist/Done gate/Contract closure matrix item and eight productionAuditInputLifecycleCheckpoint.closureReconciliation obligations to valid evidence, this-session condition or outstanding owner. Wait for user confirmation. Before confirmation only HEAD/index/tracked/untracked, code/docs/JSON/artifact reads and checksum checks. For indispensable execution diagnosis, first state minimal command, comparison inputs, decision and stopping boundary; diagnosis approval is not implementation approval.",
+        "boundedExecution": "After confirmation, trace and measure the existing first control audit test under unchanged 60-second budget, identify the direct cause and make only justified audit/producer/capture/consumer/typed-gate or test-owner changes needed to obtain current-source complete sidecar and receipts. Use small counterexamples, affected suites, complete decoded old/new artifact values/order/counts, typed reasons/first difference, disk bytes/SHA and receipt checks. Keep master and source identities explicit. If a separate owner or new game semantics is required, record evidence and minimum next bounded action; do not chain implementation.",
+        "runtimeEvidence": "Earlier success 52.680/53.091 seconds; recent full audit 64.757/66.683 timeout; same-input CPU affinity0-7 before/after one run 60.100/61.968 both timeout. No sole-change attribution, budget relaxation or aimless rerun. The first test currently loads master and computes servant scenarios; its bottleneck is not yet measured.",
+        "remainingOwners": "CE condition one cell is a separate craftEssence owner; other HP native/recovery and alternate paths, whole ratchets/typed diagnostics, legacy unique coverage, formal performance, final quality, integrated counters/digests/all receipts remain independent until proven. Reuse valid units0..51, NP/OC selection, support read, Step3 eight shards when identities hold.",
+        "closureDecision": "Aim for TSK-08 complete only if every checklist, Done gate, contract and eight input-lifecycle obligations has valid current evidence, in-scope Blocking0 and time remain. Then run necessary affected audit, formal before/after three-run performance, README final quality and integrated counter/digest/all-receipt reconciliation. Otherwise no dependent quality or product closure; update existing Task/evidence and make a product-incomplete local commit. No push.",
+        "sessionBoundary": "At 60 minutes checkpoint in existing Task/evidence; at 90 minutes finish current atomic action and hand off. No new family or independent quality retries."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -27664,7 +27680,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Support ten-cell selected operation actual HP read and committed consumption are proved for five original requests; nine cells have 45 normal nonselections. See boundedUnits[52].hpPublishedSupportValueReadCheckpoint. Step2/TSK-08 remain open for CE separate owner, other native/recovery and whole audit/ratchet/legacy/formal performance/final quality gates; TSK-09.1/09 blocked.",
+    "nextSession": "Next one-session scope is TSK-08 obligation/owner reconciliation plus the current-source control audit timeout and complete-sidecar path, beginning with a current-code plan for user confirmation. Distinct CE/native/recovery/legacy owners remain explicit unmet conditions; no automatic TSK-08 closure. See handoffPreparation.nextSession.tsk08ClosureReconciliationSession.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -27709,7 +27725,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "handoffPreparation.nextSession.hpSupportValueReadSession",
+    "nextSessionReference": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
     "capacityAttemptMaterializationCheckpointCommit": "f375eea18ed2184de2943f7303ada777dfc44f71",
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.121"
+document_version: "1.7.122"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4017,3 +4017,11 @@ TSK-08 checklistの全ratchet・typed diagnostics／完全artifact到達・legac
 最終の局所unit17、production HP7、元support test1、typecheck／対象lint・formatは成功。support artifactは旧55 bindingから実read5件を加え60 bindingとなり、新fieldと参照indexを除く完全decoded値・順序・件数は旧版と一致、typed failure0／first difference null。新artifactは182616 bytes／SHA-256 `9ae4d64b2fcd9c1d57a5a8adf8d5338d693df8415ec84130bb1d1235efc0857a`、test-owned receipt6件とdisk／manifest照合error0。元support testだけの診断runnerは6 skippedを契約違反と報告するため、全audit成功とは呼ばない。同input・affinity0–7の変更前／途中candidateのsupport live phase各1runは8.959／8.490秒、最終sourceの別runは7.908秒。単発差を性能改善や正式3-run契約とみなさない。比較と全義務の分類は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpPublishedSupportValueReadCheckpoint`を正本とする。
 
 今回単位のBlockingは0。元control sidecarの新しい全件receiptはなく、既存60秒audit第1 testのtimeout、CE別owner・他のnative／recovery、全ratchet／diagnostics到達、legacy固有coverage、正式性能、README最終quality、統合counter／digest／全receiptは未達または未照合。Step 0／1／3は成立、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`。依存quality／製品closureを開始せず、対象限定local checkpoint commitで引き継ぐ。次の限定操作は上記checkpointの`nextLimitedOperation`を参照する。pushしない。
+
+### Step再確認とTSK-08残義務・control audit次単位準備（2026-09-28）
+
+開始HEAD `4bfb4cd08c4aad05c7081af6b6e1f547231370a8`、index／tracked／untrackedはclean。Step 0のbaseline／契約、Step 1のV41 marker・V40保持／明示再計算、Step 3の改訂matrix／eligibilityは成立済み。Step 2とTSK-08は未完了、TSK-09.1／09は`blocked`。直近support実read checkpointのsource7／input1／artifact4は現diskのbytes／SHAと一致した。選択level-10 cellの元request5件では実HP readとcommitted消費を証明済みで、他9 cellの45件は正常な非選択、preparation nativeは0／`notApplicable`、recoveryは未観測である。全HP依存cellのreadやnative／recoveryへ拡張しない。
+
+残義務は、(1) HP別owner・native／recoveryを含む経路のcoverage、(2) 全ratchetとtyped diagnostics／完全artifact到達、(3) legacy固有coverageを保持した整理、(4) 現sourceの全control sidecar／receipt、(5) 正式な前後各3run性能・README最終quality・統合counter／digest／全receiptである。既存control audit第1 testは60秒上限で直近64.757／66.683秒timeoutし、同input・affinity0–7の変更前後1runも60.100／61.968秒で両方timeoutした。以前の52.680／53.091秒との差を特定変更に帰属できず、上限緩和や無目的な再試行はしない。現コードでは同testがmaster読込後にservant別の`calculateScenario`などを行うが、律速箇所は未計測である。
+
+次の1セッションは、まず現コードからTSK-08 checklist／Done gate／Contract closure matrixと入力lifecycle8義務を有効証拠・未達・直接ownerへ対応付け、control auditのtimeoutと現source全sidecar欠落を解く限定計画を利用者へ示して確認を待つ。確認前は読込・identity照合のみ。確認後は同じaudit／artifact生成・利用経路に限って必要な診断、原因修正、局所反証、影響suite、旧新完全artifact比較と全receipt照合、既存正本更新、local commitまで進める。CE・別のHP owner・native／recovery・legacy整理を連鎖実装せず、独立ownerの不足は次の限定操作として記録する。全義務が有効証拠で閉じ対象内Blockingが0、時間が残る場合だけ正式性能・最終quality・統合照合に進みTSK-08完了を目指す。未達なら依存qualityを始めず製品未完了checkpointとする。60分で既存正本へcheckpoint、90分でatomic actionを終えて引き継ぐ。次sessionの正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.tsk08ClosureReconciliationSession`。pushしない。
