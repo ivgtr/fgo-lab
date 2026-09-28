@@ -10,6 +10,8 @@ import type { PreparedCalculationScenario, CalculationExecution } from './scenar
 export interface HpPublishedDependencyRequest {
   prepared: PreparedCalculationScenario;
   calculation?: CalculationExecution;
+  ownerScope?: 'supportProjection';
+  requestPhase?: 'original' | 'repairAttempt' | 'withInputs' | 'selected';
 }
 type Stage =
   | 'canonicalCondition'
@@ -99,21 +101,31 @@ const recipient = (declaration: HpProofDeclaration) => {
 /** Scenario ownership is weaker than canonical selection or an execution read. */
 function directScenarioOwnerIndex(requests: readonly HpPublishedDependencyRequest[]) {
   const owners = new Map<string, number[]>();
+  const supportOwners = new Map<string, number[]>();
   const add = (origin: HpProofDeclaration['identity']['origin'], owner: string, index: number) => {
     const key = JSON.stringify([origin, owner]);
     const indices = owners.get(key);
     if (indices) indices.push(index);
     else owners.set(key, [index]);
   };
-  requests.forEach(({ prepared }, index) => {
+  requests.forEach(({ prepared, ownerScope }, index) => {
     const scenario = prepared.scenario;
     if (scenario.mode !== 'resolved') return;
     for (const origin of ['attacker', 'passive', 'np'] as const)
       add(origin, scenario.attacker.servantId, index);
+    if (ownerScope === 'supportProjection')
+      for (const source of scenario.support?.composition.sources ?? [])
+        for (const skill of source.skills)
+          if (skill.enabled) {
+            const key = JSON.stringify([source.servantId, skill.skillId]);
+            const indices = supportOwners.get(key);
+            if (indices) indices.push(index);
+            else supportOwners.set(key, [index]);
+          }
     if (scenario.craftEssence) add('craftEssence', scenario.craftEssence.craftEssenceId, index);
     if (scenario.mysticCode) add('mysticCode', scenario.mysticCode.mysticCodeId, index);
   });
-  return owners;
+  return { owners, supportOwners };
 }
 
 /** Borrow existing captures only. A canonical context is neither selection nor an actual HP read. */
@@ -557,6 +569,14 @@ export function reconcileHpPublishedDependencyCoverage(
     'npEvaluation',
   ];
   const directOwners = directScenarioOwnerIndex(requests);
+  const supportOwnerRequests = (d: HpProofDeclaration) =>
+    d.identity.origin === 'attacker'
+      ? (directOwners.supportOwners.get(JSON.stringify([d.identity.owner, d.identity.skill])) ?? [])
+      : [];
+  const ownerRequests = (d: HpProofDeclaration) => [
+    ...(directOwners.owners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? []),
+    ...supportOwnerRequests(d),
+  ];
   const npBindings = new Map<string, { canonical: number[]; evaluations: number[] }>();
   observed.forEach((binding, index) => {
     if (binding.declaration.identity.kind !== 'hpRatioLow') return;
@@ -725,10 +745,60 @@ export function reconcileHpPublishedDependencyCoverage(
           : ('unobserved' as const),
     };
   };
+  const supportValueSelection = (declaration: HpProofDeclaration, requestIndex: number) => {
+    const selected = observed.flatMap((binding, index) =>
+      binding.requestIndex === requestIndex &&
+      binding.stage === 'selectedPreparationCell' &&
+      binding.declaration.effect === declaration.effect &&
+      binding.declaration.operation === declaration.operation
+        ? [{ binding, index }]
+        : [],
+    );
+    if (selected.length !== 1) {
+      if (selected.length > 1)
+        fail('ambiguousCanonical', `requests.${requestIndex}.supportValueCell`);
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: selected.length
+          ? ('ambiguousSelectedCell' as const)
+          : ('selectedCellMissing' as const),
+      };
+    }
+    const { binding, index } = selected[0]!;
+    if (binding.declaration !== declaration)
+      return { requestIndex, disposition: 'otherCellSelected' as const, selectedBinding: index };
+    const detail = binding.detail as {
+      steps: readonly { reached: readonly unknown[] }[];
+      native: { status: string; outcomes: readonly { outcome: string }[] };
+      appendedActions: readonly unknown[];
+    };
+    const reached = detail.steps.some((step) => step.reached.length > 0);
+    const noNativeStep =
+      detail.steps.length === 0 &&
+      detail.native.status === 'committed' &&
+      detail.native.outcomes.length > 0 &&
+      detail.native.outcomes.every((outcome) => outcome.outcome === 'notApplicable');
+    return {
+      requestIndex,
+      disposition: noNativeStep
+        ? ('selectedCellNoNativeStep' as const)
+        : reached
+          ? ('selectedCellReached' as const)
+          : ('selectedCellUnobserved' as const),
+      selectedBinding: index,
+      reached,
+      nativeStatus: detail.native.status,
+      appendedActions: detail.appendedActions.length,
+      actualRead: 'unobserved' as const,
+      recovery: 'unobserved' as const,
+    };
+  };
   return {
     requestCount: requests.length,
-    requests: requests.map(({ prepared, calculation }, index) => ({
+    requests: requests.map(({ prepared, calculation, requestPhase }, index) => ({
       index,
+      ...(requestPhase ? { requestPhase } : {}),
       scenario: prepared.scenario,
       preparedStatus: prepared.status,
       resultStatus: calculation?.result.status,
@@ -743,20 +813,23 @@ export function reconcileHpPublishedDependencyCoverage(
         identity: d.identity,
         value: d.value,
         operation: d.operation,
-        directScenarioOwnerRequests:
-          directOwners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? [],
+        directScenarioOwnerRequests: ownerRequests(d),
         npVariantSelections:
           d.identity.kind === 'hpRatioLow'
-            ? (directOwners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? []).map(
-                (requestIndex) => npSelection(d, requestIndex),
-              )
+            ? ownerRequests(d).map((requestIndex) => npSelection(d, requestIndex))
             : [],
         ocRateSelections:
           d.identity.kind === 'ocRateExpression'
-            ? (directOwners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? []).map(
-                (requestIndex) => ocRateSelection(d, requestIndex),
-              )
+            ? ownerRequests(d).map((requestIndex) => ocRateSelection(d, requestIndex))
             : [],
+        ...(requests.some((request) => request.ownerScope === 'supportProjection') &&
+        d.identity.kind === 'valueExpression'
+          ? {
+              supportValueSelections: supportOwnerRequests(d).map((requestIndex) =>
+                supportValueSelection(d, requestIndex),
+              ),
+            }
+          : {}),
         stages: stages.map((stage) => {
           const indices = observed.flatMap((b, index) =>
             b.declaration === d && b.stage === stage ? [index] : [],

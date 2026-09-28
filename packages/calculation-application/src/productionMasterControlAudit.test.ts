@@ -2080,179 +2080,328 @@ describe('production master inventory ratchet', () => {
     },
   );
 
-  it('calculates or rejects every support projection through the shared decision path', async () => {
-    const master = await loadProductionMaster();
-    const attacker = master.servants.find((servant) => servant.id === '100100')!;
-    const versions: VersionContext = {
-      schemaVersion: SCHEMA_VERSION,
-      engineVersion: ENGINE_VERSION,
-      appVersion: '0.1.0',
-      gameRegion: 'JP',
-      masterDataLocale: 'ja-JP',
-      masterDataVersion: master.version,
-    };
-    const failures: string[] = [];
-    const intrinsicRecipientConflicts: string[] = [];
-    const supportDispositions: {
-      servantId: string;
-      skillId: string;
-      key: string;
-      status: string;
-      outcome: EffectProjection['outcome'] | undefined;
-      explanation: EffectProjection['explanation'] | undefined;
-    }[] = [];
-    const typedUnsupported: string[] = [];
-    let projectionCount = 0;
-    const preparationRejected: string[] = [];
-    for (const source of master.servants) {
-      for (const skill of source.skills) {
-        let scenario: ResolvedScenario = {
-          ...createDefaultResolvedScenario(master, undefined, attacker),
-          preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
-          support: {
-            sourceTemplateId: null,
-            composition: {
-              sources: [
-                {
-                  sourceInstanceId: `audit:${source.id}:${skill.id}`,
-                  servantId: source.id,
-                  skills: [{ skillId: skill.id, skillLevel: 10, enabled: true }],
-                },
-              ],
-              effectInclusions: [],
+  it(
+    'calculates or rejects every support projection through the shared decision path',
+    {
+      ...productionAuditTestOptions(['production-hp-support-value-expression.json']),
+      timeout: 120_000,
+    },
+    async ({ task }) => {
+      const master = await loadProductionMaster();
+      const hpDeclarations = hpProofCoverageInventory(master).filter(
+        (declaration) =>
+          declaration.identity.kind === 'valueExpression' &&
+          declaration.operation?.kind === 'damageModifier' &&
+          declaration.operation.route.target === 'partyMember' &&
+          declaration.operation.route.contributionScope === 'partyWide' &&
+          declaration.operation.route.eligibility.kind === 'requiredRecipient' &&
+          declaration.operation.route.eligibility.recipient === 'attacker',
+      );
+      const supportHpRequests: HpPublishedDependencyRequest[] = [];
+      const attacker = master.servants.find((servant) => servant.id === '100100')!;
+      const versions: VersionContext = {
+        schemaVersion: SCHEMA_VERSION,
+        engineVersion: ENGINE_VERSION,
+        appVersion: '0.1.0',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+        masterDataVersion: master.version,
+      };
+      const failures: string[] = [];
+      const intrinsicRecipientConflicts: string[] = [];
+      const supportDispositions: {
+        servantId: string;
+        skillId: string;
+        key: string;
+        status: string;
+        outcome: EffectProjection['outcome'] | undefined;
+        explanation: EffectProjection['explanation'] | undefined;
+      }[] = [];
+      const typedUnsupported: string[] = [];
+      let projectionCount = 0;
+      const preparationRejected: string[] = [];
+      for (const source of master.servants) {
+        for (const skill of source.skills) {
+          let scenario: ResolvedScenario = {
+            ...createDefaultResolvedScenario(master, undefined, attacker),
+            preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+            support: {
+              sourceTemplateId: null,
+              composition: {
+                sources: [
+                  {
+                    sourceInstanceId: `audit:${source.id}:${skill.id}`,
+                    servantId: source.id,
+                    skills: [{ skillId: skill.id, skillLevel: 10, enabled: true }],
+                  },
+                ],
+                effectInclusions: [],
+              },
             },
-          },
-        };
-        let baseline = calculateScenarioOutcome(scenario, master, versions);
-        const repaired = new Set<string>();
-        while (baseline.result.status === 'inputRequired') {
-          const input = baseline.inputDefinitions.find(
-            (input) =>
-              ['worldTraitPresence', 'sourceMaximumHp', 'sourceChoice'].includes(input.kind) &&
-              !repaired.has(input.key),
-          );
-          if (!input) break;
-          repaired.add(input.key);
-          scenario = applyCanonicalInputCommand(scenario, {
-            kind: 'setCanonicalIntegerInput',
-            key: input.key,
-            value: input.kind === 'sourceMaximumHp' ? 10000 : 0,
-          });
-          baseline = calculateScenarioOutcome(scenario, master, versions);
-        }
-        if (baseline.status === 'rejected') {
-          preparationRejected.push(
-            `${source.id}:${skill.id}:${baseline.result.issues.map((issue) => issue.code).join(',')}`,
-          );
-          continue;
-        }
-        const projections = baseline.effects.filter(
-          (effect) => effect.source.origin === 'support' && effect.controllability === 'user',
-        );
-        projectionCount += projections.length;
-        for (const projection of projections) {
-          const values = Object.fromEntries(
-            projection.requiredInputs.map((input) => [
-              input.key,
-              input.defaultValue ?? input.minimum,
-            ]),
-          );
-          const scenarioWithInputs = {
-            ...scenario,
-            canonicalInputValues: Object.fromEntries(
-              Object.entries({
-                ...Object.fromEntries(
-                  Object.entries(scenario.canonicalInputValues).map(([key, input]) => [
-                    key,
-                    input.value,
-                  ]),
-                ),
-                ...values,
-              }).map(([key, value]) => [key, { kind: 'integer' as const, value }]),
-            ),
           };
-          const withInputs = calculateScenario(scenarioWithInputs, master, versions);
-          const current = withInputs.effects.find(
-            (effect) => effect.projectionKey === projection.projectionKey,
+          const hasHpExpression = skill.effects.some((effect) =>
+            hpDeclarations.some((declaration) => declaration.effect === effect),
           );
-          if (!current) {
-            failures.push(`${source.id}:${skill.id}:${projection.projectionKey}:missing`);
-            continue;
-          }
-          const selected = calculateScenario(
-            applyEffectControlPresentationDecision(
-              scenarioWithInputs,
-              withInputs.effectControls.find((control) => control.key === current.projectionKey)!,
+          const evaluateSupport = (
+            request: ResolvedScenario,
+            requestPhase: NonNullable<HpPublishedDependencyRequest['requestPhase']>,
+          ) => {
+            if (!hasHpExpression) return calculateScenarioOutcome(request, master, versions);
+            const prepared = prepareCalculationScenarioWithPolicy(
+              request,
+              master,
+              { kind: 'calculator' },
+              {},
               true,
-              withInputs.activationRequirements,
-              withInputs.effects,
-              withInputs.effectInputs,
-            ),
-            master,
-            versions,
+            );
+            const owner: HpPublishedDependencyRequest = {
+              prepared,
+              ownerScope: 'supportProjection',
+              requestPhase,
+            };
+            supportHpRequests.push(owner);
+            const calculation = evaluatePreparedCalculationScenario(prepared, versions);
+            owner.calculation = calculation;
+            return calculation;
+          };
+          let baseline = evaluateSupport(scenario, 'original');
+          const repaired = new Set<string>();
+          while (baseline.result.status === 'inputRequired') {
+            const input = baseline.inputDefinitions.find(
+              (input) =>
+                ['worldTraitPresence', 'sourceMaximumHp', 'sourceChoice'].includes(input.kind) &&
+                !repaired.has(input.key),
+            );
+            if (!input) break;
+            repaired.add(input.key);
+            scenario = applyCanonicalInputCommand(scenario, {
+              kind: 'setCanonicalIntegerInput',
+              key: input.key,
+              value: input.kind === 'sourceMaximumHp' ? 10000 : 0,
+            });
+            baseline = evaluateSupport(scenario, 'repairAttempt');
+          }
+          if (baseline.status === 'rejected') {
+            preparationRejected.push(
+              `${source.id}:${skill.id}:${baseline.result.issues.map((issue) => issue.code).join(',')}`,
+            );
+            continue;
+          }
+          const projections = baseline.effects.filter(
+            (effect) => effect.source.origin === 'support' && effect.controllability === 'user',
           );
-          const outcome = selected.effects.find(
-            (effect) => effect.projectionKey === projection.projectionKey,
-          )?.outcome;
-          supportDispositions.push({
-            servantId: source.id,
-            skillId: skill.id,
-            key: projection.projectionKey,
-            status: selected.result.status,
-            outcome,
-            explanation: selected.effects.find(
+          projectionCount += projections.length;
+          for (const projection of projections) {
+            const values = Object.fromEntries(
+              projection.requiredInputs.map((input) => [
+                input.key,
+                input.defaultValue ?? input.minimum,
+              ]),
+            );
+            const scenarioWithInputs = {
+              ...scenario,
+              canonicalInputValues: Object.fromEntries(
+                Object.entries({
+                  ...Object.fromEntries(
+                    Object.entries(scenario.canonicalInputValues).map(([key, input]) => [
+                      key,
+                      input.value,
+                    ]),
+                  ),
+                  ...values,
+                }).map(([key, value]) => [key, { kind: 'integer' as const, value }]),
+              ),
+            };
+            const withInputs = requireExecutableCalculation(
+              evaluateSupport(scenarioWithInputs, 'withInputs'),
+            );
+            const current = withInputs.effects.find(
               (effect) => effect.projectionKey === projection.projectionKey,
-            )?.explanation,
-          });
-          const isIntrinsicRecipientConflict =
-            selected.result.status === 'unsupported' &&
-            selected.result.missingEvidence.length > 0 &&
-            selected.result.missingEvidence.every((reason) =>
-              reason.startsWith('constraintConflict:'),
-            ) &&
-            outcome !== 'applied';
-          if (isIntrinsicRecipientConflict) {
-            intrinsicRecipientConflicts.push(
-              `${source.id}:${skill.id}:${projection.projectionKey}`,
             );
-            continue;
-          }
-          if (selected.result.status === 'unsupported' && outcome === 'unsupported') {
-            typedUnsupported.push(`${source.id}:${skill.id}:${projection.projectionKey}`);
-            continue;
-          }
-          if (selected.result.status !== 'calculated' || outcome === 'unsupported')
-            failures.push(
-              `${source.id}:${skill.id}:${projection.projectionKey}:${selected.result.status}:${String(outcome)}:${selected.effectWarnings.join('|')}`,
+            if (!current) {
+              failures.push(`${source.id}:${skill.id}:${projection.projectionKey}:missing`);
+              continue;
+            }
+            const selected = requireExecutableCalculation(
+              evaluateSupport(
+                applyEffectControlPresentationDecision(
+                  scenarioWithInputs,
+                  withInputs.effectControls.find(
+                    (control) => control.key === current.projectionKey,
+                  )!,
+                  true,
+                  withInputs.activationRequirements,
+                  withInputs.effects,
+                  withInputs.effectInputs,
+                ),
+                'selected',
+              ),
             );
+            const outcome = selected.effects.find(
+              (effect) => effect.projectionKey === projection.projectionKey,
+            )?.outcome;
+            supportDispositions.push({
+              servantId: source.id,
+              skillId: skill.id,
+              key: projection.projectionKey,
+              status: selected.result.status,
+              outcome,
+              explanation: selected.effects.find(
+                (effect) => effect.projectionKey === projection.projectionKey,
+              )?.explanation,
+            });
+            const isIntrinsicRecipientConflict =
+              selected.result.status === 'unsupported' &&
+              selected.result.missingEvidence.length > 0 &&
+              selected.result.missingEvidence.every((reason) =>
+                reason.startsWith('constraintConflict:'),
+              ) &&
+              outcome !== 'applied';
+            if (isIntrinsicRecipientConflict) {
+              intrinsicRecipientConflicts.push(
+                `${source.id}:${skill.id}:${projection.projectionKey}`,
+              );
+              continue;
+            }
+            if (selected.result.status === 'unsupported' && outcome === 'unsupported') {
+              typedUnsupported.push(`${source.id}:${skill.id}:${projection.projectionKey}`);
+              continue;
+            }
+            if (selected.result.status !== 'calculated' || outcome === 'unsupported')
+              failures.push(
+                `${source.id}:${skill.id}:${projection.projectionKey}:${selected.result.status}:${String(outcome)}:${selected.effectWarnings.join('|')}`,
+              );
+          }
         }
       }
-    }
-    if (process.env['FGO_TEST_ARTIFACT_DIR'])
-      await writeFile(
-        resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'oc-support-dispositions.json'),
-        JSON.stringify({ supportDispositions, preparationRejected }),
+      if (process.env['FGO_TEST_ARTIFACT_DIR'])
+        await writeFile(
+          resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'oc-support-dispositions.json'),
+          JSON.stringify({ supportDispositions, preparationRejected }),
+        );
+      const supportHpBindings = hpPublishedDependencyBindings(hpDeclarations, supportHpRequests);
+      const supportHpCoverage = reconcileHpPublishedDependencyCoverage(
+        hpDeclarations,
+        supportHpRequests,
+        supportHpBindings.bindings,
       );
-    expect(preparationRejected).toEqual([
-      '102800:165551:preparation:insufficientNpGauge',
-      '304000:671650:preparation:unsupportedOcExecution',
-    ]);
-    expect(projectionCount).toBe(379);
-    expect(intrinsicRecipientConflicts).toEqual([]);
-    // Exclusive intrinsic attributes are proven false by the shared condition owner.
-    for (const key of [
-      'support:audit:200200:2167650:2167650:9963:0',
-      'support:audit:2501300:2276451:2276451:21180:0',
-    ]) {
-      expect(supportDispositions.find((entry) => entry.key === key)).toMatchObject({
-        status: 'calculated',
-        outcome: 'notApplied',
-        explanation: { code: 'conditionNotMet' },
-      });
-    }
-    expect(typedUnsupported).toEqual([]);
-    expect(failures).toEqual([]);
-  }, 120_000);
+      const supportHpReceipt = await writeProductionAuditArtifact(
+        task.meta,
+        'production-hp-support-value-expression.json',
+        supportHpCoverage,
+      );
+      const supportHpBytes = await readFile(
+        resolve(
+          process.env['FGO_TEST_ARTIFACT_DIR']!,
+          'production-hp-support-value-expression.json',
+        ),
+      );
+      expect([
+        supportHpBytes.length,
+        createHash('sha256').update(supportHpBytes).digest('hex'),
+      ]).toEqual([supportHpReceipt.expectedBytes, supportHpReceipt.expectedSha256]);
+      expect(
+        isDeepStrictEqual(decodeProductionAuditArtifact(supportHpBytes), supportHpCoverage),
+      ).toBe(true);
+      expect(supportHpCoverage.gate.failures).toEqual([]);
+      expect(supportHpCoverage.declarations).toHaveLength(10);
+      expect(supportHpCoverage.requests.map((request) => request.requestPhase)).toEqual([
+        'original',
+        'withInputs',
+        'selected',
+        'withInputs',
+        'selected',
+      ]);
+      expect(
+        supportHpCoverage.declarations.every(
+          (declaration) =>
+            declaration.directScenarioOwnerRequests.length === supportHpRequests.length,
+        ),
+      ).toBe(true);
+      const supportSelections = supportHpCoverage.declarations.flatMap((declaration) =>
+        'supportValueSelections' in declaration ? declaration.supportValueSelections : [],
+      );
+      expect(
+        supportSelections.filter(
+          (selection) => selection.disposition === 'selectedCellNoNativeStep',
+        ),
+      ).toHaveLength(supportHpRequests.length);
+      expect(
+        supportSelections.filter((selection) => selection.disposition === 'otherCellSelected'),
+      ).toHaveLength(9 * supportHpRequests.length);
+      expect(
+        supportHpCoverage.bindings.filter((binding) => binding.stage === 'selectedPreparationCell'),
+      ).toHaveLength(supportHpRequests.length);
+      expect(
+        supportHpCoverage.bindings
+          .filter((binding) => binding.stage === 'selectedPreparationCell')
+          .every((binding) => {
+            const detail = binding.detail as {
+              steps: readonly unknown[];
+              native: { status: string; outcomes: readonly { outcome: string }[] };
+            };
+            return (
+              detail.steps.length === 0 &&
+              detail.native.status === 'committed' &&
+              detail.native.outcomes.every((outcome) => outcome.outcome === 'notApplicable')
+            );
+          }),
+      ).toBe(true);
+      const selectedBinding = supportHpBindings.bindings.find(
+        (binding) => binding.stage === 'selectedPreparationCell',
+      )!;
+      const reasons = (bindings: typeof supportHpBindings.bindings) =>
+        reconcileHpPublishedDependencyCoverage(
+          hpDeclarations,
+          supportHpRequests,
+          bindings,
+        ).gate.failures.map((failure) => failure.reason);
+      expect(reasons(supportHpBindings.bindings.filter((b) => b !== selectedBinding))).toContain(
+        'missingBinding',
+      );
+      expect(reasons([...supportHpBindings.bindings, selectedBinding])).toContain(
+        'duplicateBinding',
+      );
+      expect(reasons([...supportHpBindings.bindings].reverse())).toContain('orderMismatch');
+      for (const changed of [
+        { ...selectedBinding, reference: { ...selectedBinding.reference } },
+        { ...selectedBinding, family: 'foreign' },
+        { ...selectedBinding, actor: 'foreign' },
+        { ...selectedBinding, recipient: 'foreign' },
+        { ...selectedBinding, sourceInstanceId: 'foreign' },
+        {
+          ...selectedBinding,
+          detail: { ...selectedBinding.detail, native: { status: 'rejected' } },
+        },
+      ])
+        expect(
+          reasons(
+            supportHpBindings.bindings.map((binding) =>
+              binding === selectedBinding ? (changed as typeof selectedBinding) : binding,
+            ),
+          ),
+        ).not.toEqual([]);
+      expect(preparationRejected).toEqual([
+        '102800:165551:preparation:insufficientNpGauge',
+        '304000:671650:preparation:unsupportedOcExecution',
+      ]);
+      expect(projectionCount).toBe(379);
+      expect(intrinsicRecipientConflicts).toEqual([]);
+      // Exclusive intrinsic attributes are proven false by the shared condition owner.
+      for (const key of [
+        'support:audit:200200:2167650:2167650:9963:0',
+        'support:audit:2501300:2276451:2276451:21180:0',
+      ]) {
+        expect(supportDispositions.find((entry) => entry.key === key)).toMatchObject({
+          status: 'calculated',
+          outcome: 'notApplied',
+          explanation: { code: 'conditionNotMet' },
+        });
+      }
+      expect(typedUnsupported).toEqual([]);
+      expect(failures).toEqual([]);
+    },
+  );
 
   it('calculates every craft-essence and mystic-code user projection', async () => {
     const master = await loadProductionMaster();

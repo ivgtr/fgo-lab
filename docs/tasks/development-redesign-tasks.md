@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.118"
+document_version: "1.7.119"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3995,3 +3995,11 @@ expression実read observer、support修復前capture、新native／recovery owne
 次の一単位は、Published HP value-expression 30 cellのうち元ledgerに直接owner requestがない10 cellについて、support ownerの元request、preparation capture、選択operationと実HP readの関係を現コードから計画する。該当宣言はattacker originのactor `300900`・skill `49650`・occurrence `23498:0`で、現sidecarの全stage bindingは0。masterでは`skillUse`、`partyMember` recipient、`partyWide` damageModifier、`requiredRecipient: attacker`であり、元control producerのsupport projection loopはrequired input修復後に別の`calculateScenario`を使う。この成功を修復前のnative／read proofへ合成しない。`resolveModifierValue`のHP値解決だけでも実readを証明しない。CE条件1 cellは別のcraftEssence owner `9307920`で、同一単位へ連鎖しない。
 
 次sessionはまず現コードからidentity join、元producer／borrowed capture／consumer／typed failureのownerとlifetime、新observer要否、局所反証、影響suite、TSK-08全checklist／Done gate／Contract closure matrixと入力lifecycle8義務のclosure可否を示す計画を提示し、利用者確認を待つ。確認後は承認された一単位の実装・検証・旧新artifact完全比較・既存正本更新・対象限定local commitまで同sessionで進める。全義務が有効証拠と今回の単位で閉じ、対象内Blocking0と時間余裕がある場合だけ必要audit／正式3-run性能／README最終quality／統合counter・digest・全receiptへ進みTSK-08完了を目指す。未達が残れば依存qualityを始めず製品未完了checkpointを残す。60分で既存正本へcheckpoint、90分ではatomic actionを終えて引き継ぐ。pushしない。
+
+### Published support HP value-expression元owner・capture限定checkpoint（2026-09-28）
+
+開始HEADは`ce2691df7d20fe39897f4d4d9bb43f3528972ebf`、index／tracked／untrackedはclean。現コードに基づく計画を先に提示し、利用者の`OK`を得て一単位だけ実装した。共有557宣言のうち対象10 cellをcanonical effect／operationの参照で選び、元support projection testが実際に行うoriginal／withInputs／selectedの5 requestへcaptureを付けた。修復後の結果を修復前requestへ合成せず、既存元control ledgerの3182 request／488 bindingと母集団を分けた。対象artifactは50 expression context、5 selected preparation cell、計55 binding。5件はいずれも同一level-10 cellを選んだが、対象effectのnative stepは0、native outcomeは`notApplicable`。残る45件は別cell選択である。元選択sourceとtransactionの`committed`をeffect適用、実HP read、recoveryへ昇格しない。実readは未観測、CE条件1 cellは別ownerのまま。詳細のidentity、typed gate、全義務照合は[parity evidence](../evidence/tsk-08-parity-ratchet.json)の`boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint`を正本とする。
+
+局所unit9件、support test1件、typecheck、対象lint／formatは成功。新support artifactの完全値・順序・件数は同session前版と追加fieldを除き一致し、typed failure／first differenceは0／null。最終artifact 171655 bytes／SHA-256 `968382c36099143a32ecef324658d4edc53e4b5b73e1b4e2997a1ed73f8ab930`、manifestのartifact verification error0。絞り込みtest runner全体は6 skippedを契約違反として返すため、support testの成功を全audit成功と呼ばない。旧input1／artifact6の現disk identityは一致。影響audit全7件は2回とも6成功・第1 testが既存60秒上限で64.757秒／66.683秒timeoutし、新しい元control sidecarは生成されなかった。この旧新完全比較と全receiptは未達。affinity0–7・同入力／commandの変更前後1-runでも60.100秒／61.968秒で両方timeout。直近の成功52.680秒／53.091秒との差を今回差分だけへ帰属できず、上限を緩めず再試行しない。正式3-run性能の代用にはしない。
+
+TSK-08 checklistの全ratchet・typed diagnostics／完全artifact到達・legacy整理、Done gateの全damage差説明／全production parity・fail-closed、Contract closure matrixの影響audit、正式3-run性能、README最終quality、統合counter／digest／全receiptは未達または未照合。入力lifecycle8義務の分類も上記checkpointに保持した。Step 0／1／3は成立、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`。対象内の実HP readとaudit timeoutが残るため依存quality／製品closureは開始しない。次は同じ元選択operationのcandidate result・recipient eligibilityとdisposition前のHP値解決を限定照合し、必要ならreadの試行と消費を分けるobserverを別計画で判断する。CE、別family、native／recoveryへ連鎖しない。今回の成果は対象限定local checkpoint commitとし、pushしない。
