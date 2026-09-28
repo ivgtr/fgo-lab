@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.136"
+document_version: "1.7.137"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-29"
@@ -4201,3 +4201,11 @@ legacy checklist④の文言は「旧loader、scan、candidate list、重複fixt
 checklist①は既存単一producerを再利用。②③は今回の局所command-edge経路が成立したが、六失敗クラスの最終同一identity ratchetと統合receiptは未達。④は旧13回readが`e081002`で除去済みだが、raw OC三scriptの固有raw cell／公開joinを保持する判断と、literalな削除義務の最終適用が未達。Done gateの全damage・digest first difference・bounded／完全出力・最終inventory／parity／fail-closed、`TS-AUDIT-001`／`RK-AUDIT-001`の最終影響audit、`TS-OUT-001`／`TS-ART-001`の統合出力、`RK-PERF-001`／`TS-PERF-002`の正式変更前後各3run、`DX-HANDOFF-001`のREADME最終qualityは未達。入力lifecycle①〜③は既存identityを再利用、④は選択後未到達の共通gate接続、⑤は統合ratchet、⑥はlegacy適用判断、⑦は正式性能・受入、⑧はnative／recovery consumer全体が未達。部分的なaudit成功をTSK-08完了と扱わない。
 
 次の限定操作はapplication audit producerで実際の修復commandを各前後評価済みrequestへ記録し、選択後未到達と、実行可能なordered plan上のconsumerなし／未到達を共通gateへ接続すること。rejected／invalid requestにreadを要求しない。別data-pipeline ownerは固有raw coverageを保持したままobsolete定義の有無を確定する。これらは独立owner作業のため本セッションは製品未完了checkpointで停止する。計算構造・capture・製品hot pathは不変で1run性能診断の条件には当たらず、TSK-08のDeferredが残るので正式性能・最終quality・TSK-09系は始めない。Step 0／1／3を維持し、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。対象限定local commit、pushなし。
+
+### TSK-08 Step再確認と次セッション引継ぎ（2026-09-29）
+
+開始HEAD `ea4f2c6d76e92958c8b090e446f3d0b70418cccf`、index／tracked／untrackedはclean。前引継ぎ`8e3bef3`からの製品差分は監査専用共通HP gateとfocused testだけで、Step 0のbaseline／契約、Step 1のV41 marker・V40保持／明示V41再計算、Step 3の改訂80条件matrix／eligibilityを担うsourceは変更していない。公開master、ranking計測script、単独matrix audit scriptも製品baseline `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`とGit差分なし。Step 0／1／3成立、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。直近`commandEdgeSessionCheckpoint`のsource2・最終audit／unit manifest各1・新完全artifact1は現disk bytes／SHA-256で5/5一致した。今回のStep確認ではsource test・producer・audit・quality・live計測・8 shards再生成を行っていない。
+
+次セッションの最初の成果物は現コードに基づく一セッション計画とし、利用者確認を待つ。対象候補はapplication audit producerの実修復commandと直後の評価済みrequest台帳、選択後未到達、および実行可能なordered planにおけるconsumerなし／未到達／物理readの共通gate接続である。`ea4f2c6`で完成したedge検証器やpartial commit完全artifactを再実装しない。production support projectionの現inputは`repairAttempt`を観測せず、最終scenarioだけでは修復関係を証明しない。rejected／invalid requestのplan欠落をconsumerなしと推定せず、そのrequestへreadを要求しない。raw OC三scriptは固有raw cell／公開joinを持つため、checklist④のobsolete対象判定はdata-pipeline ownerの独立判断として扱う。変更owner、代表反証、影響suite、旧新完全decoded値・順序・件数と全disk receipt、性能適用条件、全checklist／Done gate／Contract matrix／入力lifecycle8義務の条件と停止境界を計画で示す。
+
+確認後は同じ限定単位の実在欠落だけを修正・検証・正本更新・対象限定local commitまで進める。別native／recovery owner、新ゲーム意味論、別familyまたは固有raw coverageに独立作業が必要なら、根拠・未達・次の操作を既存Task／evidenceへ記録して製品未完了で止める。TSK-08自身のDeferred／Blockingが0となり全義務が同一最終source／input／artifact identityで成立する見込みがある場合だけ、必要な影響audit、Contract matrixでApplyの変更前後各3run性能、README最終quality、統合counter／digest／全receiptへ進む。詳細な現成果・再利用条件・次の判断は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.postCommandEdgeHandoff`および`commandEdgeSessionCheckpoint`を参照する。60分checkpoint／90分atomic action終了、pushなし。
