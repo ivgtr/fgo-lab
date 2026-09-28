@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.125"
+document_version: "1.7.126"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4067,3 +4067,7 @@ pnpmの反復SQLite障害はテストの問題ではない。既存`node_modules
 最終影響audit9/9、第1 test33.942秒で既存60秒上限内、HP paths7/7、battle-execution unit70/70、typecheck、対象lint／format成功。欠落・重複・unmatched、foreign identity／参照、順序、native欠落、recipient違い、transactional rejectionの9局所反証はtyped reasonとfirst differenceへ到達した。元HEADと最終差分の同input／affinity0–7／audit1 worker診断は第1 test32.498／33.942秒、全file153.332／161.200秒の各1runであり、正式な各3run性能証拠ではない。旧新control auditの共通非run-log artifact17件はbytes／SHAが一致し、完全decoded値・順序・件数も同一。新`production-hp-no-healing.json`は完全decodeでtest-owned payloadと一致し、元manifest19/19・新manifest20/20、HP paths10/10、unit5/5のdisk receiptが一致した。source・input・artifact identityと詳細分類は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpNoHealingNativeCheckpoint`を正本とする。
 
 このforward/native限定経路のBlockingは0。ただしStep 2の他HP action／lifetime／recipient、後続read・native noncommit・recovery、全ratchet／diagnostics、legacy整理、正式性能、README最終quality、統合counter／digest／全receiptは未達または未照合。TSK-08 checklist ①と単一producerは維持し、②〜④・Done gateの全体到達・Contract closure matrixの最終gateは未完了。入力lifecycle8義務のうち今回閉じたのは④の一経路だけで、①〜③の既存証拠は再利用、⑤〜⑧の全体条件は残る。Step 0／1／3は成立、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`。依存quality／製品closureを開始せず、次の限定操作は上記checkpointの`nextLimitedOperation`を参照する。対象限定local commit、pushしない。
+
+### Step 2 HP証拠モデルの再判断（2026-09-28）
+
+前checkpointの「次のHP ownerを一つ選ぶ」という継続方針は撤回する。`HpOperation`／`HpActorState`にはtypedな演算・状態がある一方、auditの`hpCoverageSelectorMatches`と`PreparationHpAction`はaction別selector・capture欄を増やしており、この延長ではaction × lifetime × recipientごとのaudit実装が続く。先に共通のHP operation／read／transaction証拠モデルを、現producer・consumerとschema-legal反例で反証する。宣言・利用可能action・選択・到達・native attempt・物理read・committed消費・正常な非選択・transactional rejection・別実行のrecoveryを共通のtyped identityと順序で結べるかを確認し、必要な義務を意味上の遷移・read境界から導く。元実行に後続consumerがないwriterへread／recoveryを要求しない。共有inventory／digest、元request ledger、既存capture／typed gate／artifact ownerと成立済みStep 0／1／3・units[0]〜[51]を再利用し、別owner用moduleを追加する前にこのモデルの成否と真の欠落を決める。具体的な次操作は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpNoHealingNativeCheckpoint.nextLimitedOperation`。これは設計仮説の検証指示であり、共通gate完成やTSK-08 closureを主張しない。
