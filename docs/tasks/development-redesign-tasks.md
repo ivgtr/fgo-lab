@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.131"
+document_version: "1.7.132"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4159,6 +4159,17 @@ legacyの分類単位はfile名でなく**入力母集団と固有assertion**と
 
 HPの監査対象はaction別の分岐表でなく、既存canonical宣言と元request参照を結ぶ**一つの遷移モデル**で定める。選択は`notSelected`または`selected(step, reach: unreached／skipped／attempted)`、attemptは元operation statusとnative transaction `rejected／committed`を保持し、適用済みcommitだけが保持instance／receiptのwriter参照を供給できる。consumerは`noDownstreamConsumer／consumerNotReached／physicalRead(value, consumed)`で区別する。これは段階間の制約を持つ監査上の状態であり、HP actionやrecipient名のswitchではない。source instance・operation index・step・actor／recipient・保持されたinstance／receipt参照でidentityを照合する。capture欠落、ownerの曖昧さ、矛盾した遷移はtyped failureとfirst differenceにし、通常の非選択や数値fallbackに変換しない。rejectは元stateを保持する。recoveryは元requestの続きのcommitではなく、入力commandとowner identityで元の失敗へ結ぶ別requestであり、修復後requestが後続consumerへ到達する場合だけread／消費を要求する。既存`reconcileHpOperationEvidence`は元control request 3186件を結ぶ一方、support projectionの`original`／`repairAttempt`／`withInputs`／`selected`は別台帳で、phase名だけでは元requestとの関係を証明しない。必要な明示linkはapplication／audit ledger ownerに置き、個別HP actionのselectorを増やさない。
 
-性能は現Contract matrixの`Apply`を維持し、`RK-PERF-001`と`TS-PERF-002`の正式な変更前後各3runをTSK-08完了条件とする。現在の単位で計算構造・capture・製品hot pathを変えた場合の各1run診断は原因判定だけで、正式gateの代用にしない。製品baseline `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`と候補に対し、同master／入力・CPU affinity 0–7・production4／unit4／audit1 workers・同予算の比較commandを測定前に固定する。同じ入力で比較不能なら別入力へ代替せず、baseline契約のBlockingとして解決する。
+性能は現Contract matrixの`Apply`を維持し、`RK-PERF-001`と`TS-PERF-002`の正式な変更前後各3runをTSK-08完了条件とする。現在の単位で計算構造・capture・製品hot pathを変えた場合の各1run診断は原因判定だけで、正式gateの代用にしない。製品baseline `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`と現HEADでは、公開master、TSK-06.5 source evidence、`measure-ranking-resources.ts`、ranking既定条件、単独80条件`audit-oc-matrix.ts`のGit blobが同一と確認した。ranking計測と単独matrix監査をそれぞれ同workload比較とし、`taskset -c 0-7`、同Node／pnpm・master／input・budget、production4／unit4／audit1 workersを固定する。各側**別processで3run**し、ranking script内の3 sampleを3runへ読み替えない。全production suiteはbaseline以降14 test fileが変わったため、同workloadの性能比較器ではなく最終quality gateとする。script開始失敗をshimや別入力で補わずBlockingとする。
 
-この設計でまだ実装前に埋めるものは、旧定義の全件表、後続consumerを持つ元／修復requestの有限な遷移表と代表反例、性能比較command／入力identityである。表が確定するまで新しいHP audit分岐やlegacy削除を始めない。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence.preimplementationDesignDecision`。今回の更新は設計のみで、checklist②〜④やDone gateの完了は主張しない。Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
+現コードで確認したlegacy候補は次のとおり。定義／caller／assertionの同一性を確認した範囲では、追加で削除すべき並行producerは見つかっていない。全件判定前にchecklist④を完了扱いにはしない。
+
+| 現定義 | 直接利用と固有責務 | 設計上の扱い |
+| --- | --- | --- |
+| `audit-oc-planning-baseline.mjs`、`audit-oc-normalized-master.ts`、`audit-oc-normalization.mjs` | 前者がraw四exportと公開masterを結び、後二者がraw 167／632 cellと公開cell／writerを照合。歴史evidenceのcommandから参照 | raw／公開証拠ownerとして保持 |
+| `resourceProductionAudit.ts`、`ocProductionAudit.ts` | `productionAudit.ts`が既読masterのcanonical occurrence inventoryに利用 | 現行共有auditとして保持 |
+| applicationのmaster loader 3 test file | 各file内で一回共有し、inventory／control／parityは別assertion | 旧13-load経路とは異なり保持 |
+| `productionClosureAudit.ts`の`candidateInventory` | `calculateRankingPolicy`の実結果を保存 | 独立した候補期待値listではないため保持 |
+
+HPの有限な反証表は、①owner文脈からの通常非選択、②選択後未到達／skipped、③attempt後native rejectと元state保持、④適用commitと保持writer参照、⑤consumerなし／未到達、⑥実read後の非消費／消費、⑦元requestのinputRequiredと入力command後の別request、の7遷移とする。これらはaction×recipient全組合せではない。元control台帳3186件と共通HP proofを再利用する。support projectionの現fixtureには`original, withInputs, selected, withInputs, selected`の5 requestが保存され、`repairAttempt`はこの入力で観測されていない。phase名から元requestとのlinkを推測せず、⑦は明示linkを持つ小さいschema-legal反例で確かめる。欠落や曖昧さは監査失敗であり、別の保存先や値で補わない。
+
+この設計で実装前に残るのは、legacy全定義・callerの最終表、7遷移へ実在の元／修復request参照と代表反例を割り当てること、正式性能のbaseline／candidate実行環境が同条件で起動することの確認である。表が確定するまで新しいHP audit分岐やlegacy削除を始めない。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `remainingWorkSummary.remainingWorkRedesign.closureDecisionSequence.preimplementationDesignDecision`。今回の更新は設計のみで、checklist②〜④やDone gateの完了は主張しない。Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
