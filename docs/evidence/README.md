@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.127"
+document_version: "1.4.128"
 status: "Active"
 updated_at: "2026-09-28"
 ---
@@ -97,3 +97,5 @@ Published HP依存接続の結果正本は`boundedUnits[52].hpPublishedDependenc
 次session準備の正本は同evidence `handoffPreparation.nextSession.hpPublishedDependencyOwnerPathSession`。`76330ca`のsource3／input1／artifact4の8 identityを照合した。元control ledgerにないCE条件1・value10cellと、owner requestはあるがvariant／cell未選択のNP残2・OC-rate25を分離。CE／mystic-codeの別audit経路は元prepared／capture ledgerではない。Step0／1／3成立、Step2・TSK-08未完了、09.1／09 blocked。今回の準備は読込・checksumのみで、新実行診断や製品変更はない。次担当者は現コードから最初に計画を提示し、利用者確認後に一つのHP proof coverage単位を同sessionで収束する。TSK-08全体closureは別の未達義務も含めて判定する。
 
 Published support HP value-expression10 cellの元owner／capture限定結果は[parity evidence](tsk-08-parity-ratchet.json)の`boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint`。元support test自身の5 requestでlevel-10 cell選択5、他cell45、対象effectのnative step0／`notApplicable`を区別し、実HP readは未観測とした。新artifactの完全値・bytes／SHA・局所receiptは一致。影響audit第1 testは変更前後の同条件1-runを含め既存60秒でtimeoutし、新元control sidecar／全receipt・正式性能・最終qualityは未達。TSK-08 in_progress、09.1／09 blockedの製品未完了checkpointで、CE／別family／native・recoveryへ拡張しない。
+
+次sessionの限定準備は同evidenceの`handoffPreparation.nextSession.hpSupportValueReadSession`。現コードでHP値解決はoperation dispositionより前、modifier追加とgroup commitは後段であり、projectionの`applied`を実HP readやtransaction確定の証拠と扱わない。直近support source2／input1／artifact8と旧control artifact6の現disk identityを照合済み。旧準備source2は変更済みの履歴identity。まずコードに基づく設計・TSK-08 closure可否を提示して確認を待ち、確認後にsupport十cellの一単位だけ同sessionで進める。監査60秒上限と製品未完了の停止境界は維持する。

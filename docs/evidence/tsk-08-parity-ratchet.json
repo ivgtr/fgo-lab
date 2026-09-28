@@ -23636,9 +23636,9 @@
         },
         {
           "stage": 2,
-          "current": "Step2 remains open. Completed S4/without-area, stars/scalar forward/recovery, fixed BP forward/native noncommit, capacity forward/native noncommit, and HP fixed forward/noncommit[46]/[47], maximumFixed forward/noncommit[48]/[49], receive committed forward[50] retain their separate proof contracts. Scoped receive changed-attempt native noncommit isolation[51] is implemented and verified. Historical checkpoints/contract waits are resolved; this is not whole TSK-08 closure. Active unit52 consumer58/control7 and restoration checkpoints are retained;committed capacity original63+2/proof5 now pass at a842b91. Outer attempt original177+5=182 and affected published control7 now pass in the current scoped checkpoint;Current raw/HP gates now pass; full quality and whole closure remain pending. Currentinputlifecyclecheckpoint:finalproduction33/155(14/5) andcontract8passed;wholecoverage/ratchet/legacy/formalperformance/finalqualityremainopen. See boundedUnits[52].productionAuditInputLifecycleCheckpoint. Current give committed-forward slice is implemented with schema-legal nonempty evidence and separate published0 boundary;see boundedUnits[52].giveCommittedForwardCheckpoint. Whole TSK08 remains open. Current give native noncommit A/B shared audit is implemented with separate filtered empty-read capture;final give3/HP6/related391 retained/audit77 and full comparisons/370 disk+350 declared receipt error0 verified;not whole closure. HPcanonical486/7470/54groups andgenericconsumerreferences verified;seehpCoverageReconciliationCheckpoint;notnative/read/recoveryorwholeclosure. Transfer2 declarations/24 original native operations andretained selectedHP seeds nowconnected;old selected12/HP7/give6/audit77 artifacts retained. ActualHP read/HP-dependentNP0 inthesePublishedcases isnotNP causality/recoveryclosure. See boundedUnits[52].hpTransferEvidenceReconciliationCheckpoint. Explicit HP dependency557 and scoped fixedSelf3 correspondence verified at d91b128;whole native/read/NP/recovery remains open. Published元control3182request/478bindingsの対応を接続。attacker条件9/read90、NP4variant/evaluation16 consumed、expression20 context/selected2cell。CE1/NP2variant/残value10・OC25/expression実read/成功recoveryは未観測。See boundedUnits[52].hpPublishedDependencyProofCheckpoint. Latest 76330ca owner-index checkpoint connects direct scenario owner requests only (CE1/value10 absent; NP2 2/4, OC25 each10 owner requests). No new variant/cell selection or actual expression HP read; see boundedUnits[52].hpPublishedDependencyRemainderCheckpoint.",
-          "nextBoundedScope": "残るCE条件1／HP依存NP variant2／value-expression10cell／OC-rate25cellを、既存元request・capture・artifactと宣言identityで再照合する。既存責務内の接続だけを計画確認後に実装し、observer／native／recovery等の別ownerを要する場合は未達として止める。",
-          "nextScopeQualification": "handoffPreparation.nextSession.hpPublishedDependencyRemainderSession",
+          "current": "Step 2 remains open. Completed units[0]..[51] and retained unit52 proofs remain separate. Latest support value-expression target ten-cell checkpoint has original support owner five requests, five selected level-10 preparation cells and 45 normal other-cell nonselections; target native step0/notApplicable, physical HP read unobserved. Projection disposition says applied but is a different layer. Current-source control audit first test timed out at existing 60 seconds and a new full sidecar/receipts are unavailable. See boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint; whole TSK-08 gates remain open.",
+          "nextBoundedScope": "Plan and, after user confirmation, implement only support value-expression ten-cell original request/capture/selected-operation/actual-read coverage if current owner path supports it; otherwise record exact unmet conditions and next bounded operation. CE, other family, native/recovery and runtime gap are separate.",
+          "nextScopeQualification": "handoffPreparation.nextSession.hpSupportValueReadSession",
           "activeUnit52ScopeReference": "boundedUnits[52]",
           "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint"
         },
@@ -23649,10 +23649,10 @@
       ],
       "latestBoundedUnit": 51,
       "latestEvidence": "boundedUnits[51]: 6 generated changed noncommit representatives plus 1 strict parsed-master schema-legal derivative; 8 boundaries; 94 negatives/610 failed checks; focused13/affectedAudit25/quality1444/155/29 successful. 14 full diagnostics lossless, 645 receipts verified, counters/digests unchanged. Original published42/34append/8consumed actual0 remains a separate boundary. See boundedUnits[52].consumerResponsibilityConvergence/capacityRestorationComparisonCheckpoint/committedCapacityMaterializationCheckpoint for retained scoped checkpoints,not product closure. Current outer attempt checkpoint:original177+5=182/control7 passed,old177 full values/bytes/SHA identical,1854 negatives/58824 failure checks,199 final attempt+control receipts/error0;published capacity selected0/excludedNp1 remains a distinct boundary.",
-      "nextBoundedUnit": "unit52 remaining coverage: read-only reconciliation and separate bounded plan; no chained family implementation",
+      "nextBoundedUnit": "unit52 support value-expression actual-read coverage plan first; scoped implementation after confirmation only",
       "priorRecordCommit": "d1e55500b2dfdc4e5210df7c794fd2fe892186b1",
       "recordCommitPolicy": "Implementation commit in boundedUnits[51]; resolve result documentation commit from Git history.",
-      "nextScopeQualification": "handoffPreparation.nextSession.hpPublishedDependencyOwnerPathSession",
+      "nextScopeQualification": "handoffPreparation.nextSession.hpSupportValueReadSession",
       "latestCompletedBoundedUnit": 51,
       "activeBoundedUnit": 52,
       "asOfCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -23667,7 +23667,8 @@
       "asOfHpTransferEvidenceCheckpointCommit": "1cc348209ff3953512f120772e0482bf18f4ef70",
       "asOfHpRemainingProofCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
       "asOfPublishedDependencyCheckpointReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint",
-      "asOfPublishedDependencyRemainderCheckpointReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint"
+      "asOfPublishedDependencyRemainderCheckpointReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint",
+      "asOfSupportValueCheckpointReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint"
     },
     "completedScalarQuantityForwardPreparation": {
       "baselineHead": "be8b604eeaa954587ce7f8a71b1f4604daca38f3",
@@ -24472,7 +24473,7 @@
       },
       "historicalRootQualification": "Historical-prefixed plans remainhistory. productionAuditInputLifecycleSession wasconfirmedandexecuted;currentresultandnextlimitedoperationareownedby boundedUnits[52].productionAuditInputLifecycleCheckpoint.",
       "currentCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
-      "currentSessionReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint",
+      "currentSessionReference": "handoffPreparation.nextSession.hpSupportValueReadSession",
       "capacityAttemptMaterializationSession": {
         "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -26364,6 +26365,156 @@
         "runnerFallback": "If pnpm fails before the script at external SQLite store, inspect /tmp/tsk08-tools/pnpm content, 730 bytes, SHA-256 7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6; then nested PATH to same generic runner.",
         "sessionBoundary": "At 60 minutes update existing Task/evidence checkpoint; at 90 minutes finish current atomic action and hand off. No extra quality retry, independent investigation or another family.",
         "recordCommitPolicy": "Update existing Task/evidence/registry and in-scope code only; review and stage target files; local commit, no push. Resolve this preparation commit SHA from Git, not a self-reference here."
+      },
+      "hpSupportValueReadSession": {
+        "status": "prepared; current-code plan and TSK-08 closure assessment first; await user confirmation before implementation or execution",
+        "preparationHead": "96bb9820093959ce54ab442a5f4d10360cf69346",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "priorResultReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint",
+        "sourceIdentities": [
+          {
+            "path": "packages/battle-execution/src/candidateExecution.ts",
+            "bytes": 15102,
+            "sha256": "3fc3dad55077f2eeed4abcf99ca9badb17472b48fb8ea37529f7a9963a1feda9"
+          },
+          {
+            "path": "packages/battle-execution/src/candidateOperationContext.ts",
+            "bytes": 8594,
+            "sha256": "32102096b57006d0ce6c6ac8b92b698af0627008a97b27cd276b7c69f5132304"
+          },
+          {
+            "path": "packages/battle-execution/src/projection.ts",
+            "bytes": 19350,
+            "sha256": "5c72129466ec3dbf39372cb529cb3cbe18c0cb67eb1ba965913a919b0d9b518d"
+          },
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 11298,
+            "sha256": "29797680d4bbc8893ad2505dc45087ca6d0575902316bc945bb130d8f65da0a2"
+          },
+          {
+            "path": "packages/battle-execution/src/auxiliarySources.ts",
+            "bytes": 7466,
+            "sha256": "5b0fc34e9fce9c567bbc5ae37e9b24a14047c822011088c9b90f89730586a4a2"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 103426,
+            "sha256": "21e995ac466763d048536e0d177a9959cf6ca1e3b3f44e1d547a07e299e2efe7"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+            "bytes": 34989,
+            "sha256": "785e5c2d6f7ea49277e460fff2ae7a81ee20759076a482db32f09fa1c5dd050e"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "retainedArtifactIdentities": [
+          {
+            "path": ".test-results/2026-09-28T08-27-03-920Z-3-305f65/manifest.json",
+            "bytes": 3154,
+            "sha256": "bc6a4b42849449638bfc6ddc1822bbc9c9ad63904d282058cd57837eab9e1d3f"
+          },
+          {
+            "path": ".test-results/2026-09-28T08-27-03-920Z-3-305f65/production-hp-support-value-expression.json",
+            "bytes": 171655,
+            "sha256": "968382c36099143a32ecef324658d4edc53e4b5b73e1b4e2997a1ed73f8ab930"
+          },
+          {
+            "path": ".test-results/2026-09-28T08-24-56-087Z-3-21a0f4/manifest.json",
+            "bytes": 3334,
+            "sha256": "f6ae6a16c5e2d4082623f33634e18e578d298b18d7a7dbbe806339da4c9733ad"
+          },
+          {
+            "path": ".test-results/tsk-08-support-20260928/complete-comparison.json",
+            "bytes": 1697,
+            "sha256": "5cb8f5d44dc6188bcd2622ff290d9b8a1cb9e4bc6b84850e90ff6679514461a8"
+          },
+          {
+            "path": ".test-results/2026-09-28T08-06-43-733Z-3-96b3ab/manifest.json",
+            "bytes": 6063,
+            "sha256": "dcdb8ce63c694724ba5f6ac63776e908b516df7ea3c920c0e76026e3acfe65a4"
+          },
+          {
+            "path": ".test-results/2026-09-28T08-10-01-154Z-3-8a0710/manifest.json",
+            "bytes": 6063,
+            "sha256": "1db4d1edae57012fbb9be64718d833bcc99522457a538cac3590199c76efe601"
+          },
+          {
+            "path": ".test-results/2026-09-28T08-13-12-846Z-6-e9d46e/manifest.json",
+            "bytes": 4886,
+            "sha256": "31df4d0587f7a23865516dcb71a466c7eb73ef2128019735c665e5252c5af153"
+          },
+          {
+            "path": ".test-results/2026-09-28T08-14-21-156Z-3-9d930d/manifest.json",
+            "bytes": 4713,
+            "sha256": "c78c86d3c727933347306f907af0c28f702a484b214bf7004b9840909ab089e9"
+          }
+        ],
+        "projectionDispositionArtifactIdentity": {
+          "path": ".test-results/2026-09-28T08-27-03-920Z-3-305f65/oc-support-dispositions.json",
+          "bytes": 90287,
+          "sha256": "03e72c9ece70fe4534bb4555ea3241a69ffcce47a24dc501baad9ae7bc6e2644"
+        },
+        "oldControlArtifactIdentities": [
+          {
+            "path": ".test-results/2026-09-28T04-06-35-326Z-3-611a6a/manifest.json",
+            "bytes": 3371,
+            "sha256": "da8c13f3a0a6ad3c0cd1a2ca3784ff6a3eb881b54fe489b473b17620679809c8"
+          },
+          {
+            "path": ".test-results/2026-09-28T04-06-42-694Z-3-38f9dd/manifest.json",
+            "bytes": 5862,
+            "sha256": "40ee3daf702c008d331abf371406774e1ce906d7cf802139db7f505133aadc60"
+          },
+          {
+            "path": ".test-results/2026-09-28T04-06-42-694Z-3-38f9dd/production-hp-published-dependency.json",
+            "bytes": 13243577,
+            "sha256": "95dc29392628052f358aa7f31036ab0a0055f702cb13383a1d0092cdd56e6155"
+          },
+          {
+            "path": ".test-results/tsk-08-oc-rate-20260928/complete-comparison.json",
+            "bytes": 4260,
+            "sha256": "2c3cef1ca7ed9fb188b8a4e19109b2426d6439aaa603d03a9d139a521d0afd0d"
+          },
+          {
+            "path": ".test-results/tsk-08-oc-rate-20260928/unit-comparison.json",
+            "bytes": 7135,
+            "sha256": "9ebfd47a20f042233a81df9f65cef2102a230c295fbb5a9d5879a5e15004be51"
+          },
+          {
+            "path": ".test-results/2026-09-28T04-05-40-068Z-3-04a77a/manifest.json",
+            "bytes": 2882,
+            "sha256": "9ffd6693bcc655c72ab70bd7f3d801d518ef7819982cbd3e9ce76a3e1b7309a0"
+          }
+        ],
+        "identityQualification": "Current support source2/input1/artifact8 and old control artifact6 match disk bytes/SHA. The old preparation source2 for control/coverage changed in the preceding implementation; use their old hashes only as historical identities. No current-source full control sidecar exists after the 60-second audit timeout.",
+        "currentCodeFindings": [
+          "candidateExecution.ts resolves modifierValue before resolveOperationDisposition, then appends addModifier only for applied and contributionIncluded, and later decides group commit or rollback; distinguish read attempt, consumption, committed effect and rollback.",
+          "projection.ts resolves HP expression from canonical attackerHpPermille or actor HP. Existing hpExecutionObservation.ts captures HP conditions/NP, not this value-expression read.",
+          "Original support test has five original/withInputs/selected requests; required-input repair and selection occur in separate calculateScenario calls. The selected level-10 cell has five preparation bindings, other cells 45 normal nonselections; target native step0/notApplicable. Projection disposition artifact marks target occurrence23498:0 applied but does not by itself prove physical read or committed consumption."
+        ],
+        "oneSessionScope": "Published HP value-expression target ten cells actor300900/skill49650/occurrence23498:0 only. Join shared declaration to canonical source/operation, original support request and preparation capture, selected operation, candidate result, recipient eligibility, physical HP read/consumption and artifact in one coverage unit; use existing ledger/inventory/typed gate/focused module and artifact paths. Define new observer ownership/lifetime only if needed. No new game semantics.",
+        "firstDeliverable": "Present current-code design, file changes, proof distinctions, typed failure and transactional handling, small negative fixture matrix, impact/performance assessment, and evidence-based TSK-08 checklist/Done gate/Contract closure matrix plus eight input-lifecycle obligations mapping. Wait for user confirmation.",
+        "beforeConfirmation": "HEAD/index/tracked/untracked, source/docs/JSON/artifact read and checksum only. If executable diagnosis is indispensable, state minimal command, comparison inputs, decision and stop boundary first; diagnostic approval is not implementation approval.",
+        "afterConfirmation": "Implement only approved one unit; focused fixtures and affected suite; old/new complete decoded values/order/count, typed reasons/first difference, disk bytes/SHA and receipts; update existing Task/evidence; scoped local commit, no push. If only normal nonselection is proven, record selected/read as unmet. If another owner/family, native/recovery, runtime gap or unrelated owner change is needed, record evidence and next bounded operation and stop.",
+        "exclusions": [
+          "CE condition one cell (craftEssence owner)",
+          "another family",
+          "native/recovery chain",
+          "original owner rerun by default",
+          "new expected-value generator",
+          "large proof re-decode",
+          "fixedSelf selector expansion",
+          "eight shard regeneration absent identity doubt"
+        ],
+        "performanceAndClosure": "Keep control audit first-test 60-second limit. Previous successful 52.680/53.091 seconds versus current full audit timeout 64.757/66.683 and same-input affinity0-7 before/after 60.100/61.968 timeout; do not assign sole causality to the change. If calculation structure/capture/hot path changes, one baseline and candidate live-phase run each on same input, affinity0-7, production4/unit4/audit1 workers and same budget; this is not formal three-run performance. Only if all obligations have valid evidence plus this unit, in-scope Blocking0 and time remains, run needed audit/formal three-run/README final quality/integrated counters,digests,all receipts and pursue TSK-08 closure. Otherwise product-incomplete checkpoint; TSK-09.1/09 remain blocked.",
+        "sessionBoundary": "At 60 minutes checkpoint in existing canon; at 90 minutes finish atomic action and hand off. No additional quality retries, independent investigation or family expansion.",
+        "recordCommitPolicy": "Resolve this documentation preparation commit from Git history; do not self-reference its hash."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -27335,11 +27486,11 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Current support ten-cell owner/capture proof is product-incomplete. Next limited operation and unmet gates are boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint.nextLimitedOperation; plan separately before changing actual-read observer or audit performance. CE and other families remain separate.",
+    "nextSession": "Current support ten-cell selection proof is product-incomplete. Next session plans the same original support operation actual-read coverage first and waits for confirmation; see handoffPreparation.nextSession.hpSupportValueReadSession. CE, other families and native/recovery remain separate. Audit timeout and whole closure gates remain open.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
-        "detail": "HP486／7470のidentity・primitive coverageとgeneric consumer参照を照合済み。unit52.hpCoverageReconciliationCheckpointを参照。54group、context429／明示selected211宣言は全native／実read／NP／recoveryを証明しない。実audit gapは別の限定計画で扱い、新supported behaviorや同scenario recoveryを追加しない。 transfer2／native24／retained selected HP seedの限定接続はboundedUnits[52].hpTransferEvidenceReconciliationCheckpoint。全read／NP／recoveryを証明しない。 Current explicit canonicalHP dependency557=writer486/condition10/value30/OC-rate25/hpRatioLow6,use-condition0/HP-conditioned gauge0;schema-legal fixedSelf3 correspondence andPublishedtransfer2 join verified. See boundedUnits[52].hpRemainingProofReconciliationCheckpoint. Whole native/read/NP/recovery stillunconnected. Published control request/capture接続はboundedUnits[52].hpPublishedDependencyProofCheckpoint。元3182requestで条件9/read90、NP4variant/evaluation16、expression20context/selected2cell。全closureではない。 NP2 variantの元owner6はboundedUnits[52].hpPublishedNpVariantSelectionCheckpointで正常な非選択を証明。OC25はboundedUnits[52].hpPublishedOcRateSelectionCheckpointで元owner10、選択1cell/正常な他cell非選択240、terminalの後続rate readなしを証明。CE1/value10の元owner、他の実read/native/recoveryは未接続。 Support value10 now has one original support owner path: five request phases, one selected level-10 cell per request, native effect step notApplicable/no reached step, actual HP read unobserved. See boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint; CE1 and whole read/native/recovery remain open."
+        "detail": "HP canonical writer486/7470 and 54 groups, explicit HP dependency557 (writer486/condition10/value30/OC-rate25/hpRatioLow6), transfer2 and schema-legal fixedSelf3 are recorded in boundedUnits[52] checkpoints. Original control 3182 requests/488 bindings precede the support result. NP2 remaining variants have normal nonselection proof; OC25 has one selected cell and 240 normal other-cell nonselections, with no downstream rate read on those terminal actions. Current support value-expression ten cells have original support five requests, five selected level-10 preparation cells and 45 normal other-cell nonselections; native step0/notApplicable and physical HP read unobserved. See boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint. CE condition one cell belongs to another craftEssence owner. Whole actual-read/native/recovery, audit timeout, ratchets, legacy, formal performance and final quality remain open."
       },
       {
         "work": "Whole ratchet and diagnostic/artifact closure",
@@ -27380,7 +27531,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint",
+    "nextSessionReference": "handoffPreparation.nextSession.hpSupportValueReadSession",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
     "capacityAttemptMaterializationCheckpointCommit": "f375eea18ed2184de2943f7303ada777dfc44f71",
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",
