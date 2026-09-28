@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.117"
+document_version: "1.7.118"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3987,3 +3987,11 @@ expression実read observer、support修復前capture、新native／recovery owne
 局所unit9／既存OC transaction unit17／元control audit7、typecheck／対象lint・formatが通過。最終audit第1 testは既存60秒上限内の52.680秒で、直近53.091秒との差は単発変動として扱い、timeout／thresholdは変更していない。旧新sidecarの完全decoded値・順序は追加OC field／bindingと参照index補正以外一致し、旧fixture1／否定13件も追加fieldを除き完全一致。対象外control artifact12件のbytes／SHA一致、新2runのdisk25／test-owned receipt15はerror0。実行前のpnpm外部SQLite store障害には内容・730 bytes・SHAを確認した正本の`/tmp/tsk08-tools/pnpm`をnested PATHで適用した。source／input／artifact identity、比較のfirst difference null、typed failure、TSK-08全checklist／Done gate／Contract closure matrixと入力lifecycle8義務は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpPublishedOcRateSelectionCheckpoint`を正本とする。
 
 今回単位のBlockingは0。CE条件1／value-expression10 cellの元owner request、他の実read、全native noncommit／成功recovery、全ratchet／diagnostics到達、legacy固有coverage／整理、正式3-run性能、README最終quality、統合counter／digest／全receiptは未達または未照合。Step 0／1／3は成立、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。依存quality／製品closureは開始せず、対象限定local commitで引き継ぐ。次の限定操作は上記checkpointの`nextOperation`を参照する。pushしない。
+
+### Step再確認とPublished support HP value-expression次単位準備（2026-09-28）
+
+開始HEAD `82085b8c8c43f4f15acdb1bfdc53e02eb110e28e`、index／tracked／untrackedはclean。Step 0のbaseline／契約、Step 1のV41 request marker・V40保持／明示V41再計算、Step 3の改訂matrix／eligibilityは成立済み。Step 2とTSK-08は未完了、TSK-09.1／09は`blocked`。完了units[0]〜[51]と直近NP／OC選択proofを再開しない。直近OC checkpointのsource3／input1／artifact6は現diskと一致し、今回の直接owner source6／master input1／artifact6のbytes／SHAを[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.hpPublishedSupportValueExpressionSession`に記録した。準備中のsource test／producer／audit／quality／live計測は実行していない。文書検証`test:docs` 6件とintegrityは通過。pnpmのscript前SQLite store障害には内容・730 bytes・SHAを確認した正本の代替runnerをnested PATHで使った。
+
+次の一単位は、Published HP value-expression 30 cellのうち元ledgerに直接owner requestがない10 cellについて、support ownerの元request、preparation capture、選択operationと実HP readの関係を現コードから計画する。該当宣言はattacker originのactor `300900`・skill `49650`・occurrence `23498:0`で、現sidecarの全stage bindingは0。masterでは`skillUse`、`partyMember` recipient、`partyWide` damageModifier、`requiredRecipient: attacker`であり、元control producerのsupport projection loopはrequired input修復後に別の`calculateScenario`を使う。この成功を修復前のnative／read proofへ合成しない。`resolveModifierValue`のHP値解決だけでも実readを証明しない。CE条件1 cellは別のcraftEssence owner `9307920`で、同一単位へ連鎖しない。
+
+次sessionはまず現コードからidentity join、元producer／borrowed capture／consumer／typed failureのownerとlifetime、新observer要否、局所反証、影響suite、TSK-08全checklist／Done gate／Contract closure matrixと入力lifecycle8義務のclosure可否を示す計画を提示し、利用者確認を待つ。確認後は承認された一単位の実装・検証・旧新artifact完全比較・既存正本更新・対象限定local commitまで同sessionで進める。全義務が有効証拠と今回の単位で閉じ、対象内Blocking0と時間余裕がある場合だけ必要audit／正式3-run性能／README最終quality／統合counter・digest・全receiptへ進みTSK-08完了を目指す。未達が残れば依存qualityを始めず製品未完了checkpointを残す。60分で既存正本へcheckpoint、90分ではatomic actionを終えて引き継ぐ。pushしない。
