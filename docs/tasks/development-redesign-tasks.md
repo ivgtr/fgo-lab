@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.126"
+document_version: "1.7.127"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4112,3 +4112,13 @@ schema-legalの局所反証は、複数operationの順序、modifier追加→物
 次作業者の最初の成果は実装でなく、**現コードから作る一セッション計画**とする。`productionParityDiagnostics.ts`のparity／final outcome／preparation transaction gate、`productionClosureAudit.test.ts`のintentional failureとartifact、`audit-oc-matrix.ts`／`merge-oc-matrix.ts`のsingle／merge接続、`productionAuditArtifacts.ts`のmanifest／receipt ownerを読み、6失敗クラスの元入力・typed reason・canonical identity・first difference・bounded summary・完全artifactへの到達を一対一に表にする。`quantityConditions`の現参照はbaseline監査、raw normalization、architecture否定fixtureにも存在するため、旧loader／scan／candidate list／重複fixtureの削除対象とは名称だけで同一視せず、定義・呼出し・固有coverageから判断する。共通HP proofは成立済みの局所証拠として再利用し、別HP action／recipient監査を再開しない。
 
 計画には変更候補とowner、代表的な局所反証、影響suite、旧新artifactの完全decoded値・順序・件数およびdisk bytes／SHA・全receiptの比較、性能条件、停止境界を記載する。TSK-08全checklist／Done gate／Contract closure matrixと入力lifecycle 8義務を、成立済み証拠・同sessionで閉じる条件・別ownerまたは未達へ照合する。利用者に提示して確認を待ち、確認後は承認された範囲の必要な実装／検証／既存正本更新／対象限定local commitを続ける。別ownerのnative／recovery責務、新ゲーム意味論、固有legacy coverageなどが見つかれば根拠と未達・次の限定操作を記録して停止する。TSK-08自身のDeferred／Blockingが0で全義務が同一最終identityで成立し、時間が残る場合だけ正式各3run性能gate、必要audit、README最終qualityと統合counter／digest／全receiptを行い完了を目指す。未達なら製品未完了checkpointで閉じ、依存qualityとTSK-09系は開始しない。60分checkpoint／90分atomic action終了、pushなし。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.postHpOperationClosureSession`。
+
+### TSK-08 Step 2 六失敗クラス・legacy限定照合checkpoint（2026-09-28）
+
+開始HEAD `889d5435c03330ae72b13106c7215402ffad8d6f`、index／tracked／untrackedはclean。利用者が一セッション計画を確認後、共通HP checkpointのsource7・公開master1・manifest2・新artifact1の現disk bytes／SHA-256を11/11照合した。`productionClosureAudit.test.ts`のpartial commit反例はassertionだけで完全artifactに無かったため、既存preparation transaction gateの`preparationResourceCommitMismatch`、canonical action identity、`valid` first differenceと元observationを同じ宣言artifactへ追加した。HP／damage／candidate／capture／manifest ownerは変更していない。
+
+局所`productionClosureAudit` 5/5、typecheck、対象lint／format、差分checkが成功。新runの全9 receiptはdisk bytes／SHA-256一致、`artifactVerification.errors`は空。旧新の4診断artifactを完全decodeし、preparationは元observation 3件／failure 3件から各4件へ増加、元全値・順序は一致、新partial commitのtyped reason／identity／first differenceはgateとartifactで一致した。final outcome・inert controlは全値一致、parityは計測`elapsedMs` 1値だけ異なる。旧20 receiptは旧run内で20/20一致するが、旧新runはsuite構成が異なり20対9を同一母集団とは主張しない。詳細identityは[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.postHpOperationClosureSession.resultCheckpoint`。
+
+legacy定義／caller／固有coverageを照合した。`audit-oc-planning-baseline.mjs`のraw function／published master scan、`audit-oc-normalized-master.ts`のraw OC 167 occurrence／632 cell normalization、`resourceProductionAudit.ts`／`ocProductionAudit.ts`の現行inventory、applicationのproduction control／parity／master inventory各testは入力またはassertionが異なり、単なる旧loader／重複fixtureとは判定できない。後三者のmaster loaderは各test file内で一回だけ共有する。`productionClosureAudit.ts`のcandidate inventoryは現ranking policyから来る。`quantityConditions`はbaseline raw監査とdata-pipeline normalizationにあり、名称で削除しない。raw OC scriptはdata-pipeline別ownerの固有coverageを持つため、checklist④の削除可否は未達とし連鎖実装を止める。次の限定操作はdata-pipeline ownerが各scriptの現行契約・呼出し・代替coverageを確認し、固有raw cell証拠を保持したまま obsolete な定義だけを決めること。
+
+checklist①とStep 0／1／3は成立済み。②はpartial commitのartifact欠落を局所解消したが6クラスの同一最終identity全体照合は未達、③は局所artifact到達のみ、④は上記別owner判定待ち。Done gateの最終inventory／parity／fail-closed／digest差分・全receiptは未照合。`TS-AUDIT-001`／`RK-AUDIT-001`は既存共有producerと共通HP proofを再利用し最終gate未達、`TS-OUT-001`／`TS-ART-001`は今回局所通過・統合未達、`RK-PERF-001`／`TS-PERF-002`の正式各3runと`DX-HANDOFF-001`のREADME最終qualityは未達。入力lifecycle①〜③は同identityの既存証拠を再利用、④・⑧は別native／recovery ownerの全体証拠が未照合（後続consumerのない元requestにread／recoveryは要求しない）、⑤は局所反例のみ、⑥は別owner固有coverage判定待ち、⑦は正式性能・最終受入未達。TSK-08自身に未達が残るためStep 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。依存quality・8 shards再生成・pushは行わず、対象限定local checkpointとする。

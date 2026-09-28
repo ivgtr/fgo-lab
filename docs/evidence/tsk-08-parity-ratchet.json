@@ -27336,7 +27336,121 @@
         "firstDeliverable": "Before editing or running source tests, present a code-grounded one-session plan. Map six failure classes to original input, typed reason, canonical identity, first difference, bounded summary and complete artifact; inventory legacy definitions/callers/unique coverage. Name owner/files, representative falsifiers, affected suites, full decoded old/new value/order/count and disk bytes/SHA/all-receipt comparison, performance trigger and stop boundary. Reconcile every TSK-08 checklist/Done/Contract row and input lifecycle eight obligations to valid existing evidence, in-session closure condition or separate owner/unmet. Wait for user confirmation. If execution diagnostics are indispensable, show minimal command, comparison input, decision and stop boundary first; diagnostic approval is not implementation approval.",
         "afterConfirmation": "Work only the approved ratchet/diagnostic and directly related legacy reconciliation unit. Implement only demonstrated gaps in existing matrix/gate/artifact owner, verify focused counterexamples and affected suites, compare complete artifacts and receipts, update existing Task/evidence, and make a scoped local commit. Reuse the matching common HP proof and completed units0..51. Do not revive per-HP-action audits or a separate generator/digest/artifact authority.",
         "conditionalClosure": "Aim for TSK-08 completion only if checklist, Done gate, Contract matrix and lifecycle eight all have same-final-identity Verified or legitimate Not applicable evidence, no TSK-08 Deferred/Blocking, and time for required affected audit, applicable same-input/CPU-affinity0-7 production4/unit4/audit1 formal baseline/candidate three runs each, README quality, and integrated counters/digests/all receipts. Otherwise commit a product-incomplete checkpoint and leave TSK-09.1/09 blocked.",
-        "stopBoundary": "If another HP/native/recovery owner, new game semantics, distinct family or unique legacy coverage needs independent work, record the precise owner, evidence, unmet condition and next limited operation in existing Task/evidence and stop. No silent fallback, ID runtime branch, new expectation generator, unconditional eight-shard regeneration, dependent quality, stage of unrelated changes or push. Keep control first-test 60s cap/current pnpm configuration; no historical shim fallback. Checkpoint by 60 minutes and finish current atomic action at 90 minutes."
+        "stopBoundary": "If another HP/native/recovery owner, new game semantics, distinct family or unique legacy coverage needs independent work, record the precise owner, evidence, unmet condition and next limited operation in existing Task/evidence and stop. No silent fallback, ID runtime branch, new expectation generator, unconditional eight-shard regeneration, dependent quality, stage of unrelated changes or push. Keep control first-test 60s cap/current pnpm configuration; no historical shim fallback. Checkpoint by 60 minutes and finish current atomic action at 90 minutes.",
+        "resultCheckpoint": {
+          "status": "product_incomplete_scoped_partial_commit_artifact_gap_closed",
+          "startHead": "889d5435c03330ae72b13106c7215402ffad8d6f",
+          "source": {
+            "path": "packages/calculation-application/src/productionClosureAudit.test.ts",
+            "bytes": 51857,
+            "sha256": "10e00ccd16b7ac5da7ae0f7409b8f5aa9cbab43b31b4c8976642ab4f68ed20af"
+          },
+          "identityReuse": "boundedUnits[52].hpOperationModelCheckpoint source7, published master1, manifests2, new artifact1: disk bytes/SHA 11/11; established Step0/1/3 and units0..51 retained only at matching identity",
+          "directGap": "Partial commit mutation-before inconsistency was asserted but omitted from the complete preparation transaction diagnostic. Same existing gate/owner now saves original observation, audit, typed failure and first difference.",
+          "failureClassReconciliation": {
+            "parity": "compareProductionParity canonicalMismatch/executionNotExecutable; matrix parityFailure/matrixMismatch; parity diagnostic and single/merge manifest gates exist; final integrated identity unmet",
+            "unsupportedInvalid": "evaluateProductionFinalOutcomeGate finalProfileStatusPresent/finalProfileOutcomeIdentityMismatch; final outcome diagnostic and shard difference exist; final integrated identity unmet",
+            "partialCommit": "preparationResourceCommitMismatch, production:fixture-condition:profile:fixture-profile:preparation:action:1, valid true/false; now in complete artifact",
+            "inertControl": "userControl typed gate with intentional failure and complete inert fixture; final integrated identity unmet",
+            "staleMutation": "preparationReceiptMismatch/stale actionId and preparationResourceSequenceMismatch plus existing scalar/HP stale read/recovery artifacts; full class/population join unmet"
+          },
+          "artifactComparison": {
+            "oldManifest": {
+              "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/manifest.json",
+              "bytes": 6246,
+              "sha256": "b8bc15f43d82548695d70d22c9bf7ea280fe46d81363e6d45c5852a85976a8f6"
+            },
+            "newManifest": {
+              "path": ".test-results/2026-09-28T13-33-36-609Z-15-fd3d09/manifest.json",
+              "bytes": 3777,
+              "sha256": "5da82ca6128588727432520642bb546c56b7a6b64b5657aacdac50ea4225b086"
+            },
+            "oldArtifacts": [
+              {
+                "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/production-closure-parity-diagnostics.json",
+                "bytes": 18842,
+                "sha256": "94f2751f510cc5ecbd7bbf57ee88490959f8bdac6da915672136c12fe9783270"
+              },
+              {
+                "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/production-final-outcome-diagnostics.json",
+                "bytes": 8317,
+                "sha256": "faf99a63479a9ff0deb0392705119c1239a9a73925c9a7c142387ae7b4df7993"
+              },
+              {
+                "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/production-preparation-transaction-diagnostics.json",
+                "bytes": 16824,
+                "sha256": "f15c2328370a67ee7aac9c6fc71751db31aab9fe04695bc0d23a58d86ea3a87f"
+              },
+              {
+                "path": ".test-results/2026-09-26T09-31-18-606Z-2-3ef48f/unit/production-inert-control-fixture.json",
+                "bytes": 93574,
+                "sha256": "a43b2180fd4c085b6b61af7a3d0cf0cd6ec59d9e0058815c4468f6e493681454"
+              }
+            ],
+            "newArtifacts": [
+              {
+                "path": ".test-results/2026-09-28T13-33-36-609Z-15-fd3d09/production-closure-parity-diagnostics.json",
+                "bytes": 18842,
+                "sha256": "535baec1f4e7f8ae4b0efbad23d6795e99c4ee450d0d9e73d0cb29dc079cfa3f"
+              },
+              {
+                "path": ".test-results/2026-09-28T13-33-36-609Z-15-fd3d09/production-final-outcome-diagnostics.json",
+                "bytes": 8317,
+                "sha256": "faf99a63479a9ff0deb0392705119c1239a9a73925c9a7c142387ae7b4df7993"
+              },
+              {
+                "path": ".test-results/2026-09-28T13-33-36-609Z-15-fd3d09/production-preparation-transaction-diagnostics.json",
+                "bytes": 22196,
+                "sha256": "36fec502229cc0b78b97162e70108684bc1e748afcddc0d73031d63dc607590e"
+              },
+              {
+                "path": ".test-results/2026-09-28T13-33-36-609Z-15-fd3d09/production-inert-control-fixture.json",
+                "bytes": 93574,
+                "sha256": "a43b2180fd4c085b6b61af7a3d0cf0cd6ec59d9e0058815c4468f6e493681454"
+              }
+            ],
+            "oldDiskReceipts": 20,
+            "oldReceiptErrors": 0,
+            "newDiskReceipts": 9,
+            "newReceiptErrors": 0,
+            "completeDecoded": "Preparation observations 3->4 and intentional failures 3->4; all old values/order preserved with new partialCommit at observation index1 and failure index0, new audit typed reason/identity/firstDifference equals gate. Final outcome/inert exact; parity only conditionSummaries[0].elapsedMs differs. Old/new manifests have different suite populations and are not treated as one receipt population.",
+            "newArtifactVerificationErrors": 0
+          },
+          "verification": {
+            "focused": "pnpm test:diagnostic -- productionClosureAudit: 5/5, 0 warnings",
+            "typecheck": "pnpm typecheck passed",
+            "lint": "pnpm exec eslint packages/calculation-application/src/productionClosureAudit.test.ts passed",
+            "format": "pnpm exec prettier --check packages/calculation-application/src/productionClosureAudit.test.ts passed",
+            "diff": "git diff --check passed"
+          },
+          "legacyInventory": {
+            "rawBaselineScan": "packages/data-pipeline/scripts/audit-oc-planning-baseline.mjs reads four raw exports plus published master and joins function metadata; distinct raw evidence owner",
+            "rawNormalization": "packages/data-pipeline/scripts/audit-oc-normalized-master.ts asserts 167 raw OC occurrences/632 cells and writes normalized diagnostic; unique raw-cell coverage, separate data-pipeline owner",
+            "currentInventories": "resourceProductionAudit.ts and ocProductionAudit.ts are called by data-pipeline productionAudit.ts; retain current canonical inventory",
+            "applicationLoaders": "productionMasterInventory.test.ts, productionExecutionParity.test.ts, productionMasterControlAudit.test.ts cache one master read per test file and own distinct inventory/parity/control assertions; not duplicate audit producer",
+            "candidateList": "productionClosureAudit.ts obtains candidateInventory from calculateRankingPolicy; no separate expected-list generator found in inspected path",
+            "quantityConditions": "baseline raw audit and effectNormalization local canonical conversion retain distinct responsibility; name alone gives no deletion basis",
+            "decision": "Unique raw OC coverage requires data-pipeline owner assessment before checklist4 deletion; no deletion in this unit."
+          },
+          "closure": {
+            "checklist1": "Verified previously; confirm final identity",
+            "checklist2": "Partial commit artifact gap closed locally; all six class final identity unmet",
+            "checklist3": "Local typed reason/identity/first-diff/full artifact reached; integrated receipts unmet",
+            "checklist4": "Deferred to data-pipeline raw baseline/normalization owner because unique coverage remains",
+            "doneGate": "Final inventory/parity/fail-closed/digest/receipt acceptance unmet",
+            "TS-AUDIT-001/RK-AUDIT-001": "Shared producer and HP proof reused; final affected audit unmet",
+            "TS-OUT-001/TS-ART-001": "Local fixture and artifact passed; full integrated bounded/complete output unmet",
+            "RK-PERF-001/TS-PERF-002": "Formal applicable before/after 3-run gate unmet; current test-only change does not alter hot path",
+            "DX-HANDOFF-001": "Task/evidence checkpoint written; README final quality unmet",
+            "inputLifecycle1to3": "Existing evidence reused only at matching identity",
+            "inputLifecycle4and8": "Separate native/recovery owner whole coverage unverified; no consumer means no read/recovery duty",
+            "inputLifecycle5": "Scoped failure fixture verified; whole six-class ratchet unmet",
+            "inputLifecycle6": "Separate data-pipeline unique raw-cell coverage assessment pending",
+            "inputLifecycle7": "Formal performance and final quality/integrated acceptance unmet"
+          },
+          "nextLimitedOperation": "Data-pipeline owner: establish current contract/callers/replacement coverage for raw OC baseline and normalized-master scripts; retain unique raw-cell assertions, identify only provably obsolete definitions. Then resume same-final-identity six-class reachability and integrated gates. No per-HP action expansion, unconditional 8 shards, dependent quality, or push.",
+          "stepStatus": "Step2/TSK-08 in_progress; TSK-09.1/09 blocked"
+        }
       }
     },
     "completedScalarRecoveryPreparation": {

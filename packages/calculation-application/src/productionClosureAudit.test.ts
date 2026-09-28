@@ -573,25 +573,28 @@ it(
         { ...observation, actions: [skillAction, gainAction] },
       ]).failures,
     ).toEqual([]);
-    expect(
-      auditProductionPreparationTransactionObservations([
+    const partialCommitObservation = {
+      ...observation,
+      actions: [
+        skillAction,
         {
-          ...observation,
-          actions: [
-            skillAction,
-            {
-              ...gainAction,
-              resourceTransaction: {
-                ...gainAction.resourceTransaction,
-                mutations: [
-                  { ...gainAction.resourceTransaction.mutations[0]!, before: initialResource },
-                ],
-              },
-            },
-          ],
+          ...gainAction,
+          resourceTransaction: {
+            ...gainAction.resourceTransaction,
+            mutations: [
+              { ...gainAction.resourceTransaction.mutations[0]!, before: initialResource },
+            ],
+          },
         },
-      ]).failures,
-    ).toMatchObject([{ reason: 'preparationResourceCommitMismatch' }]);
+      ],
+    };
+    const partialCommitAudit = auditProductionPreparationTransactionObservations([
+      partialCommitObservation,
+    ]);
+    const partialCommit = evaluateProductionPreparationTransactionGate({
+      expectedCalculatedProfiles: 1,
+      ...partialCommitAudit,
+    });
     const passing = evaluateProductionPreparationTransactionGate({
       expectedCalculatedProfiles: 1,
       ...audit,
@@ -631,12 +634,34 @@ it(
       boundary: 'calculation-application-production-preparation-transaction',
       source: 'productionClosureAudit.test.ts',
       canonicalIdentity: 'tsk-08:preparation-transactions',
-      observations: [observation, staleReceiptObservation, discontinuousResourceObservation],
+      observations: [
+        observation,
+        partialCommitObservation,
+        staleReceiptObservation,
+        discontinuousResourceObservation,
+      ],
       audit,
+      partialCommitAudit,
       failedAudit,
       discontinuousResourceAudit,
       passing,
-      intentionalFailures: [failed, missingProfile, discontinuousResource],
+      intentionalFailures: [partialCommit, failed, missingProfile, discontinuousResource],
+    });
+    expect(partialCommit).toMatchObject({
+      status: 'failed',
+      firstDifference: {
+        identity: 'production:fixture-condition:profile:fixture-profile:preparation:action:1',
+        path: 'valid',
+        expected: true,
+        actual: false,
+      },
+      failures: [
+        {
+          reason: 'preparationResourceCommitMismatch',
+          canonicalIdentity:
+            'production:fixture-condition:profile:fixture-profile:preparation:action:1',
+        },
+      ],
     });
     expect(passing).toMatchObject({
       status: 'passed',
