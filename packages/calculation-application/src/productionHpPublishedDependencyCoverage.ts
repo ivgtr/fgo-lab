@@ -79,7 +79,11 @@ const sourceMatches = (
   (declaration.identity.origin === source.origin ||
     (declaration.identity.origin === 'attacker' && source.origin === 'support')) &&
   declaration.identity.owner === source.sourceId &&
-  declaration.identity.skill === source.skillId &&
+  (declaration.identity.origin === 'np'
+    ? declaration.identity.variant !== null &&
+      declaration.identity.skill === declaration.identity.variant.ref.noblePhantasmId &&
+      source.skillId === `np:${noblePhantasmVariantKey(declaration.identity.variant.ref)}`
+    : declaration.identity.skill === source.skillId) &&
   declaration.identity.occurrence === source.effectOccurrenceId &&
   declaration.effect?.id === source.effectId &&
   variantMatches(declaration, ref);
@@ -461,6 +465,14 @@ export function hpPublishedDependencyBindings(
                 })),
                 native: attempt.native,
                 transitionStatus: transition.result.status,
+                ...(d.identity.kind === 'ocRateExpression'
+                  ? {
+                      terminalAction: transition.command.kind === 'executeAttackNoblePhantasm',
+                      laterReachedKinds: attempt.reached
+                        .filter((step) => origins.some((origin) => step.index > origin.index))
+                        .map((step) => ({ index: step.index, kind: step.step.kind })),
+                    }
+                  : {}),
                 appendedActions: transition.result.state.appliedActions.slice(
                   transition.before.appliedActions.length,
                 ),
@@ -632,6 +644,87 @@ export function reconcileHpPublishedDependencyCoverage(
       evaluationBinding: proof.evaluations[0]!,
     };
   };
+  const ocRateSelection = (declaration: HpProofDeclaration, requestIndex: number) => {
+    const { prepared } = requests[requestIndex]!;
+    if (prepared.status !== 'executable')
+      return { requestIndex, disposition: 'unobserved' as const, reason: 'notExecutable' as const };
+    if (!prepared.resolved.noblePhantasmVariant)
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: 'noSelectedVariant' as const,
+      };
+    if (prepared.executionObservation?.targetExecution?.selection !== 'selected')
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: 'targetNotSelected' as const,
+      };
+    const selectedVariant = prepared.resolved.noblePhantasmVariant;
+    const owner = prepared.master.servants.find((actor) => actor.id === declaration.identity.owner);
+    if (!owner || !getNoblePhantasmVariants(owner).includes(selectedVariant)) {
+      fail('npVariantSelectionMismatch', `requests.${requestIndex}.ocRateVariant`);
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: 'foreignSelectedVariant' as const,
+      };
+    }
+    if (!variantMatches(declaration, selectedVariant.ref))
+      return { requestIndex, disposition: 'otherVariantSelected' as const };
+    const selected = observed.flatMap((binding, index) =>
+      binding.stage === 'selectedPreparationCell' &&
+      binding.requestIndex === requestIndex &&
+      binding.declaration.identity.kind === 'ocRateExpression' &&
+      binding.declaration.operation === declaration.operation &&
+      binding.declaration.effect === declaration.effect
+        ? [{ binding, index }]
+        : [],
+    );
+    if (selected.length !== 1) {
+      if (selected.length > 1) fail('ambiguousCanonical', `requests.${requestIndex}.ocRateCell`);
+      return {
+        requestIndex,
+        disposition: 'unobserved' as const,
+        reason: selected.length
+          ? ('ambiguousSelectedCell' as const)
+          : ('selectedCellMissing' as const),
+      };
+    }
+    const { binding, index } = selected[0]!;
+    if (binding.declaration !== declaration)
+      return { requestIndex, disposition: 'otherCellSelected' as const, selectedBinding: index };
+    const detail = binding.detail as {
+      native?: { status: string; outcomes: readonly { step: number; outcome: string }[] };
+      transitionStatus: string;
+      terminalAction: boolean;
+      laterReachedKinds: readonly { index: number; kind: string }[];
+      steps: readonly { index: number; reached: readonly unknown[] }[];
+      appendedActions: readonly { sourceKind: string }[];
+    };
+    const selectedStep = detail.steps[0]?.index;
+    const committed =
+      detail.native?.status === 'committed' &&
+      detail.native.outcomes.some(
+        (outcome) => outcome.step === selectedStep && outcome.outcome === 'applied',
+      ) &&
+      detail.transitionStatus === 'applied' &&
+      detail.appendedActions.some((action) => action.sourceKind === 'attackNoblePhantasm');
+    return {
+      requestIndex,
+      disposition: committed ? ('selectedCommitted' as const) : ('selectedUnobserved' as const),
+      selectedBinding: index,
+      reached: detail.steps.some((step) => step.reached.length > 0),
+      nativeStatus: detail.native?.status ?? null,
+      appended: detail.appendedActions.length,
+      actualRead:
+        committed &&
+        detail.terminalAction &&
+        !detail.laterReachedKinds.some((step) => step.kind === 'grant')
+          ? ('noLaterGrantInTerminalAction' as const)
+          : ('unobserved' as const),
+    };
+  };
   return {
     requestCount: requests.length,
     requests: requests.map(({ prepared, calculation }, index) => ({
@@ -656,6 +749,12 @@ export function reconcileHpPublishedDependencyCoverage(
           d.identity.kind === 'hpRatioLow'
             ? (directOwners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? []).map(
                 (requestIndex) => npSelection(d, requestIndex),
+              )
+            : [],
+        ocRateSelections:
+          d.identity.kind === 'ocRateExpression'
+            ? (directOwners.get(JSON.stringify([d.identity.origin, d.identity.owner])) ?? []).map(
+                (requestIndex) => ocRateSelection(d, requestIndex),
               )
             : [],
         stages: stages.map((stage) => {

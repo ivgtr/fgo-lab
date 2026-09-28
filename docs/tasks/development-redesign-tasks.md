@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.116"
+document_version: "1.7.117"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -3979,3 +3979,11 @@ expression実read observer、support修復前capture、新native／recovery owne
 次の1セッション候補はPublished OC-rate HP依存25 cellの元owner経路に限定する。現sidecarでは25宣言が同一NP variantに属し、同じ10件の直接scenario owner requestを持つが、`selectedPreparationCell`を含む全stageのbindingは0である。元requestはattack NP実行を含み、対象variantのeffectが選択された証拠はない。`sourceCollection`のbefore-damage source、`preparationOc`の選択source／step originsと元transition capture、`ocState.rateValue`のHP取得・rate利用を直接照合し、利用可能、variant／cell選択、reached、native／append、実read、正常な非選択、未観測を分ける。現在のowner requestだけでproduct exclusionや実read0を主張せず、新observer／別ownerが必要かは現コードの計画で判断する。CE条件1とvalue-expression10 cellの元owner母集団、別のnative／recovery family、HP意味論追加はこの単位へ連鎖しない。
 
 次sessionの指示正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.ocRatePublishedDependencySession`。最初に現コードによる設計・検証・TSK-08全体closure可否の計画を提示し利用者確認を待つ。確認後は承認された一単位の実装・反証・影響suite・旧新artifact完全比較・既存正本更新・対象限定local commitまで同sessionで進める。全checklist／Done gate／Contract closure matrixと元input lifecycle8義務を有効証拠へ照合し、全義務と対象内Blocking 0が閉じる場合だけ必要audit／正式性能／README最終quality／統合counter・digest・全receiptを実施してTSK-08完了を目指す。残れば依存qualityを始めず製品未完了checkpointとする。60分で既存正本へcheckpoint、90分では現在のatomic actionを終え引き継ぐ。pushしない。
+
+### Published OC-rate HP依存の元選択・終端非消費proof checkpoint（2026-09-28）
+
+開始HEAD `248a4423ef475723951eb0797ebaf42a1f1d467f`、index／tracked／untrackedはclean。利用者へ現コードの計画を提示して確認を得た後、OC-rate25 cellの元producer／preparation capture／consumerを接続した。宣言のNP IDと選択sourceの`np:<variant key>`を直接文字列比較していたことが全stage binding0の原因だったため、NP ID・typed variant ref・source keyのjoinへ修正した。元3182 request、共有557宣言、旧478 bindingを保持し、選択された1 cellに元request50〜59の10 bindingを追加した。25 cell×各10 requestのうち選択・reached・native committed・attack NP appendは10、別cell選択は240。選択rate後に同じterminal actionでgrantが到達しないため、この元request群ではrateの実HP readは生じない。別のreader全体の0件証明や製品対象外とはしない。新observer、元owner再実行、HP意味論・製品hot path変更はない。
+
+局所unit9／既存OC transaction unit17／元control audit7、typecheck／対象lint・formatが通過。最終audit第1 testは既存60秒上限内の52.680秒で、直近53.091秒との差は単発変動として扱い、timeout／thresholdは変更していない。旧新sidecarの完全decoded値・順序は追加OC field／bindingと参照index補正以外一致し、旧fixture1／否定13件も追加fieldを除き完全一致。対象外control artifact12件のbytes／SHA一致、新2runのdisk25／test-owned receipt15はerror0。実行前のpnpm外部SQLite store障害には内容・730 bytes・SHAを確認した正本の`/tmp/tsk08-tools/pnpm`をnested PATHで適用した。source／input／artifact identity、比較のfirst difference null、typed failure、TSK-08全checklist／Done gate／Contract closure matrixと入力lifecycle8義務は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpPublishedOcRateSelectionCheckpoint`を正本とする。
+
+今回単位のBlockingは0。CE条件1／value-expression10 cellの元owner request、他の実read、全native noncommit／成功recovery、全ratchet／diagnostics到達、legacy固有coverage／整理、正式3-run性能、README最終quality、統合counter／digest／全receiptは未達または未照合。Step 0／1／3は成立、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。依存quality／製品closureは開始せず、対象限定local commitで引き継ぐ。次の限定操作は上記checkpointの`nextOperation`を参照する。pushしない。

@@ -1,6 +1,10 @@
 import { expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
-import { masterSnapshotSchema, masterEffectSchema } from '@fgo-lab/master-data';
+import {
+  masterSnapshotSchema,
+  masterEffectSchema,
+  noblePhantasmEffectSchema,
+} from '@fgo-lab/master-data';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
@@ -24,7 +28,13 @@ import {
   decodeProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
-function setup(excluded = false, repeated = false, alternateNp = false, selectedStandard = false) {
+function setup(
+  excluded = false,
+  repeated = false,
+  alternateNp = false,
+  selectedStandard = false,
+  ocRate = false,
+) {
   const master = masterSnapshotSchema.parse(fixture);
   const actor = master.servants[0]!;
   const effect = masterEffectSchema.parse({
@@ -144,6 +154,42 @@ function setup(excluded = false, repeated = false, alternateNp = false, selected
         kind: 'standard' as const,
         rawFunctionType: 'damageNp',
       }));
+  }
+  if (ocRate) {
+    const variant = actor.noblePhantasmVariantGroups[0]!.variants[0]!;
+    const cell = {
+      applicationRatePermille: 1000,
+      turns: { kind: 'finite' as const, remaining: 1 },
+      uses: { kind: 'unlimited' as const },
+      amount: { kind: 'inverseHpLinear' as const, basePermille: 0, bonusAtZeroHpPermille: 400 },
+    };
+    variant.effects = [
+      noblePhantasmEffectSchema.parse({
+        ...effect,
+        id: 'fixture-oc-rate',
+        occurrenceId: 'fixture-oc-rate:0',
+        gameActivation: 'npBeforeDamage',
+        timing: 'beforeDamage',
+        requirement: { recipient: 'sourceSelf', expression: { kind: 'always' } },
+        execution: [
+          {
+            kind: 'grantOcApplicationRate',
+            route: {
+              target: 'sourceSelf',
+              contributionScope: 'personal',
+              eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+            },
+            lifetime: 'active',
+            stacking: 'additive',
+            stateTraits: ['positive', 'grantSuccessUp'],
+            role: 'casterGrant',
+            sign: 1,
+            selector: 'positive',
+            cells: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => cell)),
+          },
+        ],
+      }),
+    ];
   }
   master.servants = [actor];
   master.craftEssences = [];
@@ -400,6 +446,82 @@ it('keeps a selected standard NP outside HP evaluation proof without rejecting a
       reason: 'selectedVariantHasNoHpDeclaration',
     },
   ]);
+});
+
+it('connects the selected NP OC-rate cell and proves terminal nonconsumption separately from other cells', () => {
+  const f = setup(false, false, false, false, true);
+  const ledger = f.reconcile();
+  expect(ledger.gate.failures).toEqual([]);
+  const cells = ledger.declarations.filter((d) => d.identity.kind === 'ocRateExpression');
+  expect(cells).toHaveLength(25);
+  expect(
+    cells.flatMap((d) => d.ocRateSelections).filter((s) => s.disposition === 'selectedCommitted'),
+  ).toMatchObject([
+    {
+      requestIndex: 0,
+      reached: true,
+      nativeStatus: 'committed',
+      appended: 1,
+      actualRead: 'noLaterGrantInTerminalAction',
+    },
+  ]);
+  expect(
+    cells.flatMap((d) => d.ocRateSelections).filter((s) => s.disposition === 'otherCellSelected'),
+  ).toHaveLength(24);
+  expect(ledger.bindings.filter((b) => b.declaration.kind === 'ocRateExpression')).toHaveLength(1);
+});
+
+it('fails closed on missing, duplicate and foreign selected OC-rate capture', () => {
+  const f = setup(false, false, false, false, true);
+  const selected = f.borrowed.bindings.find(
+    (binding) => binding.declaration.identity.kind === 'ocRateExpression',
+  )!;
+  const without = f.borrowed.bindings.filter((binding) => binding !== selected);
+  const reasons = (bindings: readonly HpPublishedDependencyBinding[]) =>
+    f.reconcile(bindings).gate.failures.map((failure) => failure.reason);
+  expect(reasons(without)).toContain('missingBinding');
+  expect(reasons([...f.borrowed.bindings, selected])).toContain('duplicateBinding');
+  expect(
+    reasons(
+      f.borrowed.bindings.map((binding) =>
+        binding === selected ? { ...binding, requestIndex: 99 } : binding,
+      ),
+    ),
+  ).toContain('unmatchedBinding');
+  for (const changed of [
+    { ...selected, reference: { ...selected.reference } },
+    { ...selected, family: 'other' },
+    { ...selected, actor: 'foreign' },
+    { ...selected, recipient: 'foreign' },
+    { ...selected, sourceInstanceId: 'foreign' },
+    { ...selected, detail: { ...selected.detail, steps: [] } },
+    { ...selected, detail: { ...selected.detail, native: { status: 'rejected' } } },
+  ]) {
+    const bindings = f.borrowed.bindings.map((binding) =>
+      binding === selected ? (changed as HpPublishedDependencyBinding) : binding,
+    );
+    expect(f.reconcile(bindings).gate.passed).toBe(false);
+  }
+  expect(reasons([...f.borrowed.bindings].reverse())).toContain('orderMismatch');
+  if (f.prepared.status !== 'executable' || !f.prepared.resolved.noblePhantasmVariant)
+    throw new Error('fixture_oc_selected_variant_missing');
+  const foreign = {
+    ...f.prepared,
+    resolved: {
+      ...f.prepared.resolved,
+      noblePhantasmVariant: {
+        ...f.prepared.resolved.noblePhantasmVariant,
+        canonicalId: 'foreign-variant',
+      },
+    },
+  };
+  expect(
+    reconcileHpPublishedDependencyCoverage(
+      f.declarations,
+      [{ prepared: foreign, calculation: f.calculation }],
+      f.borrowed.bindings,
+    ).gate.failures.map((failure) => failure.reason),
+  ).toContain('npVariantSelectionMismatch');
 });
 
 it('rejects incomplete requests and equal foreign request/candidate capture owners', () => {

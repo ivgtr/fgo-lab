@@ -1570,7 +1570,25 @@ describe('production master inventory ratchet', () => {
         unconnectedHpDependencies('ocRateExpression').map(
           (declaration) => declaration.directScenarioOwnerRequests.length,
         ),
-      ).toEqual(Array(25).fill(10));
+      ).toEqual(Array(24).fill(10));
+      const ocRateCells = hpDependencyCoverage.declarations.filter(
+        (declaration) => declaration.identity.kind === 'ocRateExpression',
+      );
+      expect(ocRateCells.flatMap((declaration) => declaration.ocRateSelections)).toHaveLength(250);
+      expect(
+        ocRateCells
+          .flatMap((declaration) => declaration.ocRateSelections)
+          .filter(
+            (selection) =>
+              selection.disposition === 'selectedCommitted' &&
+              selection.actualRead === 'noLaterGrantInTerminalAction',
+          ),
+      ).toHaveLength(10);
+      expect(
+        ocRateCells
+          .flatMap((declaration) => declaration.ocRateSelections)
+          .filter((selection) => selection.disposition === 'otherCellSelected'),
+      ).toHaveLength(240);
       const selectedExpectedIdentities = expectedUserControlIdentities.map((identity) => ({
         ...identity,
         profileKey:

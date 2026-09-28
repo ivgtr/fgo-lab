@@ -23064,6 +23064,150 @@
         },
         "closureDecision": "One confirmed NP coverage unit passed with local Blocking0. Whole TSK-08 remains in_progress; Step2 open, TSK-09.1/09 blocked. Do not start dependent quality or product closure.",
         "nextOperation": "Separately determine the original owner/capture lifetime for CE condition1 and value-expression10, and selected-cell/actual-read observation for OC-rate25. Decide observer/owner need from direct producer/consumer code; keep distinct families/native/recovery out of scope until separately authorized."
+      },
+      "hpPublishedOcRateSelectionCheckpoint": {
+        "status": "one_oc_rate_hp_proof_coverage_unit_verified_product_incomplete",
+        "baselineHead": "248a4423ef475723951eb0797ebaf42a1f1d467f",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "authorization": "User approved code-based OC-rate plan before implementation; no push.",
+        "sourceIdentities": [
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+            "bytes": 31875,
+            "sha256": "4c682f08e0dec0282f1baef04699fb1f1693b6fc284950c727de4812e10558fb"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts",
+            "bytes": 21790,
+            "sha256": "801bbddfed50ef8bc7cc434016a09423b1ffceb1e0caedba07264cffb6554fd8"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 96970,
+            "sha256": "eef3683c4428ee5edc6be630311e6953892e4f0df798190a7fd081672e2b60e6"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "artifactIdentities": [
+          {
+            "path": ".test-results/2026-09-28T04-06-35-326Z-3-611a6a/manifest.json",
+            "bytes": 3371,
+            "sha256": "da8c13f3a0a6ad3c0cd1a2ca3784ff6a3eb881b54fe489b473b17620679809c8"
+          },
+          {
+            "path": ".test-results/2026-09-28T04-06-42-694Z-3-38f9dd/manifest.json",
+            "bytes": 5862,
+            "sha256": "40ee3daf702c008d331abf371406774e1ce906d7cf802139db7f505133aadc60"
+          },
+          {
+            "path": ".test-results/2026-09-28T04-06-42-694Z-3-38f9dd/production-hp-published-dependency.json",
+            "bytes": 13243577,
+            "sha256": "95dc29392628052f358aa7f31036ab0a0055f702cb13383a1d0092cdd56e6155"
+          },
+          {
+            "path": ".test-results/tsk-08-oc-rate-20260928/complete-comparison.json",
+            "bytes": 4260,
+            "sha256": "2c3cef1ca7ed9fb188b8a4e19109b2426d6439aaa603d03a9d139a521d0afd0d"
+          },
+          {
+            "path": ".test-results/tsk-08-oc-rate-20260928/unit-comparison.json",
+            "bytes": 7135,
+            "sha256": "9ebfd47a20f042233a81df9f65cef2102a230c295fbb5a9d5879a5e15004be51"
+          },
+          {
+            "path": ".test-results/2026-09-28T04-05-40-068Z-3-04a77a/manifest.json",
+            "bytes": 2882,
+            "sha256": "9ffd6693bcc655c72ab70bd7f3d801d518ef7819982cbd3e9ce76a3e1b7309a0"
+          }
+        ],
+        "ownerAndBoundary": {
+          "inventory": "Existing hpProofCoverageInventory remains sole 557-declaration inventory; 25 OC-rate cells belong to one typed NP variant and canonical execution.0 grantOcApplicationRate.",
+          "producer": "Existing productionMasterControlAudit.evaluateWithOrderedOperationEvents retains 3182 original prepared/calculation requests before family selectors. No replay/new expected-value generator.",
+          "rootCause": "NP declaration skill is canonical noblePhantasmId; selected preparation SourceEffect.skillId is np:<typed variant key>. The former direct string comparison suppressed every selectedPreparationCell binding. Join now checks canonical NP id, typed variant ref and source key together.",
+          "capture": "Original sourceCollection before-damage effect, preparationOc selected source/cell, stepOrigins/reached/native and WeakMap original transition capture are borrowed. Added laterReachedKinds/terminalAction only to OC-rate binding details; no product state/capture/hot-path change.",
+          "consumer": "ocState.rateValue accesses hp[rate.valueOwner] only inside a later eligible included rate iteration on a grant. The original selected rate has no later grant in its terminal attack-NP attempt; no actual HP read is inferred from resolved rate, declaration or request. Later/future read coverage remains unobserved.",
+          "proof": "Existing typed gate and sidecar add declaration ocRateSelections: selectedCommitted with reached/native/append and noLaterGrantInTerminalAction; otherCellSelected. Original request/canonical/capture owner references are validated before persistence.",
+          "observer": "No new observer in this unit: the original 10 request terminal transactions have no later grant after selected rate. A later-owner selected rate with a grant would need a separate actual-read observer/owner decision; this unit does not claim that proof."
+        },
+        "population": {
+          "requests": 3182,
+          "oldBindings": 478,
+          "newBindings": 488,
+          "dependencyDeclarations": 71,
+          "ocRateDeclarations": 25,
+          "originalDirectOwnerRequestsPerCell": 10,
+          "selectedCell": "execution.0.cells.0.0.amount",
+          "selectedOriginalRequests": [
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59
+          ],
+          "selectedCommitted": 10,
+          "otherCellSelected": 240,
+          "selectedCellBindings": 10,
+          "selectedReachesGrantStep": 10,
+          "selectedNativeCommitted": 10,
+          "selectedAttackNpAppend": 10,
+          "normalNoLaterGrantInTerminalAction": 10,
+          "originalReadBoundary": "No later grant after the selected rate in the 10 original terminal actions; actual read elsewhere remains unobserved.",
+          "qualification": "The no-later-grant result is limited to these original terminal requests; it is not full published OC-rate reader proof or product exclusion."
+        },
+        "verification": {
+          "unit": "Focused unit 9/9, warnings0; final unit manifest in artifactIdentities.",
+          "controlAudit": "Original control audit 7/7, warnings0; final first test 52.680s within unchanged 60s limit, total 133.02s. Prior 53.091s, intermediate corrected runs 50.978s/52.804s; single-run movement does not identify a cause or satisfy formal performance.",
+          "ocState": "Existing OC transaction tests 17/17 passed on unchanged source: rollback on invalid/inputRequired/unsupported sibling, current HP read only at later grant, excluded rate without HP read.",
+          "static": "tsc -b passed; target ESLint warnings0; target Prettier check passed; git diff --check passed.",
+          "completeComparison": "Old/new full decoded sidecar value/order equal after only new OC selections and 10 OC bindings are removed and binding indices remapped; first difference null. Old fixture 1 and negative 13 full decoded values/order equal after added empty field removed. Twelve unchanged control artifacts have equal bytes/SHA. New two-run disk descriptors25 and test-owned receipts15 have errors0; exact identities in comparison artifacts.",
+          "failures": "Initial pnpm stopped before script at external SQLite store; verified /tmp/tsk08-tools/pnpm content,730 bytes,SHA 7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6 and used same generic runner. Initial corrected audit failed the old 25-unconnected assertion after one cell legitimately connected; updated bounded assertion and final audit passed.",
+          "falsifiers": "Small fixture covers selected cell vs24 sibling cells, reached/native/append/no later grant; missing/duplicate/unmatched, equal foreign reference, wrong family/actor/recipient/source/order, forged reached and rejected native, foreign selected variant all fail closed. Existing ocState.test.ts covers transactional rollback; no OC runtime semantics changed."
+        },
+        "inputLifecycleClosureReconciliation": [
+          "0: Original input lifecycle and occurrence/HP gates retained at recorded identities; product input owner unchanged.",
+          "1: HP486/7470 and shared digest unchanged; this is not whole state-transition audit.",
+          "2: Completed mutation slices and units0..51 retained; no action selector or HP semantics change.",
+          "3: OC25 original requests are classified selected1 cell/other24 across10 requests; no later grant in terminal action. CE1/value10 original owner request absent, all native noncommit/success recovery and other read consumers remain unverified.",
+          "4: Local typed gate, full old/new artifact and receipt reachability pass; whole population ratchets/diagnostic reachability remain open.",
+          "5: Legacy aggregate/loader/scan/candidate/duplicate fixture unique coverage and cleanup remain open.",
+          "6: Formal before/after3-run performance, README final quality, integrated counter/digest/all receipts remain open.",
+          "7: Declaration/request/variant/cell/reached/native/append/no-later-grant are separate; no CE projection or support-repaired proof is composed into original read/native/recovery."
+        ],
+        "tsk08ClosureReconciliation": {
+          "checklist": {
+            "soleInventoryProducer": "retained",
+            "allRatchets": "open whole population",
+            "typedDiagnosticsCompleteArtifact": "local typed negatives/full decoded/artifact/receipt verified; whole reachability open",
+            "legacyCleanup": "open unique coverage and references"
+          },
+          "doneGate": {
+            "damageDifferences": "old product/control artifacts unchanged; full damage difference explanation not integrated",
+            "firstCanonicalDifference": "local typed first difference and normalization null verified; whole digest mismatch path open",
+            "boundedFullResults": "local complete artifacts passed; whole failures open",
+            "inventoryParityFailClosed": "scoped control audit passed; final integrated production/calculator/ranking gate open",
+            "soleProducer": "retained"
+          },
+          "contractMatrix": {
+            "TS-AUDIT-001": "control audit7 passed; whole production gate open",
+            "TS-OUT-001": "local typed negatives passed; whole diagnostics open",
+            "TS-ART-001": "disk25/test-owned15 errors0; whole receipts open",
+            "RK-AUDIT-001": "matrix/eligibility and completed units retained; whole policy/parity/fail-closed open",
+            "RK-PERF-001": "formal before/after three-run open",
+            "TS-PERF-002": "formal before/after three-run open",
+            "DX-HANDOFF-001": "local checkpoint/commit; README final quality open"
+          }
+        },
+        "closureDecision": "This OC-rate original-owner unit has Blocking0, but Step2 and whole TSK-08 remain in_progress. CE/value original owner, other actual-read/native/recovery, whole ratchets/diagnostics/legacy, formal performance, final quality and integrated counters/digests/all receipts are unclosed. TSK-09.1/09 remain blocked. Do not start dependent quality/product closure.",
+        "nextOperation": "Separately plan the remaining Published CE condition1/value-expression10 original request/capture owner and later OC-rate actual-read owner if needed. Preserve this original terminal no-later-grant result; do not fabricate a read with owner replay or support repair."
       }
     }
   ],
@@ -24162,7 +24306,7 @@
       },
       "historicalRootQualification": "Historical-prefixed plans remainhistory. productionAuditInputLifecycleSession wasconfirmedandexecuted;currentresultandnextlimitedoperationareownedby boundedUnits[52].productionAuditInputLifecycleCheckpoint.",
       "currentCheckpointCommit": "d91b1281c2283f8743b90d0315f115d09250aa75",
-      "currentSessionReference": "handoffPreparation.nextSession.ocRatePublishedDependencySession",
+      "currentSessionReference": "boundedUnits[52].hpPublishedOcRateSelectionCheckpoint.nextOperation",
       "capacityAttemptMaterializationSession": {
         "status": "Confirmed session complete as product-incomplete scoped checkpoint;final outer attempt182/control7 passed. Current result/remaining gates/next bounded operation are boundedUnits[52].capacityAttemptMaterializationCheckpoint.",
         "preparationHead": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
@@ -25863,7 +26007,7 @@
         "recordCommitPolicy": "Update existing Task/evidence/registry only, with any in-scope implementation files. Review and stage target files, local commit, no push. Resolve this preparation commit SHA from Git history in the final handoff prompt; do not self-reference it inside this JSON."
       },
       "ocRatePublishedDependencySession": {
-        "status": "prepared_read_only_awaiting_code_based_plan_and_user_confirmation",
+        "status": "completed_scoped_unit_product_incomplete",
         "name": "ocRatePublishedDependencySession",
         "baselineHead": "bc66d76d7607f5950cc1219321edbb05d6d7ae3f",
         "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
@@ -25955,7 +26099,8 @@
         "closureDecision": "Aim for TSK-08 completion only if all checklist, Done gate, matrix and eight input-lifecycle obligations genuinely close with valid evidence, in-scope Blocking0 and time for affected audit, formal three-run performance, README final quality, integrated counter/digest/all receipts. Otherwise do not start dependent quality; create a product-incomplete checkpoint and local commit. TSK-09.1/09 remain blocked.",
         "sessionBoundary": "At60min update existing Task/evidence checkpoint; at90min finish the current atomic action and hand off. Do not start extra quality retry, unrelated investigation or another family.",
         "runnerFallback": "Only if pnpm fails before script at external SQLite store: inspect /tmp/tsk08-tools/pnpm contents, 730 bytes, SHA-256 7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6, then set nested PATH and use the same generic runner.",
-        "recordCommitPolicy": "Update existing Task/evidence/registry only with in-scope implementation files. Review and stage target files, local commit, no push. Resolve this preparation commit SHA from Git history in final prompt; do not self-reference it in this JSON."
+        "recordCommitPolicy": "Update existing Task/evidence/registry only with in-scope implementation files. Review and stage target files, local commit, no push. Resolve this preparation commit SHA from Git history in final prompt; do not self-reference it in this JSON.",
+        "completionReference": "boundedUnits[52].hpPublishedOcRateSelectionCheckpoint"
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -26927,7 +27072,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Published OC-rate HP依存25cell（同一NP variant、各10元owner request、現sidecar全stage binding0）を一つの限定候補とし、最初に元variant／cell選択とpreparation capture／ocState実readの設計・検証計画を提示して利用者確認を待つ。CE1/value10、全native/recovery、全ratchet/legacy/正式性能/最終quality/統合receiptは独立の未達として照合する。",
+    "nextSession": "Separately plan the remaining Published CE condition1/value-expression10 original request/capture owner and later OC-rate actual-read owner if needed. Preserve this original terminal no-later-grant result; do not fabricate a read with owner replay or support repair.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -26988,6 +27133,7 @@
     "hpRemainingProofCheckpointReference": "boundedUnits[52].hpRemainingProofReconciliationCheckpoint",
     "asOfPublishedDependencyCheckpointReference": "boundedUnits[52].hpPublishedDependencyProofCheckpoint",
     "asOfPublishedDependencyRemainderCheckpointReference": "boundedUnits[52].hpPublishedDependencyRemainderCheckpoint",
-    "asOfHpNpVariantSelectionCheckpointReference": "boundedUnits[52].hpPublishedNpVariantSelectionCheckpoint"
+    "asOfHpNpVariantSelectionCheckpointReference": "boundedUnits[52].hpPublishedNpVariantSelectionCheckpoint",
+    "asOfOcRateSelectionCheckpointReference": "boundedUnits[52].hpPublishedOcRateSelectionCheckpoint"
   }
 }
