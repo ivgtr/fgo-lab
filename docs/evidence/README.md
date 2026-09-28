@@ -105,3 +105,5 @@ Published support HP value-expression10 cellの元owner／capture限定結果は
 Step再確認と次の一単位の準備は同evidence `handoffPreparation.nextSession.ceConditionOwnerSession`。Step 0／1／3は維持、Step 2は未完了。現sidecarのCE HP条件1件は元owner requestが空で全stage未観測だが、既存のCE数値golden／calculator・portable testは元prepared・captureの共有audit接続を証明しない。次作業者は現コードのCE ownerから計画を提示し利用者確認を待った後、一つのowner経路だけ実装・検証する。別HP owner・native／recovery・legacyは連鎖せず、全義務が有効に閉じた場合だけTSK-08完了を判定する。
 
 CE後の残HP `noHealing` 敵全体native forward限定結果は同evidence `boundedUnits[52].hpNoHealingNativeCheckpoint`。元control3186 requestから10件が選択・native commitし、敵3体ずつ30 modifier appendを記録した。影響audit9/9、HP paths7/7、unit70/70、旧新共通artifact17件のbytes／SHA一致、最終manifest20/20 receipt。後続enemy HP gainの物理read・消費、実native noncommit、recoveryとTSK-08全体義務は未達。Step 2／TSK-08は`in_progress`、09.1／09は`blocked`。次の限定操作は同checkpointを参照し、Step 3の8 shardsを疑義なく再生成しない。
+
+TSK-08の残義務は[Taskの再設計](../tasks/development-redesign-tasks.md)と同evidence `remainingWorkSummary.remainingWorkRedesign`に整理した。HP ownerを一件ずつ増やす方針は撤回し、canonical遷移・失敗クラス・現存legacy参照・最終統合の四つの判定単位で閉じる。新しい製品証拠やTSK-08完了を示す記録ではない。

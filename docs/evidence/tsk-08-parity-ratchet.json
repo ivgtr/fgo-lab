@@ -28118,7 +28118,31 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Step0/1/3 remain established and Step2/TSK-08 in_progress. The noHealing native forward proof is valid locally, but the per-owner audit continuation is withdrawn: first falsify a shared HP operation/read/transaction evidence model against current typed unions and direct paths. Do not implement each action/lifetime/recipient combination or demand a physical read/recovery where no original consumer runs. Whole ratchets/diagnostics, legacy, formal performance, README quality and integrated closure remain open; TSK-09.1/09 blocked. See hpNoHealingNativeCheckpoint.nextLimitedOperation.",
+    "nextSession": "Step0/1/3 remain established and Step2/TSK-08 in_progress. The noHealing native forward proof is valid locally, but the per-owner audit continuation is withdrawn. Use remainingWorkRedesign below: first falsify a shared HP operation/read/transaction evidence model, then close six ratchet failure classes, reconcile actual legacy references, and perform one integrated acceptance. Do not implement each action/lifetime/recipient combination or demand a physical read/recovery where no original consumer runs. TSK-09.1/09 remain blocked.",
+    "remainingWorkRedesign": {
+      "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
+      "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
+      "ratchetUnit": "Map parity, unsupported, invalid, partial commit, inert control and stale mutation to current source records, typed reason, canonical identity, first difference, bounded summary and complete artifact. Reuse matching matrix/eligibility and focused proofs; add only missing failure-class counterexamples.",
+      "legacyUnit": "Enumerate definitions, callers and unique coverage of old loader, scan, candidate list and duplicate fixtures before removal. A quantityConditions reference alone does not make a raw producer obsolete; retain or defer uniquely owned coverage.",
+      "acceptanceUnit": "On one final source/input identity reconcile full inventory, 80-condition matrix and eligibility digest, calculator/ranking parity, fail-closed, all receipts/bytes/SHA, bounded and complete diagnostics. Run applicable formal before/after three-run performance gates, required opt-in audit and README quality once. Do not regenerate established eight shards without concrete identity doubt.",
+      "contractMapping": {
+        "checklist1": "established shared inventory and sole producer; verify unchanged at final identity",
+        "checklist2": "coverageUnit plus ratchetUnit",
+        "checklist3": "ratchetUnit plus acceptanceUnit",
+        "checklist4": "legacyUnit",
+        "doneGate": "Explain actual damage differences from canonical input/witness/ordered plan/governing rule; first canonical digest difference; bounded summary and complete artifact; full inventory/parity/fail-closed; sole producer",
+        "TS-AUDIT-001/RK-AUDIT-001": "coverageUnit and acceptanceUnit",
+        "TS-OUT-001/TS-ART-001": "ratchetUnit and acceptanceUnit",
+        "RK-PERF-001/TS-PERF-002": "acceptanceUnit, same-input same-environment before/after three runs when applicable",
+        "DX-HANDOFF-001": "final README quality and Task/evidence reconciliation",
+        "inputLifecycle1to3": "reconcile and reuse established input/primitive/completed mutation evidence at exact identity",
+        "inputLifecycle4and8": "coverageUnit, including bounded native/recovery responsibility",
+        "inputLifecycle5": "ratchetUnit",
+        "inputLifecycle6": "legacyUnit",
+        "inputLifecycle7": "acceptanceUnit"
+      },
+      "currentStatus": "No new product or suite verification was run for this redesign. Step2 and TSK-08 remain in_progress; TSK-09.1/09 blocked. Contract matrix <tsk-08-report> is an unresolved placeholder, not completed evidence."
+    },
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",

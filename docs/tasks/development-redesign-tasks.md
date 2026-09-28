@@ -4071,3 +4071,20 @@ pnpmの反復SQLite障害はテストの問題ではない。既存`node_modules
 ### Step 2 HP証拠モデルの再判断（2026-09-28）
 
 前checkpointの「次のHP ownerを一つ選ぶ」という継続方針は撤回する。`HpOperation`／`HpActorState`にはtypedな演算・状態がある一方、auditの`hpCoverageSelectorMatches`と`PreparationHpAction`はaction別selector・capture欄を増やしており、この延長ではaction × lifetime × recipientごとのaudit実装が続く。先に共通のHP operation／read／transaction証拠モデルを、現producer・consumerとschema-legal反例で反証する。宣言・利用可能action・選択・到達・native attempt・物理read・committed消費・正常な非選択・transactional rejection・別実行のrecoveryを共通のtyped identityと順序で結べるかを確認し、必要な義務を意味上の遷移・read境界から導く。元実行に後続consumerがないwriterへread／recoveryを要求しない。共有inventory／digest、元request ledger、既存capture／typed gate／artifact ownerと成立済みStep 0／1／3・units[0]〜[51]を再利用し、別owner用moduleを追加する前にこのモデルの成否と真の欠落を決める。具体的な次操作は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpNoHealingNativeCheckpoint.nextLimitedOperation`。これは設計仮説の検証指示であり、共通gate完成やTSK-08 closureを主張しない。
+
+### TSK-08 残義務の再設計（2026-09-28）
+
+HP ownerを順番に実装する進め方は終了する。Step 2のcoverageは宣言数やaction × lifetime × recipientの全組合せではなく、既存canonical operation／state／read／transactionの**意味上異なる遷移**で判定する。各宣言を共有inventoryで数え、元requestに対して非選択・選択後未到達・attempt・commit・実read・消費・rejectを別状態として照合する。後続consumerがない元requestにはread／recoveryを要求しない。productionで出現しないschema-legal状態は代表fixtureで反証し、未観測を成功・対象外・製品欠落のいずれにも自動分類しない。既存の個別proofは該当する遷移の証拠として再利用し、全組合せの再実行はしない。
+
+残作業は次の有限な判定に組み替える。各行は既存Task／evidenceへVerified・Not applicable・Deferred（ownerと理由）・Blockingのいずれかを記録し、Blockingだけを修正対象とする。TSK-08自身の必須義務にDeferred／Blockingが残れば完了にしない。新しい監査正本や期待値生成器は作らない。
+
+| 判定単位 | 閉じる条件と停止境界 |
+| --- | --- |
+| 1. coverageモデル | `HpOperation`／`HpActorState`、元ledger、`PreparationHpAction`、`hpCoverageSelectorMatches`、既存typed gateを直接照合し、operation identity・actor／recipient・順序・attempt／commit／readのjoinが代表的なforward、native reject、transactional reject、別実行recoveryを表現できるか反証する。表現不能な意味上の境界だけをBlockingとして修正する。個別ownerごとのgate追加に戻らない。 |
+| 2. ratchetと診断 | parity、unsupported、invalid、partial commit、inert control、stale mutationの6種を、既存matrix／gate／captureの元入力と完全artifactへ一対一に対応付ける。typed reason・canonical identity・first difference、bounded summaryと完全結果の到達を各**失敗クラス**で確認する。既存成功証拠は同identityなら再利用し、失敗クラスの代表反例だけを追加する。 |
+| 3. legacy参照 | 旧loader／scan／candidate list／重複fixtureの定義・参照・固有coverageを列挙し、現producerと重複するものだけ削除する。`quantityConditions`という語だけでraw入力ownerや局所normalizationを旧経路と判定しない。固有coverageが残ればowner付きDeferredとして停止する。 |
+| 4. 統合受入 | source／input identityとStep 0／1／3、共有inventory・80条件matrix／eligibility digest、calculator／ranking parity、fail-closed、全receipt・bytes／SHA、first diff・出力上限を同一最終差分で照合する。構造変更が該当する`RK-PERF-001`／`TS-PERF-002`は正本どおり同input・同環境の変更前後各3run、最後に必要なopt-in auditと`pnpm quality`を実施する。既存8 shardsはidentity疑義がない限り再生成しない。 |
+
+TSK-08 checklist①と単一producer、Step 0／1／3、matrix／eligibilityは成立済み。checklist②は判定単位1・2、③は2・4、④は3で閉じる。Done gateの全damage差分の説明は**発生した差分**のcanonical input／witness／ordered plan／governing ruleを完全artifactから追えること、digest mismatchは最初のcanonical差分へ到達すること、大量失敗はbounded summaryと完全結果の双方が残ることで判定する。全profile × 全操作組合せの新規実行は条件ではない。`TS-AUDIT-001`／`RK-AUDIT-001`は共有producerと判定単位1・4、`TS-OUT-001`／`TS-ART-001`は2・4、`RK-PERF-001`／`TS-PERF-002`は4、`DX-HANDOFF-001`は最終qualityとこのTask／evidenceの照合に対応する。Contract closure matrixの`<tsk-08-report>`は未作成のplaceholderであり、既存JSON／manifestへ実証拠を対応付けるまで完了扱いにしない。
+
+入力lifecycleの8義務は、①現入力と既存gate、②全HP primitive母集団、③完了mutation slicesを再利用候補とし、④残るHP経路と⑧native／recovery境界を判定単位1で分類する。⑤全ratchet／診断は2、⑥legacyは3、⑦正式性能／最終受入は4で閉じる。④や⑧に実製品欠落が見つかれば、その意味上の遷移だけをBlockingとする。別のゲーム意味論または別ownerの設計が必要なら根拠と未達条件を記録して停止する。TSK-08とStep 2は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
