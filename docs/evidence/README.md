@@ -107,3 +107,5 @@ Step再確認と次の一単位の準備は同evidence `handoffPreparation.nextS
 CE後の残HP `noHealing` 敵全体native forward限定結果は同evidence `boundedUnits[52].hpNoHealingNativeCheckpoint`。元control3186 requestから10件が選択・native commitし、敵3体ずつ30 modifier appendを記録した。影響audit9/9、HP paths7/7、unit70/70、旧新共通artifact17件のbytes／SHA一致、最終manifest20/20 receipt。後続enemy HP gainの物理read・消費、実native noncommit、recoveryとTSK-08全体義務は未達。Step 2／TSK-08は`in_progress`、09.1／09は`blocked`。次の限定操作は同checkpointを参照し、Step 3の8 shardsを疑義なく再生成しない。
 
 TSK-08の残義務は[Taskの再設計](../tasks/development-redesign-tasks.md)と同evidence `remainingWorkSummary.remainingWorkRedesign`に整理した。HP ownerを一件ずつ増やす方針は撤回し、canonical遷移・失敗クラス・現存legacy参照・最終統合の四つの判定単位で閉じる。新しい製品証拠やTSK-08完了を示す記録ではない。
+
+再設計後の次セッション指示は同evidence `handoffPreparation.nextSession.tsk08RedesignedClosureSession`。Step 0／1／3を維持し、Step 2の共通HP証拠モデルを現コードから先に計画して利用者確認を待つ。準備時点で直近checkpointのsource4／master1／artifact5は現diskのbytes／SHAと一致したが、製品testやauditは再実行していない。

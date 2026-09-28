@@ -4088,3 +4088,11 @@ HP ownerを順番に実装する進め方は終了する。Step 2のcoverageは�
 TSK-08 checklist①と単一producer、Step 0／1／3、matrix／eligibilityは成立済み。checklist②は判定単位1・2、③は2・4、④は3で閉じる。Done gateの全damage差分の説明は**発生した差分**のcanonical input／witness／ordered plan／governing ruleを完全artifactから追えること、digest mismatchは最初のcanonical差分へ到達すること、大量失敗はbounded summaryと完全結果の双方が残ることで判定する。全profile × 全操作組合せの新規実行は条件ではない。`TS-AUDIT-001`／`RK-AUDIT-001`は共有producerと判定単位1・4、`TS-OUT-001`／`TS-ART-001`は2・4、`RK-PERF-001`／`TS-PERF-002`は4、`DX-HANDOFF-001`は最終qualityとこのTask／evidenceの照合に対応する。Contract closure matrixの`<tsk-08-report>`は未作成のplaceholderであり、既存JSON／manifestへ実証拠を対応付けるまで完了扱いにしない。
 
 入力lifecycleの8義務は、①現入力と既存gate、②全HP primitive母集団、③完了mutation slicesを再利用候補とし、④残るHP経路と⑧native／recovery境界を判定単位1で分類する。⑤全ratchet／診断は2、⑥legacyは3、⑦正式性能／最終受入は4で閉じる。④や⑧に実製品欠落が見つかれば、その意味上の遷移だけをBlockingとする。別のゲーム意味論または別ownerの設計が必要なら根拠と未達条件を記録して停止する。TSK-08とStep 2は`in_progress`、TSK-09.1／09は`blocked`、pushなし。
+
+### Step確認と再設計後の一セッション引継ぎ準備（2026-09-28）
+
+開始HEAD `09837344bbb2b79c0d38359b3d6d037f42ba51d1`、index／tracked／untrackedはclean。Step 0のbaseline／契約、Step 1のV41 markerとV40履歴保持・明示再計算、Step 3の改訂matrix／eligibilityは現定義と記録上成立済み。Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。直近`hpNoHealingNativeCheckpoint`のsource4、公開master1、manifest／artifact5の計10 identityを現diskのbytes／SHAで照合し、すべて一致した。今回Step 3 shards・source test・producer・audit・quality・live計測は実行していない。
+
+現コードの`HpOperation`は`hpModifier`／`removeHpModifiers`／HP `resourceMutation`を含み、`HpActorState`はtyped unionである。一方、`PreparationHpAction`は共有write／sourceEnd／native／attempted／returnedに加えてtransfer／receive／give／noHealing別のcapture欄を持ち、`hpCoverageSelectorMatches`はfamily別の適格selectorを返す。これは共通証拠joinが未完成という確証ではなく、別HP owner実装を再開する前に反証すべき設計仮説である。元requestのproducer、captureの保持期間、実consumer、operation／read／transactionのtyped joinと正常な非選択を現コードから計画する。
+
+次の一セッションは、上記の共通HP証拠モデルを第一単位とする。最初に変更file・意味上の遷移・局所反証・影響suite・旧新artifact／receipt比較・性能条件・TSK-08全義務の成立／未達を示す計画を利用者へ提示し、確認を待つ。確認後は同じ単位で必要な最小の実装または変更不要の証明、局所／影響検証、既存Task／evidence更新、対象限定local commitまで進める。単位外の別owner／新ゲーム意味論が必要なら根拠と未達・次の限定操作を記録して止める。全checklist／Done gate／Contract matrix／入力lifecycle8義務が同一最終identityで成立し、TSK-08内のDeferred／Blockingが0、時間が残る場合だけ正式性能・必要audit・README quality・統合照合へ進み完了を目指す。60分checkpoint、90分はatomic action終了、pushなし。詳細正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.tsk08RedesignedClosureSession`。
