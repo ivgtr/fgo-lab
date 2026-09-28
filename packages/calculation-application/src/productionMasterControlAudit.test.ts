@@ -11,6 +11,15 @@ import {
 import { createHash } from 'node:crypto';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
 import {
+  noHealingSelection,
+  noHealingProgram,
+  noHealingSource,
+  noHealingDiagnostic,
+  auditNoHealing,
+  type NoHealingProgram,
+  type NoHealingSource,
+} from './productionHpNoHealingAudit';
+import {
   hpPublishedDependencyBindings,
   reconcileHpPublishedDependencyCoverage,
   type HpPublishedDependencyRequest,
@@ -222,6 +231,8 @@ function loadProductionMaster() {
 
 const scalarQuantityObservations: ScalarQuantitySource[] = [];
 const hpPublishedDependencyRequests: HpPublishedDependencyRequest[] = [];
+const noHealingPrograms: NoHealingProgram[] = [];
+const noHealingObservations: NoHealingSource[] = [];
 let hpPreparationArtifactPayloads:
   | {
       preparation: ReturnType<typeof auditPublishedHpPreparation>;
@@ -298,6 +309,15 @@ function evaluateWithOrderedOperationEvents(
   if (maySelectAlly) selectedAllyCanonicalRequests.push(prepared);
   const evaluated = evaluatePreparedCalculationScenario(prepared, versions);
   hpDependencyRequest.calculation = evaluated;
+  const noHealing = noHealingSelection(
+    prepared,
+    evaluated,
+    hpPublishedDependencyRequests.length - 1,
+  );
+  if (noHealing) {
+    noHealingPrograms.push(noHealingProgram(noHealing));
+    noHealingObservations.push(noHealingSource(noHealing));
+  }
   if (maySelectAlly) selectedAllyRequests.push({ prepared, calculation: evaluated, versions });
   // Request population is collected before any executable/native/activation filter.
   if (receiveCanonical(prepared)) {
@@ -636,6 +656,8 @@ describe('production master inventory ratchet', () => {
       };
       maximumFixedPopulationComplete = false;
       hpPublishedDependencyRequests.length = 0;
+      noHealingPrograms.length = 0;
+      noHealingObservations.length = 0;
       receiveRequests.length = 0;
       receivePrograms.length = 0;
       receiveAttemptPrograms.length = 0;
@@ -2571,6 +2593,178 @@ describe('production master inventory ratchet', () => {
       }
       expect(typedUnsupported).toEqual([]);
       expect(failures).toEqual([]);
+    },
+  );
+
+  it(
+    'joins original noHealing requests to enemy native modifier appends',
+    productionAuditTestOptions(['production-hp-no-healing.json']),
+    async ({ task }) => {
+      const master = await loadProductionMaster();
+      const declarations = hpProofCoverageInventory(master);
+      const gate = auditNoHealing({
+        requests: hpPublishedDependencyRequests,
+        declarations,
+        expected: noHealingPrograms,
+        observations: noHealingObservations,
+      });
+      const audit = (input: Partial<Parameters<typeof auditNoHealing>[0]>) =>
+        auditNoHealing({
+          requests: hpPublishedDependencyRequests,
+          declarations,
+          expected: noHealingPrograms,
+          observations: noHealingObservations,
+          ...input,
+        });
+      const first = noHealingObservations[0]!;
+      const transition = first.transitions![0]!;
+      const action = transition.hpActions![0]!;
+      const withAction = (changed: typeof action) => ({
+        ...first,
+        transitions: [
+          { ...transition, hpActions: [changed, ...transition.hpActions!.slice(1)] },
+          ...first.transitions!.slice(1),
+        ],
+      });
+      const write = action.noHealingWrites![0]!;
+      const withoutNative = { ...action };
+      delete withoutNative.native;
+      const negativeChecks = [
+        [
+          'missingRequest',
+          audit({
+            requests: hpPublishedDependencyRequests.slice(0, noHealingPrograms[0]!.selection.index),
+          }),
+        ],
+        [
+          'duplicateRequest',
+          audit({
+            expected: [noHealingPrograms[0]!, noHealingPrograms[0]!, ...noHealingPrograms.slice(2)],
+          }),
+        ],
+        [
+          'unmatchedRequest',
+          audit({
+            expected: noHealingPrograms.slice(1),
+            observations: noHealingObservations.slice(1),
+          }),
+        ],
+        [
+          'orderMismatch',
+          audit({
+            observations: [
+              noHealingObservations[1]!,
+              noHealingObservations[0]!,
+              ...noHealingObservations.slice(2),
+            ],
+          }),
+        ],
+        [
+          'foreignIdentity',
+          audit({
+            declarations: declarations.filter(
+              (d) =>
+                d.operation !== noHealingPrograms[0]!.selection.canonical.writers[0]!.operation,
+            ),
+          }),
+        ],
+        [
+          'foreignReference',
+          audit({
+            observations: [
+              { ...first, scenario: { ...first.scenario } },
+              ...noHealingObservations.slice(1),
+            ],
+          }),
+        ],
+        [
+          'nativeMissing',
+          audit({ observations: [withAction(withoutNative), ...noHealingObservations.slice(1)] }),
+        ],
+        [
+          'recipientMismatch',
+          audit({
+            observations: [
+              withAction({
+                ...action,
+                noHealingWrites: [
+                  {
+                    ...write,
+                    modifiers: [
+                      { ...write.modifiers[0]!, actor: 'attacker' },
+                      ...write.modifiers.slice(1),
+                    ],
+                  },
+                ],
+              }),
+              ...noHealingObservations.slice(1),
+            ],
+          }),
+        ],
+        [
+          'transactionMismatch',
+          audit({
+            observations: [
+              withAction({
+                ...action,
+                native: { ...action.native!, status: 'invalid', reason: 'fixtureReject' },
+                returned: action.attempted!,
+              }),
+              ...noHealingObservations.slice(1),
+            ],
+          }),
+        ],
+      ] as const;
+      const payload = {
+        qualification:
+          'Original selected enemy noHealing preparation/native appends only; no later physical gain read, committed consumption or recovery is inferred.',
+        declarations: declarations.filter(
+          (declaration) =>
+            declaration.identity.kind === 'writer' &&
+            declaration.operation?.kind === 'hpModifier' &&
+            declaration.operation.action === 'noHealing',
+        ),
+        requestIndices: noHealingPrograms.map((program) => program.selection.index),
+        proofs: noHealingObservations.map(noHealingDiagnostic),
+        gate,
+        negativeChecks,
+      };
+      const receipt = await writeProductionAuditArtifact(
+        task.meta,
+        'production-hp-no-healing.json',
+        encodeProductionAuditDiagnostic(payload),
+      );
+      const bytes = await readFile(
+        resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-hp-no-healing.json'),
+      );
+      expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
+        receipt.expectedBytes,
+        receipt.expectedSha256,
+      ]);
+      expect(
+        isDeepStrictEqual(
+          decodeProductionAuditDiagnostic(
+            decodeProductionAuditArtifact(bytes) as ReturnType<
+              typeof encodeProductionAuditDiagnostic
+            >,
+          ),
+          payload,
+        ),
+      ).toBe(true);
+      expect(gate.failures).toEqual([]);
+      expect([
+        gate.requestCount,
+        gate.noCanonicalSelection,
+        gate.selected,
+        gate.reached,
+        gate.nativeAttempts,
+        gate.nativeCommitted,
+        gate.committedModifiers,
+      ]).toEqual([3186, 3176, 10, 10, 10, 10, 30]);
+      for (const [reason, negative] of negativeChecks) {
+        expect(negative.failures.some((failure) => failure.reason === reason)).toBe(true);
+        expect(negative.firstDifference).not.toBeNull();
+      }
     },
   );
 

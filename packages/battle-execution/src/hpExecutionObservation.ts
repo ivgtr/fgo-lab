@@ -76,6 +76,8 @@ export interface PreparationHpAction {
   }[];
   /** Original empty give read after owner condition filtering; separate from positive consumption. */
   giveExcludedConsumptions?: NonNullable<PreparationHpAction['giveConsumptions']>;
+  /** Original enemy noHealing appends, including each selected recipient. */
+  noHealingWrites?: NonNullable<PreparationHpAction['modifierWrites']>;
   sourceEnds: {
     source: SourceEffect;
     step: number;
@@ -148,6 +150,38 @@ export function captureGiveWrite(
   )
     return;
   (action.giveWrites ??= []).push({
+    source,
+    operationIndex,
+    operation,
+    valueSetIndex,
+    valueIndex: source.valueIndex,
+    before,
+    after,
+    modifiers: (after.modifiers ?? []).slice(before.modifiers?.length ?? 0),
+    receipts: after.receipts.slice(before.receipts.length),
+  });
+}
+
+/** Borrow the original operation result; this never executes an HP writer. */
+export function captureNoHealingWrite(
+  action: PreparationHpAction,
+  source: SourceEffect,
+  operation: SourceEffect['effect']['execution'][number],
+  operationIndex: number,
+  before: HpState,
+  after: HpState,
+  valueSetIndex: number,
+): void {
+  if (
+    source.origin !== 'attacker' ||
+    operation.kind !== 'hpModifier' ||
+    operation.action !== 'noHealing' ||
+    operation.lifetime !== 'active' ||
+    operation.route.target !== 'enemy' ||
+    operation.selection !== 'allEnemies'
+  )
+    return;
+  (action.noHealingWrites ??= []).push({
     source,
     operationIndex,
     operation,

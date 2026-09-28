@@ -2,6 +2,7 @@ import {
   preparationHpScope,
   captureSelectedAllyMaximumFixedWrite,
   captureGiveWrite,
+  captureNoHealingWrite,
   type PreparationHpAction,
 } from './hpExecutionObservation';
 import {
@@ -1014,6 +1015,16 @@ export function executePreparationOc(args: {
             });
           if (hpAction)
             captureGiveWrite(
+              hpAction,
+              source,
+              operation,
+              operationIndex,
+              hpBefore,
+              result.state,
+              receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+            );
+          if (hpAction)
+            captureNoHealingWrite(
               hpAction,
               source,
               operation,

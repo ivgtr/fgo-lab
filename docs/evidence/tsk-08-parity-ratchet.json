@@ -23741,6 +23741,169 @@
         "blockingInThisUnit": 0,
         "remaining": "Step2 and TSK-08 in_progress; other HP owner/action/lifetime/recipient, native noncommit/recovery, whole ratchets/typed failure reachability, legacy cleanup, formal performance, README final quality and integrated counters/digests/all receipts are not closed. Step0/1/3 established; TSK-09.1/09 blocked.",
         "nextLimitedOperation": "Use remainingWorkSummary and productionAuditInputLifecycleCheckpoint.closureReconciliation to choose one separate HP owner/action/lifetime/recipient original-request-to-consumer gap. First reconcile its current producer/capture and valid artifact identity; present a bounded plan before implementing that family. Do not start dependent quality or product closure from this CE result."
+      },
+      "hpNoHealingNativeCheckpoint": {
+        "status": "scoped original noHealing enemy-native forward proof complete; TSK-08 product incomplete",
+        "startHead": "0e79612cf0a3bb65d9a3f2a834970aeb5dd7a462",
+        "ceEvidenceCommit": "95b5b3ca58faa691ec745cca990f82f7ac58c68a",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "sourceIdentity": [
+          {
+            "path": "packages/battle-execution/src/hpExecutionObservation.ts",
+            "bytes": 14085,
+            "sha256": "37a690df904359620ebce50d0460b572150740bfbf6560591014df5d9d48db6c"
+          },
+          {
+            "path": "packages/battle-execution/src/preparationOc.ts",
+            "bytes": 59907,
+            "sha256": "14cd8d951307301c91d5f0a691f71266e0bd11c8079448bcca540873cbba06ca"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpNoHealingAudit.ts",
+            "bytes": 12735,
+            "sha256": "b5877730298f93b57cb8b2fff721f0a817fc7467987258a42cd0571f145bb6ce"
+          },
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 116756,
+            "sha256": "c91b593aaeac9cc1e0da8a5d3360ecb83f1ac9e5fc0df562dc841c3ea53d6d05"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "artifacts": {
+          "baselineManifest": {
+            "path": ".test-results/2026-09-28T11-13-55-500Z-19-e7dd93/manifest.json",
+            "bytes": 6057,
+            "sha256": "264f2777f6d7238686d053b999930e8edd842d988a77c86df937e5c784ce2ab4"
+          },
+          "candidateManifest": {
+            "path": ".test-results/2026-09-28T11-28-40-618Z-15-8b0599/manifest.json",
+            "bytes": 6274,
+            "sha256": "2ecae0fc19b65f9568790d13cadd45d12ddecd47f2c82e7c9b052bd40d6db418"
+          },
+          "noHealing": {
+            "path": ".test-results/2026-09-28T11-28-40-618Z-15-8b0599/production-hp-no-healing.json",
+            "bytes": 189228,
+            "sha256": "edc821ef9b3f1db9bebf095c0150d333853e1a0c41c34475122df4e1c323eb1a"
+          },
+          "hpPathsManifest": {
+            "path": ".test-results/2026-09-28T11-12-55-752Z-15-83e870/manifest.json",
+            "bytes": 3923,
+            "sha256": "c814b795565c86072febb8b5f7a41b332d33c2077226a7ce99fa562c360b6c18"
+          },
+          "unitManifest": {
+            "path": ".test-results/2026-09-28T11-20-33-008Z-15-6179cd/manifest.json",
+            "bytes": 2891,
+            "sha256": "c2e8999119102eca91f1b633c4c41eaad90da8f020e4b9eb322914865aef8e7b"
+          }
+        },
+        "owner": "Existing control evaluateWithOrderedOperationEvents retains original prepared before evaluation in hpPublishedDependencyRequests; calculation is attached to the same entry. hpPreparationCanonicalFor selects typed attacker skill command/effect/operation and joins the borrowed hpProofCoverageInventory declaration. begin/finishPreparationHpCapture keep original-owner references on the preparation context/transition only. executePreparationOc borrows original executeHpOperation applied result and records noHealing appends without replay. auditNoHealing consumes the original request/transition/typed operation and existing manifest/artifact owner.",
+        "population": {
+          "allOriginalRequests": 3186,
+          "noCanonicalSelection": 3176,
+          "selected": 10,
+          "reached": 10,
+          "nativeAttempts": 10,
+          "nativeCommitted": 10,
+          "enemyModifierAppends": 30,
+          "originalRequestIndices": [
+            2500,
+            2501,
+            2502,
+            2503,
+            2504,
+            2505,
+            2506,
+            2507,
+            2508,
+            2509
+          ],
+          "physicalGainReads": "not proven by this capture",
+          "committedGainConsumption": "not proven by this capture",
+          "nativeNoncommit": "not observed in this original selected population",
+          "recovery": "not proven by this capture"
+        },
+        "falsifiers": [
+          "missingRequest",
+          "duplicateRequest",
+          "unmatchedRequest",
+          "orderMismatch",
+          "foreignIdentity",
+          "foreignReference",
+          "nativeMissing",
+          "recipientMismatch",
+          "transactionMismatch"
+        ],
+        "typedGate": {
+          "positiveFailures": 0,
+          "positiveFirstDifference": null,
+          "negativeCases": 9,
+          "negativeTypedReasonAndFirstDifference": "9/9"
+        },
+        "validation": {
+          "audit": "9/9 final, first control test 33.942s < 60s; warnings0",
+          "productionHpPaths": "7/7",
+          "battleExecutionUnit": "70/70",
+          "typecheck": "pnpm exec tsc -b --pretty false passed",
+          "lint": "targeted ESLint max-warnings=0 passed",
+          "format": "targeted Prettier check passed",
+          "receipts": "baseline19/19 and candidate20/20 disk bytes/SHA; production10/10 and unit5/5 manifest receipts",
+          "artifactComparison": "All 17 common non-run-log artifact files are byte/SHA identical, hence their complete decoded values/order/counts are identical. Only vitest.json/stdout.log differ by run/test count. New noHealing diagnostic is full encoded/decoded deep-equal to test-owned payload and has 10 ordered proofs plus nine complete typed negative gates. Control sidecar remains 3186 request/496 binding/71 non-writer declaration, unchanged bytes/SHA. No Step3 shard regenerated."
+        },
+        "performance": {
+          "method": "Same master/input/control audit, taskset affinity0-7, audit1 worker, unchanged 60000ms first-test budget; original HEAD source temporarily restored and byte-exactly restored afterward, then candidate source run once. Production4/unit4 worker configuration unchanged.",
+          "baseline": {
+            "artifact": ".test-results/2026-09-28T11-13-55-500Z-19-e7dd93/manifest.json",
+            "firstTestMs": 32497.822,
+            "fileDurationMs": 153332
+          },
+          "candidate": {
+            "artifact": ".test-results/2026-09-28T11-28-40-618Z-15-8b0599/manifest.json",
+            "firstTestMs": 33942.145,
+            "fileDurationMs": 161200
+          },
+          "interpretation": "One-run +1444.323ms first test and +7868ms file; both pass. This is diagnostic variation, not causal attribution or formal before/after three-run RK-PERF-001/TS-PERF-002 evidence."
+        },
+        "closureReconciliation": {
+          "checklist": [
+            "shared sole inventory established",
+            "whole parity/unsupported/invalid/partial commit/inert control/stale mutation ratchets remain open; this unit closes only noHealing native forward",
+            "typed reason/identity/first diff/full artifact pass locally; whole reachability open",
+            "legacy cleanup open"
+          ],
+          "doneGate": [
+            "all damage differences not fully reconciled",
+            "digest-to-first-diff implemented locally, whole reachability open",
+            "bounded/full artifact locally complete, massive-failure whole reachability open",
+            "inventory/parity/fail-closed final integrated gate open",
+            "sole TSK-06.5 producer retained; no candidate/damage recomputation"
+          ],
+          "contractMatrix": {
+            "TS-AUDIT-001": "affected audit9/9 only; whole contract open",
+            "TS-OUT-001": "nine local typed negatives only; whole contract open",
+            "TS-ART-001": "new complete artifact and20/20 receipt only; whole contract open",
+            "RK-AUDIT-001": "Step3 and scoped proofs retained; final full policy integration open",
+            "RK-PERF-001": "formal 3+3 open",
+            "TS-PERF-002": "formal 3+3 open",
+            "DX-HANDOFF-001": "README final quality open"
+          },
+          "inputLifecycleEight": [
+            "current lifecycle/occurrence gates retained at matching identity",
+            "primitive HP inventory486/7470 retained; not whole transition proof",
+            "completed fixed/maximumFixed/receive/give/transfer slices reused only at matching conditions",
+            "one published noHealing enemy/active/allEnemies original native forward closed; other action/lifetime/recipient, actual read, noncommit and recovery open",
+            "whole ratchets/diagnostics reachability open",
+            "legacy cleanup open",
+            "formal performance/final quality/integrated acceptance open",
+            "normal nonselection, unsupported, native rejection and recovery remain separate; no inferred product exclusion"
+          ]
+        },
+        "blocking": "Scoped forward owner has no blocking. Actual noHealing later enemy gain read/consumption, native noncommit and recovery are not established by this run. Other HP owners, whole ratchets/typed diagnostics, legacy, formal performance, README quality and integrated counters/digests/all receipts remain open. Step0/1/3 established; Step2 and TSK-08 in_progress; TSK-09.1/09 blocked.",
+        "nextLimitedOperation": "In a new bounded session, inspect one remaining original HP consumer/recipient or native noncommit/recovery owner from remainingWorkSummary and productionAuditInputLifecycleCheckpoint.closureReconciliation; first reconcile availability, original request/capture and whether selected. Do not infer physical read from this noHealing append, replay writer, regenerate Step3 shards without identity doubt, or start dependent quality. No push."
       }
     }
   ],
@@ -26977,6 +27140,12 @@
         "conditionalClosure": "Aim to complete TSK-08 only if every checklist, Done gate, Contract matrix and lifecycle obligation has valid current evidence, in-scope Blocking0 and time for required affected audit, formal before/after three-run performance, README quality and integrated counters/digests/all receipts. One HP proof or a successful test count cannot imply that. If another family/native/recovery/legacy or global gate remains, do not start dependent quality; document the gap and next limited operation in existing Task/evidence, commit product-incomplete checkpoint, keep TSK-09.1/09 blocked.",
         "performanceAndRunner": "For calculation structure/capture/product hot-path changes only, diagnose same-input affinity0-7 production4/unit4/audit1 worker live phases with one baseline/candidate run at the same budget; not a substitute for formal three runs. Preserve control first-test 60000ms. Confirm current pnpm workspace/dependency setting; no historical shim fallback.",
         "sessionBoundary": "Checkpoint existing Task/evidence by 60 minutes; at 90 minutes finish the current atomic action and hand off. Do not chain another family or optional quality retries."
+      },
+      "postNoHealingHpOwnerSession": {
+        "status": "scoped noHealing forward/native checkpoint completed; product incomplete",
+        "reference": "boundedUnits[52].hpNoHealingNativeCheckpoint",
+        "startHead": "0e79612cf0a3bb65d9a3f2a834970aeb5dd7a462",
+        "nextOperation": "In a new bounded session, inspect one remaining original HP consumer/recipient or native noncommit/recovery owner from remainingWorkSummary and productionAuditInputLifecycleCheckpoint.closureReconciliation; first reconcile availability, original request/capture and whether selected. Do not infer physical read from this noHealing append, replay writer, regenerate Step3 shards without identity doubt, or start dependent quality. No push."
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -27948,11 +28117,11 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Step0/1/3 remain established; CE condition original-owner/capture proof completed at 95b5b3c and current control sidecar is 3186 requests/496 bindings with 14/14 receipts. Step2 and TSK-08 remain open. Next session must plan from current code one genuine remaining HP owner/native/recovery gap, obtain user confirmation, then implement/verify only that unit; see handoffPreparation.nextSession.postCeStepReconciliationSession. Whole ratchet/legacy/formal performance/README quality/integrated closure remain separate. TSK-09.1/09 blocked.",
+    "nextSession": "Step0/1/3 remain established. Published noHealing enemy allEnemies original forward/native proof has 10 selected/committed actions and 30 recipient modifier appends; physical gain read/consumption, native noncommit and recovery remain unproved. Step2 and TSK-08 in_progress; other HP owners, whole ratchets, legacy, formal performance, README quality and integrated closure open. Next bounded owner is specified by hpNoHealingNativeCheckpoint.nextLimitedOperation. TSK-09.1/09 blocked.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
-        "detail": "HP canonical writer486/7470 and 54 groups, explicit HP dependency557, transfer2 and schema-legal fixedSelf3 are retained. Current-source control3186 requests/496 bindings and complete sidecar/14 receipts pass; CE original owner has four selected physical reads (two false at501/nonconsumed, two true at500/committed). NP two all-stage-unobserved rows are otherVariantSelected; OC-rate24 are other-cell selections; support value-expression ten-cell proof has five original physical reads/committed consumptions on one selected cell plus45 normal nonselections. These scoped proofs do not close other HP owner/action/lifetime/recipient native/noncommit/recovery or whole mutation coverage. See boundedUnits[52].ceConditionOwnerCheckpoint and productionAuditInputLifecycleCheckpoint.closureReconciliation."
+        "detail": "Current noHealing enemy/active/allEnemies source has 10 original selected/native committed actions and 30 enemy modifier appends; it proves no later physical gain read/consumption, native noncommit or recovery. HP canonical writer486/7470 and explicit dependency557, transfer2, fixedSelf3, CE four physical reads, NP/OC normal nonselection and support selected-cell read remain retained at matching identities. Other HP action/lifetime/recipient/native/recovery and whole mutation coverage remain open; see boundedUnits[52].hpNoHealingNativeCheckpoint and productionAuditInputLifecycleCheckpoint.closureReconciliation."
       },
       {
         "work": "Whole ratchet and diagnostic/artifact closure",
@@ -27993,7 +28162,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "handoffPreparation.nextSession.postCeStepReconciliationSession",
+    "nextSessionReference": "handoffPreparation.nextSession.postNoHealingHpOwnerSession",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
@@ -28016,6 +28185,7 @@
     "asOfSupportValueCheckpointReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint",
     "asOfSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint",
     "ceConditionOwnerCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint",
-    "ceConditionOwnerCheckpointCommit": "95b5b3ca58faa691ec745cca990f82f7ac58c68a"
+    "ceConditionOwnerCheckpointCommit": "95b5b3ca58faa691ec745cca990f82f7ac58c68a",
+    "noHealingNativeCheckpointReference": "boundedUnits[52].hpNoHealingNativeCheckpoint"
   }
 }

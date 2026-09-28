@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.130"
+document_version: "1.4.131"
 status: "Active"
 updated_at: "2026-09-28"
 ---
@@ -103,3 +103,5 @@ Published support HP value-expression10 cellの元owner／capture限定結果は
 現sourceのcontrol audit timeoutと完全artifact到達の限定結果は[parity evidence](tsk-08-parity-ratchet.json) `boundedUnits[52].controlAuditArtifactCheckpoint`。第1 testの元request・gate値を保ち、二つの大きいHP diagnosticの保存と完全decodeを直後のtestへ分けた。影響audit8/8、元control3182 request／488 binding、新sidecar、artifact全14 receiptのdisk bytes／SHAが一致し、既存60秒上限内で通過した。support実readは選択1 cellの元5 requestだけで、CE別owner・native／recovery、全ratchet、legacy、正式性能、最終quality、統合closureは未達。TSK-08は`in_progress`、09.1／09は`blocked`を維持する。
 
 Step再確認と次の一単位の準備は同evidence `handoffPreparation.nextSession.ceConditionOwnerSession`。Step 0／1／3は維持、Step 2は未完了。現sidecarのCE HP条件1件は元owner requestが空で全stage未観測だが、既存のCE数値golden／calculator・portable testは元prepared・captureの共有audit接続を証明しない。次作業者は現コードのCE ownerから計画を提示し利用者確認を待った後、一つのowner経路だけ実装・検証する。別HP owner・native／recovery・legacyは連鎖せず、全義務が有効に閉じた場合だけTSK-08完了を判定する。
+
+CE後の残HP `noHealing` 敵全体native forward限定結果は同evidence `boundedUnits[52].hpNoHealingNativeCheckpoint`。元control3186 requestから10件が選択・native commitし、敵3体ずつ30 modifier appendを記録した。影響audit9/9、HP paths7/7、unit70/70、旧新共通artifact17件のbytes／SHA一致、最終manifest20/20 receipt。後続enemy HP gainの物理read・消費、実native noncommit、recoveryとTSK-08全体義務は未達。Step 2／TSK-08は`in_progress`、09.1／09は`blocked`。次の限定操作は同checkpointを参照し、Step 3の8 shardsを疑義なく再生成しない。

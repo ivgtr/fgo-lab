@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.124"
+document_version: "1.7.125"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4059,3 +4059,11 @@ pnpmの反復SQLite障害はテストの問題ではない。既存`node_modules
 現sidecarで全stage未観測のNP `hpRatioLow` 2行は直接owner requestを持つ正常な別variant選択、OC-rate 24行は記録済みの別cell選択である。attacker value-expression 10行は元control直接requestが空だが、別の元support request証拠では選択cellの実HP read／committed消費5件と他cell非選択45件が成立している。この行数だけで欠落や製品対象外を決めない。残るStep 2は、別HP owner／action／lifetime／recipientとnative非commit／recoveryの元producer→capture→consumerを現コードで照合して、真の未達を一単位選ぶ必要がある。全ratchet、legacy整理、正式性能・最終quality・統合照合もTSK-08の別義務として残る。
 
 次sessionは最初に現コードから直接経路とTSK-08 checklist／Done gate／Contract closure matrix・入力lifecycle8義務を対応付け、1セッションで閉じるHP経路を選び、変更候補・反証・影響suite・artifact比較・性能条件とともに計画を利用者へ提示して確認を待つ。確認後は同じ単位の実装・検証・既存正本更新・対象限定local commitまで進める。全義務が有効証拠で閉じる場合だけTSK-08完了gateを目指し、残義務があれば依存qualityを始めず製品未完了checkpointで止める。次sessionの詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.postCeStepReconciliationSession`。Step 3の8 shardsは具体的なidentity疑義なしに再生成しない。pushしない。
+
+### TSK-08 残HP `noHealing` 敵全体native経路の限定checkpoint（2026-09-28）
+
+開始HEAD `0e79612cf0a3bb65d9a3f2a834970aeb5dd7a462`、開始時index／tracked／untrackedはclean。利用者が限定計画を確認後、共有HP宣言に1件ある`active/enemy/allEnemies/noHealing`について、元control ledgerのprepared→calculation、typed skill／effect／operation、元準備capture、native結果と受取先別modifier appendを接続した。3186元request中10件がcanonical選択され、10件ともnative到達・commit、敵3体ずつ計30 appendを記録した。他3176件はこのwriterのcanonical非選択である。別の後続enemy HP gainの物理read・committed消費、実native noncommit、recoveryはこの証拠に含めない。新しい期待値生成器、ID runtime分岐、別artifact owner、damage再計算は追加していない。
+
+最終影響audit9/9、第1 test33.942秒で既存60秒上限内、HP paths7/7、battle-execution unit70/70、typecheck、対象lint／format成功。欠落・重複・unmatched、foreign identity／参照、順序、native欠落、recipient違い、transactional rejectionの9局所反証はtyped reasonとfirst differenceへ到達した。元HEADと最終差分の同input／affinity0–7／audit1 worker診断は第1 test32.498／33.942秒、全file153.332／161.200秒の各1runであり、正式な各3run性能証拠ではない。旧新control auditの共通非run-log artifact17件はbytes／SHAが一致し、完全decoded値・順序・件数も同一。新`production-hp-no-healing.json`は完全decodeでtest-owned payloadと一致し、元manifest19/19・新manifest20/20、HP paths10/10、unit5/5のdisk receiptが一致した。source・input・artifact identityと詳細分類は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].hpNoHealingNativeCheckpoint`を正本とする。
+
+このforward/native限定経路のBlockingは0。ただしStep 2の他HP action／lifetime／recipient、後続read・native noncommit・recovery、全ratchet／diagnostics、legacy整理、正式性能、README最終quality、統合counter／digest／全receiptは未達または未照合。TSK-08 checklist ①と単一producerは維持し、②〜④・Done gateの全体到達・Contract closure matrixの最終gateは未完了。入力lifecycle8義務のうち今回閉じたのは④の一経路だけで、①〜③の既存証拠は再利用、⑤〜⑧の全体条件は残る。Step 0／1／3は成立、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`。依存quality／製品closureを開始せず、次の限定操作は上記checkpointの`nextLimitedOperation`を参照する。対象限定local commit、pushしない。
