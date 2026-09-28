@@ -1527,6 +1527,44 @@ describe('production master inventory ratchet', () => {
 
       maximumFixedPopulationComplete = true;
       const hpDependencyDeclarations = hpProofCoverageInventory(master);
+      const ceConditions = hpDependencyDeclarations.filter(
+        (declaration) =>
+          declaration.identity.origin === 'craftEssence' &&
+          declaration.identity.kind === 'condition' &&
+          declaration.identity.path === 'requirement.expression' &&
+          'quantity' in declaration.value &&
+          declaration.value.quantity === 'attackerHpPermille' &&
+          'comparison' in declaration.value &&
+          declaration.value.comparison === 'atMost' &&
+          'value' in declaration.value &&
+          declaration.value.value === 500,
+      );
+      expect(ceConditions).toHaveLength(1);
+      const ceCondition = ceConditions[0]!;
+      const ce = master.craftEssences.find(
+        (candidate) => candidate.id === ceCondition.identity.owner,
+      );
+      const ceActor = calculations.find(
+        ({ calculation }) => calculation.result.status === 'calculated',
+      )?.servant;
+      if (!ce || !ceActor || !ce.effects.includes(ceCondition.effect!))
+        throw new TypeError('production_ce_condition_owner_missing');
+      const originalControlRequestCount = hpPublishedDependencyRequests.length;
+      for (const limitBreak of [0, 4] as const)
+        for (const hp of [502, 500] as const) {
+          const scenario: ResolvedScenario = {
+            ...createDefaultResolvedScenario(master, undefined, ceActor),
+            preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+            attackerHpPermille: hp,
+            craftEssence: {
+              craftEssenceId: ce.id,
+              level: ce.maxLevelByLimitBreak[limitBreak],
+              limitBreak,
+            },
+          };
+          const { calculation } = evaluateWithOrderedOperationEvents(scenario, master, versions);
+          expect(calculation.result.status).toBe('calculated');
+        }
       const hpDependencyBindings = hpPublishedDependencyBindings(
         hpDependencyDeclarations,
         hpPublishedDependencyRequests,
@@ -1553,6 +1591,44 @@ describe('production master inventory ratchet', () => {
       ).toBe(true);
       expect(hpDependencyCoverage.gate.failures).toEqual([]);
       expect(hpDependencyCoverage.productClosure).toBe(false);
+      expect(originalControlRequestCount).toBe(3182);
+      expect(hpDependencyCoverage.requestCount).toBe(originalControlRequestCount + 4);
+      expect(
+        hpDependencyCoverage.requests
+          .slice(0, originalControlRequestCount)
+          .every(
+            (request) =>
+              request.scenario.mode === 'resolved' && request.scenario.craftEssence === null,
+          ),
+      ).toBe(true);
+      const ceRow = hpDependencyCoverage.declarations.find((declaration) =>
+        isDeepStrictEqual(declaration.identity, ceCondition.identity),
+      );
+      expect(ceRow?.directScenarioOwnerRequests).toEqual([
+        originalControlRequestCount,
+        originalControlRequestCount + 1,
+        originalControlRequestCount + 2,
+        originalControlRequestCount + 3,
+      ]);
+      for (const [offset, hp] of [501, 500, 501, 500].entries()) {
+        const requestIndex = originalControlRequestCount + offset;
+        expect(hpDependencyCoverage.requests[requestIndex]?.targetSelection).toBe('selected');
+        const ceBindings = hpDependencyCoverage.bindings.filter(
+          (binding) =>
+            binding.requestIndex === requestIndex &&
+            isDeepStrictEqual(binding.declaration, ceCondition.identity),
+        );
+        expect(ceBindings.map((binding) => binding.stage)).toEqual([
+          'canonicalCondition',
+          'actualConditionRead',
+        ]);
+        expect(ceBindings[1]?.detail).toMatchObject({
+          permille: hp,
+          evaluated: hp === 500,
+          transaction: 'committed',
+          modifierConsumed: hp === 500,
+        });
+      }
       const unconnectedHpDependencies = (kind: string) =>
         hpDependencyCoverage.declarations.filter(
           (declaration) =>
@@ -1560,10 +1636,10 @@ describe('production master inventory ratchet', () => {
             declaration.stages.every((stage) => stage.observation === 'unobserved'),
         );
       expect(
-        unconnectedHpDependencies('condition')
-          .filter((declaration) => declaration.identity.origin === 'craftEssence')
-          .map((declaration) => declaration.directScenarioOwnerRequests.length),
-      ).toEqual([0]);
+        unconnectedHpDependencies('condition').filter(
+          (declaration) => declaration.identity.origin === 'craftEssence',
+        ),
+      ).toEqual([]);
       expect(
         unconnectedHpDependencies('hpRatioLow')
           .map((declaration) => declaration.directScenarioOwnerRequests.length)

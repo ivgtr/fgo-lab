@@ -23623,6 +23623,124 @@
         },
         "closureDecision": "Step0/1/3 established; Step2 and TSK-08 in_progress, TSK-09.1/09 blocked. The timeout/current-source control artifact obligation is closed locally, but distinct CE/other HP native/recovery, whole ratchets/diagnostics, legacy, formal performance, final quality and integrated evidence prohibit TSK-08 completion. Do not start dependent quality or another owner in this unit. No push.",
         "nextLimitedOperation": "Reconcile one separate owner/path at a time, starting with the CE craftEssence condition owner or another explicitly selected HP native/recovery gap; preserve existing shared inventory, request ledger, typed gate and manifest. Before final closure, independently settle whole ratchets/legacy and required formal/quality/integrated gates."
+      },
+      "ceConditionOwnerCheckpoint": {
+        "status": "bounded CE owner/capture proof complete; TSK-08 product closure open",
+        "startHead": "7b89ad08c4ef06b272322b318ceaf2e251ae5f9e",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "authorization": "User approved current-code plan before edits/tests; no push.",
+        "ownerDecision": "The first control test owns original prepared/evaluated requests and finalizes the shared sidecar before the separate CE/mystic test. Select the one published craftEssence requirement.expression attackerHpPermille atMost500 declaration from the shared inventory, execute four original calculator scenarios through evaluateWithOrderedOperationEvents, and borrow its WeakMap candidate capture. Typed craftEssence skill identity joins ce:<skill>; no ID runtime branch, new expected-value generator, second audit owner or product execution change.",
+        "sourceIdentity": [
+          {
+            "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+            "bytes": 110444,
+            "sha256": "79ff8c7d89c327de14308d9f991a6c139ee0bac63805a79d39f7a790beddbe12"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+            "bytes": 40300,
+            "sha256": "106499184fabb36ed05b984d82e3379df986eb80f19808dceae50df2bbb23c56"
+          },
+          {
+            "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts",
+            "bytes": 21971,
+            "sha256": "0994dc5557cd20e34e27cb14d3fb2598377bf0febb4066e5048e476335e01658"
+          }
+        ],
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "priorArtifact": {
+          "manifest": {
+            "path": ".test-results/2026-09-28T09-53-29-188Z-2-fbe8ef/manifest.json",
+            "bytes": 6056,
+            "sha256": "43602b329b90978971c09c8ff68541a4f954873efbdd73c6096e8a6dd6f0ea6e"
+          },
+          "sidecar": {
+            "path": ".test-results/2026-09-28T09-53-29-188Z-2-fbe8ef/production-hp-published-dependency.json",
+            "bytes": 13253020,
+            "sha256": "14b3b9d8a6e1176973fda896056561947eb1868539e4868ab04b126a10a4a855"
+          }
+        },
+        "currentArtifact": {
+          "manifest": {
+            "path": ".test-results/2026-09-28T10-38-36-635Z-15-2a08db/manifest.json",
+            "bytes": 6057,
+            "sha256": "4112e05c067c3594dde6d33867a8bca61f1791589030b4a11c28ade82825edda"
+          },
+          "sidecar": {
+            "path": ".test-results/2026-09-28T10-38-36-635Z-15-2a08db/production-hp-published-dependency.json",
+            "bytes": 13286904,
+            "sha256": "62300d5ed514cac03e68f2b83e4a92be3e2231ffb99f5e475313d77a7c19dfe8"
+          }
+        },
+        "proof": {
+          "declarations": "Shared 557 inventory retained; one CE condition declaration row changed. Original 3182 requests, all CE null, and their order are unchanged. Four appended original CE requests use input HP502/500 at normal/LB and all select one target. Physical reads are 501/500 because input 501 quantizes to physical 500 for the selected actor. Two 501 reads evaluate false and consume no modifier; two 500 reads evaluate true and the addModifier operation commits. Four canonicalCondition plus four actualConditionRead bindings added. Normal nonselection is distinct from read. Native/recovery are not inferred.",
+          "counts": {
+            "oldRequests": 3182,
+            "newRequests": 3186,
+            "declarations": 71,
+            "oldBindings": 488,
+            "newBindings": 496,
+            "unobservedFamilies": 5
+          },
+          "gate": {
+            "passed": true,
+            "failures": 0,
+            "firstDifference": null,
+            "productClosure": false
+          }
+        },
+        "artifactComparison": "ProductionAuditArtifacts decoder round-trip passed. Complete old/new decoded sidecars are deep equal after removing exactly the four appended requests, eight appended CE bindings, one CE declaration row change and four new fields on pre-existing actualConditionRead details. Existing 3182 requests and 488 binding order are equal. All common 13 production artifacts other than the CE sidecar are byte/SHA identical; vitest.json and stdout.log differ only as run records. Old and new manifests each list 19 disk artifacts with bytes/SHA verified. New run has 14 unique declarations and 14 unique receipts; all paths, bytes and SHA match disk and manifest; artifactVerification.errors is empty.",
+        "verification": {
+          "controlAudit": "8/8; first test 32.297s < 60s; warning0; .test-results/2026-09-28T10-38-36-635Z-15-2a08db",
+          "focusedGate": "9/9 with missing/duplicate/unmatched, reference/identity/order and forged rolledBack/consumed rejection; .test-results/2026-09-28T10-38-19-987Z-15-73ec32",
+          "productionHpPaths": "7/7; .test-results/2026-09-28T10-42-11-690Z-15-1c9802",
+          "hpConditionGolden": "1/1; .test-results/2026-09-28T10-43-21-364Z-15-b2739a",
+          "runner": "59/59",
+          "static": "tsc -b, target ESLint/Prettier and git diff --check passed.",
+          "diagnosticHistory": "First broad audit attempt failed with CE unmatchedCanonical then first-test receipt cascade; typed CE join fixed. Second targeted attempt passed gate but HP501 scenario input yielded physical HP500; changed input to HP502 and asserted physical 501. A wrong unit-suite command selected zero tests and was superseded by the correct production golden 1/1. Failed runs are not acceptance evidence."
+        },
+        "performance": "Only audit producer/consumer/test code changed; product calculation structure, capture and hot path are unchanged. No old/new live-phase diagnostic was required. The observed 32.297s first test is a 60s bound check, not formal before/after three-run ranking or production performance evidence.",
+        "closureReconciliation": {
+          "checklist": [
+            "Sole TSK-06.5 inventory/digest producer retained.",
+            "All parity/unsupported/invalid/partial commit/inert control/stale mutation population-to-gate ratchets remain unverified.",
+            "Current CE typed gate and complete artifact/14 receipts reached; whole diagnostic and massive-failure reachability remain open.",
+            "Legacy aggregate/loader/scan/candidate list/duplicate fixture unique coverage and removal remain open."
+          ],
+          "doneGate": [
+            "CE input, ordered operation and HP read/commit differences explained; all damage differences remain open.",
+            "CE gate firstDifference null; integrated digest mismatch to first canonical difference remains unverified.",
+            "Current artifacts complete; massive failure bound/completeness remains open.",
+            "Affected audit and HP production paths pass; final full inventory/calculator-ranking/fail-closed gate remains open.",
+            "Single semantic producer retained; candidate/damage semantics not recalculated."
+          ],
+          "contractMatrix": {
+            "TS-AUDIT-001": "CE affected control audit 8/8 and HP production paths 7/7 passed; wider required production closure open.",
+            "TS-OUT-001": "Focused typed rejection fixture passed; whole intentional-failure reachability open.",
+            "TS-ART-001": "Current complete decoded sidecar and 14/14 receipt pass; massive failure path open.",
+            "RK-AUDIT-001": "Established Step3 eight shards reused at matching identity; integrated full policy/parity/fail-closed open.",
+            "RK-PERF-001": "Formal before/after ranking three runs absent.",
+            "TS-PERF-002": "Formal before/after production gate three runs absent.",
+            "DX-HANDOFF-001": "Product checkpoint only; README final quality withheld because whole product obligations remain open."
+          },
+          "inputLifecycleEight": [
+            "1: Original request lifecycle now includes CE four prepared/captured requests; current control sidecar and 14 receipts reached.",
+            "2: HP primitive population and 557 declaration inventory retained; whole selected/read/state transition coverage open.",
+            "3: Completed fixed/maximumFixed/receive and units0..51 retained at valid identities; not whole mutation coverage.",
+            "4: Support selected five reads/commits and 45 nonselections retained; CE condition two true committed reads/two false physical reads added; other owner/action/lifetime/recipient and native/recovery open.",
+            "5: CE typed gate/artifact reached; whole ratchet and failure diagnostics open.",
+            "6: Legacy unique-coverage reconciliation/cleanup open.",
+            "7: Formal performance, README quality and integrated counter/digest/all receipt closure open.",
+            "8: Normal CE nonselection, physical read, committed modifier and transactional rejection distinct; no native/recovery inference."
+          ]
+        },
+        "blockingInThisUnit": 0,
+        "remaining": "Step2 and TSK-08 in_progress; other HP owner/action/lifetime/recipient, native noncommit/recovery, whole ratchets/typed failure reachability, legacy cleanup, formal performance, README final quality and integrated counters/digests/all receipts are not closed. Step0/1/3 established; TSK-09.1/09 blocked.",
+        "nextLimitedOperation": "Use remainingWorkSummary and productionAuditInputLifecycleCheckpoint.closureReconciliation to choose one separate HP owner/action/lifetime/recipient original-request-to-consumer gap. First reconcile its current producer/capture and valid artifact identity; present a bounded plan before implementing that family. Do not start dependent quality or product closure from this CE result."
       }
     }
   ],
@@ -26786,7 +26904,7 @@
         "sessionBoundary": "At 60 minutes checkpoint in existing Task/evidence; at 90 minutes finish current atomic action and hand off. No new family or independent quality retries."
       },
       "ceConditionOwnerSession": {
-        "status": "prepared_docs_only; current-code plan and user confirmation required before execution or implementation",
+        "status": "executed as bounded CE owner/capture checkpoint; whole TSK-08 open",
         "preparationHead": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
         "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
         "stepDecision": "Step0 baseline/contracts, Step1 V41 marker with V40 retention/explicit recomputation, and Step3 revised matrix/eligibility remain established. Step2 and TSK-08 in_progress; TSK-09.1/09 blocked.",
@@ -26843,7 +26961,8 @@
         "closurePolicy": "Aim for TSK-08 completion only if all checklist, Done gate, Contract matrix and input-lifecycle eight obligations have valid current evidence, in-scope Blocking0 and time for required affected audit, formal before/after three-run performance, README final quality and integrated counters/digests/all receipts. The current CE unit alone cannot imply whole closure. Otherwise make a product-incomplete checkpoint without dependent quality. Keep TSK-09.1/09 blocked and do not push.",
         "excluded": "Other HP owner/action/lifetime/recipient, native/noncommit/recovery, other selection family, legacy cleanup, HP game semantics, runner redesign and TSK-09.1/09. Reuse units0..51, retained NP/OC/support/control proofs and Step3 eight shards at matching identity; do not regenerate them without a concrete mismatch.",
         "performanceBoundary": "Only if calculation structure, capture or product hot path changes, use the same input and affinity0-7, production4/unit4/audit1 workers and budget for one baseline/candidate live-phase diagnostic each. This does not replace formal before/after three-run contracts. The control first-test limit stays 60000ms. The current pnpm-workspace setting requires dependency synchronization to a writable /tmp store on drift; use ordinary pnpm after synchronization and do not revive the historical shim fallback.",
-        "sessionBoundary": "At 60 minutes checkpoint in existing Task/evidence; at 90 minutes finish the current atomic action and hand off. Do not start another family, an extra quality retry or an independent investigation."
+        "sessionBoundary": "At 60 minutes checkpoint in existing Task/evidence; at 90 minutes finish the current atomic action and hand off. Do not start another family, an extra quality retry or an independent investigation.",
+        "executionCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint"
       }
     },
     "completedScalarRecoveryPreparation": {
@@ -27815,7 +27934,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "One bounded Published CE attacker-HP condition original-owner/capture proof, beginning with a current-code plan and user confirmation; see handoffPreparation.nextSession.ceConditionOwnerSession. The current-source control timeout/full-sidecar path is closed locally by boundedUnits[52].controlAuditArtifactCheckpoint. Separate native/recovery/other owner, whole ratchet/legacy, formal performance, README quality and integrated closure wait for their own valid evidence. TSK-08 remains in_progress and TSK-09.1/09 blocked.",
+    "nextSession": "Published CE attacker-HP condition owner/capture proof is complete at boundedUnits[52].ceConditionOwnerCheckpoint. Separate HP owners/native/recovery, whole ratchets/legacy, formal performance, README quality and integrated closure remain open. Step2 and TSK-08 in_progress; TSK-09.1/09 blocked.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
@@ -27860,7 +27979,7 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "handoffPreparation.nextSession.ceConditionOwnerSession",
+    "nextSessionReference": "boundedUnits[52].ceConditionOwnerCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
@@ -27881,6 +28000,7 @@
     "asOfHpNpVariantSelectionCheckpointReference": "boundedUnits[52].hpPublishedNpVariantSelectionCheckpoint",
     "asOfOcRateSelectionCheckpointReference": "boundedUnits[52].hpPublishedOcRateSelectionCheckpoint",
     "asOfSupportValueCheckpointReference": "boundedUnits[52].hpPublishedSupportValueExpressionCheckpoint",
-    "asOfSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint"
+    "asOfSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint",
+    "ceConditionOwnerCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint"
   }
 }

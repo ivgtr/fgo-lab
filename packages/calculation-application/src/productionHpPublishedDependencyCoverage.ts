@@ -53,6 +53,7 @@ export type HpPublishedDependencyReason =
   | 'foreignReference'
   | 'bindingMismatch'
   | 'orderMismatch'
+  | 'conditionReadMismatch'
   | 'valueReadMismatch'
   | 'npVariantSelectionMismatch';
 interface Failure {
@@ -87,7 +88,9 @@ const sourceMatches = (
     ? declaration.identity.variant !== null &&
       declaration.identity.skill === declaration.identity.variant.ref.noblePhantasmId &&
       source.skillId === `np:${noblePhantasmVariantKey(declaration.identity.variant.ref)}`
-    : declaration.identity.skill === source.skillId) &&
+    : declaration.identity.origin === 'craftEssence'
+      ? source.skillId === `ce:${declaration.identity.skill}`
+      : declaration.identity.skill === source.skillId) &&
   declaration.identity.occurrence === source.effectOccurrenceId &&
   declaration.effect?.id === source.effectId &&
   variantMatches(declaration, ref);
@@ -321,14 +324,26 @@ export function hpPublishedDependencyBindings(
         fail('requestOwnerMismatch', `${candidatePath}.seed`);
       candidate?.reads.forEach((read, position) => {
         const operation = ordered?.operations[read.operationSequence];
+        const group = captured.candidateState?.executionGroups[read.operationGroupIndex];
+        const event =
+          'operationEvents' in captured
+            ? captured.operationEvents[read.operationSequence]
+            : undefined;
         if (
           !operation ||
           operation.operationId !== read.operationId ||
-          !captured.candidateState?.executionGroups[
-            read.operationGroupIndex
-          ]?.operationIds.includes(read.operationId)
+          !group?.operationIds.includes(read.operationId)
         ) {
           fail('unmatchedCanonical', `requests.${requestIndex}.reads.${position}`);
+          return;
+        }
+        if (
+          event?.operationId !== operation.operationId ||
+          event.sequence !== read.operationSequence ||
+          event.operationOutcome !==
+            (group.outcome === 'rolledBack' ? 'unsupported' : event.operationOutcome)
+        ) {
+          fail('conditionReadMismatch', `requests.${requestIndex}.reads.${position}`);
           return;
         }
         const d = one(
@@ -356,6 +371,16 @@ export function hpPublishedDependencyBindings(
                 evaluated: read.evaluated,
                 conditionOutcome: read.conditionOutcome,
                 hp: read.state.hp,
+                transaction: group.outcome,
+                operationOutcome: event.operationOutcome,
+                projectionOutcome: event.projectionOutcome,
+                modifierConsumed:
+                  operation.kind === 'addModifier' &&
+                  read.evaluated === true &&
+                  group.outcome === 'committed' &&
+                  group.appliedOperationIds.includes(operation.operationId) &&
+                  event.operationOutcome === 'applied' &&
+                  event.projectionOutcome === 'applied',
               },
             },
             captured.candidateIndex,

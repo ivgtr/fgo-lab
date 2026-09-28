@@ -320,6 +320,13 @@ it(
       [{ ...original, sourceInstanceId: 'foreign' }, 'bindingMismatch'],
       [{ ...original, group: 99 }, 'bindingMismatch'],
       [{ ...original, detail: { ...original.detail, evaluated: 'excluded' } }, 'bindingMismatch'],
+      [
+        {
+          ...original,
+          detail: { ...original.detail, transaction: 'rolledBack', modifierConsumed: true },
+        },
+        'bindingMismatch',
+      ],
     ] as const) {
       const values = [...bindings];
       // Wrong family is injected at the test boundary, not added to the accepted union.
