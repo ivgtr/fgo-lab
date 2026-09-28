@@ -4209,3 +4209,22 @@ checklist①は既存単一producerを再利用。②③は今回の局所comman
 次セッションの最初の成果物は現コードに基づく一セッション計画とし、利用者確認を待つ。対象候補はapplication audit producerの実修復commandと直後の評価済みrequest台帳、選択後未到達、および実行可能なordered planにおけるconsumerなし／未到達／物理readの共通gate接続である。`ea4f2c6`で完成したedge検証器やpartial commit完全artifactを再実装しない。production support projectionの現inputは`repairAttempt`を観測せず、最終scenarioだけでは修復関係を証明しない。rejected／invalid requestのplan欠落をconsumerなしと推定せず、そのrequestへreadを要求しない。raw OC三scriptは固有raw cell／公開joinを持つため、checklist④のobsolete対象判定はdata-pipeline ownerの独立判断として扱う。変更owner、代表反証、影響suite、旧新完全decoded値・順序・件数と全disk receipt、性能適用条件、全checklist／Done gate／Contract matrix／入力lifecycle8義務の条件と停止境界を計画で示す。
 
 確認後は同じ限定単位の実在欠落だけを修正・検証・正本更新・対象限定local commitまで進める。別native／recovery owner、新ゲーム意味論、別familyまたは固有raw coverageに独立作業が必要なら、根拠・未達・次の操作を既存Task／evidenceへ記録して製品未完了で止める。TSK-08自身のDeferred／Blockingが0となり全義務が同一最終source／input／artifact identityで成立する見込みがある場合だけ、必要な影響audit、Contract matrixでApplyの変更前後各3run性能、README最終quality、統合counter／digest／全receiptへ進む。詳細な現成果・再利用条件・次の判断は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.postCommandEdgeHandoff`および`commandEdgeSessionCheckpoint`を参照する。60分checkpoint／90分atomic action終了、pushなし。
+
+### TSK-08 command／consumer ledger限定checkpoint（製品未完了、2026-09-29）
+
+開始HEAD `3881c3db2e531f24d47a0a0eee2f3a8d9ab8f9bf`、開始時のindex／tracked／untrackedはclean。計画を提示して利用者確認後に実装した。application auditのsupport projection修復loopは、各実commandと直前・直後に評価したrequest indexを保存し、既存共通HP operation gateで検証する。現公開masterでは修復0件であり、5 requestに`repairAttempt`はない。二段階修復の3 request／2 edge反例は`ea4f2c6`の既存証拠を再利用し、今回のproduction0件を修復成功の全件証明とはしない。
+
+既存published dependency ownerは通常requestにも既存candidate value-read captureを接続した。実行可能なordered planから、consumerなし／planあり、選択済みcell／未選択cell、物理read／read未観測を分類する。rejected requestは`noOrderedPlan`で、read欠落から`noDownstreamConsumer`へ変換しない。schema-legal fixtureは、条件・選択cell・NPの物理read3件、未選択cell9件、実行可能planにHP consumerなし、rejectedでplanなしを通過。現production artifactは3186 request、ordered consumer plan64、consumerなし3122、物理read126、未選択cell144、selected-unreached／consumer-not-reached0、gate failure0。support artifactは5 request、物理read5、未選択cell45、command edge0、gate failure0。0件の遷移を到達済みとは扱わない。
+
+最終sourceでfocused 10/10、登録済みaudit owner 10/10、typecheck、対象lint／formatを通過。audit第1 testは28.60秒で60秒上限内。旧新audit manifest各21 receiptとunit manifest各7 receiptは全disk bytes／SHA-256一致、verification error0。audit共通21件中17件はbytes／SHA一致。差分はrun固有の`stdout.log`／`vitest.json`と、今回拡張したpublished dependency／supportの2完全artifactのみ。published dependencyの旧496 bindingは新512 bindingの順序を保つ部分列で、追加16件は通常requestの`actualValueRead`。旧request3186件と全共有field、旧bindingの完全decoded値、read追加分と参照index補正を除く全declarationは同じ。supportの旧5 request／60 binding／全共有fieldは完全decoded値・順序・件数まで一致。unitの旧9／新10 test、旧16 bindingは新17 bindingの順序保持部分列、14否定artifactはreason集合を保ち、3件のindex／cardinality差だけをread追加で説明した。source、manifest、artifactのbytes／SHA-256と比較詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `postCommandConsumerSessionCheckpoint`を参照する。計算構造・製品capture／hot pathは不変で、単発の正式性能診断条件には当たらない。audit artifactの増分とtest時間は上記に記録し、正式3run gateの代用とはしない。
+
+| 義務 | このcheckpoint後の判定 |
+| --- | --- |
+| checklist①／入力lifecycle①〜③ | 単一producer、共有input／486-source・7470-cell inventory、完了済みmutation証拠を同一identity範囲で再利用。 |
+| checklist②③／入力lifecycle④⑤⑧ | command ledgerとconsumer plan／readの局所接続は成立。selected-unreached／consumer-not-reachedのschema-legal実経路、native／recovery全体、六失敗クラスの元入力からtyped reason／canonical identity／first difference／bounded summary／完全artifact／全receiptへの統合到達は未達。 |
+| checklist④／入力lifecycle⑥ | 旧13回master読込は`e081002`で除去済み。raw OC三scriptは固有raw cell／公開joinを持ち保持。現存する真にobsoleteな定義の確定とliteralな削除義務の適用判断は未達。 |
+| Done gate | 今回の局所read／transactionと旧damage証拠は維持。全damage差分、digest first difference、bounded／完全出力、最終inventory／parity／fail-closedを同一最終identityで統合照合する条件は未達。 |
+| `TS-AUDIT-001`／`RK-AUDIT-001`、`TS-OUT-001`／`TS-ART-001` | 影響auditと局所artifact／receiptは成功。全matrix／parity／fail-closedと六クラス統合出力は未達。 |
+| `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／入力lifecycle⑦ | 正式な変更前後各3run性能、README最終quality、統合counter／digest／全receiptは未実施。 |
+
+別native／recovery consumerとselected-unreached／consumer-not-reachedのschema-legal原経路、六クラス統合ratchet、data-pipeline ownerのobsolete適用判断が独立して残るため、TSK-08のDeferred／Blockingは0ではない。次の限定操作は、元のselected prepared requestとnative actionの未到達capture、実行可能ordered planのconsumer未到達を共通gateの既存bindingへ接続し、必要な場合だけ欠けたtyped failureを追加すること。rejected／invalidにはreadを要求しない。legacyは固有raw coverageを保持して定義単位で判断する。Step 0／1／3成立、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。依存quality、正式性能、8 shards再生成、TSK-09系、pushは行わず、対象限定local checkpoint commitで止める。

@@ -163,7 +163,7 @@ export function hpPublishedDependencyBindings(
         fail('foreignDeclaration', `declarations.${index}.owner`);
     });
   }
-  requests.forEach(({ prepared, calculation, ownerScope }, requestIndex) => {
+  requests.forEach(({ prepared, calculation }, requestIndex) => {
     if (!calculation) {
       fail('requestOwnerMismatch', `requests.${requestIndex}.calculation`);
       return;
@@ -523,81 +523,80 @@ export function hpPublishedDependencyBindings(
         }),
       ),
     );
-    if (ownerScope === 'supportProjection')
-      candidates.forEach((captured) => {
-        const candidate = hpCandidateObservationFor(captured.candidateState);
-        candidate?.valueReads.forEach((read, position) => {
-          if (
-            !dependencies.some(
-              (declaration) =>
-                declaration.identity.kind === 'valueExpression' &&
-                sourceMatches(declaration, read.operation.source, null),
-            )
+    candidates.forEach((captured) => {
+      const candidate = hpCandidateObservationFor(captured.candidateState);
+      candidate?.valueReads.forEach((read, position) => {
+        if (
+          !dependencies.some(
+            (declaration) =>
+              declaration.identity.kind === 'valueExpression' &&
+              sourceMatches(declaration, read.operation.source, null),
           )
-            return;
-          const operation = ordered?.operations[read.operationSequence];
-          const group = captured.candidateState?.executionGroups[read.operationGroupIndex];
-          const event =
-            'operationEvents' in captured
-              ? captured.operationEvents[read.operationSequence]
-              : undefined;
-          const selected = bindings.filter(
-            (binding) =>
-              binding.requestIndex === requestIndex &&
-              binding.stage === 'selectedPreparationCell' &&
-              binding.sourceInstanceId === read.operation.source.sourceInstanceId &&
-              binding.declaration.identity.kind === 'valueExpression' &&
-              sourceMatches(binding.declaration, read.operation.source, null),
-          );
-          if (
-            !operation ||
-            operation !== read.operation ||
-            read.result.operation !== operation ||
-            event?.operationId !== operation.operationId ||
-            event.operationOutcome !==
-              (group?.outcome === 'rolledBack' ? 'unsupported' : read.result.outcome) ||
-            !group?.operationIds.includes(operation.operationId) ||
-            selected.length !== 1
-          ) {
-            fail('valueReadMismatch', `requests.${requestIndex}.valueReads.${position}`);
-            return;
-          }
-          const declaration = selected[0]!.declaration;
-          const committed = group.outcome === 'committed';
-          const consumed =
-            committed &&
-            read.result.outcome === 'applied' &&
-            read.contributionIncluded &&
-            read.modifierAppended &&
-            group.appliedOperationIds.includes(operation.operationId);
-          push(
-            declaration,
-            {
-              stage: 'actualValueRead',
-              position,
-              operation,
-              sequence: read.operationSequence,
-              group: read.operationGroupIndex,
-              sourceInstanceId: operation.source.sourceInstanceId,
-              actor: 'attacker',
-              actionId: null,
-              actionIndex: null,
-              reference: read,
-              detail: {
-                selectedCellPath: declaration.identity.path,
-                permille: read.permille,
-                resolvedValue: read.value,
-                operationOutcome: read.result.outcome,
-                contributionIncluded: read.contributionIncluded,
-                modifierAppended: read.modifierAppended,
-                transaction: group.outcome,
-                consumed,
-              },
+        )
+          return;
+        const operation = ordered?.operations[read.operationSequence];
+        const group = captured.candidateState?.executionGroups[read.operationGroupIndex];
+        const event =
+          'operationEvents' in captured
+            ? captured.operationEvents[read.operationSequence]
+            : undefined;
+        const selected = bindings.filter(
+          (binding) =>
+            binding.requestIndex === requestIndex &&
+            binding.stage === 'selectedPreparationCell' &&
+            binding.sourceInstanceId === read.operation.source.sourceInstanceId &&
+            binding.declaration.identity.kind === 'valueExpression' &&
+            sourceMatches(binding.declaration, read.operation.source, null),
+        );
+        if (
+          !operation ||
+          operation !== read.operation ||
+          read.result.operation !== operation ||
+          event?.operationId !== operation.operationId ||
+          event.operationOutcome !==
+            (group?.outcome === 'rolledBack' ? 'unsupported' : read.result.outcome) ||
+          !group?.operationIds.includes(operation.operationId) ||
+          selected.length !== 1
+        ) {
+          fail('valueReadMismatch', `requests.${requestIndex}.valueReads.${position}`);
+          return;
+        }
+        const declaration = selected[0]!.declaration;
+        const committed = group.outcome === 'committed';
+        const consumed =
+          committed &&
+          read.result.outcome === 'applied' &&
+          read.contributionIncluded &&
+          read.modifierAppended &&
+          group.appliedOperationIds.includes(operation.operationId);
+        push(
+          declaration,
+          {
+            stage: 'actualValueRead',
+            position,
+            operation,
+            sequence: read.operationSequence,
+            group: read.operationGroupIndex,
+            sourceInstanceId: operation.source.sourceInstanceId,
+            actor: 'attacker',
+            actionId: null,
+            actionIndex: null,
+            reference: read,
+            detail: {
+              selectedCellPath: declaration.identity.path,
+              permille: read.permille,
+              resolvedValue: read.value,
+              operationOutcome: read.result.outcome,
+              contributionIncluded: read.contributionIncluded,
+              modifierAppended: read.modifierAppended,
+              transaction: group.outcome,
+              consumed,
             },
-            captured.candidateIndex,
-          );
-        });
+          },
+          captured.candidateIndex,
+        );
       });
+    });
   });
   return { bindings, failures };
 }
@@ -671,6 +670,74 @@ export function reconcileHpPublishedDependencyCoverage(
     'actualValueRead',
     'npEvaluation',
   ];
+  const bindingsByRequest = requests.map(() => [] as HpPublishedDependencyBinding[]);
+  observed.forEach((binding) => bindingsByRequest[binding.requestIndex]?.push(binding));
+  const consumerPlans = requests.map(({ prepared }, requestIndex) => {
+    if (prepared.status !== 'executable' || !prepared.orderedScenario)
+      return { requestIndex, disposition: 'noOrderedPlan' as const, consumers: [] };
+    const requestBindings = bindingsByRequest[requestIndex]!;
+    const planned = requestBindings.filter(
+      (binding) =>
+        binding.stage === 'canonicalCondition' ||
+        binding.stage === 'expressionContext' ||
+        binding.stage === 'canonicalNp',
+    );
+    if (!planned.length)
+      return { requestIndex, disposition: 'noDownstreamConsumer' as const, consumers: [] };
+    const target = prepared.executionObservation?.targetExecution;
+    const consumers = planned.map((binding) => {
+      const selectedCell =
+        binding.stage !== 'expressionContext' ||
+        requestBindings.some(
+          (candidate) =>
+            candidate.stage === 'selectedPreparationCell' &&
+            candidate.declaration === binding.declaration &&
+            candidate.sourceInstanceId === binding.sourceInstanceId,
+        );
+      const reads = requestBindings.filter(
+        (candidate) =>
+          candidate.declaration === binding.declaration &&
+          candidate.operation === binding.operation &&
+          (candidate.stage === 'actualConditionRead' ||
+            candidate.stage === 'actualValueRead' ||
+            candidate.stage === 'npEvaluation'),
+      );
+      const event =
+        target?.selection === 'selected' && binding.sequence !== null
+          ? target.operationEvents[binding.sequence]
+          : undefined;
+      return {
+        declaration: binding.declaration.identity,
+        operationId: binding.operation?.operationId ?? null,
+        sequence: binding.sequence,
+        stage: binding.stage,
+        disposition: !selectedCell
+          ? ('cellNotSelected' as const)
+          : reads.length
+            ? ('physicalRead' as const)
+            : target?.selection !== 'selected'
+              ? ('consumerSelectionUnresolved' as const)
+              : event
+                ? ('consumerReachedWithoutRead' as const)
+                : ('consumerNotReached' as const),
+        readCount: reads.length,
+      };
+    });
+    return { requestIndex, disposition: 'orderedConsumerPlan' as const, consumers };
+  });
+  const selectedUnreached = observed.flatMap((binding, bindingIndex) => {
+    if (binding.stage !== 'selectedPreparationCell') return [];
+    const detail = binding.detail as { steps?: readonly { reached: readonly unknown[] }[] };
+    return detail.steps?.length && detail.steps.every((step) => step.reached.length === 0)
+      ? [
+          {
+            bindingIndex,
+            requestIndex: binding.requestIndex,
+            declaration: binding.declaration.identity,
+          },
+        ]
+      : [];
+  });
   const directOwners = directScenarioOwnerIndex(requests);
   const supportOwnerRequests = (d: HpProofDeclaration) =>
     d.identity.origin === 'attacker'
@@ -977,6 +1044,8 @@ export function reconcileHpPublishedDependencyCoverage(
         phase: operation.phase,
       },
     })),
+    consumerPlans,
+    selectedUnreached,
     unobserved: [
       'availableActionInventory',
       'valueExpressionActualRead',

@@ -246,10 +246,22 @@ it(
     const ledger = f.reconcile();
     expect(ledger.gate.failures).toEqual([]);
     expect(ledger.productClosure).toBe(false);
+    expect(ledger.consumerPlans[0]?.disposition).toBe('orderedConsumerPlan');
+    expect(
+      ledger.consumerPlans[0]?.consumers.filter(
+        (consumer) => consumer.disposition === 'physicalRead',
+      ),
+    ).toHaveLength(3);
+    expect(
+      ledger.consumerPlans[0]?.consumers.filter(
+        (consumer) => consumer.disposition === 'cellNotSelected',
+      ),
+    ).toHaveLength(9);
     expect(f.calculation.result).toEqual(
       calculateScenario(f.scenario, f.master, f.versions).result,
     );
     expect(ledger.bindings.some((b) => b.stage === 'actualConditionRead')).toBe(true);
+    expect(ledger.bindings.some((b) => b.stage === 'actualValueRead')).toBe(true);
     expect(
       ledger.bindings.some(
         (b) =>
@@ -289,6 +301,62 @@ it(
     expect(isDeepStrictEqual(decodeProductionAuditArtifact(disk), ledger)).toBe(true);
   },
 );
+
+it('records an executable request with no ordered HP consumer without inferring a read', () => {
+  const f = setup(false, false, true, true);
+  const actor = f.master.servants[0]!;
+  actor.skills = [];
+  actor.actorFormGraph.forms[0]!.skillIds = [];
+  for (const group of actor.noblePhantasmVariantGroups)
+    for (const variant of group.variants)
+      if (variant.kind === 'attack')
+        variant.damage = variant.damage.map((damage) => ({
+          ...damage,
+          kind: 'standard' as const,
+          rawFunctionType: 'damageNp',
+        }));
+  const declarations = hpProofCoverageInventory(f.master);
+  const scenario = {
+    ...f.scenario,
+    preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
+  };
+  const prepared = prepareCalculationScenarioWithPolicy(
+    scenario,
+    f.master,
+    { kind: 'calculator' },
+    {},
+    true,
+  );
+  const calculation = evaluatePreparedCalculationScenario(prepared, f.versions);
+  const requests = [{ prepared, calculation }];
+  const bindings = hpPublishedDependencyBindings(declarations, requests);
+  const ledger = reconcileHpPublishedDependencyCoverage(declarations, requests, bindings.bindings);
+  expect(prepared.status).toBe('executable');
+  expect(ledger.gate.failures).toEqual([]);
+  expect(ledger.consumerPlans).toEqual([
+    { requestIndex: 0, disposition: 'noDownstreamConsumer', consumers: [] },
+  ]);
+  const rejected = prepareCalculationScenarioWithPolicy(
+    { ...scenario, preNoblePhantasmPlan: [] },
+    f.master,
+    { kind: 'calculator' },
+    {},
+    true,
+  );
+  const rejectedRequests = [
+    { prepared: rejected, calculation: evaluatePreparedCalculationScenario(rejected, f.versions) },
+  ];
+  const rejectedBindings = hpPublishedDependencyBindings(declarations, rejectedRequests);
+  const rejectedLedger = reconcileHpPublishedDependencyCoverage(
+    declarations,
+    rejectedRequests,
+    rejectedBindings.bindings,
+  );
+  expect(rejected.status).toBe('rejected');
+  expect(rejectedLedger.consumerPlans).toEqual([
+    { requestIndex: 0, disposition: 'noOrderedPlan', consumers: [] },
+  ]);
+});
 
 it(
   'rejects missing, duplicate, unmatched, equal foreign bindings and altered identity/detail',

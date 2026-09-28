@@ -10,7 +10,10 @@ import {
 } from './productionHpSelectedAllyMaximumFixedPreparationAudit';
 import { createHash } from 'node:crypto';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
-import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
+import {
+  reconcileHpOperationEvidence,
+  type HpAuditInputCommandEdge,
+} from './productionHpOperationEvidence';
 import {
   noHealingSelection,
   noHealingProgram,
@@ -2215,6 +2218,7 @@ describe('production master inventory ratchet', () => {
           declaration.operation.route.eligibility.recipient === 'attacker',
       );
       const supportHpRequests: HpPublishedDependencyRequest[] = [];
+      const supportHpInputCommandEdges: HpAuditInputCommandEdge[] = [];
       const attacker = master.servants.find((servant) => servant.id === '100100')!;
       const versions: VersionContext = {
         schemaVersion: SCHEMA_VERSION,
@@ -2291,12 +2295,20 @@ describe('production master inventory ratchet', () => {
             );
             if (!input) break;
             repaired.add(input.key);
-            scenario = applyCanonicalInputCommand(scenario, {
+            const command = {
               kind: 'setCanonicalIntegerInput',
               key: input.key,
               value: input.kind === 'sourceMaximumHp' ? 10000 : 0,
-            });
+            } as const;
+            const fromRequestIndex = supportHpRequests.length - 1;
+            scenario = applyCanonicalInputCommand(scenario, command);
             baseline = evaluateSupport(scenario, 'repairAttempt');
+            if (hasHpExpression)
+              supportHpInputCommandEdges.push({
+                fromRequestIndex,
+                command,
+                toRequestIndex: supportHpRequests.length - 1,
+              });
           }
           if (baseline.status === 'rejected') {
             preparationRejected.push(
@@ -2402,10 +2414,22 @@ describe('production master inventory ratchet', () => {
         supportHpRequests,
         supportHpBindings.bindings,
       );
+      const supportHpOperationEvidence = reconcileHpOperationEvidence(
+        hpProofCoverageInventory(master),
+        supportHpRequests,
+        supportHpInputCommandEdges,
+      );
+      const supportHpArtifact = {
+        ...supportHpCoverage,
+        inputCommandEvidence: {
+          inputCommandEdges: supportHpInputCommandEdges,
+          gate: supportHpOperationEvidence.gate,
+        },
+      };
       const supportHpReceipt = await writeProductionAuditArtifact(
         task.meta,
         'production-hp-support-value-expression.json',
-        supportHpCoverage,
+        supportHpArtifact,
       );
       const supportHpBytes = await readFile(
         resolve(
@@ -2418,9 +2442,10 @@ describe('production master inventory ratchet', () => {
         createHash('sha256').update(supportHpBytes).digest('hex'),
       ]).toEqual([supportHpReceipt.expectedBytes, supportHpReceipt.expectedSha256]);
       expect(
-        isDeepStrictEqual(decodeProductionAuditArtifact(supportHpBytes), supportHpCoverage),
+        isDeepStrictEqual(decodeProductionAuditArtifact(supportHpBytes), supportHpArtifact),
       ).toBe(true);
       expect(supportHpCoverage.gate.failures).toEqual([]);
+      expect(supportHpOperationEvidence.gate.failures).toEqual([]);
       expect(supportHpCoverage.declarations).toHaveLength(10);
       expect(supportHpCoverage.requests.map((request) => request.requestPhase)).toEqual([
         'original',
