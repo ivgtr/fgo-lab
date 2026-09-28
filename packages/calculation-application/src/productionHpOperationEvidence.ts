@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { isHpOperation, type HpState } from '@fgo-lab/battle-execution';
 import {
   hpCandidateObservationFor,
@@ -5,6 +6,7 @@ import {
 } from '@fgo-lab/battle-execution/preparation-audit';
 import { firstCanonicalAuditDifference } from '@fgo-lab/master-data/production-audit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
+import { applyCanonicalInputCommand, type CanonicalInputCommand } from './canonicalInputs';
 import type { HpProofDeclaration } from './productionHpProofCoverage';
 import {
   directScenarioOwnerIndex,
@@ -13,9 +15,16 @@ import {
 import { scalarQuantitySnapshot } from './productionScalarQuantityAudit';
 
 /** Reconcile the original selected operation stream without reexecuting an HP owner. */
+export interface HpAuditInputCommandEdge {
+  fromRequestIndex: number;
+  command: CanonicalInputCommand;
+  toRequestIndex: number;
+}
+
 export function reconcileHpOperationEvidence(
   declarations: readonly HpProofDeclaration[],
   requests: readonly HpPublishedDependencyRequest[],
+  inputCommandEdges: readonly HpAuditInputCommandEdge[] = [],
 ) {
   type FailureReason =
     | 'requestOwnerMismatch'
@@ -29,7 +38,8 @@ export function reconcileHpOperationEvidence(
     | 'modifierReadOrderMismatch'
     | 'candidateReadMismatch'
     | 'ownerSelectionMismatch'
-    | 'nativeTransactionMismatch';
+    | 'nativeTransactionMismatch'
+    | 'inputCommandEdgeMismatch';
   const failures: {
     reason: FailureReason;
     path: string;
@@ -68,6 +78,94 @@ export function reconcileHpOperationEvidence(
     );
     if (firstDifference) failures.push({ reason, path, firstDifference });
   };
+  const incoming = new Set<number>();
+  for (const [edgeIndex, edge] of inputCommandEdges.entries()) {
+    const path = `inputCommandEdges.${edgeIndex}`;
+    const from = requests[edge.fromRequestIndex];
+    const to = requests[edge.toRequestIndex];
+    if (
+      !Number.isInteger(edge.fromRequestIndex) ||
+      !Number.isInteger(edge.toRequestIndex) ||
+      edge.fromRequestIndex < 0 ||
+      edge.toRequestIndex <= edge.fromRequestIndex ||
+      !from ||
+      !to ||
+      incoming.has(edge.toRequestIndex)
+    ) {
+      fail('inputCommandEdgeMismatch', `${path}.indices`, 'unique ordered existing requests', [
+        edge.fromRequestIndex,
+        edge.toRequestIndex,
+      ]);
+      continue;
+    }
+    incoming.add(edge.toRequestIndex);
+    if (
+      from.prepared.scenario.mode !== 'resolved' ||
+      to.prepared.scenario.mode !== 'resolved' ||
+      from.calculation?.result.status !== 'inputRequired'
+    ) {
+      fail('inputCommandEdgeMismatch', `${path}.predecessor`, 'resolved inputRequired', [
+        from.prepared.scenario.mode,
+        from.calculation?.result.status ?? null,
+        to.prepared.scenario.mode,
+      ]);
+      continue;
+    }
+    const definition = from.prepared.resolved.inputDefinitions.find(
+      (item) => item.key === edge.command.key,
+    );
+    const required = from.calculation.result.requiredInputs.some(
+      (item) => item.key === edge.command.key,
+    );
+    if (
+      !definition ||
+      !required ||
+      edge.command.value === null ||
+      !Number.isInteger(edge.command.value) ||
+      edge.command.value < definition.minimum ||
+      edge.command.value > definition.maximum ||
+      (edge.command.value - definition.minimum) % definition.step !== 0
+    ) {
+      fail(
+        'inputCommandEdgeMismatch',
+        `${path}.command`,
+        'required valid input command',
+        edge.command,
+      );
+      continue;
+    }
+    if (
+      from.prepared.master !== to.prepared.master ||
+      !isDeepStrictEqual(from.prepared.contributionPolicy, to.prepared.contributionPolicy) ||
+      !isDeepStrictEqual(from.prepared.preparation, to.prepared.preparation)
+    ) {
+      fail(
+        'inputCommandEdgeMismatch',
+        `${path}.owner`,
+        'same master, policy and preparation',
+        false,
+      );
+      continue;
+    }
+    let expected: typeof to.prepared.scenario;
+    try {
+      expected = applyCanonicalInputCommand(from.prepared.scenario, edge.command);
+    } catch {
+      fail('inputCommandEdgeMismatch', `${path}.command`, 'applicable command', edge.command);
+      continue;
+    }
+    if (!isDeepStrictEqual(expected, to.prepared.scenario))
+      fail('inputCommandEdgeMismatch', `${path}.scenario`, expected, to.prepared.scenario);
+  }
+  requests.forEach((request, index) => {
+    if (request.requestPhase === 'repairAttempt' && !incoming.has(index))
+      fail(
+        'inputCommandEdgeMismatch',
+        `requests.${index}.recovery`,
+        'one input command edge',
+        null,
+      );
+  });
   const writers = declarations.filter((item) => item.identity.kind === 'writer');
   type Writer = {
     actionIndex: number;
@@ -532,6 +630,7 @@ export function reconcileHpOperationEvidence(
     modifierReads,
     candidateReads,
     declarationRows,
+    ...(inputCommandEdges.length ? { inputCommandEdges } : {}),
     gate: { failures, firstDifference: failures[0]?.firstDifference ?? null },
   };
 }

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.135"
+document_version: "1.7.136"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-29"
@@ -4191,3 +4191,13 @@ legacy checklist④の文言は「旧loader、scan、candidate list、重複fixt
 次作業者は現コードから一セッション計画を**最初の成果物として提示し、利用者確認を待つ**。legacy候補の定義／caller／入力／固有assertion、六失敗クラスの元入力からtyped gate・first difference・bounded／完全artifact・receiptまで、監査専用の修復edgeとconsumer段階を照合する。変更候補とowner、代表反証、影響suite、旧新完全decode値・順序・件数とdisk bytes／SHA-256・全receipt、性能条件、全checklist／Done gate／Contract matrix／入力lifecycle8義務、停止境界を一枚の計画にまとめる。確認後は承認された同じ限定単位を実装・局所／影響検証・既存Task／evidence更新・対象限定local commitまで進める。partial commit artifact、共通HP proof、80条件matrix／eligibilityと完了unitsはidentityと意味が一致する範囲で再利用し、別HP action／recipient監査へ戻らない。
 
 別native／recovery owner、新ゲーム意味論、別family、保持すべき固有raw coverageに独立作業が必要なら、その根拠・未達条件・次の限定操作を既存正本へ残して製品未完了checkpointで止める。全TSK-08義務が同一最終identityで成立しDeferred／Blockingが0、時間が残る場合だけ、必要な影響audit、`Apply`の正式変更前後各3run性能、README最終qualityと統合counter／digest／全receiptを行い完了を目指す。現段階ではchecklist②〜④、Done gate最終照合、Contract最終gate、入力lifecycle④〜⑧が未達または未照合であり、単一fixtureの成功を全体完了としない。60分で既存正本にcheckpoint、90分で現在のatomic actionを終えて引き継ぎ、pushしない。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.postModelStepCheckHandoff`。
+
+### TSK-08 修復command edge限定実装checkpoint（製品未完了、2026-09-29）
+
+開始HEAD `8e3bef39f0ddb5d9dbc12125b84c079b2d1c6bf8`、index／tracked／untrackedはcleanで、計画を提示して利用者確認後に実装した。共通HP gateへ監査専用の元request・実入力command・直後に評価したrequestのedgeを追加した。前requestの`inputRequired`と要求input、同じmaster／policy／preparation、正確なscenario変換と順序を照合する。二つのcommandを要するschema-legal反例は3 request／2 edgeを保存し、欠落と誤commandを`inputCommandEdgeMismatch`＋first canonical differenceにした。準備でrejectedとなる前2 requestにはordered planがなく、後続readを要求していない。製品runtime、damage、capture、HP action別selectorは変更していない。
+
+最終sourceでfocused `hpExecution.test.ts` 22/22、登録済みaudit owner 10/10、typecheck、対象lintを通過した。先のaudit全5 file／87 test成功はlint修正前のsourceなので最終identityの根拠にしない。旧HP audit manifestの21件と最終audit manifestの共通21件はrun固有の`stdout.log`／`vitest.json`以外19件がbytes／SHA-256まで一致し、完全decoded値・順序・件数を維持した。unit旧6／新7件の共通6件もrun固有2件以外4件一致した。全disk receiptはaudit旧21／新21、unit旧6／新7の全件一致、manifest verification error 0。新しい完全artifactは3 request／2 edge／operation 6／modifier read 3、正例failure 0、反例2で16325 bytes、SHA-256 `14d39591973b3c184d91e74ef6c479025cc9a49887feab2b86c1ad9f60a00d50`。source・manifest・artifact identityとlegacy定義／直接caller／入力／固有assertionの最終表は[evidence](../evidence/tsk-08-parity-ratchet.json) `commandEdgeSessionCheckpoint`を正本とする。
+
+checklist①は既存単一producerを再利用。②③は今回の局所command-edge経路が成立したが、六失敗クラスの最終同一identity ratchetと統合receiptは未達。④は旧13回readが`e081002`で除去済みだが、raw OC三scriptの固有raw cell／公開joinを保持する判断と、literalな削除義務の最終適用が未達。Done gateの全damage・digest first difference・bounded／完全出力・最終inventory／parity／fail-closed、`TS-AUDIT-001`／`RK-AUDIT-001`の最終影響audit、`TS-OUT-001`／`TS-ART-001`の統合出力、`RK-PERF-001`／`TS-PERF-002`の正式変更前後各3run、`DX-HANDOFF-001`のREADME最終qualityは未達。入力lifecycle①〜③は既存identityを再利用、④は選択後未到達の共通gate接続、⑤は統合ratchet、⑥はlegacy適用判断、⑦は正式性能・受入、⑧はnative／recovery consumer全体が未達。部分的なaudit成功をTSK-08完了と扱わない。
+
+次の限定操作はapplication audit producerで実際の修復commandを各前後評価済みrequestへ記録し、選択後未到達と、実行可能なordered plan上のconsumerなし／未到達を共通gateへ接続すること。rejected／invalid requestにreadを要求しない。別data-pipeline ownerは固有raw coverageを保持したままobsolete定義の有無を確定する。これらは独立owner作業のため本セッションは製品未完了checkpointで停止する。計算構造・capture・製品hot pathは不変で1run性能診断の条件には当たらず、TSK-08のDeferredが残るので正式性能・最終quality・TSK-09系は始めない。Step 0／1／3を維持し、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。対象限定local commit、pushなし。

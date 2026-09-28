@@ -1,4 +1,4 @@
-import { applyCanonicalInputCommand } from './canonicalInputs';
+import { applyCanonicalInputCommand, type CanonicalInputCommand } from './canonicalInputs';
 import { hpCoverageSources } from './productionHpCoverage';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
 import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
@@ -351,117 +351,202 @@ describe('HP initial intent through common preparation and recovery', () => {
     ]);
   });
 
-  it('keeps an unresolved heal modifier explicit until consumed, then repairs from initial input', () => {
-    const modifier = effect('uncertain-heal', [
-      {
-        kind: 'hpModifier',
-        action: 'receive',
-        sign: 1,
-        bounds: { minimum: 0, maximum: 50000 },
-        values: values(300),
-        traits: ['buffTrait:1'],
-        lifetime: 'active',
-        route: {
-          target: 'sourceSelf',
-          contributionScope: 'personal',
-          eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+  it(
+    'keeps an unresolved heal modifier explicit until consumed, then repairs from initial input',
+    productionAuditTestOptions(['hp-recovery-command-edges.json']),
+    async ({ task }) => {
+      const modifier = effect('uncertain-heal', [
+        {
+          kind: 'hpModifier',
+          action: 'receive',
+          sign: 1,
+          bounds: { minimum: 0, maximum: 50000 },
+          values: values(300),
+          traits: ['buffTrait:1'],
+          lifetime: 'active',
+          route: {
+            target: 'sourceSelf',
+            contributionScope: 'personal',
+            eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+          },
         },
-      },
-    ]);
-    modifier.requirement.expression = {
-      kind: 'trait',
-      scope: 'recipient',
-      trait: 'holyGrail',
-      present: true,
-      provenance: {
-        stateSources: 'activeOnly',
-        ignoredStateTraits: 'exclude',
-        unremovableStateTraits: 'include',
-      },
-    };
-    const idle = setup([modifier], 500);
-    const deferred = resolveScenarioPreparationOutcome(idle.scenario, idle.master);
-    expect(deferred.status).toBe('executable');
-    if (deferred.status === 'executable')
-      expect(deferred.formExecution.state.hp?.modifiers?.[0]?.unresolvedCondition).toMatchObject({
-        kind: 'worldTraitPresence',
-      });
-    const consumed = setup([modifier, effect('heal', [gain(1000)])], 500);
-    const outcome = calculateScenario(consumed.scenario, consumed.master, consumed.versions);
-    expect(outcome.result.status).toBe('inputRequired');
-    const definition = outcome.inputDefinitions.find(
-      (input) => input.kind === 'worldTraitPresence',
-    )!;
-    expect(definition).toBeDefined();
-    for (const present of [0, 1]) {
-      let repaired = applyCanonicalInputCommand(consumed.scenario, {
-        kind: 'setCanonicalIntegerInput',
-        key: definition.key,
-        value: present,
-      });
-      const firstRepair = calculateScenario(repaired, consumed.master, consumed.versions);
-      if (firstRepair.result.status === 'inputRequired') {
-        const next = firstRepair.inputDefinitions.find(
-          (input) => input.kind === 'worldTraitPresence' && input.key !== definition.key,
-        )!;
-        expect(next).toBeDefined();
-        repaired = applyCanonicalInputCommand(repaired, {
+      ]);
+      modifier.requirement.expression = {
+        kind: 'trait',
+        scope: 'recipient',
+        trait: 'holyGrail',
+        present: true,
+        provenance: {
+          stateSources: 'activeOnly',
+          ignoredStateTraits: 'exclude',
+          unremovableStateTraits: 'include',
+        },
+      };
+      const idle = setup([modifier], 500);
+      const deferred = resolveScenarioPreparationOutcome(idle.scenario, idle.master);
+      expect(deferred.status).toBe('executable');
+      if (deferred.status === 'executable')
+        expect(deferred.formExecution.state.hp?.modifiers?.[0]?.unresolvedCondition).toMatchObject({
+          kind: 'worldTraitPresence',
+        });
+      const consumed = setup([modifier, effect('heal', [gain(1000)])], 500);
+      const outcome = calculateScenario(consumed.scenario, consumed.master, consumed.versions);
+      expect(outcome.result.status).toBe('inputRequired');
+      const definition = outcome.inputDefinitions.find(
+        (input) => input.kind === 'worldTraitPresence',
+      )!;
+      expect(definition).toBeDefined();
+      for (const present of [0, 1]) {
+        const firstCommand: CanonicalInputCommand = {
           kind: 'setCanonicalIntegerInput',
-          key: next.key,
+          key: definition.key,
           value: present,
-        });
-      }
-      if (present === 0) {
-        const originalPrepared = prepareCalculationScenarioWithPolicy(
-          consumed.scenario,
-          consumed.master,
-          { kind: 'calculator' },
-          {},
-          true,
-        );
-        const repairedPrepared = prepareCalculationScenarioWithPolicy(
+        };
+        let repaired = applyCanonicalInputCommand(consumed.scenario, firstCommand);
+        const afterFirstCommand = repaired;
+        const firstRepair = calculateScenario(repaired, consumed.master, consumed.versions);
+        let secondCommand: CanonicalInputCommand | null = null;
+        if (firstRepair.result.status === 'inputRequired') {
+          const next = firstRepair.inputDefinitions.find(
+            (input) => input.kind === 'worldTraitPresence' && input.key !== definition.key,
+          )!;
+          expect(next).toBeDefined();
+          secondCommand = {
+            kind: 'setCanonicalIntegerInput',
+            key: next.key,
+            value: present,
+          };
+          repaired = applyCanonicalInputCommand(repaired, secondCommand);
+        }
+        if (present === 0) {
+          const originalPrepared = prepareCalculationScenarioWithPolicy(
+            consumed.scenario,
+            consumed.master,
+            { kind: 'calculator' },
+            {},
+            true,
+          );
+          const repairedPrepared = prepareCalculationScenarioWithPolicy(
+            repaired,
+            consumed.master,
+            { kind: 'calculator' },
+            {},
+            true,
+          );
+          const originalCalculation = evaluatePreparedCalculationScenario(
+            originalPrepared,
+            consumed.versions,
+          );
+          const repairedCalculation = evaluatePreparedCalculationScenario(
+            repairedPrepared,
+            consumed.versions,
+          );
+          const firstPrepared = prepareCalculationScenarioWithPolicy(
+            afterFirstCommand,
+            consumed.master,
+            { kind: 'calculator' },
+            {},
+            true,
+          );
+          const firstCalculation = evaluatePreparedCalculationScenario(
+            firstPrepared,
+            consumed.versions,
+          );
+          expect(firstCalculation.result).toEqual(firstRepair.result);
+          const requests = [
+            { prepared: originalPrepared, calculation: originalCalculation },
+            {
+              prepared: firstPrepared,
+              calculation: firstCalculation,
+              requestPhase: 'repairAttempt' as const,
+            },
+            ...(secondCommand
+              ? [
+                  {
+                    prepared: repairedPrepared,
+                    calculation: repairedCalculation,
+                    requestPhase: 'repairAttempt' as const,
+                  },
+                ]
+              : []),
+          ];
+          const edges = [
+            { fromRequestIndex: 0, command: firstCommand, toRequestIndex: 1 },
+            ...(secondCommand
+              ? [{ fromRequestIndex: 1, command: secondCommand, toRequestIndex: 2 }]
+              : []),
+          ];
+          const evidence = reconcileHpOperationEvidence(
+            hpProofCoverageInventory(consumed.master),
+            requests,
+            edges,
+          );
+          expect(evidence.gate.failures).toEqual([]);
+          expect(evidence.inputCommandEdges).toEqual(edges);
+          expect(edges).toHaveLength(secondCommand ? 2 : 1);
+          const missing = reconcileHpOperationEvidence(
+            hpProofCoverageInventory(consumed.master),
+            requests,
+            edges.slice(0, -1),
+          );
+          expect(missing.gate.failures).toMatchObject([
+            {
+              reason: 'inputCommandEdgeMismatch',
+              path: `requests.${requests.length - 1}.recovery`,
+            },
+          ]);
+          expect(missing.gate.firstDifference).not.toBeNull();
+          const wrong = reconcileHpOperationEvidence(
+            hpProofCoverageInventory(consumed.master),
+            requests,
+            [{ ...edges[0]!, command: { ...firstCommand, value: 1 } }, ...edges.slice(1)],
+          );
+          expect(
+            wrong.gate.failures.some((failure) => failure.reason === 'inputCommandEdgeMismatch'),
+          ).toBe(true);
+          const payload = {
+            requests: requests.map((request) => ({
+              scenario: request.prepared.scenario,
+              preparationStatus: request.prepared.status,
+              resultStatus: request.calculation.result.status,
+            })),
+            evidence,
+            negatives: [missing.gate, wrong.gate],
+          };
+          const path = 'hp-recovery-command-edges.json';
+          const receipt = await writeProductionAuditArtifact(task.meta, path, payload);
+          const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path));
+          expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
+            receipt.expectedBytes,
+            receipt.expectedSha256,
+          ]);
+          expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+          expect(
+            evidence.rows.some((row) => row.requestIndex === 0 && row.transaction === 'rejected'),
+          ).toBe(true);
+          expect(
+            evidence.rows.some(
+              (row) => row.requestIndex === requests.length - 1 && row.transaction === 'committed',
+            ),
+          ).toBe(true);
+        }
+        const execution = resolveScenarioPreparationOutcome(repaired, consumed.master);
+        expect(
+          execution.status,
+          JSON.stringify(execution.status === 'rejected' ? execution.rejection : execution.status),
+        ).toBe('executable');
+        if (execution.status === 'executable')
+          expect(execution.formExecution.state.hp?.actors.attacker).toMatchObject({
+            current: present ? 6800 : 6500,
+          });
+        const request = createCalculatorPortableRequest(
           repaired,
-          consumed.master,
-          { kind: 'calculator' },
-          {},
-          true,
+          currentCalculationVersionContext(consumed.master),
         );
-        const originalCalculation = evaluatePreparedCalculationScenario(
-          originalPrepared,
-          consumed.versions,
-        );
-        const repairedCalculation = evaluatePreparedCalculationScenario(
-          repairedPrepared,
-          consumed.versions,
-        );
-        const evidence = reconcileHpOperationEvidence(hpProofCoverageInventory(consumed.master), [
-          { prepared: originalPrepared, calculation: originalCalculation },
-          { prepared: repairedPrepared, calculation: repairedCalculation },
-        ]);
-        expect(evidence.gate.failures).toEqual([]);
-        expect(
-          evidence.rows.some((row) => row.requestIndex === 0 && row.transaction === 'rejected'),
-        ).toBe(true);
-        expect(
-          evidence.rows.some((row) => row.requestIndex === 1 && row.transaction === 'committed'),
-        ).toBe(true);
+        expect(executePortableCalculation(request, consumed.master).status).toBe('executed');
       }
-      const execution = resolveScenarioPreparationOutcome(repaired, consumed.master);
-      expect(
-        execution.status,
-        JSON.stringify(execution.status === 'rejected' ? execution.rejection : execution.status),
-      ).toBe('executable');
-      if (execution.status === 'executable')
-        expect(execution.formExecution.state.hp?.actors.attacker).toMatchObject({
-          current: present ? 6800 : 6500,
-        });
-      const request = createCalculatorPortableRequest(
-        repaired,
-        currentCalculationVersionContext(consumed.master),
-      );
-      expect(executePortableCalculation(request, consumed.master).status).toBe('executed');
-    }
-  });
+    },
+  );
   it('binds a party HP condition to each recipient', () => {
     const conditional = effect('party-heal', [{ ...gain(1000), recipient: 'partyMember' }]);
     conditional.requirement = {

@@ -28468,6 +28468,46 @@
       "currentProductCommit": "6c2add54623f134e4d352c0db97730958a7d2e2d"
     }
   },
+  "commandEdgeSessionCheckpoint": {
+    "status": "product_incomplete_direct_audit_edge_closed",
+    "startHead": "8e3bef39f0ddb5d9dbc12125b84c079b2d1c6bf8",
+    "sourceIdentity": [
+      { "path": "packages/calculation-application/src/productionHpOperationEvidence.ts", "bytes": 25229, "sha256": "be47db2796316cd27e572cda21fbf4ae5cab8fccf475864f103c8542576e9f74" },
+      { "path": "packages/calculation-application/src/hpExecution.test.ts", "bytes": 59709, "sha256": "d4edf1ca7c3dd690650c389c35428871a4f99753049746056d4981c50643f217" }
+    ],
+    "reusedIdentity": "hpOperationModelCheckpoint source7/published master1/manifests2/operation artifact1 disk bytes/SHA 11/11; postHpOperationClosureSession.resultCheckpoint source1/manifests2/complete diagnostics8 disk bytes/SHA 11/11. Existing 80-condition matrix/eligibility and partial-commit artifact were not regenerated.",
+    "directGapClosed": "The common HP gate accepts audit-only ordered input-command edges. It checks distinct ordered evaluated requests, predecessor inputRequired and required canonical definition/value, same master/policy/preparation, and exact applyCanonicalInputCommand scenario transformation. A repairAttempt request without an incoming edge fails with typed inputCommandEdgeMismatch and canonical first difference. It does not reexecute damage or require a read after rejected/invalid preparation.",
+    "localFalsifier": "One schema-legal two-command recovery has three evaluated requests, status rejected/inputRequired -> rejected/inputRequired -> executable/calculated, two ordered edges, six HP operation rows, three modifier reads and zero positive gate failures. Missing final edge and wrong first command both yield inputCommandEdgeMismatch and firstDifference. The original and intermediate request have orderedScenario null; no downstream read is inferred or required for them.",
+    "legacyClassification": [
+      { "definition": "audit-oc-planning-baseline.mjs", "caller": "historical evidence command", "population": "four raw exports and published master", "uniqueAssertion": "raw function metadata joins published OC/rate/writer partitions", "disposition": "retain: no equivalent current canonical-only scan" },
+      { "definition": "audit-oc-normalized-master.ts", "caller": "historical raw-normalization evidence command", "population": "raw OC 167 occurrences and 632 cells", "uniqueAssertion": "raw numeric, turns and uses equality", "disposition": "retain: no equivalent raw-cell assertion" },
+      { "definition": "audit-oc-normalization.mjs", "caller": "historical normalization evidence command consuming planning baseline inventory", "population": "normalized snapshot plus baseline inventory", "uniqueAssertion": "published normalized cells and writer join", "disposition": "retain: distinct public join" },
+      { "definition": "resourceProductionAudit.ts and ocProductionAudit.ts", "caller": "data-pipeline productionAudit.ts", "population": "already parsed published master canonical occurrences", "uniqueAssertion": "current resource/OC inventory and digest", "disposition": "retain current owner" },
+      { "definition": "application productionMasterInventory, productionExecutionParity and productionMasterControlAudit loaders", "caller": "their respective test files", "population": "one parsed published master per test-file owner", "uniqueAssertion": "inventory, parity and control are distinct", "disposition": "retain; old 13 repeated reads/projections removed in e081002 via createSuiteAuditInput" },
+      { "definition": "productionClosureAudit.ts candidateInventory", "caller": "calculateRankingPolicy", "population": "actual ranking policy calculation", "uniqueAssertion": "observed candidate count and upper bounds", "disposition": "retain: not a separate expectation list" },
+      { "definition": "audit-tsk00-baseline.mjs", "caller": "pinned TSK-00 historical baseline", "population": "historical raw baseline", "uniqueAssertion": "historical inventory", "disposition": "retain outside current runtime producer" }
+    ],
+    "artifactComparison": {
+      "oldHpManifest": ".test-results/2026-09-28T12-35-38-891Z-15-72db5b/manifest.json",
+      "newAuditManifest": { "path": ".test-results/2026-09-28T15-28-31-785Z-15-668847/manifest.json", "bytes": 6502, "sha256": "f58cb7e59ff1c12de2decd22278bc45ffb3019de52e5d374ab02e00138f4a964" },
+      "auditCommon": "21 common files; 19 exact bytes/SHA and therefore complete decoded values/order/counts equal; only run-specific stdout.log and vitest.json differ. Original production-hp-operation-evidence.json remains 3745246 bytes SHA-256 9a80a78a9f8452c09ef2165b5b2e49ec7fbd8c21c1f9257bc44c791e24b20390.",
+      "auditReceipts": "old 21/21 and final-source new 21/21 match disk bytes/SHA; both artifactVerification.errors empty",
+      "oldUnitManifest": ".test-results/2026-09-28T15-17-32-812Z-15-677f69/manifest.json",
+      "newUnitManifest": { "path": ".test-results/2026-09-28T15-28-18-425Z-15-c661e7/manifest.json", "bytes": 3324, "sha256": "4cf5055ab4826b41aaf3d21c6b7512ed4f83db56c3b9f6da5813556b2b4f44e8" },
+      "unitCommon": "6 common files; 4 exact bytes/SHA and complete decoded values/order/counts equal; only run-specific stdout.log and vitest.json differ",
+      "unitReceipts": "old 6/6 and new 7/7 match disk bytes/SHA; both artifactVerification.errors empty",
+      "newCompleteArtifact": { "path": ".test-results/2026-09-28T15-28-18-425Z-15-c661e7/hp-recovery-command-edges.json", "bytes": 16325, "sha256": "14d39591973b3c184d91e74ef6c479025cc9a49887feab2b86c1ad9f60a00d50", "decoded": "requests3 in source order; inputCommandEdges2 in command order; operation rows6; modifier reads3; candidate reads0; positive failures0; negative reasons2 both inputCommandEdgeMismatch with first differences" }
+    },
+    "verification": "At final source: focused hpExecution.test.ts 22/22, filtered audit owner 10/10, typecheck and targeted eslint passed, warnings0. An earlier pre-lint audit call forwarded -- and ran all five audit files 87/87; it is not final-source evidence. A first diagnostic attempt named an audit-only file under unit/production and found no tests; not a product test failure. No source hot path/capture/compute change, so no one-run performance diagnosis. No formal three-run performance or final quality because Deferred remains.",
+    "closureReconciliation": {
+      "checklist": "1 established; 2-3 scoped command-edge proof added but six-class same-final-identity ratchet/receipts remain open; 4 retains unique raw evidence and final obsolete-category judgment remains open",
+      "doneGate": "Scoped HP transaction and first-difference proof improved; whole damage, digest first difference, bounded/full output, final inventory/parity/fail-closed acceptance remains open",
+      "contracts": "TS-AUDIT-001 scoped registered audit passed but final impact audit open; TS-OUT-001/TS-ART-001 scoped complete artifact/receipts pass but integrated six-class output open; RK-AUDIT-001 full final matrix/parity open; RK-PERF-001/TS-PERF-002 formal before/after three runs open; DX-HANDOFF-001 final quality open",
+      "inputLifecycle": ["1 existing input gate reused", "2 existing 486-source/7470-cell inventory reused", "3 completed mutation slices retained at matching identity", "4 original operation joins retained; selected-unreached common-gate connection open", "5 six-class integrated ratchet open", "6 legacy obsolete-category judgment open", "7 formal performance/final quality/integrated acceptance open", "8 two-command recovery link proven locally; full native/recovery consumer dispositions open"]
+    },
+    "stopBoundary": "Selected-unreached and noDownstreamConsumer versus consumerNotReached require joining original ordered consumer plan and native owner capture in the application audit producer; existing local fixtures alone do not prove that common-gate path. Production supportProjection has five requests with no repairAttempt for this input and no command-edge ledger; the final scenario is not a lineage proof. Raw OC scripts retain unique data-pipeline coverage, so literal checklist4 deletion cannot be claimed. These are independent owner work; do not start formal performance/quality or TSK-09.",
+    "nextLimitedOperation": "At application audit producer, capture each actual repair command with its immediately evaluated predecessor/successor (including intermediate inputRequired), then connect one selected-unreached schema-legal prepared request and an executable ordered-plan no-consumer/consumer-not-reached pair to the common gate. Keep rejected/invalid requests terminal for read obligations. Data-pipeline owner separately decides whether any legacy definition is truly obsolete without deleting unique raw cells. Reconcile all TSK-08 obligations at one final identity before formal gates."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
