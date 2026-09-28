@@ -28564,6 +28564,35 @@
     },
     "nextLimitedOperation": "At original application/native capture owner, connect one schema-legal selected-unreached and one executable ordered-plan consumer-not-reached original request to the existing binding/operation gate; distinguish an observed event without read from absent event, then reconcile all reader classes. Data-pipeline owner separately determines exact obsolete definitions without dropping raw assertions. Keep rejected/invalid noOrderedPlan terminal for read obligations. Do not start dependent quality/formal performance/TSK-09 while TSK-08 Deferred/Blocking remains. Local scoped commit only, no push."
   },
+  "postCommandConsumerStepRecheck": {
+    "status": "documentation_checkpoint_product_incomplete",
+    "recheckedHead": "5476a27e0ab785e7cb6f5f25b246f384c5dc1fcc",
+    "worktreeAtStart": "index, tracked and untracked clean",
+    "steps": {
+      "established": [
+        0,
+        1,
+        3
+      ],
+      "open": 2,
+      "tsk08": "in_progress",
+      "tsk091And09": "blocked"
+    },
+    "identityCheck": "postCommandConsumerSessionCheckpoint source/master/manifests/full artifacts: 10/10 disk bytes and SHA-256 match; audit receipts 21/21 and unit receipts 7/7 match; manifest verification errors 0. Reuse only at matching source/input/artifact identity.",
+    "currentCodePath": "productionMasterControlAudit.test.ts support projection records each actual input command and immediately evaluated before/after request; productionHpOperationEvidence.ts checks those edges. productionHpPublishedDependencyCoverage.ts joins executable ordered plan, canonical consumer binding, selected cell, operation reachability and physical reads. The five production support requests contain no repairAttempt/command edge. Original production 3186 requests include 64 ordered plans, 3122 noDownstreamConsumer, 126 physical reads, 144 cellNotSelected, and zero selectedUnreached/consumerNotReached. Zero observed rows do not prove native/recovery cases.",
+    "nextOneSessionUnit": "From current original application request and native capture, determine and if representable connect one schema-legal selected-unreached and one executable ordered-plan consumer-not-reached counterexample to existing operation/binding typed gate and complete artifact/receipt. Reuse existing no-consumer, physical-read, two-command/three-request repair proof and partial-commit artifact. Rejected/invalid noOrderedPlan requests have no downstream read obligation. Reconcile six failure classes and legacy definitions/callers/input populations/unique assertions before claiming closure.",
+    "firstDeliverable": "Present current-code implementation plan with owner, representative counterexamples, affected suites, complete decoded old/new values/order/count and disk bytes/SHA-256/all receipt comparison, performance impact, closure mapping and stop boundary; wait for user confirmation. Until then read only HEAD/index/diffs/untracked, code, canonical documents and existing artifacts/checksums. After approval complete the same bounded unit through validation, documentation and scoped local commit without routine reapproval.",
+    "closureMapping": {
+      "checklist1AndLifecycle1to3": "Established single producer and shared inventory/input/completed mutation proof; reuse at matching identity.",
+      "checklist2And3Lifecycle4And5And8": "Local command/consumer gates established; selected-unreached, consumer-not-reached, native/recovery and six-class integrated original-to-typed-reason/identity/first-difference/bounded-summary/full-artifact/all-receipt reachability open.",
+      "checklist4AndLifecycle6": "Old 13 repeated master reads removed by e081002. Raw OC baseline/normalized-master/normalization retain unique raw cell and published join assertions; classify exact obsolete definitions by caller and input before any deletion.",
+      "doneGateAndContracts": "Final full inventory, damage/parity/fail-closed, canonical digest first difference, bounded/full outputs and integrated receipt identity open for TS-AUDIT-001, RK-AUDIT-001, TS-OUT-001, TS-ART-001.",
+      "performanceQualityLifecycle7": "RK-PERF-001 and TS-PERF-002 Apply formal before/after three runs, DX-HANDOFF-001 README final quality and integrated counter/digest/receipts open."
+    },
+    "performanceAndStop": "One baseline/candidate diagnostic run with same input, CPU affinity 0-7, production4/unit4/audit1 workers and budget only if calculation structure, capture or product hot path changes; it does not replace formal Apply three-run gate. Preserve first control test 60s and verifyDepsBeforeRun:error; no shim. If independent native/recovery, new game semantics, another family or retained unique raw coverage needs its own owner, record evidence/unmet conditions/next action and stop product-incomplete. Proceed to affected audits, formal performance, README final quality and TSK-08 completion only when Deferred/Blocking are zero and all checklist/Done/Contract/lifecycle8 evidence can share final source/input/artifact identity. No unexplained eight-shard regeneration, dependent quality, TSK-09 work or push.",
+    "verificationThisSession": "Read-only current Step/source and historical artifact/checksum reconciliation; no source test, producer, audit, quality or live measurement. Documentation-only integrity validation follows this record.",
+    "timebox": "Checkpoint existing Task/evidence by 60 minutes; finish current atomic action and hand off by 90 minutes."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -28572,7 +28601,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postCommandConsumerSessionCheckpoint. Step2/TSK-08 remains in_progress: original selected-unreached and consumer-not-reached native request paths, six-class integrated reachability, exact obsolete legacy disposition and final Apply gates remain open. Plan a bounded original-owner path from current code; reuse matching matrix/eligibility, HP proof, command-edge and partial-commit artifacts. Do not infer no consumer from rejected/invalid noOrderedPlan, regenerate eight shards without identity doubt, or begin dependent quality/TSK-09.",
+    "nextSession": "Follow postCommandConsumerStepRecheck. First present a current-code one-session plan and wait for confirmation; then pursue the bounded original native selected-unreached/consumer-not-reached connection and six-class/legacy reconciliation. Step2/TSK-08 remains in_progress; completion only at one final identity with Deferred/Blocking zero. No dependent quality, TSK-09 or push while obligations remain.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
