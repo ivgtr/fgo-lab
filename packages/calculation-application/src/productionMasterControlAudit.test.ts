@@ -222,6 +222,15 @@ function loadProductionMaster() {
 
 const scalarQuantityObservations: ScalarQuantitySource[] = [];
 const hpPublishedDependencyRequests: HpPublishedDependencyRequest[] = [];
+let hpPreparationArtifactPayloads:
+  | {
+      preparation: ReturnType<typeof auditPublishedHpPreparation>;
+      attempt: {
+        gate: ReturnType<typeof auditPublishedHpPreparationAttempts>;
+        proofs: ReturnType<typeof hpPreparationAttemptDiagnostic>[];
+      };
+    }
+  | undefined;
 const hpRequests: {
   prepared: ReturnType<typeof prepareCalculationScenarioWithPolicy>;
   calculation: ReturnType<typeof evaluatePreparedCalculationScenario>;
@@ -611,12 +620,11 @@ describe('production master inventory ratchet', () => {
         'production-preparation-bp-attempt.json',
         'production-preparation-bp-capacity.json',
         'production-preparation-bp-capacity-attempt.json',
-        'production-preparation-hp.json',
-        'production-preparation-hp-attempt.json',
         'production-hp-published-dependency.json',
       ]),
     },
     async ({ task }) => {
+      hpPreparationArtifactPayloads = undefined;
       const master = await loadProductionMaster();
       const versions: VersionContext = {
         schemaVersion: SCHEMA_VERSION,
@@ -1665,18 +1673,6 @@ describe('production master inventory ratchet', () => {
         hpPrograms,
         hpObservations,
       );
-      await writeProductionAuditArtifact(
-        task.meta,
-        'production-preparation-hp.json',
-        encodeProductionAuditDiagnostic(hpGate),
-      );
-      const savedHpGate = decodeProductionAuditArtifact(
-        await readFile(
-          resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-preparation-hp.json'),
-        ),
-      ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
-      expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(savedHpGate), hpGate)).toBe(true);
-
       const hpAttemptGate = auditPublishedHpPreparationAttempts(
         master,
         hpRequests,
@@ -1688,19 +1684,7 @@ describe('production master inventory ratchet', () => {
         gate: hpAttemptGate,
         proofs: hpAttemptObservations.map(hpPreparationAttemptDiagnostic),
       };
-      await writeProductionAuditArtifact(
-        task.meta,
-        'production-preparation-hp-attempt.json',
-        encodeProductionAuditDiagnostic(hpAttemptDiagnostic),
-      );
-      const savedHpAttempt = decodeProductionAuditArtifact(
-        await readFile(
-          resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-preparation-hp-attempt.json'),
-        ),
-      ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
-      expect(
-        isDeepStrictEqual(decodeProductionAuditDiagnostic(savedHpAttempt), hpAttemptDiagnostic),
-      ).toBe(true);
+      hpPreparationArtifactPayloads = { preparation: hpGate, attempt: hpAttemptDiagnostic };
       expect(hpAttemptGate.status, JSON.stringify(hpAttemptGate.firstDifference)).toBe('passed');
 
       const userControlGate = auditProductionUserControlObservations({
@@ -1892,6 +1876,39 @@ describe('production master inventory ratchet', () => {
           explanation: { code: 'unresolved' },
         },
       );
+    },
+  );
+
+  it(
+    'persists the original control HP preparation diagnostics with complete receipts',
+    {
+      timeout: 60_000,
+      ...productionAuditTestOptions([
+        'production-preparation-hp.json',
+        'production-preparation-hp-attempt.json',
+      ]),
+    },
+    async ({ task }) => {
+      const payloads = hpPreparationArtifactPayloads;
+      if (!payloads) throw new TypeError('production_control_hp_artifact_payloads_missing');
+      for (const [path, payload] of [
+        ['production-preparation-hp.json', payloads.preparation],
+        ['production-preparation-hp-attempt.json', payloads.attempt],
+      ] as const) {
+        const receipt = await writeProductionAuditArtifact(
+          task.meta,
+          path,
+          encodeProductionAuditDiagnostic(payload),
+        );
+        const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path));
+        expect(bytes.length).toBe(receipt.expectedBytes);
+        expect(createHash('sha256').update(bytes).digest('hex')).toBe(receipt.expectedSha256);
+        const saved = decodeProductionAuditArtifact(bytes) as ReturnType<
+          typeof encodeProductionAuditDiagnostic
+        >;
+        expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(saved), payload)).toBe(true);
+      }
+      hpPreparationArtifactPayloads = undefined;
     },
   );
 

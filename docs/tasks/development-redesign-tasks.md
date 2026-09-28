@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.122"
+document_version: "1.7.123"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-28"
@@ -4027,3 +4027,11 @@ TSK-08 checklistの全ratchet・typed diagnostics／完全artifact到達・legac
 次の1セッションは、まず現コードからTSK-08 checklist／Done gate／Contract closure matrixと入力lifecycle8義務を有効証拠・未達・直接ownerへ対応付け、control auditのtimeoutと現source全sidecar欠落を解く限定計画を利用者へ示して確認を待つ。確認前は読込・identity照合のみ。確認後は同じaudit／artifact生成・利用経路に限って必要な診断、原因修正、局所反証、影響suite、旧新完全artifact比較と全receipt照合、既存正本更新、local commitまで進める。CE・別のHP owner・native／recovery・legacy整理を連鎖実装せず、独立ownerの不足は次の限定操作として記録する。全義務が有効証拠で閉じ対象内Blockingが0、時間が残る場合だけ正式性能・最終quality・統合照合に進みTSK-08完了を目指す。未達なら依存qualityを始めず製品未完了checkpointとする。60分で既存正本へcheckpoint、90分でatomic actionを終えて引き継ぐ。次sessionの正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `handoffPreparation.nextSession.tsk08ClosureReconciliationSession`。pushしない。
 
 pnpmの反復SQLite障害はテストの問題ではない。既存`node_modules`の設定不一致と現行lockfileとの差分が自動`pnpm install`を誘発し、制限環境の外部storeで失敗していた。`pnpm-workspace.yaml`で依存不一致を明示的なerrorにし、[README](../../README.md)の書き込み可能なstoreを使う同期手順へ移した。既知のSQLite失敗を毎session再現せず、shimで依存不一致を隠さない。詳細は上記handoffの`runnerPreparation`を参照する。
+
+### TSK-08 control audit timeout・現source完全artifact限定checkpoint（2026-09-28）
+
+開始HEAD `2a03c0f6d0c017f859b8e2915c17502063b359b2`はcleanで、support checkpointのsource7／input1／artifact4と旧control artifactはbytes／SHA一致。計画を利用者へ提示し`OK`を受けた。診断中に別sessionのpnpm整備commit `bbd06994cb2cf6680097188c6ebfea2ac1bf8d33`がHEADへ加わったため、今回のtest source差分だけを扱う。第1 testの約60秒の内、元control request／HP coverageは約20秒、二つの完全HP diagnosticのencode・書込・再読込が約24秒と判明した。control gate本体は約0.6秒。timeoutを緩めず、第1 testで作った同じHP gate値を直後のartifact testが借り、二つの完全artifactを既存writerで書き、decode・bytes／SHA receiptを照合する構造へ分けた。元requestの再実行、新しい期待値生成器、製品hot path変更はない。
+
+現source・同masterで影響audit fileは8/8成功、第1 test32.206秒、artifact test22.614秒、warning0、manifest artifact error0。全14宣言／receiptが一意でdisk bytes／SHAと一致した。missing／duplicate／unmatched、参照・順序、typed first difference、HP非commit拒否の既存局所fixture3 fileも80/80成功。旧新control sidecarはrequest3182／binding488／unobserved5、順序、gate failure0／first difference nullが一致。新しい`actualValueRead`未観測stage71件だけを除けば完全decoded envelopeは一致し、他の共通production artifact12件はbytesも一致する。`tsc -b`、対象ESLint／Prettier、差分checkが成功。artifactとchecksum、TSK-08 checklist／Done gate／Contract closure matrix・入力lifecycle8義務の分類は[evidence](../evidence/tsk-08-parity-ratchet.json) `boundedUnits[52].controlAuditArtifactCheckpoint`を正本とする。
+
+この限定経路のBlockingは0だが、CE craftEssence owner、別HP action／lifetime／recipientとnative／recovery、全ratchet・typed failure到達、legacy固有coverage、正式前後各3run性能、README最終quality、統合counter／digest／全receiptは未達または未照合。Step 0／1／3は成立、Step 2とTSK-08は`in_progress`、TSK-09.1／09は`blocked`。依存quality／製品closureは開始しない。次は別ownerまたは未達義務を一単位として選ぶ。今回の成果は対象限定local checkpoint commitとし、pushしない。

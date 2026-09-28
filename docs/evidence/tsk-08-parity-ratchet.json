@@ -23551,6 +23551,78 @@
         "closureDecision": "This ten-cell support unit has five original-request physical HP reads and committed modifier consumptions for one selected level-10 cell, plus 45 normal other-cell nonselections. Scoped Blocking0; Step2 and TSK-08 remain in_progress because other owner/native/recovery, full audit, ratchets, legacy, formal performance and final quality are not closed. TSK-09.1/09 stay blocked. No dependent quality or product closure run.",
         "nextLimitedOperation": "Reconcile the remaining HP proof owners and native/recovery gaps against the existing checklist, starting with CE condition craftEssence owner as a separate bounded unit; independently resolve the first control audit 60s runtime without relaxing the limit before full closure. Do not automatically regenerate Step3 shards or rerun completed units.",
         "recordCommitPolicy": "Commit this product-incomplete checkpoint locally with only target code/Task/evidence/registry files; no push."
+      },
+      "controlAuditArtifactCheckpoint": {
+        "status": "product_incomplete; current-source control audit and all test-owned artifacts verified",
+        "preparationHead": "2a03c0f6d0c017f859b8e2915c17502063b359b2",
+        "concurrentHeadAtVerification": "bbd06994cb2cf6680097188c6ebfea2ac1bf8d33",
+        "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "sourceIdentity": {
+          "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+          "bytes": 107095,
+          "sha256": "4171ed03e6e6d268c240fcb9d79a934c7ce790477dfca66685c5e8e75fde6d46"
+        },
+        "inputIdentity": {
+          "path": "apps/web/public/master/master.json",
+          "bytes": 32953998,
+          "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+        },
+        "diagnosis": "Same first test under unchanged 60000ms: master/default/control production and HP coverage reached about 20s. The two complete HP diagnostic graphs spent about 7.8s and 7.1s encoding, 1.9s and 2.1s writing, 2.5s and 2.7s read/decode; HP gates also took about 2.6s and 5.2s. The user-control gate itself took about 0.6s. Instrumentation was removed. Prior success/timeout differences are not attributed to one source change. No timeout, population or assertion was relaxed.",
+        "change": "The first original-control test retains the same requests, captures, gates and seven own artifacts. A directly following test borrows its two immutable HP diagnostic payloads, writes the same lossless artifacts, checks disk bytes/SHA receipts and decodes the complete values; missing first-test payload throws. No replay, new expected-value generator, product hot-path or semantic producer was added.",
+        "verification": {
+          "fullAffectedAudit": "One file, 8/8 passed, warning0, artifact errors0; first test 32.206s and new artifact test 22.614s, both under 60000ms. The two-test filtered run 2/2 passed but runner contract_failure from six intentional skips is not used as full-audit success.",
+          "manifest": {
+            "path": ".test-results/2026-09-28T09-53-29-188Z-2-fbe8ef/manifest.json",
+            "bytes": 6056,
+            "sha256": "43602b329b90978971c09c8ff68541a4f954873efbdd73c6096e8a6dd6f0ea6e"
+          },
+          "sidecar": {
+            "path": ".test-results/2026-09-28T09-53-29-188Z-2-fbe8ef/production-hp-published-dependency.json",
+            "bytes": 13253020,
+            "sha256": "14b3b9d8a6e1176973fda896056561947eb1868539e4868ab04b126a10a4a855"
+          },
+          "completeComparison": "Old retained control sidecar 2026-09-28T04-06-42-694Z-3-38f9dd: 3182 requests, 71 declarations, 488 bindings, 5 unobserved, gate passed/failures[]/firstDifference null. New has identical ordered requests/bindings/unobserved/gate; removing only 71 newly defined unobserved actualValueRead stages makes the entire decoded envelope equal. All 12 other shared production artifacts are byte identical old/new, including 44,131,692-byte HP and 57,702,239-byte HP attempt artifacts. The support artifact retains its previously verified 182,616-byte/SHA identity.",
+          "receipts": "Full run: seven artifact-owning tests, 14 unique declared artifacts, 14/14 receipt paths/bytes/SHA matched disk, manifest artifactVerification.errors[]. The split test owns exactly the two HP diagnostic receipts.",
+          "localFalsifiers": "Affected unit fixture files productionHpPublishedDependencyCoverage.test.ts, productionAuditArtifacts.test.ts and productionHpPreparationAttemptAudit.test.ts passed 80/80 with artifact errors0. They exercise missing/duplicate/unmatched bindings, foreign identity/reference, order mismatch, typed reason/firstDifference, receipt publication and HP noncommit rejection. Manifest .test-results/2026-09-28T10-00-54-661Z-2-9b0842/manifest.json is 18129 bytes/SHA-256 f132011d5a20ba5b76c50ab6c272e8365616500f4281e86ba03dbbdb1d62006f. This is scoped proof, not whole ratchet closure.",
+          "static": "tsc -b, target ESLint zero warnings, target Prettier check, git diff --check passed.",
+          "runnerQualification": "The first attempted pnpm diagnostic failed before tests at external SQLite store. The user-specified /tmp/tsk08-tools/pnpm shim was checked as 730 bytes/SHA-256 7c1d6756373db5629a714855d6a756c5c58cb0ec799c926b17248292f4d78af6 and used only through the same generic runner. Concurrent commit bbd06994 changed pnpm workspace/lockfile and records dependency synchronization separately; this audit result is tied to the manifest source/input and installed dependencies, not a final README quality gate."
+        },
+        "closureReconciliation": {
+          "checklist": [
+            "Sole TSK-06.5 inventory/digest producer retained; this test-owner change adds no semantic producer.",
+            "Whole parity/unsupported/invalid/partial-commit/inert-control/stale-mutation ratchets remain unverified.",
+            "Current-source control sidecar and 14/14 receipts are now reached; all typed failure paths and bounded massive-failure completeness remain unverified.",
+            "Legacy aggregate/loader/scan/candidate-list/duplicate-fixture unique coverage and removal remain open."
+          ],
+          "doneGate": [
+            "Current control artifacts preserve observed inputs/ordered bindings; all damage differences are not explained.",
+            "Current sidecar firstDifference null; global digest mismatch to first canonical difference remains unverified.",
+            "Current complete artifacts and receipts pass; massive failure bound/completeness remains open.",
+            "Affected audit passes; full inventory/calculator-ranking/fail-closed final gate remains open.",
+            "TSK-06.5 remains sole semantic producer; candidates and damage semantics were not regenerated."
+          ],
+          "contractMatrix": {
+            "TS-AUDIT-001": "Affected control audit 8/8 passed; wider required production audit remains a final gate.",
+            "TS-OUT-001": "Retained focused typed failure fixtures; whole intentional-failure reachability remains open.",
+            "TS-ART-001": "Current control sidecar and 14/14 receipts pass; massive-failure path remains open.",
+            "RK-AUDIT-001": "Step3 eight shards reused at established identity; integrated full policy/parity/fail-closed remains open.",
+            "RK-PERF-001": "Formal before/after ranking three runs not performed.",
+            "TS-PERF-002": "Formal before/after production gate three runs not performed; test-only split did not alter product hot path.",
+            "DX-HANDOFF-001": "Current checkpoint recorded; README final quality withheld while product gaps remain."
+          },
+          "inputLifecycleEight": [
+            "1: Original request lifecycle and current-source complete control sidecar now connected.",
+            "2: HP primitive inventory and 557 declarations retained; full selected/read/state-transition coverage remains open.",
+            "3: Completed fixed/maximumFixed/receive and units0..51 retained only at valid identities.",
+            "4: Support selected cell five reads/commits retained; other HP owners, lifetimes, recipients, native/recovery remain open.",
+            "5: Current scoped typed gate/artifact passes; whole ratchet and diagnostic reachability remain open.",
+            "6: Legacy unique-coverage reconciliation and cleanup remain open.",
+            "7: Formal performance, README final quality, integrated counter/digest/all receipts remain open.",
+            "8: CE craftEssence owner and other families remain separate; nonselection/notApplicable/unobserved are not reads."
+          ]
+        },
+        "closureDecision": "Step0/1/3 established; Step2 and TSK-08 in_progress, TSK-09.1/09 blocked. The timeout/current-source control artifact obligation is closed locally, but distinct CE/other HP native/recovery, whole ratchets/diagnostics, legacy, formal performance, final quality and integrated evidence prohibit TSK-08 completion. Do not start dependent quality or another owner in this unit. No push.",
+        "nextLimitedOperation": "Reconcile one separate owner/path at a time, starting with the CE craftEssence condition owner or another explicitly selected HP native/recovery gap; preserve existing shared inventory, request ledger, typed gate and manifest. Before final closure, independently settle whole ratchets/legacy and required formal/quality/integrated gates."
       }
     }
   ],
@@ -26697,7 +26769,8 @@
         "resultReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint"
       },
       "tsk08ClosureReconciliationSession": {
-        "status": "prepared_docs_only; current-code plan and user confirmation required before diagnosis, source tests or implementation",
+        "status": "executed; current-source control audit/artifact path closed locally; TSK-08 product incomplete",
+        "resultReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
         "runnerPreparation": "2026-09-28 pnpm11 diagnosis and repair: installed workspace state had enableGlobalVirtualStore=false while the run setting differed; installed and wanted lockfiles differed, and the wanted lockfile failed frozen install against calculation-application/package.json. Default verify-deps-before-run=install then tried an install before tests and failed at the external SQLite store. pnpm-workspace.yaml now sets enableGlobalVirtualStore=false and verifyDepsBeforeRun=error; the lockfile importer was corrected and pnpm install --offline --store-dir=/tmp/tsk08-pnpm-store synchronized existing node_modules. Ordinary pnpm exec and test:docs succeeded. Do not repeat the known SQLite failure or use the shim to hide dependency drift. Older fallback instructions are historical. On a future dependency change use pnpm install with a writable store as in README, review the lockfile diff, then use ordinary pnpm. Recheck only when node_modules, lockfile or pnpm configuration changes.",
         "preparationHead": "4bfb4cd08c4aad05c7081af6b6e1f547231370a8",
         "productBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
@@ -27681,11 +27754,11 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Next one-session scope is TSK-08 obligation/owner reconciliation plus the current-source control audit timeout and complete-sidecar path, beginning with a current-code plan for user confirmation. Distinct CE/native/recovery/legacy owners remain explicit unmet conditions; no automatic TSK-08 closure. See handoffPreparation.nextSession.tsk08ClosureReconciliationSession.",
+    "nextSession": "The current-source control audit timeout and complete-sidecar path are locally closed by boundedUnits[52].controlAuditArtifactCheckpoint. Next bounded work belongs to a separate CE/HP native/recovery owner or remaining whole ratchet/legacy obligation; formal performance, README quality and integrated closure wait for all Blocking to clear. TSK-08 remains in_progress and TSK-09.1/09 blocked.",
     "laterTsk08": [
       {
         "work": "Mutation family and path coverage reconciliation",
-        "detail": "HP canonical writer486/7470 and 54 groups, explicit HP dependency557, transfer2 and schema-legal fixedSelf3 are retained. Original control3182 requests/488 bindings precede support. NP and OC selection proof remains scoped. Support value-expression ten cells have five original-request actual HP read and committed consumption events on one selected level-10 cell plus45 normal nonselections; preparation native0/notApplicable is separate. CE condition one cell is a craftEssence owner. Whole native/recovery/other-owner, first audit timeout, ratchets, legacy, formal performance and final quality remain open; see boundedUnits[52].hpPublishedSupportValueReadCheckpoint."
+        "detail": "HP canonical writer486/7470 and 54 groups, explicit HP dependency557, transfer2 and schema-legal fixedSelf3 are retained. Current-source control3182 requests/488 bindings and complete sidecar/14 receipts pass after the 60s test-owner split; this does not broaden support read coverage. NP and OC selection proof remains scoped. Support ten cells have five original-request actual HP read and committed consumption events on one selected level-10 cell plus45 normal nonselections; preparation native0/notApplicable is separate. CE condition one cell is a craftEssence owner. Whole native/recovery/other-owner, ratchets, legacy, formal performance and final quality remain open; see boundedUnits[52].controlAuditArtifactCheckpoint."
       },
       {
         "work": "Whole ratchet and diagnostic/artifact closure",
@@ -27727,6 +27800,7 @@
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
     "nextSessionReference": "handoffPreparation.nextSession.tsk08ClosureReconciliationSession",
+    "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
     "capacityAttemptMaterializationCheckpointCommit": "f375eea18ed2184de2943f7303ada777dfc44f71",
     "asOfInputLifecycleBaseline": "4059f552f70936f3b9ba92280f7681683bc7d6c4",
