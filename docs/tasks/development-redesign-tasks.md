@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.142"
+document_version: "1.7.143"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-29"
@@ -4372,3 +4372,11 @@ schema-legalな入れ子の同値別leaf、欠落／入替え／foreign参照／
 | `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／lifecycle⑦ | 正式変更前後各3run性能、README最終quality、統合counter／digestはDeferred。 |
 
 六クラスの現ownerはparityのmatrix gate、unsupported／invalidのfinal outcome、partial commitのtransaction、inert controlの公開control、stale mutationのreceipt／recoveryで維持した。局所artifact成功を六クラス最終ratchetへ読み替えない。公開OC-rate25宣言の選択済み終端NPに合成後続grantを足して未達解消とも扱わない。次は残る七宣言種別のphase別consumerと六クラスの同一最終identity到達を有限表で照合し、別native／recovery経路・固有raw coverageのownerを限定判定する。TSK-08自身のDeferredが残るためStep 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`。正式性能・README最終quality・8 shards再生成・TSK-09系・pushは開始しない。対象限定local checkpoint commitで停止する。
+
+### TSK-08 Step再照合と次作業者への引継ぎ（実装なし、2026-09-29）
+
+開始HEAD `c8f6b61f63a09c6827867adcf37e5023a2eabb00`、index／tracked差分／untrackedはclean。直近`postCandidateLeafIdentityImplementationCheckpoint`の製品source6／公開master1、旧新unit・公開control・単回性能診断manifest6、全receipt 114＋116＋21＋21＋12＋12＝296を現diskのbytes／SHA-256で309／309照合し、不一致0、各manifestの`artifactVerification.errors`は空。Step 0のbaseline／契約、Step 1のV41 marker・V40保持／明示再計算、Step 3の改訂80条件matrix／eligibilityは既存証拠を再利用し、公開master・scenario／portable・production audit・ranking計測script・単独matrix scriptの代表7pathが製品baseline `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`からGit差分なしと確認した。Step 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`。今回producer・source test・audit・live性能・8 shards再生成は実行していない。
+
+次作業者の最初の成果物は**実装ではなく現コードからの一セッション計画**。元application requestから選択、準備／native、ordered plan、候補event、物理read、typed gate、完全artifact／全receiptまで、定義・直接callerと宣言phase別の有限表を照合し、一つの共通ownerの未達遷移を選ぶ。`productionHpOperationEvidence.ts`、`productionHpPublishedDependencyCoverage.ts`と直接callerの`productionMasterControlAudit.test.ts`／`hpExecution.test.ts`は調査入口であり、実装ownerは現コードと反例から再判断する。六失敗クラス、checklist①〜④／Done gate／Contract matrix、入力lifecycle①〜⑧を成立・今回閉じる条件・別owner／Deferredへ対応付ける。schema-legalな正常非選択、選択後未到達、準備拒否、候補abort、物理read／消費、実commandごとの修復edgeを区別し、read欠落だけでconsumerなしとしない。公開OC-rate終端NPの合成後続grantは元request coverageに数えない。
+
+計画には変更境界と影響suite、旧新完全decoded値・順序・件数とdisk bytes／SHA-256・全receipt、性能適用条件、停止境界を含め、利用者に提示して確認を待つ。確認前は読取・既存checksum照合のみ。確認後は承認された同じ限定単位を実装・必要な検証・既存正本更新・対象限定local commitまで進め、通常の技術判断で再承認を求めない。別owner／新ゲーム意味論／別family／固有raw coverageが独立作業なら未達条件と次の限定操作を既存Task／evidenceへ記録し製品未完了checkpointで停止する。TSK-08自身のDeferred／Blockingが0で同一最終source／input／artifact identityの全義務を閉じる見込みと時間がある場合だけ、必要audit、正式各3run性能、README最終quality、統合counter／digest／全receiptへ進む。control第1 testの60秒上限と`verifyDepsBeforeRun: error`を維持し、fallback・ID別runtime分岐・HP action／recipient別selector・別期待値生成器・別audit正本を増やさない。60分で既存正本へcheckpoint、90分でatomic actionを終えて引継ぎ、pushなし。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `postCandidateLeafIdentityStepRecheckHandoff`。

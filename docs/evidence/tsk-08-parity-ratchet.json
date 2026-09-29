@@ -29129,6 +29129,37 @@
     "remainingConditions": "TSK-08 Step2 Deferred remains >0. fixedSelf alone derives expected bindings from observed reads; the published gate independently detects missing selected original candidate reads. Do not infer no consumer from absent read. Distinct native/recovery and unique raw owners need separate bounded operation. No full ratchet, dependent quality, eight shards, TSK-09 or push.",
     "nextLimitedOperation": "Build a finite original request/declaration-phase consumer table for the seven remaining kinds and six classes, using current definitions/direct callers. Link actual repair commands one edge per evaluated request. Choose one common-owner transition gap, falsify with schema-legal nonselection, preparation rejection, candidate abort and recovery; update this Task/evidence and commit only that unit if implementable. Stop at independent data-pipeline/raw or new game-semantics owner."
   },
+  "postCandidateLeafIdentityStepRecheckHandoff": {
+    "date": "2026-09-29",
+    "status": "read_only_step_recheck_for_next_worker",
+    "startHead": "c8f6b61f63a09c6827867adcf37e5023a2eabb00",
+    "worktreeAtStart": "HEAD/index/tracked/untracked clean",
+    "stepDecision": {
+      "0": "established baseline and contracts",
+      "1": "established V41 marker, V40 historical retention and explicit V41 recomputation",
+      "2": "in_progress; TSK-08 in_progress",
+      "3": "established revised 80-condition matrix and eligibility",
+      "dependencies": "TSK-09.1 and TSK-09 blocked"
+    },
+    "identityRecheck": "postCandidateLeafIdentityImplementationCheckpoint product source6 and published master1, old/new unit/control/single-run diagnostic manifests6, and all 114+116+21+21+12+12=296 artifact receipts match current disk bytes and SHA-256: 309/309 records, no mismatch; all six artifactVerification.errors empty. Representative published master, scenario.ts, portableCalculation.ts, application/data-pipeline productionAudit.ts, ranking measurement script and single matrix script: seven paths with no Git diff from product baseline 60dea89944a884bbbe40464eb1ae7e65cb77ad4e. Historical artifacts remain scoped to recorded source/input identities; this read-only check does not establish final TSK-08 acceptance.",
+    "currentCodeResearchEntry": {
+      "definitions": [
+        "packages/calculation-application/src/productionHpOperationEvidence.ts:reconcileHpOperationEvidence",
+        "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts:hpPublishedDependencyBindings/reconcileHpPublishedDependencyCoverage"
+      ],
+      "directCallers": [
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "packages/calculation-application/src/hpExecution.test.ts",
+        "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts"
+      ],
+      "interpretation": "These are read-only entry points, not a selected change owner or implementation shape. Re-evaluate current definitions and all direct callers before selecting one bounded semantic transition."
+    },
+    "obligationStatus": "Checklist1/input lifecycle1-3 and Step0/1/3 established only for matching identity. Candidate equal-leaf proof from c8f6b61 is a closed local unit. Checklist2-3/lifecycle4-5,8 still require native/alternate/recovery consumer union and six-class original-input to typed reason, canonical identity/first difference, bounded summary, complete artifact and every receipt at one final identity. Checklist4/lifecycle6 literal obsolete judgment remains Deferred while retained raw OC 167 occurrence/632 cell and public join have unique assertions; historical 13 repeated master reads removed. Done gate, TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001 final inventory/parity/fail-closed/digest/receipts, RK-PERF-001/TS-PERF-002 formal three separate runs per side, DX-HANDOFF-001/lifecycle7 README final quality remain Deferred.",
+    "firstDeliverable": "Present a current-code implementation plan, not implementation. Make a finite declaration-phase/original-request/consumer table, choose one common-owner transition with schema-legal falsifiers, trace original request through selection, preparation/native, ordered plan, candidate event, physical read, typed gate, complete artifact/all receipts. Map every checklist/Done gate/Contract/lifecycle obligation to established evidence, this unit or separate owner/unmet. Name affected suites, complete decoded old/new values/order/counts and disk bytes/SHA/all receipts comparison, performance condition and stop boundary. Obtain user confirmation before edits, new producer runs or tests.",
+    "afterConfirmation": "Implement and verify only the approved bounded unit, update existing Task/evidence and make a scoped local commit without push. Do not seek repeated approval for routine technical choices. Preserve common HP proof, two unreached original-request classes, three evaluated requests/two actual command edges, preparation condition reads, partial-commit full artifact and 80-condition matrix where identities match. No missing-read to no-consumer inference, synthetic later grant for terminal NP OC-rate, fallback, ID runtime branch, action/recipient selectors, separate expectation generator or audit authority.",
+    "performanceAndStop": "If computation/capture/product hot path changes, same input/CPU affinity0-7/production4 unit4 audit1 workers/same budget baseline and candidate one-run each is diagnostic only; Contract Apply formal before/after three separate runs per side remains open. Keep control first test 60s and verifyDepsBeforeRun:error. If TSK-08 Deferred/Blocking remains, stop at product-incomplete checkpoint without dependent quality, formal performance, unexplained eight-shard regeneration or TSK-09. Only if all TSK-08 obligations can close under one final source/input/artifact identity and time remains, run required affected audit, formal performance, README quality and integrated counter/digest/receipts. Write checkpoint to existing canon by 60min and finish current atomic action/handoff by 90min.",
+    "nextLimitedOperation": "From current definitions/direct callers construct finite seven-declaration phase and six-failure-class consumer table, then select one common-owner transition gap and present the bounded implementation plan for user confirmation. After confirmation finish the same unit through local commit; independent native/recovery, raw-data, new semantics or separate family work ends in a recorded product-incomplete checkpoint."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -29137,7 +29168,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postCandidateLeafIdentityImplementationCheckpoint.nextLimitedOperation. Step2/TSK-08 remains in_progress with Deferred native/recovery, six-class final identity, literal obsolete, formal performance and final quality. Choose one bounded common-owner transition after current-code finite table; do not begin TSK-09, dependent quality or push.",
+    "nextSession": "Follow postCandidateLeafIdentityStepRecheckHandoff.firstDeliverable. Begin with a current-code bounded plan and user confirmation, then implement/verify/update canon/local commit only the approved unit. Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Reuse matching existing evidence, leave distinct native/recovery/raw owners and final gates Deferred, no dependent quality or push.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -29239,8 +29270,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postCandidateLeafIdentityImplementationCheckpoint.nextLimitedOperation",
-    "latestCheckpointReference": "postCandidateLeafIdentityImplementationCheckpoint",
+    "nextSessionReference": "postCandidateLeafIdentityStepRecheckHandoff.firstDeliverable",
+    "latestCheckpointReference": "postCandidateLeafIdentityStepRecheckHandoff",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
