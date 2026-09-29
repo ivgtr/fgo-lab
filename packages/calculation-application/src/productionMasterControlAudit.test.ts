@@ -1797,18 +1797,6 @@ describe('production master inventory ratchet', () => {
         expectedCriticalStarsForward,
         observations: userControlObservations,
       });
-      await writeProductionAuditArtifact(task.meta, 'production-inert-control-production.json', {
-        schemaVersion: 1,
-        boundary: 'calculation-application-production-inert-controls',
-        source: 'productionMasterControlAudit.test.ts',
-        canonicalIdentity: userControlGate.canonicalIdentity,
-        expectedIdentities: selectedExpectedIdentities,
-        expectedBattlePointReads,
-        expectedCriticalStarsForward,
-        preparationInventories: Object.fromEntries(preparationInventories),
-        gate: userControlGate,
-        observations: userControlObservations,
-      });
       expect(hpGate.status, JSON.stringify(hpGate.firstDifference)).toBe('passed');
       expect(scalarGate.status, JSON.stringify(scalarGate.firstDifference)).toBe('passed');
       expect(attemptGate.status).toBe('passed');
@@ -1847,17 +1835,62 @@ describe('production master inventory ratchet', () => {
           expectedProjectionCount: expectedUserControlIdentities.length,
           expectedIdentities: selectedExpectedIdentities,
           expectedBattlePointReads,
+          expectedCriticalStarsForward,
           observations: userControlObservations.map((observation) =>
             observation === battlePointProof ? missingRead : observation,
           ),
         });
         expect(rejected.status).toBe('failed');
-        if (rejected.status === 'failed')
-          expect(
-            rejected.failures.some(
-              (failure) => failure.reason === 'userControlBattlePointReadProofMissing',
-            ),
-          ).toBe(true);
+        if (rejected.status !== 'failed')
+          throw new TypeError('published_inert_control_failure_missing');
+        const failure = rejected.failures.find(
+          (item) => item.reason === 'userControlBattlePointReadProofMissing',
+        );
+        expect(failure).toBeDefined();
+        if (!failure) throw new TypeError('published_inert_control_reason_missing');
+        expect(rejected.canonicalIdentity).toBe(userControlGate.canonicalIdentity);
+        expect(failure.firstDifference.identity).toBe(failure.canonicalIdentity);
+        const boundedFailure = {
+          reason: failure.reason,
+          canonicalIdentity: failure.canonicalIdentity,
+          firstDifference: failure.firstDifference,
+          failureCount: rejected.failures.length,
+        };
+        expect(JSON.stringify(boundedFailure).length).toBeLessThan(32 * 1024);
+        const payload = {
+          schemaVersion: 1,
+          boundary: 'calculation-application-production-inert-controls',
+          source: 'productionMasterControlAudit.test.ts',
+          canonicalIdentity: userControlGate.canonicalIdentity,
+          expectedIdentities: selectedExpectedIdentities,
+          expectedBattlePointReads,
+          expectedCriticalStarsForward,
+          preparationInventories: Object.fromEntries(preparationInventories),
+          gate: userControlGate,
+          observations: userControlObservations,
+          intentionalFailure: {
+            originalRequest: battlePointProof,
+            corruptedObservation: missingRead,
+            boundedSummary: boundedFailure,
+            gate: rejected,
+          },
+        };
+        const receipt = await writeProductionAuditArtifact(
+          task.meta,
+          'production-inert-control-production.json',
+          payload,
+        );
+        const bytes = await readFile(
+          resolve(
+            process.env['FGO_TEST_ARTIFACT_DIR']!,
+            'production-inert-control-production.json',
+          ),
+        );
+        expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
+          receipt.expectedBytes,
+          receipt.expectedSha256,
+        ]);
+        expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
       } else throw new Error('production_battle_point_proof_missing');
       // E2E-A032-DANTE-INVENTORY E2E-A032-SUMMER-WU-INVENTORY
       expect(master.servants).toHaveLength(469);
