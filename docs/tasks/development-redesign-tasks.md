@@ -4250,3 +4250,27 @@ checklist①／入力lifecycle①〜③は既存identityの証拠を再利用。
 最終sourceのfocused unit10/10、warning0。旧新完全fixture／negative artifactはdecoded全値・配列順序・件数とdisk bytes／SHA-256が一致し、unit manifest両方の全7/7 receipt・verification error0を確認。失敗した探索run、誤った`--`で全auditを起動した失敗run、単独assertionは製品成功証拠にしない。計算構造・capture・hot path変更はなく、1run性能診断は非該当。正式性能、README quality、8 shards再生成、依存TSK-09系、pushを行わない。詳細な旧新manifest、六クラス・legacy各定義、全義務と次の操作は[evidence](../evidence/tsk-08-parity-ratchet.json) `postSelectedConsumerBoundaryCheckpoint`。
 
 checklist①／入力lifecycle①〜③はidentity一致の既存証拠を保持。checklist②③／lifecycle④⑤⑧は元native拒否captureと実行可能planのconsumer reachを所有する別経路、および六失敗クラスの最終統合ratchetが未達。checklist④／lifecycle⑥はraw OC固有assertionを保持したobsolete定義の最終判断が未達。Done gateと`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001`は最終同一identityの全damage・digest first difference・bounded／完全artifact・inventory／parity／fail-closed・全receiptが未達。`RK-PERF-001`／`TS-PERF-002`／`DX-HANDOFF-001`／lifecycle⑦は正式各3run性能と最終qualityが未達。次はbattle-execution／applicationのnative rejection capture ownerが、準備拒否前の選択・step origin・到達とrequestを保持できるかを限定設計し、candidate execution ownerがordered operation eventとHP consumerの物理到達を別に表せるかを調べる。新しい意味論・別familyが要れば別単位とする。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、製品未完了checkpointで停止する。
+
+### TSK-08 残義務の設計調査checkpoint（実装なし、2026-09-29）
+
+利用者の今回指示により製品実装・source test・producer・audit・quality・live性能は行わず、現定義と直接callerを読み直した。前checkpointの未到達反証に関する結論を限定する。準備拒否でも`sourceCollection.ts`はcommandごとにattempt captureを開始・終了し、`scenario.ts`は元requestの`prepared`／`calculation`へ拒否captureを付ける。`preparationOc.ts`は全step originを記録してからnative実行し、`ocState.ts`は拒否より後のstepを`reached`へ入れず元stateを返す。したがって、準備の選択後未到達を表す材料は既存captureにある。先のfixtureで`selectedPreparationCell=0`だったことはcapture不存在の証明ではない。`modifierUseCondition`宣言は現`productionHpPublishedDependencyCoverage.ts`の準備選択join対象外で、同条件の物理評価も後段のmodifier合算readとは別である。`hpConditionedNpGauge`も宣言在庫にはあるが同join対象外である。これらを値一致や欠落readから補完しない。
+
+実行可能planのconsumer未到達にも静的に有望な原経路がある。`resolvedScenarioSchema`が受け入れる、内部整合はあるが現operation sourceに属さない非attackerのactivation factは`executionPlan.ts`を通過し得る。`candidatePreparation.ts`の`buildActivationContext`が`unknownFact`／`orphanFact`を返すと、`candidateFailure.ts`は`operations:[]`とtyped issueを返す。`executionAuditObservation.ts`のeventは実operationsから作るため、候補比較が`selected`ならordered planにHP consumerがあってもevent/readは0となる。元application requestをschema parseから共通gateまで実行した証拠はまだなく、成立条件として残す。HP比率1000の通常候補は値を先読みするため、この反証の代用にならない。
+
+設計候補はapplication監査専用の一つのtyped request遷移台帳へ元request、各実input commandと評価済み前後request、準備source／step origin／native結果、実行可能時だけordered operationとcandidate abort issue、物理read／消費、artifact参照を結ぶこと。既存operation edge検証器とowner captureを再利用し、`consumerPlans`のread欠落ベースの弱い分類を段階別の排他的状態へ置換する。準備rejected／invalid／manualは`noOrderedPlan`で止め、後続read義務を作らない。選択済みcellの未到達、operation前abort、operation到達後readなし、実read後非消費／消費を異なる理由にし、capture欠落・曖昧なidentity・矛盾はtyped failure＋canonical first differenceとする。`modifierUseCondition`の条件評価とwriter／modifier合算readの関係はnative ownerの直接参照から設計し、action／recipient別selectorやfallbackを増やさない。監査API／artifact shapeの破壊的整理は許容するが、damage意味論は変えない。
+
+次の限定操作は、この2反証を元application requestでschema parse→準備capture→共通operation／binding gateまで通し、全宣言種別の段階別owner-to-consumer対応と六失敗クラスの元入力→typed reason→bounded／完全artifact→全receiptを同一identityで表にすること。旧raw OC三scriptは固有raw cell／公開joinを持つため、定義・caller・入力母集団・固有assertionごとにobsolete対象を判定する。今回の静的推論は成功test／production証拠ではない。checklist②〜④、Done gate、入力lifecycle④〜⑧とContract最終gateは未達のまま。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `postResearchDesignCheckpoint`。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、pushなし。
+
+| HP宣言種別 | 現在の直接の証拠経路 | 設計上の未達／判定境界 |
+| --- | --- | --- |
+| `writer` | `preparationHpActionsFor`→共通`reconcileHpOperationEvidence`の選択・step・native・transaction・保持参照 | 元requestの未到達を同gateへ通す代表反証が未成立。 |
+| `condition` | ordered `canonicalCondition`→candidate `actualConditionRead`、準備source `selectedPreparationCell` | orderedと準備の条件評価を同じreadと見なさず、phaseと原operationを照合する。 |
+| `modifierUseCondition` | 在庫宣言と`preparationHp.ts`の後続HP gain時の条件評価 | 準備選択join対象外。評価の個別captureはmodifier合算readとは別に必要か、元owner参照から判定する。 |
+| `valueExpression` | 準備選択cell、ordered `expressionContext`、candidate `actualValueRead` | contextだけでは選択／物理readとしない。既存の実readと非消費を保持する。 |
+| `ocRateExpression` | 準備選択cell、native OC結果と終端action判定 | selected／committedと実HP readを混同しない。 |
+| `hpConditionedNpGauge` | 在庫宣言、準備NP gauge mutation／条件のowner | 現公開bindingに対応段階がなく、schema-legal非空fixtureの直接経路が未達。 |
+| `hpRatioLow` | ordered `canonicalNp`→candidate `npEvaluation`、選択variantのidentity | 準備拒否後の架空NP readを作らず、selected variant／実評価を照合する。 |
+
+現`productionHpPublishedDependencyCoverage.ts`の`consumerPlans`はcanonical bindingが空なら`noDownstreamConsumer`、選択後readが空でeventも空なら`consumerNotReached`とするが、後者にcandidate abortのtyped理由は入らない。`gate.firstDifference`は先頭のreason/pathでcanonical expected/actual値を持たない。末尾`unobserved`は`valueExpressionActualRead`を含む固定文言で、現在追加済みの実read件数と連動しない。最適な整理は、この派生summaryと固定文言を元captureに裏付けられたphase別の排他的disposition／typed failureへ置き換え、既存`productionHpOperationEvidence.ts`のcanonical first differenceを共通形式として使うこと。六失敗クラスは既存局所gateの成功を保持し、元入力・同一最終source／input・typed reason・canonical identity／first difference・bounded summary・完全decoded artifact・全disk receiptの対応が確認できた行だけ最終ratchetとして閉じる。legacyは`commandEdgeSessionCheckpoint.legacyClassification`の7候補を定義・caller・入力・固有assertionで再照合し、旧13回readのみ削除済み、raw OC三scriptを保持する判断を維持する。
+
+特に`consumerPlans`は`target.operationEvents[binding.sequence]`を引く箇所で、そのeventの`operationId`とplan側operationを同じsummary内では照合しない。新しいtyped関係では順序indexだけを根拠に到達扱いせず、operation ID・source・group・候補identityと、abort issueまたは実readの元参照を検証する。既存の個別read gateが行う照合は再利用する。

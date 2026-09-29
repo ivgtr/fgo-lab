@@ -28746,6 +28746,39 @@
       "TSK-09": "blocked"
     }
   },
+  "postResearchDesignCheckpoint": {
+    "date": "2026-09-29",
+    "startHead": "e17c826a5d9290986efcbb89c03267a256f67231",
+    "scope": "Read-only source/Task/evidence investigation; no product implementation, source test, producer, audit, quality or live measurement. Static path inference is not a verified fixture or production result.",
+    "correctionsToPriorCheckpoint": {
+      "preparationCapture": "sourceCollection begins/finishes capture for each original command. scenario attaches the transition/attempt capture to rejected prepared and calculation objects. preparationOc constructs stepOrigins before executeOcAction, which records only reached steps and returns prior state on reject. Therefore selected-but-unreached material exists in the original capture; prior selectedPreparationCell=0 does not prove capture absence.",
+      "declarationJoin": "hpProofCoverageInventory declares modifierUseCondition and hpConditionedNpGauge, but hpPublishedDependencyBindings preparation source join accepts condition/valueExpression/ocRateExpression only. The previous fixture added modifierUseCondition, so its zero selectedPreparationCell includes an adapter coverage gap. A modifier useCondition evaluation happens during a later HP gain before modifierValue; the existing modifierReads records the post-filter aggregate and is not an exact condition-evaluation witness.",
+      "orderedAbort": "A schema-valid, internally consistent non-attacker activation fact can remain in executionScenario even when its source/requirement does not belong to current operations. buildActivationContext then returns typed unknownFact/orphanFact; assembleInvalidActivationResult returns operations:[] with issues. auditOperationEvents derives from actual operations, so an executable ordered HP consumer with selected equivalent target candidates can have zero events/read. This is a code-path hypothesis until an original application request is parsed and run through the common gate. The previous HP-permille-1000 candidate physically read before operation disposition and is not this counterexample."
+    },
+    "designDecision": {
+      "owner": "calculation-application audit request ledger and typed gate; borrow battle-execution native/candidate captures and existing input-command edge validator, without changing damage semantics",
+      "model": "One audit-only discriminated request transition: original/evaluated request and each actual repair command edge; preparation source selection, step origin/reach, native attempt/status and returned state; ordered plan only for executable resolved requests, target selection, candidate abort issue, operation event, physical read and consumption; manifest/complete artifact reference. Keep a rejected/invalid/manual noOrderedPlan terminal without a downstream read obligation. A selected cell with unreached native step, an ordered operation aborted before event, an event without physical read and a physical read not consumed are distinct dispositions.",
+      "identity": "Join original master declaration reference/path to source, operation, candidate and retained instance/receipt identities. Require exact order and owner references; missing/ambiguous capture or impossible transition is a typed failure with canonical first difference. Do not infer a selected cell from equal numeric values or no consumer from missing reads.",
+      "breakingBoundary": "Replace the current consumerPlans weak absence classification and reshape audit-only ledger/artifact API if required. Reuse operation transaction/command edge gate, owner captures and generic manifest owner. Do not create per-action or recipient selectors, an expectation generator, parallel audit source, runtime ID branch, or fallback.",
+      "declarationPhaseMap": {
+        "writer": "preparation native operation/transaction via common operation gate; original selected-unreached common-gate falsifier open",
+        "condition": "ordered canonicalCondition and candidate actualConditionRead plus preparation selected source; distinguish phases",
+        "modifierUseCondition": "declared, evaluated on later HP gain; missing preparation selection join and no exact individual condition-evaluation witness in modifier aggregate read",
+        "valueExpression": "preparation selected cell, ordered expressionContext and candidate actualValueRead; context alone is not a read",
+        "ocRateExpression": "preparation selected cell/native OC outcome; selected/committed is not automatically an HP read",
+        "hpConditionedNpGauge": "declared preparation NP gauge mutation and HP condition; no present published-binding stage",
+        "hpRatioLow": "ordered canonicalNp, selected variant and candidate npEvaluation; no fabricated read after preparation rejection"
+      },
+      "summaryGap": "Current consumerPlans labels noDownstreamConsumer from absent planned bindings and consumerNotReached from absent event/read without the candidate abort issue. It indexes target.operationEvents[binding.sequence] without checking that event's operationId against the planned operation in this summary. Its gate.firstDifference is reason/path, not canonical expected/actual values. Its fixed unobserved list still names valueExpressionActualRead although actualValueRead is now emitted. Replace these audit-only summaries with source-backed typed phase dispositions and canonical first difference, reusing the operation gate format.",
+      "nextFalsifiers": [
+        "Schema-parse an original request whose earlier native step rejects and whose later selected writer has a stepOrigin but no reached step; check returned original state and common operation/binding gate. Do not demand an ordered plan or read on that rejected request.",
+        "Schema-parse an original executable request with an ordered HP consumer and an orphan non-attacker activation fact; verify typed invalidActivationContext, selected candidate, zero operation events/read, and a consumerNotReached reason tied to that issue.",
+        "Compare with existing noDownstreamConsumer, cellNotSelected, physicalRead consumed/nonconsumed and three-request/two-command recovery evidence at matching identity; do not shortcut intermediate requests."
+      ]
+    },
+    "remaining": "Checklist2/3 and input lifecycle4/5/8 require representative original-to-gate proof and six-class integrated input/reason/identity/first-difference/bounded/full/all-receipt mapping. Checklist4/lifecycle6 requires exact obsolete definition/caller/population/unique-assertion decision while retaining raw OC evidence. Done gate, TS-AUDIT-001, TS-OUT-001, TS-ART-001, RK-AUDIT-001, formal RK-PERF-001/TS-PERF-002 three runs, DX-HANDOFF-001 final quality and lifecycle7 remain open. Established checklist1/lifecycle1-3, Step0/1/3, shared HP proof, partial commit and 80-condition matrix are reusable only at matching identity. TSK-08 in_progress; TSK-09.1/09 blocked.",
+    "nextLimitedOperation": "Finish the two original application request falsifiers and an exhaustive declaration-kind-to-phase/consumer table, then choose the smallest coherent audit-only model replacement. Audit the six failure-class end-to-end records and legacy exact definitions/callers separately before final gates. No push."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -28856,8 +28889,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postSelectedConsumerBoundaryCheckpoint.nextLimitedOperation",
-    "latestCheckpointReference": "postSelectedConsumerBoundaryCheckpoint",
+    "nextSessionReference": "postResearchDesignCheckpoint.nextLimitedOperation",
+    "latestCheckpointReference": "postResearchDesignCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
