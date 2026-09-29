@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.137"
+document_version: "1.7.138"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-29"
@@ -4240,3 +4240,13 @@ checklist①は既存単一producerを再利用。②③は今回の局所comman
 次作業者の最初の成果物は現コードに基づく変更owner・代表反証・影響suite・旧新の完全decoded値／順序／件数とdisk bytes／SHA-256・全receipt比較・性能影響・停止境界を含む計画であり、利用者へ提示して確認を待つ。確認前はHEAD／index／差分／untrackedとコード・正本・artifactの読取／checksum照合に限定する。確認後は同じ単位を実装・局所反証・影響検証・既存正本更新・対象限定local commitまで進め、通常の技術判断で再承認を求めない。計算構造・capture・製品hot path変更時だけ指定条件でbaseline／candidate各1runを診断し、正式な`Apply`変更前後各3run性能gateと混同しない。control第1 testの60秒上限と`verifyDepsBeforeRun: error`を守る。
 
 checklist①／入力lifecycle①〜③は既存identityの証拠を再利用。checklist②③／入力lifecycle④⑤⑧は上記native／recovery境界と六クラス統合が条件。checklist④／lifecycle⑥はobsolete定義の全件判断が条件。Done gate、`TS-AUDIT-001`／`RK-AUDIT-001`、`TS-OUT-001`／`TS-ART-001`は最終同一source／input／artifact identityのinventory／parity／fail-closed／digest／全receiptまで未達。`RK-PERF-001`／`TS-PERF-002`と`DX-HANDOFF-001`／lifecycle⑦は正式性能とREADME最終qualityが未達。別native／recovery owner、新ゲーム意味論、別family、保持すべきraw coverageに独立作業が必要なら根拠・未達条件・次の限定操作を既存正本へ記録し、製品未完了checkpointで止める。TSK-08自身のDeferred／Blockingが0となり全義務を同一最終identityで閉じられる見込みと時間がある場合だけ、必要な影響audit、正式3run性能、最終quality、統合counter／digest／全receiptへ進む。8 shardsは具体的identity疑義なしに再生成しない。60分で既存正本へcheckpoint、90分でatomic actionを終えて引き継ぐ。pushしない。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `postCommandConsumerStepRecheck`を参照する。
+
+### TSK-08 元request未到達反証のowner境界checkpoint（製品未完了、2026-09-29）
+
+開始HEAD `a5faa28b8e54ce9c7439689536ba1f1da5e75bcc`、index／tracked／untracked clean。利用者へ現コードの一セッション計画を提示して`OK`を受けた。前checkpointのsource3／master1／manifest2／完全artifact4は現disk bytes・SHA-256で10/10一致。元application producerは評価前にrequestを保持し、support修復は実commandと各直前・直後の評価済みrequestをedge化する。operation gateはedge、binding gateは準備・ordered plan・選択cell・実readを照合する。productionの3186 request中ordered plan64、consumerなし3122、physical read126、非選択cell144、selected-unreached／consumer-not-reached各0、support修復edge0の既存証拠を現在のsource/inputに限り再利用する。
+
+今回のschema-legal反証候補を元実行へ通した結果、HP比率1000の実行可能requestはHP値を先に物理readし、consumer未到達ではなかった。既存`native-unreached` fixtureへHP条件cellを置いた候補は準備`rejected`／結果`unsupported`となり、`orderedScenario:null`、共通ledgerの`noOrderedPlan`／選択cell0だった。これはnative側の未到達境界であり、選択後の実行可能planやread欠落に変換できない。試行した製品test差分は全て取り消し、最終source差分0。前者のeventは`executionAuditObservation.ts`が実行operations全件から生成するため、選択済みplanでevent欠落を正常な`consumerNotReached`として作ることも現captureではできない。欠落eventを作為的に削った入力をschema-legal元経路の証拠にしない。
+
+最終sourceのfocused unit10/10、warning0。旧新完全fixture／negative artifactはdecoded全値・配列順序・件数とdisk bytes／SHA-256が一致し、unit manifest両方の全7/7 receipt・verification error0を確認。失敗した探索run、誤った`--`で全auditを起動した失敗run、単独assertionは製品成功証拠にしない。計算構造・capture・hot path変更はなく、1run性能診断は非該当。正式性能、README quality、8 shards再生成、依存TSK-09系、pushを行わない。詳細な旧新manifest、六クラス・legacy各定義、全義務と次の操作は[evidence](../evidence/tsk-08-parity-ratchet.json) `postSelectedConsumerBoundaryCheckpoint`。
+
+checklist①／入力lifecycle①〜③はidentity一致の既存証拠を保持。checklist②③／lifecycle④⑤⑧は元native拒否captureと実行可能planのconsumer reachを所有する別経路、および六失敗クラスの最終統合ratchetが未達。checklist④／lifecycle⑥はraw OC固有assertionを保持したobsolete定義の最終判断が未達。Done gateと`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001`は最終同一identityの全damage・digest first difference・bounded／完全artifact・inventory／parity／fail-closed・全receiptが未達。`RK-PERF-001`／`TS-PERF-002`／`DX-HANDOFF-001`／lifecycle⑦は正式各3run性能と最終qualityが未達。次はbattle-execution／applicationのnative rejection capture ownerが、準備拒否前の選択・step origin・到達とrequestを保持できるかを限定設計し、candidate execution ownerがordered operation eventとHP consumerの物理到達を別に表せるかを調べる。新しい意味論・別familyが要れば別単位とする。TSK-08 `in_progress`、TSK-09.1／09 `blocked`、製品未完了checkpointで停止する。
