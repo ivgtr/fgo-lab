@@ -4495,3 +4495,20 @@ TSK-08完了へ向かう計画の反証点は、**inertを閉じた前提で残�
 | `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／入力lifecycle⑦ | 計算構造・capture・製品hot pathに変更がないため単回性能診断は非該当。正式変更前後各3run、README最終qualityと統合counter／digestはDeferred。 |
 
 Step 0／1／3は一致する既存証拠を維持し、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。次の限定操作は、五クラスの一つについて実在する公開元requestと現typed gateの直接経路を特定し、独立期待・保存前失敗なし・全receiptまで同じidentityで閉じること。別途native／recovery consumer unionとliteral legacy候補をそれぞれのownerで判定する。公開OC-rate25の終端NPに合成後続grantを足さず、選択済みcondition cellからnative物理readを推定しない。TSK-08のDeferredが残るため正式性能、README最終quality、8 shards再生成、TSK-09系、pushは実行せず、対象限定local checkpoint commitで停止する。
+
+### TSK-08 Step再確認と次の実装計画の判定境界（2026-09-30）
+
+開始HEAD `6ca44c623ad705d53b7008ad2a4d0de313f67041`、index／tracked／untrackedはclean。直近commitはcalculation-applicationのaudit test 2件と既存Task／evidenceだけを変更した。製品baseline `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`と現HEADで、公開master、`master-data/productionAudit.ts`、`productionClosureAudit.ts`、V41／V40のschema／portable境界、ranking計測script、単独matrix scriptはGit blob一致。今回の読取と既存`postSixClassFailureOutputCheckpoint`の最終source／master／artifact identityを照合し、producer・source test・audit・live性能は再実行していない。
+
+| Step | 現判定 | 成立範囲と反証 |
+| --- | --- | --- |
+| 0: baseline／契約 | 成立済み | 製品baselineと契約の既存証拠を維持。直近test／記録commitを製品意味論の再達成と数えない。 |
+| 1: V41 request marker | 成立済み | V40履歴保持と明示V41再計算の既存証拠を維持。schema／portable境界のblob不変を確認。今回の失敗fixtureを保存復元の追加証拠と数えない。 |
+| 2: TSK-08 | `in_progress` | 公開inert二反例は独立NP期待、元command差分、実公開gate失敗、保存後runner、全receiptまで局所接続。五クラスはfixtureの失敗出力のみ。七宣言種別のnative／alternate／recovery、六クラスの元入力からの同一最終identity統合、literal legacy判定と最終受入が残る。 |
+| 3: 改訂80条件matrix／eligibility | 成立済み | 既存共有matrix／eligibility証拠を同じsource／input identityで維持。今回のunit内の80条件構成assertionだけを全公開matrixの再実行と数えない。 |
+
+**TSK-08完了へ進む計画の反証条件:** 次の一単位が五クラスのfixture runner失敗を再演するだけ、または公開masterで正常0件のfailureを合成fixtureから公開到達件数へ加えるだけなら、checklist②③・Done gate・`TS-AUDIT-001`／`TS-OUT-001`／`TS-ART-001`の未達は減らない。元application requestの生成者と直接caller、独立したgoverning rule、実公開gate、完全artifact／全receiptまでの新しい閉鎖、または別の実在するchecklist④／入力lifecycle④⑥⑧の未達解消を計画で示せなければ単位を選び直す。選択済みcondition cellからnative物理readを推定せず、公開OC-rate終端NPへ合成後続grantを足さない。公開母集団0件ならschema合法fixtureの義務と公開元requestに残る義務を分ける。
+
+次作業者は最初に**現コードの定義・直接caller・既存artifactを根拠にした実装計画**を提示し、利用者確認を待つ。確認後は承認された同じ単位を通常の技術判断で再承認せず実装・必要な検証・既存Task／evidence更新・対象限定local commitまで進める。計画にはchecklist全項目、Done gate、Contract matrix全行、入力lifecycle①〜⑧と七宣言種別のphase別consumerを成立済み／今回閉じる／別owner・未達へ対応付ける。別ownerや新ゲーム意味論、raw OC固有coverageが独立作業なら根拠・残条件・次の限定操作を記録して製品未完了checkpointで止める。正式性能各3run、README最終quality、TSK-09.1／09はTSK-08自身のDeferred／Blockingが残る間は開始しない。Step 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`を維持する。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `postSixClassStepReconciliation`。
+
+今回の文書差分は`git diff --check`、Prettier check、`pnpm test:docs`（6 tests）、`pnpm validate:evidence`（2 files／10 tests）で確認した。製品source／inputに変更はなく、既存artifactを再生成していない。

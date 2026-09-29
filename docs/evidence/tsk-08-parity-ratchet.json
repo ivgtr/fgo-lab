@@ -29469,6 +29469,24 @@
     "remainingConditions": "Step0/1/3 retain matching-identity evidence; Step2/TSK-08 remains in_progress. The other five classes have bounded/full output from synthetic fixture gates, but published original-request failure coverage and same-final-identity six-class integration remain Deferred. Seven-declaration native/alternate/recovery consumer union, checklist4/lifecycle6 literal obsolete decision, whole Done gate, final TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001, formal RK-PERF-001/TS-PERF-002 and DX-HANDOFF-001 README quality remain Deferred. Preserve raw OC 167 occurrences/632 cells and public join as unique evidence. TSK-09.1/09 blocked; no dependent quality, formal performance, eight-shard regeneration or push.",
     "nextLimitedOperation": "Choose one original published request and typed gate among parity, unsupported, invalid, partial commit or stale mutation whose current fixture-only failure has a real common-owner published path; prove the independent expected rule and save-before-fail runner receipt at one identity. Separately classify the native/recovery consumer union and literal legacy definitions by direct callers, input population and unique assertions. Do not infer physical read from a selected condition cell or count synthetic later OC grants as published reach."
   },
+  "postSixClassStepReconciliation": {
+    "date": "2026-09-30",
+    "status": "read_only_step_reconciliation_product_incomplete",
+    "head": "6ca44c623ad705d53b7008ad2a4d0de313f67041",
+    "comparisonBaseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+    "sourceIdentity": "HEAD changed only calculation-application audit tests and existing Task/evidence from the prior commit. Published master, master-data productionAudit.ts, calculation-application productionClosureAudit.ts, schema and portable V41/V40 boundary, ranking workload script and single matrix script match baseline Git blobs. Reused postSixClassFailureOutputCheckpoint source/master/artifact identity is unchanged; no producer or audit rerun in this reconciliation.",
+    "steps": {
+      "0": "established baseline/contracts at retained identity; current test/document commit adds no product semantic evidence",
+      "1": "established V41 request marker with V40 historical preservation and explicit V41 recomputation at retained schema/portable identity",
+      "2": "in_progress: published inert two intentional counterexample paths locally closed through independent rule/command expectation, actual public gate failure, complete saved artifact, bounded failed runner and receipts; five other failure classes have fixture failure output only; native/alternate/recovery consumer union, six-class original-request integration, literal legacy and final acceptance remain",
+      "3": "established revised 80-condition matrix and eligibility at retained source/input identity; current unit's 80-condition construction assertion is not a rerun of the full published matrix",
+      "dependencies": "TSK-09.1 and TSK-09 blocked while TSK-08 remains in_progress"
+    },
+    "progressFalsifier": "A next unit that repeats only fixture runner failures or counts a synthetic schema-legal failure as a published original-request failure does not reduce checklist2/3, Done gate or TS-AUDIT-001/TS-OUT-001/TS-ART-001. The proposed unit must close a demonstrable remaining original-request-to-public-gate transition with independent governing expectation, complete artifact and all receipts, or another real checklist4/lifecycle4,6,8 unmet condition. If the published normal population is zero, keep the schema-legal fixture duty and the published original-request duty separate. Reject a plan that assumes a selected condition cell proves native physical read, adds a later synthetic OC grant to a terminal published NP, or recycles the rejected Battle Point read proof as an inert failure.",
+    "firstDeliverable": "Before edits or new source/test/producer runs, inspect current definitions/direct callers and matching source/input/artifact identities; present an implementation plan mapping all TSK-08 checklist, Done gate, Contract matrix rows, lifecycle1-8 and seven declaration kinds by phase to established/current unit/separate owner or unmet. Show a real TSK-08 Deferred condition reduced by one common-owner unit, original application request through gate and runner, independent rule, schema-legal falsifier, affected suites, complete decoded old/new values/order/counts and disk bytes/SHA/all receipts, performance trigger and stop boundary. Wait for user confirmation; after it, finish the approved unit through necessary verification, existing Task/evidence update and scoped local commit without routine reapproval.",
+    "verification": "Read-only HEAD/index/worktree and baseline-to-HEAD scoped Git blob comparison. git diff --check, Prettier check, pnpm test:docs (6 tests), pnpm validate:evidence (2 files/10 tests) passed. No product edit, producer/audit/performance run or artifact regeneration in this Step reconciliation.",
+    "remaining": "Step2/TSK-08 in_progress. Six-class final original-request integration, seven-kind native/alternate/recovery union, exact literal legacy disposition with raw OC 167 occurrences/632 cells and public join retained, whole Done gate, TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001, formal RK-PERF-001/TS-PERF-002 before/after three runs and DX-HANDOFF-001 final README quality remain Deferred. No dependent quality, TSK-09 or push."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -29477,7 +29495,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postSixClassFailureOutputCheckpoint.nextLimitedOperation. Published inert NP and operation observation counterexamples now use the actual public gate failure/save/runner path with independent NP expectation and complete receipts. Five other classes have only fixture-gate failure output, not published original-request closure. Step0/1/3 established; Step2/TSK-08 in_progress; TSK-09.1/09 blocked. No dependent quality or push.",
+    "nextSession": "Follow postSixClassStepReconciliation.firstDeliverable and progressFalsifier. Published inert NP and operation counterexamples now use the actual public gate failure/save/runner path with independent expectation; five other classes have only fixture failure output. Step0/1/3 established at retained identity; Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Plan first, obtain confirmation, then execute the approved unit. No dependent quality or push.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -29579,8 +29597,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postSixClassFailureOutputCheckpoint.nextLimitedOperation",
-    "latestCheckpointReference": "postSixClassFailureOutputCheckpoint",
+    "nextSessionReference": "postSixClassStepReconciliation.firstDeliverable",
+    "latestCheckpointReference": "postSixClassStepReconciliation",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
