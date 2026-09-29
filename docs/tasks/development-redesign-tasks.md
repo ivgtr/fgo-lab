@@ -4477,3 +4477,21 @@ checklist①／入力lifecycle①〜③、Step0／1／3の一致identity証拠�
 | Done gate／Contract matrix／入力lifecycle⑦ | 全damage説明、digest first difference、六クラスの同一最終identity、最終inventory／parity／fail-closed、正式各3run性能、README quality、統合counter／全receiptはDeferred。局所audit成功を統合Doneへ数えない。 |
 
 TSK-08完了へ向かう計画の反証点は、**inertを閉じた前提で残り五クラスを順に追加しても、checklist②③・`TS-OUT-001`／`TS-ART-001`と大量失敗時の完全結果が閉じない**ことである。次作業者はまず現コードから直接生成・利用経路と六クラス／七宣言phaseの有限表を作り、inertの不足を修正する単位か共通の失敗診断境界を扱う単位かを、TSK-08全体の残義務へ効く反例で選び直す。最初の成果物は実装でなく実装計画とし、利用者確認後に承認された同じ単位の実装・必要な検証・既存Task／evidence更新・対象限定local commitまで進む。別owner／新ゲーム意味論／独立raw coverageが必要なら未達条件と次の限定操作を記録して製品未完了checkpointで止める。TSK-08自身のDeferred／Blockingが残る間は依存quality・TSK-09系を始めない。pushなし。
+
+### TSK-08 六クラス失敗出力と公開inert gateの接続checkpoint（製品未完了、2026-09-30）
+
+開始HEAD `a107defcbe672af956b1c7736239216b021de6e9`、clean worktree。現コードの定義・直接caller、六クラス、七宣言種別、checklist／Done gate／Contract matrix／入力lifecycleを照合した計画を先に提示し、利用者の`OK`と範囲拡大の指示を受けた。今回の同一owner単位はcalculation-applicationの既存公開control／production closure診断testだけであり、製品計算、capture、runner、master、候補やdamage semanticsは変更していない。
+
+公開NP-special元requestの期待五値はcanonical projection `valuePermille=1500`から`[1.5,1.5,1.5,1.5,1.5]`、除外時は寄与なしの`[1,1,1,1,1]`とし、観測と同じ`calculation.input`からのコピーを除いた。公開の別operation元requestも有効／除外scenarioとprojectionを保持する。観測改変反例は**実際の公開`userControlGate`**へ渡し、完全artifactを書いた後に通常のgate失敗判定でrunnerを失敗させた。NPは`userControlNpSpecialInputNotChanged`／`changed: true→false`、operationは`userControlDidNotReachOperationOrDamage`／`reached: true→false`が各1件。全NP-special観測の入力を同値にする反例も保存後に失敗し、154 failureを完全artifactへ残した。これはschema合法な意図的反例であり、公開元requestの失敗件数には加えない。他五クラスは既存fixture gateのparity `parityFailure`／`canonicalMismatch`、unsupported・invalid `finalProfileStatusPresent`（statusで区別）、partial commit `preparationResourceCommitMismatch`、stale receipt `preparationReceiptMismatch`を保存後のcompact runner失敗出力へ接続した。元公開requestから各gateまでの統合は未達のまま。
+
+最終sourceでclosure unit 5／5、登録済みaudit 5 file／88 test、typecheck、対象lint／format、差分checkが成功。第1公開control testは60秒上限内。成功unit 9、成功audit 99、五クラス失敗run各9、公開inert三失敗run各12の**計189／189 disk receipt**をbytes／SHA-256で照合し、不一致・artifact verification error 0。失敗runnerのcompact出力は12〜13行、完全artifactを保持した。旧新公開auditは99 path・順序が一致し、差分はrun固有`vitest.json`／`stdout.log`と意図したinert artifactのみ。新artifactから追加operation proofとそのlossless codec pathだけを除くと、旧新の全decoded値・配列順・件数は同一SHA-256 `13eee6dfce65377464445a822e3527e9ef16eb7a854ad7c734a5db5c589d9cbb`。artifact、source、全manifestのidentity・receiptと反例ごとの差は[evidence](../evidence/tsk-08-parity-ratchet.json) `postSixClassFailureOutputCheckpoint`を正本とする。
+
+| TSK-08義務 | 今回後の判定 |
+| --- | --- |
+| checklist①／入力lifecycle①〜③ | 唯一の共有producer、486-source／7470-cell inventory、80条件matrixと既存mutationの一致identity証拠を維持。 |
+| checklist②③／入力lifecycle④⑤⑧ | 公開inert二経路の独立期待・公開gate失敗・bounded／完全artifact・receiptを今回閉じた。五クラスはfixture失敗出力だけ前進し、公開元request統合と七宣言種別の別native／alternate／recovery consumerはDeferred。正常非選択、選択後未到達、準備拒否、候補abort、物理read／消費、実command修復を混同しない。 |
+| checklist④／入力lifecycle⑥ | 旧13回master読込は除去済み。literal obsoleteの定義・caller・母集団・固有assertion判定はdata-pipeline ownerでDeferred。raw OC 167 occurrence／632 cellと公開joinを保持。 |
+| Done gate、`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001` | 今回の公開inert局所と六クラスfixtureの失敗出力は成立。全damage説明、digest first difference、最終inventory／parity／fail-closed、六クラス公開元request→同一最終identity統合はDeferred。 |
+| `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／入力lifecycle⑦ | 計算構造・capture・製品hot pathに変更がないため単回性能診断は非該当。正式変更前後各3run、README最終qualityと統合counter／digestはDeferred。 |
+
+Step 0／1／3は一致する既存証拠を維持し、Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。次の限定操作は、五クラスの一つについて実在する公開元requestと現typed gateの直接経路を特定し、独立期待・保存前失敗なし・全receiptまで同じidentityで閉じること。別途native／recovery consumer unionとliteral legacy候補をそれぞれのownerで判定する。公開OC-rate25の終端NPに合成後続grantを足さず、選択済みcondition cellからnative物理readを推定しない。TSK-08のDeferredが残るため正式性能、README最終quality、8 shards再生成、TSK-09系、pushは実行せず、対象限定local checkpoint commitで停止する。

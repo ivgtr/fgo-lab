@@ -68,6 +68,32 @@ async function writeUserControlDiagnosticArtifact(
   );
 }
 
+function assertFailureProbe(
+  failureClass: string,
+  gate: {
+    status: 'passed' | 'failed';
+    reason?: string;
+    canonicalIdentity: string;
+    firstDifference: unknown;
+    failures: readonly { reason: string; canonicalIdentity: string; firstDifference: unknown }[];
+  },
+  reason?: string,
+): void {
+  if (process.env['FGO_TSK08_FAILURE_CLASS_PROBE'] !== failureClass) return;
+  const failure =
+    reason === undefined ? gate.failures[0] : gate.failures.find((item) => item.reason === reason);
+  expect(
+    gate.status,
+    JSON.stringify({
+      failureClass,
+      gateReason: gate.reason ?? null,
+      reason: failure?.reason ?? reason ?? null,
+      canonicalIdentity: failure?.canonicalIdentity ?? gate.canonicalIdentity,
+      firstDifference: failure?.firstDifference ?? gate.firstDifference,
+    }),
+  ).toBe('passed');
+}
+
 it('combines eligibility partition digests in canonical order and rejects incomplete merges', () => {
   const partitions = Array.from({ length: 8 }, (_, partition) => ({
     partition,
@@ -232,6 +258,7 @@ it(
       failures: [canonicalFailure, statusFailure].filter(Boolean),
       firstDifference: canonicalFailure?.firstDifference,
     });
+    assertFailureProbe('parity', parityGate);
     expect(conditionCount).toBe(80);
     expect(uniqueConditionCount).toBe(80);
     expect(conditionInputsLegal).toBe(true);
@@ -404,6 +431,21 @@ it(
         intentionalFailures: [failed, missingIdentity, duplicateIdentity],
       },
     );
+    assertFailureProbe('unsupported', failed, 'finalProfileStatusPresent');
+    if (process.env['FGO_TSK08_FAILURE_CLASS_PROBE'] === 'invalid') {
+      const invalidFailure = failed.failures.find(
+        (failure) => failure.reason === 'finalProfileStatusPresent' && failure.status === 'invalid',
+      );
+      expect(
+        failed.status,
+        JSON.stringify({
+          failureClass: 'invalid',
+          reason: invalidFailure?.reason ?? null,
+          canonicalIdentity: invalidFailure?.canonicalIdentity ?? null,
+          firstDifference: invalidFailure?.firstDifference ?? null,
+        }),
+      ).toBe('passed');
+    }
     expect(passing).toMatchObject({
       status: 'passed',
       canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
@@ -647,6 +689,8 @@ it(
       passing,
       intentionalFailures: [partialCommit, failed, missingProfile, discontinuousResource],
     });
+    assertFailureProbe('partialCommit', partialCommit);
+    assertFailureProbe('staleMutation', failed);
     expect(partialCommit).toMatchObject({
       status: 'failed',
       firstDifference: {

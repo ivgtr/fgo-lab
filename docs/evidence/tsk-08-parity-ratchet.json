@@ -29436,6 +29436,39 @@
     "verification": "Read-only HEAD/index/tracked/untracked check and current definition/direct-caller/artifact inspection. No product source edit, product producer/audit test or performance run. pnpm test:docs passed 6/6; pnpm validate:evidence passed 2 files/10 tests; Prettier check and git diff --check passed. Scoped local commit belongs to this record-only update.",
     "nextLimitedOperation": "Before code edits, present a current-code implementation plan that first falsifies the inert-closure assumption and maps every TSK-08 checklist/Done-gate/Contract/lifecycle obligation. Choose one real common-owner gap that can close an actual Deferred condition; show independent expectation, original request, actual typed gate failure, save-before-assertion completeness, bounded runner output, complete decoded artifact/all receipts, affected suites, performance trigger and stop boundary. Wait for user confirmation, then finish that same unit without repeated routine approval, update existing Task/evidence and make a scoped local commit. If separate owner/new game semantics/raw coverage is required, record the exact unmet condition and stop at a product-incomplete checkpoint. No dependent quality/TSK-09 or push while TSK-08 Deferred remains."
   },
+  "postSixClassFailureOutputCheckpoint": {
+    "date": "2026-09-30",
+    "status": "product_incomplete_published_inert_gate_and_six_class_failure_output_connected",
+    "startHead": "a107defcbe672af956b1c7736239216b021de6e9",
+    "authorization": "Current-code plan presented before edits; user approved a broader common failure-output unit. No push.",
+    "sourceIdentity": {
+      "publishedControlTest": { "bytes": 127733, "sha256": "7dc49257532e8003e6378fefab772ac04d1ce7174626e5d5684468d2915655ec" },
+      "closureFixtureTest": { "bytes": 53488, "sha256": "63fa84bbac009cea8d79bba7c0f71e66f915ec4dacf7a3456fabb302f85e4b34" },
+      "publishedMaster": { "bytes": 32953998, "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a" }
+    },
+    "closedCondition": "Published selected NP-special original request now derives enabled five-level expectation [1.5,1.5,1.5,1.5,1.5] from canonical projection valuePermille 1500 and excluded [1,1,1,1,1] from the disabled contribution rule, not calculation.input. A second published non-NP original request retains enabled/excluded scenarios and canonical operation. Both source scenario effectDecisions are asserted enabled/disabled by their projection decision key after artifact save. Observation counterexamples pass through the public userControlGate, save the full artifact before assertions, then fail at its normal status branch with exact class reason, canonical identity and first difference. The NP and operation probes each have exactly one failure: userControlNpSpecialInputNotChanged changed true/false and userControlDidNotReachOperationOrDamage reached true/false. An all-NP-input-equal observation probe saves the artifact and fails with 154 recorded failures; it is a stress counterexample, not 154 published original-request failures. The other five classes retain their original fixture gates and now expose their typed failure, canonical identity and first difference through bounded failed runner output after the existing full artifacts are saved. Fixture probes are not published reach counts or whole-class closure.",
+    "finalVerification": "Final source: targeted closure unit 5/5; registered audit 5 files/88 tests; first public control test remains under 60 seconds; typecheck, target ESLint/Prettier and diff check pass. The unit success manifest has 9 receipts, the audit success has 99, five class failure manifests have 9 each, and three published inert failure manifests have 12 each: all 189/189 disk receipts matched bytes and SHA-256, every artifactVerification.errors empty. Failed compact runner summaries are bounded to 12-13 lines and retain complete JSON artifacts. No calculation structure, capture or product hot path changed, so a single-run performance diagnostic was not triggered. Formal RK-PERF-001/TS-PERF-002 three runs per side remain open.",
+    "artifacts": {
+      "unitSuccess": ".test-results/2026-09-29T15-56-47-800Z-15-8f9f52/manifest.json",
+      "auditSuccess": { "path": ".test-results/2026-09-29T16-08-42-115Z-15-d42fdd/manifest.json", "bytes": 24527, "sha256": "dbc77e87d7859aa7086342ac32ffbd5da34f50c04433ca94694fac2a30663039", "receipts": 99 },
+      "classFailureManifests": [
+        ".test-results/2026-09-29T15-57-06-317Z-2-57a8f5/manifest.json",
+        ".test-results/2026-09-29T15-57-06-317Z-2-cbaf24/manifest.json",
+        ".test-results/2026-09-29T15-57-06-320Z-2-fa4d66/manifest.json",
+        ".test-results/2026-09-29T15-57-06-328Z-2-5a4d9b/manifest.json",
+        ".test-results/2026-09-29T15-57-06-331Z-2-d2a1be/manifest.json"
+      ],
+      "publishedInertFailureManifests": [
+        ".test-results/2026-09-29T16-13-12-165Z-2-54dc1d/manifest.json",
+        ".test-results/2026-09-29T16-13-54-627Z-2-94f8f4/manifest.json",
+        ".test-results/2026-09-29T16-14-41-606Z-2-b7da9b/manifest.json"
+      ],
+      "publishedInertSuccessArtifact": { "bytes": 166692002, "sha256": "13258317cd7f0e5b0690f72f37b20e9006e3ea5e5af79d233733d87138738100" }
+    },
+    "completeComparison": "Old/new published audit have the same 99 receipt paths in the same order. Only vitest.json, stdout.log and production-inert-control-production.json differ; the other 96 artifacts match disk bytes and SHA-256 exactly. Removing only the added operation counterexample from the new lossless payload and its codec path metadata gives the same full canonical JSON SHA-256 13eee6dfce65377464445a822e3527e9ef16eb7a854ad7c734a5db5c589d9cbb for old and new. Independently, decodeProductionAuditArtifact on both complete files followed by removal of only the new operation counterexample and isDeepStrictEqual returned true: all existing decoded values, array order and counts match. The 1590 public observations remain in order. Compared with success, NP probe changes observation index18 and has one changed-path failure; operation probe changes index0 and has one reached-path failure; allEqual changes 152 observation rows and saves all 154 failures. The fixture success/failure decoded artifacts match fully except the recorded elapsedMs in the parity audit condition summary.",
+    "remainingConditions": "Step0/1/3 retain matching-identity evidence; Step2/TSK-08 remains in_progress. The other five classes have bounded/full output from synthetic fixture gates, but published original-request failure coverage and same-final-identity six-class integration remain Deferred. Seven-declaration native/alternate/recovery consumer union, checklist4/lifecycle6 literal obsolete decision, whole Done gate, final TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001, formal RK-PERF-001/TS-PERF-002 and DX-HANDOFF-001 README quality remain Deferred. Preserve raw OC 167 occurrences/632 cells and public join as unique evidence. TSK-09.1/09 blocked; no dependent quality, formal performance, eight-shard regeneration or push.",
+    "nextLimitedOperation": "Choose one original published request and typed gate among parity, unsupported, invalid, partial commit or stale mutation whose current fixture-only failure has a real common-owner published path; prove the independent expected rule and save-before-fail runner receipt at one identity. Separately classify the native/recovery consumer union and literal legacy definitions by direct callers, input population and unique assertions. Do not infer physical read from a selected condition cell or count synthetic later OC grants as published reach."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -29444,7 +29477,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postInertClosureClaimReviewCheckpoint.nextLimitedOperation. The published NP-special observation-mutation fixture is valid scoped evidence, but its expectation copies the same calculated input used by the observation, the public gate stays passed, the runner failure is an opt-in manual throw, and all-inert values can throw before artifact write. Inert class closure is Deferred again. Step0/1/3 established; Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Replan from current code and TSK-08 whole obligations before implementation; no dependent quality or push.",
+    "nextSession": "Follow postSixClassFailureOutputCheckpoint.nextLimitedOperation. Published inert NP and operation observation counterexamples now use the actual public gate failure/save/runner path with independent NP expectation and complete receipts. Five other classes have only fixture-gate failure output, not published original-request closure. Step0/1/3 established; Step2/TSK-08 in_progress; TSK-09.1/09 blocked. No dependent quality or push.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -29546,8 +29579,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postInertClosureClaimReviewCheckpoint.nextLimitedOperation",
-    "latestCheckpointReference": "postInertClosureClaimReviewCheckpoint",
+    "nextSessionReference": "postSixClassFailureOutputCheckpoint.nextLimitedOperation",
+    "latestCheckpointReference": "postSixClassFailureOutputCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
