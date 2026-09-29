@@ -29362,6 +29362,27 @@
     "remainingConditions": "Step0/1/3 established; Step2/TSK-08 in_progress, TSK-09.1/09 blocked. Other native/recovery consumer union, integrated six-class ratchet, data-pipeline literal obsolete disposition and final Apply gates remain. Published OC-rate25 is NP-derived and selected terminal NP has no later grant. No formal performance, README final quality, eight-shard regeneration, dependent task or push.",
     "nextLimitedOperation": "Choose a distinct original-request native/recovery phase consumer from the seven-kind table, with a direct caller and independent expected capture; separately reconcile six-class final identity and data-pipeline obsolete definitions. Do not count synthetic fixtures as published occurrence coverage."
   },
+  "postPublishedNativeConditionFeasibilityCheckpoint": {
+    "date": "2026-09-29",
+    "status": "product_incomplete_hypothesis_rejected_no_product_diff",
+    "startHead": "5700c11799c43955a7fc0f7222ad0273af1de571",
+    "authorization": "Presented current-code plan before mutation; user replied OK; no push.",
+    "hypothesis": "Published condition declaration selected preparation cells would yield native physical HP reads that could be joined to the original request and public dependency gate.",
+    "result": "Rejected by actual published request population. The experimental public artifact retains 3186 original requests and 512 bindings, with zero nativePreparationConditionRead bindings. Its 90 selected condition bindings cover 40 original requests and 9 declarations; all 180 selected steps are notApplicable. A committed native action does not imply evaluation of these selected source conditions. Local schema-legal fixture reads cannot be counted as published original-request coverage. Product and test edits were restored to HEAD.",
+    "oldIdentity": "postNpTwoOperationValueReadCheckpoint.auditArtifacts.candidateManifest and its published dependency artifact; current product source and published master SHA-256 still match postNpTwoOperationValueReadCheckpoint.sourceIdentity.",
+    "experimentArtifact": {
+      "path": ".test-results/2026-09-29T12-55-48-777Z-2-5196ba/production-hp-published-dependency.json",
+      "bytes": 13854225,
+      "sha256": "3c0962f6ea3110aae79d4f587a9eaa079c0d91774171976452b23c9b15316ce2",
+      "decodedComparison": "Old/new requestCount 3186 and bindings 512, gate failures zero. The experiment adds one unobserved nativePreparationConditionRead stage to each of 71 declaration rows. Removing only those 71 unobserved entries makes the entire decoded payload, array order/counts and encoded auxiliary fields equal to the old artifact. No public physical-read evidence was added."
+    },
+    "experimentRuns": {
+      "focusedUnit": "19/19 and typecheck passed on experimental source. Manifest .test-results/2026-09-29T12-55-21-613Z-2-b074ee/manifest.json: 4860 bytes, SHA-256 db637eb8ce5e22df6c70bf3a8f2312ac6641a0cd0b6a14bcfebb6a356cd36985, 14 artifacts, zero verification errors. This does not verify restored final source.",
+      "publicAudit": "8 passed/2 failed on experimental source. The first failure is the explicit positive published-native-read assertion; the second depends on artifact payloads not initialized after that failure. Manifest .test-results/2026-09-29T12-55-48-777Z-2-5196ba/manifest.json: 5794 bytes, SHA-256 dc7a1750a169447cafc0a94864061865f5d6ca8cd42a693ef81f94d1a38e3009, outcome artifact_failure, 16 receipt errors. It is not complete success evidence."
+    },
+    "obligations": "Checklist1/lifecycle1-3 retained only at matching identity. Checklist2-3/lifecycle4-5,8 not closed by this experiment. Checklist4/lifecycle6 literal obsolete judgment belongs to data-pipeline and remains Deferred, retaining raw OC167 occurrences/632 cells and public join. All Done gate and TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001 integrated six-class/first-diff/bounded/full/all-receipt duties remain. RK-PERF-001/TS-PERF-002 formal three-run gates and DX-HANDOFF-001/lifecycle7 README quality remain Deferred. Step0/1/3 established; Step2/TSK-08 in_progress; TSK-09.1/09 blocked.",
+    "nextLimitedOperation": "Before proposing another unit, prove an actual public original-request physical consumer phase and identify an unconnected gate obligation from direct caller/capture, or choose one integrated six-failure-class gap. Existing public candidate condition94/value16/NP-evaluation16 bindings are leads, not presumed missing. Keep normal nonselection, selected skipped, preparation rejection, candidate abort, physical read and consumption, and each actual repair command distinct. Do not infer native reads from the 90 selected cells or reuse this local-only hypothesis."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -29370,7 +29391,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postNpBeforeDamageValueReadCheckpoint.nextLimitedOperation. The selected ready HP and NP beforeDamage value-expression physical-read obligations are closed locally, including nonselected sibling physical read without consumption. Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Reuse matching evidence; distinct native/recovery/raw owners and integrated final gates remain Deferred. No dependent quality or push.",
+    "nextSession": "Follow postPublishedNativeConditionFeasibilityCheckpoint.nextLimitedOperation. Published selected condition cells have zero native physical reads in the current original-request population; the approved hypothesis was rejected and experimental product/test edits restored. Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Reuse matching prior evidence; native/recovery/raw owners and integrated six-class/final gates remain Deferred. No dependent quality or push.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -29472,8 +29493,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postNpTwoOperationValueReadCheckpoint.nextLimitedOperation",
-    "latestCheckpointReference": "postNpTwoOperationValueReadCheckpoint",
+    "nextSessionReference": "postPublishedNativeConditionFeasibilityCheckpoint.nextLimitedOperation",
+    "latestCheckpointReference": "postPublishedNativeConditionFeasibilityCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
