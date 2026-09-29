@@ -28,6 +28,7 @@ import {
 import { resolveTargetCandidates } from './targetContext';
 import { compileNoblePhantasmDamageOperation } from './npDamageCompilation';
 import { effectChangesPreparation } from './preparationTransaction';
+import { retainCompiledSources } from './executionSourceObservation';
 import type { ResolvedAttackerFormExecution } from './sourceCollection';
 import { closeResourceMutationSemantics } from './resourceSemantics';
 export function compileExecutionPlan(
@@ -234,7 +235,7 @@ export function compileExecutionPlan(
     ...(collected.formExecution?.state.hp?.inputDefinitions ?? []),
     ...(collected.formExecution?.requiredInputs ?? []),
   ]);
-  return {
+  const plan: PreparedOrderedScenario = {
     baseInput,
     scenario: executionScenario,
     attackerTraits: initialForm?.traits ?? [],
@@ -263,4 +264,6 @@ export function compileExecutionPlan(
     battlePointDomains: master.battlePointDomains,
     appliedPreparationActions: collected.formExecution?.actions ?? [],
   };
+  retainCompiledSources(plan, collected.sources);
+  return plan;
 }

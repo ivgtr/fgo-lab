@@ -44,6 +44,7 @@ function setup(
   nativePreparation = false,
   nestedCondition = false,
   npCondition = false,
+  npValueExpression = false,
 ) {
   const master = masterSnapshotSchema.parse(fixture);
   const actor = master.servants[0]!;
@@ -203,7 +204,18 @@ function setup(
   for (const group of actor.noblePhantasmVariantGroups)
     for (const variant of group.variants)
       if (variant.kind === 'attack') {
-        variant.effects = [];
+        variant.effects = npValueExpression
+          ? [
+              noblePhantasmEffectSchema.parse({
+                ...effect,
+                id: 'fixture-np-hp-reader',
+                occurrenceId: 'fixture-np-hp-reader:0',
+                gameActivation: 'npBeforeDamage',
+                timing: 'beforeDamage',
+                requirement: { recipient: 'sourceSelf', expression: { kind: 'always' } },
+              }),
+            ]
+          : [];
         variant.damage = variant.damage.map((damage) => ({
           ...damage,
           kind: 'hpRatioLow',
@@ -1029,6 +1041,117 @@ it(
     );
     const disk = await readFile(
       resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-candidate-condition-leaf-identity.json'),
+    );
+    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+  },
+);
+
+it(
+  'joins a selected NP beforeDamage HP value cell to its candidate physical read',
+  productionAuditTestOptions(['hp-np-before-damage-value-read.json']),
+  async ({ task }) => {
+    const f = setup(false, false, false, false, false, false, false, false, true);
+    expect(resolvedScenarioSchema.safeParse(f.scenario).success).toBe(true);
+    const target = f.calculation.executionObservation?.targetExecution;
+    if (target?.selection !== 'selected' || target.candidateState?.preflight?.status !== 'ready')
+      throw new Error('selected_np_candidate_missing');
+    const capture = hpCandidateObservationFor(target.candidateState);
+    if (!capture) throw new Error('np_candidate_capture_missing');
+    const selected = f.borrowed.bindings.filter(
+      (binding) =>
+        binding.declaration.identity.origin === 'np' &&
+        binding.declaration.identity.kind === 'valueExpression' &&
+        binding.stage === 'selectedPreparationCell',
+    );
+    const npReads = capture.valueReads.filter((read) => read.operation.source.origin === 'np');
+    expect(selected).toHaveLength(1);
+    expect(npReads).toHaveLength(1);
+    const positive = f.reconcile();
+    expect(positive.gate.failures).toEqual([]);
+    expect(
+      positive.bindings.filter(
+        (binding) => binding.declaration.origin === 'np' && binding.stage === 'actualValueRead',
+      ),
+    ).toHaveLength(1);
+    const index = capture.valueReads.indexOf(npReads[0]!);
+    const [removed] = capture.valueReads.splice(index, 1);
+    const missingBindings = hpPublishedDependencyBindings(f.declarations, f.requests);
+    const missing = reconcileHpPublishedDependencyCoverage(
+      f.declarations,
+      f.requests,
+      missingBindings.bindings,
+    );
+    capture.valueReads.splice(index, 0, removed!);
+    expect(missing.gate.failures.some((failure) => failure.reason === 'valueReadMismatch')).toBe(
+      true,
+    );
+    expect(missing.gate.failures.some((failure) => failure.firstDifference?.identity)).toBe(true);
+    const complete = {
+      originalRequest: f.prepared.scenario,
+      selectedVariant: f.prepared.resolved.noblePhantasmVariant?.ref,
+      orderedPlan: f.prepared.orderedScenario,
+      selectedCells: selected,
+      operationEvents: target.operationEvents,
+      executionGroups: target.candidateState.executionGroups,
+      candidateValueReads: capture.valueReads,
+      positive,
+      missing,
+    };
+    await writeProductionAuditArtifact(task.meta, 'hp-np-before-damage-value-read.json', complete);
+    const disk = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-np-before-damage-value-read.json'),
+    );
+    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+  },
+);
+
+it(
+  'keeps the sibling NP beforeDamage value cell unselected',
+  productionAuditTestOptions(['hp-np-before-damage-sibling.json']),
+  async ({ task }) => {
+    const f = setup(false, false, true, false, false, false, false, false, true);
+    const result = f.reconcile();
+    expect(result.gate.failures).toEqual([]);
+    const selected = f.borrowed.bindings.filter(
+      (binding) =>
+        binding.declaration.identity.origin === 'np' &&
+        binding.declaration.identity.kind === 'valueExpression' &&
+        binding.stage === 'selectedPreparationCell',
+    );
+    expect(selected).toHaveLength(1);
+    expect(selected[0]?.declaration.identity.variant?.ref).toEqual(
+      f.prepared.resolved.noblePhantasmVariant?.ref,
+    );
+    const other = f.declarations.filter(
+      (declaration) =>
+        declaration.identity.origin === 'np' &&
+        declaration.identity.kind === 'valueExpression' &&
+        declaration.identity.variant?.canonicalId !==
+          selected[0]?.declaration.identity.variant?.canonicalId,
+    );
+    expect(other).toHaveLength(10);
+    const physicalReads = result.bindings.filter(
+      (binding) => binding.declaration.origin === 'np' && binding.stage === 'actualValueRead',
+    );
+    expect(physicalReads).toHaveLength(2);
+    expect(
+      physicalReads.map((binding) => (binding.detail as { consumed: boolean }).consumed),
+    ).toEqual([true, false]);
+    const target = f.calculation.executionObservation?.targetExecution;
+    const complete = {
+      originalRequest: f.prepared.scenario,
+      selectedVariant: f.prepared.resolved.noblePhantasmVariant?.ref,
+      orderedPlan: f.prepared.orderedScenario,
+      selectedCells: selected,
+      operationEvents: target?.selection === 'selected' ? target.operationEvents : null,
+      executionGroups:
+        target?.selection === 'selected' ? (target.candidateState?.executionGroups ?? null) : null,
+      physicalReads,
+      result,
+    };
+    await writeProductionAuditArtifact(task.meta, 'hp-np-before-damage-sibling.json', complete);
+    const disk = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-np-before-damage-sibling.json'),
     );
     expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
   },

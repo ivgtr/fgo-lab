@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.143"
+document_version: "1.7.144"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-29"
@@ -4400,3 +4400,21 @@ schema-legalな入れ子の同値別leaf、欠落／入替え／foreign参照／
 六クラスはparityのmatrix gate、unsupported／invalidのfinal outcome、partial commitのtransaction、inert controlの公開control、stale mutationのreceipt／recoveryに局所証拠を保持する。単独auditや今回の値式反例を六クラス最終ratchetへ読み替えない。公開OC-rate25宣言の選択済み終端NPには後続grantがなく、合成grantを公開元requestの到達証拠にしない。Step 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`。次は別native／recovery ownerのphase別consumer、六クラスの統合同一identity、raw OCを保持したobsolete判定を一つずつ限定する。TSK-08自身のDeferredが残るため、正式性能・README最終quality・8 shards再生成・TSK-09系・pushは行わず、この製品未完了checkpointを対象限定local commitで止める。
 
 別境界の探索では、master schemaが受け入れるNP `beforeDamage`値式fixtureに候補物理readがあっても、現公開gateは対応する選択cellとのjoinで`valueReadMismatch`（`requests.0.valueReads.1`）を返した。探索fixtureとNP用source変更は復元し、上記最終source・artifactに含めていない。公開母集団の値式30宣言はすべてattacker由来であり、この合成NPを公開到達証拠へ加算しない。次の限定操作はNP元request→準備source／cell選択→ordered NP effect→候補readの直接callerを調べ、選択cell欠落かvariant joinかを区別して別計画を提示すること。失敗診断は`.test-results/2026-09-29T10-39-41-954Z-15-649f57`、詳細は同[evidence](../evidence/tsk-08-parity-ratchet.json)のcheckpointを参照。
+
+### TSK-08 NP beforeDamage値式の選択cell／実read接続checkpoint（製品未完了、2026-09-29）
+
+開始HEAD `8187cc8a052f653e87fd1fcc60e03dddb37b9699`、index／差分／untrackedはclean。現コードと元application requestに基づく計画を先に提示し、利用者の`OK`後に実装した。schemaで受理されたNP beforeDamage値式の反例は、ordered `addModifier`と候補物理readを持つ一方、準備attemptから借りる公開bindingにNP `selectedPreparationCell`がなかった。元の「joinだけ」という仮説を反例で訂正した。beforeDamage sourceはcompile時のsource群が保持するため、battle-executionが元`SourceEffect`参照をproduct state外のWeakMapに保持し、application公開gateが選択variant、元effect／operation／cell path、event／group、物理readを照合する。非選択の兄弟NP variantも`notApplied`の物理readは起こり得るので、選択cellなし・非消費readとして区別する。欠落・曖昧・異variantは既存typed gateでfail closedにし、damage／candidate生成／HP action・recipient selector／fallback／別期待値生成器は変更していない。
+
+最終製品sourceの公開auditは5 file／88 test成功、公開master・既存99 artifact中97件の非run内容は旧artifactとdisk bytes／SHA-256が完全一致し、従って完全decoded値・配列順・件数も一致。差分はrun固有の`stdout.log`／`vitest.json`だけ。最終test sourceの局所18／18、typecheck、target lint／format、差分check成功。新しい完全artifactは選択NP元request／ordered plan／選択cell／read欠落のtyped `valueReadMismatch`＋first differenceと、兄弟variantの物理read2件・消費`true,false`を別々に保存する。旧unitの共通11 artifact中9件の非run内容は完全一致。旧119／新13、旧公開99／新公開99、CPU診断baseline99／candidate99の全528 disk receiptをbytes／SHA-256で照合し不一致0、全manifestのverification errorは空。manifest／artifact identityは[evidence](../evidence/tsk-08-parity-ratchet.json) `postNpBeforeDamageValueReadCheckpoint`を正本とする。
+
+計算compile capture変更の同input・CPU affinity0–7・production4／unit4／audit1 workers・同60秒上限の単回診断はcontrol第1 test32.176→32.277秒（+0.101秒）。全audit257.05→267.56秒（+10.51秒）は主に別の二testの単回変動であり、候補数・damage・既存97 artifactの差は観測されない。正式な変更前後各3run性能gateには数えない。`verifyDepsBeforeRun: error`を維持し、baseline cloneでは固定lockfileを用いた独立installで依存状態を整えた。
+
+| TSK-08義務 | 今回の判定 |
+| --- | --- |
+| checklist①／入力lifecycle①〜③ | 単一producer、486-source／7470-cell共有inventory、既存mutation、改訂80条件matrixを同じ意味とinput identityの範囲で再利用。 |
+| checklist②③／lifecycle④⑤⑧ | 今回はNP beforeDamageの元request→compile source／選択cell→ordered operation／物理read／消費の遷移を閉じた。元request二種の未到達、3 request／2実command修復edge、準備条件read、共通HP gate、partial commit完全artifactは既存証拠を再利用。別native／recovery consumer unionと六クラスの最終同一identity到達はDeferred。 |
+| checklist④／lifecycle⑥ | 旧13回master読込は除去済み。既存`commandEdgeSessionCheckpoint.legacyClassification`の定義・直接caller・入力母集団・固有assertionを維持。raw OC 167 occurrence／632 cellと公開joinには固有coverageがあり削除しない。literal obsolete最終判定はdata-pipeline ownerでDeferred。 |
+| Done gate、`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001` | 局所のtyped first difference／完全artifact／全receiptと影響auditは成立。全damage説明、digest first difference、最終inventory／parity／fail-closed、六クラス統合出力はDeferred。 |
+| `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／lifecycle⑦ | 単回診断だけ成立。正式各3run、README最終quality、統合counter／digest／全receiptはDeferred。 |
+
+六クラスはparity matrix、unsupported／invalid final outcome、partial commit transaction、inert公開control、stale mutation receipt／recoveryの元入力からtyped reason、canonical identity／first difference、bounded summary、完全artifact、全receiptまで同一最終identityで統合する必要がある。公開OC-rate25宣言はNP由来で、選択済み終端NPに後続grantはない。今回の合成値式fixtureを公開元requestの到達件数には加えない。次は七宣言種別のphase別表から別native／recovery consumer遷移を一つ選び、raw evidenceのobsolete判定と六クラス統合は別ownerとして限定して進める。TSK-08自身のDeferredが残るのでStep 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`。依存quality、正式性能、8 shards再生成、TSK-09系、pushは行わず、対象限定local checkpoint commitで止める。

@@ -1,6 +1,9 @@
 import { isDeepStrictEqual } from 'node:util';
 import type { BattleOperation, ConditionExpression, SourceEffect } from '@fgo-lab/battle-execution';
-import { hpCandidateObservationFor } from '@fgo-lab/battle-execution/preparation-audit';
+import {
+  compiledSourcesFor,
+  hpCandidateObservationFor,
+} from '@fgo-lab/battle-execution/preparation-audit';
 import { getNoblePhantasmVariants, noblePhantasmVariantKey } from '@fgo-lab/master-data';
 import {
   firstCanonicalAuditDifference,
@@ -108,6 +111,39 @@ const sourceMatches = (
   declaration.identity.occurrence === source.effectOccurrenceId &&
   declaration.effect?.id === source.effectId &&
   variantMatches(declaration, ref);
+const compiledNpValueCell = (
+  dependencies: readonly HpProofDeclaration[],
+  ordered: PreparedCalculationScenario['orderedScenario'],
+  operation: BattleOperation,
+): HpProofDeclaration | null => {
+  if (!ordered || operation.source.origin !== 'np') return null;
+  const sources = compiledSourcesFor(ordered)?.filter(
+    (source) =>
+      source.phase === 'beforeNpDamage' &&
+      source.sourceInstanceId === operation.source.sourceInstanceId &&
+      source.effect.id === operation.source.effectId &&
+      source.effect.occurrenceId === operation.source.effectOccurrenceId,
+  );
+  if (sources?.length !== 1) return null;
+  const source = sources[0]!;
+  const operationIndices = source.effect.execution.flatMap((candidate, index) =>
+    (candidate.kind === 'damageModifier' || candidate.kind === 'modifierRateChange') &&
+    candidate.valueExpressions[source.valueSetIndex]?.[source.valueIndex]
+      ? [index]
+      : [],
+  );
+  if (operationIndices.length !== 1) return null;
+  const operationIndex = operationIndices[0]!;
+  const matches = dependencies.filter(
+    (declaration) =>
+      declaration.identity.kind === 'valueExpression' &&
+      declaration.effect === source.effect &&
+      sourceMatches(declaration, operation.source, source.noblePhantasmVariant) &&
+      declaration.identity.path ===
+        `execution.${operationIndex}.valueExpressions.${source.valueSetIndex}.${source.valueIndex}`,
+  );
+  return matches.length === 1 ? matches[0]! : null;
+};
 const recipient = (declaration: HpProofDeclaration) => {
   const operation = declaration.operation;
   return operation && 'route' in operation
@@ -208,6 +244,8 @@ export function hpPublishedDependencyBindings(
     )
       fail('requestOwnerMismatch', `requests.${requestIndex}.owner`);
     const ordered = prepared.orderedScenario;
+    const compiledNpCell = (operation: BattleOperation) =>
+      compiledNpValueCell(dependencies, ordered, operation);
     const transport = battlePointPreparationRejectionObservationFor(prepared);
     if (prepared.scenario.mode === 'resolved' && prepared.status !== 'invalid' && !transport)
       fail('missingCapture', `requests.${requestIndex}.preparation`);
@@ -362,9 +400,12 @@ export function hpPublishedDependencyBindings(
             d.identity.kind === 'valueExpression' &&
             sourceMatches(d, operation.source, operation.source.origin === 'np' ? ref : null),
         );
-        if (!matches.length)
+        const contextMatches = matches.length
+          ? matches
+          : [compiledNpCell(operation)].filter((d) => d !== null);
+        if (!contextMatches.length)
           fail('unmatchedCanonical', `requests.${requestIndex}.operations.${sequence}.expression`);
-        matches.forEach((d, position) =>
+        contextMatches.forEach((d, position) =>
           push(d, {
             stage: 'expressionContext',
             position,
@@ -669,15 +710,90 @@ export function hpPublishedDependencyBindings(
         }),
       ),
     );
+    if (ordered) {
+      const compiledSources = compiledSourcesFor(ordered);
+      if (
+        !compiledSources &&
+        ordered.operations.some((operation) => operation.source.origin === 'np')
+      )
+        fail('missingCapture', `requests.${requestIndex}.compiledSources`);
+      compiledSources
+        ?.filter(
+          (source) =>
+            source.phase === 'beforeNpDamage' &&
+            source.noblePhantasmVariant !== null &&
+            ref !== null &&
+            noblePhantasmVariantKey(source.noblePhantasmVariant) === noblePhantasmVariantKey(ref),
+        )
+        .forEach((source, position) => {
+          const operationSource = {
+            origin: source.origin,
+            sourceId: source.sourceId,
+            sourceInstanceId: source.sourceInstanceId,
+            skillId: source.skillId,
+            effectId: source.effect.id,
+            effectOccurrenceId: source.effect.occurrenceId,
+          };
+          dependencies
+            .filter((declaration) => {
+              if (
+                declaration.identity.kind !== 'valueExpression' ||
+                declaration.effect !== source.effect ||
+                !sourceMatches(declaration, operationSource, source.noblePhantasmVariant)
+              )
+                return false;
+              const operationIndex = declaration.operation
+                ? source.effect.execution.indexOf(declaration.operation)
+                : -1;
+              return (
+                declaration.identity.path ===
+                `execution.${operationIndex}.valueExpressions.${source.valueSetIndex}.${source.valueIndex}`
+              );
+            })
+            .forEach((declaration) =>
+              push(declaration, {
+                stage: 'selectedPreparationCell',
+                position,
+                operation: null,
+                sequence: null,
+                group: null,
+                sourceInstanceId: source.sourceInstanceId,
+                actor: 'attacker',
+                actionId: null,
+                actionIndex: null,
+                reference: source,
+                detail: {
+                  source: {
+                    origin: source.origin,
+                    sourceId: source.sourceId,
+                    skillId: source.skillId,
+                    valueSetIndex: source.valueSetIndex,
+                    valueIndex: source.valueIndex,
+                    variant: source.noblePhantasmVariant,
+                  },
+                  phase: source.phase,
+                  qualification:
+                    'Compiled NP beforeDamage source cell; candidate read and consumption are separate.',
+                },
+              }),
+            );
+        });
+    }
     candidates.forEach((captured) => {
       const candidate = hpCandidateObservationFor(captured.candidateState);
       candidate?.valueReads.forEach((read, position) => {
+        const compiledCell = compiledNpCell(read.operation);
         if (
           !dependencies.some(
             (declaration) =>
               declaration.identity.kind === 'valueExpression' &&
-              sourceMatches(declaration, read.operation.source, null),
-          )
+              sourceMatches(
+                declaration,
+                read.operation.source,
+                read.operation.source.origin === 'np' ? ref : null,
+              ),
+          ) &&
+          !compiledCell
         )
           return;
         const operation = ordered?.operations[read.operationSequence];
@@ -692,7 +808,11 @@ export function hpPublishedDependencyBindings(
             binding.stage === 'selectedPreparationCell' &&
             binding.sourceInstanceId === read.operation.source.sourceInstanceId &&
             binding.declaration.identity.kind === 'valueExpression' &&
-            sourceMatches(binding.declaration, read.operation.source, null),
+            sourceMatches(
+              binding.declaration,
+              read.operation.source,
+              read.operation.source.origin === 'np' ? ref : null,
+            ),
         );
         if (
           !operation ||
@@ -702,12 +822,18 @@ export function hpPublishedDependencyBindings(
           event.operationOutcome !==
             (group?.outcome === 'rolledBack' ? 'unsupported' : read.result.outcome) ||
           !group?.operationIds.includes(operation.operationId) ||
-          selected.length !== 1
+          (selected.length !== 1 &&
+            !(
+              selected.length === 0 &&
+              compiledCell &&
+              read.result.outcome === 'notApplied' &&
+              !read.modifierAppended
+            ))
         ) {
           fail('valueReadMismatch', `requests.${requestIndex}.valueReads.${position}`);
           return;
         }
-        const declaration = selected[0]!.declaration;
+        const declaration = selected[0]?.declaration ?? compiledCell!;
         const committed = group.outcome === 'committed';
         const consumed =
           committed &&
@@ -746,6 +872,7 @@ export function hpPublishedDependencyBindings(
   });
   requests.forEach(({ prepared }, requestIndex) => {
     if (prepared.status !== 'executable') return;
+    const selectedRef = prepared.resolved.noblePhantasmVariant?.ref ?? null;
     const target = prepared.executionObservation?.targetExecution;
     if (target?.selection !== 'selected' || target.candidateState?.preflight?.status !== 'ready')
       return;
@@ -758,6 +885,8 @@ export function hpPublishedDependencyBindings(
         binding.stage === 'selectedPreparationCell' &&
         binding.declaration.identity.kind === 'valueExpression',
     );
+    const compiledNpCell = (operation: BattleOperation) =>
+      compiledNpValueCell(dependencies, prepared.orderedScenario, operation);
     const expected: {
       operation: BattleOperation;
       sequence: number;
@@ -776,9 +905,28 @@ export function hpPublishedDependencyBindings(
       const matches = selected.filter(
         (binding) =>
           binding.sourceInstanceId === operation.source.sourceInstanceId &&
-          sourceMatches(binding.declaration, operation.source, null),
+          sourceMatches(
+            binding.declaration,
+            operation.source,
+            operation.source.origin === 'np' ? selectedRef : null,
+          ),
       );
-      if (matches.length === 0) return; // Normal nonselection has no physical read obligation.
+      if (matches.length === 0) {
+        const compiledCell = compiledNpCell(operation);
+        if (!compiledCell || event.operationOutcome !== 'notApplied') return;
+        const group = candidateState.executionGroups.findIndex((item) =>
+          item.operationIds.includes(operation.operationId),
+        );
+        if (group < 0) {
+          fail(
+            'candidateEventMismatch',
+            `requests.${requestIndex}.operations.${sequence}.valueRead`,
+          );
+          return;
+        }
+        expected.push({ operation, sequence, group, declaration: compiledCell });
+        return;
+      }
       if (matches.length !== 1) {
         fail('ambiguousCanonical', `requests.${requestIndex}.operations.${sequence}.valueCell`);
         return;
