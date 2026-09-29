@@ -55,7 +55,9 @@ export type HpPublishedDependencyReason =
   | 'orderMismatch'
   | 'conditionReadMismatch'
   | 'valueReadMismatch'
-  | 'npVariantSelectionMismatch';
+  | 'npVariantSelectionMismatch'
+  | 'candidatePreflightMismatch'
+  | 'candidateEventMismatch';
 interface Failure {
   reason: HpPublishedDependencyReason;
   path: string;
@@ -319,7 +321,20 @@ export function hpPublishedDependencyBindings(
     candidates.forEach((captured) => {
       const candidate = hpCandidateObservationFor(captured.candidateState);
       const candidatePath = `requests.${requestIndex}.candidates.${captured.candidateIndex}`;
-      if (!candidate && target?.selection !== 'unresolved') fail('missingCapture', candidatePath);
+      const preflight = captured.candidateState?.preflight;
+      const aborted = preflight?.status === 'aborted';
+      if (aborted) {
+        if (
+          !preflight.issues.some((issue) => issue.kind === 'invalidActivationContext') ||
+          candidate ||
+          captured.candidateState?.executionGroups.length !== 0 ||
+          ('operationEvents' in captured && captured.operationEvents.length !== 0)
+        )
+          fail('candidatePreflightMismatch', candidatePath);
+      } else if (preflight?.status !== 'ready' && target?.selection !== 'unresolved')
+        fail('candidatePreflightMismatch', candidatePath);
+      if (!candidate && !aborted && target?.selection !== 'unresolved')
+        fail('missingCapture', candidatePath);
       if (candidate && candidate.seed.hp !== ordered?.hp)
         fail('requestOwnerMismatch', `${candidatePath}.seed`);
       candidate?.reads.forEach((read, position) => {
@@ -706,6 +721,32 @@ export function reconcileHpPublishedDependencyCoverage(
         target?.selection === 'selected' && binding.sequence !== null
           ? target.operationEvents[binding.sequence]
           : undefined;
+      const operation =
+        binding.sequence === null
+          ? undefined
+          : prepared.orderedScenario?.operations[binding.sequence];
+      const groups =
+        target?.selection === 'selected'
+          ? (target.candidateState?.executionGroups.filter((group) =>
+              group.operationIds.includes(binding.operation?.operationId ?? ''),
+            ) ?? [])
+          : [];
+      if (
+        event &&
+        (event.sequence !== binding.sequence ||
+          event.operationId !== binding.operation?.operationId ||
+          operation?.operationId !== event.operationId ||
+          operation.source.sourceInstanceId !== binding.sourceInstanceId ||
+          groups.length !== 1)
+      )
+        fail('candidateEventMismatch', `requests.${requestIndex}.consumer.${binding.sequence}`);
+      if (
+        !event &&
+        selectedCell &&
+        target?.selection === 'selected' &&
+        target.candidateState?.preflight?.status === 'ready'
+      )
+        fail('candidateEventMismatch', `requests.${requestIndex}.consumer.${binding.sequence}`);
       return {
         declaration: binding.declaration.identity,
         operationId: binding.operation?.operationId ?? null,

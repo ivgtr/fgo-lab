@@ -26,7 +26,7 @@ import type {
   ResolvedCanonicalInputSet,
   ContributionApplicationPolicy,
 } from './executionTypes';
-import { prepareCandidateExecution } from './candidatePreparation';
+import { prepareCandidateExecution, type PreparedCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
 import { assembleInvalidActivationResult } from './candidateFailure';
 import { markOperationGroupUnsupported } from './candidateRollback';
@@ -139,6 +139,17 @@ export function executeOrderedScenarioCandidate(
   );
 }
 
+function recordCandidatePreflight(
+  audit: MutableCandidateStateAudit | undefined,
+  candidate: PreparedCandidateExecution,
+): void {
+  if (!audit) return;
+  audit.preflight =
+    candidate.status === 'invalidActivationContext'
+      ? { status: 'aborted', issues: candidate.issues }
+      : { status: 'ready' };
+}
+
 function executeOrderedScenarioCandidateInternal(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
@@ -148,6 +159,7 @@ function executeOrderedScenarioCandidateInternal(
 ): OrderedScenarioExecution {
   const { baseInput, damage, operations, attackerClass } = prepared;
   const candidate = prepareCandidateExecution(prepared, resolvedInputs, targetCandidate);
+  recordCandidatePreflight(audit, candidate);
   if (candidate.status === 'invalidActivationContext')
     return assembleInvalidActivationResult({ prepared, resolvedInputs, candidate });
   const {

@@ -95,6 +95,7 @@ export interface OrderedExecutionGroupAuditEvent {
 }
 
 export interface OrderedCandidateStateAudit {
+  preflight: { status: 'ready' } | { status: 'aborted'; issues: readonly ExecutionIssue[] } | null;
   preGroupContextResolution: {
     appliedOperationIds: readonly string[];
     before: {

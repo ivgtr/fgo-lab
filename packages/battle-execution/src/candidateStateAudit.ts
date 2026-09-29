@@ -18,6 +18,7 @@ import type {
 } from './executionTypes';
 
 export interface MutableCandidateStateAudit {
+  preflight: OrderedCandidateStateAudit['preflight'];
   preGroupContextResolution: OrderedCandidateStateAudit['preGroupContextResolution'];
   executionGroups: OrderedExecutionGroupAuditEvent[];
   inputQuantityReads: OrderedInputQuantityReadAuditEvent[];
@@ -64,6 +65,7 @@ export interface CandidateExecutionWithAudit {
 
 export function createMutableCandidateStateAudit(): MutableCandidateStateAudit {
   return {
+    preflight: null,
     preGroupContextResolution: null,
     executionGroups: [],
     inputQuantityReads: [],

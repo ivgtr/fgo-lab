@@ -476,7 +476,25 @@ export function reconcileHpOperationEvidence(
       target?.selection === 'selected' && target.candidateState
         ? hpCandidateObservationFor(target.candidateState)
         : undefined;
-    if (target?.selection === 'selected' && !candidate)
+    const preflight = target?.selection === 'selected' ? target.candidateState?.preflight : null;
+    const aborted = preflight?.status === 'aborted';
+    if (target?.selection === 'selected' && !preflight)
+      fail(
+        'candidateReadMismatch',
+        `requests.${requestIndex}.candidatePreflight`,
+        'ready-or-aborted',
+        null,
+      );
+    if (
+      aborted &&
+      (!preflight.issues.some((issue) => issue.kind === 'invalidActivationContext') ||
+        candidate ||
+        (target?.selection === 'selected' &&
+          (target.operationEvents.length !== 0 ||
+            target.candidateState?.executionGroups.length !== 0)))
+    )
+      fail('candidateReadMismatch', `requests.${requestIndex}.candidatePreflight`, true, false);
+    if (target?.selection === 'selected' && !candidate && !aborted)
       fail('missingCapture', `requests.${requestIndex}.candidate`, true, false);
     const operations = prepared.orderedScenario?.operations ?? [];
     const groups =

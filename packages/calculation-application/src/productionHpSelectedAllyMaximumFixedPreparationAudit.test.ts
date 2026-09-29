@@ -7,7 +7,9 @@ import { readFile } from 'node:fs/promises';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { firstCanonicalAuditDifference } from '@fgo-lab/master-data/production-audit';
-import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { ENGINE_VERSION, SCHEMA_VERSION, resolvedScenarioSchema } from '@fgo-lab/schema';
+import { hpProofCoverageInventory } from './productionHpProofCoverage';
+import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
 import {
   createDefaultResolvedScenario,
   prepareCalculationScenarioWithPolicy,
@@ -371,7 +373,7 @@ const versions = {
   masterDataLocale: 'ja-JP',
 } as const;
 function run(master: MasterDataSnapshot, spec: Spec, capture = true, ranking = false) {
-  const scenario = {
+  const scenario = resolvedScenarioSchema.parse({
     ...createDefaultResolvedScenario(master, undefined),
     attackerHpPermille: spec.initial,
     explicitOverrides: {},
@@ -384,7 +386,7 @@ function run(master: MasterDataSnapshot, spec: Spec, capture = true, ranking = f
       })),
       { kind: 'executeAttackNoblePhantasm' as const },
     ],
-  };
+  });
   const prepared = prepareCalculationScenarioWithPolicy(
     scenario,
     master,
@@ -512,6 +514,41 @@ for (const spec of specs)
       else expect(p.gate.connected).toBe(0);
     },
   );
+
+it(
+  'keeps a schema-parsed selected HP writer unreached after native rejection',
+  productionAuditTestOptions(['hp-native-selected-unreached.json']),
+  async ({ task }) => {
+    const spec = {
+      ...specs.find((item) => item.name === 'native-unreached')!,
+      writes: [[1200, -700]],
+    };
+    const master = fixtureMaster(spec);
+    const result = run(master, spec);
+    const evidence = reconcileHpOperationEvidence(hpProofCoverageInventory(master), [
+      {
+        prepared: result.prepared,
+        calculation: result.calculation,
+      },
+    ]);
+    expect(result.prepared.status).toBe('rejected');
+    expect(result.prepared.orderedScenario).toBeNull();
+    expect(evidence.gate.failures).toEqual([]);
+    expect(
+      evidence.rows.some(
+        (row) =>
+          row.step !== null && !row.reached && !row.attempted && row.transaction === 'rejected',
+      ),
+    ).toBe(true);
+    expect(evidence.candidateReads).toEqual([]);
+    await save(task, 'hp-native-selected-unreached.json', {
+      status: result.prepared.status,
+      orderedScenario: result.prepared.orderedScenario,
+      result: result.calculation.result,
+      evidence,
+    });
+  },
+);
 
 type Path = (string | number)[];
 function at(value: unknown, path: Path): unknown {

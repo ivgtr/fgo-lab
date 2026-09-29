@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { resolvedScenarioSchema } from '@fgo-lab/schema';
 import fixture from '../../test-fixtures/master/fixture.json';
 import {
   masterSnapshotSchema,
@@ -9,6 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
+import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
 import {
   hpPublishedDependencyBindings,
   reconcileHpPublishedDependencyCoverage,
@@ -357,6 +359,120 @@ it('records an executable request with no ordered HP consumer without inferring 
     { requestIndex: 0, disposition: 'noOrderedPlan', consumers: [] },
   ]);
 });
+
+it('rejects a missing ordered event from a ready selected candidate', () => {
+  const f = setup();
+  const target = f.calculation.executionObservation?.targetExecution;
+  expect(target?.selection).toBe('selected');
+  if (target?.selection !== 'selected') throw new Error('selected candidate missing');
+  expect(target.candidateState?.preflight).toEqual({ status: 'ready' });
+  target.operationEvents = [];
+  const gate = reconcileHpPublishedDependencyCoverage(
+    f.declarations,
+    f.requests,
+    f.borrowed.bindings,
+  ).gate;
+  expect(gate.failures.some((failure) => failure.reason === 'candidateEventMismatch')).toBe(true);
+});
+
+it(
+  'keeps a schema-parsed preflight abort distinct from missing HP capture',
+  productionAuditTestOptions(['hp-preflight-abort.json']),
+  async ({ task }) => {
+    const f = setup();
+    const scenario = resolvedScenarioSchema.parse({
+      ...f.scenario,
+      targetContext: {
+        ...f.scenario.targetContext,
+        class: { kind: 'concrete', classId: 'saber' },
+        attribute: { kind: 'concrete', attribute: 'man' },
+      },
+      activationFacts: [
+        {
+          kind: 'sourceQuantity',
+          source: { origin: 'support', sourceInstanceId: 'orphan:hp', skillId: null },
+          quantity: 'battlePointRate',
+          subjectId: 'orphan',
+          comparison: 'atLeast',
+          value: 1,
+        },
+      ],
+    });
+    const prepared = prepareCalculationScenarioWithPolicy(
+      scenario,
+      f.master,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    const calculation = evaluatePreparedCalculationScenario(prepared, f.versions);
+    const requests = [{ prepared, calculation }];
+    const bindings = hpPublishedDependencyBindings(f.declarations, requests);
+    const published = reconcileHpPublishedDependencyCoverage(
+      f.declarations,
+      requests,
+      bindings.bindings,
+    );
+    const operation = reconcileHpOperationEvidence(f.declarations, requests);
+    expect(prepared.status).toBe('executable');
+    expect(prepared.orderedScenario?.operations.length).toBeGreaterThan(0);
+    expect(calculation.executionObservation?.targetExecution?.selection).toBe('selected');
+    expect(calculation.result.status).toBe('unsupported');
+    expect(published.consumerPlans[0]?.disposition).toBe('orderedConsumerPlan');
+    expect(
+      published.consumerPlans[0]?.consumers.some(
+        (item) => item.disposition === 'consumerNotReached',
+      ),
+    ).toBe(true);
+    expect(published.gate.failures).toEqual([]);
+    expect(operation.gate.failures).toEqual([]);
+    const preflight = calculation.executionObservation?.targetExecution;
+    expect(preflight?.selection).toBe('selected');
+    if (preflight?.selection !== 'selected') throw new Error('selected candidate missing');
+    expect(preflight.candidateState?.preflight).toMatchObject({
+      status: 'aborted',
+      issues: [{ kind: 'invalidActivationContext', detail: 'unknownFact' }],
+    });
+    const originalPreflight = preflight.candidateState?.preflight;
+    preflight.candidateState!.preflight = { status: 'ready' };
+    const negativePublished = reconcileHpPublishedDependencyCoverage(
+      f.declarations,
+      requests,
+      bindings.bindings,
+    ).gate;
+    const negativeOperation = reconcileHpOperationEvidence(f.declarations, requests).gate;
+    expect(negativePublished.failures).toContainEqual({
+      reason: 'missingCapture',
+      path: 'requests.0.candidates.0',
+    });
+    expect(negativeOperation.failures.some((failure) => failure.reason === 'missingCapture')).toBe(
+      true,
+    );
+    expect(negativeOperation.firstDifference).not.toBeNull();
+    preflight.candidateState!.preflight = originalPreflight!;
+    await writeProductionAuditArtifact(task.meta, 'hp-preflight-abort.json', {
+      scenario,
+      result: calculation.result,
+      plan: published.consumerPlans,
+      publishedGate: published.gate,
+      operationGate: operation.gate,
+      preflight: preflight.candidateState?.preflight,
+      negativePublished,
+      negativeOperation,
+    });
+    const bytes = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-preflight-abort.json'),
+    );
+    expect(decodeProductionAuditArtifact(bytes)).toMatchObject({
+      scenario,
+      plan: published.consumerPlans,
+      publishedGate: published.gate,
+      operationGate: operation.gate,
+      negativePublished,
+      negativeOperation,
+    });
+  },
+);
 
 it(
   'rejects missing, duplicate, unmatched, equal foreign bindings and altered identity/detail',

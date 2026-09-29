@@ -28833,6 +28833,60 @@
     },
     "nextLimitedOperation": "The next worker first presents a current-code one-session plan and waits for confirmation, then executes only the approved bounded unit through local verification, artifact comparison, existing-canon update and scoped local commit. Full TSK-08 closure is conditional on zero remaining obligations and comparable final identity."
   },
+  "postOriginalRequestUnreachedCheckpoint": {
+    "date": "2026-09-29",
+    "status": "product_incomplete_local_checkpoint",
+    "startHead": "4080c984d9a8b546b65b09a0434aa1b5747d8843",
+    "authorization": "One-session plan presented before edits and explicitly confirmed. Initial HEAD/index/tracked/untracked clean; 18 retained source/input/manifest/artifact byte and SHA-256 identities matched disk before execution. No push.",
+    "sourceIdentity": [
+      { "path": "packages/battle-execution/src/candidateExecution.ts", "bytes": 16054, "sha256": "2febd682e0bbe0ec6d01c619a1d0a19b2b74b2f4aeced520f24121fdd05d50e0" },
+      { "path": "packages/battle-execution/src/candidateStateAudit.ts", "bytes": 7544, "sha256": "ad771800a718c4bb100d937dcb74e4a18dda962e86586203aab8e2db6c351404" },
+      { "path": "packages/battle-execution/src/executionTypes.ts", "bytes": 7150, "sha256": "b770131a9cf3a2146689292e31203a19620caa992d1012d4c07c2e3671e54e43" },
+      { "path": "packages/calculation-application/src/productionHpOperationEvidence.ts", "bytes": 25998, "sha256": "d714df40fda12ffeef684e615438b1f264cad4d0b09ba0e56f56d90609e8f44b" },
+      { "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts", "bytes": 44906, "sha256": "0c8a2fb0209c3c8f46be5863f1ce75cda393c984c4b2ccd1f1de04450eb6cb1f" },
+      { "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts", "bytes": 29107, "sha256": "76bd75c9810d4a83228f19e665b265656a386af5773753f8138a61d78530c3d3" },
+      { "path": "packages/calculation-application/src/productionHpSelectedAllyMaximumFixedPreparationAudit.test.ts", "bytes": 49488, "sha256": "35938da1090be3246527ced216b6600722d2b9a2e333fcec03b98dee6591ca71" }
+    ],
+    "inputIdentity": { "path": "apps/web/public/master/master.json", "bytes": 32953998, "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a" },
+    "directPath": "The existing application producer retains original evaluated requests and actual command edges; commandEdgeSessionCheckpoint proves 3 evaluated requests/2 edges. Original preparation/native attempt captures step origins before execution and reached steps after it. Candidate preparation now places ready or aborted(typed issues) on the audit-only per-candidate observation before returning; normal abort is distinguished from a ready missing HP capture in both common gates. Planned consumer event must match operation ID, sequence, source instance and exactly one captured group; missing event for ready selected candidate fails. Existing physical HP read and transaction bindings remain owners; no new product semantics or selector.",
+    "representativeFalsifiers": {
+      "nativeSelectedUnreached": "Parsed original resolved scenario; one native action with two selected HP writers, first invalid at skill level 4. Prepared rejected, orderedScenario null, second row step 2/reached false/attempted false/transaction rejected; common operation gate failures 0 and candidate reads 0. No downstream plan/read obligation.",
+      "orderedPreflightAbort": "Parsed original resolved scenario with concrete target and schema-legal orphan non-attacker sourceQuantity fact. Prepared executable, selected target and ordered HP consumer plan, typed invalidActivationContext/unknownFact, operation events/read 0, consumerNotReached. Common published and operation gates failures 0; changing only audit preflight to ready yields missingCapture and canonical first difference. Removing a ready candidate event yields candidateEventMismatch."
+    },
+    "artifactComparison": {
+      "unit": "Old 2026-09-28T15-59-44-079Z-16-c18969 and final 2026-09-29T07-34-22-332Z-15-82b73a: tests 10 to 12, declared files 7 to 8. Both original fixture and negatives have exactly equal complete decoded values, array order, count, disk bytes and SHA-256. New hp-preflight-abort.json is 14104 bytes/SHA-256 0a31e13dbb8f66534392359a53e0fba99909aaab936e3f41e775d922530f7086; only stdout.log/vitest.json differ among old files. Old/new full receipts 7/7 and 8/8, verification errors 0. Final manifest 3518 bytes/SHA-256 f98457945fc657a96f4ed0e998769e428a6af5f4945aa2852a5c2530dd58f1a4.",
+      "controlAudit": "Old 2026-09-28T16-00-04-145Z-15-a4e2e4 and final 2026-09-29T07-34-33-865Z-15-57d518: tests 10/10; artifacts 21/21, all old/new declared disk receipts match bytes/SHA-256, verification errors 0. Sixteen common non-run artifacts are byte-identical. Three changed complete diagnostics decode to exactly equal original values, array order and counts after removing only new preflight observations: receive and receive-attempt each add 24 ready and 24 null per-candidate observations; inert-control adds 3474 ready. stdout.log/vitest.json are run-specific. Final manifest 6502 bytes/SHA-256 73baa4837a448a73f2f349f3c60be5b0a16a26b3a083a25ea7df5b5675806c47.",
+      "selectedNativeAudit": "Final 2026-09-29T07-29-15-986Z-15-bdb750: 59/59 tests, 64/64 declared disk receipts, errors 0. The two same-source runs at 07-13 and 07-29 have 62 byte-identical complete artifacts, including all old selectedAlly fixtures and the new native artifact; only stdout.log/vitest.json differ. New hp-native-selected-unreached.json is 17541 bytes/SHA-256 cfe289600b3ce6c96602e1894d5d79f07e763c53368c3451b894b4fe69ac03dc. Final manifest 16658 bytes/SHA-256 6a36a2d22f801241aaab791ede2119861ca06450e2fa05e46c7c46f3bf15ac72."
+    },
+    "verification": "Final source focused unit 12/12, selected native audit 59/59, production control audit 10/10; control first test 33.404 seconds under unchanged 60-second limit. TypeScript build, target ESLint, Prettier and diff check passed. Product damage/inventory/matrix source unchanged; no eight-shard regeneration. Published master checksum matches retained source.",
+    "performance": "Audit capture changed. Same original control first test/input on CPU affinity 0-7, Node v26.3.1, audit project one worker (unit 4, production 50%=4 unchanged), same 60-second test budget: archived 4080c984 baseline one successful run 37.70 seconds elapsed/35.51 test; final candidate one successful run 36.85 seconds elapsed/34.56 test. A preliminary direct baseline run without required artifact directory and a reused candidate output directory failed for setup reasons and are not performance evidence. This is diagnostic only, not RK-PERF-001/TS-PERF-002 formal before/after three runs each.",
+    "declarationObligations": {
+      "writer": "Published 486 declarations; original operation selected/attempted/native transaction rows retained, with one new selected-but-unreached native refusal. Whole alternate/recovery union remains open.",
+      "condition": "Published 10; ordered canonical/physical candidate read paths retained. Native condition leaf source path and evaluation order outside candidate capture remain open.",
+      "modifierUseCondition": "Published 0; schema-legal nonempty fixture and native modifier evaluation are outside current published binding join. False filtered instance cannot be inferred from aggregate modifierReads; separate native read owner remains.",
+      "valueExpression": "Published 30; selected cell and actualValueRead paths retained. Whole original/repaired population and native noncommit remain open.",
+      "ocRateExpression": "Published 25; selected OC cell/native path retained; full variant/cell/native-read union remains open.",
+      "hpConditionedNpGauge": "Published 0; schema-legal nonempty fixture needs source-condition preparation read with original leaf path/order and NP gauge operation identity. Current published binding join does not cover it.",
+      "hpRatioLow": "Published 6; selected variant and candidate NP read paths retained; rejected preparation has no NP read obligation, and full alternate/recovery coverage remains open."
+    },
+    "failureClassReconciliation": {
+      "parity": "Existing typed matrix first-difference and full single/merge artifacts; final same-identity inventory/parity/all-receipt join open.",
+      "unsupported": "Existing final-profile typed outcome and published zero ratchet; final original-input to bounded/full artifact join open.",
+      "invalid": "Existing typed invalid fixture and new original-request invalidActivationContext/unknownFact abort artifact; integrated six-class summary/receipt join open.",
+      "partialCommit": "Existing preparation transaction rollback and complete partial-commit artifact unchanged; integrated six-class join open.",
+      "inertControl": "Existing typed user-control gate and full production artifact; final diagnostic decoded equality excluding preflight verified; integrated join open.",
+      "staleMutation": "Existing receipt/sequence and HP stale read/recovery scoped artifacts; whole original-ledger consumer population and integrated join open."
+    },
+    "legacy": "commandEdgeSessionCheckpoint.legacyClassification remains valid by definition/caller/input population/unique assertion. e081002 removed old 13 repeated master reads. Raw OC planning four-export/public metadata join, normalized raw 167 occurrences/632 cells, and public normalization join retain unique assertions. Exact literal obsolete-definition disposition remains a separate data-pipeline owner decision; no unique raw script deleted.",
+    "closureReconciliation": {
+      "checklist": "1 established with sole producer; 2 and 3 gain two original-request boundary proofs but whole six-class ratchet and typed/bounded/full/all-receipt integration remain Deferred; 4 old repeated loader removed but exact obsolete definition classification Deferred.",
+      "doneGate": "Scoped damage and gate output unchanged and complete artifacts/receipts verified. All-damage explanation, digest first canonical difference and final inventory/parity/fail-closed at one final source/input/artifact identity remain Deferred.",
+      "contracts": "TS-AUDIT-001 scoped affected audit passed; RK-AUDIT-001 final full matrix/parity join Deferred. TS-OUT-001 and TS-ART-001 scoped complete outputs/receipts passed but integrated six-class output Deferred. RK-PERF-001 and TS-PERF-002 formal comparable before/after three runs each Deferred. DX-HANDOFF-001 README final quality Deferred.",
+      "inputLifecycle": ["1 strict input/shared producer retained", "2 486 sources/7470 cells retained", "3 completed mutation slices retained only in their scope", "4 two new original-request unreached proofs completed; other native/read/NP/recovery paths Deferred", "5 six-class integrated ratchet Deferred", "6 literal legacy disposition Deferred", "7 formal performance/final quality/integrated acceptance Deferred", "8 two-command edge proof retained; whole native/recovery consumer union Deferred"]
+    },
+    "stopBoundary": "TSK-08 itself retains Deferred obligations; do not start dependent quality, formal closure, TSK-09.1/09 or unrelated family. Step 0/1/3 established, Step 2 and TSK-08 in_progress, TSK-09.1/09 blocked. No new game semantics, fallback, HP selector, expectation generator, audit authority or push.",
+    "nextLimitedOperation": "Independently scope preparation HP-condition physical-read capture for modifierUseCondition and hpConditionedNpGauge against original source leaf path, actual evaluation order, source/operation identity and native transaction; decide exact owner with current code before implementation. Then reconcile remaining native/recovery consumer union and six-class final same-identity artifact reachability."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -28943,8 +28997,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postStepHandoffDesignCheckpoint.nextLimitedOperation",
-    "latestCheckpointReference": "postStepHandoffDesignCheckpoint",
+    "nextSessionReference": "postOriginalRequestUnreachedCheckpoint.nextLimitedOperation",
+    "latestCheckpointReference": "postOriginalRequestUnreachedCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
