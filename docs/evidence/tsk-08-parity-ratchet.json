@@ -29321,6 +29321,47 @@
     "remainingConditions": "Step0/1/3 established; Step2/TSK-08 in_progress, TSK-09.1/09 blocked. Separate native/recovery consumers, integrated six-class ratchet, literal legacy obsolete classification and final Apply gates remain. Public OC-rate25 is NP-derived and selected terminal NP has no later grant; this synthetic value-expression fixture is not published original-request coverage. No formal performance, README final quality, eight-shard regeneration, dependent tasks or push.",
     "nextLimitedOperation": "Use the seven-kind phase table to select the next independent native/recovery consumer transition from original requests; then separately reconcile six failure classes and data-pipeline obsolete definitions. Preserve matching prior source/input/artifact identities and unique raw OC evidence."
   },
+  "postNpTwoOperationValueReadCheckpoint": {
+    "date": "2026-09-29",
+    "status": "product_incomplete_local_unit_complete",
+    "startHead": "683fa63c875063ae45a63929d482352ed2154d73",
+    "authorization": "Current-code plan presented before mutation; user replied OK. No push.",
+    "closedCondition": "One schema-accepted original application NP beforeDamage request with two HP value-expression operations in the same effect now joins the two original execution cell paths to two ordered addModifier operations and two candidate physical reads. The red request had two selected cells and two reads but returned ambiguousCanonical and valueReadMismatch. The final request has two selected NP cells, two consumed NP reads in operation order and no positive gate failures; deleting the second read returns valueReadMismatch with execution.1.valueExpressions.0.0 in the canonical identity and first difference, while swapping reads returns two valueReadMismatch failures. This is a schema-legal scoped proof, not a published-master occurrence count.",
+    "owner": "battle-execution retains original compiled operation references outside product state across cached compilation and the final ordered plan; calculation-application joins declaration, selected variant/cell, ordered operation, event/group and physical read using that reference. Duplicate operation IDs have no usable capture. No damage semantics, candidate policy, HP action/recipient selector, fallback, raw interpretation or expectation generator changed.",
+    "sourceIdentity": {
+      "packages/battle-execution/src/executionSourceObservation.ts": { "bytes": 1527, "sha256": "b292fe741450572aad31fa4589d5934abc3d54a2936de1bebeabd264dbcdfaae" },
+      "packages/battle-execution/src/executionPlan.ts": { "bytes": 10772, "sha256": "a0e9b2b9fe03b3b2ba37b205ec70ef194a28e1521deb8a303f97d3fc22d5b227" },
+      "packages/battle-execution/src/operationCompiler.ts": { "bytes": 39733, "sha256": "a1891013b09f8501e66a481d2edc5718578ac47ecec9a6781763c420bd996f1f" },
+      "packages/battle-execution/src/preparationAttemptObservation.ts": { "bytes": 3651, "sha256": "34fa0602998521394ca45d500af25b9e6ba5135d1208c5d5bad255c471705383" },
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts": { "bytes": 59942, "sha256": "1b6add10a5a755588850f7ec4ceef6fe3753b4a0850a0485da303a6da6c84125" },
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts": { "bytes": 50965, "sha256": "ec4a328dd3613250aa347a8b5d189c43b13a3239093df2a607d2367ecec1a547" },
+      "publishedMaster": { "path": "apps/web/public/master/master.json", "bytes": 32953998, "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a" }
+    },
+    "unitArtifacts": {
+      "oldManifest": { "path": ".test-results/2026-09-29T11-19-06-131Z-15-28e870/manifest.json", "bytes": 4663, "sha256": "3db90b2a8821ff04c62a5378d8335941dcdf0c3c6d6a81833d948f6b4dbc68d2", "receipts": "13/13" },
+      "newManifest": { "path": ".test-results/2026-09-29T12-26-01-346Z-15-b8ae67/manifest.json", "bytes": 4927, "sha256": "2fc3e0632352016a387cea08f2f7cb3d229d6ec1fda56b949756fad0d0e4ddad", "receipts": "14/14" },
+      "newProof": { "path": "hp-np-before-damage-two-operations.json", "bytes": 943961, "sha256": "3bded474379b021b4798078967d0aad821bb71baf8124222f2c00d8b5b79c8f5" },
+      "decodedComparison": "All 13 common paths compared by complete decoded JSON value/order/count and disk bytes/SHA-256. Nine are byte-identical. stdout.log and vitest.json are run-specific. The two existing NP proof payloads retain identical originalRequest, selectedVariant, orderedPlan, selectedCells, operationEvents, executionGroups and physical reads in order. Their NP expressionContext list loses nine erroneous cross-cell bindings each; positive/missing binding counts 29/28 to 20/19, sibling 32 to 23; consumer counts 22 to 13 and 24 to 15. Declaration counts remain 22 and 33; binding-index fields shift consistently. Gate failures remain unchanged. The new proof contains complete positive, missing and swapped ledgers. Both manifests have empty artifactVerification.errors."
+    },
+    "auditArtifacts": {
+      "oldManifest": { "path": ".test-results/2026-09-29T11-10-07-863Z-15-2ef5b7/manifest.json", "bytes": 24667, "sha256": "015d0993eb58d0ffde7480e46de3793747fea745b41cfb1afa9345e9631830ad", "receipts": "99/99" },
+      "candidateManifest": { "path": ".test-results/2026-09-29T12-26-45-341Z-15-2d4bc7/manifest.json", "bytes": 24527, "sha256": "40d26991980fadc78a9c994de7686768d7c90e56ff87108def11c1acb94ae299", "receipts": "99/99" },
+      "baselineManifest": { "path": "/tmp/tsk08-two-op-baseline-683fa63/.test-results/2026-09-29T12-32-40-020Z-15-7e44a4/manifest.json", "bytes": 24493, "sha256": "fcd332913470fdeb05e657e08622de11c687e25490976f40da9c3092777d5b49", "receipts": "99/99" },
+      "comparison": "Old/candidate/baseline all have the same 99 paths; all 97 non-run artifacts have identical complete decoded values, order, counts, disk bytes and SHA-256. Only stdout.log and vitest.json differ. All 297 disk receipts match and every artifactVerification.errors is empty."
+    },
+    "performanceDiagnostic": "Identical published master and lockfile; baseline HEAD 683fa63 archived to /tmp and installed offline with frozen lockfile, candidate final source; Node v26.3.1, pnpm v11.20.0, CPU affinity 0-7, production4/unit4/audit1 workers, unchanged first-control 60s and verifyDepsBeforeRun:error. One full registered audit run each: baseline 304720ms, candidate 298618ms; first control 38940.910ms to 40360.291ms, both under 60s. Both 5 files/88 tests pass with 97 non-run artifacts equal. This is diagnostic only; formal RK-PERF-001/TS-PERF-002 before/after three runs remain Deferred.",
+    "verification": "Final focused original-request 19/19, battle-execution compiler/OC 64/64, registered audit 88/88, typecheck, targeted ESLint/Prettier and diff check passed. Old/new unit 27 disk receipts and three audit manifests 297 disk receipts were checked against bytes/SHA-256; 324/324 total, no artifact verification errors. Existing sibling variant keeps cellNotSelected with physical readCount 1 and consumed=false. Normal nonselection, selected-unreached, preparation rejection, candidate abort and three requests/two actual command repair edges retain their matching prior proofs rather than being inferred from missing reads.",
+    "obligationDisposition": {
+      "checklist1_inputLifecycle1to3": "Established sole producer and 486-source/7470-cell inventory, mutation evidence and revised 80-condition matrix reused only at matching source/input identity.",
+      "checklist2to3_inputLifecycle4_5_8": "This unit closes NP same-effect multi-operation original request selection/ordered operation/physical read/consumption, typed missing and swapped failures, complete artifact and receipts. Seven-kind other native/recovery consumer union and integrated six-class original-input to typed reason/canonical first difference/bounded/full artifact/all-receipt ratchet remain Deferred.",
+      "checklist4_inputLifecycle6": "Old repeated 13 master reads removed; commandEdgeSessionCheckpoint.legacyClassification remains the definition/direct-caller/input-population/unique-assertion inventory. Raw OC167 occurrences/632 cells and published join have unique evidence; literal obsolete decision belongs to data-pipeline and remains Deferred.",
+      "doneGate_TS_AUDIT_001_RK_AUDIT_001_TS_OUT_001_TS_ART_001": "Scoped first difference, complete artifact and affected public audit pass. Whole damage explanation, digest first difference, final inventory/parity/fail-closed and six-class same-final-identity output remain Deferred.",
+      "RK_PERF_001_TS_PERF_002_DX_HANDOFF_001_inputLifecycle7": "One-run diagnostic only. Formal before/after three runs, README final quality and integrated counters/digest/all receipts remain Deferred."
+    },
+    "sixFailureClasses": "Parity matrix, unsupported/invalid final outcome, partial commit transaction, inert published control and stale mutation receipt/recovery keep their existing distinct owners. Each still needs one final source/input/artifact identity through typed reason, canonical identity/first difference, bounded summary, complete artifact and every disk receipt; this NP fixture alone is not six-class closure.",
+    "remainingConditions": "Step0/1/3 established; Step2/TSK-08 in_progress, TSK-09.1/09 blocked. Other native/recovery consumer union, integrated six-class ratchet, data-pipeline literal obsolete disposition and final Apply gates remain. Published OC-rate25 is NP-derived and selected terminal NP has no later grant. No formal performance, README final quality, eight-shard regeneration, dependent task or push.",
+    "nextLimitedOperation": "Choose a distinct original-request native/recovery phase consumer from the seven-kind table, with a direct caller and independent expected capture; separately reconcile six-class final identity and data-pipeline obsolete definitions. Do not count synthetic fixtures as published occurrence coverage."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -29431,8 +29472,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postNpBeforeDamageValueReadCheckpoint.nextLimitedOperation",
-    "latestCheckpointReference": "postNpBeforeDamageValueReadCheckpoint",
+    "nextSessionReference": "postNpTwoOperationValueReadCheckpoint.nextLimitedOperation",
+    "latestCheckpointReference": "postNpTwoOperationValueReadCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",

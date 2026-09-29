@@ -1,6 +1,6 @@
 import { beginPreparationHpCapture, finishPreparationHpCapture } from './hpExecutionObservation';
 export { preparationHpActionsFor, hpCandidateObservationFor } from './hpExecutionObservation';
-export { compiledSourcesFor } from './executionSourceObservation';
+export { compiledSourcesFor, compiledOperationSourceFor } from './executionSourceObservation';
 export type { PreparationHpAction, HpCandidateObservation } from './hpExecutionObservation';
 import type { SourceEffect } from './sourceCollection';
 import type { BattlePointState } from './battlePointResource';

@@ -4418,3 +4418,21 @@ schema-legalな入れ子の同値別leaf、欠落／入替え／foreign参照／
 | `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／lifecycle⑦ | 単回診断だけ成立。正式各3run、README最終quality、統合counter／digest／全receiptはDeferred。 |
 
 六クラスはparity matrix、unsupported／invalid final outcome、partial commit transaction、inert公開control、stale mutation receipt／recoveryの元入力からtyped reason、canonical identity／first difference、bounded summary、完全artifact、全receiptまで同一最終identityで統合する必要がある。公開OC-rate25宣言はNP由来で、選択済み終端NPに後続grantはない。今回の合成値式fixtureを公開元requestの到達件数には加えない。次は七宣言種別のphase別表から別native／recovery consumer遷移を一つ選び、raw evidenceのobsolete判定と六クラス統合は別ownerとして限定して進める。TSK-08自身のDeferredが残るのでStep 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`。依存quality、正式性能、8 shards再生成、TSK-09系、pushは行わず、対象限定local checkpoint commitで止める。
+
+### TSK-08 NP beforeDamage同一effectの複数HP値式operation checkpoint（製品未完了、2026-09-29）
+
+開始HEAD `683fa63c875063ae45a63929d482352ed2154d73`、index／差分／untrackedはclean。現コード・直接caller・元application requestに基づく計画を先に提示し、利用者の`OK`後に実装した。master schemaはeffect内の複数operationを許すが、旧`compiledNpValueCell`は値式operationが1件であることを要求し、選択cell／候補readのsource単位joinも2件を曖昧扱いした。schema受理済み元requestの赤い反証は、選択NP cell 2、ordered `addModifier` 2、物理read 2を持ちながら`ambiguousCanonical`／`valueReadMismatch`になった。compileが元operation参照をproduct state外に保持し、公開gateが元cell path、variant、ordered operation、event／group、readを一対一に照合する。正常2件はそれぞれ`execution.0.valueExpressions.0.0`／`.1.valueExpressions.0.0`へ接続し消費`true,true`。2件目read欠落は元path付きtyped `valueReadMismatch`とfirst difference、read順序入替えは2件のtyped mismatchを返す。合成fixtureを公開masterの到達件数へ加算せず、兄弟variantの`cellNotSelected`・物理read 1・非消費を維持する。
+
+最終sourceの局所元request 19／19、battle-executionのcompiler／OC 64／64、公開audit 5 file／88 test、typecheck、target lint／format、差分checkが成功。旧unit 13／新unit 14、旧公開99／新公開99、同input性能baseline99の全324 disk receiptをbytes／SHA-256で照合し不一致0、各manifestのverification errorは空。公開99 path中97件の非run artifactは旧・新・baselineで完全decoded値／順序／件数とbytes／SHA-256が一致。unit共通13 path中9件は完全一致、run固有2件が異なる。既存NP proof 2件は元request／plan／event／group／物理readが一致し、各NP `expressionContext`から誤った別cellの9 bindingが除かれ、対応するconsumer数とbinding indexだけが変わった。新規完全artifactは正常・欠落・入替えの各ledgerを保存した。manifest path、bytes／SHA、source identityと詳細比較は[evidence](../evidence/tsk-08-parity-ratchet.json) `postNpTwoOperationValueReadCheckpoint`を正本とする。
+
+計算compile capture変更の同input・CPU affinity0–7・production4／unit4／audit1 workers・同予算の単回診断はbaseline 304.72秒→candidate 298.62秒、control第1 test 38.94→40.36秒で60秒内。正式変更前後各3run性能gateではない。`verifyDepsBeforeRun: error`を維持し、baseline HEADを`/tmp`へ展開して同じlockfileでoffline frozen installした。
+
+| TSK-08義務 | この単位後の判定 |
+| --- | --- |
+| checklist①／入力lifecycle①〜③ | 唯一のproducer、486-source／7470-cell共有inventory、既存mutationと80条件matrixを一致するsource／input identityで再利用。 |
+| checklist②③／lifecycle④⑤⑧ | 今回のNP複数値式の元request→選択→ordered operation→物理read／消費、typed欠落／入替えと完全artifactを局所で閉じた。正常非選択、選択後未到達、準備拒否、候補abort、3 request／実command 2修復edgeは既存同identity証拠を再利用。別native／recovery consumer unionと六クラス最終統合はDeferred。 |
+| checklist④／lifecycle⑥ | 旧13回master読込除去済み。定義・直接caller・入力母集団・固有assertionによるlegacy最終判断はdata-pipeline ownerでDeferred。raw OC 167 occurrence／632 cellと公開joinを保持。 |
+| Done gate、`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001` | 局所typed first difference・完全artifact／全receiptと影響公開auditは成功。全damage説明、digest first difference、最終inventory／parity／fail-closed、六クラス同一最終identityのbounded／完全出力はDeferred。 |
+| `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／lifecycle⑦ | 同input単回診断のみ。正式各3run、README最終quality、統合counter／digest／全receiptはDeferred。 |
+
+六クラスのownerはparity matrix、unsupported／invalid final outcome、partial commit transaction、inert公開control、stale mutation receipt／recoveryに分けて維持する。いずれも元入力→typed reason→canonical identity／first difference→bounded summary→完全artifact→全disk receiptを同一最終identityで統合する義務が残る。公開OC-rate25宣言の選択済み終端NPに後続grantはない。Step 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`。次は七宣言種別の別native／recovery consumerを元requestの直接callerから選び、六クラス統合とdata-pipelineのliteral obsolete判定を別ownerの残義務として照合する。Deferredが残るため正式性能・README最終quality・8 shards再生成・TSK-09系・pushは行わず、対象限定local checkpoint commitで停止する。

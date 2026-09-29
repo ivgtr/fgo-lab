@@ -28,7 +28,7 @@ import {
 import { resolveTargetCandidates } from './targetContext';
 import { compileNoblePhantasmDamageOperation } from './npDamageCompilation';
 import { effectChangesPreparation } from './preparationTransaction';
-import { retainCompiledSources } from './executionSourceObservation';
+import { operationSourceFor, retainCompiledSources } from './executionSourceObservation';
 import type { ResolvedAttackerFormExecution } from './sourceCollection';
 import { closeResourceMutationSemantics } from './resourceSemantics';
 export function compileExecutionPlan(
@@ -264,6 +264,18 @@ export function compileExecutionPlan(
     battlePointDomains: master.battlePointDomains,
     appliedPreparationActions: collected.formExecution?.actions ?? [],
   };
-  retainCompiledSources(plan, collected.sources);
+  const sourceOperations = new Map<
+    string,
+    NonNullable<ReturnType<typeof operationSourceFor>> | null
+  >();
+  for (const operation of compiledOperations) {
+    const original = operationSourceFor(operation);
+    if (!original) continue;
+    sourceOperations.set(
+      operation.operationId,
+      sourceOperations.has(operation.operationId) ? null : original,
+    );
+  }
+  retainCompiledSources(plan, collected.sources, sourceOperations);
   return plan;
 }

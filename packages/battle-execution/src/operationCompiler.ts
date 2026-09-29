@@ -1,4 +1,5 @@
 import type { ResourceMutationIdentity } from './contracts';
+import { operationSourceFor, retainOperationSource } from './executionSourceObservation';
 import { markerIntersects } from './markerDependency';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import { actorFormEquals, canonicalRequirementLeaves } from '@fgo-lab/master-data';
@@ -572,10 +573,12 @@ export function compileEffectCached(
     byKey.set(key, compiled);
   }
   return {
-    operations: compiled.operations.map((operation) => ({
-      ...operation,
-      order: operation.order + startOrder,
-    })),
+    operations: compiled.operations.map((operation) => {
+      const copy = { ...operation, order: operation.order + startOrder };
+      const sourceOperation = operationSourceFor(operation);
+      if (sourceOperation) retainOperationSource(copy, sourceOperation);
+      return copy;
+    }),
     projections: compiled.projections,
   };
 }
@@ -998,14 +1001,16 @@ export function compileEffect(
         targetTraits:
           actorForms.find(({ id }) => actorFormEquals(id, semantic.targetFormId))?.traits ?? [],
       });
-    else if (semantic.kind === 'modifierRateChange')
-      operations.push({
+    else if (semantic.kind === 'modifierRateChange') {
+      const operation: BattleOperation = {
         ...baseOperation(source, semantic.route.contributionScope, order++, uniqueSuffix('rate')),
         kind: 'changeModifierRate',
         modifier: semantic.modifier,
         ratePermille: selectedValue(source, semantic)!,
-      });
-    else if (semantic.kind === 'ignoreDefense')
+      };
+      operations.push(operation);
+      retainOperationSource(operation, semantic);
+    } else if (semantic.kind === 'ignoreDefense')
       operations.push({
         ...baseOperation(
           source,
@@ -1028,7 +1033,7 @@ export function compileEffect(
     else if (semantic.kind === 'damageModifier') {
       const operationValue = selectedValue(source, semantic)!;
       const operationExpression = selectedValueExpression(source, semantic);
-      operations.push({
+      const operation: BattleOperation = {
         ...baseOperation(
           source,
           semantic.route.contributionScope,
@@ -1042,7 +1047,9 @@ export function compileEffect(
           ? signedModifierValueExpression(operationExpression, semantic.sign)
           : null,
         card: semantic.card,
-      });
+      };
+      operations.push(operation);
+      retainOperationSource(operation, semantic);
     }
   }
   return { operations, projections };

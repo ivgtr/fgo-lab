@@ -2,6 +2,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { BattleOperation, ConditionExpression, SourceEffect } from '@fgo-lab/battle-execution';
 import {
   compiledSourcesFor,
+  compiledOperationSourceFor,
   hpCandidateObservationFor,
 } from '@fgo-lab/battle-execution/preparation-audit';
 import { getNoblePhantasmVariants, noblePhantasmVariantKey } from '@fgo-lab/master-data';
@@ -126,14 +127,9 @@ const compiledNpValueCell = (
   );
   if (sources?.length !== 1) return null;
   const source = sources[0]!;
-  const operationIndices = source.effect.execution.flatMap((candidate, index) =>
-    (candidate.kind === 'damageModifier' || candidate.kind === 'modifierRateChange') &&
-    candidate.valueExpressions[source.valueSetIndex]?.[source.valueIndex]
-      ? [index]
-      : [],
-  );
-  if (operationIndices.length !== 1) return null;
-  const operationIndex = operationIndices[0]!;
+  const original = compiledOperationSourceFor(ordered, operation);
+  const operationIndex = original ? source.effect.execution.indexOf(original) : -1;
+  if (operationIndex < 0) return null;
   const matches = dependencies.filter(
     (declaration) =>
       declaration.identity.kind === 'valueExpression' &&
@@ -400,9 +396,10 @@ export function hpPublishedDependencyBindings(
             d.identity.kind === 'valueExpression' &&
             sourceMatches(d, operation.source, operation.source.origin === 'np' ? ref : null),
         );
-        const contextMatches = matches.length
-          ? matches
-          : [compiledNpCell(operation)].filter((d) => d !== null);
+        const contextMatches =
+          operation.source.origin === 'np'
+            ? [compiledNpCell(operation)].filter((d) => d !== null)
+            : matches;
         if (!contextMatches.length)
           fail('unmatchedCanonical', `requests.${requestIndex}.operations.${sequence}.expression`);
         contextMatches.forEach((d, position) =>
@@ -808,6 +805,9 @@ export function hpPublishedDependencyBindings(
             binding.stage === 'selectedPreparationCell' &&
             binding.sourceInstanceId === read.operation.source.sourceInstanceId &&
             binding.declaration.identity.kind === 'valueExpression' &&
+            (read.operation.source.origin !== 'np' ||
+              binding.declaration.operation ===
+                compiledOperationSourceFor(ordered!, read.operation)) &&
             sourceMatches(
               binding.declaration,
               read.operation.source,
@@ -905,6 +905,9 @@ export function hpPublishedDependencyBindings(
       const matches = selected.filter(
         (binding) =>
           binding.sourceInstanceId === operation.source.sourceInstanceId &&
+          (operation.source.origin !== 'np' ||
+            binding.declaration.operation ===
+              compiledOperationSourceFor(prepared.orderedScenario!, operation)) &&
           sourceMatches(
             binding.declaration,
             operation.source,

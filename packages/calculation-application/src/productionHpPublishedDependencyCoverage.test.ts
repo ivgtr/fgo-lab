@@ -45,6 +45,7 @@ function setup(
   nestedCondition = false,
   npCondition = false,
   npValueExpression = false,
+  repeatedNpValueOperation = false,
 ) {
   const master = masterSnapshotSchema.parse(fixture);
   const actor = master.servants[0]!;
@@ -213,6 +214,9 @@ function setup(
                 gameActivation: 'npBeforeDamage',
                 timing: 'beforeDamage',
                 requirement: { recipient: 'sourceSelf', expression: { kind: 'always' } },
+                execution: repeatedNpValueOperation
+                  ? [effect.execution[0]!, structuredClone(effect.execution[0]!)]
+                  : effect.execution,
               }),
             ]
           : [];
@@ -1152,6 +1156,85 @@ it(
     await writeProductionAuditArtifact(task.meta, 'hp-np-before-damage-sibling.json', complete);
     const disk = await readFile(
       resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-np-before-damage-sibling.json'),
+    );
+    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+  },
+);
+
+it(
+  'joins two HP value operations in one selected NP effect to their own physical reads',
+  productionAuditTestOptions(['hp-np-before-damage-two-operations.json']),
+  async ({ task }) => {
+    const f = setup(false, false, false, false, false, false, false, false, true, true);
+    expect(resolvedScenarioSchema.safeParse(f.scenario).success).toBe(true);
+    const target = f.calculation.executionObservation?.targetExecution;
+    if (target?.selection !== 'selected' || target.candidateState?.preflight?.status !== 'ready')
+      throw new Error('selected_np_candidate_missing');
+    const capture = hpCandidateObservationFor(target.candidateState);
+    if (!capture) throw new Error('np_candidate_capture_missing');
+    const selected = f.borrowed.bindings.filter(
+      (binding) =>
+        binding.declaration.identity.origin === 'np' &&
+        binding.declaration.identity.kind === 'valueExpression' &&
+        binding.stage === 'selectedPreparationCell',
+    );
+    const reads = capture.valueReads.filter((read) => read.operation.source.origin === 'np');
+    expect(selected).toHaveLength(2);
+    expect(reads).toHaveLength(2);
+    const positive = f.reconcile();
+    expect(positive.gate.failures).toEqual([]);
+    const readBindings = positive.bindings.filter(
+      (binding) => binding.declaration.origin === 'np' && binding.stage === 'actualValueRead',
+    );
+    expect(readBindings.map((binding) => binding.declaration.path)).toEqual([
+      'execution.0.valueExpressions.0.0',
+      'execution.1.valueExpressions.0.0',
+    ]);
+    expect(
+      readBindings.map((binding) => (binding.detail as { consumed: boolean }).consumed),
+    ).toEqual([true, true]);
+    const removed = capture.valueReads.splice(capture.valueReads.indexOf(reads[1]!), 1)[0]!;
+    const missingBorrowed = hpPublishedDependencyBindings(f.declarations, f.requests);
+    const missing = reconcileHpPublishedDependencyCoverage(
+      f.declarations,
+      f.requests,
+      missingBorrowed.bindings,
+    );
+    capture.valueReads.splice(capture.valueReads.indexOf(reads[0]!) + 1, 0, removed);
+    expect(missing.gate.failures.map((failure) => failure.reason)).toContain('valueReadMismatch');
+    expect(missing.gate.failures.some((failure) => failure.firstDifference?.identity)).toBe(true);
+    const first = capture.valueReads.indexOf(reads[0]!);
+    const second = capture.valueReads.indexOf(reads[1]!);
+    capture.valueReads[first] = reads[1]!;
+    capture.valueReads[second] = reads[0]!;
+    const swappedBorrowed = hpPublishedDependencyBindings(f.declarations, f.requests);
+    const swapped = reconcileHpPublishedDependencyCoverage(
+      f.declarations,
+      f.requests,
+      swappedBorrowed.bindings,
+    );
+    capture.valueReads[first] = reads[0]!;
+    capture.valueReads[second] = reads[1]!;
+    expect(swapped.gate.failures.map((failure) => failure.reason)).toContain('valueReadMismatch');
+    const complete = {
+      originalRequest: f.prepared.scenario,
+      selectedVariant: f.prepared.resolved.noblePhantasmVariant?.ref,
+      orderedPlan: f.prepared.orderedScenario,
+      selectedCells: selected,
+      operationEvents: target.operationEvents,
+      executionGroups: target.candidateState.executionGroups,
+      candidateValueReads: capture.valueReads,
+      positive,
+      missing,
+      swapped,
+    };
+    await writeProductionAuditArtifact(
+      task.meta,
+      'hp-np-before-damage-two-operations.json',
+      complete,
+    );
+    const disk = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-np-before-damage-two-operations.json'),
     );
     expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
   },
