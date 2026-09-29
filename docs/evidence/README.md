@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.131"
+document_version: "1.4.132"
 status: "Active"
-updated_at: "2026-09-28"
+updated_at: "2026-09-29"
 ---
 
 # Evidence report index
@@ -109,3 +109,5 @@ CE後の残HP `noHealing` 敵全体native forward限定結果は同evidence `bou
 TSK-08の残義務は[Taskの再設計](../tasks/development-redesign-tasks.md)と同evidence `remainingWorkSummary.remainingWorkRedesign`に整理した。HP ownerを一件ずつ増やす方針は撤回し、canonical遷移・失敗クラス・現存legacy参照・最終統合の四つの判定単位で閉じる。新しい製品証拠やTSK-08完了を示す記録ではない。
 
 再設計後の次セッション指示は同evidence `handoffPreparation.nextSession.tsk08RedesignedClosureSession`。Step 0／1／3を維持し、Step 2の共通HP証拠モデルを現コードから先に計画して利用者確認を待つ。準備時点で直近checkpointのsource4／master1／artifact5は現diskのbytes／SHAと一致したが、製品testやauditは再実行していない。
+
+最新のStep再確認と候補HP条件leaf identityの設計調査は[parity evidence](tsk-08-parity-ratchet.json) `postCandidateLeafIdentityDesignCheckpoint`。開始HEAD `e73fd926`、既存source／master／manifest／全artifact 104／104のdisk bytes・SHA-256が一致。公開OC-rateの終端NPに後続readを要求する旧案を撤回し、候補条件readの同値別leafを値だけで対応できない監査境界を記録した。これは未実装の設計候補であり、Step 0／1／3成立、Step 2／TSK-08 `in_progress`、09.1／09 `blocked`を維持する。次sessionは現コードから計画を提示し利用者確認を待つ。

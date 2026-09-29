@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.140"
+document_version: "1.7.141"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-29"
@@ -4342,3 +4342,15 @@ schema-legalな元request1件／ordered plan2 operationから、同値の別leaf
 七種宣言の元request選択、準備・native評価、ordered plan、実readをそれぞれ独立に照合することが次の限定候補。`modifierUseCondition`／`hpConditionedNpGauge`の準備条件read、元request二種の未到達、二段階修復3 request／2 edge、共通HP gate、partial commit完全artifact、80条件matrixは同一identityの既存証拠として再利用する。次作業者は現コードの定義・直接callerから、残るnative／recovery consumer unionのうち一セッションで閉じる実経路とownerを選び、元requestからtyped gate／完全artifact／全receiptまでの実装計画を**先に提示して利用者確認を待つ**。六失敗クラスの元入力からtyped reason／canonical first difference／bounded summary／完全artifact／全receipt、legacy定義・caller・入力母集団・固有assertion、全checklist／Done gate／Contract matrix／入力lifecycle8義務も計画時に対応付ける。旧新artifactの完全decoded値・順序・件数、disk bytes／SHA-256・全receiptの比較方法と性能適用条件を記す。
 
 確認前はHEAD／index／差分／untracked、コード・正本・既存artifactの読取とchecksum照合のみ。確認後は承認された同じ限定単位を実装・必要な検証・既存Task／evidence更新・対象限定local commitまで進め、通常の技術判断で再承認を求めない。別native／recovery owner、別family、新ゲーム意味論、保持すべき固有raw coverageに独立作業が要れば根拠・未達条件・次の操作を既存正本へ記録し製品未完了で停止する。TSK-08自身のDeferred／Blockingが0かつ全義務を同一最終source／input／artifact identityで閉じる見込みと時間がある場合だけ、正式な変更前後各3run性能、必要な影響audit、README最終quality、統合counter／digest／全receiptへ進む。60分で既存正本にcheckpoint、90分でatomic actionを終えて引継ぎ、pushなし。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `postPreparationStepRecheckHandoff`。
+
+### TSK-08 候補HP条件leaf identityの設計調査とStep確認（実装なし、2026-09-29）
+
+開始HEAD `e73fd92618fc4470da00d6cc0812b9b72fbb5ac8`、index／tracked差分／untrackedはclean。直近checkpointのsource6／公開master1、unit・control・selected-native manifest3と各artifact9／21／64を現diskのbytes／SHA-256で104／104照合し、不一致0・artifact verification error0。Step 0のbaseline／契約、Step 1のV41 marker・V40保持／明示再計算、Step 3の改訂80条件matrix／eligibilityは既存証拠と代表source／公開master／ranking計測・単独matrix scriptの製品baseline `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`からの無差分で維持する。Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`。今回、製品実装・source test・producer・audit・quality・live計測・8 shards再生成は行っていない。
+
+先に提示したOC-rate後続grantの物理read案は次作業から外す。公開`ocRateExpression`25宣言はすべてNP由来で、選択済み10行は終端NP actionに後続grantがなく、他240行は別cell選択である。schema-legalな合成readerを作っても、この公開元request母集団の未達を直接閉じない。native readに候補preflight／operation eventを要求する混同も避ける。
+
+現コードで確認した別の欠落は候補HP条件readのleaf identityである。`evaluateCondition`はHP量を物理観測するが、`HpQuantityRead`／候補`reads`に評価したcompiled leaf参照・元pathがない。`hpPublishedDependencyBindings`の`conditionDeclarations`はsourceと比較演算子・値で宣言を選ぶため、同一effect内の同値別leafを正当な二行へ対応できず`ambiguousCanonical`になる。準備条件readの元leaf path／順序は既存checkpointで局所成立済みだが、候補経路は別である。これは現時点で監査証明の欠落であり、damage値の不具合とは断定しない。`compileEffectCondition`はHP量leafの入れ子構造を保ち、NPではvariant条件が外側に付くため、元pathとcompiled参照の構造的照合を反証する価値がある。値のみのjoinや欠落readからのconsumerなし推定を行わない。
+
+次の作業者は[evidence](../evidence/tsk-08-parity-ratchet.json) `postCandidateLeafIdentityDesignCheckpoint`を判断材料に、**現コードの定義・直接callerから一セッションの変更ownerと実装形を計画して先に提示し、利用者確認を待つ**。候補は既存HP observerが実評価leafのidentityを保持し、既存application監査が元宣言path・compiled構造・read順／transactionをtypedに照合する方向だが、過去案を実装指示として固定しない。監査専用API／artifactの破壊的整理は許容し、既存の弱い`firstDifference`や固定`unobserved`を残すためのfallbackは追加しない。schema-legalな同値別leaf、片方の欠落／入替え、nested `all`／`any`／`not`、準備拒否・候補abortを代表反証とし、元request→評価→ordered plan→event→物理read→typed gate→完全artifact／全receiptまで示す。
+
+checklist①／入力lifecycle①〜③はidentity一致の既存証拠を再利用する。②③／lifecycle④⑤⑧はこの候補境界のほか七種のphase別native／recovery義務と六失敗クラスの元入力→typed reason→canonical first difference→bounded／完全artifact→全receiptの最終統合がDeferred。④／lifecycle⑥は旧13回master読込除去済みだが、固有raw OC cell／公開joinを保持したliteral obsolete判断が別data-pipeline ownerでDeferred。Done gateと`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001`の最終inventory／parity／fail-closed／digest・全receipt、`RK-PERF-001`／`TS-PERF-002`の正式変更前後各3run、`DX-HANDOFF-001`／lifecycle⑦のREADME最終qualityも未達。次sessionは計画確認前に読取・既存checksum照合のみ、確認後は同じ限定単位の実装・影響検証・既存正本更新・対象限定local commitまで進める。未達が残れば製品未完了checkpointとし、依存quality／TSK-09系／pushを始めない。60分checkpoint／90分atomic action終了を維持する。

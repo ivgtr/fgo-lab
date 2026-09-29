@@ -28990,6 +28990,36 @@
     },
     "executionBoundary": "Before confirmation only HEAD/index/diff/untracked, code/canonical-doc/existing-artifact reads and checksum comparison. After confirmation implement the same approved bounded unit, verify affected suites and old/new complete decoded values/order/count plus disk bytes/SHA-256/all receipts, update existing Task/evidence and create a scoped local commit without repeated ordinary technical approval. If separate native/recovery owner, new semantics, another family or unique raw coverage needs independent work, record evidence/unmet condition/next operation and stop product-incomplete. Only with TSK-08 Deferred/Blocking zero at one final source/input/artifact identity and sufficient time proceed to affected audits, formal three-run performance, README final quality and integrated counters/digests/receipts. Keep control first test <=60 seconds and verifyDepsBeforeRun:error; no fallback, ID branch, HP selector, separate expectation/audit authority, unexplained shard regeneration, TSK-09 work or push. Checkpoint within 60 minutes and finish the current atomic action within 90 minutes."
   },
+  "postCandidateLeafIdentityDesignCheckpoint": {
+    "date": "2026-09-29",
+    "status": "read_only_step_recheck_and_design; product_incomplete",
+    "startHead": "e73fd92618fc4470da00d6cc0812b9b72fbb5ac8",
+    "worktreeAtStart": "HEAD matched handoff; index, tracked diff and untracked files empty",
+    "stepDecision": {
+      "0": "established baseline and contracts",
+      "1": "established V41 marker, V40 retention and explicit V41 recomputation",
+      "2": "in_progress; TSK-08 in_progress",
+      "3": "established revised 80-condition matrix and eligibility",
+      "dependencies": "TSK-09.1 and TSK-09 blocked"
+    },
+    "identityRecheck": "postPreparationConditionReadCheckpoint source6 and published master1, final unit/control/selected-native manifests3 and their 9/21/64 artifacts: 104/104 present with recorded disk bytes and SHA-256; all three artifactVerification.errors empty. Published master, scenario/portable source and ranking/matrix scripts selected for Step0/1/3 comparison have no Git diff against product baseline 60dea89944a884bbbe40464eb1ae7e65cb77ad4e. No source test, producer, audit, quality, live measurement or shard regeneration was run in this design session.",
+    "investigatedSourceIdentity": [
+      { "path": "packages/battle-execution/src/condition.ts", "bytes": 12423, "sha256": "00021befc635886213cdc387ff3dc6fc4dc0b11b243c42a88c58644698cecdf2" },
+      { "path": "packages/battle-execution/src/hpExecutionObservation.ts", "bytes": 15757, "sha256": "3cfd703f5d8d94e105549dcc9932905adeab5cbf5b1b21c90b8be0960c33fb7e" },
+      { "path": "packages/battle-execution/src/candidateExecution.ts", "bytes": 16054, "sha256": "2febd682e0bbe0ec6d01c619a1d0a19b2b74b2f4aeced520f24121fdd05d50e0" },
+      { "path": "packages/battle-execution/src/operationCompiler.ts", "bytes": 39273, "sha256": "69620bda0880c3be269d36d61527fb4b3ca87c5328740d711cf3bf18dce04aea" },
+      { "path": "packages/calculation-application/src/productionHpProofCoverage.ts", "bytes": 16419, "sha256": "b7aa054cd4e96c229993ca77348190b291769076e841d42c6766fa9f7f01c148" },
+      { "path": "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts", "bytes": 44906, "sha256": "0c8a2fb0209c3c8f46be5863f1ce75cda393c984c4b2ccd1f1de04450eb6cb1f" },
+      { "path": "packages/calculation-application/src/productionHpOperationEvidence.ts", "bytes": 37038, "sha256": "db6caf8b19f344c3ea4764fbba0f8abd61b6c645f445ff4883a9084e1a83fc9c" },
+      { "path": "packages/calculation-application/src/productionMasterControlAudit.test.ts", "bytes": 118891, "sha256": "6fdac8a3efc85a79ddad4e4aeeee041f1e73a4899e320e136c828bebc8e9baf4" }
+    ],
+    "rejectedCandidate": "Do not implement an OC-rate physical read merely for the published selected NP cells: all 25 published ocRateExpression declarations originate from NP, and the 10 selectedCommitted rows have no later grant in their terminal action; 240 rows select another cell. A synthetic later-grant reader may be schema-legal but does not close that original published request population. Native read and candidate preflight/operation events are different execution phases.",
+    "confirmedBoundary": "evaluateCondition observes each actual attackerHpPermille leaf, but HpQuantityRead and HpCandidateObservation.reads retain comparison/value and no compiled leaf reference or original path. hpPublishedDependencyBindings conditionDeclarations matches source plus comparison/value, so two equal-valued leaves in one effect yield ambiguousCanonical rather than distinct valid declaration/read correspondence. compileEffectCondition preserves quantity leaf nesting, while sourceCondition can wrap NP effects with a variant condition. The exact original-to-compiled path correspondence and schema-legal original request remain to be proved; numerical damage behavior is not diagnosed as wrong.",
+    "designDirectionNotImplementationInstruction": "From current code first choose the semantic owner and shape. Candidate direction: retain the physically evaluated compiled leaf identity in the existing HP condition observer, map it structurally and in order to the canonical declaration path through the compiler's NP wrapper where applicable, and replace value-only joining and weak reason/path-only firstDifference or fixed unobserved summaries with typed phase/disposition and canonical first difference in the existing application audit authority. Do not add a new expectation producer, fallback, ID/runtime or HP action/recipient selector. Breaking audit-only API/artifact shape is acceptable if it removes duplicate weak models; prove the owner boundary before editing.",
+    "representativeFalsifiers": "Original schema-legal request with two distinct equal-valued HP quantity leaves in one effect; compare original selection, native evaluation, executable ordered plan, candidate preflight/event, both physical reads, transaction and full artifact. Include one missing or swapped leaf, changed compiled subtree, nested all/any/not, selected candidate abort and rejected preparation; demand typed identity/first difference, and never require an ordered read for a rejected request or a terminal NP without downstream consumer.",
+    "closureReconciliation": "Checklist1 and input lifecycle1-3 retained only at matching identity. Checklist2-3 and lifecycle4/5/8 still need seven-kind phase obligations and six-class same-final-identity original input -> typed reason -> canonical first difference -> bounded summary -> full artifact -> all receipts. Candidate equal-leaf join is one concrete gap, not all closure. Checklist4/lifecycle6 still need exact obsolete-definition decision; e081002 removed the old 13 repeated master reads, while raw OC cell and published joins retain unique assertions. Done gate, TS-AUDIT-001, RK-AUDIT-001, TS-OUT-001, TS-ART-001 need final inventory/parity/fail-closed/digest and integrated receipts. RK-PERF-001/TS-PERF-002 need formal before/after three runs; DX-HANDOFF-001/lifecycle7 need final README quality. TSK-08 Deferred remains nonzero.",
+    "nextSession": "Present a current-code bounded plan before implementation and wait for user confirmation. Prove the direct definition/caller path and representative original request, decide whether the candidate leaf identity boundary is the best one-session unit, map every TSK-08 obligation, and specify affected suites, full decoded old/new values/order/counts, disk bytes/SHA-256/all receipts, performance condition and stop boundary. After confirmation execute only the approved unit through verification, existing-canon update and scoped local commit. If independent owner/family/semantics or unique raw coverage remains, record unmet condition and next operation as product-incomplete. No push, TSK-09 work, unexplained eight-shard regeneration, or final quality/formal closure while Deferred remains."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -28998,7 +29028,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postPreparationStepRecheckHandoff. The preparation HP-condition read unit is complete in its local scope; next present a current-code plan for one bounded remaining seven-kind native/recovery consumer path, while mapping the six-class input-to-typed/bounded/full/all-receipt join and separate data-pipeline obsolete-definition disposition. Wait for user confirmation before implementation. Step2/TSK-08 remains in_progress, TSK-09.1/09 blocked; no dependent quality, unexplained shard regeneration or push.",
+    "nextSession": "Follow postCandidateLeafIdentityDesignCheckpoint. First present a current-code plan and wait for user confirmation; candidate equal-valued HP condition leaf identity is a confirmed candidate-audit correspondence gap, while the proposed OC-rate later-grant physical read does not close the published terminal NP population. Rejudge the bounded owner/implementation shape from code, then execute only the confirmed unit. Step2/TSK-08 remains in_progress, TSK-09.1/09 blocked; no dependent quality, unexplained shard regeneration or push.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -29100,8 +29130,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postPreparationStepRecheckHandoff.nextPlanCandidate",
-    "latestCheckpointReference": "postPreparationStepRecheckHandoff",
+    "nextSessionReference": "postCandidateLeafIdentityDesignCheckpoint.nextSession",
+    "latestCheckpointReference": "postCandidateLeafIdentityDesignCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
