@@ -813,6 +813,16 @@ describe('production master inventory ratchet', () => {
           ),
       );
       const userControlObservations: ProductionUserControlObservation[] = [];
+      let npSpecialOriginalRequest: {
+        observationIndex: number;
+        enabledScenario: CalculationScenario;
+        excludedScenario: CalculationScenario;
+        projection: EffectProjection;
+        expectedDamageInput: {
+          enabled: [number, number, number, number, number];
+          excluded: [number, number, number, number, number];
+        };
+      } | null = null;
       const expectedCriticalStarsForward: CriticalStarsForwardExpectation[] = [];
       const selectedProfileKeys = new Map<string, string>();
       const preparationInventories = new Map<
@@ -1381,6 +1391,27 @@ describe('production master inventory ratchet', () => {
                   }
                 : {}),
             });
+            if (npSpecialOriginalRequest === null && member.modifier === 'npSpecial') {
+              const selected = userControlObservations.at(-1)!;
+              if (
+                selected.enabled.inputBinding.kind === 'bound' &&
+                selected.excluded.inputBinding.kind === 'bound' &&
+                selected.enabled.inputBinding.address === 'npSpecialMultipliers' &&
+                selected.excluded.inputBinding.address === 'npSpecialMultipliers' &&
+                JSON.stringify(selected.enabled.inputBinding.value) !==
+                  JSON.stringify(selected.excluded.inputBinding.value)
+              )
+                npSpecialOriginalRequest = {
+                  observationIndex: userControlObservations.length - 1,
+                  enabledScenario: selectedScenario,
+                  excludedScenario,
+                  projection: member,
+                  expectedDamageInput: {
+                    enabled: [...active.input.npSpecialMultipliers],
+                    excluded: [...excluded.input.npSpecialMultipliers],
+                  },
+                };
+            }
           }
         }
 
@@ -1797,6 +1828,37 @@ describe('production master inventory ratchet', () => {
         expectedCriticalStarsForward,
         observations: userControlObservations,
       });
+      if (npSpecialOriginalRequest === null)
+        throw new Error('production_np_special_original_request_missing');
+      const originalNpSpecial = userControlObservations[npSpecialOriginalRequest.observationIndex]!;
+      if (
+        originalNpSpecial.enabled.inputBinding.kind !== 'bound' ||
+        originalNpSpecial.enabled.inputBinding.address !== 'npSpecialMultipliers' ||
+        originalNpSpecial.excluded.inputBinding.kind !== 'bound' ||
+        originalNpSpecial.excluded.inputBinding.address !== 'npSpecialMultipliers'
+      )
+        throw new Error('production_np_special_original_binding_missing');
+      const inertNpSpecialObservation: ProductionUserControlObservation = {
+        ...originalNpSpecial,
+        excluded: {
+          ...originalNpSpecial.excluded,
+          inputBinding: {
+            ...originalNpSpecial.excluded.inputBinding,
+            value: originalNpSpecial.enabled.inputBinding.value,
+          },
+        },
+      };
+      const inertNpSpecialGate = auditProductionUserControlObservations({
+        expectedProjectionCount: expectedUserControlIdentities.length,
+        expectedIdentities: selectedExpectedIdentities,
+        expectedBattlePointReads,
+        expectedCriticalStarsForward,
+        observations: userControlObservations.map((observation, index) =>
+          index === npSpecialOriginalRequest.observationIndex
+            ? inertNpSpecialObservation
+            : observation,
+        ),
+      });
       await writeProductionAuditArtifact(task.meta, 'production-inert-control-production.json', {
         schemaVersion: 1,
         boundary: 'calculation-application-production-inert-controls',
@@ -1808,7 +1870,37 @@ describe('production master inventory ratchet', () => {
         preparationInventories: Object.fromEntries(preparationInventories),
         gate: userControlGate,
         observations: userControlObservations,
+        intentionalFailure: {
+          originalRequest: npSpecialOriginalRequest,
+          originalObservation: originalNpSpecial,
+          alteredObservation: inertNpSpecialObservation,
+          gate: inertNpSpecialGate,
+        },
       });
+      const npSpecialFailure = inertNpSpecialGate.failures.find(
+        (failure) => failure.reason === 'userControlNpSpecialInputNotChanged',
+      );
+      expect(npSpecialOriginalRequest.expectedDamageInput.enabled).toEqual(
+        originalNpSpecial.enabled.inputBinding.value,
+      );
+      expect(npSpecialOriginalRequest.expectedDamageInput.excluded).toEqual(
+        originalNpSpecial.excluded.inputBinding.value,
+      );
+      expect(npSpecialOriginalRequest.expectedDamageInput.enabled).not.toEqual(
+        npSpecialOriginalRequest.expectedDamageInput.excluded,
+      );
+      expect(inertNpSpecialGate.status).toBe('failed');
+      expect(npSpecialFailure).toMatchObject({
+        firstDifference: { path: 'changed', expected: true, actual: false },
+      });
+      if (process.env['FGO_TSK08_INERT_FAILURE_PROBE'] === '1')
+        throw new Error(
+          `production_user_control_ratchet_failed:${JSON.stringify({
+            reason: npSpecialFailure?.reason ?? null,
+            canonicalIdentity: npSpecialFailure?.canonicalIdentity ?? null,
+            firstDifference: npSpecialFailure?.firstDifference ?? null,
+          })}`,
+        );
       expect(hpGate.status, JSON.stringify(hpGate.firstDifference)).toBe('passed');
       expect(scalarGate.status, JSON.stringify(scalarGate.firstDifference)).toBe('passed');
       expect(attemptGate.status).toBe('passed');
