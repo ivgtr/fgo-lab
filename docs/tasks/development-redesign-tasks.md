@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.141"
+document_version: "1.7.142"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-29"
@@ -4354,3 +4354,21 @@ schema-legalな元request1件／ordered plan2 operationから、同値の別leaf
 次の作業者は[evidence](../evidence/tsk-08-parity-ratchet.json) `postCandidateLeafIdentityDesignCheckpoint`を判断材料に、**現コードの定義・直接callerから一セッションの変更ownerと実装形を計画して先に提示し、利用者確認を待つ**。候補は既存HP observerが実評価leafのidentityを保持し、既存application監査が元宣言path・compiled構造・read順／transactionをtypedに照合する方向だが、過去案を実装指示として固定しない。監査専用API／artifactの破壊的整理は許容し、既存の弱い`firstDifference`や固定`unobserved`を残すためのfallbackは追加しない。schema-legalな同値別leaf、片方の欠落／入替え、nested `all`／`any`／`not`、準備拒否・候補abortを代表反証とし、元request→評価→ordered plan→event→物理read→typed gate→完全artifact／全receiptまで示す。
 
 checklist①／入力lifecycle①〜③はidentity一致の既存証拠を再利用する。②③／lifecycle④⑤⑧はこの候補境界のほか七種のphase別native／recovery義務と六失敗クラスの元入力→typed reason→canonical first difference→bounded／完全artifact→全receiptの最終統合がDeferred。④／lifecycle⑥は旧13回master読込除去済みだが、固有raw OC cell／公開joinを保持したliteral obsolete判断が別data-pipeline ownerでDeferred。Done gateと`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001`の最終inventory／parity／fail-closed／digest・全receipt、`RK-PERF-001`／`TS-PERF-002`の正式変更前後各3run、`DX-HANDOFF-001`／lifecycle⑦のREADME最終qualityも未達。次sessionは計画確認前に読取・既存checksum照合のみ、確認後は同じ限定単位の実装・影響検証・既存正本更新・対象限定local commitまで進める。未達が残れば製品未完了checkpointとし、依存quality／TSK-09系／pushを始めない。60分checkpoint／90分atomic action終了を維持する。
+
+### TSK-08 候補HP条件leaf identity限定実装checkpoint（製品未完了、2026-09-29）
+
+開始HEAD `05ce1cbe4ec5daf3f1fbdaaf92863992e94efc6c`、index／tracked／untrackedはclean。利用者へ現コード計画と独立期待readの補正を提示し、確認後に実装した。`evaluateCondition`のHP物理read captureへ実評価compiled leaf参照を追加。`hpProofCoverageInventory`が持つ元requirement pathとcompiled `all`／`any`／`not`構造を同じapplication proof責務で対にし、公開bindingは元requestのordered operationからread列を実captureと独立に確定する。選択済み・preflight readyの候補だけ、operation event／transaction・実readの参照と順序を照合する。欠落・入替え・同値foreign leaf・compiled subtree変更はtyped `conditionReadMismatch`とcanonical identity／first differenceで失敗する。fixedSelfの直接consumerも同じleaf対応を使い、同値別NP readerを別pathに結ぶ。公開gateの実read件数から独立した固定`unobserved`欄は削除した。damage／candidate生成／HP action・recipient選択／fallbackは変更していない。
+
+schema-legalな入れ子の同値別leaf、欠落／入替え／foreign参照／subtree変更、NP wrapperを通るfixedSelf reader、準備NP選択だけでordered候補readがない経路、既存準備拒否・候補abortを反証した。最終sourceの対象unit 3 file／126 test、battle条件2 file／27 test、公開control audit 10／10、typecheck・target lint／format・差分checkが成功。control第1 testは35.819秒で60秒上限内。変更前後の同command・同input・affinity0–7・既定production4／unit4／audit1 workersの第1 test各1runは33.07→35.67秒（+2.60秒、単回診断）。絞り込みrunner全体はskip契約により非0で、正式各3run性能gateには数えない。`verifyDepsBeforeRun: error`、worker／予算／timeout／ratchetは緩めていない。
+
+開始HEADを`/tmp`へ独立checkoutし同じunit suiteを実行した旧123 test／114 receiptと新126 test／116 receiptの全disk bytes／SHA-256は一致。完全decode後の共通109製品artifactは26件が完全一致、81件が追加されたcapture leaf参照だけを除くと値・配列順・件数が完全一致、2件は固定`unobserved`欄の削除だけ。新規2件は候補・fixedSelf leafの元request／ordered plan／event／gate／反証を含む。公開controlの旧新21／21 receiptも一致し、共通の非run artifactは公開／support bindingの`unobserved`削除2件以外、完全decoded値・順序・件数とbytes／SHAが一致。公開元request3186、宣言71、binding512、ordered consumer plan64／no downstream3122、gate失敗0を維持した。詳細なsource、manifest、artifact bytes／SHAと全receiptは[evidence](../evidence/tsk-08-parity-ratchet.json) `postCandidateLeafIdentityImplementationCheckpoint`。
+
+| TSK-08義務 | 今回の判定 |
+| --- | --- |
+| checklist①／入力lifecycle①〜③ | 単一producer、共有master／既存inventory・mutation・80条件matrixをidentity一致の範囲で維持。 |
+| checklist②③／lifecycle④⑤⑧ | 候補HP同値別leafとfixedSelf直接consumerを今回閉じた。元request二種未到達、3評価済みrequest／2修復edge、準備read・共通HP gate・partial commit artifactは既存証拠を再利用。七宣言種別の残るnative／alternate／recovery consumer unionと六クラスの最終同一identity統合はDeferred。 |
+| checklist④／lifecycle⑥ | 旧13回master読込は除去済み。raw OC planning／normalized 167 occurrence・632 cell／公開normalization join、現行inventory・一回read・ranking candidateInventoryは定義・直接caller・入力母集団・固有assertionが異なるため保持。literal obsolete対象の最終判定はdata-pipeline ownerでDeferred。 |
+| Done gate、`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001` | 局所原入力／first difference／完全artifact・全receiptと影響control auditは成立。全damage・digest first difference、最終inventory／parity／fail-closed、六クラスの元入力→typed reason→bounded／完全artifact→全receipt統合はDeferred。 |
+| `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／lifecycle⑦ | 正式変更前後各3run性能、README最終quality、統合counter／digestはDeferred。 |
+
+六クラスの現ownerはparityのmatrix gate、unsupported／invalidのfinal outcome、partial commitのtransaction、inert controlの公開control、stale mutationのreceipt／recoveryで維持した。局所artifact成功を六クラス最終ratchetへ読み替えない。公開OC-rate25宣言の選択済み終端NPに合成後続grantを足して未達解消とも扱わない。次は残る七宣言種別のphase別consumerと六クラスの同一最終identity到達を有限表で照合し、別native／recovery経路・固有raw coverageのownerを限定判定する。TSK-08自身のDeferredが残るためStep 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`。正式性能・README最終quality・8 shards再生成・TSK-09系・pushは開始しない。対象限定local checkpoint commitで停止する。

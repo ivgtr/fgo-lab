@@ -10,7 +10,10 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
-import { preparationHpActionsFor } from '@fgo-lab/battle-execution/preparation-audit';
+import {
+  hpCandidateObservationFor,
+  preparationHpActionsFor,
+} from '@fgo-lab/battle-execution/preparation-audit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
 import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
 import {
@@ -39,6 +42,8 @@ function setup(
   selectedStandard = false,
   ocRate = false,
   nativePreparation = false,
+  nestedCondition = false,
+  npCondition = false,
 ) {
   const master = masterSnapshotSchema.parse(fixture);
   const actor = master.servants[0]!;
@@ -118,6 +123,24 @@ function setup(
       kind: 'all',
       requirements: [effect.requirement.expression, structuredClone(effect.requirement.expression)],
     };
+  if (nestedCondition) {
+    const leaf = effect.requirement.expression;
+    effect.requirement.expression = {
+      kind: 'all',
+      requirements: [
+        { kind: 'any', requirements: [leaf, structuredClone(leaf)] },
+        {
+          kind: 'not',
+          requirement: {
+            kind: 'quantity',
+            quantity: 'attackerHpPermille',
+            comparison: 'atLeast',
+            value: 501,
+          },
+        },
+      ],
+    };
+  }
   const selectedEffect = nativePreparation
     ? masterEffectSchema.parse({
         ...effect,
@@ -220,7 +243,18 @@ function setup(
         occurrenceId: 'fixture-oc-rate:0',
         gameActivation: 'npBeforeDamage',
         timing: 'beforeDamage',
-        requirement: { recipient: 'sourceSelf', expression: { kind: 'always' } },
+        requirement: {
+          recipient: 'sourceSelf',
+          expression: npCondition
+            ? {
+                kind: 'all',
+                requirements: [
+                  effect.requirement.expression,
+                  structuredClone(effect.requirement.expression),
+                ],
+              }
+            : { kind: 'always' },
+        },
         execution: [
           {
             kind: 'grantOcApplicationRate',
@@ -431,7 +465,7 @@ it(
           d.stages.find((s) => s.stage === 'actualConditionRead')?.observation === 'unobserved',
       ),
     ).toBe(true);
-    expect(ledger.unobserved).toContain('valueExpressionActualRead');
+    expect(ledger.bindings.some((binding) => binding.stage === 'actualValueRead')).toBe(true);
     await writeProductionAuditArtifact(task.meta, 'hp-published-dependency-fixture.json', ledger);
     const disk = await readFile(
       resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-published-dependency-fixture.json'),
@@ -896,9 +930,15 @@ it('rejects incomplete requests and equal foreign request/candidate capture owne
   ).toContain('missingCapture');
 });
 
-it('fails closed on ambiguous equal condition leaves and a foreign NP declaration value', () => {
+it('distinguishes equal condition leaves and rejects a foreign NP declaration value', () => {
   const repeated = setup(false, true);
-  expect(repeated.reconcile().gate.failures.map((x) => x.reason)).toContain('ambiguousCanonical');
+  expect(repeated.reconcile().gate.failures).toEqual([]);
+  expect(
+    repeated
+      .reconcile()
+      .bindings.filter((binding) => binding.stage === 'actualConditionRead')
+      .map((binding) => binding.declaration.path),
+  ).toEqual(['requirement.expression.requirements.0', 'requirement.expression.requirements.1']);
   const f = setup();
   const declarations = f.declarations.map((d) =>
     d.identity.kind === 'hpRatioLow' ? { ...d, value: structuredClone(d.value) } : d,
@@ -917,4 +957,97 @@ it('fails closed on ambiguous equal condition leaves and a foreign NP declaratio
       foreignBindings.bindings,
     ).gate.failures.map((x) => x.reason),
   ).toContain('foreignDeclaration');
+});
+
+it(
+  'proves candidate HP leaf identity and read order from an original nested request',
+  productionAuditTestOptions(['hp-candidate-condition-leaf-identity.json']),
+  async ({ task }) => {
+    const f = setup(false, false, false, false, false, false, true);
+    expect(masterEffectSchema.safeParse(f.master.servants[0]!.skills[0]!.effects[0]).success).toBe(
+      true,
+    );
+    const target = f.calculation.executionObservation?.targetExecution;
+    if (target?.selection !== 'selected' || !target.candidateState)
+      throw new Error('selected_candidate_missing');
+    const capture = hpCandidateObservationFor(target.candidateState);
+    if (!capture) throw new Error('candidate_hp_capture_missing');
+    const positive = f.reconcile();
+    expect(positive.gate.failures).toEqual([]);
+    const conditionPaths = positive.bindings
+      .filter((binding) => binding.stage === 'actualConditionRead')
+      .map((binding) => binding.declaration.path);
+    expect(conditionPaths).toEqual([
+      'requirement.expression.requirements.0.requirements.0',
+      'requirement.expression.requirements.0.requirements.1',
+      'requirement.expression.requirements.1.requirement',
+    ]);
+    const removed = capture.reads.splice(1, 1)[0]!;
+    const missing = f.reconcile().gate;
+    capture.reads.splice(1, 0, removed);
+    const first = capture.reads[0]!,
+      second = capture.reads[1]!;
+    capture.reads[0] = second;
+    capture.reads[1] = first;
+    const swapped = f.reconcile().gate;
+    capture.reads[0] = first;
+    capture.reads[1] = second;
+    const originalLeaf = first.leaf;
+    first.leaf = structuredClone(originalLeaf);
+    const foreignEqualLeaf = f.reconcile().gate;
+    first.leaf = originalLeaf;
+    const operation = f.prepared.orderedScenario!.operations.find(
+      (item) => item.source.effectId === 'hp-reader',
+    )!;
+    const originalCondition = operation.condition;
+    operation.condition = { kind: 'always' };
+    const changedTree = f.reconcile().gate;
+    operation.condition = originalCondition;
+    for (const gate of [missing, swapped, foreignEqualLeaf, changedTree]) {
+      expect(gate.passed).toBe(false);
+      expect(gate.failures.some((failure) => failure.reason === 'conditionReadMismatch')).toBe(
+        true,
+      );
+      expect(gate.failures.some((failure) => failure.firstDifference?.identity)).toBe(true);
+    }
+    const complete = {
+      originalRequest: f.prepared.scenario,
+      orderedPlan: f.prepared.orderedScenario,
+      operationEvents: target.operationEvents,
+      executionGroups: target.candidateState.executionGroups,
+      conditionPaths,
+      positive,
+      missing,
+      swapped,
+      foreignEqualLeaf,
+      changedTree,
+    };
+    await writeProductionAuditArtifact(
+      task.meta,
+      'hp-candidate-condition-leaf-identity.json',
+      complete,
+    );
+    const disk = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-candidate-condition-leaf-identity.json'),
+    );
+    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+  },
+);
+
+it('keeps selected native NP conditions outside the candidate read obligation', () => {
+  const f = setup(false, false, false, false, true, false, false, true);
+  const coverage = f.reconcile();
+  expect(coverage.gate.failures).toEqual([]);
+  const npConditionBindings = coverage.bindings.filter(
+    (binding) => binding.declaration.origin === 'np' && binding.declaration.kind === 'condition',
+  );
+  expect(npConditionBindings.map((binding) => [binding.stage, binding.declaration.path])).toEqual([
+    ['selectedPreparationCell', 'requirement.expression.requirements.0'],
+    ['selectedPreparationCell', 'requirement.expression.requirements.1'],
+  ]);
+  expect(
+    f.prepared.orderedScenario?.operations.some(
+      (operation) => operation.source.effectId === 'fixture-oc-rate',
+    ),
+  ).toBe(false);
 });

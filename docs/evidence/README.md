@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.132"
+document_version: "1.4.133"
 status: "Active"
 updated_at: "2026-09-29"
 ---
@@ -111,3 +111,5 @@ TSK-08の残義務は[Taskの再設計](../tasks/development-redesign-tasks.md)�
 再設計後の次セッション指示は同evidence `handoffPreparation.nextSession.tsk08RedesignedClosureSession`。Step 0／1／3を維持し、Step 2の共通HP証拠モデルを現コードから先に計画して利用者確認を待つ。準備時点で直近checkpointのsource4／master1／artifact5は現diskのbytes／SHAと一致したが、製品testやauditは再実行していない。
 
 最新のStep再確認と候補HP条件leaf identityの設計調査は[parity evidence](tsk-08-parity-ratchet.json) `postCandidateLeafIdentityDesignCheckpoint`。開始HEAD `e73fd926`、既存source／master／manifest／全artifact 104／104のdisk bytes・SHA-256が一致。公開OC-rateの終端NPに後続readを要求する旧案を撤回し、候補条件readの同値別leafを値だけで対応できない監査境界を記録した。これは未実装の設計候補であり、Step 0／1／3成立、Step 2／TSK-08 `in_progress`、09.1／09 `blocked`を維持する。次sessionは現コードから計画を提示し利用者確認を待つ。
+
+候補HP条件leaf identityの限定実装結果は同evidence `postCandidateLeafIdentityImplementationCheckpoint`。実評価compiled leaf参照と元requirement pathを構造的に対応付け、元ordered planから独立に期待read列を作る。旧新unit artifactの完全decode／全receipt、公開control 21／21 receipt、同条件単回性能診断を記録した。残るnative／recovery・六クラス統合・legacy literal判定・正式性能／最終qualityはDeferred。Step 2／TSK-08は`in_progress`、09.1／09は`blocked`。対象限定local checkpointで停止する。

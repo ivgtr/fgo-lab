@@ -1,11 +1,12 @@
 import {
   getNoblePhantasmVariants,
+  noblePhantasmVariantKey,
   type CanonicalEffectRequirement,
   type MasterDataSnapshot,
   type MasterEffect,
   type NoblePhantasmVariant,
 } from '@fgo-lab/master-data';
-import { isHpOperation } from '@fgo-lab/battle-execution';
+import { isHpOperation, type ConditionExpression } from '@fgo-lab/battle-execution';
 import {
   isFixedSelfHpWriter,
   type HpPreparationProgram,
@@ -53,6 +54,46 @@ export function hpRequirementLeaves(
   return requirement.kind === 'quantity' && requirement.quantity === 'attackerHpPermille'
     ? [{ path, value: requirement }]
     : [];
+}
+
+/** Correlate preserved HP condition leaves by original path and compiled object identity. */
+export function pairedHpRequirementLeaves(
+  original: CanonicalEffectRequirement,
+  compiled: ConditionExpression,
+  path: string,
+):
+  | {
+      path: string;
+      original: CanonicalEffectRequirement;
+      compiled: Extract<ConditionExpression, { kind: 'quantity' }>;
+    }[]
+  | null {
+  if (original.kind === 'all' || original.kind === 'any') {
+    if (
+      compiled.kind !== original.kind ||
+      compiled.expressions.length !== original.requirements.length
+    )
+      return null;
+    const children = original.requirements.map((child, index) =>
+      pairedHpRequirementLeaves(
+        child,
+        compiled.expressions[index]!,
+        `${path}.requirements.${index}`,
+      ),
+    );
+    return children.some((child) => child === null) ? null : children.flatMap((child) => child!);
+  }
+  if (original.kind === 'not')
+    return compiled.kind === 'not'
+      ? pairedHpRequirementLeaves(original.requirement, compiled.expression, `${path}.requirement`)
+      : null;
+  if (original.kind !== 'quantity' || original.quantity !== 'attackerHpPermille') return [];
+  return compiled.kind === 'quantity' &&
+    compiled.quantity === 'attackerHpPermille' &&
+    compiled.comparison === original.comparison &&
+    compiled.value === original.value
+    ? [{ path, original, compiled }]
+    : null;
 }
 
 /** Declaration inventory only. No expected HP values, requests or native outcomes are generated. */
@@ -354,29 +395,63 @@ export function fixedSelfHpProofCoverage(
   );
   for (const [position, read] of (references.candidate?.reads ?? []).entries()) {
     const canonical = selection.canonical.readers.find(
-      (r) => r.operationId === read.operationId && r.sequence === read.operationSequence,
+      (r) =>
+        r.operationId === read.operationId &&
+        r.sequence === read.operationSequence &&
+        r.leaf === read.leaf,
     );
     if (!canonical) {
       failures.push({ reason: 'unmatchedDeclaration', path: `actualConditionRead.${position}` });
       continue;
     }
-    const natural = selection.canonical.naturalReaders.filter(
-      (r) =>
-        r.occurrenceId === canonical.source.effectOccurrenceId &&
-        r.leaf.kind === 'quantity' &&
-        r.leaf.comparison === read.comparison &&
-        r.leaf.value === read.expectedValue,
+    const sourceDeclarations = declarations.filter(
+      (d) =>
+        d.identity.kind === 'condition' &&
+        d.identity.owner === canonical.source.sourceId &&
+        d.identity.origin === canonical.source.origin &&
+        d.identity.occurrence === canonical.source.effectOccurrenceId &&
+        d.effect?.id === canonical.source.effectId &&
+        (d.identity.origin !== 'np' ||
+          JSON.stringify(d.identity.variant?.ref) ===
+            JSON.stringify(selection.prepared.resolved.noblePhantasmVariant?.ref)),
+    );
+    const sourceEffect = sourceDeclarations[0]?.effect;
+    const operation = selection.prepared.orderedScenario?.operations[read.operationSequence];
+    let compiledCondition = operation?.condition;
+    if (canonical.source.origin === 'np' && compiledCondition) {
+      const wrapper = compiledCondition;
+      compiledCondition =
+        wrapper.kind === 'all' &&
+        wrapper.expressions.length === 2 &&
+        wrapper.expressions[1]?.kind === 'noblePhantasmVariant' &&
+        selection.prepared.resolved.noblePhantasmVariant &&
+        noblePhantasmVariantKey(wrapper.expressions[1].variant) ===
+          noblePhantasmVariantKey(selection.prepared.resolved.noblePhantasmVariant.ref)
+          ? wrapper.expressions[0]
+          : undefined;
+    }
+    const paired =
+      sourceEffect &&
+      compiledCondition &&
+      sourceDeclarations.every((declaration) => declaration.effect === sourceEffect)
+        ? pairedHpRequirementLeaves(
+            sourceEffect.requirement.expression,
+            compiledCondition,
+            'requirement.expression',
+          )?.find((entry) => entry.compiled === read.leaf)
+        : undefined;
+    const natural = selection.canonical.naturalReaders.some(
+      (r) => r.occurrenceId === canonical.source.effectOccurrenceId && r.leaf === paired?.original,
     );
     bind(
-      declarations.filter(
+      sourceDeclarations.filter(
         (d) =>
-          d.identity.kind === 'condition' &&
-          d.identity.owner === canonical.source.sourceId &&
-          d.identity.origin === canonical.source.origin &&
-          (d.identity.origin !== 'np' ||
-            JSON.stringify(d.identity.variant?.ref) ===
-              JSON.stringify(selection.prepared.resolved.noblePhantasmVariant?.ref)) &&
-          natural.some((r) => r.leaf === d.value),
+          paired &&
+          natural &&
+          d.identity.path === paired.path &&
+          d.value === paired.original &&
+          read.comparison === read.leaf.comparison &&
+          read.expectedValue === read.leaf.value,
       ),
       {
         stage: 'actualConditionRead',

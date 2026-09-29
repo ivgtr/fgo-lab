@@ -251,6 +251,7 @@ export function evaluateCondition(
       if (condition.quantity === 'attackerHpPermille')
         observeHpQuantity(
           state,
+          condition,
           state.resourceActor ?? 'attacker',
           actual,
           condition.comparison,

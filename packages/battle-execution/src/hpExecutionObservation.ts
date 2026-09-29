@@ -290,6 +290,8 @@ export interface HpCandidateObservation {
     comparison: string;
     expectedValue: number;
     evaluated: boolean | null;
+    /** The condition leaf actually evaluated, retained only in audit capture. */
+    leaf: Extract<ConditionExpression, { kind: 'quantity' }>;
     conditionOutcome?: OperationResult['condition'];
   }[];
   nps: (HpNpEvaluation & {
@@ -380,6 +382,7 @@ export interface HpQuantityRead {
   comparison: string;
   expectedValue: number;
   evaluated: boolean | null;
+  leaf: Extract<ConditionExpression, { kind: 'quantity' }>;
 }
 type HpQuantityObserver = (read: HpQuantityRead) => void;
 const conditionScopes = new WeakMap<object, HpQuantityObserver>();
@@ -394,13 +397,14 @@ export function finishHpConditionCapture(state: object, previous: HpQuantityObse
 }
 export function observeHpQuantity(
   state: object,
+  leaf: Extract<ConditionExpression, { kind: 'quantity' }>,
   actor: string,
   permille: number | null,
   comparison: string,
   expectedValue: number,
   evaluated: boolean | null,
 ): void {
-  conditionScopes.get(state)?.({ actor, permille, comparison, expectedValue, evaluated });
+  conditionScopes.get(state)?.({ leaf, actor, permille, comparison, expectedValue, evaluated });
 }
 
 export function applyObservedNpDamage(

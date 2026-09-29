@@ -2,8 +2,16 @@ import { isDeepStrictEqual } from 'node:util';
 import type { BattleOperation, ConditionExpression, SourceEffect } from '@fgo-lab/battle-execution';
 import { hpCandidateObservationFor } from '@fgo-lab/battle-execution/preparation-audit';
 import { getNoblePhantasmVariants, noblePhantasmVariantKey } from '@fgo-lab/master-data';
+import {
+  firstCanonicalAuditDifference,
+  type CanonicalAuditDifference,
+} from '@fgo-lab/master-data/production-audit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
-import { hpProofCoverageInventory, type HpProofDeclaration } from './productionHpProofCoverage';
+import {
+  hpProofCoverageInventory,
+  pairedHpRequirementLeaves,
+  type HpProofDeclaration,
+} from './productionHpProofCoverage';
 import type { PreparedCalculationScenario, CalculationExecution } from './scenario';
 
 /** The original producer retains every request before its family selectors. */
@@ -61,8 +69,11 @@ export type HpPublishedDependencyReason =
 interface Failure {
   reason: HpPublishedDependencyReason;
   path: string;
+  canonicalIdentity?: string;
+  firstDifference?: CanonicalAuditDifference;
 }
-const hpLeaves = (condition: ConditionExpression): ConditionExpression[] =>
+type HpConditionLeaf = Extract<ConditionExpression, { kind: 'quantity' }>;
+const hpLeaves = (condition: ConditionExpression): HpConditionLeaf[] =>
   condition.kind === 'all' || condition.kind === 'any'
     ? condition.expressions.flatMap(hpLeaves)
     : condition.kind === 'not'
@@ -70,6 +81,7 @@ const hpLeaves = (condition: ConditionExpression): ConditionExpression[] =>
       : condition.kind === 'quantity' && condition.quantity === 'attackerHpPermille'
         ? [condition]
         : [];
+
 const variantMatches = (
   declaration: HpProofDeclaration,
   ref: SourceEffect['noblePhantasmVariant'],
@@ -145,6 +157,24 @@ export function hpPublishedDependencyBindings(
   const dependencies = declarations.filter((d) => d.identity.kind !== 'writer');
   const fail = (reason: HpPublishedDependencyReason, path: string) =>
     failures.push({ reason, path });
+  const failCondition = (
+    path: string,
+    identity: string,
+    expected: string | null,
+    actual: string | null,
+  ) => {
+    const firstDifference = firstCanonicalAuditDifference(
+      [{ identity, value: expected }],
+      [{ identity, value: actual }],
+    );
+    if (!firstDifference) throw new TypeError('hp_condition_difference_missing');
+    failures.push({
+      reason: 'conditionReadMismatch',
+      path,
+      canonicalIdentity: identity,
+      firstDifference: { ...firstDifference, path },
+    });
+  };
   // Compilation binds new condition objects; declaration references must still belong to the
   // original shared master, not an equal foreign inventory supplied to both sides of the gate.
   if (requests[0]) {
@@ -211,16 +241,12 @@ export function hpPublishedDependencyBindings(
       }
       return matches[0];
     };
-    const conditionDeclarations = (operation: BattleOperation, comparison: string, value: number) =>
-      dependencies.filter(
-        (d) =>
-          d.identity.kind === 'condition' &&
-          sourceMatches(d, operation.source, operation.source.origin === 'np' ? ref : null) &&
-          'comparison' in d.value &&
-          d.value.comparison === comparison &&
-          'value' in d.value &&
-          d.value.value === value,
-      );
+    const conditionReadPlan: {
+      operation: BattleOperation;
+      sequence: number;
+      declaration: HpProofDeclaration;
+      leaf: HpConditionLeaf;
+    }[] = [];
     const npDeclaration = (
       operation: Extract<BattleOperation, { kind: 'executeNpDamage' }>,
       path: string,
@@ -238,13 +264,60 @@ export function hpPublishedDependencyBindings(
         path,
       );
     (ordered?.operations ?? []).forEach((operation, sequence) => {
-      hpLeaves(operation.condition).forEach((leaf, position) => {
-        if (leaf.kind !== 'quantity') return;
+      const conditionDeclarations = dependencies.filter(
+        (d) =>
+          d.identity.kind === 'condition' &&
+          sourceMatches(d, operation.source, operation.source.origin === 'np' ? ref : null),
+      );
+      const sourceEffect = conditionDeclarations[0]?.effect;
+      if (conditionDeclarations.some((d) => d.effect !== sourceEffect))
+        fail('ambiguousCanonical', `requests.${requestIndex}.operations.${sequence}.conditions`);
+      let compiledCondition: ConditionExpression = operation.condition;
+      if (conditionDeclarations.length && operation.source.origin === 'np') {
+        const wrapper = operation.condition;
+        if (
+          wrapper.kind !== 'all' ||
+          wrapper.expressions.length !== 2 ||
+          wrapper.expressions[1]?.kind !== 'noblePhantasmVariant' ||
+          !ref ||
+          noblePhantasmVariantKey(wrapper.expressions[1].variant) !== noblePhantasmVariantKey(ref)
+        )
+          failCondition(
+            `requests.${requestIndex}.operations.${sequence}.wrapper`,
+            JSON.stringify([requestIndex, operation.source]),
+            JSON.stringify(['all', 2, ref ? noblePhantasmVariantKey(ref) : null]),
+            JSON.stringify([
+              wrapper.kind,
+              wrapper.kind === 'all' ? wrapper.expressions.length : null,
+              wrapper.kind === 'all' && wrapper.expressions[1]?.kind === 'noblePhantasmVariant'
+                ? noblePhantasmVariantKey(wrapper.expressions[1].variant)
+                : null,
+            ]),
+          );
+        else compiledCondition = wrapper.expressions[0]!;
+      }
+      const originalCondition = sourceEffect?.requirement.expression;
+      const pairs = originalCondition
+        ? pairedHpRequirementLeaves(originalCondition, compiledCondition, 'requirement.expression')
+        : hpLeaves(compiledCondition).length
+          ? null
+          : [];
+      if (pairs === null)
+        failCondition(
+          `requests.${requestIndex}.operations.${sequence}.structure`,
+          JSON.stringify([requestIndex, operation.source]),
+          originalCondition ? JSON.stringify(originalCondition) : null,
+          JSON.stringify(compiledCondition),
+        );
+      (pairs ?? []).forEach(({ path, original, compiled: leaf }, position) => {
         const d = one(
-          conditionDeclarations(operation, leaf.comparison, leaf.value),
+          conditionDeclarations.filter(
+            (declaration) => declaration.identity.path === path && declaration.value === original,
+          ),
           `requests.${requestIndex}.operations.${sequence}.conditions.${position}`,
         );
-        if (d)
+        if (d) {
+          conditionReadPlan.push({ operation, sequence, declaration: d, leaf });
           push(d, {
             stage: 'canonicalCondition',
             position,
@@ -258,6 +331,7 @@ export function hpPublishedDependencyBindings(
             reference: leaf,
             detail: { leaf },
           });
+        }
       });
       if (operation.kind === 'executeNpDamage' && operation.damage.kind === 'hpRatioLow') {
         const d = npDeclaration(operation, `requests.${requestIndex}.operations.${sequence}.np`);
@@ -337,6 +411,59 @@ export function hpPublishedDependencyBindings(
         fail('missingCapture', candidatePath);
       if (candidate && candidate.seed.hp !== ordered?.hp)
         fail('requestOwnerMismatch', `${candidatePath}.seed`);
+      if (target?.selection === 'selected' && preflight?.status === 'ready' && candidate) {
+        const actualReads = candidate.reads;
+        for (
+          let position = 0;
+          position < Math.max(conditionReadPlan.length, actualReads.length);
+          position++
+        ) {
+          const planned = conditionReadPlan[position];
+          const read = actualReads[position];
+          if (
+            planned &&
+            read &&
+            planned.sequence === read.operationSequence &&
+            planned.operation.operationId === read.operationId &&
+            planned.leaf === read.leaf &&
+            read.comparison === planned.leaf.comparison &&
+            read.expectedValue === planned.leaf.value
+          )
+            continue;
+          const actualOwner =
+            read &&
+            conditionReadPlan.find(
+              (entry) => entry.sequence === read.operationSequence && entry.leaf === read.leaf,
+            );
+          const identity = planned
+            ? JSON.stringify([
+                requestIndex,
+                planned.operation.operationId,
+                planned.declaration.identity,
+              ])
+            : JSON.stringify([requestIndex, read?.operationId, position]);
+          const path = `requests.${requestIndex}.reads.${position}`;
+          const expected = planned
+            ? JSON.stringify([
+                planned.operation.operationId,
+                planned.sequence,
+                planned.declaration.identity.path,
+                planned.leaf.comparison,
+                planned.leaf.value,
+              ])
+            : null;
+          const actual = read
+            ? JSON.stringify([
+                read.operationId,
+                read.operationSequence,
+                actualOwner?.declaration.identity.path ?? null,
+                read.comparison,
+                read.expectedValue,
+              ])
+            : null;
+          failCondition(path, identity, expected, actual);
+        }
+      }
       candidate?.reads.forEach((read, position) => {
         const operation = ordered?.operations[read.operationSequence];
         const group = captured.candidateState?.executionGroups[read.operationGroupIndex];
@@ -362,7 +489,11 @@ export function hpPublishedDependencyBindings(
           return;
         }
         const d = one(
-          conditionDeclarations(operation, read.comparison, read.expectedValue),
+          conditionReadPlan
+            .filter(
+              (entry) => entry.sequence === read.operationSequence && entry.leaf === read.leaf,
+            )
+            .map((entry) => entry.declaration),
           `requests.${requestIndex}.reads.${position}`,
         );
         if (d)
@@ -1087,13 +1218,6 @@ export function reconcileHpPublishedDependencyCoverage(
     })),
     consumerPlans,
     selectedUnreached,
-    unobserved: [
-      'availableActionInventory',
-      'valueExpressionActualRead',
-      'ocRateExpressionActualRead',
-      'wholeNativeNoncommitCoverage',
-      'successfulRecoveryCoverage',
-    ],
     qualification:
       'Correspondence within the original control producer requests only. Direct scenario owner is not variant or cell selection. Declaration, selected cell, reached step, native action, append, actual read and NP evaluation are distinct; absent stages are not zero, unsupported or product exclusion.',
     productClosure: false as const,

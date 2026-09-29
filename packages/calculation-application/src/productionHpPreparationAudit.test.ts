@@ -328,6 +328,55 @@ const shared = new Map<
     ranking: ReturnType<typeof run>;
   }
 >();
+
+it(
+  'maps equal NP reader leaves in the fixedSelf proof by compiled identity',
+  productionAuditTestOptions(['hp-fixed-equal-leaf-identity.json']),
+  async ({ task }) => {
+    const spec = specs[0]!;
+    const master = fixtureMaster(spec);
+    for (const group of master.servants[0]!.noblePhantasmVariantGroups)
+      for (const variant of group.variants) {
+        const reader = variant.effects.find((item) => item.id === 'hp-reader');
+        if (!reader) continue;
+        const original = reader.requirement.expression;
+        reader.requirement.expression = {
+          kind: 'all',
+          requirements: [original, structuredClone(original)],
+        };
+      }
+    const parsed = masterSnapshotSchema.parse(master);
+    const result = run(parsed, spec);
+    const declarations = hpProofCoverageInventory(parsed);
+    const positive = fixedSelfHpProofCoverage(declarations, result.program, result.gate);
+    expect(positive.failures).toEqual([]);
+    expect(
+      positive.correspondence.bindings
+        .filter((binding) => binding.stage === 'actualConditionRead')
+        .map((binding) => binding.declaration.path),
+    ).toEqual(['requirement.expression.requirements.0', 'requirement.expression.requirements.1']);
+    const read = result.program.references.candidate!.reads[0]!;
+    const originalLeaf = read.leaf;
+    read.leaf = structuredClone(originalLeaf);
+    const foreignEqualLeaf = fixedSelfHpProofCoverage(declarations, result.program, result.gate);
+    read.leaf = originalLeaf;
+    expect(
+      foreignEqualLeaf.failures.some((failure) => failure.reason === 'unmatchedDeclaration'),
+    ).toBe(true);
+    const complete = {
+      originalRequest: result.prepared.scenario,
+      orderedPlan: result.prepared.orderedScenario,
+      operationEvents: result.calculation.executionObservation?.targetExecution,
+      positive,
+      foreignEqualLeaf,
+    };
+    await writeProductionAuditArtifact(task.meta, 'hp-fixed-equal-leaf-identity.json', complete);
+    const disk = await readFile(
+      `${process.env['FGO_TEST_ARTIFACT_DIR']}/hp-fixed-equal-leaf-identity.json`,
+    );
+    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+  },
+);
 const groups = [
   'positive',
   'missing',

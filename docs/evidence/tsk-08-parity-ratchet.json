@@ -29020,6 +29020,115 @@
     "closureReconciliation": "Checklist1 and input lifecycle1-3 retained only at matching identity. Checklist2-3 and lifecycle4/5/8 still need seven-kind phase obligations and six-class same-final-identity original input -> typed reason -> canonical first difference -> bounded summary -> full artifact -> all receipts. Candidate equal-leaf join is one concrete gap, not all closure. Checklist4/lifecycle6 still need exact obsolete-definition decision; e081002 removed the old 13 repeated master reads, while raw OC cell and published joins retain unique assertions. Done gate, TS-AUDIT-001, RK-AUDIT-001, TS-OUT-001, TS-ART-001 need final inventory/parity/fail-closed/digest and integrated receipts. RK-PERF-001/TS-PERF-002 need formal before/after three runs; DX-HANDOFF-001/lifecycle7 need final README quality. TSK-08 Deferred remains nonzero.",
     "nextSession": "Present a current-code bounded plan before implementation and wait for user confirmation. Prove the direct definition/caller path and representative original request, decide whether the candidate leaf identity boundary is the best one-session unit, map every TSK-08 obligation, and specify affected suites, full decoded old/new values/order/counts, disk bytes/SHA-256/all receipts, performance condition and stop boundary. After confirmation execute only the approved unit through verification, existing-canon update and scoped local commit. If independent owner/family/semantics or unique raw coverage remains, record unmet condition and next operation as product-incomplete. No push, TSK-09 work, unexplained eight-shard regeneration, or final quality/formal closure while Deferred remains."
   },
+  "postCandidateLeafIdentityImplementationCheckpoint": {
+    "date": "2026-09-29",
+    "status": "product_incomplete_local_unit_complete",
+    "startHead": "05ce1cbe4ec5daf3f1fbdaaf92863992e94efc6c",
+    "scope": "Approved one-session candidate HP condition leaf identity, including the fixedSelf direct consumer; no push.",
+    "ownerAndChange": "battle-execution condition evaluator passes the actual compiled quantity leaf to HpQuantityRead. calculation-application pairs original requirement paths with compiled all/any/not leaf references, builds expected selected/preflight-ready candidate reads independently from original ordered operations, and compares event/transaction/read order through the published typed gate. Missing, swapped, foreign equal-valued leaves and changed compiled trees fail with conditionReadMismatch, canonical identity and firstCanonicalAuditDifference. The fixedSelf direct consumer uses the same structural correspondence. Removed fixed unobserved projection because it was derived from observed reads.",
+    "representativeFalsifiers": "Schema-legal equal leaves nested under all/any/not; missing, swapped, foreign equal leaf, changed subtree; schema-parsed fixedSelf NP reader with NP wrapper and foreign leaf; preparation-only selected NP effect has no ordered candidate read; existing preparation rejection and candidate abort retain fail-closed behavior. Published OC-rate25 all NP-derived; the selected10 end at terminal NP with no later grant. No synthetic later-grant read counts as original request closure.",
+    "sourceIdentity": {
+      "packages/battle-execution/src/condition.ts": {
+        "bytes": 12444,
+        "sha256": "85866e4014e902daa669c33b00478df0a8adfbd5c9c3c7d04763c01c6f372c1f"
+      },
+      "packages/battle-execution/src/hpExecutionObservation.ts": {
+        "bytes": 16027,
+        "sha256": "9116900a1ee8ee6d738b4edc024a860d9c2d9be215bf344ae79d5141f7f84f4c"
+      },
+      "packages/calculation-application/src/productionHpProofCoverage.ts": {
+        "bytes": 19326,
+        "sha256": "fe3a91615a0587d663bc6cc8d12a31281d32adcdd72655f85ef43d6aa99ed3f8"
+      },
+      "packages/calculation-application/src/productionHpPreparationAudit.test.ts": {
+        "bytes": 39041,
+        "sha256": "19e0b7bcb33280749b075c68c5f3b05790db49d705f02d0817d6522badf298ef"
+      },
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts": {
+        "bytes": 49722,
+        "sha256": "f2531cd5fc256a362524b563f9719bf6a9f513b9706e030d0f8e9e64744c9897"
+      },
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts": {
+        "bytes": 39247,
+        "sha256": "36be8c64047600effad96e28acc57a54d363ecd4bb6bc99478b014c02073138c"
+      },
+      "publishedMaster": {
+        "bytes": 32953998,
+        "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+      }
+    },
+    "unitArtifactComparison": {
+      "baselineManifest": {
+        "path": "/tmp/tsk08-leaf-baseline/.test-results/2026-09-29T09-49-30-835Z-15-9a2a8a/manifest.json",
+        "bytes": 27743,
+        "sha256": "35f1488702cf5e0a840eb768fc47d3a7d5c914626d18733ad0a41b5c255c805f",
+        "verifiedReceipts": "114/114"
+      },
+      "candidateManifest": {
+        "path": ".test-results/2026-09-29T09-49-58-836Z-15-01fd66/manifest.json",
+        "bytes": 28199,
+        "sha256": "6ba0665ff2ebf974da592e504f7aec38554191560b2592248c79dd4b5e7a7c36",
+        "verifiedReceipts": "116/116"
+      },
+      "decodedComparison": "All common 109 product artifacts fully decoded: 26 exactly equal; 81 equal in complete values, array order and counts after removing only the newly captured leaf reference; 2 differ only by deletion of the fixed unobserved field. All disk bytes/SHA-256 match their receipts and artifactVerification.errors=[] on both sides. Baseline123/123 and candidate126/126 tests.",
+      "newArtifacts": [
+        {
+          "name": "hp-candidate-condition-leaf-identity.json",
+          "bytes": 224486,
+          "sha256": "0a54f38647bf7b636edf23e7ed01e23e745acc85689b39c6b8f104a9b1cab73a"
+        },
+        {
+          "name": "hp-fixed-equal-leaf-identity.json",
+          "bytes": 1202561,
+          "sha256": "2c0dadf7e061f15048516b5a7678870fd208647c0a7458b9e96cb7e9d9cba531"
+        }
+      ]
+    },
+    "controlArtifactComparison": {
+      "baselineManifest": {
+        "path": ".test-results/2026-09-29T08-45-35-078Z-15-347248/manifest.json",
+        "bytes": 6494,
+        "sha256": "41938c40fda5628f826f73496cc286eaa5e4709895097aa4ef711b6cc75ddae2",
+        "verifiedReceipts": "21/21"
+      },
+      "candidateManifest": {
+        "path": ".test-results/2026-09-29T09-43-54-524Z-15-376a7e/manifest.json",
+        "bytes": 6539,
+        "sha256": "e37c4cb9e991df231a806215d20682bc40abc6b147005b9074d9b0302ed34988",
+        "verifiedReceipts": "21/21"
+      },
+      "decodedComparison": "All common non-run artifacts fully decoded and equal in values, order and count except published/support binding artifacts whose only delta is deleted fixed unobserved. Original request3186, declaration71, binding512, orderedConsumerPlan64, noDownstreamConsumer3122, gate failures0 on both sides.",
+      "publishedBindingArtifact": {
+        "oldBytes": 13843922,
+        "oldSha256": "0cd57852219e6840aa43b3eabaf76b3a33567671fad8cf892042fa24096e3e1f",
+        "newBytes": 13843717,
+        "newSha256": "da5f0bed664c31b46226bd881d1cfa0caa1b076739e1b8c6b864aef61af707fe"
+      }
+    },
+    "verification": "Final source: typecheck, targeted ESLint/format, three-file unit126/126, battle condition27/27, productionMasterControlAudit10/10, first test35.819s under60s; verifyDepsBeforeRun:error retained. Filtered performance runner exits nonzero on skipped tests but the first test passed.",
+    "performanceDiagnostic": {
+      "condition": "Only one baseline and one candidate run of the same control first test, input, affinity0-7, production4/unit4/audit1 workers and budget. Baseline33.07s; candidate35.67s; +2.60s (~7.9%). Not the formal three-run Apply gate.",
+      "baselineManifest": {
+        "path": ".test-results/2026-09-29T09-25-37-950Z-15-be932e/manifest.json",
+        "bytes": 4562,
+        "sha256": "a12e46f7c83d905d52af2d39e2c78a7ece839c426dad2cc22b422f4a892e8fe7"
+      },
+      "candidateManifest": {
+        "path": ".test-results/2026-09-29T09-43-08-790Z-15-baac25/manifest.json",
+        "bytes": 4561,
+        "sha256": "d05d72ba1d3476f9415226221231f1f58a3fb2b5a78717431fddde511d85e3e3"
+      }
+    },
+    "obligationDisposition": {
+      "checklist1_lifecycle1to3": "Established, identity-matched single producer, shared inventory/mutation, 80-condition matrix retained.",
+      "checklist2to3_lifecycle4_5_8": "Candidate equal-leaf and fixedSelf consumer proof closed in this unit. Existing preparation reads, two unreached original request types, three evaluated requests/two repair edges, common HP gate and partial-commit artifact reused by identity. Seven declaration-phase native/alternate/recovery union and same-final-identity integration Deferred.",
+      "checklist4_lifecycle6": "Historical repeated 13 master reads removed. Raw OC planning, normalized 167 occurrence/632 cells, published join, current inventory, one-read loaders, ranking candidateInventory retain distinct callers/input populations/assertions. Literal obsolete decision Deferred to data-pipeline owner.",
+      "doneGate_contractMatrix": "TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001 final inventory, calculator-ranking parity, fail-closed and aggregate digest/receipts Deferred. RK-PERF-001/TS-PERF-002 formal before/after three-run performance Deferred. DX-HANDOFF-001/README final quality Deferred.",
+      "sixClasses": "Parity matrix gate; unsupported/invalid final outcome; partial commit transaction; inert control published control; stale mutation receipt/recovery have scoped evidence. Original input to typed reason, canonical identity/first difference, bounded summary, complete artifact and every receipt under one final source/input/artifact identity is Deferred."
+    },
+    "remainingConditions": "TSK-08 Step2 Deferred remains >0. fixedSelf alone derives expected bindings from observed reads; the published gate independently detects missing selected original candidate reads. Do not infer no consumer from absent read. Distinct native/recovery and unique raw owners need separate bounded operation. No full ratchet, dependent quality, eight shards, TSK-09 or push.",
+    "nextLimitedOperation": "Build a finite original request/declaration-phase consumer table for the seven remaining kinds and six classes, using current definitions/direct callers. Link actual repair commands one edge per evaluated request. Choose one common-owner transition gap, falsify with schema-legal nonselection, preparation rejection, candidate abort and recovery; update this Task/evidence and commit only that unit if implementable. Stop at independent data-pipeline/raw or new game-semantics owner."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -29028,7 +29137,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postCandidateLeafIdentityDesignCheckpoint. First present a current-code plan and wait for user confirmation; candidate equal-valued HP condition leaf identity is a confirmed candidate-audit correspondence gap, while the proposed OC-rate later-grant physical read does not close the published terminal NP population. Rejudge the bounded owner/implementation shape from code, then execute only the confirmed unit. Step2/TSK-08 remains in_progress, TSK-09.1/09 blocked; no dependent quality, unexplained shard regeneration or push.",
+    "nextSession": "Follow postCandidateLeafIdentityImplementationCheckpoint.nextLimitedOperation. Step2/TSK-08 remains in_progress with Deferred native/recovery, six-class final identity, literal obsolete, formal performance and final quality. Choose one bounded common-owner transition after current-code finite table; do not begin TSK-09, dependent quality or push.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -29130,8 +29239,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postCandidateLeafIdentityDesignCheckpoint.nextSession",
-    "latestCheckpointReference": "postCandidateLeafIdentityDesignCheckpoint",
+    "nextSessionReference": "postCandidateLeafIdentityImplementationCheckpoint.nextLimitedOperation",
+    "latestCheckpointReference": "postCandidateLeafIdentityImplementationCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
