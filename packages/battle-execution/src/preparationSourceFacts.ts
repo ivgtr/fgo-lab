@@ -4,6 +4,11 @@ import type { ConditionExpression } from './contracts';
 import { evaluateCondition, type ConditionEvaluationState } from './condition';
 import { runtimeInputDefinitionsForSource } from './operationCompiler';
 import { resolveStochasticActivationOutcome } from './stochasticOutcomes';
+import {
+  beginHpConditionCapture,
+  finishHpConditionCapture,
+  type HpQuantityRead,
+} from './hpExecutionObservation';
 import type { OcSourceProgram } from './ocSourceProgram';
 
 /** A trigger on the selected command is known; absent trigger metadata is not a guessed activation. */
@@ -42,6 +47,7 @@ function commandCondition(
 export function resolvePreparationSourceFacts(
   program: OcSourceProgram,
   facts: ConditionEvaluationState,
+  onHpRead?: (read: HpQuantityRead) => void,
 ) {
   const definitions = runtimeInputDefinitionsForSource(program.source);
   let values = { ...facts.resolvedInputValues };
@@ -65,7 +71,13 @@ export function resolvePreparationSourceFacts(
   }
   const resolved = { ...facts, resolvedInputValues: values };
   const condition = commandCondition(program.condition, program);
-  const outcome = evaluateCondition(condition, resolved);
+  const previous = onHpRead ? beginHpConditionCapture(resolved, onHpRead) : undefined;
+  let outcome: boolean | null;
+  try {
+    outcome = evaluateCondition(condition, resolved);
+  } finally {
+    if (onHpRead) finishHpConditionCapture(resolved, previous);
+  }
   const inputKeys = new Set(
     canonicalRequirementLeaves(program.source.effect.requirement.expression).flatMap((leaf) =>
       leaf.kind === 'inputQuantity'

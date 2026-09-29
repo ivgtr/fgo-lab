@@ -3,7 +3,7 @@ import type { MutableCandidateStateAudit } from './candidateStateAudit';
 import { evaluateConditionAgainstKnownFacts, modifierValue } from './candidateOperationContext';
 import { operationConditionResult } from './operationResult';
 import { applyNoblePhantasmDamage } from './npDamageExecution';
-import type { EffectDecision, BattleOperation } from './contracts';
+import type { EffectDecision, BattleOperation, ConditionExpression } from './contracts';
 import type { ContributionApplicationPolicy } from './executionTypes';
 import type { SourceEffect } from './sourceCollection';
 import type { HpState, HpModifierInstance } from './hpResource';
@@ -50,6 +50,27 @@ export interface PreparationHpAction {
     read: Parameters<
       NonNullable<Parameters<typeof executeHpOperation>[0]['observeModifierRead']>
     >[0];
+  }[];
+  /** Native condition callbacks entered in order, before their physical read capture. */
+  conditionAttempts: {
+    kind: 'source' | 'modifierUse';
+    source: SourceEffect;
+    operation: HpModifierInstance['operation'] | null;
+    operationIndex: number | null;
+    instance: HpModifierInstance | null;
+    step: number;
+  }[];
+  /** Native evaluations in execution order, including false reads filtered before gain aggregation. */
+  conditionReads: {
+    kind: 'source' | 'modifierUse';
+    source: SourceEffect;
+    operation: HpModifierInstance['operation'] | null;
+    operationIndex: number | null;
+    instance: HpModifierInstance | null;
+    step: number;
+    condition: ConditionExpression;
+    reads: HpQuantityRead[];
+    outcome: boolean | null;
   }[];
   writes: {
     source: SourceEffect;
@@ -353,7 +374,7 @@ export function observeHpNp(
     });
 }
 
-interface HpQuantityRead {
+export interface HpQuantityRead {
   actor: string;
   permille: number | null;
   comparison: string;

@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
-import { isHpOperation, type HpState } from '@fgo-lab/battle-execution';
+import { isHpOperation, type ConditionExpression, type HpState } from '@fgo-lab/battle-execution';
 import {
   hpCandidateObservationFor,
   preparationHpActionsFor,
@@ -7,12 +7,26 @@ import {
 import { firstCanonicalAuditDifference } from '@fgo-lab/master-data/production-audit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
 import { applyCanonicalInputCommand, type CanonicalInputCommand } from './canonicalInputs';
-import type { HpProofDeclaration } from './productionHpProofCoverage';
+import { hpRequirementLeaves, type HpProofDeclaration } from './productionHpProofCoverage';
 import {
   directScenarioOwnerIndex,
   type HpPublishedDependencyRequest,
 } from './productionHpPublishedDependencyCoverage';
 import { scalarQuantitySnapshot } from './productionScalarQuantityAudit';
+
+function compiledHpLeaves(
+  value: ConditionExpression,
+  path: string,
+): { path: string; comparison: string; value: number }[] {
+  if (value.kind === 'all' || value.kind === 'any')
+    return value.expressions.flatMap((child, index) =>
+      compiledHpLeaves(child, `${path}.requirements.${index}`),
+    );
+  if (value.kind === 'not') return compiledHpLeaves(value.expression, `${path}.requirement`);
+  return value.kind === 'quantity' && value.quantity === 'attackerHpPermille'
+    ? [{ path, comparison: value.comparison, value: value.value }]
+    : [];
+}
 
 /** Reconcile the original selected operation stream without reexecuting an HP owner. */
 export interface HpAuditInputCommandEdge {
@@ -39,7 +53,8 @@ export function reconcileHpOperationEvidence(
     | 'candidateReadMismatch'
     | 'ownerSelectionMismatch'
     | 'nativeTransactionMismatch'
-    | 'inputCommandEdgeMismatch';
+    | 'inputCommandEdgeMismatch'
+    | 'preparationConditionReadMismatch';
   const failures: {
     reason: FailureReason;
     path: string;
@@ -70,6 +85,26 @@ export function reconcileHpOperationEvidence(
     physicalValue: number | null;
     consumed: boolean;
     writerOperations: Writer[];
+  }[] = [];
+  const preparationConditionReads: {
+    requestIndex: number;
+    actionIndex: number;
+    evaluationIndex: number;
+    declaration: HpProofDeclaration['identity'];
+    sourceInstanceId: string;
+    readerOperationIndex: number | null;
+    modifierInstanceId: string | null;
+    writerSourceInstanceId: string | null;
+    writerOperationIndex: number | null;
+    declaredOperationIndex: number | null;
+    declaredOperationReached: boolean | null;
+    step: number;
+    readIndex: number;
+    actor: string;
+    permille: number | null;
+    evaluated: boolean | null;
+    conditionOutcome: boolean | null;
+    transaction: 'committed' | 'rejected';
   }[] = [];
   const fail = (reason: FailureReason, path: string, expected: unknown, actual: unknown) => {
     const firstDifference = firstCanonicalAuditDifference(
@@ -216,6 +251,227 @@ export function reconcileHpOperationEvidence(
           fail('missingCapture', `requests.${requestIndex}.actions.${actionIndex}`, true, false);
           continue;
         }
+        if (action.conditionAttempts.length !== action.conditionReads.length)
+          fail(
+            'preparationConditionReadMismatch',
+            `requests.${requestIndex}.actions.${actionIndex}.conditionCount`,
+            action.conditionAttempts.length,
+            action.conditionReads.length,
+          );
+        action.conditionAttempts.forEach((entered, evaluationIndex) => {
+          const captured = action.conditionReads[evaluationIndex];
+          if (
+            !captured ||
+            captured.kind !== entered.kind ||
+            captured.source !== entered.source ||
+            captured.operation !== entered.operation ||
+            captured.operationIndex !== entered.operationIndex ||
+            captured.instance !== entered.instance ||
+            captured.step !== entered.step
+          )
+            fail(
+              'preparationConditionReadMismatch',
+              `requests.${requestIndex}.actions.${actionIndex}.conditionAttempts.${evaluationIndex}`,
+              [
+                entered.kind,
+                entered.source.sourceInstanceId,
+                entered.operationIndex,
+                entered.instance?.id ?? null,
+                entered.step,
+              ],
+              captured
+                ? [
+                    captured.kind,
+                    captured.source.sourceInstanceId,
+                    captured.operationIndex,
+                    captured.instance?.id ?? null,
+                    captured.step,
+                  ]
+                : null,
+            );
+        });
+        action.conditionReads.forEach((event, evaluationIndex) => {
+          const path = `requests.${requestIndex}.actions.${actionIndex}.conditionReads.${evaluationIndex}`;
+          const root =
+            event.kind === 'source'
+              ? event.source.effect.requirement.expression
+              : event.operation?.useCondition;
+          const modifierOwners =
+            event.kind === 'modifierUse'
+              ? declarations.filter(
+                  (item) =>
+                    item.identity.kind === 'modifierUseCondition' &&
+                    item.operation === event.operation,
+                )
+              : [];
+          const modifierOwner = modifierOwners[0];
+          const rootPath =
+            event.kind === 'source'
+              ? 'requirement.expression'
+              : (modifierOwner?.identity.path.match(/^execution\.\d+\.useCondition/)?.[0] ?? '');
+          const original = root ? hpRequirementLeaves(root, rootPath) : [];
+          const compiled = compiledHpLeaves(event.condition, rootPath);
+          const native = action.native;
+          const reached = attempt.reached.some((item) =>
+            attempt.stepOrigins.some(
+              (origin) =>
+                origin.index === item.index &&
+                origin.index === event.step &&
+                origin.source === event.source &&
+                (event.kind === 'source'
+                  ? origin.operationIndex === null
+                  : origin.operationIndex === event.operationIndex),
+            ),
+          );
+          const reader =
+            event.kind === 'modifierUse'
+              ? action.operations.find(
+                  (entry) =>
+                    entry.source === event.source &&
+                    entry.operationIndex === event.operationIndex &&
+                    entry.step === event.step,
+                )
+              : null;
+          const currentWriters = event.instance
+            ? action.operations.filter(
+                (entry) =>
+                  entry.step < event.step &&
+                  entry.operation === event.operation &&
+                  entry.result.status === 'applied' &&
+                  !(entry.before.modifiers ?? []).includes(event.instance!) &&
+                  entry.result.state.modifiers?.includes(event.instance!) === true,
+              )
+            : [];
+          if (
+            currentWriters.length > 1 ||
+            (event.instance && currentWriters.length && instanceWriters.has(event.instance))
+          )
+            fail(
+              'preparationConditionReadMismatch',
+              `${path}.writer`,
+              'one original writer',
+              currentWriters.length,
+            );
+          const writer = event.instance ? instanceWriters.get(event.instance) : undefined;
+          const currentWriter = currentWriters[0];
+          if (
+            !action.sources.includes(event.source) ||
+            !native ||
+            !reached ||
+            !root ||
+            (event.kind === 'source'
+              ? event.operation !== null || event.instance !== null || event.operationIndex !== null
+              : !event.instance ||
+                event.instance.operation !== event.operation ||
+                !reader?.before.modifiers?.includes(event.instance) ||
+                event.source.effect.execution[event.operationIndex!] !== reader.operation ||
+                !modifierOwner ||
+                new Set(modifierOwners.map((item) => item.effect)).size !== 1)
+          )
+            fail('preparationConditionReadMismatch', `${path}.owner`, true, false);
+          if (compiled.length !== event.reads.length)
+            fail(
+              'preparationConditionReadMismatch',
+              `${path}.count`,
+              compiled.length,
+              event.reads.length,
+            );
+          compiled.forEach((leaf, readIndex) => {
+            const raw = original.find((item) => item.path === leaf.path);
+            const read = event.reads[readIndex];
+            if (
+              !raw ||
+              !read ||
+              read.comparison !== leaf.comparison ||
+              read.expectedValue !== leaf.value ||
+              (raw.value.kind === 'quantity' &&
+                (raw.value.comparison !== leaf.comparison || raw.value.value !== leaf.value))
+            ) {
+              fail(
+                'preparationConditionReadMismatch',
+                `${path}.reads.${readIndex}`,
+                leaf,
+                read ?? null,
+              );
+              return;
+            }
+            const kinds =
+              event.kind === 'modifierUse'
+                ? (['modifierUseCondition'] as const)
+                : (['condition', 'hpConditionedNpGauge'] as const);
+            for (const kind of kinds) {
+              const gaugeOperations =
+                kind === 'hpConditionedNpGauge'
+                  ? event.source.effect.execution.flatMap((operation, index) =>
+                      operation.kind === 'resourceMutation' && operation.resource === 'npGauge'
+                        ? [{ operation, index }]
+                        : [],
+                    )
+                  : [{ operation: null, index: -1 }];
+              for (const gauge of gaugeOperations) {
+                const matched = declarations.filter(
+                  (declaration) =>
+                    declaration.identity.kind === kind &&
+                    declaration.effect ===
+                      (kind === 'modifierUseCondition'
+                        ? modifierOwner?.effect
+                        : event.source.effect) &&
+                    declaration.value === raw.value &&
+                    declaration.identity.path ===
+                      (kind === 'hpConditionedNpGauge'
+                        ? `execution.${gauge.index}:${leaf.path}`
+                        : leaf.path) &&
+                    (kind === 'hpConditionedNpGauge'
+                      ? declaration.operation === gauge.operation
+                      : kind === 'modifierUseCondition'
+                        ? declaration.operation === event.operation
+                        : declaration.operation === null),
+                );
+                if (matched.length !== 1) {
+                  fail(
+                    'preparationConditionReadMismatch',
+                    `${path}.declaration.${kind}.${readIndex}`,
+                    1,
+                    matched.length,
+                  );
+                  continue;
+                }
+                preparationConditionReads.push({
+                  requestIndex,
+                  actionIndex,
+                  evaluationIndex,
+                  declaration: matched[0]!.identity,
+                  sourceInstanceId: event.source.sourceInstanceId,
+                  readerOperationIndex: event.operationIndex,
+                  modifierInstanceId: event.instance?.id ?? null,
+                  writerSourceInstanceId:
+                    writer?.sourceInstanceId ?? currentWriter?.source.sourceInstanceId ?? null,
+                  writerOperationIndex:
+                    writer?.operationIndex ?? currentWriter?.operationIndex ?? null,
+                  declaredOperationIndex: gauge.index < 0 ? null : gauge.index,
+                  declaredOperationReached:
+                    gauge.index < 0
+                      ? null
+                      : attempt.reached.some((item) =>
+                          attempt.stepOrigins.some(
+                            (origin) =>
+                              origin.index === item.index &&
+                              origin.source === event.source &&
+                              origin.operationIndex === gauge.index,
+                          ),
+                        ),
+                  step: event.step,
+                  readIndex,
+                  actor: read.actor,
+                  permille: read.permille,
+                  evaluated: read.evaluated,
+                  conditionOutcome: event.outcome,
+                  transaction: native?.status === 'committed' ? 'committed' : 'rejected',
+                });
+              }
+            }
+          });
+        });
         const matched = new Set<number>();
         const matchedDecisions = new Set<number>();
         for (const source of action.sources)
@@ -646,6 +902,7 @@ export function reconcileHpOperationEvidence(
     selected,
     rows,
     modifierReads,
+    preparationConditionReads,
     candidateReads,
     declarationRows,
     ...(inputCommandEdges.length ? { inputCommandEdges } : {}),

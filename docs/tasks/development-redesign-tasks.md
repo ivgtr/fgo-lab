@@ -4316,3 +4316,21 @@ HEAD `0497c6690b7c46f6bbe94b67da94674fc077837f`はindex／tracked／untracked cl
 checklist①／入力lifecycle①〜③は同一identityの単一producer・inventory・既存証拠を再利用。checklist②③／lifecycle④⑤⑧は今回候補を閉じても七種宣言のphase別義務、別native／recovery consumer unionと六失敗クラスの元入力→typed reason→canonical first difference→bounded／完全artifact→全receiptの最終統合が未達。checklist④／lifecycle⑥は旧13回master読込除去済みだが、固有raw OC cell／公開joinを保持したobsolete定義の最終判断が未達。Done gateと`TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001`は同一最終identityでの全体照合、`RK-PERF-001`／`TS-PERF-002`は正式変更前後各3run、`DX-HANDOFF-001`／lifecycle⑦はREADME最終qualityが未達。これらを今回の局所成功で完了扱いしない。
 
 次作業者は現コードから一セッション計画を先に出し、利用者確認前は読取・既存checksum照合だけとする。確認後は承認範囲を局所反証、影響検証、旧新完全decoded artifactとdisk bytes／SHA-256・全receiptの照合、既存Task／evidence更新、対象限定local commitまで進める。別ownerが要れば未達と次操作を記録して製品未完了で止める。TSK-08のDeferred／Blockingが0となる見込みがある場合だけ最終監査・正式性能・qualityへ進む。60分で正本checkpoint、90分でatomic action終了。pushなし。詳細は[evidence](../evidence/tsk-08-parity-ratchet.json) `postOriginalRequestStepRecheckHandoff`。
+
+### TSK-08 準備HP条件read限定checkpoint（製品未完了、2026-09-29）
+
+開始HEAD `4ba3094b99d8811eb54141716421f3e5fb70199e`、index／tracked／untracked clean。現コードの定義・直接caller・元requestから完全artifactまでを結ぶ計画を先に提示し、利用者の`OK`後に実装した。`resolvePreparationSourceFacts`のsource条件と、HP gain前の`modifierCondition`から既存HP quantity observerへ監査専用captureを接続した。実評価開始の順序付き台帳とread行を照合するため、行全体の欠落もtyped failureになる。共通operation gateは元leaf pathと評価順、master effect／operation参照、reader step／source、modifier instanceと元writer、NP gauge宣言とnative step到達、物理HP値・結果、transactionを照合する。同値leafを値のみで対応付けず、false modifierが後段の合算readから消えても条件readを保持する。元leaf walkerは既存宣言inventory ownerへ一本化した。製品damage意味論、別producer／期待値、HP action／recipient selectorは変更していない。
+
+schema-legalな元request1件／ordered plan2 operationから、同値の別leaf2件によるsource物理read2件、`hpConditionedNpGauge`宣言行2件、falseの`modifierUseCondition`物理read1件を得た。宣言行は計5件、gate failure 0。第2 readの値改変・欠落と評価行全体の欠落はtyped `preparationConditionReadMismatch`とfirst canonical differenceになる。元request、ordered plan、正負例の完全値はunit artifact `hp-native-condition-reads.json`（69285 bytes、SHA-256 `fbb74fabe5785a006c47ff31158546206c549c444e45b63ef73b6eeb15feae7e`）に保存した。既存の3評価済みrequest／2 command edge、選択後未到達とpreflight abort、partial commit、80条件matrixは一致するidentity内で再利用した。
+
+最終sourceでunit 13／13、関連unit 28／28、selected native audit 59／59、production control audit 10／10、`tsc -b`、対象ESLint／Prettier、差分checkが成功。control第1 testは31.786秒で60秒上限内。旧新完全decoded値・順序・件数を比較し、unitの共通非run artifact 6件、control 18件はbytes／SHA-256まで同一。selected nativeの共通61件も同一。変化したcontrol／selected native完全artifactは新しい空の`preparationConditionReads`を除く完全decoded値・順序・件数が旧artifactと一致した。旧新のunit 8／9、control 21／21、selected native 64／64の全receiptは実disk bytes／SHA-256と一致し、verification error 0。各manifest・source・inputの厳密なidentityは[evidence](../evidence/tsk-08-parity-ratchet.json) `postPreparationConditionReadCheckpoint`を参照する。capture変更の同input・CPU affinity 0–7・既定unit4／production4／audit1 workersによる診断各1runはbaseline 36.51秒、最終candidate 33.30秒（約8.8%減）であり、正式な各3run性能gateではない。`verifyDepsBeforeRun: error`を維持し、shim fallbackは使っていない。
+
+| 義務 | 現判定 |
+| --- | --- |
+| checklist①／入力lifecycle①〜③ | 単一producer、共有input／486-source・7470-cell inventory、既存mutation証拠を一致するidentityで再利用。 |
+| checklist②③／lifecycle④⑤⑧ | 今回の`modifierUseCondition`／`hpConditionedNpGauge`準備物理readを局所接続。七種宣言の全native／alternate／recovery unionと六失敗クラスの元入力→typed reason→canonical identity／first difference→bounded summary→完全artifact→全receiptの最終同一identity統合はDeferred。 |
+| checklist④／lifecycle⑥ | 旧13回master読込は`e081002`で除去済み。`commandEdgeSessionCheckpoint.legacyClassification`の定義・caller・入力母集団・固有assertionを再利用し、raw OC固有cell／公開joinを保持。literalなobsolete定義の適用判断は別data-pipeline ownerでDeferred。 |
+| Done gate、`TS-AUDIT-001`／`RK-AUDIT-001`、`TS-OUT-001`／`TS-ART-001` | 局所の元入力／ordered plan／typed first difference／完全artifact、影響control・native auditは成功。全damage説明、digest first difference、最終inventory／parity／fail-closed、六クラス統合出力はDeferred。 |
+| `RK-PERF-001`／`TS-PERF-002`、`DX-HANDOFF-001`／lifecycle⑦ | 変更前後各3run正式性能とREADME最終quality、統合counter／digest／全receiptはDeferred。今回の各1runは診断のみ。 |
+
+別native／recovery consumer union、六失敗クラス統合ratchet、data-pipelineのobsolete適用判断が独立して残るため、TSK-08自身のDeferredは0ではない。Step 0／1／3成立、Step 2／TSK-08 `in_progress`、TSK-09.1／09 `blocked`を維持する。次は七種宣言の残るphase別consumer義務と六クラスの同一identity到達を限定して照合し、固有raw coverageを失わずobsolete定義を判定する。依存quality、正式性能、8 shards再生成、TSK-09系、pushは行わず、対象限定local checkpoint commitで止める。

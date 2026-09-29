@@ -39,6 +39,22 @@ export interface HpProofDeclaration {
   value: object;
 }
 
+/** The same source leaf paths define the inventory and native audit correspondence. */
+export function hpRequirementLeaves(
+  requirement: CanonicalEffectRequirement,
+  path: string,
+): { path: string; value: CanonicalEffectRequirement }[] {
+  if (requirement.kind === 'all' || requirement.kind === 'any')
+    return requirement.requirements.flatMap((child, index) =>
+      hpRequirementLeaves(child, `${path}.requirements.${index}`),
+    );
+  if (requirement.kind === 'not')
+    return hpRequirementLeaves(requirement.requirement, `${path}.requirement`);
+  return requirement.kind === 'quantity' && requirement.quantity === 'attackerHpPermille'
+    ? [{ path, value: requirement }]
+    : [];
+}
+
 /** Declaration inventory only. No expected HP values, requests or native outcomes are generated. */
 export function hpProofCoverageInventory(master: MasterDataSnapshot): HpProofDeclaration[] {
   const declarations: HpProofDeclaration[] = [];
@@ -69,26 +85,13 @@ export function hpProofCoverageInventory(master: MasterDataSnapshot): HpProofDec
         operation,
         value,
       });
-    const leaves = (
-      requirement: CanonicalEffectRequirement,
-      path: string,
-    ): { path: string; value: CanonicalEffectRequirement }[] => {
-      if (requirement.kind === 'all' || requirement.kind === 'any')
-        return requirement.requirements.flatMap((child, index) =>
-          leaves(child, `${path}.requirements.${index}`),
-        );
-      if (requirement.kind === 'not') return leaves(requirement.requirement, `${path}.requirement`);
-      return requirement.kind === 'quantity' && requirement.quantity === 'attackerHpPermille'
-        ? [{ path, value: requirement }]
-        : [];
-    };
-    const conditions = leaves(effect.requirement.expression, 'requirement.expression');
+    const conditions = hpRequirementLeaves(effect.requirement.expression, 'requirement.expression');
     for (const leaf of conditions) add('condition', leaf.path, leaf.value, null);
     effect.execution.forEach((operation, index) => {
       const path = `execution.${index}`;
       if (isHpOperation(operation)) add('writer', path, operation, operation);
       if (operation.kind === 'hpModifier' && operation.useCondition)
-        for (const leaf of leaves(operation.useCondition, `${path}.useCondition`))
+        for (const leaf of hpRequirementLeaves(operation.useCondition, `${path}.useCondition`))
           add('modifierUseCondition', leaf.path, leaf.value, operation);
       if (operation.kind === 'resourceMutation' && operation.resource === 'npGauge')
         for (const leaf of conditions)

@@ -10,6 +10,8 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
+import { preparationHpActionsFor } from '@fgo-lab/battle-execution/preparation-audit';
+import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
 import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
 import {
   hpPublishedDependencyBindings,
@@ -36,6 +38,7 @@ function setup(
   alternateNp = false,
   selectedStandard = false,
   ocRate = false,
+  nativePreparation = false,
 ) {
   const master = masterSnapshotSchema.parse(fixture);
   const actor = master.servants[0]!;
@@ -115,6 +118,51 @@ function setup(
       kind: 'all',
       requirements: [effect.requirement.expression, structuredClone(effect.requirement.expression)],
     };
+  const selectedEffect = nativePreparation
+    ? masterEffectSchema.parse({
+        ...effect,
+        execution: [
+          {
+            kind: 'hpModifier',
+            action: 'receive',
+            sign: 1,
+            route: {
+              target: 'sourceSelf',
+              contributionScope: 'personal',
+              eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+            },
+            bounds: { minimum: null, maximum: null },
+            traits: [],
+            values: [[100], [], [], [], []],
+            lifetime: 'active',
+            useCondition: {
+              kind: 'quantity',
+              quantity: 'attackerHpPermille',
+              comparison: 'atMost',
+              value: 400,
+            },
+          },
+          {
+            kind: 'resourceMutation',
+            resource: 'hp',
+            direction: 'gain',
+            unit: 'fixed',
+            recipient: 'sourceSelf',
+            subjectId: null,
+            amount: { kind: 'fixed', values: [[100], [], [], [], []] },
+          },
+          {
+            kind: 'resourceMutation',
+            resource: 'npGauge',
+            direction: 'gain',
+            unit: 'fixed',
+            recipient: 'sourceSelf',
+            subjectId: null,
+            amount: { kind: 'fixed', values: [[100], [], [], [], []] },
+          },
+        ],
+      })
+    : effect;
   actor.skills = [
     {
       id: 'reader-skill',
@@ -124,7 +172,7 @@ function setup(
       detail: '',
       imageKey: null,
       resourceRequirement: null,
-      effects: [effect],
+      effects: [selectedEffect],
     },
   ];
   actor.passives = [];
@@ -237,6 +285,94 @@ function setup(
     reconcile,
   };
 }
+
+it(
+  'links native preparation HP reads to distinct original leaves and the filtered modifier',
+  productionAuditTestOptions(['hp-native-condition-reads.json']),
+  async ({ task }) => {
+    const f = setup(false, true, false, false, false, true);
+    const evidence = reconcileHpOperationEvidence(f.declarations, f.requests);
+    expect(evidence.gate.failures).toEqual([]);
+    expect(f.calculation.result.status).toBe('calculated');
+    expect(
+      evidence.preparationConditionReads.map((row) => [
+        row.declaration.kind,
+        row.declaration.path,
+        row.readIndex,
+        row.conditionOutcome,
+        row.transaction,
+      ]),
+    ).toEqual([
+      ['condition', 'requirement.expression.requirements.0', 0, true, 'committed'],
+      [
+        'hpConditionedNpGauge',
+        'execution.2:requirement.expression.requirements.0',
+        0,
+        true,
+        'committed',
+      ],
+      ['condition', 'requirement.expression.requirements.1', 1, true, 'committed'],
+      [
+        'hpConditionedNpGauge',
+        'execution.2:requirement.expression.requirements.1',
+        1,
+        true,
+        'committed',
+      ],
+      ['modifierUseCondition', 'execution.0.useCondition', 0, false, 'committed'],
+    ]);
+    expect(
+      evidence.preparationConditionReads
+        .filter((row) => row.declaration.kind === 'hpConditionedNpGauge')
+        .map((row) => [row.declaredOperationIndex, row.declaredOperationReached]),
+    ).toEqual([
+      [2, true],
+      [2, true],
+    ]);
+    const modifier = evidence.preparationConditionReads.find(
+      (row) => row.declaration.kind === 'modifierUseCondition',
+    )!;
+    expect(modifier.writerSourceInstanceId).toBe(modifier.sourceInstanceId);
+    expect(modifier.writerOperationIndex).toBe(0);
+    expect(modifier.modifierInstanceId).not.toBeNull();
+    const transport = battlePointPreparationRejectionObservationFor(f.prepared)!;
+    const action = transport.transitions
+      .flatMap((transition) => preparationHpActionsFor(transition.result) ?? [])
+      .find((item) => item.conditionReads.length > 0)!;
+    const source = action.conditionReads.find((item) => item.kind === 'source')!;
+    source.reads[1]!.expectedValue = 499;
+    const negative = reconcileHpOperationEvidence(f.declarations, f.requests).gate;
+    expect(
+      negative.failures.some((item) => item.reason === 'preparationConditionReadMismatch'),
+    ).toBe(true);
+    expect(negative.firstDifference).not.toBeNull();
+    source.reads[1]!.expectedValue = 500;
+    const removed = source.reads.pop()!;
+    const missing = reconcileHpOperationEvidence(f.declarations, f.requests).gate;
+    expect(missing.failures.some((item) => item.path.endsWith('.count'))).toBe(true);
+    source.reads.push(removed);
+    const omitted = action.conditionReads.shift()!;
+    const missingEvaluation = reconcileHpOperationEvidence(f.declarations, f.requests).gate;
+    expect(missingEvaluation.failures.some((item) => item.path.endsWith('.conditionCount'))).toBe(
+      true,
+    );
+    expect(missingEvaluation.firstDifference).not.toBeNull();
+    action.conditionReads.unshift(omitted);
+    const complete = {
+      originalRequest: f.prepared.scenario,
+      orderedPlan: f.prepared.orderedScenario,
+      evidence,
+      negative,
+      missing,
+      missingEvaluation,
+    };
+    await writeProductionAuditArtifact(task.meta, 'hp-native-condition-reads.json', complete);
+    const disk = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-native-condition-reads.json'),
+    );
+    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+  },
+);
 
 it(
   'connects original reader-only capture without widening the fixedSelf selector',

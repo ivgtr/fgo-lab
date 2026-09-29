@@ -3,6 +3,8 @@ import {
   captureSelectedAllyMaximumFixedWrite,
   captureGiveWrite,
   captureNoHealingWrite,
+  beginHpConditionCapture,
+  finishHpConditionCapture,
   type PreparationHpAction,
 } from './hpExecutionObservation';
 import {
@@ -17,7 +19,7 @@ import {
   markerIntersects,
   markerHasOpaqueReads,
 } from './markerDependency';
-import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
+import { canonicalRequirementLeaves, getNoblePhantasmVariants } from '@fgo-lab/master-data';
 import { hpPermille } from './hpResource';
 import {
   isHpOperation,
@@ -172,6 +174,8 @@ export function executePreparationOc(args: {
         steps: [],
         operations: [],
         modifierReads: [],
+        conditionAttempts: [],
+        conditionReads: [],
         writes: [],
         sourceEnds: [],
       }
@@ -309,6 +313,7 @@ export function executePreparationOc(args: {
     let sourceApplies = true;
     let sourceState = current;
     let sourceStochasticFailureSteps: number[] | undefined;
+    const sourceStep = steps.length;
     steps.push(() => {
       sourceState = current;
       if (!source.sourceEnabled) {
@@ -382,13 +387,42 @@ export function executePreparationOc(args: {
       const writes = current.uncertainContextWrites.filter(
         (write) => write.scope !== 'attackerState' || (write.actor ?? 'attacker') === actor,
       );
+      const sourceHasHpCondition =
+        hpAction &&
+        !args.context.planningOnly &&
+        canonicalRequirementLeaves(source.effect.requirement.expression).some(
+          (leaf) => leaf.kind === 'quantity' && leaf.quantity === 'attackerHpPermille',
+        );
+      if (sourceHasHpCondition)
+        hpAction.conditionAttempts.push({
+          kind: 'source',
+          source,
+          operation: null,
+          operationIndex: null,
+          instance: null,
+          step: sourceStep,
+        });
+      const sourceConditionReads: PreparationHpAction['conditionReads'][number]['reads'] = [];
       const resolved = resolvePreparationSourceFacts(
         {
           ...program,
           condition: closePreparationConditionReads(program.condition, writes, boundFacts),
         },
         boundFacts,
+        sourceHasHpCondition ? (read) => sourceConditionReads.push(read) : undefined,
       );
+      if (sourceHasHpCondition)
+        hpAction.conditionReads.push({
+          kind: 'source',
+          source,
+          operation: null,
+          operationIndex: null,
+          instance: null,
+          step: sourceStep,
+          condition: resolved.condition,
+          reads: sourceConditionReads,
+          outcome: resolved.outcome,
+        });
       program = { ...program, condition: resolved.condition };
       if (resolved.missingCondition)
         missingSourceConditions.set(source.effect, resolved.missingCondition);
@@ -820,8 +854,44 @@ export function executePreparationOc(args: {
                 },
               };
               const facts = preparationSourceConditionState(queryProgram, currentFacts()!);
+              const modifierHasHpCondition =
+                hpAction &&
+                canonicalRequirementLeaves(instance.operation.useCondition!).some(
+                  (leaf) => leaf.kind === 'quantity' && leaf.quantity === 'attackerHpPermille',
+                );
+              if (modifierHasHpCondition)
+                hpAction.conditionAttempts.push({
+                  kind: 'modifierUse',
+                  source,
+                  operation: instance.operation,
+                  operationIndex,
+                  instance,
+                  step: hpStep,
+                });
+              const reads: PreparationHpAction['conditionReads'][number]['reads'] = [];
+              const previous = modifierHasHpCondition
+                ? beginHpConditionCapture(facts, (read) => reads.push(read))
+                : undefined;
+              let outcome: boolean | null;
+              try {
+                outcome = evaluateCondition(condition, facts);
+              } finally {
+                if (modifierHasHpCondition) finishHpConditionCapture(facts, previous);
+              }
+              if (modifierHasHpCondition)
+                hpAction.conditionReads.push({
+                  kind: 'modifierUse',
+                  source,
+                  operation: instance.operation,
+                  operationIndex,
+                  instance,
+                  step: hpStep,
+                  condition,
+                  reads,
+                  outcome,
+                });
               return {
-                outcome: evaluateCondition(condition, facts),
+                outcome,
                 input: requiredOcConditionInput(queryProgram, facts),
               };
             },
