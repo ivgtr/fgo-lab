@@ -744,6 +744,116 @@ export function hpPublishedDependencyBindings(
       });
     });
   });
+  requests.forEach(({ prepared }, requestIndex) => {
+    if (prepared.status !== 'executable') return;
+    const target = prepared.executionObservation?.targetExecution;
+    if (target?.selection !== 'selected' || target.candidateState?.preflight?.status !== 'ready')
+      return;
+    const candidateState = target.candidateState;
+    const candidate = hpCandidateObservationFor(candidateState);
+    if (!candidate) return; // The ready-candidate capture gate above reports this separately.
+    const selected = bindings.filter(
+      (binding) =>
+        binding.requestIndex === requestIndex &&
+        binding.stage === 'selectedPreparationCell' &&
+        binding.declaration.identity.kind === 'valueExpression',
+    );
+    const expected: {
+      operation: BattleOperation;
+      sequence: number;
+      group: number;
+      declaration: HpProofDeclaration;
+    }[] = [];
+    prepared.orderedScenario?.operations.forEach((operation, sequence) => {
+      if (
+        operation.kind !== 'addModifier' ||
+        (operation.valueExpression?.kind !== 'inverseHpLinear' &&
+          operation.valueExpression?.kind !== 'hpRangeLinear')
+      )
+        return;
+      const event = target.operationEvents[sequence];
+      if (!event) return; // A selected operation without an event has its own typed gate.
+      const matches = selected.filter(
+        (binding) =>
+          binding.sourceInstanceId === operation.source.sourceInstanceId &&
+          sourceMatches(binding.declaration, operation.source, null),
+      );
+      if (matches.length === 0) return; // Normal nonselection has no physical read obligation.
+      if (matches.length !== 1) {
+        fail('ambiguousCanonical', `requests.${requestIndex}.operations.${sequence}.valueCell`);
+        return;
+      }
+      const group = candidateState.executionGroups.findIndex((item) =>
+        item.operationIds.includes(operation.operationId),
+      );
+      if (group < 0 || event.operationId !== operation.operationId || event.sequence !== sequence) {
+        fail('candidateEventMismatch', `requests.${requestIndex}.operations.${sequence}.valueRead`);
+        return;
+      }
+      expected.push({ operation, sequence, group, declaration: matches[0]!.declaration });
+    });
+    for (
+      let position = 0;
+      position < Math.max(expected.length, candidate.valueReads.length);
+      position++
+    ) {
+      const planned = expected[position];
+      const read = candidate.valueReads[position];
+      if (
+        planned &&
+        read &&
+        read.operation === planned.operation &&
+        read.operationSequence === planned.sequence &&
+        read.operationGroupIndex === planned.group
+      )
+        continue;
+      const identity = JSON.stringify([
+        requestIndex,
+        target.candidateIndex,
+        planned?.operation.operationId ?? read?.operation.operationId ?? null,
+        planned?.declaration.identity ?? null,
+      ]);
+      const path = `requests.${requestIndex}.valueReads.${position}`;
+      const firstDifference = firstCanonicalAuditDifference(
+        [
+          {
+            identity,
+            value: planned
+              ? JSON.stringify([
+                  planned.sequence,
+                  planned.operation.operationId,
+                  planned.group,
+                  planned.declaration.identity.path,
+                ])
+              : null,
+          },
+        ],
+        [
+          {
+            identity,
+            value: read
+              ? JSON.stringify([
+                  read.operationSequence,
+                  read.operation.operationId,
+                  read.operationGroupIndex,
+                  selected.find(
+                    (binding) =>
+                      binding.sourceInstanceId === read.operation.source.sourceInstanceId,
+                  )?.declaration.identity.path ?? null,
+                ])
+              : null,
+          },
+        ],
+      );
+      if (!firstDifference) throw new TypeError('hp_value_read_difference_missing');
+      failures.push({
+        reason: 'valueReadMismatch',
+        path,
+        canonicalIdentity: identity,
+        firstDifference: { ...firstDifference, path },
+      });
+    }
+  });
   return { bindings, failures };
 }
 

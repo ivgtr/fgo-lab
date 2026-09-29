@@ -29160,6 +29160,46 @@
     "performanceAndStop": "If computation/capture/product hot path changes, same input/CPU affinity0-7/production4 unit4 audit1 workers/same budget baseline and candidate one-run each is diagnostic only; Contract Apply formal before/after three separate runs per side remains open. Keep control first test 60s and verifyDepsBeforeRun:error. If TSK-08 Deferred/Blocking remains, stop at product-incomplete checkpoint without dependent quality, formal performance, unexplained eight-shard regeneration or TSK-09. Only if all TSK-08 obligations can close under one final source/input/artifact identity and time remains, run required affected audit, formal performance, README quality and integrated counter/digest/receipts. Write checkpoint to existing canon by 60min and finish current atomic action/handoff by 90min.",
     "nextLimitedOperation": "From current definitions/direct callers construct finite seven-declaration phase and six-failure-class consumer table, then select one common-owner transition gap and present the bounded implementation plan for user confirmation. After confirmation finish the same unit through local commit; independent native/recovery, raw-data, new semantics or separate family work ends in a recorded product-incomplete checkpoint."
   },
+  "postSelectedValueReadObligationCheckpoint": {
+    "date": "2026-09-29",
+    "status": "product_incomplete_local_unit_complete",
+    "startHead": "d0d65ae0bd9a99d9ae7b2a2cbd3e13cbd50551a0",
+    "authorization": "Current-code bounded plan shown to user; user replied OK before source edits and tests. No push.",
+    "ownerAndResult": "calculation-application published HP dependency gate derives the selected ready candidate value-read obligation from original selected preparation cell, ordered addModifier operation, event and execution group, independently of candidate.valueReads. A missing or displaced read fails with valueReadMismatch, canonical identity and firstCanonicalAuditDifference. Damage, candidate generation, native capture and product hot path unchanged.",
+    "redGreenCounterexample": "Original schema-parsed resolved request has two ordered operations, two events, two groups and two selected HP cells. With the one valueReads entry removed but ready preflight and event retained, pre-change gate had no valueReadMismatch. Final gate fails with exactly one valueReadMismatch even when observed bindings are regenerated from the missing capture: expected [sequence0, operationId, group0, execution.0.valueExpressions.0.0], actual null. The separate operation gate remains failure-free, proving the public gate now covers a distinct missing transition.",
+    "sourceAndInputIdentity": {
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts": { "bytes": 53903, "sha256": "154618006069b9781307a42cedbdaed6b97519822349cfc562e0148e0e6f1bbe" },
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts": { "bytes": 41684, "sha256": "ccd6fe4e4e5720500a6390f1c3fd0dd552f35454fbe5ad2e6faebc323a128829" },
+      "publishedMaster": { "path": "apps/web/public/master/master.json", "bytes": 32953998, "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a" },
+      "otherProductSources": "Prior postCandidateLeafIdentityImplementationCheckpoint sources unchanged; representative product baseline paths from postCandidateLeafIdentityStepRecheckHandoff retained."
+    },
+    "unitArtifactComparison": {
+      "baselineManifest": { "path": ".test-results/2026-09-29T09-49-58-836Z-15-01fd66/manifest.json", "bytes": 28199, "sha256": "6ba0665ff2ebf974da592e504f7aec38554191560b2592248c79dd4b5e7a7c36", "receipts": "116/116" },
+      "candidateManifest": { "path": ".test-results/2026-09-29T10-35-35-387Z-15-60516c/manifest.json", "bytes": 28870, "sha256": "99b4608f75ec7a2fe11d2bbe2ec43f224466febb7fae75891cd07571fdb16501", "receipts": "119/119" },
+      "decodedComparison": "All 116 old artifact paths exist in the new manifest. Common 114 product artifacts are exact disk-byte and complete decoded value/order/count matches. Only run-specific vitest.json and stdout.log differ. Three new artifacts are prior recovery-command-edges, transfer-identity and this value-read obligation proof. Artifact verification errors empty on both sides.",
+      "newProof": { "path": ".test-results/2026-09-29T10-35-35-387Z-15-60516c/hp-candidate-value-read-obligation.json", "bytes": 306438, "sha256": "b5d8f6e103a129c28a1ea4735c31a488d2508ae4ab1d067d67a1fbaeb5847809", "positiveBindings": 17, "missingBindings": 16, "missingGateFailures": 1 }
+    },
+    "auditArtifactComparison": {
+      "baselineControlManifest": { "path": ".test-results/2026-09-29T09-43-54-524Z-15-376a7e/manifest.json", "bytes": 6539, "sha256": "e37c4cb9e991df231a806215d20682bc40abc6b147005b9074d9b0302ed34988", "receipts": "21/21" },
+      "candidateAuditManifest": { "path": ".test-results/2026-09-29T10-30-02-037Z-15-f692d9/manifest.json", "bytes": 24622, "sha256": "9701728a870f0f25c8a9cd22626018eddc9b986a7ccee284499d67e9184de848", "receipts": "99/99" },
+      "decodedComparison": "All 21 control artifact paths exist in the five-file audit. Nineteen non-run artifacts, including full published and support HP artifacts, are byte-for-byte and complete decoded value/order/count equal. Only run-specific vitest.json and stdout.log differ; 78 extra audit artifacts belong to the four additional audit files. All receipts match disk bytes and SHA-256; artifact verification errors empty on both sides.",
+      "publishedHpArtifact": { "bytes": 13843717, "sha256": "da5f0bed664c31b46226bd881d1cfa0caa1b076739e1b8c6b864aef61af707fe" },
+      "supportHpArtifact": { "bytes": 211762, "sha256": "87d9f6d4b5c70bdf81e3f591252accf02d8d8c1c6f0a01527a691a9365b7f78f" }
+    },
+    "verification": "Final product source: affected three-file unit143/143, five-file audit88/88 including productionMasterControlAudit10/10, first control test34.365s under60s, typecheck, targeted ESLint/Prettier and git diff --check. verifyDepsBeforeRun:error unchanged. A later test-only assertion strengthened the regenerated-binding falsifier; unit was rerun on final test source, while audit producer inputs and product source remained identical.",
+    "performance": "No calculation structure, capture or product hot-path change; scoped one-run diagnostic condition does not apply. Formal RK-PERF-001/TS-PERF-002 before/after three-run gate remains Deferred.",
+    "obligationDisposition": {
+      "checklist1_inputLifecycle1to3": "Established single shared producer, inventory/mutation and revised 80-condition matrix retained at matching source/input identity.",
+      "checklist2to3_inputLifecycle4_5_8": "Selected ready value-expression reached-operation physical-read obligation closed here. Normal nonselection, preparation rejection, selected-unreached, candidate abort, physical read/consumption and three evaluated requests/two actual repair edges retain scoped evidence. Distinct native/recovery consumer union and six-class final same-identity original-input to typed reason/first difference/bounded/full artifact/all receipts remain Deferred.",
+      "checklist4_inputLifecycle6": "Old 13 repeated master reads removed. Raw OC planning/public metadata join, raw normalized 167 occurrence/632 cell assertions and public normalization join have distinct definitions, direct callers and input populations; literal obsolete decision is Deferred to data-pipeline owner.",
+      "doneGateAndAuditOutputArtifactContracts": "Local typed first difference/full artifact/all receipts and affected audit pass. Whole damage explanation, canonical digest first difference, final inventory/calculator-ranking parity/fail-closed, six-class integrated output remain Deferred for TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001.",
+      "performanceAndHandoff_inputLifecycle7": "Formal three runs per side and README final quality, integrated counter/digest/receipts remain Deferred for RK-PERF-001/TS-PERF-002/DX-HANDOFF-001."
+    },
+    "sixFailureClasses": "Parity matrix, unsupported/invalid final outcome, partial commit transaction, inert published control and stale mutation receipt/recovery retain distinct scoped owners. No single audit success is counted as their same-final-identity original input -> typed reason -> canonical first difference -> bounded summary -> complete artifact -> all receipt closure.",
+    "separateNpBoundary": "An exploratory master-schema-accepted NP beforeDamage HP value-expression fixture produced a candidate physical read but the current published selected-cell join failed with valueReadMismatch at requests.0.valueReads.1. Failed diagnostic: .test-results/2026-09-29T10-39-41-954Z-15-649f57. Exploratory fixture/source changes were reverted byte-for-byte to the verified final source; this is neither a passing proof nor published original-request coverage. The published 30 value-expression declarations are all attacker-origin. Next owner must trace original NP request through native source/cell capture and variant correspondence before planning the NP transition.",
+    "remainingConditions": "Step0/1/3 established; Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Separate native/recovery consumer, integrated six-class ratchet, literal raw/obsolete classification and final Apply gates remain. Published OC-rate25 are NP-derived and selected terminal NP has no later grant; synthetic grant is not an original-request proof. No formal performance, README quality, eight-shard regeneration, TSK-09 or push.",
+    "nextLimitedOperation": "First distinguish NP beforeDamage selected-cell capture absence from variant-join failure using current original request, native source and direct caller; present a bounded plan before any NP change. Other native/recovery consumers, six-class final identity and data-pipeline obsolete definition remain separate; preserve unique raw cell/public join assertions."
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -29168,7 +29208,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postCandidateLeafIdentityStepRecheckHandoff.firstDeliverable. Begin with a current-code bounded plan and user confirmation, then implement/verify/update canon/local commit only the approved unit. Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Reuse matching existing evidence, leave distinct native/recovery/raw owners and final gates Deferred, no dependent quality or push.",
+    "nextSession": "Follow postSelectedValueReadObligationCheckpoint.nextLimitedOperation. The selected ready value-expression physical-read obligation is closed locally. Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Reuse matching evidence, leave distinct native/recovery/raw owners and integrated final gates Deferred, no dependent quality or push.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -29270,8 +29310,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postCandidateLeafIdentityStepRecheckHandoff.firstDeliverable",
-    "latestCheckpointReference": "postCandidateLeafIdentityStepRecheckHandoff",
+    "nextSessionReference": "postSelectedValueReadObligationCheckpoint.nextLimitedOperation",
+    "latestCheckpointReference": "postSelectedValueReadObligationCheckpoint",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",

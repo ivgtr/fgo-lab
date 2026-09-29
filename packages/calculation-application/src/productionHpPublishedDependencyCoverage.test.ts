@@ -1034,6 +1034,63 @@ it(
   },
 );
 
+it(
+  'rejects a missing selected HP value read after its ready candidate operation',
+  productionAuditTestOptions(['hp-candidate-value-read-obligation.json']),
+  async ({ task }) => {
+    const f = setup();
+    expect(resolvedScenarioSchema.safeParse(f.scenario).success).toBe(true);
+    const target = f.calculation.executionObservation?.targetExecution;
+    if (target?.selection !== 'selected' || !target.candidateState)
+      throw new Error('selected_candidate_missing');
+    expect(target.candidateState.preflight).toEqual({ status: 'ready' });
+    const capture = hpCandidateObservationFor(target.candidateState);
+    if (!capture) throw new Error('candidate_hp_capture_missing');
+    const positive = f.reconcile();
+    expect(positive.gate.failures).toEqual([]);
+    expect(capture.valueReads).toHaveLength(1);
+    const original = capture.valueReads.splice(0, 1)[0]!;
+    const missingBindings = hpPublishedDependencyBindings(f.declarations, f.requests);
+    const missing = reconcileHpPublishedDependencyCoverage(
+      f.declarations,
+      f.requests,
+      missingBindings.bindings,
+    );
+    const operation = reconcileHpOperationEvidence(f.declarations, f.requests);
+    capture.valueReads.splice(0, 0, original);
+    expect(target.operationEvents[original.operationSequence]?.operationId).toBe(
+      original.operation.operationId,
+    );
+    expect(missing.gate.failures.some((failure) => failure.reason === 'valueReadMismatch')).toBe(
+      true,
+    );
+    expect(missing.gate.failures).toHaveLength(1);
+    expect(missing.gate.failures.some((failure) => failure.firstDifference?.identity)).toBe(true);
+    expect(operation.gate.failures).toEqual([]);
+    const complete = {
+      originalRequest: f.prepared.scenario,
+      orderedPlan: f.prepared.orderedScenario,
+      operationEvents: target.operationEvents,
+      executionGroups: target.candidateState.executionGroups,
+      selectedCells: positive.bindings.filter(
+        (binding) => binding.stage === 'selectedPreparationCell',
+      ),
+      positive,
+      missing,
+      operationGate: operation.gate,
+    };
+    await writeProductionAuditArtifact(
+      task.meta,
+      'hp-candidate-value-read-obligation.json',
+      complete,
+    );
+    const disk = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-candidate-value-read-obligation.json'),
+    );
+    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+  },
+);
+
 it('keeps selected native NP conditions outside the candidate read obligation', () => {
   const f = setup(false, false, false, false, true, false, false, true);
   const coverage = f.reconcile();
