@@ -1,4 +1,7 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
+import * as preparationOwner from '../../battle-execution/src/preNoblePhantasm';
+import * as hpOwner from '../../battle-execution/src/hpResource';
+import { preparationHpScope } from '../../battle-execution/src/hpExecutionObservation';
 import { resolvedScenarioSchema } from '@fgo-lab/schema';
 import fixture from '../../test-fixtures/master/fixture.json';
 import {
@@ -31,7 +34,11 @@ import {
 import { currentCalculationVersionContext } from './portableCalculation';
 import { hpPreparationCanonical } from './productionHpPreparationAudit';
 import { applyCanonicalInputCommand } from './canonicalInputs';
-import { evaluateProductionFinalOutcomeGate } from './productionParityDiagnostics';
+import {
+  evaluateProductionFinalOutcomeGate,
+  auditProductionPreparationRejections,
+  type ProductionPreparationRejectionWitness,
+} from './productionParityDiagnostics';
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
@@ -1320,7 +1327,7 @@ it('keeps selected native NP conditions outside the candidate read obligation', 
 
 it(
   'joins original OC-rate requests to live HP reads, transactional consumption and command repair',
-  productionAuditTestOptions(['hp-oc-rate-live-reads.json']),
+  productionAuditTestOptions(['hp-oc-rate-live-reads.json', 'hp-execution-class-witnesses.json']),
   async ({ task }) => {
     const base = setup(false, false, false, false, true);
     const actor = base.master.servants[0]!;
@@ -1372,7 +1379,7 @@ it(
       selection: 'direct',
       lossFloor: 'oneIfAlive',
       subjectId: null,
-      amount: { kind: 'fixed', values: [[100], [], [], [], []] },
+      amount: { kind: 'fixed', values: [[100, 100], [], [], [], []] },
     };
     const make = (changeHp: boolean, reject: boolean) => {
       const master = masterSnapshotSchema.parse(base.master);
@@ -1484,6 +1491,153 @@ it(
       });
     });
     const ledgers = cases.map((entry) => entry.reconcile());
+    // Faults execute at the owner boundary, before normal capture and downstream evaluation.
+    // The rejected state's independent snapshot is taken before the reducer, never from receipts.
+    const rejectionMaster = make(true, true);
+    const rejectionActor = rejectionMaster.servants[0]!;
+    rejectionActor.skills.push({
+      ...rejectionActor.skills[0]!,
+      id: 'committed-prefix',
+      slot: 2,
+      effects: [
+        masterEffectSchema.parse({
+          ...source,
+          occurrenceId: 'prefix-hp',
+          gameActivation: 'skillUse',
+          execution: [loss],
+        }),
+      ],
+    });
+    rejectionActor.actorFormGraph.forms[0]!.skillIds.push('committed-prefix');
+    const canonicalRejectionMaster = masterSnapshotSchema.parse(rejectionMaster);
+    const rejectionScenario = resolvedScenarioSchema.parse({
+      ...createDefaultResolvedScenario(
+        canonicalRejectionMaster,
+        undefined,
+        canonicalRejectionMaster.servants[0],
+      ),
+      attackerHpPermille: 500,
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 2, skillLevel: 1, choice: null },
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 2, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
+    });
+    const reducer = preparationOwner.reducePreNoblePhantasmAction;
+    const observeRejection = (leak: boolean) => {
+      const witnesses: ProductionPreparationRejectionWitness[] = [];
+      const spy = vi
+        .spyOn(preparationOwner, 'reducePreNoblePhantasmAction')
+        .mockImplementation((servant, state, command, context) => {
+          const beforeSnapshot = structuredClone(state);
+          const result = reducer(servant, state, command, context);
+          const scope = preparationHpScope(context);
+          const attempted = (scope ?? []).flatMap((action) =>
+            action.attempted ? [action.attempted] : [],
+          );
+          if (result.status === 'rejected' && scope !== undefined) {
+            if (leak && attempted.length) Object.assign(state, attempted.at(-1)!);
+            witnesses.push({
+              canonicalIdentity: `schema-legal:oc-rate:rejection:${witnesses.length}:${command.kind}`,
+              before: state,
+              beforeSnapshot,
+              result,
+              attempted,
+            });
+          }
+          return result;
+        });
+      try {
+        const original = run(canonicalRejectionMaster, 500, false, rejectionScenario);
+        return {
+          original: {
+            master: original.master,
+            scenario: original.scenario,
+            request: original.request,
+            transport: battlePointPreparationRejectionObservationFor(original.request.prepared),
+          },
+          witnesses,
+          gate: auditProductionPreparationRejections(witnesses, [
+            'schema-legal:oc-rate:rejection:0:useSkillSlot',
+          ]),
+        };
+      } finally {
+        spy.mockRestore();
+      }
+    };
+    const realRejection = observeRejection(false);
+    const realLeak = observeRejection(true);
+    const physicalHp = hpOwner.hpPermille;
+    let firstActor: Parameters<typeof physicalHp>[0];
+    const oldHp = vi.spyOn(hpOwner, 'hpPermille').mockImplementation((actor) => {
+      if (actor?.kind !== 'absolute') return physicalHp(actor);
+      firstActor ??= actor;
+      return physicalHp(firstActor);
+    });
+    let staleExecution: ReturnType<typeof run>;
+    try {
+      staleExecution = run(make(true, false), 500);
+    } finally {
+      oldHp.mockRestore();
+    }
+    const staleExecutionGate = staleExecution.reconcile();
+    const executionClasses = {
+      activeProbe: process.env['FGO_TSK08_FAILURE_CLASS_PROBE'] ?? null,
+      population: 'schemaLegalOriginalRequests',
+      governingRules: {
+        partialCommit:
+          'A rejected reducer call retains the exact command-start state and values, including the committed prefix.',
+        staleMutation:
+          'Every included rate reads the current HP after preceding real writes; consumption belongs to the native transaction.',
+      },
+      realRejection,
+      realLeak,
+      missingWitnessGate: auditProductionPreparationRejections(
+        [],
+        ['schema-legal:oc-rate:rejection:0:useSkillSlot'],
+      ),
+      staleExecution: {
+        master: staleExecution.master,
+        scenario: staleExecution.scenario,
+        request: staleExecution.request,
+        gate: staleExecutionGate,
+        transport: battlePointPreparationRejectionObservationFor(staleExecution.request.prepared),
+      },
+      commandRepair: { requests: [missing.request, repaired.request], command, edges, recovery },
+    };
+    await writeProductionAuditArtifact(
+      task.meta,
+      'hp-execution-class-witnesses.json',
+      executionClasses,
+    );
+    const executionBytes = await readFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-execution-class-witnesses.json'),
+    );
+    expect(isDeepStrictEqual(decodeProductionAuditArtifact(executionBytes), executionClasses)).toBe(
+      true,
+    );
+    expect(realRejection.witnesses).toHaveLength(1);
+    expect(realRejection.witnesses[0]!.beforeSnapshot.appliedActions).toHaveLength(1);
+    expect(realRejection.witnesses[0]!.beforeSnapshot.usedSkillSlots.has(2)).toBe(true);
+    expect(realRejection.gate).toMatchObject({
+      status: 'passed',
+      failures: [],
+      rows: [{ status: 'rejected', stateRetained: true, changedAttempts: 1 }],
+    });
+    expect(realRejection.witnesses[0]!.attempted[0]!.hp).not.toEqual(
+      realRejection.witnesses[0]!.beforeSnapshot.hp,
+    );
+    expect(realLeak.gate.failures[0]).toMatchObject({ reason: 'preparationRejectedStateMismatch' });
+    expect(realLeak.gate.rows[0]!.stateRetained).toBe(true);
+    expect(executionClasses.missingWitnessGate.failures[0]!.reason).toBe(
+      'preparationRejectionCoverageMismatch',
+    );
+    expect(
+      staleExecutionGate.ocRateReads!.failures.some(
+        (failure) => failure.reason === 'ocRateReadMismatch',
+      ),
+    ).toBe(true);
+    const executionProbe = process.env['FGO_TSK08_FAILURE_CLASS_PROBE'];
     const attempt = battlePointPreparationRejectionObservationFor(live.request.prepared)!
       .transitions.flatMap((transition) => transition.attempts ?? [])
       .find((entry) => preparationOcRatesFor(entry)?.reads.length === 2)!;
@@ -1644,13 +1798,23 @@ it(
       /\.uses\.remaining$/,
     );
     const probe = process.env['FGO_TSK08_OC_READ_PROBE'];
-    if (probe === 'unsupported' || probe === 'invalid') {
-      const failed = finalOutcomeGates[probe === 'unsupported' ? 4 : 5]!;
+    if (executionProbe === 'partialCommit' || executionProbe === 'staleMutation') {
+      const gate =
+        executionProbe === 'partialCommit' ? realLeak.gate : staleExecutionGate.ocRateReads!;
+      expect(
+        gate.failures.length,
+        JSON.stringify({ failureClass: executionProbe, ...gate.failures[0] }),
+      ).toBe(0);
+    }
+    const finalStatusProbe =
+      executionProbe === 'unsupported' || executionProbe === 'invalid' ? executionProbe : probe;
+    if (finalStatusProbe === 'unsupported' || finalStatusProbe === 'invalid') {
+      const failed = finalOutcomeGates[finalStatusProbe === 'unsupported' ? 4 : 5]!;
       expect(
         failed.status,
         JSON.stringify({
           population: 'schemaLegalOriginalRequest',
-          failureClass: probe,
+          failureClass: finalStatusProbe,
           ...failed.failures[0],
         }),
       ).toBe('passed');

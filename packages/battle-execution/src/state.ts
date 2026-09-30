@@ -12,6 +12,24 @@ import type {
 import { createConditionState, traitFacts, traitCounts } from './conditionState';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 
+export function appendModifier(
+  state: ExecutableBattleState,
+  operation: Extract<BattleOperation, { kind: 'addModifier' }>,
+  value: number,
+): void {
+  state.modifiers = [
+    ...state.modifiers,
+    {
+      operationId: operation.operationId,
+      source: operation.source,
+      modifier: operation.modifier,
+      valuePermille: value,
+      card: operation.card,
+      order: operation.order,
+    },
+  ];
+}
+
 export function cloneBattleState(state: ExecutableBattleState): ExecutableBattleState {
   return {
     ...state,

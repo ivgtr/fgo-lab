@@ -1,7 +1,7 @@
 {
   "task": "TSK-08",
-  "status": "in_progress",
-  "unit": "records-preserving audit connection with final-profile outcome and preparation transaction ratchets",
+  "status": "done",
+  "unit": "final production audit convergence and failure diagnostics",
   "baseline": {
     "headAtStart": "be27827e7b3e9c488d425a2c8aa4e2b9dfe7592e",
     "worktreeAtStart": [
@@ -243,7 +243,7 @@
     "TSK-09.1": "blocked",
     "TSK-09": "blocked"
   },
-  "nextBoundedUnit": "Give coverage/actualconsumption andconditionalcommittedforwardauditconnection;designandconfirmationfirst. Native noncommit/recovery/constantCE/otherfamilyexcluded;conditionalTSK08closureonlyifallobligationsandtimepermit.",
+  "nextBoundedUnit": null,
   "boundedUnits": [
     {
       "name": "final-profile unsupported/invalid/inputRequired gate",
@@ -24070,7 +24070,7 @@
       }
     }
   ],
-  "currentBoundedUnit": "Committed attacker-skill active maximumFixed HP modifier partyMember/selectedAlly original attacker-recipient write/live-read/NP audit",
+  "currentBoundedUnit": "TSK-08 final integrated acceptance",
   "handoffPreparation": {
     "baselineHead": "ad9d216c5dfdd3f90da91dbf0f01417ac4095e46",
     "scope": "Read-only direct-symbol and saved artifact reconciliation plus four existing documentation records for next bounded non-commit preparation isolation handoff; no product/test edits or new source tests/producers/audit/quality.",
@@ -29964,15 +29964,15 @@
   },
   "currentStepConvergenceReview": {
     "date": "2026-09-30",
-    "status": "closure_plan_required_after_scoped_oc_rate_commit_product_incomplete",
-    "head": "364e02fc2f5807ffba8fe7a6fc28a21920d624bb",
-    "sourceBoundary": "Documentation-only organization after commit 364e02f and read-only source/caller/artifact assessment. No product source, tests, verification inputs or requirements changed. postOcRateReadCheckpoint retains the scoped implemented unit and its source hashes; historical checkpoint instructions are superseded by this review for the next operation.",
+    "status": "complete",
+    "head": "f85ef90febba2ef57d214da683fd83fba352f46e",
+    "sourceBoundary": "Final12-file scope: audit diagnostics/live fault fixtures, historical evidence boundary, obsolete single CLI removal, unchanged-body functions relocated to existing execution owners to satisfy fixed architecture limits, and canonical records. Master/source expectations/candidate/damage semantics unchanged. Final source hashes and acceptance artifacts pinned in approvedClosureImplementation.",
     "stepDecision": {
       "0": "established at matching baseline and contract identity",
       "1": "established V41 marker, V40 retention and explicit V41 recomputation at matching identity",
-      "2": "in_progress: checklist2-4, Done gate, contract acceptance and input lifecycle4-8 have unresolved conditions; scoped proofs do not close their union",
+      "2": "established: finite six-class/seven-kind obligations, final legacy dispositions, all Done/Apply contracts and input lifecycle1-8 verified at final affected source/input identities",
       "3": "established 80-condition matrix and eligibility at matching identity; this does not imply Step2 closure",
-      "dependencies": "TSK-09.1 and TSK-09 blocked"
+      "dependencies": "TSK-09.1/09 not started in this request; no push. TSK-08 dependency is now satisfied."
     },
     "progressFalsifier": "The existing single/merge matrix producers already call the preparation transaction gate for calculated published records. Repeating that call with altered saved gauge or receipt identity does not prove partial transaction rejection, zero leaked state, stale mutation recovery, or a new original-request reach. A future unit must first identify an obligation absent from existing source/caller/artifacts and show its reduction. Selected cells are not physical reads; a schema-legal fixture is not a published occurrence; failure runs cannot share one artifact identity merely because they share source/master/input.",
     "step2Order": [
@@ -29981,47 +29981,51 @@
       "2c: Alongside 2a, reconcile every exact legacy candidate definition, caller, population and unique assertion; retain uniquely owned evidence and delete only a proven obsolete equivalent. Determine the historical TSK-00 auditor boundary from current evidence and whether original-snapshot investigation is necessary. Data-pipeline ownership does not exclude this obligation from TSK-08. Retain raw OC167/632 and public join.",
       "2d: After in-scope Blocking in 2a-2c is resolved, freeze final source/master/input and close the Done gate and all Apply contracts. Each failure run retains its own manifest/artifact/receipt identity; reusable proofs must match affected source/input. Reconcile inventory/digest, 80 conditions, parity/fail-closed, damage differences/first difference, output bounds, required audits, formal before/after three-process performance runs and README quality. Replace provisional contract artifact references with actual evidence."
     ],
-    "nextLimitedOperation": "Read-only planning: finish the finite 2a obligation reconciliation and assess 2c legacy candidates, then present a code-grounded implementation plan covering remaining real gaps through 2d. Begin with a falsifier showing whether named unmet conditions actually decrease; name owners, source/callers, representative counterexamples, required validation and checklist/Done/contract/lifecycle effects. Stop for user confirmation before implementation or verification runs. After confirmation continue approved implementation, required validation, canonical updates and scoped local commits to TSK-08 closure without routine reapproval. Separate owner alone is not scope exclusion. Do not advance TSK-09.1/09 or push.",
-    "currentUnitReference": "postOcRateReadCheckpoint",
+    "nextLimitedOperation": "TSK-08 complete; no remaining operation. Deliver scoped local commit. TSK-09.1/09 and push are not part of this request.",
+    "currentUnitReference": "approvedClosureImplementation",
     "closureDirectionAssessment": {
-      "decision": "Scoped OC-rate proof is valid progress in diagnostic joining; whole-task convergent closure is not yet demonstrated because the finite obligations and final legacy dispositions remain unfinished.",
-      "ocRateBoundary": "Published 25 declarations/250 selections retain 10 terminal selected requests with no later grant and 240 other-cell selections. No new published physical reader. The six-request schema-legal fixture proves local native/command-repair joining, not full seven-kind or six-class closure.",
-      "failureProbeBoundary": "Six intentional OC probe runs are four sensitivity corruptions and two actual schema-legal final-status fixtures, not the six TSK-08 failure classes. The stale probe changes a captured read and the transaction probe clones a returned-state reference; neither closes whole stale mutation or partial commit.",
-      "acceptanceBoundary": "350 receipt checks include 189 retained receipts; scoped test success, 97 unchanged public artifacts and one saved-before/current-after timing comparison are not final integrated acceptance or formal three-run performance evidence.",
-      "ownerBoundary": "Application/execution and data-pipeline responsibilities remain distinct, but all in-scope obligations belong to TSK-08 closure. A true external dependency or unspecified game meaning must be recorded precisely, not inferred from package ownership."
+      "decision": "Whole-task convergence established by finite obligations and final integrated acceptance, not local success inference.",
+      "ocRateBoundary": "Public25 declarations/250 selections remain10 selected terminal/no later grant +240 other-cell selections. Schema live/reject/repair fixtures remain separate populations; selected cells are not physical reads.",
+      "failureProbeBoundary": "Final six live TSK-08 class probes supersede historical OC sensitivity probes; actual native rejection/state leak, stale consumer and excluded public operation execution reach their typed gates. Each original request/manifest/full artifact/receipt is independent.",
+      "acceptanceBoundary": "Final reconciliation includes full mandatory quality, applicable audit88, formal before/after3run, all80records and all declared/disk receipts. Earlier350 receipts, failed quality/single runs and one-run timings remain historical diagnostics only.",
+      "ownerBoundary": "All semantic/data-pipeline/application/execution obligations resolved in-scope. No unspecified game rule or external owner Blocking remains."
     },
     "remainingObligations": [
       {
         "id": "R08-REQUEST",
         "step": "2a",
-        "status": "unresolved_reconciliation",
-        "missing": "Finite original-request/phase/consumer table covering six classes and seven kinds; current sixClasses/declarationKinds are summaries, not the completed table.",
+        "status": "closed",
+        "missing": null,
         "existingEvidence": "postOcRateReadCheckpoint.sixClasses and declarationKinds; retained boundedUnits[52] operation/native/alternate/recovery records",
-        "closureEffect": "checklist2-3; input lifecycle4-5/8; TS-AUDIT-001/RK-AUDIT-001 scope determination"
+        "closureEffect": "checklist2-3; input lifecycle4-5/8; TS-AUDIT-001/RK-AUDIT-001 scope determination",
+        "resolutionReference": "approvedClosureImplementation.requestReconciliation"
       },
       {
         "id": "R08-CLASS",
         "step": "2b",
-        "status": "unresolved_class_join",
-        "missing": "Actual partial transaction rejection/zero-leak and stale mutation/consumer/recovery witnesses joined to their typed class diagnostics, then all six classes reconciled at valid final identity. The exact source gaps must be determined from current owners and retained proofs.",
+        "status": "closed",
+        "missing": null,
         "existingEvidence": "postOcRateReadCheckpoint.sixClasses; real preparation/group rollback and command-linked HP/criticalStars/scalar proofs; OC sensitivity probes remain scoped",
-        "closureEffect": "checklist2-3; input lifecycle4-5/8; TS-OUT-001/TS-ART-001; Done bounded/first-difference/full-result gates"
+        "closureEffect": "checklist2-3; input lifecycle4-5/8; TS-OUT-001/TS-ART-001; Done bounded/first-difference/full-result gates",
+        "resolutionReference": "approvedClosureImplementation.classJoin"
       },
       {
         "id": "R08-LEGACY",
         "step": "2c",
-        "status": "unresolved_literal_disposition",
-        "missing": "Final exact obsolete/retain disposition for surviving candidates, especially audit-tsk00-baseline.mjs historical boundary; prove equivalence before deletion or document exhaustive zero-obsolete finding.",
+        "status": "closed",
+        "missing": null,
         "existingEvidence": "postOcRateReadCheckpoint.legacyDefinitionTable; e081002 repeated-read removal; unique raw OC167/632/public join retained",
-        "closureEffect": "checklist4; input lifecycle6; sole-producer Done condition"
+        "closureEffect": "checklist4; input lifecycle6; sole-producer Done condition",
+        "resolutionReference": "approvedClosureImplementation.legacyDisposition"
       },
       {
         "id": "R08-ACCEPT",
         "step": "2d",
-        "status": "deferred_until_in_scope_blocking_closed",
-        "missing": "Final integrated inventory/parity/fail-closed/diagnostic/artifact/receipt acceptance, applicable audits, formal comparable before/after three-process performance and README quality; bind all Contract matrix entries to actual artifacts.",
+        "status": "closed",
+        "missing": null,
         "existingEvidence": "established Steps0/1/3 and matching retained proofs; postOcRateReadCheckpoint.verification is scoped only",
-        "closureEffect": "Done gate; all Apply contracts; input lifecycle7; no TSK-09.1/09 advance until TSK-08 done"
+        "closureEffect": "Done gate; all Apply contracts; input lifecycle7; no TSK-09.1/09 advance until TSK-08 done",
+        "resolutionReference": "approvedClosureImplementation.finalAcceptance"
       }
     ],
     "planAcceptance": {
@@ -30044,10 +30048,11 @@
     "establishedSteps": [
       0,
       1,
+      2,
       3
     ],
-    "openStep": 2,
-    "nextSession": "Read-only planning: finish the finite 2a obligation reconciliation and assess 2c legacy candidates, then present a code-grounded implementation plan covering remaining real gaps through 2d. Begin with a falsifier showing whether named unmet conditions actually decrease; name owners, source/callers, representative counterexamples, required validation and checklist/Done/contract/lifecycle effects. Stop for user confirmation before implementation or verification runs. After confirmation continue approved implementation, required validation, canonical updates and scoped local commits to TSK-08 closure without routine reapproval. Separate owner alone is not scope exclusion. Do not advance TSK-09.1/09 or push.",
+    "openStep": null,
+    "nextSession": "No remaining TSK-08 work. Final canonical records and scoped local commit complete this request; TSK-09.1/09 and push not started.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -30070,9 +30075,9 @@
         "inputLifecycle6": "legacyUnit",
         "inputLifecycle7": "acceptanceUnit"
       },
-      "currentStatus": "No new product or suite verification was run for this redesign. Step2 and TSK-08 remain in_progress; TSK-09.1/09 blocked. Contract matrix <tsk-08-report> is an unresolved placeholder, not completed evidence.",
+      "currentStatus": "Closed by approvedClosureImplementation.finalAcceptance. Earlier redesign/decision-sequence text is historical planning evidence, not active Deferred work.",
       "closureDecisionSequence": {
-        "status": "planning_only_no_product_execution",
+        "status": "complete",
         "planningHead": "cadcfc38fcb196e94e63a3e6d0da6d162d13c6d9",
         "decision1Legacy": "For each named old loader, scan, candidate list and duplicate fixture, record definition, direct callers, input population and unique assertions. Delete only an exact obsolete path whose input and assertions are preserved by a current owner. Raw OC baseline, normalized-master and normalization scripts retain distinct raw/published cell and writer assertions unless this comparison proves an equivalent replacement. A retained unique producer is not silently counted as removed; if the literal checklist demands its deletion, resolve that contract decision explicitly in the existing Task before checking it off.",
         "decision2FailureClasses": "Use one row per parity, unsupported, invalid, partial commit, inert control and stale mutation. Each row names the normal production population and zero/failure ratchet, intentional schema-legal counterexample, original input, existing typed gate/reason, canonical identity/first difference, bounded runner summary, complete decoded artifact and receipt. An intentional fixture proves fail-closed behavior; it does not prove the whole production population. Reuse the matching 80-condition matrix/eligibility, common HP operation/read/transaction proof and partial-commit artifact without regenerating eight shards. Native/recovery proof is required only where the original request has a downstream consumer; separate-run recovery is distinct from the failed transaction.",
@@ -30175,6 +30180,1117 @@
     "ceConditionOwnerCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint",
     "ceConditionOwnerCheckpointCommit": "95b5b3ca58faa691ec745cca990f82f7ac58c68a",
     "noHealingNativeCheckpointReference": "boundedUnits[52].hpNoHealingNativeCheckpoint",
-    "ocRateReadCheckpointReference": "postOcRateReadCheckpoint"
+    "ocRateReadCheckpointReference": "postOcRateReadCheckpoint",
+    "status": "complete",
+    "finalAcceptanceReference": "approvedClosureImplementation.finalAcceptance"
+  },
+  "approvedClosureImplementation": {
+    "status": "complete",
+    "startHead": "f85ef90febba2ef57d214da683fd83fba352f46e",
+    "startedAt": "2026-09-30T06:04:04Z",
+    "authorization": "User approved the read-only closure plan with ok. Continue through scoped local commit; no push or TSK-09 work.",
+    "progressFalsifier": "Saved observation corruption, gate replay, selected cells as physical reads and fixture counts as published occurrences close no execution obligation.",
+    "requestReconciliation": {
+      "population": {
+        "publishedOriginalRequests": 3186,
+        "writerDeclarations": 486,
+        "dependencyDeclarations": 71,
+        "writerRows": 2195,
+        "modifierReads": 2113,
+        "candidateReads": 126,
+        "preparationConditionReads": 0,
+        "dependencyBindings": 512
+      },
+      "scope": "Finite original-request obligations. Available declarations, selection, reached native operation, actual consumer, consumption and a separately commanded repair request remain distinct. Outside-control-request population is not production zero, normal nonselection or unsupported.",
+      "sourceArtifact": ".test-results/2026-09-30T02-41-45-811Z-2-20d7d6",
+      "writerDisposition": {
+        "selectedDeclarations": 303,
+        "ownerPresentUnselectedDeclarations": 42,
+        "withoutControlOwnerRequest": 141,
+        "normalOwnerContextNonselectionRequests": 374,
+        "unresolvedOwnerContextRequests": 0,
+        "basis": "declarationRows contains exact owner/selected/unresolved request indices. 141 declarations have no original request in this control producer; retain this boundary explicitly. All declarations/cells are retained in shared primitive inventory and schema-native rules; the full policy matrix supplies attack-profile execution population. Do not claim 141 physical consumers or unsupported cases."
+      },
+      "kinds": [
+        {
+          "kind": "writer",
+          "published": 486,
+          "owner": "executeHpOperation/changeHpModifiers -> executePreparationOc -> reducer; application command/source selection",
+          "proof": "production-hp-operation-evidence.json rows/modifierReads/candidateReads/declarationRows; hp-recovery-command-edges.json; selected-unreached and preflight original requests",
+          "required": "Selected/reached operations distinguish attempted from committed; read links require retained instance/receipt. Rejection retains command-start prefix; repair is an explicit separate request. No read without a planned consumer."
+        },
+        {
+          "kind": "condition",
+          "published": 10,
+          "owner": "native condition callback and ordered condition execution; original source/leaf selection",
+          "proof": "published bindings canonicalCondition=94, actualConditionRead=94, selectedPreparationCell=90; hp-native-condition-reads.json and CE-owner proof",
+          "required": "Physical evaluation only at an entered native/ordered consumer. Published preparation reads=0 follows selected step notApplicable; selection is not a read. Preserve native/schema fixture and candidate/preflight phase boundaries."
+        },
+        {
+          "kind": "modifierUseCondition",
+          "published": 0,
+          "owner": "HP modifier condition before gain aggregation",
+          "proof": "hp-native-condition-reads.json false retained-modifier read and instance/leaf correspondence; hpExecution removal and later-read proofs",
+          "required": "productionZero with schema-legal rule proof. False condition is physically read but excluded, and is not absent observation. Retention/removal/consumption follows the real gain owner."
+        },
+        {
+          "kind": "valueExpression",
+          "published": 30,
+          "owner": "original operation/cell compile binding and ordered addModifier execution",
+          "proof": "expressionContext=160, selectedPreparationCell=16, actualValueRead=16; support, NP beforeDamage/two-operation/sibling and selected-unreached artifacts",
+          "required": "Selected cell/variant/operation joins physical read; sibling nonselected read can be nonconsumed. Preflight/rejection with no ordered consumer is an explicit boundary."
+        },
+        {
+          "kind": "ocRateExpression",
+          "published": 25,
+          "owner": "executeOcAction rate query/read/transaction; application input repair",
+          "proof": "250 selections=10 terminal selectedCommitted+240 otherCellSelected; hp-oc-rate-live-reads.json six distinct original requests and command repair",
+          "required": "Published terminal requests have no later grant: no physical-rate-read obligation. Schema live/rejected/excluded/repair requests remain separate; later grant reads current HP and consumes once per native action."
+        },
+        {
+          "kind": "hpConditionedNpGauge",
+          "published": 0,
+          "owner": "source HP condition callback then native NP resource mutation",
+          "proof": "hp-native-condition-reads.json original NP-gauge operation/source-leaf binding",
+          "required": "productionZero with native schema rule proof. Gauge update is the consumer, not ordered damage; aborted preparation has no later NP reader."
+        },
+        {
+          "kind": "hpRatioLow",
+          "published": 6,
+          "owner": "selected canonical NP and live candidate HP evaluation",
+          "proof": "22 variant selections=16 selected+6 sibling; canonicalNp/npEvaluation=16; hpExecution write-before-NP and commanded repair proofs",
+          "required": "Selected reached NP evaluates retained HP, preserving continuous ratio rule. Rejected/no-NP requests and siblings do not acquire a mandatory NP read."
+        }
+      ],
+      "closureBasis": "All seven declaration kinds have finite exact original-request ledgers and canonical consumer rules. Production-zero, no-owner-request, sibling/nonselected, reached-without-read, native rejection, candidate abort and explicit recovery boundaries stay separate. Real class join gaps are resolved below rather than deferred by owner."
+    },
+    "legacyDisposition": {
+      "removedAlready": "e081002:13 repeated read/projection calls; current executionSemanticsProduction uses createSuiteAuditInput once.",
+      "retained": [
+        "raw OC planning metadata joins",
+        "raw normalized OC167 occurrence/632 cell and public cell/writer join",
+        "resourceProductionInventory/ocProductionInventory direct compileDataPipelineProductionAudit callers",
+        "three suite-local cached loaders with distinct inventory/parity/control assertions",
+        "actual calculateRankingPolicy candidateInventory",
+        "audit-tsk00-baseline.mjs as historical artifact, not a current-schema audit"
+      ],
+      "historicalBoundary": {
+        "reproductionCommit": "dc798b3",
+        "command": "node packages/data-pipeline/scripts/audit-tsk00-baseline.mjs --check",
+        "exitCode": 0,
+        "artifact": ".test-results/tsk-08-final-acceptance-20260930/historical/baseline.json",
+        "bytes": 11582,
+        "sha256": "da2c396a169d3b8826840b7b471a2c4c3246f021a4828d350d2c40ba089e044e",
+        "stderrBytes": 0,
+        "stableDigest": "a6523fd55828b97a09e86e30e2844040e64e9d9b87c989c01fbced338437ffc2",
+        "decision": "All nine original expected digests reproduced. dc798b3 script/master/test/PNG snapshot preserves unique historical coverage. Latest c216284 revision already has canonical master but obsolete quantityConditions reader; do not use it as the historical reproduction boundary or add fallback."
+      },
+      "additionalProvenEquivalentObsoleteDefinitions": 1,
+      "classification": "Resolved: every surviving candidate has a distinct current assertion or an exact retained historical reproduction boundary. Keep raw unique coverage. No current runtime/suite caller for the historical baseline auditor.",
+      "candidateTable": [
+        {
+          "definition": "packages/data-pipeline/src/executionSemanticsProduction.test.ts:createSuiteAuditInput",
+          "caller": "same-suite resource/OC/HP assertions",
+          "population": "published master/allEffects, raw servant/equip HP assertion separately",
+          "uniqueAssertion": "canonical inventory, raw HP normalisation;13 duplicate read/projection removed e081002",
+          "disposition": "retain single current producer; obsolete repeated calls removed"
+        },
+        {
+          "definition": "packages/data-pipeline/src/resourceProductionAudit.ts:resourceProductionInventory",
+          "caller": "packages/data-pipeline/src/productionAudit.ts:compileDataPipelineProductionAudit",
+          "population": "canonical resources and occurrences",
+          "uniqueAssertion": "resource semantic inventory",
+          "disposition": "retain current owner"
+        },
+        {
+          "definition": "packages/data-pipeline/src/ocProductionAudit.ts:ocProductionInventory",
+          "caller": "packages/data-pipeline/src/productionAudit.ts:compileDataPipelineProductionAudit",
+          "population": "canonical OC operations/cells",
+          "uniqueAssertion": "OC inventory independent of raw exports",
+          "disposition": "retain current owner"
+        },
+        {
+          "definition": "packages/calculation-application/src/{productionMasterInventory,productionExecutionParity,productionMasterControlAudit}.test.ts:cached loaders",
+          "caller": "each named suite only",
+          "population": "one parsed published master per file",
+          "uniqueAssertion": "inventory vs execution parity vs original public controls; distinct assertions",
+          "disposition": "retain; no per-case repeated read"
+        },
+        {
+          "definition": "packages/calculation-application/src/productionClosureAudit.ts:result.candidateInventory",
+          "caller": "audit-oc-matrix.ts and productionClosureAudit.test.ts",
+          "population": "actual calculateRankingPolicy result",
+          "uniqueAssertion": "actual policy candidate reach/eligibility/digest",
+          "disposition": "retain actual producer; no parallel expectation list"
+        },
+        {
+          "definition": "packages/data-pipeline/scripts/audit-oc-planning-baseline.mjs",
+          "caller": "direct historical CLI/evidence",
+          "population": "four raw exports/function metadata + published master",
+          "uniqueAssertion": "raw planning/semantic join",
+          "disposition": "retain unique raw evidence"
+        },
+        {
+          "definition": "packages/data-pipeline/scripts/audit-oc-normalized-master.ts and audit-oc-normalization.mjs",
+          "caller": "direct historical CLI/evidence",
+          "population": "raw167 occurrences/632 cells and public normalization join",
+          "uniqueAssertion": "numeric/lifetime raw evidence + published cell/writer correspondence",
+          "disposition": "retain unique raw evidence"
+        },
+        {
+          "definition": "packages/data-pipeline/scripts/audit-tsk00-baseline.mjs",
+          "caller": "direct TSK-00 report reproduction; current runtime/suite caller0",
+          "population": "dc798b3 script/master/test/PNG original snapshot",
+          "uniqueAssertion": "all9 historical expected digests reproduced, stableDigest a6523f...",
+          "disposition": "retain historical artifact, exact snapshot documented; no current-schema fallback"
+        },
+        {
+          "definition": "packages/calculation-application/scripts/audit-oc-matrix.ts:single full-matrix branch",
+          "caller": "default/FGO_AUDIT_SHARDS=1 CLI; no registered suite caller",
+          "population": "all80 conditions; same original auditProductionClosure semantic producer",
+          "uniqueAssertion": "Final inventory/parity/fail-closed/transaction/receipt assertions are retained by canonical8-shard+merge; the single aggregate layout never matches the merged source digest",
+          "disposition": "Removed obsolete noncanonical final branch; unsupported1 rejected explicitly with canonical acquisition command"
+        }
+      ]
+    },
+    "classJoin": {
+      "status": "Closed: all six final-source actual execution probes have intended typed reason/first difference, independent manifest identity, bounded complete output and every receipt verified.",
+      "owner": "productionParityDiagnostics::auditProductionPreparationRejections and existing OC/HP/scalar/criticalStars read/recovery gates",
+      "actualPartialCommit": "Real HP write followed by missing OC cell refuses native transaction. Wrapper snapshots state before reducer; normal result retains all values and identity. Test-only execution fault leaks the actual attempted state into the original owner state before its real caller; typed preparationRejectedStateMismatch first difference hp.actors.attacker.current 5400 -> 5300 (previous command committed HP -100 before the rejected command). Saved capture/receipt is not edited.",
+      "actualStaleMutation": "Real HP writer runs before a real later grant. Test-only HP consumer fault executes with prior HP; normal capture then independent canonical rate rule detects expected490 -> actual500 with ocRateReadMismatch. No captured read is changed.",
+      "coverage": "Expected rejection identity is independently declared; missing witness yields preparationRejectionCoverageMismatch. Existing explicit command repair remains a separate original request/repairAttempt edge.",
+      "actualInertControl": "Public excluded scenario retained exactly. Test-only candidateOperationContext.operationEnabled fault ignores its canonical decision and executes the excluded operation; real recalculation/capture yields userControlDidNotReachOperationOrDamage at reached true -> false. Old observation substitution is sensitivity only.",
+      "finalFailureProbes": [
+        {
+          "class": "parity",
+          "manifest": ".test-results/2026-09-30T10-09-17-834Z-19-3c35ee/manifest.json",
+          "manifestBytes": 3761,
+          "manifestSha256": "7888b99be42289d9e10c41e1359d66cd0cd15c0c9eeb5ccc0e3fd7e5081b60e9",
+          "outcome": "test_failure",
+          "completeReceiptCount": 9,
+          "summaryLines": 13,
+          "summaryBytes": 1882,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/structural-final/parity.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/structural-final/parity.stderr.log",
+          "diagnostic": "AssertionError: {\"failureClass\":\"parity\",\"reason\":\"canonicalMismatch\",\"canonicalIdentity\":\"production:naturalLimit-included-baseline-np1-oc1:profile:[\\\"fixture-saber\\\",{\\\"skillSlots\\\":[],\\\"passiveVariantIds\\\":[],\\\"intrinsicTraits\\\":[\\\"humanoid\\\",\\\"servant\\\"],\\\"baseNoblePhantasmVariantCanonicalId\\\":\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\",\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\":[\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\"]},\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\"]:parity:portable\",\"firstDifference\":{\"identity\":\"production:naturalLimit-included-baseline-np1-oc1:profile:[\\\"fixture-saber\\\",{\\\"skillSlots\\\":[],\\\"passiveVariantIds\\\":[],\\\"intrinsicTraits\\\":[\\\"humanoid\\\",\\\"servant\\\"],\\\"baseNoblePhantasmVariantCanonicalId\\\":\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\",\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\":[\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\"]},\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\"]:parity:portable\",\"path\":\"input.fouAtk\",\"expected\":1000,\"actual\":1001}}: expected [ { …(9) } ] to deeply equal []"
+        },
+        {
+          "class": "unsupported",
+          "manifest": ".test-results/2026-09-30T10-09-21-104Z-105-515a39/manifest.json",
+          "manifestBytes": 5304,
+          "manifestSha256": "742c2c6250542a9d56fb398aea96019da62b0bd72a22ce6aea7e2d24436b3d39",
+          "outcome": "test_failure",
+          "completeReceiptCount": 16,
+          "summaryLines": 13,
+          "summaryBytes": 1804,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/structural-final/unsupported.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/structural-final/unsupported.stderr.log",
+          "diagnostic": "AssertionError: {\"population\":\"schemaLegalOriginalRequest\",\"failureClass\":\"unsupported\",\"reason\":\"finalProfileStatusPresent\",\"canonicalIdentity\":\"production:schema-legal:oc-rate-request:4:profile:{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}:final-outcome\",\"conditionKey\":\"schema-legal:oc-rate-request:4\",\"profileKey\":\"{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}\",\"status\":\"unsupported\",\"expected\":\"calculated\",\"actual\":\"unsupported\",\"firstDifference\":{\"identity\":\"production:schema-legal:oc-rate-request:4:profile:{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}:final-outcome\",\"path\":\"status\",\"expected\":\"calculated\",\"actual\":\"unsupported\"}}: expected 'failed' to be 'passed' // Object.is equality"
+        },
+        {
+          "class": "invalid",
+          "manifest": ".test-results/2026-09-30T10-09-24-744Z-191-9d9b54/manifest.json",
+          "manifestBytes": 5304,
+          "manifestSha256": "a81a066425d47bce4890e5262d13512f33babde1d6179c2ae8b03967bdaa4adf",
+          "outcome": "test_failure",
+          "completeReceiptCount": 16,
+          "summaryLines": 13,
+          "summaryBytes": 1788,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/structural-final/invalid.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/structural-final/invalid.stderr.log",
+          "diagnostic": "AssertionError: {\"population\":\"schemaLegalOriginalRequest\",\"failureClass\":\"invalid\",\"reason\":\"finalProfileStatusPresent\",\"canonicalIdentity\":\"production:schema-legal:oc-rate-request:5:profile:{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}:final-outcome\",\"conditionKey\":\"schema-legal:oc-rate-request:5\",\"profileKey\":\"{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}\",\"status\":\"invalid\",\"expected\":\"calculated\",\"actual\":\"invalid\",\"firstDifference\":{\"identity\":\"production:schema-legal:oc-rate-request:5:profile:{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}:final-outcome\",\"path\":\"status\",\"expected\":\"calculated\",\"actual\":\"invalid\"}}: expected 'failed' to be 'passed' // Object.is equality"
+        },
+        {
+          "class": "partialCommit",
+          "manifest": ".test-results/2026-09-30T10-09-28-140Z-277-0b4339/manifest.json",
+          "manifestBytes": 5304,
+          "manifestSha256": "70b5c7cf4258c5a4c059f2cf395a2d21cd6e26bbefa4108022be0abec186d4e4",
+          "outcome": "test_failure",
+          "completeReceiptCount": 16,
+          "summaryLines": 13,
+          "summaryBytes": 1079,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/structural-final/partialCommit.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/structural-final/partialCommit.stderr.log",
+          "diagnostic": "AssertionError: {\"failureClass\":\"partialCommit\",\"reason\":\"preparationRejectedStateMismatch\",\"canonicalIdentity\":\"schema-legal:oc-rate:rejection:0:useSkillSlot\",\"firstDifference\":{\"identity\":\"schema-legal:oc-rate:rejection:0:useSkillSlot\",\"path\":\"hp.actors.attacker.current\",\"expected\":5400,\"actual\":5300}}: expected 1 to be +0 // Object.is equality"
+        },
+        {
+          "class": "staleMutation",
+          "manifest": ".test-results/2026-09-30T10-09-31-657Z-363-6ab213/manifest.json",
+          "manifestBytes": 5304,
+          "manifestSha256": "cece785061e27f20c784fe989a16ff14db1efabf77aa9f8d16c953c838da9b0a",
+          "outcome": "test_failure",
+          "completeReceiptCount": 16,
+          "summaryLines": 13,
+          "summaryBytes": 1525,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/structural-final/staleMutation.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/structural-final/staleMutation.stderr.log",
+          "diagnostic": "AssertionError: {\"failureClass\":\"staleMutation\",\"reason\":\"ocRateReadMismatch\",\"path\":\"requests.0.actions.0.ocRateQueries.1.hp\",\"canonicalIdentity\":\"[0,\\\"preparation:0:useSkillSlot\\\",4,1,{\\\"origin\\\":\\\"attacker\\\",\\\"owner\\\":\\\"fixture-saber\\\",\\\"skill\\\":\\\"reader-skill\\\",\\\"variant\\\":null,\\\"occurrence\\\":\\\"fixture-oc-rate:0\\\",\\\"path\\\":\\\"execution.0.cells.0.0.amount\\\",\\\"kind\\\":\\\"ocRateExpression\\\"}]\",\"firstDifference\":{\"identity\":\"[0,\\\"preparation:0:useSkillSlot\\\",4,1,{\\\"origin\\\":\\\"attacker\\\",\\\"owner\\\":\\\"fixture-saber\\\",\\\"skill\\\":\\\"reader-skill\\\",\\\"variant\\\":null,\\\"occurrence\\\":\\\"fixture-oc-rate:0\\\",\\\"path\\\":\\\"execution.0.cells.0.0.amount\\\",\\\"kind\\\":\\\"ocRateExpression\\\"}]\",\"path\":\"requests.0.actions.0.ocRateQueries.1.hp\",\"expected\":490,\"actual\":500}}: expected 1 to be +0 // Object.is equality"
+        },
+        {
+          "class": "inertControl",
+          "manifest": ".test-results/2026-09-30T10-09-35-160Z-449-b4c62c/manifest.json",
+          "manifestBytes": 6508,
+          "manifestSha256": "14783608a707ea2d2f302ea58b7126be7854015fc61fabb6aee47b5b54a1413e",
+          "outcome": "test_failure",
+          "completeReceiptCount": 21,
+          "summaryLines": 13,
+          "summaryBytes": 2331,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/structural-final/inertControl.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/structural-final/inertControl.stderr.log",
+          "diagnostic": "Error: production_user_control_ratchet_failed:{\"canonicalIdentity\":\"tsk-08:inert-controls\",\"reason\":\"userControlDidNotReachOperationOrDamage\",\"firstDifference\":{\"identity\":\"production:control-inventory:[\\\"100100\\\",\\\"[\\\\\\\"100100\\\\\\\",{\\\\\\\"skillSlots\\\\\\\":[{\\\\\\\"slot\\\\\\\":1,\\\\\\\"skillVariantId\\\\\\\":\\\\\\\"2695650\\\\\\\"},{\\\\\\\"slot\\\\\\\":2,\\\\\\\"skillVariantId\\\\\\\":\\\\\\\"756450\\\\\\\"},{\\\\\\\"slot\\\\\\\":3,\\\\\\\"skillVariantId\\\\\\\":\\\\\\\"501650\\\\\\\"}],\\\\\\\"passiveVariantIds\\\\\\\":[\\\\\\\"34550\\\\\\\",\\\\\\\"88450\\\\\\\"],\\\\\\\"intrinsicTraits\\\\\\\":[\\\\\\\"FSNServant\\\\\\\",\\\\\\\"alignmentGood\\\\\\\",\\\\\\\"alignmentLawful\\\\\\\",\\\\\\\"arthur\\\\\\\",\\\\\\\"attributeEarth\\\\\\\",\\\\\\\"canBeInBattle\\\\\\\",\\\\\\\"classSaber\\\\\\\",\\\\\\\"dragon\\\\\\\",\\\\\\\"fiveStarServant\\\\\\\",\\\\\\\"genderFemale\\\\\\\",\\\\\\\"hasCostume\\\\\\\",\\\\\\\"hominidaeServant\\\\\\\",\\\\\\\"humanoid\\\\\\\",\\\\\\\"king\\\\\\\",\\\\\\\"knightsOfTheRound\\\\\\\",\\\\\\\"riding\\\\\\\",\\\\\\\"saberClassServant\\\\\\\",\\\\\\\"saberface\\\\\\\",\\\\\\\"servant\\\\\\\",\\\\\\\"skyOrEarthExceptPseudoAndDemiServant\\\\\\\",\\\\\\\"skyOrEarthServant\\\\\\\",\\\\\\\"standardClassServant\\\\\\\",\\\\\\\"weakToEnumaElish\\\\\\\"],\\\\\\\"baseNoblePhantasmVariantCanonicalId\\\\\\\":\\\\\\\"d327de48a3ba20d64a7fbf42e442141e3814daa81ca1776ec736ba73986e2b7e\\\\\\\",\\\\\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\\\\\":[\\\\\\\"d327de48a3ba20d64a7fbf42e442141e3814daa81ca1776ec736ba73986e2b7e\\\\\\\"]},\\\\\\\"d327de48a3ba20d64a7fbf42e442141e3814daa81ca1776ec736ba73986e2b7e\\\\\\\"]\\\",\\\"selectedProfile\\\",\\\"attacker:attacker:100100:2695650:152:0\\\",\\\"attacker:attacker:100100:2695650:152:0:modifier:attackBuff\\\",\\\"attacker:attacker:100100:2695650:152:0:modifier:attackBuff:modifier\\\"]:enabled-vs-excluded\",\"path\":\"reached\",\"expected\":true,\"actual\":false},\"failureCount\":1}"
+        }
+      ],
+      "actualParity": "Real ranking original request and valid portable transport retained unchanged; test-only portable preparation fault changes fouAtk1000->1001 before real scenario preparation/calculation. auditProductionClosure detects canonicalMismatch input.fouAtk1000->1001, with original/forwarded/prepared scenarios and complete result. Old dummy comparison is sensitivity only.",
+      "parityNormalManifest": ".test-results/2026-09-30T06-51-32-615Z-16-8c8ac4/manifest.json",
+      "classTable": [
+        {
+          "class": "parity",
+          "scope": "schemaLegalOriginalRankingRequest; published final parity failures0",
+          "owner": "portable transport -> real scenario preparation -> auditProductionClosure/compareProductionParity",
+          "phase": "valid request -> portable preparation -> canonical input/result comparison",
+          "reason": "canonicalMismatch",
+          "firstDifference": "input.fouAtk1000->1001",
+          "consumer": "real calculator execution; full expected/actual result saved"
+        },
+        {
+          "class": "unsupported",
+          "scope": "schemaLegalOriginalOcRequest; published final unsupported0",
+          "owner": "executeOcAction missingOcCell -> application final status -> finalOutcomeGate",
+          "phase": "selected native invalid/missingOcCell -> application unsupported",
+          "reason": "finalProfileStatusPresent",
+          "firstDifference": "status calculated->unsupported",
+          "consumer": "no ordered consumer after preparation rejects; not a physical read obligation"
+        },
+        {
+          "class": "invalid",
+          "scope": "schemaLegalOriginalMasterWithMissingLevelStat; published final invalid0",
+          "owner": "scenario level validation -> application invalid -> finalOutcomeGate",
+          "phase": "original preparation with missing level data -> invalid",
+          "reason": "finalProfileStatusPresent",
+          "firstDifference": "status calculated->invalid",
+          "consumer": "no ordered calculation; no numeric fallback"
+        },
+        {
+          "class": "partialCommit",
+          "scope": "schemaLegalOriginalMultiCommandRequest; published native rejection0 in retained control population",
+          "owner": "real reducer -> independent command-start snapshot -> auditProductionPreparationRejections",
+          "phase": "committed prefix -> second command writes HP -> later native failure -> command rejection",
+          "reason": "preparationRejectedStateMismatch",
+          "firstDifference": "hp.actors.attacker.current5400->5300",
+          "consumer": "returned original reducer state compared fully; normal reference/prefix/action/slot retained; attempted state is not committed"
+        },
+        {
+          "class": "inertControl",
+          "scope": "published original selectedProfile enabled/excluded request",
+          "owner": "application exclusion command -> candidateOperationContext.operationEnabled -> real ordered execution -> user-control gate",
+          "phase": "same profile, exact excluded command -> live execution ignores selection",
+          "reason": "userControlDidNotReachOperationOrDamage",
+          "firstDifference": "reached true->false",
+          "consumer": "original excluded calculation input/effects/ordered observation, not altered saved observation"
+        },
+        {
+          "class": "staleMutation",
+          "scope": "schemaLegalOriginalOcRequest; public terminal10 have no later grant",
+          "owner": "HP writer -> hpPermille native reader -> canonical OC rate rule -> published-dependency gate",
+          "phase": "HP write -> later physical rate read/current retained instance -> native transaction/consumption",
+          "reason": "ocRateReadMismatch",
+          "firstDifference": "requests.0.actions.0.ocRateQueries.1.hp490->500",
+          "consumer": "real faulted HP read; independent normal rule after spy restore; command repair is separately linked missing-input request, not faulted-read rewriting"
+        }
+      ],
+      "beforeArchitectureRepairProbes": [
+        {
+          "class": "parity",
+          "manifest": ".test-results/2026-09-30T06-51-35-799Z-100-9c1e4e/manifest.json",
+          "manifestBytes": 3762,
+          "manifestSha256": "ef26623c0b1911a9e108dfde2d7b374b25e4e03de6786f6ff58268ccdccd4160",
+          "outcome": "test_failure",
+          "completeReceiptCount": 9,
+          "summaryLines": 14,
+          "summaryBytes": 2003,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/parity.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/parity.stderr.log",
+          "diagnostic": "AssertionError: {\"failureClass\":\"parity\",\"reason\":\"canonicalMismatch\",\"canonicalIdentity\":\"production:naturalLimit-included-baseline-np1-oc1:profile:[\\\"fixture-saber\\\",{\\\"skillSlots\\\":[],\\\"passiveVariantIds\\\":[],\\\"intrinsicTraits\\\":[\\\"humanoid\\\",\\\"servant\\\"],\\\"baseNoblePhantasmVariantCanonicalId\\\":\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\",\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\":[\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\"]},\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\"]:parity:portable\",\"firstDifference\":{\"identity\":\"production:naturalLimit-included-baseline-np1-oc1:profile:[\\\"fixture-saber\\\",{\\\"skillSlots\\\":[],\\\"passiveVariantIds\\\":[],\\\"intrinsicTraits\\\":[\\\"humanoid\\\",\\\"servant\\\"],\\\"baseNoblePhantasmVariantCanonicalId\\\":\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\",\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\":[\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\"]},\\\"2602345b9cf2dd9052dae9f65a3eddf4642fdc767d4c12c9bd8b2e7c448ba574\\\"]:parity:portable\",\"path\":\"input.fouAtk\",\"expected\":1000,\"actual\":1001}}: expected [ { …(9) } ] to deeply equal []"
+        },
+        {
+          "class": "unsupported",
+          "manifest": ".test-results/2026-09-30T06-42-47-536Z-98-e73828/manifest.json",
+          "manifestBytes": 5303,
+          "manifestSha256": "665a5e6337253446577d172235c2809045a17b72f880df84ca01353418c2ec9b",
+          "outcome": "test_failure",
+          "completeReceiptCount": 16,
+          "summaryLines": 14,
+          "summaryBytes": 1940,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/unsupported.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/unsupported.stderr.log",
+          "diagnostic": "AssertionError: {\"population\":\"schemaLegalOriginalRequest\",\"failureClass\":\"unsupported\",\"reason\":\"finalProfileStatusPresent\",\"canonicalIdentity\":\"production:schema-legal:oc-rate-request:4:profile:{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}:final-outcome\",\"conditionKey\":\"schema-legal:oc-rate-request:4\",\"profileKey\":\"{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}\",\"status\":\"unsupported\",\"expected\":\"calculated\",\"actual\":\"unsupported\",\"firstDifference\":{\"identity\":\"production:schema-legal:oc-rate-request:4:profile:{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}:final-outcome\",\"path\":\"status\",\"expected\":\"calculated\",\"actual\":\"unsupported\"}}: expected 'failed' to be 'passed' // Object.is equality"
+        },
+        {
+          "class": "invalid",
+          "manifest": ".test-results/2026-09-30T06-42-51-394Z-180-fe5ba7/manifest.json",
+          "manifestBytes": 5304,
+          "manifestSha256": "ad8687a71ff950047c9241d9dad4cab7e1b8a4a68b71d7ea06255eefbba7b1dc",
+          "outcome": "test_failure",
+          "completeReceiptCount": 16,
+          "summaryLines": 14,
+          "summaryBytes": 1925,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/invalid.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/invalid.stderr.log",
+          "diagnostic": "AssertionError: {\"population\":\"schemaLegalOriginalRequest\",\"failureClass\":\"invalid\",\"reason\":\"finalProfileStatusPresent\",\"canonicalIdentity\":\"production:schema-legal:oc-rate-request:5:profile:{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}:final-outcome\",\"conditionKey\":\"schema-legal:oc-rate-request:5\",\"profileKey\":\"{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}\",\"status\":\"invalid\",\"expected\":\"calculated\",\"actual\":\"invalid\",\"firstDifference\":{\"identity\":\"production:schema-legal:oc-rate-request:5:profile:{\\\"servantId\\\":\\\"fixture-saber\\\",\\\"initialActorFormId\\\":{\\\"actorId\\\":\\\"fixture-saber\\\",\\\"limitCount\\\":0},\\\"source\\\":\\\"master\\\",\\\"level\\\":90,\\\"npLevel\\\":1,\\\"fouAtk\\\":1000}:final-outcome\",\"path\":\"status\",\"expected\":\"calculated\",\"actual\":\"invalid\"}}: expected 'failed' to be 'passed' // Object.is equality"
+        },
+        {
+          "class": "partialCommit",
+          "manifest": ".test-results/2026-09-30T06-42-55-046Z-262-46146a/manifest.json",
+          "manifestBytes": 5304,
+          "manifestSha256": "a743359935ac3de5e26c84a151e5c1b312f6bdd2f1d8156ce0bf497022ed4088",
+          "outcome": "test_failure",
+          "completeReceiptCount": 16,
+          "summaryLines": 14,
+          "summaryBytes": 1216,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/partialCommit.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/partialCommit.stderr.log",
+          "diagnostic": "AssertionError: {\"failureClass\":\"partialCommit\",\"reason\":\"preparationRejectedStateMismatch\",\"canonicalIdentity\":\"schema-legal:oc-rate:rejection:0:useSkillSlot\",\"firstDifference\":{\"identity\":\"schema-legal:oc-rate:rejection:0:useSkillSlot\",\"path\":\"hp.actors.attacker.current\",\"expected\":5400,\"actual\":5300}}: expected 1 to be +0 // Object.is equality"
+        },
+        {
+          "class": "staleMutation",
+          "manifest": ".test-results/2026-09-30T06-42-58-414Z-344-9415bd/manifest.json",
+          "manifestBytes": 5304,
+          "manifestSha256": "14111f8f32d8e3bc8197cdfe7f68dbf1654505f81c6749c10ea9a18932548afd",
+          "outcome": "test_failure",
+          "completeReceiptCount": 16,
+          "summaryLines": 14,
+          "summaryBytes": 1662,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/staleMutation.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/staleMutation.stderr.log",
+          "diagnostic": "AssertionError: {\"failureClass\":\"staleMutation\",\"reason\":\"ocRateReadMismatch\",\"path\":\"requests.0.actions.0.ocRateQueries.1.hp\",\"canonicalIdentity\":\"[0,\\\"preparation:0:useSkillSlot\\\",4,1,{\\\"origin\\\":\\\"attacker\\\",\\\"owner\\\":\\\"fixture-saber\\\",\\\"skill\\\":\\\"reader-skill\\\",\\\"variant\\\":null,\\\"occurrence\\\":\\\"fixture-oc-rate:0\\\",\\\"path\\\":\\\"execution.0.cells.0.0.amount\\\",\\\"kind\\\":\\\"ocRateExpression\\\"}]\",\"firstDifference\":{\"identity\":\"[0,\\\"preparation:0:useSkillSlot\\\",4,1,{\\\"origin\\\":\\\"attacker\\\",\\\"owner\\\":\\\"fixture-saber\\\",\\\"skill\\\":\\\"reader-skill\\\",\\\"variant\\\":null,\\\"occurrence\\\":\\\"fixture-oc-rate:0\\\",\\\"path\\\":\\\"execution.0.cells.0.0.amount\\\",\\\"kind\\\":\\\"ocRateExpression\\\"}]\",\"path\":\"requests.0.actions.0.ocRateQueries.1.hp\",\"expected\":490,\"actual\":500}}: expected 1 to be +0 // Object.is equality"
+        },
+        {
+          "class": "inertControl",
+          "manifest": ".test-results/2026-09-30T06-43-01-994Z-426-0abb49/manifest.json",
+          "manifestBytes": 6508,
+          "manifestSha256": "c85e1d337ab16f02fc091f3c992b13a044a87a5eb969490304e07c35a23e53f0",
+          "outcome": "test_failure",
+          "completeReceiptCount": 21,
+          "summaryLines": 14,
+          "summaryBytes": 2458,
+          "stdout": ".test-results/tsk-08-final-acceptance-20260930/inertControl.stdout.log",
+          "stderr": ".test-results/tsk-08-final-acceptance-20260930/inertControl.stderr.log",
+          "diagnostic": "Error: production_user_control_ratchet_failed:{\"canonicalIdentity\":\"tsk-08:inert-controls\",\"reason\":\"userControlDidNotReachOperationOrDamage\",\"firstDifference\":{\"identity\":\"production:control-inventory:[\\\"100100\\\",\\\"[\\\\\\\"100100\\\\\\\",{\\\\\\\"skillSlots\\\\\\\":[{\\\\\\\"slot\\\\\\\":1,\\\\\\\"skillVariantId\\\\\\\":\\\\\\\"2695650\\\\\\\"},{\\\\\\\"slot\\\\\\\":2,\\\\\\\"skillVariantId\\\\\\\":\\\\\\\"756450\\\\\\\"},{\\\\\\\"slot\\\\\\\":3,\\\\\\\"skillVariantId\\\\\\\":\\\\\\\"501650\\\\\\\"}],\\\\\\\"passiveVariantIds\\\\\\\":[\\\\\\\"34550\\\\\\\",\\\\\\\"88450\\\\\\\"],\\\\\\\"intrinsicTraits\\\\\\\":[\\\\\\\"FSNServant\\\\\\\",\\\\\\\"alignmentGood\\\\\\\",\\\\\\\"alignmentLawful\\\\\\\",\\\\\\\"arthur\\\\\\\",\\\\\\\"attributeEarth\\\\\\\",\\\\\\\"canBeInBattle\\\\\\\",\\\\\\\"classSaber\\\\\\\",\\\\\\\"dragon\\\\\\\",\\\\\\\"fiveStarServant\\\\\\\",\\\\\\\"genderFemale\\\\\\\",\\\\\\\"hasCostume\\\\\\\",\\\\\\\"hominidaeServant\\\\\\\",\\\\\\\"humanoid\\\\\\\",\\\\\\\"king\\\\\\\",\\\\\\\"knightsOfTheRound\\\\\\\",\\\\\\\"riding\\\\\\\",\\\\\\\"saberClassServant\\\\\\\",\\\\\\\"saberface\\\\\\\",\\\\\\\"servant\\\\\\\",\\\\\\\"skyOrEarthExceptPseudoAndDemiServant\\\\\\\",\\\\\\\"skyOrEarthServant\\\\\\\",\\\\\\\"standardClassServant\\\\\\\",\\\\\\\"weakToEnumaElish\\\\\\\"],\\\\\\\"baseNoblePhantasmVariantCanonicalId\\\\\\\":\\\\\\\"d327de48a3ba20d64a7fbf42e442141e3814daa81ca1776ec736ba73986e2b7e\\\\\\\",\\\\\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\\\\\":[\\\\\\\"d327de48a3ba20d64a7fbf42e442141e3814daa81ca1776ec736ba73986e2b7e\\\\\\\"]},\\\\\\\"d327de48a3ba20d64a7fbf42e442141e3814daa81ca1776ec736ba73986e2b7e\\\\\\\"]\\\",\\\"selectedProfile\\\",\\\"attacker:attacker:100100:2695650:152:0\\\",\\\"attacker:attacker:100100:2695650:152:0:modifier:attackBuff\\\",\\\"attacker:attacker:100100:2695650:152:0:modifier:attackBuff:modifier\\\"]:enabled-vs-excluded\",\"path\":\"reached\",\"expected\":true,\"actual\":false},\"failureCount\":1}"
+        }
+      ]
+    },
+    "performancePreparation": {
+      "baseline": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+      "installationFailure": "Original baseline lockfile misclassifies declared schema dependency as devDependency; frozen install stops. Package manifests are byte-identical to current.",
+      "resolution": "Both sides use the current frozen pnpm-lock.yaml and pnpm-workspace.yaml, retaining verifyDepsBeforeRun:error and enableGlobalVirtualStore:false. Only these two baseline environment files differ; no workload/source/master change. Offline store miss resolved by normal frozen install, without shim or dependency-check relaxation. Formal runs pending.",
+      "startedAt": "2026-09-30T06:53:58Z",
+      "orchestration": "/tmp/fgo-tsk08-formal-performance.sh",
+      "output": ".test-results/tsk-08-final-acceptance-20260930/performance",
+      "scope": "Current formal gate uses canonical eight shards/merge, maximum4 concurrent processes/two waves on CPU0-7. Three independent coordinator processes per side; source/master/conditions frozen. Original single run retained only as negative diagnostic.",
+      "identicalInputs": {
+        "apps/web/public/master/master.json": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+        "docs/evidence/tsk-06-5-production-closure.json": "995874f88ea34dd013d185da742a931065e23b199f9c4d07078ff6820d4d6881",
+        "scripts/measure-ranking-resources.ts": "71b93ec9eaf96d43decd0b1012053aa11185b656256aa26c500b14bd38dc1c63",
+        "packages/calculation-application/scripts/audit-oc-matrix.ts": "35820ee2c386973ec69ef6dfaf6c965e7ed09317799d77c15090b8df5104dddb",
+        "pnpm-lock.yaml": "8c2277a59280e7051bb2aa3bab25b3c746db9a3bdfc4b50ee6eeedf822823e37",
+        "pnpm-workspace.yaml": "42a00571f59834b12e9d689693a0c0e677a418cf48bfe6f3f8ebc20fc8f7f363"
+      },
+      "originalSingleAttempt": {
+        "manifest": ".test-results/tsk-08-final-acceptance-20260930/performance/baseline-1-matrix/manifest.json",
+        "status": "failed; not a valid formal TS-PERF-002 run",
+        "wallSeconds": 3001.84,
+        "conditions": 80,
+        "outcomes": {
+          "calculated": 34600,
+          "unavailableUnderPolicy": 40,
+          "unsupported": 0,
+          "invalid": 0,
+          "inputRequired": 0
+        },
+        "parityCount": 34600,
+        "rawSingleDigest": "8daf8f893a7c0edb96cdc9bfebe6c8fcbc3889cff80ed32e2696857479605818",
+        "expectedMergedDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+        "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+        "rootCause": "Single and canonical merge aggregate layouts differ: single admissions global digest, eligibility aggregate digest and condition-order unavailable; merge admissions/candidate shardDigests, partition-order count-map/unavailable aggregation and no eligibility aggregate digest. Matching workload blobs did not prove aggregate identity. No source expectation change or passing-run claim."
+      },
+      "canonicalResolution": {
+        "owner": "audit-oc-matrix.ts shard writer and existing merge-oc-matrix.ts sole final full-matrix gate",
+        "change": "Retire the unvalidated full single CLI branch; explicit FGO_AUDIT_SHARDS=8 and shard0..7 only. The existing merge retains source digest, all80 receipts, final status and transaction/parity gates. No candidate/damage generation replacement.",
+        "retiredSingleProbe": ".test-results/tsk-08-final-acceptance-20260930/retired-single/manifest.json",
+        "retiredSingleResult": "exit1 invalid_audit_shard:0/1 with exact required canonical command; complete failure artifact saved",
+        "formalWorkload": "Existing canonical eight shards, fixed maximum4 processes/two waves on CPU0-7, then existing merge; three independent coordinator processes per side. No overlapping ranking/other workload. Actual missing final artifacts and single-vs-merge mismatch justify this canonical acquisition; not unconditional regeneration.",
+        "startedAt": "2026-09-30T07:57:10Z",
+        "orchestration": [
+          "/tmp/fgo-tsk08-canonical-matrix-run.sh",
+          "/tmp/fgo-tsk08-canonical-performance.sh"
+        ],
+        "output": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical",
+        "rankingReuse": "Original baseline1 ranking process is valid and source/conditions/node/CPU identical; retained, no repeat. It does not make the failed single matrix a passing run.",
+        "firstBaseline": "baseline1 passed mergedDigest04415e8a..., eligibility68e41503...,34600 calculated/parity,40 unavailable,unsupported/invalid/inputRequired0;1093.41 wallSeconds. The same baseline producing the failed single digest passes canonical merge, confirming layout mismatch rather than production output mismatch."
+      },
+      "earlyRankingObservation": {
+        "baseline1MedianMs": 5241.1703,
+        "candidate1MedianMs": 6848.870380999997,
+        "status": "Only1 valid process per side, not formal median. Wait for all3 per side; >10% unexplained regression is Blocking, no threshold or counter relaxation."
+      }
+    },
+    "verification": {
+      "qualification": "Final full-quality unit/production plus final registered audit and six live probes supersede earlier scoped runs where execution ownership changed.",
+      "quality": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/manifest.json",
+      "audit": ".test-results/2026-09-30T10-12-04-316Z-535-914653/manifest.json"
+    },
+    "remaining": "No TSK-08 condition remains. Deliver this result in the scoped local closure commit; no TSK-09 work or push.",
+    "scopedUnit": {
+      "manifest": ".test-results/2026-09-30T06-31-29-442Z-44-dc4e42/manifest.json",
+      "files": 4,
+      "passedTests": 48,
+      "warnings": 0
+    },
+    "sourceIdentity": {
+      "packages/calculation-application/src/productionParityDiagnostics.ts": "4b9f4bf5411687f9920a2a2399f649f7b16ae319fe6e36f36d3b1a6ba5fd26e3",
+      "packages/calculation-application/src/productionClosureAudit.test.ts": "47f77918e69e4c93b68828f02bcbd9d0ee1800633cc79a858b0143491fc1deb8",
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts": "2e7e17fb2f5a9f81062becbf6744d79c1a2ac03d6682e31b209b06c4143684fc",
+      "packages/calculation-application/src/productionMasterControlAudit.test.ts": "97dfc39a06044d3617c3e2f43ddfedceb69ba1edfbcdf720491012bb956bbdcb",
+      "packages/calculation-application/scripts/audit-oc-matrix.ts": "67184fe028d1ad44fdc40d67c1636cf659d7b899d034fa134282ea6dcd618a8c",
+      "packages/battle-execution/src/executionPlan.ts": "0fc1605d84f5868baa59ea92b5bb9b4601911a648a796a98423f48dc98cc7d34",
+      "packages/battle-execution/src/candidateExecution.ts": "40c2524bcb126704a30e323129dc0cdc7277038c3f97dbd975f28079de6d51fd",
+      "packages/battle-execution/src/candidateStateAudit.ts": "ec8a93e16bd8348ab6e99868ba452c5b3a15996d782721180336dfe10522e7a6",
+      "packages/battle-execution/src/state.ts": "f360fd8a532a28838714c330412527f00aac0627880700baaddbf38265374c81"
+    },
+    "normalRegisteredAudit": {
+      "manifest": ".test-results/2026-09-30T10-12-04-316Z-535-914653/manifest.json",
+      "manifestSha256": "5f089b71d88e98d5e3987a6bc0a826376c452d31a98b9522df3f122f39891499",
+      "files": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0
+      },
+      "tests": {
+        "total": 88,
+        "passed": 88,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "warnings": 0,
+      "completeReceiptCount": 99,
+      "affectedSource": "All final execution and diagnostic owners frozen; refreshed after mandatory architecture repair."
+    },
+    "checkpointAt": "2026-09-30T06:59:32Z",
+    "sessionContinuation": "No new semantic family. Approved atomic2d acceptance started06:53:58; original session60min checkpoint records all current changes/proofs/remaining gates.80-condition satisfied workload is long (~110s ranking per early condition); all six formal processes remain required, no shard/sample/workload substitution.",
+    "sessionBoundaryCheckpoint": {
+      "recordedAt": "2026-09-30T07:43:01Z",
+      "scope": "No new semantic family or child investigation after90min. Already-started formal2d acceptance atomic action continues; no additional implementation.",
+      "head": "f85ef90febba2ef57d214da683fd83fba352f46e",
+      "trackedChanges": 7,
+      "stagedChanges": 0,
+      "performanceStatus": "baseline1 matrix ongoing; all formal3+3, final quality, full receipt reconciliation and local commit remain pending"
+    },
+    "staticScriptCheck": {
+      "format": "passed",
+      "rootTypecheck": "passed",
+      "explicitScriptEslint": "not in configured TS project; project-service parse error. No config/ignore/ratchet changes. Script syntax/execution checked by real retired-input and canonical shard/merge commands; final configured lint remains required."
+    },
+    "finalAcceptance": {
+      "status": "passed",
+      "reconciliationArtifact": ".test-results/tsk-08-final-acceptance-20260930/final-reconciliation.json",
+      "reconciliationBytes": 620020,
+      "reconciliationSha256": "b5009ed09376e3d80b943d570cd2ce4d6d4c32c84ca98246344245025e59ab9c",
+      "manifestCount": 68,
+      "artifactReceiptDeclarationCount": 2490,
+      "uniqueDeclaredArtifactCount": 1415,
+      "manifestOwnReceipts": 68,
+      "errors": [],
+      "performance": {
+        "rankingMedianMs": {
+          "before": 6522.7213120000015,
+          "after": 5279.240440000001,
+          "unit": "ms",
+          "deltaPercent": -19.063835667980168
+        },
+        "matrixWallSeconds": {
+          "before": 1049.34,
+          "after": 841.93,
+          "unit": "seconds",
+          "deltaPercent": -19.76575752377685
+        }
+      },
+      "formalRuns": {
+        "baseline": [
+          {
+            "label": "baseline-1",
+            "rankingMedianMs": 5241.1703,
+            "rankingArtifact": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-ranking.json",
+            "matrixWallSeconds": 1093.41,
+            "matrixManifest": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-matrix/manifest.json"
+          },
+          {
+            "label": "baseline-2",
+            "rankingMedianMs": 6522.7213120000015,
+            "rankingArtifact": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-2-ranking.json",
+            "matrixWallSeconds": 1049.34,
+            "matrixManifest": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-2-matrix/manifest.json"
+          },
+          {
+            "label": "baseline-3",
+            "rankingMedianMs": 6809.317289999999,
+            "rankingArtifact": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-3-ranking.json",
+            "matrixWallSeconds": 1027.08,
+            "matrixManifest": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-3-matrix/manifest.json"
+          }
+        ],
+        "candidate": [
+          {
+            "label": "candidate-1",
+            "rankingMedianMs": 5128.682149,
+            "rankingArtifact": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-1-ranking.json",
+            "matrixWallSeconds": 840.6,
+            "matrixManifest": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-1-matrix/manifest.json"
+          },
+          {
+            "label": "candidate-2",
+            "rankingMedianMs": 5375.249980999999,
+            "rankingArtifact": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-2-ranking.json",
+            "matrixWallSeconds": 847.65,
+            "matrixManifest": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-2-matrix/manifest.json"
+          },
+          {
+            "label": "candidate-3",
+            "rankingMedianMs": 5279.240440000001,
+            "rankingArtifact": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-3-ranking.json",
+            "matrixWallSeconds": 841.93,
+            "matrixManifest": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-3-matrix/manifest.json"
+          }
+        ]
+      },
+      "matrixReferences": [
+        {
+          "label": "baseline-1",
+          "manifest": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-matrix/manifest.json",
+          "sha256": "879af462bd3209ffaf18365a25598bbcf07e008b6164991d65355ad55cb1a95a",
+          "outcomes": {
+            "calculated": 34600,
+            "unavailableUnderPolicy": 40,
+            "inputRequired": 0,
+            "invalid": 0,
+            "unsupported": 0
+          },
+          "digest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+          "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+        },
+        {
+          "label": "baseline-2",
+          "manifest": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-2-matrix/manifest.json",
+          "sha256": "c0622470fa3ca89b1781f9c47fd4e8e935337f3cec135b4de6c491ab9505ef54",
+          "outcomes": {
+            "calculated": 34600,
+            "unavailableUnderPolicy": 40,
+            "inputRequired": 0,
+            "invalid": 0,
+            "unsupported": 0
+          },
+          "digest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+          "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+        },
+        {
+          "label": "baseline-3",
+          "manifest": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-3-matrix/manifest.json",
+          "sha256": "52c41526c36c73d7ec6a1ba26ead075635e29395a1281621dead9855efe5110a",
+          "outcomes": {
+            "calculated": 34600,
+            "unavailableUnderPolicy": 40,
+            "inputRequired": 0,
+            "invalid": 0,
+            "unsupported": 0
+          },
+          "digest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+          "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+        },
+        {
+          "label": "candidate-1",
+          "manifest": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-1-matrix/manifest.json",
+          "sha256": "d78449fabdaf43a916e0d8ea5b2e65b10bb0c7349e52aac0e7863d10b38611d3",
+          "outcomes": {
+            "calculated": 34600,
+            "unavailableUnderPolicy": 40,
+            "inputRequired": 0,
+            "invalid": 0,
+            "unsupported": 0
+          },
+          "digest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+          "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+        },
+        {
+          "label": "candidate-2",
+          "manifest": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-2-matrix/manifest.json",
+          "sha256": "26c729951e41afdada22ff7a68b24d1c0b6c1a3c97089bf62462d9f00261452c",
+          "outcomes": {
+            "calculated": 34600,
+            "unavailableUnderPolicy": 40,
+            "inputRequired": 0,
+            "invalid": 0,
+            "unsupported": 0
+          },
+          "digest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+          "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+        },
+        {
+          "label": "candidate-3",
+          "manifest": ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-3-matrix/manifest.json",
+          "sha256": "a537a6597c85e78d66349081cbacadfa6d7178d83589bfb7bc25782fa9e1c7e7",
+          "outcomes": {
+            "calculated": 34600,
+            "unavailableUnderPolicy": 40,
+            "inputRequired": 0,
+            "invalid": 0,
+            "unsupported": 0
+          },
+          "digest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+          "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+        }
+      ],
+      "protectedRecords": {
+        "conditions": 80,
+        "summariesAndRecordDigestsIdenticalAcrossSixRuns": true,
+        "failedSingleRecordsIdentical": true,
+        "rankingSamplesIdentical": true,
+        "damageDifferences": 0
+      },
+      "sourceExpectationsChanged": false,
+      "inScopeImplementationBlocking": 0,
+      "quality": {
+        "manifest": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/manifest.json",
+        "manifestSha256": "66558345a33b86be5f7a2d1e299307faa3a916a6b387d61aa2f7bed388b4ed78",
+        "outcome": "success",
+        "durationMs": 534875,
+        "affinity": "0-7",
+        "availableParallelism": 8,
+        "steps": [
+          {
+            "id": "format",
+            "code": 0
+          },
+          {
+            "id": "lint",
+            "code": 0
+          },
+          {
+            "id": "typecheck",
+            "code": 0
+          },
+          {
+            "id": "runner",
+            "code": 0
+          },
+          {
+            "id": "docs",
+            "code": 0
+          },
+          {
+            "id": "unit",
+            "code": 0
+          },
+          {
+            "id": "production",
+            "code": 0
+          },
+          {
+            "id": "master",
+            "code": 0
+          },
+          {
+            "id": "build",
+            "code": 0
+          },
+          {
+            "id": "playwright",
+            "code": 0
+          }
+        ],
+        "children": {
+          "unit": {
+            "manifest": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/unit/manifest.json",
+            "tests": {
+              "total": 1526,
+              "passed": 1526,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "warnings": 0,
+            "unexpectedObservations": 0,
+            "artifacts": 552
+          },
+          "production": {
+            "manifest": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/manifest.json",
+            "tests": {
+              "total": 157,
+              "passed": 157,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "warnings": 0,
+            "unexpectedObservations": 0,
+            "artifacts": 19
+          },
+          "playwright": {
+            "manifest": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/playwright/manifest.json",
+            "tests": {
+              "total": 29,
+              "passed": 29,
+              "failed": 0,
+              "skipped": 0,
+              "todo": 0,
+              "retries": 0,
+              "flaky": 0
+            },
+            "warnings": 0,
+            "unexpectedObservations": 0,
+            "artifacts": 19
+          }
+        },
+        "warnings": 0,
+        "unexpectedConsole": 0,
+        "artifactVerificationErrors": [],
+        "sha256": "66558345a33b86be5f7a2d1e299307faa3a916a6b387d61aa2f7bed388b4ed78"
+      },
+      "qualityFirstAttempt": {
+        "manifest": ".test-results/2026-09-30T09-52-17-936Z-17-081333/manifest.json",
+        "outcome": "test_failure",
+        "passed": [
+          "format",
+          "lint",
+          "typecheck",
+          "runner",
+          "docs"
+        ],
+        "unit": {
+          "passed": 1525,
+          "failed": 1,
+          "warnings": 0
+        },
+        "failure": "Inherited architecture line budgets: executionPlan282>280, then candidateExecution428>400. Thresholds unchanged; neither old success nor this stopped quality substitutes final success."
+      },
+      "qualitySecondAttempt": {
+        "manifest": ".test-results/2026-09-30T10-17-22-002Z-16-d2d261/manifest.json",
+        "outcome": "artifact_failure",
+        "unit": {
+          "passed": 1526,
+          "failed": 0,
+          "warnings": 0
+        },
+        "production": {
+          "passed": 156,
+          "failed": 1,
+          "warnings": 0
+        },
+        "failure": "HP primitive first test5353ms exceeded5000ms before two coverage receipts. Quality invoked without planned CPU0-7 affinity: availableParallelism12 -> production50%=6 workers, rather than approved8CPU/4. This failed run is not acceptance."
+      },
+      "executionConditionCorrection": {
+        "actualUnrestrictedCpuCount": 12,
+        "requiredAffinity": "0-7",
+        "requiredAvailableParallelism": 8,
+        "requiredProductionMaxWorkers": 4,
+        "unitMaxWorkers": 4,
+        "auditMaxWorkers": 1,
+        "sourceOrThresholdChanged": false,
+        "diagnosticManifest": ".test-results/2026-09-30T10-26-25-346Z-15-4af76b/manifest.json",
+        "diagnosticTestMs": 2685.855599,
+        "diagnosticQualification": "Target test passed with all receipt checks, but filtered6 other tests were skipped -> overall contract_failure. Retained as timing/readiness diagnostic, never a completed suite gate. Full seven-test HP file then final full quality required.",
+        "fullHpFile": {
+          "manifest": ".test-results/2026-09-30T10-27-19-669Z-15-a66591/manifest.json",
+          "passedTests": 7,
+          "warnings": 0,
+          "firstTestMs": 2862.016122,
+          "receiptErrors": []
+        }
+      },
+      "primitiveInventory": {
+        "artifact": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/hp-cell-inventory.json",
+        "sources": 486,
+        "cells": 7470,
+        "digest": "1864025c74b5ab87aeb57d173e4c92126dedb47c6b0b574e22f920d39a1aca55",
+        "bytes": 15858817,
+        "sha256": "e75e1a6df8f357761d3c18300b52c7194b6f64010578df1884ac7832089054b2",
+        "receiptOwner": "independent disk receipt for preserved raw primitive inventory; not a runner-declared artifact"
+      },
+      "publicProofs": [
+        {
+          "artifact": ".test-results/2026-09-30T10-12-04-316Z-535-914653/production-hp-operation-evidence.json",
+          "bytes": 3745283,
+          "sha256": "8c7f21e35155f09c13c9e065e5bbb89cf5931a81239875373a069312d28cacb0",
+          "originalArtifact": ".test-results/2026-09-30T02-41-45-811Z-2-20d7d6/production-hp-operation-evidence.json",
+          "equal": true
+        },
+        {
+          "artifact": ".test-results/2026-09-30T10-12-04-316Z-535-914653/production-hp-published-dependency.json",
+          "bytes": 13843717,
+          "sha256": "da5f0bed664c31b46226bd881d1cfa0caa1b076739e1b8c6b864aef61af707fe",
+          "originalArtifact": ".test-results/2026-09-30T02-41-45-811Z-2-20d7d6/production-hp-published-dependency.json",
+          "equal": true
+        }
+      ],
+      "independentHpDiskReceipts": [
+        {
+          "path": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/hp-cell-inventory.json",
+          "format": "json",
+          "allowEmpty": false,
+          "bytes": 15858817,
+          "sha256": "e75e1a6df8f357761d3c18300b52c7194b6f64010578df1884ac7832089054b2",
+          "focusedSourceArtifact": ".test-results/2026-09-30T10-27-19-669Z-15-a66591/hp-cell-inventory.json",
+          "byteIdentical": true,
+          "owner": "independent disk receipt, distinct from runner declarations"
+        },
+        {
+          "path": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/hp-calculator-paths.json",
+          "format": "json",
+          "allowEmpty": false,
+          "bytes": 76442496,
+          "sha256": "1b6489abcec764eef5c8fca000a68f4c166315bbedd632871a7efadd0bd3b0f7",
+          "focusedSourceArtifact": ".test-results/2026-09-30T10-27-19-669Z-15-a66591/hp-calculator-paths.json",
+          "byteIdentical": true,
+          "owner": "independent disk receipt, distinct from runner declarations"
+        },
+        {
+          "path": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/hp-ranking-paths.json",
+          "format": "json",
+          "allowEmpty": false,
+          "bytes": 454523,
+          "sha256": "0ccf3fcf069eda94872f00455af55263e26e85462c6d89324ad026e42590a2da",
+          "focusedSourceArtifact": ".test-results/2026-09-30T10-27-19-669Z-15-a66591/hp-ranking-paths.json",
+          "byteIdentical": true,
+          "owner": "independent disk receipt, distinct from runner declarations"
+        },
+        {
+          "path": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/hp-craft-essence-paths.json",
+          "format": "json",
+          "allowEmpty": false,
+          "bytes": 2633580,
+          "sha256": "be4c70c99862441030e3379a8f306f20d9310542191f39371a047786fabac729",
+          "focusedSourceArtifact": ".test-results/2026-09-30T10-27-19-669Z-15-a66591/hp-craft-essence-paths.json",
+          "byteIdentical": true,
+          "owner": "independent disk receipt, distinct from runner declarations"
+        },
+        {
+          "path": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/hp-support-paths.json",
+          "format": "json",
+          "allowEmpty": false,
+          "bytes": 1201235,
+          "sha256": "8be7cf6f603a61d407f488aa2c6cb40667a38307f3fc3fb2365f06f1d8c120f7",
+          "focusedSourceArtifact": ".test-results/2026-09-30T10-27-19-669Z-15-a66591/hp-support-paths.json",
+          "byteIdentical": true,
+          "owner": "independent disk receipt, distinct from runner declarations"
+        }
+      ],
+      "contracts": {
+        "TS-AUDIT-001": {
+          "status": "passed",
+          "command": "taskset -c 0-7 pnpm quality (production) + pnpm test:audit",
+          "artifacts": [
+            ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/manifest.json",
+            ".test-results/2026-09-30T10-12-04-316Z-535-914653/manifest.json"
+          ]
+        },
+        "TS-OUT-001": {
+          "status": "passed",
+          "command": "six final-source live class probes; README quality runner contracts",
+          "artifacts": [
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/six-class-probes.json",
+            ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/steps/runner.stdout.log"
+          ]
+        },
+        "TS-ART-001": {
+          "status": "passed",
+          "command": "existing verifyArtifactFiles for every declaration/manifest receipt and preserved primitive disk artifact",
+          "artifacts": [
+            ".test-results/tsk-08-final-acceptance-20260930/final-reconciliation.json"
+          ]
+        },
+        "RK-AUDIT-001": {
+          "status": "passed",
+          "command": "existing canonical8shards(max4,two waves)+merge; all80 calculator/ranking/portable parity, final-status and transaction gates",
+          "artifacts": [
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-1-matrix/manifest.json",
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-2-matrix/manifest.json",
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-3-matrix/manifest.json"
+          ]
+        },
+        "RK-PERF-001": {
+          "status": "passed",
+          "command": "same original measure-ranking-resources workload, CPU0-7, separate3 processes each side",
+          "comparison": {
+            "before": 6522.7213120000015,
+            "after": 5279.240440000001,
+            "unit": "ms",
+            "deltaPercent": -19.063835667980168
+          },
+          "artifacts": [
+            ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-ranking.json",
+            ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-2-ranking.json",
+            ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-3-ranking.json",
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-1-ranking.json",
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-2-ranking.json",
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-3-ranking.json"
+          ]
+        },
+        "TS-PERF-002": {
+          "status": "passed",
+          "command": "same canonical80condition workload/max4/two waves, CPU0-7, separate3 coordinator processes each side",
+          "comparison": {
+            "before": 1049.34,
+            "after": 841.93,
+            "unit": "seconds",
+            "deltaPercent": -19.76575752377685
+          },
+          "artifacts": [
+            ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-matrix/manifest.json",
+            ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-2-matrix/manifest.json",
+            ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-3-matrix/manifest.json",
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-1-matrix/manifest.json",
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-2-matrix/manifest.json",
+            ".test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-3-matrix/manifest.json"
+          ]
+        },
+        "DX-HANDOFF-001": {
+          "status": "passed",
+          "command": "taskset -c 0-7 pnpm quality; result-only canonical record updates with docs verification",
+          "artifacts": [
+            ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/manifest.json"
+          ]
+        }
+      },
+      "inputLifecycle": [
+        {
+          "id": 1,
+          "owner": "Explicit suite-local strict input owner",
+          "result": "Established: unchanged current schema/read failure propagation/frozen borrowing and source lifetime; final production157 includes input fixtures and exact shared1/1/1 counters.",
+          "artifact": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/manifest.json"
+        },
+        {
+          "id": 2,
+          "owner": "HP primitive inventory and canonical declaration inventory",
+          "result": "Established:486 sources/7470 cells and prior digest retained; seven declaration kinds inventoried without inferring physical readers from cell selection.",
+          "artifact": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/hp-cell-inventory.json",
+          "proofArtifact": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/hp-proof-coverage.json"
+        },
+        {
+          "id": 3,
+          "owner": "Completed HP/resource/marker/actor-form/scalar/BP execution slices",
+          "result": "Established within original scopes: final unit1526 and production157 exercise original forward/reject/rollback/NP/portable paths; all canonical80 records remain unchanged.",
+          "artifact": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/unit/manifest.json"
+        },
+        {
+          "id": 4,
+          "owner": "Original request/native selection and physical consumer owners",
+          "result": "Closed by finite seven-kind rule/phase/consumer reconciliation and byte-identical published original-request ledgers.141 declarations outside this control-owner request population stay explicit; not productionZero or normal nonselection. Classification unresolved0.",
+          "artifact": ".test-results/2026-09-30T10-12-04-316Z-535-914653/production-hp-operation-evidence.json",
+          "dependencyArtifact": ".test-results/2026-09-30T10-12-04-316Z-535-914653/production-hp-published-dependency.json"
+        },
+        {
+          "id": 5,
+          "owner": "Typed parity/final-outcome/transaction/control/read diagnostic gates",
+          "result": "Closed: six actual execution failure classes have independent expected requests, typed reason/canonical first difference, bounded summary, complete artifact and distinct verified manifests. Observation sensitivity alone is excluded.",
+          "artifact": ".test-results/tsk-08-final-acceptance-20260930/structural-final/six-class-probes.json"
+        },
+        {
+          "id": 6,
+          "owner": "Current input/audit producers and historical raw evidence owners",
+          "result": "Closed:13 duplicate read/projection calls removed earlier; obsolete noncanonical full single CLI branch retired. Exhaustive candidate dispositions retain distinct current assertions, rawOC167/632/public join and all9 reproduced dc798b3 historical digests.",
+          "artifact": ".test-results/tsk-08-final-acceptance-20260930/historical/baseline.json"
+        },
+        {
+          "id": 7,
+          "owner": "Final acceptance/quality/receipt/performance owners",
+          "result": "Closed: full README quality, registered audit88, same-input before/after3 independent formal runs, shared inventory/digest/80conditions/parity/fail-closed, protected counters and every final manifest/declaration/disk receipt reconciled.",
+          "artifact": ".test-results/tsk-08-final-acceptance-20260930/final-reconciliation.json",
+          "quality": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/manifest.json"
+        },
+        {
+          "id": 8,
+          "owner": "Application command recovery and native/ordered alternate consumers",
+          "result": "Closed using existing actual command-linked recovery proofs and final-source OC rejection/live stale reader witnesses. No synthetic later grant added to ten public terminal requests; only rule-applicable consumer transitions required.",
+          "artifact": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/unit/hp-recovery-command-edges.json",
+          "ocArtifact": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/unit/hp-oc-rate-live-reads.json",
+          "classArtifact": ".test-results/2026-09-30T10-28-44-838Z-16-86ccc0/unit/hp-execution-class-witnesses.json"
+        }
+      ],
+      "documentationVerification": {
+        "commands": [
+          "git diff --check",
+          "pnpm exec prettier --check docs/tasks/development-redesign-tasks.md docs/evidence/tsk-08-parity-ratchet.json docs/evidence/test-ranking-baseline-tsk-00.md",
+          "pnpm test:docs"
+        ],
+        "outcome": "passed",
+        "qualification": "Result-only Task/evidence fields have no product or performance input caller (source/scripts/e2e reference search0). Full quality source/test/config/master/TSK-06.5 input remained frozen. These two docs-command log disk receipts are recorded separately from the68 domain/final-quality manifests and2490 acceptance declarations.",
+        "diskReceipts": [
+          {
+            "path": ".test-results/tsk-08-final-acceptance-20260930/final-docs.stdout.log",
+            "bytes": 527,
+            "sha256": "995800238ddf6d304e10acb7f3de49d8b3ebba1a55fc08dd0f3c24852c7fb03c"
+          },
+          {
+            "path": ".test-results/tsk-08-final-acceptance-20260930/final-docs.stderr.log",
+            "bytes": 81,
+            "sha256": "08ca8cc422b43c1d66290de303d3e4bb4c2bd8df1969326c85eb6eeb276b2307"
+          }
+        ]
+      }
+    },
+    "architectureGateRepair": {
+      "scope": "Final mandatory quality repair, existing owners only. No additional game semantics, function call or state operation. appendModifier unchanged body moves to state; recordCandidatePreflight unchanged body moves to candidateStateAudit. executionPlan uses the same canonical EffectExecutionOperation type directly and merges duplicate sourceCollection imports.",
+      "governingInvariant": "Existing execution responsibility boundaries and fixed280/400/250 line limits; transactional state, modifier ordering and preflight outcome remain identical.",
+      "directCaller": "candidateExecution::executeOrderedScenarioCandidateInternal; compileExecutionPlan unchanged runtime body",
+      "focusedManifest": ".test-results/2026-09-30T10-04-56-036Z-44-66c2f3/manifest.json",
+      "tests": 9,
+      "warnings": 0,
+      "verification": "Refresh all six live failure probes and registered audit, final quality, then three candidate ranking/canonical matrix processes on this final source. Valid baseline three runs retained; previous candidate runs retained as earlier-source diagnostics only.",
+      "finalProbeArtifact": ".test-results/tsk-08-final-acceptance-20260930/structural-final/six-class-probes.json",
+      "registeredAudit": ".test-results/2026-09-30T10-12-04-316Z-535-914653/manifest.json",
+      "discardedInvocation": "An extra pnpm argument separator forwarded to Vitest selected the full unit suite; this invocation was stopped, logs retained under structural-final/cancelled-invocation, and not counted as a scoped final probe. Corrected six focused invocations and registered audit all completed.",
+      "finalAcceptanceReference": "approvedClosureImplementation.finalAcceptance"
+    },
+    "normalRegisteredAuditBeforeArchitectureRepair": {
+      "manifest": ".test-results/2026-09-30T06-46-26-585Z-15-7c32ca/manifest.json",
+      "manifestSha256": "3869d9c9af83beff99c55698027cded850eb9b289225f23ba94c971709ea8664",
+      "files": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0
+      },
+      "tests": {
+        "total": 88,
+        "passed": 88,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "warnings": 0,
+      "completeReceiptCount": 99,
+      "affectedSource": "Four production diagnostic modules/tests frozen; later parity test-only change is outside audit registration/inputs."
+    },
+    "completedAt": "2026-09-30T11:25:39.653Z",
+    "localCommit": {
+      "scope": [
+        "docs/evidence/test-ranking-baseline-tsk-00.md",
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/tasks/development-redesign-tasks.md",
+        "packages/battle-execution/src/candidateExecution.ts",
+        "packages/battle-execution/src/candidateStateAudit.ts",
+        "packages/battle-execution/src/executionPlan.ts",
+        "packages/battle-execution/src/state.ts",
+        "packages/calculation-application/scripts/audit-oc-matrix.ts",
+        "packages/calculation-application/src/productionClosureAudit.test.ts",
+        "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts",
+        "packages/calculation-application/src/productionMasterControlAudit.test.ts",
+        "packages/calculation-application/src/productionParityDiagnostics.ts"
+      ],
+      "startHead": "f85ef90febba2ef57d214da683fd83fba352f46e",
+      "delivery": "This canonical result is included with the12 reviewed scope files in the local closure commit. The enclosing Git commit identifies the complete record; source hashes/manifest identities are pinned here.",
+      "push": false,
+      "tsk09Work": false
+    }
   }
 }

@@ -34,6 +34,136 @@ import type {
   CalculationApplicationResult,
   CalculationExecutionObservation,
 } from './scenario';
+import type { PreNoblePhantasmState, PreparationTransitionResult } from '@fgo-lab/battle-execution';
+import { scalarQuantitySnapshot } from './productionScalarQuantityAudit';
+
+/** Captured before the real reducer call; a rejected command retains the committed prefix. */
+export interface ProductionPreparationRejectionWitness {
+  canonicalIdentity: string;
+  before: PreNoblePhantasmState;
+  beforeSnapshot: PreNoblePhantasmState;
+  result: PreparationTransitionResult;
+  attempted: readonly PreNoblePhantasmState[];
+}
+
+export function auditProductionPreparationRejections(
+  witnesses: readonly ProductionPreparationRejectionWitness[],
+  expectedIdentities: readonly string[],
+) {
+  const failures: {
+    reason:
+      | 'preparationRejectedStateMismatch'
+      | 'preparationRejectedStateIdentityMismatch'
+      | 'preparationRejectionCoverageMismatch';
+    canonicalIdentity: string;
+    firstDifference: CanonicalAuditDifference;
+  }[] = [];
+  const coverage = firstCanonicalAuditDifference(
+    [
+      {
+        identity: 'tsk-08:preparation-rejections',
+        value: { identities: expectedIdentities, nonempty: true, unique: true },
+      },
+    ],
+    [
+      {
+        identity: 'tsk-08:preparation-rejections',
+        value: {
+          identities: witnesses.map((witness) => witness.canonicalIdentity),
+          nonempty: expectedIdentities.length > 0,
+          unique: new Set(expectedIdentities).size === expectedIdentities.length,
+        },
+      },
+    ],
+  );
+  if (coverage)
+    failures.push({
+      reason: 'preparationRejectionCoverageMismatch',
+      canonicalIdentity: coverage.identity,
+      firstDifference: coverage,
+    });
+  const rows = witnesses.map((witness) => {
+    const rejected = witness.result.status === 'rejected';
+    const witnessContract = firstCanonicalAuditDifference(
+      [
+        {
+          identity: witness.canonicalIdentity,
+          value: { status: 'rejected', snapshotIndependent: true },
+        },
+      ],
+      [
+        {
+          identity: witness.canonicalIdentity,
+          value: {
+            status: witness.result.status,
+            snapshotIndependent: witness.beforeSnapshot !== witness.before,
+          },
+        },
+      ],
+    );
+    if (witnessContract)
+      failures.push({
+        reason: 'preparationRejectionCoverageMismatch',
+        canonicalIdentity: witness.canonicalIdentity,
+        firstDifference: witnessContract,
+      });
+    const stateRetained = witness.result.state === witness.before;
+    const firstDifference = firstCanonicalAuditDifference(
+      [
+        {
+          identity: witness.canonicalIdentity,
+          value: scalarQuantitySnapshot(witness.beforeSnapshot),
+        },
+      ],
+      [
+        {
+          identity: witness.canonicalIdentity,
+          value: scalarQuantitySnapshot(witness.result.state),
+        },
+      ],
+    );
+    if (rejected && firstDifference)
+      failures.push({
+        reason: 'preparationRejectedStateMismatch',
+        canonicalIdentity: witness.canonicalIdentity,
+        firstDifference,
+      });
+    if (rejected && !stateRetained)
+      failures.push({
+        reason: 'preparationRejectedStateIdentityMismatch',
+        canonicalIdentity: witness.canonicalIdentity,
+        firstDifference: firstCanonicalAuditDifference(
+          [{ identity: witness.canonicalIdentity, value: { stateRetained: true } }],
+          [{ identity: witness.canonicalIdentity, value: { stateRetained } }],
+        )!,
+      });
+    return {
+      canonicalIdentity: witness.canonicalIdentity,
+      status: witness.result.status,
+      stateRetained,
+      firstDifference,
+      changedAttempts: witness.attempted.filter(
+        (attempt) =>
+          firstCanonicalAuditDifference(
+            [
+              {
+                identity: witness.canonicalIdentity,
+                value: scalarQuantitySnapshot(witness.beforeSnapshot),
+              },
+            ],
+            [{ identity: witness.canonicalIdentity, value: scalarQuantitySnapshot(attempt) }],
+          ) !== null,
+      ).length,
+    };
+  });
+  return {
+    canonicalIdentity: 'tsk-08:preparation-rejections' as const,
+    status: failures.length ? ('failed' as const) : ('passed' as const),
+    rows,
+    failures,
+    firstDifference: failures[0]?.firstDifference ?? null,
+  };
+}
 
 export type ProductionParityPath = 'calculator' | 'portable';
 

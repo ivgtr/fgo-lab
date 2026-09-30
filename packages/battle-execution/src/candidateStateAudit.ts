@@ -7,7 +7,7 @@ import type {
   OperationResult,
 } from './contracts';
 import type { ConditionReadAudit } from './condition';
-import type { ReadyCandidateExecution } from './candidatePreparation';
+import type { PreparedCandidateExecution, ReadyCandidateExecution } from './candidatePreparation';
 import type {
   OrderedCandidateStateAudit,
   OrderedExecutionGroupAuditEvent,
@@ -24,6 +24,17 @@ export interface MutableCandidateStateAudit {
   inputQuantityReads: OrderedInputQuantityReadAuditEvent[];
   battlePointPhaseReads: OrderedBattlePointPhaseReadAuditEvent[];
   scalarNpConsumptions: OrderedCandidateStateAudit['scalarNpConsumptions'][number][];
+}
+
+export function recordCandidatePreflight(
+  audit: MutableCandidateStateAudit | undefined,
+  candidate: PreparedCandidateExecution,
+): void {
+  if (!audit) return;
+  audit.preflight =
+    candidate.status === 'invalidActivationContext'
+      ? { status: 'aborted', issues: candidate.issues }
+      : { status: 'ready' };
 }
 
 export function appendConditionReadAudit(

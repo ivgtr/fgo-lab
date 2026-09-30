@@ -5,12 +5,7 @@ import {
   captureHpValueRead,
   resolveObservedModifierValue,
 } from './hpExecutionObservation';
-import type {
-  ExecutableBattleState,
-  ExecutionIssue,
-  OperationResult,
-  BattleOperation,
-} from './contracts';
+import type { ExecutionIssue, OperationResult } from './contracts';
 import { markerOperationDisposition, applyOrderedMarkerMutation } from './markerExecution';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
 import {
@@ -18,6 +13,7 @@ import {
   applyTraitAddition,
   applyTraitRemoval,
   cloneBattleState,
+  appendModifier,
 } from './state';
 import type { TargetCandidate } from './targetContext';
 import type {
@@ -26,7 +22,7 @@ import type {
   ResolvedCanonicalInputSet,
   ContributionApplicationPolicy,
 } from './executionTypes';
-import { prepareCandidateExecution, type PreparedCandidateExecution } from './candidatePreparation';
+import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
 import { assembleInvalidActivationResult } from './candidateFailure';
 import { markOperationGroupUnsupported } from './candidateRollback';
@@ -56,28 +52,11 @@ import {
   collectAppliedOperationIds,
   appendExecutionGroupAudit,
   recordPreGroupContextResolution,
+  recordCandidatePreflight,
   type MutableCandidateStateAudit,
   type PendingMutationAuditEvent,
   type CandidateExecutionWithAudit,
 } from './candidateStateAudit';
-
-function appendModifier(
-  state: ExecutableBattleState,
-  operation: Extract<BattleOperation, { kind: 'addModifier' }>,
-  value: number,
-): void {
-  state.modifiers = [
-    ...state.modifiers,
-    {
-      operationId: operation.operationId,
-      source: operation.source,
-      modifier: operation.modifier,
-      valuePermille: value,
-      card: operation.card,
-      order: operation.order,
-    },
-  ];
-}
 
 export function executeOrderedScenarioCandidates(
   prepared: PreparedOrderedScenario,
@@ -137,17 +116,6 @@ export function executeOrderedScenarioCandidate(
     targetCandidate,
     contributionPolicy,
   );
-}
-
-function recordCandidatePreflight(
-  audit: MutableCandidateStateAudit | undefined,
-  candidate: PreparedCandidateExecution,
-): void {
-  if (!audit) return;
-  audit.preflight =
-    candidate.status === 'invalidActivationContext'
-      ? { status: 'aborted', issues: candidate.issues }
-      : { status: 'ready' };
 }
 
 function executeOrderedScenarioCandidateInternal(

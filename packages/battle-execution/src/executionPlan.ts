@@ -3,6 +3,7 @@ import {
   getBaseNoblePhantasmGroup,
   getBaseNoblePhantasmVariantForForm,
   findActorForm,
+  type EffectExecutionOperation,
   type MasterDataSnapshot,
 } from '@fgo-lab/master-data';
 import { servantAttribute } from '@fgo-lab/calc-core';
@@ -20,7 +21,7 @@ import {
   compileEffectCondition,
   runtimeInputDefinitionsForSource,
 } from './operationCompiler';
-import { collectOperationSources } from './sourceCollection';
+import { collectOperationSources, type ResolvedAttackerFormExecution } from './sourceCollection';
 import {
   activationRequirementOwnerSelected,
   collectActivationRequirementOwners,
@@ -29,7 +30,6 @@ import { resolveTargetCandidates } from './targetContext';
 import { compileNoblePhantasmDamageOperation } from './npDamageCompilation';
 import { effectChangesPreparation } from './preparationTransaction';
 import { operationSourceFor, retainCompiledSources } from './executionSourceObservation';
-import type { ResolvedAttackerFormExecution } from './sourceCollection';
 import { closeResourceMutationSemantics } from './resourceSemantics';
 export function compileExecutionPlan(
   baseInput: DamageResolutionInput,
@@ -264,10 +264,7 @@ export function compileExecutionPlan(
     battlePointDomains: master.battlePointDomains,
     appliedPreparationActions: collected.formExecution?.actions ?? [],
   };
-  const sourceOperations = new Map<
-    string,
-    NonNullable<ReturnType<typeof operationSourceFor>> | null
-  >();
+  const sourceOperations = new Map<string, EffectExecutionOperation | null>();
   for (const operation of compiledOperations) {
     const original = operationSourceFor(operation);
     if (!original) continue;

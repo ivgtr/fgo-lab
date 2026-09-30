@@ -10,6 +10,8 @@ implementation_task: "docs/tasks/development-redesign-tasks.md TSK-00"
 
 # TSK-00 test and ranking baseline
 
+再現境界（TSK-08で確認、2026-09-30）: 本reportのauditor・master・test・PNGはcommit `dc798b3` の完全snapshotで再現する。そこで `node packages/data-pipeline/scripts/audit-tsk00-baseline.mjs --check` が全9 digest一致・exit0となった。現行checkoutの同名scriptは期待値改訂後も旧readerを含み、現行schemaの監査には使用しない。固有の歴史的assertionは保持し、旧形式fallbackは追加しない。再現artifactとSHAは [TSK-08 evidence](tsk-08-parity-ratchet.json) の `approvedClosureImplementation.legacyDisposition.historicalBoundary` を参照。
+
 ## 1. Baseline identity and scope
 
 TSK-00開始時のHEADは`a49591996cd0951cc82109c252d96e2fd3991fd9`、working treeはcleanだった。本reportはtest／CI／production auditの現状を固定するだけで、data pipeline、canonical IR、application、battle execution、ranking policy、Webのproduct semanticsを変更しない。

@@ -4,18 +4,13 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { verifyArtifactFiles } from '../../../scripts/test-observation-lib.mjs';
-import {
-  connectProductionAuditMatrix,
-  createTsk065ProductionAuditSource,
-  firstCanonicalAuditDifference,
-} from '@fgo-lab/master-data/production-audit';
+import { firstCanonicalAuditDifference } from '@fgo-lab/master-data/production-audit';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { auditProductionClosure, productionClosureConditions } from '../src/productionClosureAudit';
 import {
   auditProductionPreparationTransactionObservations,
   evaluateProductionFinalOutcomeGate,
   evaluateProductionPreparationTransactionGate,
-  evaluateProductionParityGate,
   type ProductionFinalProfileOutcome,
   type ProductionPreparationTransactionObservation,
 } from '../src/productionParityDiagnostics';
@@ -57,17 +52,19 @@ async function audit(): Promise<void> {
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
   };
-  const shardCount = Number(process.env['FGO_AUDIT_SHARDS'] ?? '1');
+  const shardCount = Number(process.env['FGO_AUDIT_SHARDS'] ?? '0');
   const shardIndex = Number(process.env['FGO_AUDIT_SHARD'] ?? '0');
   if (
     !Number.isSafeInteger(shardCount) ||
-    (shardCount !== 1 && shardCount !== RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT) ||
+    shardCount !== RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT ||
     !Number.isSafeInteger(shardIndex) ||
     shardIndex < 0 ||
     shardIndex >= shardCount
   )
-    throw new TypeError(`invalid_audit_shard:${String(shardIndex)}/${String(shardCount)}`);
-  manifestName = shardCount === 1 ? 'manifest.json' : `manifest-shard-${String(shardIndex)}.json`;
+    throw new TypeError(
+      `invalid_audit_shard:${String(shardIndex)}/${String(shardCount)}; require FGO_AUDIT_SHARDS=8 and FGO_AUDIT_SHARD=0..7, then merge-oc-matrix.ts`,
+    );
+  manifestName = `manifest-shard-${String(shardIndex)}.json`;
   const selectedConditions = productionClosureConditions().filter(
     (_, index) => index % shardCount === shardIndex,
   );
@@ -138,19 +135,6 @@ async function audit(): Promise<void> {
     selectedConditions,
   );
   failureArtifact = { output, identity, audit, stage: 'build-parity-gate' };
-  const source =
-    shardCount === 1
-      ? createTsk065ProductionAuditSource(
-          JSON.parse(
-            await readFile(resolve(root, 'docs/evidence/tsk-06-5-production-closure.json'), 'utf8'),
-          ),
-          {
-            masterDataVersion: master.version,
-            artifact: 'docs/evidence/tsk-06-5-production-closure.json',
-          },
-        )
-      : null;
-  const parityGate = source ? evaluateProductionParityGate(source, audit) : null;
   const finalOutcomeGate = evaluateProductionFinalOutcomeGate({
     outcomes: audit.outcomes,
     failures: finalProfileFailures,
@@ -193,8 +177,6 @@ async function audit(): Promise<void> {
     ...artifactVerificationResult,
     firstDifference: artifactDifference,
   };
-  const sharedAuditModel =
-    source && parityGate?.status === 'passed' ? connectProductionAuditMatrix(source, audit) : null;
   failureArtifact = {
     identity,
     audit,
@@ -204,8 +186,6 @@ async function audit(): Promise<void> {
       finalProfileOutcomes: finalOutcomeGate,
       preparationTransactions: preparationTransactionGate,
     },
-    ...(parityGate ? { parityGate } : {}),
-    ...(sharedAuditModel ? { sharedAuditModel } : {}),
     stage: 'production-parity-gate',
   };
 
@@ -213,14 +193,6 @@ async function audit(): Promise<void> {
     throw new TypeError(
       `production_condition_artifact_verification:${artifactVerification.errors.join(',')}`,
     );
-
-  if (parityGate?.status === 'failed') {
-    if (parityGate.reason === 'parityFailure')
-      throw new Error(`matrix_parity_failures:${String(parityGate.failures.length)}`);
-    throw new TypeError(
-      `production_parity_gate:${parityGate.canonicalIdentity}:${parityGate.firstDifference.path || '<record>'}`,
-    );
-  }
 
   if (finalOutcomeGate.status === 'failed')
     throw new TypeError(
@@ -255,8 +227,6 @@ async function audit(): Promise<void> {
           finalProfileOutcomes: finalOutcomeGate,
           preparationTransactions: preparationTransactionGate,
         },
-        ...(parityGate ? { parityGate } : {}),
-        ...(sharedAuditModel ? { sharedAuditModel } : {}),
       },
       null,
       2,

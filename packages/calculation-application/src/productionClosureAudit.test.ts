@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
+import * as portableOwner from './portableCalculation';
+import * as scenarioOwner from './scenario';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { createTsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import type {
@@ -242,6 +244,57 @@ it(
       eligibility: {} as typeof matrixInput.eligibility,
       parityFailures: [],
     });
+    const portableRequests: {
+      original: Parameters<typeof portableOwner.executePortableCalculation>[0];
+      forwarded: Parameters<typeof portableOwner.executePortableCalculation>[0];
+      preparedScenarios: Parameters<typeof scenarioOwner.prepareCalculationScenarioWithPolicy>[0][];
+      result: ReturnType<typeof portableOwner.executePortableCalculation>;
+    }[] = [];
+    const realPortable = portableOwner.executePortableCalculation;
+    const fault = vi
+      .spyOn(portableOwner, 'executePortableCalculation')
+      .mockImplementation((request, data) => {
+        const forwarded = structuredClone(request);
+        const preparedScenarios: Parameters<
+          typeof scenarioOwner.prepareCalculationScenarioWithPolicy
+        >[0][] = [];
+        const realPrepare = scenarioOwner.prepareCalculationScenarioWithPolicy;
+        const preparationFault = vi
+          .spyOn(scenarioOwner, 'prepareCalculationScenarioWithPolicy')
+          .mockImplementation((scenario, ...args) => {
+            const changed = structuredClone(scenario);
+            if (portableRequests.length === 0 && changed.mode === 'resolved')
+              changed.attacker.fouAtk += 1;
+            preparedScenarios.push(changed);
+            return realPrepare(changed, ...args);
+          });
+        try {
+          const result = realPortable(forwarded, data);
+          portableRequests.push({ original: request, forwarded, preparedScenarios, result });
+          return result;
+        } finally {
+          preparationFault.mockRestore();
+        }
+      });
+    let executionParity;
+    try {
+      executionParity = await auditProductionClosure(
+        master,
+        { servantBuilds: {} },
+        {
+          schemaVersion: SCHEMA_VERSION,
+          engineVersion: ENGINE_VERSION,
+          appVersion: APP_VERSION,
+          masterDataVersion: master.version,
+          gameRegion: 'JP',
+          masterDataLocale: 'ja-JP',
+        },
+        undefined,
+        conditions.slice(0, 1),
+      );
+    } finally {
+      fault.mockRestore();
+    }
     await writeParityDiagnosticArtifact(task.meta, {
       schemaVersion: 1,
       boundary: 'calculation-application-production-parity',
@@ -257,8 +310,26 @@ it(
       comparisons: { canonicalFailure, statusFailure, matchingParity },
       failures: [canonicalFailure, statusFailure].filter(Boolean),
       firstDifference: canonicalFailure?.firstDifference,
+      executionFailure: { portableRequests, audit: executionParity },
     });
-    assertFailureProbe('parity', parityGate);
+    assertFailureProbe('parityGateSensitivity', parityGate);
+    expect(portableRequests.length).toBeGreaterThan(0);
+    expect(executionParity.parityFailures).toHaveLength(1);
+    expect(executionParity.parityFailures[0]).toMatchObject({
+      path: 'portable',
+      reason: 'canonicalMismatch',
+      firstDifference: { path: 'input.fouAtk', expected: 1000, actual: 1001 },
+    });
+    if (process.env['FGO_TSK08_FAILURE_CLASS_PROBE'] === 'parity')
+      expect(
+        executionParity.parityFailures,
+        JSON.stringify({
+          failureClass: 'parity',
+          reason: executionParity.parityFailures[0]?.reason,
+          canonicalIdentity: executionParity.parityFailures[0]?.canonicalIdentity,
+          firstDifference: executionParity.parityFailures[0]?.firstDifference,
+        }),
+      ).toEqual([]);
     expect(conditionCount).toBe(80);
     expect(uniqueConditionCount).toBe(80);
     expect(conditionInputsLegal).toBe(true);
@@ -431,8 +502,8 @@ it(
         intentionalFailures: [failed, missingIdentity, duplicateIdentity],
       },
     );
-    assertFailureProbe('unsupported', failed, 'finalProfileStatusPresent');
-    if (process.env['FGO_TSK08_FAILURE_CLASS_PROBE'] === 'invalid') {
+    assertFailureProbe('unsupportedGateSensitivity', failed, 'finalProfileStatusPresent');
+    if (process.env['FGO_TSK08_FAILURE_CLASS_PROBE'] === 'invalidGateSensitivity') {
       const invalidFailure = failed.failures.find(
         (failure) => failure.reason === 'finalProfileStatusPresent' && failure.status === 'invalid',
       );
@@ -689,8 +760,7 @@ it(
       passing,
       intentionalFailures: [partialCommit, failed, missingProfile, discontinuousResource],
     });
-    assertFailureProbe('partialCommit', partialCommit);
-    assertFailureProbe('staleMutation', failed);
+    // Receipt/resource sensitivity is distinct from execution-level rejection and stale reads.
     expect(partialCommit).toMatchObject({
       status: 'failed',
       firstDifference: {

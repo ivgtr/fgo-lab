@@ -148,7 +148,8 @@ import {
   type CalculationScenario,
   type VersionContext,
 } from '@fgo-lab/schema';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import * as operationOwner from '../../battle-execution/src/candidateOperationContext';
 import {
   applyEffectConditionDecision,
   applyEffectControlPresentationDecision,
@@ -1883,6 +1884,62 @@ describe('production master inventory ratchet', () => {
       const inertOperationObservation: ProductionUserControlObservation | null = originalOperation
         ? { ...originalOperation, excluded: originalOperation.enabled }
         : null;
+      // Fault the live selection owner and consume its real execution result.
+      // The original excluded command and saved observations remain intact.
+      let inertExecution: {
+        request: NonNullable<typeof operationOriginalRequest>;
+        prepared: ReturnType<typeof prepareCalculationScenarioWithPolicy>;
+        calculation: ReturnType<typeof requireExecutableCalculation>;
+        observation: ProductionUserControlObservation;
+        selectionCalls: number;
+      } | null = null;
+      if (operationOriginalRequest && originalOperation) {
+        const request = operationOriginalRequest;
+        const decisionKey =
+          request.projection.decision.state === 'enabled'
+            ? request.projection.decision.decisionKey
+            : null;
+        if (decisionKey === null) throw new TypeError('inert_execution_decision_missing');
+        const realEnabled = operationOwner.operationEnabled;
+        let selectionCalls = 0;
+        const fault = vi.spyOn(operationOwner, 'operationEnabled').mockImplementation((...args) => {
+          if (args[1].decisionKey === decisionKey) {
+            selectionCalls++;
+            return true;
+          }
+          return realEnabled(...args);
+        });
+        try {
+          const prepared = prepareCalculationScenarioWithPolicy(
+            request.excludedScenario,
+            master,
+            { kind: 'calculator' },
+            {},
+            true,
+          );
+          const calculation = requireExecutableCalculation(
+            evaluatePreparedCalculationScenario(prepared, versions),
+          );
+          if (!calculation.executionObservation)
+            throw new TypeError('inert_execution_capture_missing');
+          inertExecution = {
+            request,
+            prepared,
+            calculation,
+            observation: {
+              ...originalOperation,
+              excluded: userControlSideObservation(
+                request.projection,
+                calculation,
+                calculation.executionObservation,
+              ),
+            },
+            selectionCalls,
+          };
+        } finally {
+          fault.mockRestore();
+        }
+      }
       const controlGateInput = {
         expectedProjectionCount: expectedUserControlIdentities.length,
         expectedIdentities: selectedExpectedIdentities,
@@ -1890,7 +1947,14 @@ describe('production master inventory ratchet', () => {
         expectedCriticalStarsForward,
       };
       const probe = process.env['FGO_TSK08_INERT_FAILURE_PROBE'];
+      const executionProbe = process.env['FGO_TSK08_FAILURE_CLASS_PROBE'];
       const probeObservations = userControlObservations.map((observation, index) => {
+        if (
+          executionProbe === 'inertControl' &&
+          inertExecution &&
+          index === operationOriginalRequest?.observationIndex
+        )
+          return inertExecution.observation;
         if (
           probe === 'npSpecial' &&
           inertNpSpecialObservation &&
@@ -1940,6 +2004,16 @@ describe('production master inventory ratchet', () => {
                   : observation,
               ),
             });
+      const inertExecutionGate =
+        inertExecution &&
+        auditProductionUserControlObservations({
+          ...controlGateInput,
+          observations: userControlObservations.map((observation, index) =>
+            index === operationOriginalRequest?.observationIndex
+              ? inertExecution.observation
+              : observation,
+          ),
+        });
       await writeProductionAuditArtifact(task.meta, 'production-inert-control-production.json', {
         schemaVersion: 1,
         boundary: 'calculation-application-production-inert-controls',
@@ -1951,6 +2025,11 @@ describe('production master inventory ratchet', () => {
         preparationInventories: Object.fromEntries(preparationInventories),
         gate: userControlGate,
         observations: probeObservations,
+        executionFailure: {
+          activeProbe: executionProbe ?? null,
+          witness: inertExecution,
+          gate: inertExecutionGate,
+        },
         intentionalFailure: {
           originalRequest: npSpecialOriginalRequest,
           originalObservation: originalNpSpecial,
@@ -1965,6 +2044,18 @@ describe('production master inventory ratchet', () => {
         },
       });
       expect([undefined, 'npSpecial', 'operation', 'allEqual']).toContain(probe);
+      expect([undefined, 'inertControl']).toContain(executionProbe);
+      expect(inertExecution?.selectionCalls).toBeGreaterThan(0);
+      expect(inertExecution?.prepared.scenario).toEqual(operationOriginalRequest?.excludedScenario);
+      expect(inertExecutionGate).toMatchObject({
+        status: 'failed',
+        failures: [
+          {
+            reason: 'userControlDidNotReachOperationOrDamage',
+            firstDifference: { path: 'reached', expected: true, actual: false },
+          },
+        ],
+      });
       expect(npSpecialOriginalRequest).not.toBeNull();
       expect(operationOriginalRequest).not.toBeNull();
       for (const originalRequest of [npSpecialOriginalRequest, operationOriginalRequest]) {
