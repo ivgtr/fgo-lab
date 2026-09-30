@@ -4545,23 +4545,28 @@ checklist①／入力lifecycle①〜③は成立済みの範囲を維持。②�
 
 今回の整理はTask／evidenceの文書差分だけ。`.git`が別の読み取り専用mountで、前回の通常・権限昇格`git add`はいずれも`index.lock: Read-only file system`で失敗した。書込可能になったらこの2文書だけをstageして差分を確認し、local checkpoint commitを作る。commit前の差分を完了済み引継ぎと扱わない。
 
-### TSK-08 Step 2 の収束順序再整理（計画・反証、2026-09-30）
+### TSK-08 Step 2 の収束順序再整理（現状判定・引継ぎ、2026-09-30）
 
-Step 0／1／3は既存の一致するsource／input証拠で成立済み。Step 3の80条件matrix／eligibility成立は、Step 2の六失敗クラス、七宣言のconsumer遷移、最終受入の成立を含まない。Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。今回の更新は計画のみで、製品source／test／artifactは変更・実行していない。
+Step 0／1／3は既存の一致するsource／input証拠で成立済み。Step 3の80条件matrix／eligibility成立は、Step 2の六失敗クラス、七宣言のconsumer遷移、最終受入の成立を含まない。Step 2／TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。OC rate限定実装は`364e02f`へ収録済みで、今回の整理はTask／evidenceのみ。要件・damage semantics・検証入力を変更せず、局所成功を全体完了へ読み替えない。過去のcheckpointの「次の操作」より本節と[evidence](../evidence/tsk-08-parity-ratchet.json) `currentStepConvergenceReview`を優先する。
 
 | Step 2 の判定順 | 閉じる条件と進捗反証 | 現状態 |
 | --- | --- | --- |
-| 2a. 有限な残義務表 | 現定義・直接caller・保存artifactから、六失敗クラスと七宣言種別の選択／native／alternate／recovery／物理read・消費を元request単位で対応付ける。各行を成立済み／実欠落／production 0件でschema合法fixtureのみ／後続consumerなし／別ownerに分類し、checklist②③・入力lifecycle④⑤⑧との接点を示す。選択済みcellや合成観測だけを公開到達へ数えたら反証成立 | 局所表は既存。全義務を結ぶ統合表は未作成 |
-| 2b. 実欠落の解消 | 2aで特定した未接続の元request遷移または失敗診断だけを同じsemantic ownerで修正する。独立したrule、正常母集団と0件、schema合法反例、実gateのtyped reason／canonical first difference、保存前失敗なしのbounded runner／完全artifact／全disk receiptまでつなぐ。既存producer／gateへの再投入や観測値だけの破損で未達が減らなければ単位を選び直す | 六クラス全体・七宣言unionはDeferred。直近transaction試行は閉鎖件数0 |
-| 2c. literal legacy判定 | 旧loader／scan／candidate list／重複fixtureの各定義を直接caller・入力母集団・固有assertionで照合し、代替が同等なobsolete定義だけ削除する。該当0件なら全件根拠でchecklist④の適用を判定する。raw OC 167 occurrence／632 cellと公開joinの固有証拠を失えば反証成立 | data-pipeline ownerの最終判定はDeferred |
-| 2d. 統合受入 | 2a〜2cで対象内Deferred／Blockingが0になった最終source／master／inputを固定し、各failure probeのmanifest・完全artifact・全receiptをそのrunのidentityで照合する。共有inventory／digest、80条件、parity、fail-closed、全damage差分／first diff、適用audit、正式変更前後各3run性能、README `pnpm quality`を契約表と照合する。異なる失敗runのartifactを同一artifact identityとみなしたら反証成立 | Done gate・Contract matrix最終照合・入力lifecycle⑦はDeferred |
+| 2a. 有限な残義務表 | 現定義・直接caller・保存artifactから、六失敗クラスと七宣言種別の元request→選択→native／alternate／recovery→consumerの必要な遷移を対応付ける。各行に意味を決めるowner、既存証拠、実欠落とchecklist／Contract／入力lifecycleへの接点を記す。成立済み／実欠落／production 0件／後続consumerなし／別ownerを区別し、schema合法fixtureを公開件数へ足さない | 局所表と分類要約はあるが、元request／phase／consumerの有限統合表は未完成。分類不能は未解決のまま残す |
+| 2b. 実欠落の解消 | 2aで確認した欠落を既存semantic ownerで閉じる。実transaction拒否と漏れのないrollback、実mutation→後続read、commandから別repair requestへの遷移を、必要なclass診断へつなぐ。独立したgoverning rule、代表反例、typed reason／canonical first difference、bounded出力／完全artifact／全receiptで解消前後を示す | OC rate native／command修復の局所接続は成立。六クラス全体・七宣言の必要なconsumer遷移の照合は未達。直近公開transaction診断は閉鎖0件 |
+| 2c. literal legacy判定 | 旧loader／scan／candidate list／重複fixtureを定義・直接caller・母集団・固有assertionで照合し、同等性を証明したobsolete経路だけ削除する。削除対象0件なら全候補の処分根拠を記す。raw OC167 occurrence／632 cellと公開joinの固有証拠を保持する | 候補表はあるが、旧TSK-00 auditorの歴史的境界とobsolete処分は未確定。data-pipeline ownerもTSK-08の義務で、ownerの違いだけでは対象外にしない |
+| 2d. 統合受入 | 2a〜2cの対象内Blockingを解消して最終source／master／inputを固定し、六クラスの各failure probeを固有manifest／完全artifact／全receiptと照合する。共有inventory／digest、80条件、parity、fail-closed、全damage差分／first diff、適用audit、正式変更前後各3run性能、README `pnpm quality`をContract matrixへ対応付ける | Done gate・Contract matrix最終照合・入力lifecycle⑦は未達。旧receiptを含む350件の検査、単回性能診断、過去qualityは最終差分の全体受入ではない |
 
-次の操作は**2aの表と2cの定義表を現コードと既存証拠で先に埋め、2bで本当に未達を減らせる一単位を選ぶこと**。2aの分類不能・矛盾を正常非選択や0件へ丸めない。六クラスのfailure probeはrunごとに別manifestでよいが、同じ最終source／master／inputに属し、各runの完全artifactと全receiptが一致する必要がある。未規定のゲーム意味論または独立owner作業は未達条件として記録し、TSK-08完了や2dへ進めない。今回の判断根拠は[evidence](../evidence/tsk-08-parity-ratchet.json) `currentStepConvergenceReview`。
+次は**2aの有限統合表と2cの候補処分を先に確認し、実欠落の解消から2dまでを見通すコード根拠付き計画を提示する**。native／alternate／recoveryの直積を機械的に全宣言へ課さず、実consumerとcanonical ruleが要求する遷移を判定する。後続consumerなしは元requestとordered plan等の根拠で示し、観測欠落だけから推定しない。production 0件でも、schema合法状態に適用される契約は別に反証する。既存証拠の十分性を判定し、同じfixtureを増やすことを目的にしない。
 
+計画冒頭で「この変更が未達を減らさない」反例を検討する。既存gateの再実行、合成観測だけの破損、選択cellを物理readへ数えること、schema fixtureを公開到達へ転用することでは進捗にならない。各変更に未達行の解消前後、変更箇所／直接caller、意味owner、代表反例、影響する検証、checklist②〜④・Done gate・Contract matrix・入力lifecycle④〜⑧への効果を示す。残義務の分類と受入証拠の対応付けも進捗だが、未実装の実欠落を成立済みへ変更しない。局所一単位だけを計画して全体の残条件を再び曖昧に残さない。
+
+最初は読み取り専用のコード／保存artifact調査と実装計画までとし、提示した時点で利用者確認を待つ。確認後は承認した計画に沿って未達条件を順に解消し、必要な検証・既存正本更新・対象限定local commitまで通常の技術判断で続ける。別ownerは責務の所在であり、自動的な対象外や停止理由ではない。本当に独立作業・未規定のゲーム意味論が必要な場合だけ、正確な未達行・根拠・必要な判断／次の操作を記録し、未完了を報告する。
+
+六クラスのfailure probeはrunごとに別manifestでよいが、最終source／master／inputに対して有効で、各runの完全artifactと全receiptが一致する必要がある。保存artifactが別環境にない場合は取得対象と必要な操作を示し、検証済みと仮定しない。最終Contract matrixの仮artifact参照も実在する証拠への対応付けが未達である。同条件の成立済み証拠は再利用し、既知Blockingが残る間は最終qualityを始めない。TSK-09.1／09・pushは開始しない。
 
 ### TSK-08 OC rate実read接続（限定検証済み・製品未完了、2026-09-30）
 
-利用者が現コード・直接caller・保存artifactに基づく計画を承認した。開始時のTask／evidenceのstage済み・未stage差分を保持し、OC rateの元request→後続grant→物理HP read→native消費／拒否→command修復を既存ownerへ接続している。公開25宣言・250組のうち選択commit10件は後続grantのないterminal requestであり、選択cellを物理readへ数えない。schema合法fixtureと公開件数は分離する。六クラス・七宣言・literal legacyの有限対応表と進捗反証は[evidence](../evidence/tsk-08-parity-ratchet.json) `postOcRateReadCheckpoint`を正本とする。
+利用者が現コード・直接caller・保存artifactに基づく計画を承認した。開始時のTask／evidenceのstage済み・未stage差分を保持し、OC rateの元request→後続grant→物理HP read→native消費／拒否→command修復を既存ownerへ接続している。公開25宣言・250組のうち選択commit10件は後続grantのないterminal requestであり、選択cellを物理readへ数えない。schema合法fixtureと公開件数は分離する。六クラス・七宣言の分類要約とliteral legacy候補表、局所検証は[evidence](../evidence/tsk-08-parity-ratchet.json) `postOcRateReadCheckpoint`に保持する。元request／phase／consumerの有限統合表は未完成であり、最新の収束判定・次の操作は`currentStepConvergenceReview`を正本とする。
 
 分類の訂正: native `invalid/missingOcCell`と候補の`invalidActivationContext`は、今回の実requestではapplication最終結果`unsupported`である。最終profile invalidの閉鎖へ転用しない。また旧`audit-tsk00-baseline.mjs`が固定するのは期待digestで、入口は作業treeのmasterを読み、旧`quantityConditions`を参照する。現行runtime／suiteのcallerはないが、TSK-00 reportが固有の歴史的assertion・serializationを持つcanonical artifactとして参照するため、同等性未証明のまま削除しない。原snapshotでの再現とliteral dispositionはdata-pipeline baseline evidence ownerの未達として残す。raw OC167 occurrence／632 cellと公開joinは保持する。
 
@@ -4573,4 +4578,4 @@ Step 0／1／3は既存の一致するsource／input証拠で成立済み。Step
 
 今回減るのはchecklist②③／入力lifecycle④⑤⑧のOC rate native／command修復と元request診断の局所条件である。観測だけのstale／returned-state破損を六失敗クラスのstale mutation／partial commit閉鎖へ数えない。checklist①／lifecycle①〜③・Step0／1／3の既存成立を保持し、六クラス・七宣言のnative／alternate／recovery union、checklist④／lifecycle⑥の旧baseline auditor処分判定、Done gate・Contract matrix最終同一identity照合、正式性能・README最終quality／lifecycle⑦は未達。TSK-08／Step2は`in_progress`、TSK-09.1／09は`blocked`を維持する。
 
-次の独立操作はdata-pipeline baseline evidence ownerで、`audit-tsk00-baseline.mjs`の現master入口と歴史的`quantityConditions`／期待digestの矛盾を原TSK-00 snapshotで照合し、literal obsolete処分を判定すること。raw OC167 occurrence／632 cellと公開joinを保持する。定義・直接caller・固有assertionの有限表と残条件は同evidenceの`legacyDefinitionTable`／`nextLimitedOperation`を参照する。別途、既存の六クラス・七宣言の元request／consumer遷移を統合してから最終受入へ進む。今回の合法fixtureを公開0件の増加へ代入せず、既存gateや棄却transaction診断を再演しない。依存quality・TSK-09系・pushは開始していない。前回は通常／権限昇格の`git add`がともに`.git/index.lock: Read-only file system`で失敗したが、Git metadataの書込権限追加と利用者のcommit指示後、開始時のstage済み2文書を含む対象8ファイルだけをstage・差分確認し、本local checkpoint commitへ収録した。source hashと検証証拠は一致したまま再利用し、pushはしていない。
+次の操作は上記「Step 2 の収束順序再整理」と同evidenceの`currentStepConvergenceReview.nextLimitedOperation`を参照する。旧baseline auditorは2cの未確定候補であり、歴史的境界を現定義・直接caller・固有assertionから判断し、原snapshot調査が必要かも計画で決める。raw OC167 occurrence／632 cellと公開joinを保持し、2aの元request／consumer統合と2cの処分をTSK-08全体の残義務として扱う。今回の合法fixtureを公開0件の増加へ代入せず、既存gateや棄却transaction診断を再演しない。依存quality・TSK-09系・pushは開始していない。前回は通常／権限昇格の`git add`がともに`.git/index.lock: Read-only file system`で失敗したが、Git metadataの書込権限追加と利用者のcommit指示後、開始時のstage済み2文書を含む対象8ファイルだけをstage・差分確認し、本local checkpoint commitへ収録した。source hashと検証証拠は一致したまま再利用し、pushはしていない。
