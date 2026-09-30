@@ -182,11 +182,32 @@ const consume = <T extends InstanceBase>(instance: T, used: ReadonlySet<number>)
   used.has(instance.instanceId) && instance.uses.kind === 'finite'
     ? { ...instance, uses: { kind: 'finite', remaining: Math.max(0, instance.uses.remaining - 1) } }
     : instance;
-function rateValue(rate: OcRateInstance, hp: Readonly<Record<string, number | null>>) {
+export interface OcRateHpRead {
+  rate: OcRateInstance;
+  hp: number | null | undefined;
+}
+/** The native grant query population, before any rate value can reject the action. */
+export function ocRateAppliesToGrant(
+  rate: OcRateInstance,
+  state: OcState,
+  step: Extract<OcActionStep, { kind: 'grant' }>,
+) {
+  return (
+    live(rate, state) &&
+    rate.owner === (rate.role === 'casterGrant' ? step.caster : step.recipient) &&
+    step.grant.stateTraits.includes('positive')
+  );
+}
+function rateValue(
+  rate: OcRateInstance,
+  hp: Readonly<Record<string, number | null>>,
+  observe?: (read: OcRateHpRead) => void,
+) {
   if (rate.amount.kind === 'fixed') return { status: 'value' as const, value: rate.amount.value };
   if (rate.amount.kind !== 'inverseHpLinear' && rate.amount.kind !== 'hpRangeLinear')
     return { status: 'unsupported' as const, reason: 'unsupportedOcRateExpression' };
   const value = hp[rate.valueOwner];
+  observe?.({ rate, hp: value });
   if (value === undefined || value === null)
     return { status: 'inputRequired' as const, reason: `ocRateHp:${rate.valueOwner}` };
   if (!Number.isInteger(value) || value < 0 || value > 1000)
@@ -204,6 +225,9 @@ export function executeOcAction(
   options: {
     hasFutureNpUse: boolean;
     observeStep?: (index: number, step: OcActionStep) => void;
+    observeRateQuery?: (index: number, state: OcState, rate: OcRateInstance) => void;
+    observeRateSelection?: (index: number, state: OcState) => void;
+    observeRateHpRead?: (index: number, read: OcRateHpRead) => void;
   } = { hasFutureNpUse: true },
 ): OcActionResult {
   if (prior.committedActions.has(actionId))
@@ -380,13 +404,17 @@ export function executeOcAction(
           pending.requiredInput ?? undefined,
           pending.occurrenceId,
         );
+      options.observeRateSelection?.(index, state);
       for (const rate of state.rates) {
-        if (!live(rate, state)) continue;
-        if (rate.owner !== (rate.role === 'casterGrant' ? step.caster : step.recipient)) continue;
-        if (!step.grant.stateTraits.includes('positive')) continue;
+        if (!ocRateAppliesToGrant(rate, state, step)) continue;
+        options.observeRateQuery?.(index, state, rate);
         used.add(rate.instanceId);
         if (!rate.included) continue;
-        const value = rateValue(rate, hp);
+        const value = rateValue(
+          rate,
+          hp,
+          options.observeRateHpRead ? (read) => options.observeRateHpRead!(index, read) : undefined,
+        );
         if (value.status !== 'value') return reject(value.status, value.reason);
         effectiveRate += value.value * rate.sign * (rate.role === 'casterGrant' ? 1 : -1);
       }

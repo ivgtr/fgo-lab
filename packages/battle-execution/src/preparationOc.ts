@@ -10,6 +10,7 @@ import {
 import {
   preparationAttemptScope,
   preparationBattlePointScope,
+  capturePreparationOcRates,
   type PreparationOcAttempt,
 } from './preparationAttemptObservation';
 import { projectPlanningHpCondition, UnresolvedPreparationPlanningRead } from './hpPlanning';
@@ -1502,6 +1503,7 @@ export function executePreparationOc(args: {
       get: () => hpPermille(current.hp?.actors[source.sourceInstanceId]),
     });
   }
+  const rateObservation = attempt ? capturePreparationOcRates(attempt) : undefined;
   let result = executeOcAction(
     args.state.ocState,
     args.actionId,
@@ -1511,6 +1513,11 @@ export function executePreparationOc(args: {
       ? {
           hasFutureNpUse: args.terminalNp !== true,
           observeStep: (index, step) => attempt.reached.push({ index, step }),
+          observeRateSelection: (step, state) =>
+            rateObservation!.selections.push({ step, state, hp: current.hp }),
+          observeRateQuery: (step, state, rate) =>
+            rateObservation!.queries.push({ step, state, rate, hp: current.hp }),
+          observeRateHpRead: (step, read) => rateObservation!.reads.push({ step, ...read }),
         }
       : { hasFutureNpUse: args.terminalNp !== true },
   );

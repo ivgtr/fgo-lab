@@ -13,6 +13,7 @@ import { hpProofCoverageInventory } from './productionHpProofCoverage';
 import {
   hpCandidateObservationFor,
   preparationHpActionsFor,
+  preparationOcRatesFor,
 } from '@fgo-lab/battle-execution/preparation-audit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
 import { reconcileHpOperationEvidence } from './productionHpOperationEvidence';
@@ -29,6 +30,8 @@ import {
 } from './scenario';
 import { currentCalculationVersionContext } from './portableCalculation';
 import { hpPreparationCanonical } from './productionHpPreparationAudit';
+import { applyCanonicalInputCommand } from './canonicalInputs';
+import { evaluateProductionFinalOutcomeGate } from './productionParityDiagnostics';
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
@@ -1314,3 +1317,359 @@ it('keeps selected native NP conditions outside the candidate read obligation', 
     ),
   ).toBe(false);
 });
+
+it(
+  'joins original OC-rate requests to live HP reads, transactional consumption and command repair',
+  productionAuditTestOptions(['hp-oc-rate-live-reads.json']),
+  async ({ task }) => {
+    const base = setup(false, false, false, false, true);
+    const actor = base.master.servants[0]!;
+    const np = actor.noblePhantasmVariantGroups[0]!.variants[0]!;
+    const { timing, ...source } = np.effects[0]!;
+    const rate = source.execution[0]!;
+    if (rate.kind !== 'grantOcApplicationRate') throw new Error('fixture_rate_missing');
+    rate.cells = [
+      [
+        {
+          ...rate.cells[0][0]!,
+          uses: { kind: 'finite', remaining: 2 },
+        },
+      ],
+      [],
+      [],
+      [],
+      [],
+    ];
+    rate.cells[0].push(structuredClone(rate.cells[0][0]!));
+    const boost = {
+      kind: 'grantOcBoost',
+      route: rate.route,
+      lifetime: 'active',
+      stacking: 'additive',
+      stateTraits: ['positive'],
+      cells: [
+        [
+          {
+            applicationRatePermille: 1000,
+            stages: 1,
+            turns: { kind: 'finite', remaining: 1 },
+            uses: { kind: 'finite', remaining: 1 },
+          },
+        ],
+        [],
+        [],
+        [],
+        [],
+      ],
+    };
+    boost.cells[0]!.push(structuredClone(boost.cells[0]![0]!));
+    const loss = {
+      kind: 'resourceMutation',
+      resource: 'hp',
+      direction: 'loss',
+      unit: 'fixed',
+      recipient: 'sourceSelf',
+      selection: 'direct',
+      lossFloor: 'oneIfAlive',
+      subjectId: null,
+      amount: { kind: 'fixed', values: [[100], [], [], [], []] },
+    };
+    const make = (changeHp: boolean, reject: boolean) => {
+      const master = masterSnapshotSchema.parse(base.master);
+      const owner = master.servants[0]!;
+      owner.skills[0]!.effects = [
+        masterEffectSchema.parse({
+          ...source,
+          gameActivation: 'skillUse',
+          execution: [
+            rate,
+            boost,
+            ...(changeHp ? [loss, boost] : []),
+            ...(reject ? [{ ...boost, cells: [[boost.cells[0]![0]], [], [], [], []] }] : []),
+          ],
+        }),
+      ];
+      for (const group of owner.noblePhantasmVariantGroups)
+        for (const variant of group.variants) variant.effects = [];
+      return masterSnapshotSchema.parse(master);
+    };
+    const versions = base.versions;
+    const run = (
+      master: typeof base.master,
+      hp: number | null,
+      excluded = false,
+      supplied?: ReturnType<typeof resolvedScenarioSchema.parse>,
+      skillLevel = 1,
+    ) => {
+      const scenario = resolvedScenarioSchema.parse(
+        supplied ?? {
+          ...createDefaultResolvedScenario(master, undefined, master.servants[0]),
+          attackerHpPermille: hp,
+          preNoblePhantasmPlan: [
+            { kind: 'useSkillSlot', slot: 1, skillLevel, choice: null },
+            { kind: 'executeAttackNoblePhantasm' },
+          ],
+        },
+      );
+      const policy = excluded
+        ? {
+            kind: 'ranking' as const,
+            selfBuffs: 'excluded' as const,
+            conditionalEffects: 'baseline' as const,
+            areaView: 'included' as const,
+          }
+        : { kind: 'calculator' as const };
+      const prepared = prepareCalculationScenarioWithPolicy(scenario, master, policy, {}, true);
+      const calculation = evaluatePreparedCalculationScenario(prepared, versions);
+      const request = { prepared, calculation };
+      const declarations = hpProofCoverageInventory(master);
+      const reconcile = () => {
+        const borrowed = hpPublishedDependencyBindings(declarations, [request]);
+        return reconcileHpPublishedDependencyCoverage(declarations, [request], borrowed.bindings);
+      };
+      return { master, scenario, request, declarations, reconcile };
+    };
+    const live = run(make(true, false), 500);
+    const missingMaster = make(false, false);
+    const missing = run(missingMaster, null);
+    const input = missing.request.prepared.resolved.inputDefinitions.find(
+      (definition) => definition.kind === 'sourceHpPermille',
+    );
+    if (!input)
+      throw new Error(
+        `fixture_repair_input_missing:${JSON.stringify(missing.request.calculation.result)}`,
+      );
+    const command = { kind: 'setCanonicalIntegerInput' as const, key: input.key, value: 500 };
+    const repairedScenario = applyCanonicalInputCommand(missing.scenario, command);
+    const repaired = run(missingMaster, null, false, repairedScenario);
+    const edges = [{ fromRequestIndex: 0, command, toRequestIndex: 1 }];
+    const recovery = reconcileHpOperationEvidence(
+      missing.declarations,
+      [missing.request, { ...repaired.request, requestPhase: 'repairAttempt' }],
+      edges,
+    );
+    const excluded = run(make(false, false), 500, true);
+    const rejected = run(make(false, true), 500, false, undefined, 2);
+    const invalidMaster = make(false, false);
+    const invalidScenario = createDefaultResolvedScenario(
+      invalidMaster,
+      undefined,
+      invalidMaster.servants[0],
+    );
+    invalidMaster.servants[0]!.atkByLevel = Object.fromEntries(
+      Object.entries(invalidMaster.servants[0]!.atkByLevel).filter(
+        ([level]) => level !== String(invalidScenario.attacker.level),
+      ),
+    );
+    const invalid = run(masterSnapshotSchema.parse(invalidMaster), 500);
+    const cases = [live, missing, repaired, excluded, rejected, invalid];
+    const finalOutcomeGates = cases.map(({ request, scenario }, index) => {
+      const status = request.calculation.result.status;
+      return evaluateProductionFinalOutcomeGate({
+        outcomes: {
+          unsupported: Number(status === 'unsupported'),
+          invalid: Number(status === 'invalid'),
+          inputRequired: Number(status === 'inputRequired'),
+        },
+        failures:
+          status === 'unsupported' || status === 'invalid' || status === 'inputRequired'
+            ? [
+                {
+                  conditionKey: `schema-legal:oc-rate-request:${index}`,
+                  profileKey: JSON.stringify(scenario.attacker),
+                  status,
+                },
+              ]
+            : [],
+      });
+    });
+    const ledgers = cases.map((entry) => entry.reconcile());
+    const attempt = battlePointPreparationRejectionObservationFor(live.request.prepared)!
+      .transitions.flatMap((transition) => transition.attempts ?? [])
+      .find((entry) => preparationOcRatesFor(entry)?.reads.length === 2)!;
+    const capture = preparationOcRatesFor(attempt)!;
+    const second = capture.reads.pop()!;
+    const absent = live.reconcile();
+    capture.reads.push(second);
+    const hp = second.hp;
+    second.hp = capture.reads[0]!.hp;
+    const stale = live.reconcile();
+    second.hp = hp;
+    const queries = capture.queries.splice(0);
+    const reads = capture.reads.splice(0);
+    const missingQueries = live.reconcile();
+    capture.queries.push(...queries);
+    capture.reads.push(...reads);
+    const included = queries[0]!.rate.included;
+    queries[0]!.rate.included = false;
+    capture.reads.splice(0);
+    const forgedExclusion = live.reconcile();
+    queries[0]!.rate.included = included;
+    capture.reads.push(...reads);
+    const afterRate = attempt.native!.state.rates.find(
+      (entry) => entry.instanceId === queries[0]!.rate.instanceId,
+    )!;
+    const uses = afterRate.uses;
+    afterRate.uses = { kind: 'finite', remaining: 0 };
+    const overconsumed = live.reconcile();
+    afterRate.uses = uses;
+    const rejectedAttempt = battlePointPreparationRejectionObservationFor(
+      rejected.request.prepared,
+    )!
+      .transitions.flatMap((transition) => transition.attempts ?? [])
+      .find((entry) => preparationOcRatesFor(entry)?.reads.length)!;
+    const returned = rejectedAttempt.returned!;
+    rejectedAttempt.returned = { ...returned };
+    const leaked = rejected.reconcile();
+    rejectedAttempt.returned = returned;
+    const rejectedCapture = preparationOcRatesFor(rejectedAttempt)!;
+    const rejectedSelections = rejectedCapture.selections.splice(0);
+    const rejectedQueries = rejectedCapture.queries.splice(0);
+    const rejectedReads = rejectedCapture.reads.splice(0);
+    const erasedRejection = rejected.reconcile();
+    rejectedCapture.selections.push(...rejectedSelections);
+    rejectedCapture.queries.push(...rejectedQueries);
+    rejectedCapture.reads.push(...rejectedReads);
+    const payload = {
+      population: 'schemaLegalOriginalRequests',
+      originalTiming: timing,
+      requests: cases.map(({ master, scenario, request }) => ({
+        master,
+        scenario,
+        preparedStatus: request.prepared.status,
+        result: request.calculation.result,
+      })),
+      nativeCaptures: cases.map(({ request }) => {
+        const transport = battlePointPreparationRejectionObservationFor(request.prepared);
+        if (request.prepared.status === 'invalid')
+          return { disposition: 'invalidBeforePreparation', transport: null };
+        if (!transport) throw new Error('original_request_capture_missing');
+        return {
+          transport,
+          rateCaptures: transport.transitions.flatMap((transition) =>
+            (transition.attempts ?? []).map((attempt) => ({
+              actionId: attempt.actionId,
+              capture: preparationOcRatesFor(attempt),
+            })),
+          ),
+        };
+      }),
+      ledgers,
+      finalOutcomeGates,
+      recovery,
+      negatives: {
+        absent,
+        stale,
+        missingQueries,
+        leaked,
+        overconsumed,
+        forgedExclusion,
+        erasedRejection,
+      },
+      qualification:
+        'Observation negatives test sensitivity only; native refusal and command repair are separate actual requests.',
+    };
+    const path = 'hp-oc-rate-live-reads.json';
+    await writeProductionAuditArtifact(task.meta, path, payload);
+    const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path));
+    expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+    for (const ledger of ledgers) expect(ledger.gate.failures).toEqual([]);
+    const rows = ledgers.map((ledger) => ledger.ocRateReads?.rows ?? []);
+    expect(rows[0]).toHaveLength(2);
+    expect(rows[0]![0]!.hp).toBe(500);
+    expect(rows[0]![1]!.hp).toBeLessThan(500);
+    expect(rows[0]!.every((row) => row.consumed && row.nativeStatus === 'committed')).toBe(true);
+    expect(rows[0]!.map((row) => row.usesAfter)).toEqual([
+      { kind: 'finite', remaining: 1 },
+      { kind: 'finite', remaining: 1 },
+    ]);
+    expect(rows[1]).toMatchObject([
+      { disposition: 'physicalRead', hp: null, nativeStatus: 'inputRequired', consumed: false },
+    ]);
+    expect(rows[2]).toMatchObject([{ hp: 500, nativeStatus: 'committed', consumed: true }]);
+    expect(recovery.gate.failures).toEqual([]);
+    expect(recovery.inputCommandEdges).toEqual(edges);
+    expect(rows[3]).toMatchObject([
+      {
+        disposition: 'excludedWithoutRead',
+        hp: undefined,
+        nativeStatus: 'committed',
+        consumed: true,
+      },
+    ]);
+    expect(rows[4]).toMatchObject([
+      { hp: 500, nativeStatus: 'invalid', consumed: false, nativeReason: 'missingOcCell' },
+    ]);
+    expect(rows[5]).toEqual([]);
+    expect(invalid.request.calculation.result).toMatchObject({
+      status: 'invalid',
+      issue: { kind: 'attackerLevelStatUnavailable' },
+    });
+    expect(finalOutcomeGates.map((gate) => gate.status)).toEqual([
+      'passed',
+      'failed',
+      'passed',
+      'passed',
+      'failed',
+      'failed',
+    ]);
+    expect(finalOutcomeGates[4]!.failures).toMatchObject([
+      {
+        reason: 'finalProfileStatusPresent',
+        firstDifference: { path: 'status', expected: 'calculated', actual: 'unsupported' },
+      },
+    ]);
+    expect(finalOutcomeGates[5]!.failures).toMatchObject([
+      {
+        reason: 'finalProfileStatusPresent',
+        firstDifference: { path: 'status', expected: 'calculated', actual: 'invalid' },
+      },
+    ]);
+    for (const ledger of [absent, stale, missingQueries, forgedExclusion, erasedRejection]) {
+      expect(ledger.gate.failures.some((failure) => failure.reason === 'ocRateReadMismatch')).toBe(
+        true,
+      );
+      expect(ledger.ocRateReads!.failures[0]!.firstDifference).toBeDefined();
+    }
+    expect(
+      leaked.gate.failures.some((failure) => failure.reason === 'ocRateTransactionMismatch'),
+    ).toBe(true);
+    expect(rejectedAttempt.returned).toBe(rejectedAttempt.start);
+    expect(rejectedAttempt.native!.state).toBe(rejectedAttempt.start.ocState);
+    expect(overconsumed.ocRateReads!.failures[0]).toMatchObject({
+      reason: 'ocRateTransactionMismatch',
+      firstDifference: { expected: 1, actual: 0 },
+    });
+    expect(overconsumed.ocRateReads!.failures[0]!.firstDifference.path).toMatch(
+      /\.uses\.remaining$/,
+    );
+    const probe = process.env['FGO_TSK08_OC_READ_PROBE'];
+    if (probe === 'unsupported' || probe === 'invalid') {
+      const failed = finalOutcomeGates[probe === 'unsupported' ? 4 : 5]!;
+      expect(
+        failed.status,
+        JSON.stringify({
+          population: 'schemaLegalOriginalRequest',
+          failureClass: probe,
+          ...failed.failures[0],
+        }),
+      ).toBe('passed');
+    }
+    if (
+      probe === 'missing' ||
+      probe === 'stale' ||
+      probe === 'transaction' ||
+      probe === 'consumption'
+    ) {
+      const failed =
+        probe === 'missing'
+          ? absent
+          : probe === 'stale'
+            ? stale
+            : probe === 'transaction'
+              ? leaked
+              : overconsumed;
+      expect(failed.gate.passed, JSON.stringify(failed.ocRateReads!.failures[0])).toBe(true);
+    }
+  },
+);

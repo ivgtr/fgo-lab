@@ -4,7 +4,16 @@ export { compiledSourcesFor, compiledOperationSourceFor } from './executionSourc
 export type { PreparationHpAction, HpCandidateObservation } from './hpExecutionObservation';
 import type { SourceEffect } from './sourceCollection';
 import type { BattlePointState } from './battlePointResource';
-import type { OcActionResult, OcActionStep } from './ocState';
+import type {
+  OcActionResult,
+  OcActionStep,
+  OcRateHpRead,
+  OcRateInstance,
+  OcState,
+} from './ocState';
+import type { HpState } from './hpResource';
+export { hpPermille } from './hpResource';
+export { ocRateAppliesToGrant } from './ocState';
 import type {
   PreparationExecutionContext,
   PreparationTransitionResult,
@@ -32,6 +41,21 @@ export interface PreparationOcAttempt {
   returned?: PreNoblePhantasmState;
 }
 const scopes = new WeakMap<PreparationExecutionContext, PreparationOcAttempt[]>();
+/** Native query selection and physical HP reads are distinct; neither changes product state. */
+export interface PreparationOcRateObservation {
+  selections: { step: number; state: OcState; hp: HpState | undefined }[];
+  queries: { step: number; state: OcState; rate: OcRateInstance; hp: HpState | undefined }[];
+  reads: (OcRateHpRead & { step: number })[];
+}
+const ocRateObservations = new WeakMap<PreparationOcAttempt, PreparationOcRateObservation>();
+export function capturePreparationOcRates(attempt: PreparationOcAttempt) {
+  const observation: PreparationOcRateObservation = { selections: [], queries: [], reads: [] };
+  ocRateObservations.set(attempt, observation);
+  return observation;
+}
+export function preparationOcRatesFor(attempt: PreparationOcAttempt) {
+  return ocRateObservations.get(attempt);
+}
 const transitions = new WeakMap<PreparationTransitionResult, readonly PreparationOcAttempt[]>();
 export function beginPreparationAttemptCapture(context: PreparationExecutionContext): void {
   beginPreparationHpCapture(context);

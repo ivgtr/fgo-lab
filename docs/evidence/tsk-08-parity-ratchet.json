@@ -29487,6 +29487,503 @@
     "verification": "Read-only HEAD/index/worktree and baseline-to-HEAD scoped Git blob comparison. git diff --check, Prettier check, pnpm test:docs (6 tests), pnpm validate:evidence (2 files/10 tests) passed. No product edit, producer/audit/performance run or artifact regeneration in this Step reconciliation.",
     "remaining": "Step2/TSK-08 in_progress. Six-class final original-request integration, seven-kind native/alternate/recovery union, exact literal legacy disposition with raw OC 167 occurrences/632 cells and public join retained, whole Done gate, TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001, formal RK-PERF-001/TS-PERF-002 before/after three runs and DX-HANDOFF-001 final README quality remain Deferred. No dependent quality, TSK-09 or push."
   },
+  "postPublishedTransactionFailureCheckpoint": {
+    "date": "2026-09-30",
+    "status": "historical_diagnostic_trial_not_tsk08_closure",
+    "startHead": "cfe60dd6680794c52deddcfeef1a7712b29cb49a",
+    "authorization": "User requested a broader common-owner unit after the code-grounded plan; this unit connects two transaction failure paths from one published original ranking request. No push.",
+    "commitState": "The diagnostic test and audit-suite registration were never committed. A subsequent review found no new TSK-08 class closure and removed both source changes. The historical manifests remain evidence only for the discarded diagnostic source identity. The .git mount is read-only and blocked the earlier four-file stage attempt.",
+    "sourceIdentity": {
+      "publishedTransactionTest": { "bytes": 7363, "sha256": "7d5fb0959777d5e5db89e4c9528a62578d462cdc397d308fc1dd3ff718beb034" },
+      "auditSuiteRegistry": { "bytes": 3451, "sha256": "454505ee52f957caafaf621c90f44f0afca8979bad4494b6a328c8c231c4ca7c" },
+      "productionClosureAuditSha256": "e6ff69af49b74feb5006f70613f69c229c8a9146d01a59568b5989d7d3e6330f",
+      "productionParityDiagnosticsSha256": "b783e009f1ca69a003df13996b42fd66f1b30f24fd432c077e88258fe6f1ac3c",
+      "publishedMaster": { "bytes": 32953998, "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a" }
+    },
+    "source": "auditProductionClosure on the published master and the first canonical productionClosureConditions condition; its calculated record carries scenario.preNoblePhantasmPlan, witness, canonicalInput and appliedPreparationActions. The new audit test registers in the existing opt-in audit suite and uses auditProductionPreparationTransactionObservations/evaluateProductionPreparationTransactionGate without a new producer, expected-value generator or product semantic change.",
+    "normalPopulation": {
+      "conditionKey": "naturalLimit-included-baseline-np1-oc1",
+      "outcomes": 433,
+      "calculatedProfiles": 433,
+      "commands": 1115,
+      "actions": 1115,
+      "npUseReceipts": 434,
+      "normalGate": "passed",
+      "selectedActionIndex": 2,
+      "qualification": "All 433 calculated original requests reach the normal transaction audit for this one published condition. One source record and action are selected by typed structure for intentional observation counterexamples. The counterexamples are not 433 published failures and do not cover all 80 conditions."
+    },
+    "governingRule": "The original ordered command/action pair, NP consumption snapshot, mutation continuity and final resource state must agree; a receipt actionId must identify its actual command index and kind. Existing battle-execution preparationTransaction and ocState own those rules; the audit expects valid continuity and canonical receipt identity independently of the corrupted observation.",
+    "intentionalFailures": [
+      {
+        "class": "partialCommit",
+        "reason": "preparationResourceCommitMismatch",
+        "canonicalIdentitySuffix": ":preparation:action:2",
+        "firstDifference": { "path": "valid", "expected": true, "actual": false },
+        "change": "Only the selected action's saved afterConsumption.gauge is increased by one; the original source record and actual calculation are intact."
+      },
+      {
+        "class": "staleReceipt",
+        "reason": "preparationReceiptMismatch",
+        "canonicalIdentitySuffix": ":preparation:action:2",
+        "firstDifference": { "path": "actionId", "expected": "preparation:2:executeAttackNoblePhantasm", "actual": "preparation:1:executeAttackNoblePhantasm" },
+        "change": "Only the selected action's saved NP-use receipt identity is replaced; this is a stale receipt counterexample, not proof of a separate repaired request or all stale mutations."
+      }
+    ],
+    "finalSourceVerification": "Using a temporary Vitest config with envDir:false because the default Vite startup attempted a sandbox-denied .env read, final-source dedicated success 1/1 and two intentional test_failure runs reached the normal gate branch after complete artifact writing. Final opt-in audit 6 files/89 tests passed with 0 warning; its first existing control test took 37150.564ms, below the unchanged 60-second limit. Typecheck, target TypeScript ESLint and Prettier passed. verifyDepsBeforeRun:error is unchanged. No calculation structure, capture or product hot path changed; no single-run performance diagnosis applies. The default env-reading command is not a valid success result.",
+    "artifacts": {
+      "publishedSuccess": { "path": ".test-results/2026-09-29T16-48-29-399Z-15-ec687b/manifest.json", "sha256": "a36ac37c15917a968230925c86c9ddd170ba3ff6b9a7636a1accfdde217ced3a", "receipts": 6, "artifactBytes": 4308970, "artifactSha256": "9a5c0a371475492017922f27e6291c670a877925eaeb21a30006568626a1aa0e" },
+      "partialCommitFailure": { "path": ".test-results/2026-09-29T16-48-57-701Z-15-c47498/manifest.json", "sha256": "67397070b3fe02055040a2bba33891b7d714901c27159d81517bed70de239e34", "receipts": 6, "artifactBytes": 4313598, "artifactSha256": "5cd31109762ab01f11d8171fc186223753e0f8122c4cd02bc9f0539379b2efe0" },
+      "staleReceiptFailure": { "path": ".test-results/2026-09-29T16-49-25-016Z-15-252bca/manifest.json", "sha256": "4c4f04555a0b7a7de500ca7961596dce214f33465062913d7a5d5fd3ddb7a2d6", "receipts": 6, "artifactBytes": 4313945, "artifactSha256": "adc89313e89365fd3e2f0ba82c3cec4cee10ca2f750c8e9edd9cf50f576e925d" },
+      "fullAudit": { "path": ".test-results/2026-09-29T16-50-00-122Z-15-c7b6c7/manifest.json", "sha256": "406776522ed1e83888f72947b9df5af35fb3577514db62bb788f9da10e43d7f5", "receipts": 100 }
+    },
+    "completeComparison": "All three dedicated complete lossless decoded artifacts are deeply equal after removal of only probe and selected gate; source record, 433 observations, their array order, 1115 commands/actions, 434 NP receipts and both intentional failure gates are identical. The success and full-audit added artifact have identical 4308970 bytes/SHA-256. The old 99 full-audit receipt paths remain in order; 97 are byte/SHA-identical, and only run-specific vitest.json/stdout.log differ. Exactly one new artifact path was added. All 118/118 new-run disk receipts match bytes/SHA-256 and artifactVerification.errors is empty. Both failed runner summaries contain typed reason, canonical identity, first difference and one failure within 41 lines/32 KiB; complete JSON persists before the failure assertion.",
+    "remaining": "Checklist2/3 and lifecycle5 gain two published original-request-to-gate counterexample paths; whole six-class final identity remains Deferred. Stale receipt is not all stale mutation/recovery. Parity and unsupported/invalid remain fixture-output-only; published unsupported/invalid normal status count is zero and schema-legal fixtures do not increase public reach. Seven-kind native/alternate/recovery consumer union, lifecycle4/8, and checklist4/lifecycle6 literal legacy decision remain separate. Preserve raw OC 167 occurrences/632 cells and public join. Whole Done gate, final TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001, formal RK-PERF-001/TS-PERF-002 before/after three runs and DX-HANDOFF-001 README quality remain Deferred. Step0/1/3 established, Step2/TSK-08 in_progress, TSK-09.1/09 blocked; no dependent quality, eight-shard regeneration or push.",
+    "nextLimitedOperation": "Superseded by postPublishedTransactionStepReview.nextLimitedOperation. The public record-to-transaction gate was already connected by single and merge audit before this trial; select a genuinely open TSK-08 condition by a code-and-artifact progress falsifier."
+  },
+  "postPublishedTransactionStepReview": {
+    "date": "2026-09-30",
+    "status": "record_only_reconciliation_product_incomplete",
+    "head": "cfe60dd6680794c52deddcfeef1a7712b29cb49a",
+    "disposition": "The uncommitted productionPublishedPreparationTransactionAudit.test.ts and audit-suite registration were removed after read-only review. Their prior 6-file/89-test success and 118 receipts describe a discarded candidate source; they are not final-source success evidence or a new TSK-08 class closure. Production and test code now match the starting HEAD; only this evidence and the existing Task have a pending documentation diff.",
+    "progressFalsifier": "Before the trial, audit-oc-matrix.ts already collected every calculated production record's preNoblePhantasmPlan/appliedPreparationActions and ran auditProductionPreparationTransactionObservations/evaluateProductionPreparationTransactionGate; merge-oc-matrix.ts already merged that gate. The trial selected an action with zero resourceTransaction.mutations and changed only a saved afterConsumption.gauge; it did not produce a rejected partial transaction, prove zero leaked mutable state, or perform the subsequent recovery read required by the retained partialCommit contract. Its second probe changed only an NP receipt actionId and did not establish a stale mutation, state rollback, or an input-command repair edge. Synthetic observation corruption against one condition cannot be counted as a newly connected public caller or as either failure class's semantic closure. A future unit must demonstrate a previously unconnected original-request transition, exact governing invariant, and same-final-identity gate/artifact/receipt reach, or another real checklist/lifecycle gap; repeating synthetic fixture output does not qualify.",
+    "steps": {
+      "0": "established: baseline and contracts retained at matching identity; no current code change reopens them",
+      "1": "established: V41 marker, V40 historical retention and explicit V41 recomputation retained at matching identity",
+      "2": "in_progress: the diagnostic trial closes no new TSK-08 checklist/Done-gate/Contract-matrix condition. Existing scoped inert and other bounded-unit evidence remains scoped, while whole six-class and seven-declaration native/alternate/recovery integration, literal legacy disposition and final acceptance remain open",
+      "3": "established: revised 80-condition matrix and eligibility retained at matching identity; the discarded one-condition audit is not full matrix evidence",
+      "dependencies": "TSK-09.1 and TSK-09 remain blocked"
+    },
+    "closureClassification": "Checklist1 and input lifecycle1-3 retain matching-identity evidence. Checklist2/3 and lifecycle4/5/8 remain Deferred beyond prior scoped units; this trial adds no accepted class closure. Checklist4/lifecycle6 require exact obsolete-definition ownership while retaining raw OC 167 occurrences/632 cells and published join. Done gate and TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001 require final integrated inventory/parity/fail-closed/digest/diagnostic artifacts and all receipts. RK-PERF-001/TS-PERF-002 require formal comparable before/after three runs; DX-HANDOFF-001/lifecycle7 require README final quality and consistent handoff. Do not start dependent quality or TSK-09 while TSK-08 Deferred remains.",
+    "nextLimitedOperation": "Next worker first inspects current definitions, direct callers and matching saved artifacts, then presents a bounded implementation plan for one same-owner TSK-08 unmet condition. Open the plan with a falsifier: show why the chosen unit reduces a real checklist/Done-gate/Contract/lifecycle gap that existing producer, caller and artifacts do not already close. Distinguish normal nonselection, selected-unreached, preparation rejection, candidate abort, physical read versus consumption, and actual command-linked repair. For a six-class unit, require original request, independent rule, normal population including zero, intentional schema-legal counterexample, typed reason, canonical identity/first difference, bounded failed runner, complete saved artifact and every disk receipt at one final identity. For legacy, compare definition, direct caller, input population and unique assertions without deleting raw OC 167/632 or the public join. Present the plan and wait for user confirmation before edits/tests; after confirmation implement the approved same unit through scoped verification, Task/evidence update and local commit without routine reapproval. If a separate owner/new game semantics/unique raw coverage is required, record the exact gap and next limited operation, then stop product-incomplete. No push.",
+    "commitState": "Documentation-only reconciliation is ready for a scoped local commit, but .git remains a separate read-only mount; prior default and escalated git add both failed with index.lock: Read-only file system. Once writable, stage only docs/tasks/development-redesign-tasks.md and docs/evidence/tsk-08-parity-ratchet.json, inspect staged diff/check and commit. Do not treat the pending diff as committed handoff."
+  },
+  "postOcRateReadCheckpoint": {
+    "date": "2026-09-30",
+    "status": "scoped_verification_complete_product_incomplete",
+    "authorization": "User approved the code-grounded plan on 2026-09-30. Preserve staged/unstaged Task/evidence changes; no push or TSK-09 work.",
+    "progressFalsifier": "The new obligation is an original schema-legal request with a later native grant querying an HP-dependent OC rate. The existing ten published terminal requests have no later grant; repeating their selected-cell/commit gate cannot close this read obligation. Query/HP-read/finite-use consumption and native refusal/command repair remain distinct. Observation corruption tests sensitivity only.",
+    "owner": "ocState executeOcAction/rateValue owns query eligibility, physical HP read, finite-use commit and rollback. preparationOc/preparationAttemptObservation transports captures. productionOcRateReadAudit joins original declarations/grants and native selection to query/read/transaction; productionHpPublishedDependencyCoverage is its direct shared-gate caller. No new damage/expectation generator.",
+    "sixClasses": [
+      {
+        "class": "parity",
+        "established": "auditProductionClosure -> compareProductionParity -> single/merge gates and saved matrix; canonicalMismatch fixture has bounded/full output",
+        "remaining": "Final same-source matrix and six-class acceptance join; synthetic comparison is not an original execution failure."
+      },
+      {
+        "class": "unsupported",
+        "established": "evaluateProductionFinalOutcomeGate; published final status zero; original preflight abort and native rejection fixtures; new schema-legal original rejected OC request -> actual application unsupported -> finalProfileStatusPresent/status first difference -> bounded runner/complete artifact/own receipts",
+        "remaining": "Published final status remains zero; whole final-source normal population and six-class integration remain Deferred. Schema-legal native invalid is not final invalid."
+      },
+      {
+        "class": "invalid",
+        "established": "final-profile synthetic gate and schema-legal invalid native/preflight boundaries; new schema-parsed original master with missing attacker level stat -> actual prepared/application invalid(attackerLevelStatUnavailable) -> final typed gate/first difference -> bounded/full/own receipts",
+        "remaining": "Published final status remains zero; final-source full matrix and six-class acceptance remain Deferred. This fixture is not a published invalid occurrence."
+      },
+      {
+        "class": "partialCommit",
+        "established": "preparationTransaction real rejected transaction/original-state retention and scenario execution-group rollback fixtures",
+        "remaining": "Class output currently uses altered receipt/resource observations. Real transactional refusal and zero leaked state must join the class diagnostic; discarded published transaction trial closes nothing. New OC-rate rejected request has actual rollback/reference-retention proof, but the transaction probe clones only a saved returned-state reference and closes no whole partial-commit class."
+      },
+      {
+        "class": "inertControl",
+        "established": "productionMasterControlAudit original enabled/excluded NP-special and operation requests, user-control typed gate, complete output",
+        "remaining": "Retain scoped proof; stress corruption is not published failure population. Final six-class identity/receipt integration."
+      },
+      {
+        "class": "staleMutation",
+        "established": "hpExecution actual input-command edges; criticalStars/scalar mutation, rollback and later read witnesses",
+        "remaining": "Existing class probe is preparationReceiptMismatch, not whole stale mutation recovery. Join actual mutation/consumer witnesses and command-linked repair at their owners. New live request physically reads changed HP after its real writer and repairs missing HP through an explicit command; the stale probe corrupts only a captured read, so whole stale-mutation closure is not claimed."
+      }
+    ],
+    "declarationKinds": [
+      {
+        "kind": "writer",
+        "published": 486,
+        "established": "3186 original requests;2195 selected/reached/attempted committed operation rows;2113 modifier reads;126 candidate reads. Native selected-unreached, reject and command-edge fixtures retained.",
+        "remaining": "Full alternate/recovery union not implied by these populations."
+      },
+      {
+        "kind": "condition",
+        "published": 10,
+        "established": "Original leaf to canonical/native physical condition read; CE owner and leaf-order fixtures.",
+        "remaining": "Reconcile all phase dispositions rather than add duplicate fixtures."
+      },
+      {
+        "kind": "modifierUseCondition",
+        "published": 0,
+        "established": "Schema-legal false retained-modifier condition physically read before aggregate exclusion.",
+        "remaining": "Keep production-zero and fixture populations separate."
+      },
+      {
+        "kind": "valueExpression",
+        "published": 30,
+        "established": "Selected cell to ordered addModifier and physical value read; support and NP two-operation fixtures.",
+        "remaining": "Native/alternate/recovery union must use original requests, not cell counts."
+      },
+      {
+        "kind": "ocRateExpression",
+        "published": 25,
+        "established": "250 declaration/request selections:10 selected committed/no later grant;240 other cell selected. New six schema-legal original requests preserve 2/1/1/1/1/0 rate rows (physical read or excluded-without-read), exact consumption, rejected state retention, and a command-linked repair. Public and fixture populations remain separate.",
+        "remaining": "This later-grant native/repair slice is verified. Full native/alternate/recovery union with the other six kinds remains Deferred; public ten terminal requests still have no downstream rate reader."
+      },
+      {
+        "kind": "hpConditionedNpGauge",
+        "published": 0,
+        "established": "Schema-legal source HP leaf physical reads with NP-gauge operation identity/reach.",
+        "remaining": "Not an ordered damage reader; zero published declaration does not prove all recovery."
+      },
+      {
+        "kind": "hpRatioLow",
+        "published": 6,
+        "established": "Selected NP variant to candidate NP read. Rejected preparation has no downstream NP read obligation.",
+        "remaining": "Alternate/recovery union requires explicit request/consumer disposition."
+      }
+    ],
+    "legacyDisposition": {
+      "removed": "e081002 removed 13 repeated read/projection calls; executionSemanticsProduction directly calls createSuiteAuditInput once.",
+      "retainedUnique": "Raw OC planning (four raw exports/public metadata), raw normalized OC167/632 numeric/lifetime cells and normalization public-cell/writer join remain unique. resourceProductionInventory/ocProductionInventory are called by compileDataPipelineProductionAudit; application cached loaders and actual calculateRankingPolicy candidateInventory own distinct assertions.",
+      "correction": "audit-tsk00-baseline.mjs pins expected digests, not its input checkout. Its entry reads current apps/web/public/master/master.json and collectSemanticInventory reads obsolete effect.quantityConditions. Direct callers found only in historical TSK-00/TSK-03 evidence commands, not current runtime/suite. Prior wording pinned historical baseline must not be read as code-enforced checkout isolation.",
+      "remaining": "Historical TSK-00 report names that script as a canonical artifact with unique historical digests/serialization/test/PNG inventories. No equivalent current assertions have been demonstrated for its full historical input. Retain rather than delete unique coverage; literal disposition/reproduction documentation belongs to data-pipeline baseline evidence owner and remains Deferred. No raw OC deletion."
+    },
+    "retainedArtifacts": {
+      "reference": "postSixClassFailureOutputCheckpoint.artifacts",
+      "readOnlyDiskVerification": "2 success + 8 failure manifests,189 receipts; all disk bytes/SHA256 and manifest artifactVerification.errors match. Published control and closure test source hashes plus NP-two-operation source/master hashes matched current files before edits. This check is not a new gate or closure."
+    },
+    "verification": {
+      "status": "final-source scoped unit/audit/direct-production, six intentional failure runs, all receipts, static/docs/evidence checks passed; whole TSK-08 acceptance remains Deferred",
+      "unit": {
+        "manifest": ".test-results/2026-09-30T02-40-10-303Z-2-e0cc3d/manifest.json",
+        "bytes": 5323,
+        "sha256": "5ffa30c57245be2752b026bee7bfdd9f5a5a8a7b9d187d381bd0436cdb975b50",
+        "outcome": "success",
+        "receipts": 15,
+        "errors": []
+      },
+      "unitTests": 149,
+      "audit": {
+        "manifest": ".test-results/2026-09-30T02-41-45-811Z-2-20d7d6/manifest.json",
+        "bytes": 24584,
+        "sha256": "24577f6158ce0d68c291842b8622369a7c9b56e1d7d25977b8a9f40ab74d1127",
+        "outcome": "success",
+        "receipts": 99,
+        "errors": [],
+        "counts": {
+          "files": {
+            "total": 5,
+            "passed": 5,
+            "failed": 0,
+            "skipped": 0
+          },
+          "tests": {
+            "total": 88,
+            "passed": 88,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "warnings": 0,
+          "unexpectedObservations": 0,
+          "allowedObservations": 0,
+          "correlatedObservations": 0,
+          "infrastructureObservations": 0
+        },
+        "durationMs": 237809
+      },
+      "directProduction": {
+        "manifest": ".test-results/2026-09-30T02-46-46-143Z-2-747d5a/manifest.json",
+        "bytes": 3731,
+        "sha256": "da192b9487f9d8fa502e0320ecd1d71594c18a0796c8fa8eef3e16d6ce84081b",
+        "outcome": "success",
+        "receipts": 6,
+        "errors": [],
+        "counts": {
+          "files": {
+            "total": 3,
+            "passed": 3,
+            "failed": 0,
+            "skipped": 0
+          },
+          "tests": {
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "warnings": 0,
+          "unexpectedObservations": 0,
+          "allowedObservations": 0,
+          "correlatedObservations": 0,
+          "infrastructureObservations": 0
+        },
+        "durationMs": 37836
+      },
+      "intentionalFailureRuns": [
+        {
+          "probe": "missing",
+          "exitCode": 1,
+          "lines": 12,
+          "bytes": 3186,
+          "manifest": ".test-results/2026-09-30T02-38-48-348Z-3-c61213/manifest.json",
+          "sha256": "8851404476fc4ee61216608416a656b139536cddcece56b569fa61ad9fd94728",
+          "outcome": "test_failure",
+          "receipts": 6,
+          "errors": [],
+          "typedReason": "ocRateReadMismatch",
+          "population": "observationSensitivityOnly"
+        },
+        {
+          "probe": "stale",
+          "exitCode": 1,
+          "lines": 12,
+          "bytes": 3187,
+          "manifest": ".test-results/2026-09-30T02-38-50-862Z-75-10a079/manifest.json",
+          "sha256": "995ef9b9d737487fc1a89cce4f1fe33cc1f0f30b2848c459bc14e49f6a32c8b2",
+          "outcome": "test_failure",
+          "receipts": 6,
+          "errors": [],
+          "typedReason": "ocRateReadMismatch",
+          "population": "observationSensitivityOnly"
+        },
+        {
+          "probe": "transaction",
+          "exitCode": 1,
+          "lines": 12,
+          "bytes": 3188,
+          "manifest": ".test-results/2026-09-30T02-38-53-394Z-147-2aeec7/manifest.json",
+          "sha256": "f7fc3a95fdcf77f4ab6b9d01f981b0be1d348044c555d243cf6491033f823456",
+          "outcome": "test_failure",
+          "receipts": 6,
+          "errors": [],
+          "typedReason": "ocRateTransactionMismatch",
+          "population": "observationSensitivityOnly"
+        },
+        {
+          "probe": "consumption",
+          "exitCode": 1,
+          "lines": 12,
+          "bytes": 3188,
+          "manifest": ".test-results/2026-09-30T02-38-55-863Z-219-f98e0c/manifest.json",
+          "sha256": "1c75a89688f6f88c09daa549f8371e097c20f463ffafc3d0eed7199b5180c67c",
+          "outcome": "test_failure",
+          "receipts": 6,
+          "errors": [],
+          "typedReason": "ocRateTransactionMismatch",
+          "population": "observationSensitivityOnly"
+        },
+        {
+          "probe": "unsupported",
+          "exitCode": 1,
+          "lines": 12,
+          "bytes": 3188,
+          "manifest": ".test-results/2026-09-30T02-38-58-364Z-291-80a170/manifest.json",
+          "sha256": "25a5927069c7029ab5f0a3872691f7af3a6bb61fa0512d5fe8d19bc56caaa17d",
+          "outcome": "test_failure",
+          "receipts": 6,
+          "errors": [],
+          "typedReason": "finalProfileStatusPresent",
+          "population": "schemaLegalOriginalRequest"
+        },
+        {
+          "probe": "invalid",
+          "exitCode": 1,
+          "lines": 12,
+          "bytes": 3188,
+          "manifest": ".test-results/2026-09-30T02-39-00-872Z-363-c1637c/manifest.json",
+          "sha256": "7428372c8c3f91681ca7b74495faf537fa2944bb6f5f6ecf1bc2637127af1dc6",
+          "outcome": "test_failure",
+          "receipts": 6,
+          "errors": [],
+          "typedReason": "finalProfileStatusPresent",
+          "population": "schemaLegalOriginalRequest"
+        }
+      ],
+      "completeArtifact": {
+        "path": ".test-results/2026-09-30T02-40-10-303Z-2-e0cc3d/hp-oc-rate-live-reads.json",
+        "bytes": 2189517,
+        "sha256": "8d913ba2284d451230b8976cfb8d688e7fa27a4ecf1abb80730a1a6d2f42e0bc"
+      },
+      "completeDecodedComparison": "All six failure artifacts and the success artifact have identical bytes/SHA-256 and isDeepStrictEqual decoded values, including all six original master/scenario/result requests, native captures, ledgers, command edge, final outcome gates and seven sensitivity negatives. Each run retains its own distinct manifest and receipt identity.",
+      "receiptVerification": {
+        "retainedManifests": 10,
+        "retainedReceipts": 189,
+        "retainedReference": "postSixClassFailureOutputCheckpoint.artifacts",
+        "newReceipts": 161,
+        "totalReceipts": 350,
+        "errors": 0,
+        "qualification": "Retained artifact bytes are verified/reused for prior scoped evidence and comparison only; this is not same-final-source six-class acceptance."
+      },
+      "boundedOutput": {
+        "failureRuns": 6,
+        "linesPerRun": 12,
+        "maximumBytes": 1758,
+        "completeArtifactSavedBeforeAssertion": true
+      },
+      "publicAuditComparison": {
+        "pathsAndOrderEqual": true,
+        "receipts": 99,
+        "changed": [
+          "vitest.json",
+          "stdout.log"
+        ],
+        "equalReceipts": 97,
+        "beforeDurationMs": 266390,
+        "afterDurationMs": 237809,
+        "beforeControlMs": 35386.763879,
+        "afterControlMs": 32465.540163,
+        "versionsEqual": true,
+        "stderrBytes": 0,
+        "beforeManifest": ".test-results/2026-09-29T16-08-42-115Z-15-d42fdd/manifest.json",
+        "afterManifest": ".test-results/2026-09-30T02-41-45-811Z-2-20d7d6/manifest.json",
+        "qualification": "Same 99 receipt paths/order; only Vitest result and stdout are run-specific. The other 97 complete files, all published declarations/requests/transactions/read obligations/results, are byte-identical. No public OC-rate read occurrence added."
+      },
+      "performanceDiagnostic": {
+        "beforeAuditMs": 266390,
+        "afterAuditMs": 237809,
+        "beforeControlMs": 35386.763879,
+        "afterControlMs": 32465.540163,
+        "qualification": "Saved matching before audit versus current after audit; master/control/closure-test hashes and Node/pnpm/Vitest versions match. Domain artifact counts and values are identical; runtimeCounters are not supplied by this opt-in audit. This bounded observation does not certify environment equivalence or replace RK-PERF-001/TS-PERF-002 comparable three runs per side. The isolated checkout attempt stopped at pnpm verifyDepsBeforeRun before any test; dependency checks were not relaxed."
+      },
+      "static": "pnpm exec tsc -b --pretty false; target ESLint --max-warnings=0; target Prettier check; git diff --check passed.",
+      "environmentProtection": "All executed Vitest projects use a temporary envDir:false .mts config preserving repository project membership, worker counts and test timeouts. No environment-file contents read. The earlier .ts temporary-config startup warning is resolved; final unit, probes, audit and direct-production stderr are empty.",
+      "documentation": {
+        "docsCommand": "pnpm test:docs",
+        "docsTests": 6,
+        "evidenceCommand": "node scripts/test-runner.mjs compact --suite=production --config=<temporary envDir:false .mts config> packages/calculation-application/src/evidenceInventory.test.ts packages/calculation-application/src/evidence.test.ts",
+        "evidenceTests": 10,
+        "evidenceManifest": {
+          "manifest": ".test-results/2026-09-30T02-52-30-757Z-2-7af25d/manifest.json",
+          "bytes": 2972,
+          "sha256": "fd2165f16bae9dcc4e33f9f3672ae9f30df5fbd3c5e6ac37838cdad7c4e49c3c",
+          "receipts": 5,
+          "errors": []
+        },
+        "formatQualification": "Repository .prettierignore excludes docs; source files pass targeted Prettier. Unchanged JSON sections retain their staged formatting; JSON decoded content and docs integrity are verified."
+      }
+    },
+    "closure": "Checklist1/lifecycle1-3 and Step0/1/3 retain matching scoped evidence. This OC native-read/command-repair/diagnostic unit reduces checklist2/3 and lifecycle4/5/8, without checking off their whole union. Whole six-class and seven-kind union, checklist4/lifecycle6 historical baseline disposition, Done gate and TS-AUDIT-001/RK-AUDIT-001/TS-OUT-001/TS-ART-001 final acceptance remain Deferred. RK-PERF-001/TS-PERF-002 formal comparable before/after three runs and DX-HANDOFF-001/lifecycle7 README quality remain Deferred. No dependent quality, eight-shard regeneration, TSK-09 work or push.",
+    "sourceIdentity": {
+      "packages/battle-execution/src/ocState.ts": {
+        "bytes": 18258,
+        "sha256": "8a669a9906468d5cb31eba2369f844f9b86a171904c83ec0b6d4da9f44cb5e02"
+      },
+      "packages/battle-execution/src/preparationOc.ts": {
+        "bytes": 64153,
+        "sha256": "2def74f7d72dcb95fa14ff354c60d1222c4006c7a70e0914b316d9666e022e28"
+      },
+      "packages/battle-execution/src/preparationAttemptObservation.ts": {
+        "bytes": 4653,
+        "sha256": "d4955b83e80840fb04a34162c78a8c877439f9fb85d8d2385b98518ce87e45e9"
+      },
+      "packages/calculation-application/src/productionOcRateReadAudit.ts": {
+        "bytes": 15033,
+        "sha256": "9e669d69a4169a2ae261672ffe863f05f37ce00e589fa0e6630a6c8cfa3aefb2"
+      },
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts": {
+        "bytes": 60248,
+        "sha256": "af087670d03b928028193726cb1fe2057420e30ab1f03f563dc1a906ff494cad"
+      },
+      "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts": {
+        "bytes": 64839,
+        "sha256": "54b77eef4f51008340ba8ea9218fce0f1f44afa02093c99cd1bc6aba99e5b7e7"
+      },
+      "apps/web/public/master/master.json": {
+        "bytes": 32953998,
+        "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+      }
+    },
+    "closedConditions": [
+      "Previously unrepresented schema-legal original request: selected HP-dependent rate -> later native grant -> two physical HP reads with a real intervening HP mutation -> committed finite-use consumption exactly once per action.",
+      "Missing HP native refusal -> exact original OC/preparation state retained -> applyCanonicalInputCommand -> separate repairAttempt request -> physical read/commit, with the command edge preserved.",
+      "Policy exclusion consumes the physical finite-use rate instance without an HP read; a later missing selected OC cell rejects the native action and retains its original state.",
+      "Actual schema-parsed request results unsupported and invalid are supplied to the existing final-profile gate before intentional runner failure. Native invalid/missingOcCell becomes application unsupported; missing attacker-level stat produces a separate final invalid before preparation.",
+      "The shared published dependency gate now detects missing/stale read captures, missing query order/population, forged exclusion, overconsumption and wrong returned-state identity. Rejected native outcomes are empty, so required selections are checked from the original reached grants, including the erased-rejection counterexample."
+    ],
+    "legacyDefinitionTable": [
+      {
+        "definition": "packages/data-pipeline/scripts/audit-tsk00-baseline.mjs::collectSemanticInventory and entry",
+        "directCaller": "Historical commands in docs/evidence/test-ranking-baseline-tsk-00.md and shared-production-audit-tsk-03.md; no current runtime/suite caller found",
+        "population": "Entry reads current published master; collectSemanticInventory reads obsolete effect.quantityConditions",
+        "uniqueAssertion": "TSK-00 semantic/resource, test/PNG inventories, sorting/serialization and historical expected digests; report names the script a canonical artifact",
+        "disposition": "separate owner / Deferred: reproduce at the original TSK-00 snapshot, document its exact historical boundary, then decide literal obsolete status; do not delete or add current-schema fallback"
+      },
+      {
+        "definition": "packages/data-pipeline/scripts/audit-oc-planning-baseline.mjs",
+        "directCaller": "docs/evidence/ranking-policy-candidate-flow-tsk-06.md historical command",
+        "population": "Four raw exports/function metadata plus published master",
+        "uniqueAssertion": "Raw OC/rate/writer metadata joins and partitions",
+        "disposition": "retain unique raw evidence; not an equivalent obsolete runtime scan"
+      },
+      {
+        "definition": "packages/data-pipeline/scripts/audit-oc-normalized-master.ts and audit-oc-normalization.mjs",
+        "directCaller": "Same historical flow commands; normalization consumes baseline/normalized OC output",
+        "population": "Raw 167 OC occurrences/632 cells and their public normalized cell/writer join",
+        "uniqueAssertion": "Numeric/lifetime raw-cell equality and public join",
+        "disposition": "retain unique raw evidence; no deletion"
+      },
+      {
+        "definition": "resourceProductionAudit.ts::resourceProductionInventory and ocProductionAudit.ts::ocProductionInventory",
+        "directCaller": "packages/data-pipeline/src/productionAudit.ts::compileDataPipelineProductionAudit",
+        "population": "Current canonical effect occurrences",
+        "uniqueAssertion": "Current resource/OC canonical inventory",
+        "disposition": "established current owners; not obsolete"
+      },
+      {
+        "definition": "productionMasterInventory.test.ts cached master, productionExecutionParity.test.ts::loadMaster, productionMasterControlAudit.test.ts cached master",
+        "directCaller": "Their explicit production/audit suite tests",
+        "population": "One cached published-master parse per test file with distinct inventory/control/parity assertions",
+        "uniqueAssertion": "Different current production assertions; old 13 repeated read/projection calls already removed by e081002",
+        "disposition": "retain; no equivalent duplicate loader/fixture established"
+      },
+      {
+        "definition": "packages/calculation-application/src/productionClosureAudit.ts::auditProductionClosure candidateInventory",
+        "directCaller": "Existing production/matrix consumers",
+        "population": "Actual calculateRankingPolicy result.candidateInventory",
+        "uniqueAssertion": "Actual policy candidate execution inventory, not a second expected candidate generator",
+        "disposition": "retain current owner"
+      }
+    ],
+    "nextLimitedOperation": "At the data-pipeline baseline-evidence owner, resolve the historical auditor entry/current-master contradiction at the original TSK-00 snapshot while retaining raw OC167/632/public join assertions. Separately join the existing original-request six-class/seven-kind native/alternate/recovery evidence; do not implement another already-covered declaration fixture, replay the discarded published transaction diagnostic, or infer physical reads from selected cells. Only after those Deferred conditions close may final matrix/performance/quality acceptance start.",
+    "localCommit": {
+      "scope": [
+        "docs/evidence/tsk-08-parity-ratchet.json",
+        "docs/tasks/development-redesign-tasks.md",
+        "packages/battle-execution/src/ocState.ts",
+        "packages/battle-execution/src/preparationOc.ts",
+        "packages/battle-execution/src/preparationAttemptObservation.ts",
+        "packages/calculation-application/src/productionOcRateReadAudit.ts",
+        "packages/calculation-application/src/productionHpPublishedDependencyCoverage.ts",
+        "packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts"
+      ],
+      "identity": "The local commit containing this checkpoint and the eight scoped files. Source hashes and manifest receipts remain unchanged; obtain the commit SHA from Git history to avoid self-reference.",
+      "push": false,
+      "status": "included_in_local_checkpoint",
+      "previousAttempt": "Both normal and require_escalated git add of the eight scoped files failed creating .git/index.lock with Read-only file system. Automatic approval did not reject the action; filesystem writability is the blocker. Initial staged Task/evidence diff remains unchanged.",
+      "authorization": "User explicitly requested commit after .git write permission was added. The eight scoped paths were staged and reviewed; no push."
+    }
+  },
+  "currentStepConvergenceReview": {
+    "date": "2026-09-30",
+    "status": "approved_oc_rate_unit_scoped_verification_product_incomplete",
+    "head": "cfe60dd6680794c52deddcfeef1a7712b29cb49a",
+    "sourceBoundary": "Approved OC-rate native selection/read/transaction capture and its shared diagnostic consumer are now implemented; final source hashes and scoped verification are in postOcRateReadCheckpoint. Initial staged/unstaged Task/evidence changes were retained. The discarded published transaction trial remains historical diagnostic evidence only.",
+    "stepDecision": {
+      "0": "established at matching baseline and contract identity",
+      "1": "established V41 marker, V40 retention and explicit V41 recomputation at matching identity",
+      "2": "in_progress: checklist2-4, Done gate, contract acceptance and input lifecycle4-8 have unresolved conditions; scoped proofs do not close their union",
+      "3": "established 80-condition matrix and eligibility at matching identity; this does not imply Step2 closure",
+      "dependencies": "TSK-09.1 and TSK-09 blocked"
+    },
+    "progressFalsifier": "The existing single/merge matrix producers already call the preparation transaction gate for calculated published records. Repeating that call with altered saved gauge or receipt identity does not prove partial transaction rejection, zero leaked state, stale mutation recovery, or a new original-request reach. A future unit must first identify an obligation absent from existing source/caller/artifacts and show its reduction. Selected cells are not physical reads; a schema-legal fixture is not a published occurrence; failure runs cannot share one artifact identity merely because they share source/master/input.",
+    "step2Order": [
+      "2a: Build a finite original-request table for six failure classes and seven declaration-kind selection/native/alternate/recovery/physical-read/consumption phases. For each row identify direct producer/consumer, existing artifact, normal population including zero, schema-legal boundary, exact checklist/contract/lifecycle obligation and status: established, real gap, production-zero fixture only, no downstream consumer or separate owner. Unknown or contradictory states stay unresolved.",
+      "2b: Select one real same-owner gap from 2a. Require independent governing rule, original request, normal/zero population, intentional schema-legal falsifier, actual typed gate/reason and canonical first difference, saved complete artifact before failing assertion, bounded runner output and every disk receipt. A replay of an already connected gate or synthetic observation corruption without the claimed transaction/recovery transition closes nothing.",
+      "2c: Decide checklist4 literally by exact obsolete loader/scan/candidate-list/duplicate-fixture definition, direct caller, input population and unique assertion. Remove only an equivalent obsolete path; if none remains, record the exhaustive disposition. Retain raw OC 167 occurrences/632 cells and published join evidence.",
+      "2d: Only after 2a-2c have no in-scope Deferred/Blocking, freeze final source/master/input. Reconcile each failure probe against its own manifest/artifact/receipts, and the integrated inventory/digest, 80 conditions, parity, fail-closed, damage differences, first diff and output bounds. Run applicable audits, RK-PERF-001 and TS-PERF-002 comparable before/after three process runs, then README quality once. A changed verification identity invalidates affected results."
+    ],
+    "nextLimitedOperation": "At the data-pipeline baseline-evidence owner, resolve the historical auditor entry/current-master contradiction at the original TSK-00 snapshot while retaining raw OC167/632/public join assertions. Separately join the existing original-request six-class/seven-kind native/alternate/recovery evidence; do not implement another already-covered declaration fixture, replay the discarded published transaction diagnostic, or infer physical reads from selected cells. Only after those Deferred conditions close may final matrix/performance/quality acceptance start.",
+    "currentUnitReference": "postOcRateReadCheckpoint"
+  },
   "remainingWorkSummary": {
     "asOfPreparationCommit": "95cbab5fc811ccf20ec72c816f871cb97ab465ae",
     "establishedSteps": [
@@ -29495,7 +29992,7 @@
       3
     ],
     "openStep": 2,
-    "nextSession": "Follow postSixClassStepReconciliation.firstDeliverable and progressFalsifier. Published inert NP and operation counterexamples now use the actual public gate failure/save/runner path with independent expectation; five other classes have only fixture failure output. Step0/1/3 established at retained identity; Step2/TSK-08 in_progress; TSK-09.1/09 blocked. Plan first, obtain confirmation, then execute the approved unit. No dependent quality or push.",
+    "nextSession": "At the data-pipeline baseline-evidence owner, resolve the historical auditor entry/current-master contradiction at the original TSK-00 snapshot while retaining raw OC167/632/public join assertions. Separately join the existing original-request six-class/seven-kind native/alternate/recovery evidence; do not implement another already-covered declaration fixture, replay the discarded published transaction diagnostic, or infer physical reads from selected cells. Only after those Deferred conditions close may final matrix/performance/quality acceptance start.",
     "remainingWorkRedesign": {
       "decision": "Finite closure by canonical transition and failure class, not declaration-by-declaration audit expansion. Existing evidence is reused only at matching source/input/artifact identity. No new expectation generator, audit authority, or silent fallback.",
       "coverageUnit": "Join shared declaration inventory and original requests to typed operation/actor/recipient, ordered selection/reachability, native attempt, commit, physical read and consumption. Normal nonselection, no downstream consumer, transactional rejection and separate-run recovery remain distinct. Falsify with representative production and schema-legal forward/reject/recovery paths; change only an unrepresentable semantic boundary.",
@@ -29597,8 +30094,8 @@
     "capacityComparisonCheckpointCommit": "c387c9f829238aaa5c95126a5a31cb900cdb905f",
     "committedCapacityMaterializationCheckpointReference": "boundedUnits[52].committedCapacityMaterializationCheckpoint",
     "committedCapacityMaterializationCheckpointCommit": "a842b918b2f2c62035f5b4c3af21941e59ed7190",
-    "nextSessionReference": "postSixClassStepReconciliation.firstDeliverable",
-    "latestCheckpointReference": "postSixClassStepReconciliation",
+    "nextSessionReference": "currentStepConvergenceReview.nextLimitedOperation",
+    "latestCheckpointReference": "currentStepConvergenceReview",
     "controlAuditArtifactCheckpointReference": "boundedUnits[52].controlAuditArtifactCheckpoint",
     "controlAuditArtifactCheckpointCommit": "b48c7ce864ece2c9d66aa6a16f02e4a313d5f53f",
     "capacityAttemptMaterializationCheckpointReference": "boundedUnits[52].capacityAttemptMaterializationCheckpoint",
@@ -29622,6 +30119,7 @@
     "asOfSupportValueReadCheckpointReference": "boundedUnits[52].hpPublishedSupportValueReadCheckpoint",
     "ceConditionOwnerCheckpointReference": "boundedUnits[52].ceConditionOwnerCheckpoint",
     "ceConditionOwnerCheckpointCommit": "95b5b3ca58faa691ec745cca990f82f7ac58c68a",
-    "noHealingNativeCheckpointReference": "boundedUnits[52].hpNoHealingNativeCheckpoint"
+    "noHealingNativeCheckpointReference": "boundedUnits[52].hpNoHealingNativeCheckpoint",
+    "ocRateReadCheckpointReference": "postOcRateReadCheckpoint"
   }
 }

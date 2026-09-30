@@ -11,6 +11,7 @@ import {
   type CanonicalAuditDifference,
 } from '@fgo-lab/master-data/production-audit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
+import { reconcileOcRateReads } from './productionOcRateReadAudit';
 import {
   hpProofCoverageInventory,
   pairedHpRequirementLeaves,
@@ -69,7 +70,9 @@ export type HpPublishedDependencyReason =
   | 'valueReadMismatch'
   | 'npVariantSelectionMismatch'
   | 'candidatePreflightMismatch'
-  | 'candidateEventMismatch';
+  | 'candidateEventMismatch'
+  | 'ocRateReadMismatch'
+  | 'ocRateTransactionMismatch';
 interface Failure {
   reason: HpPublishedDependencyReason;
   path: string;
@@ -1028,7 +1031,8 @@ export function reconcileHpPublishedDependencyCoverage(
   observed: readonly HpPublishedDependencyBinding[],
 ) {
   const expected = hpPublishedDependencyBindings(declarations, requests);
-  const failures: Failure[] = [...expected.failures];
+  const ocRateReads = reconcileOcRateReads(declarations, requests);
+  const failures: Failure[] = [...expected.failures, ...ocRateReads.failures];
   const fail = (reason: HpPublishedDependencyReason, path: string) =>
     failures.push({ reason, path });
   const declared = new Set<string>();
@@ -1478,6 +1482,7 @@ export function reconcileHpPublishedDependencyCoverage(
       },
     })),
     consumerPlans,
+    ...(ocRateReads.rows.length || ocRateReads.failures.length ? { ocRateReads } : {}),
     selectedUnreached,
     qualification:
       'Correspondence within the original control producer requests only. Direct scenario owner is not variant or cell selection. Declaration, selected cell, reached step, native action, append, actual read and NP evaluation are distinct; absent stages are not zero, unsupported or product exclusion.',
