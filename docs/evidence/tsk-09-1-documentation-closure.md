@@ -1,16 +1,16 @@
 ---
 title: "TSK-09.1 documentation closure decision ledger"
-document_version: "1.3.0"
+document_version: "1.4.2"
 status: "Active"
 created_at: "2026-10-01"
-updated_at: "2026-10-01"
+updated_at: "2026-10-02"
 baseline_head: "0a787e8efd144242e5858c0e3da8b8ed0a4ab6fe"
 implementation_task: "docs/tasks/development-redesign-tasks.md TSK-09.1"
 ---
 
 # TSK-09.1 documentation closure decision ledger
 
-STEP 1の判定台帳、STEP 2の保存実験、採用した保持範囲を記録する。進捗・依存・次操作は[Tasks](../tasks/development-redesign-tasks.md)が所有する。本書は対象集合、保持する意味、未確定事項の解消ownerを所有し、別計画書へ複製しない。利用者指定によりTSK-09.11の専用baseline・再現fixture移行を最初に実施する。09.11はdone、09.1はready、STEP 2は09.11の成果から再開し、STEP 3〜6とTSK-09は未実施である。以下の全履歴bundle方式・非公開転送・pin前提は初回実験の履歴で、現在の実行順を所有しない。
+STEP 1の判定台帳、STEP 2の保存実験、採用した保持範囲を記録する。進捗・依存・次操作は[Tasks](../tasks/development-redesign-tasks.md)が所有する。本書は対象集合、保持する意味、未確定事項の解消ownerを所有し、別計画書へ複製しない。TSK-09.11の移行はdone、承認された09.1 STEP 2も完了。保持契約は以下のA表、最終判定と証拠は末尾のSTEP 2受入を正本とする。09.12の旧bundle処遇判断は完了・物理処遇未実施。09.1はin_progressへ戻し、STEP 3〜6とTSK-09は未実施である。以下の全履歴bundle方式・非公開転送・pin前提は初回実験の履歴で、現在の実行順を所有しない。
 
 ## 境界と入力の同一性
 
@@ -232,22 +232,22 @@ Kind＝machine evidence、owner＝rowのTaskが採用したaudit／差分／検�
 
 ## 必須artifactと保存判断の有限集合
 
-次のA集合は**必須の意味・直接入力**である。STEP 1はこれを支える実在artifactの保護集合Kを固定し、STEP 2が保存先・保持期間・最小実体・重複の扱い・復元prototypeを決める。Kの全raw fileをGitへ保存すべきだとは判定していない。
+次のA集合は**保持する意味と直接入力の現行契約**である。STEP 1の原証跡集合Kと09.11の移管結果を入力に、承認されたSTEP 2で収束した。原pathへの参照は原byteの無期限保持を要求しない。期間・取得保証・不足時の能力制限は下表と[STEP 2保持契約](#step-2-保持契約の収束)を合わせて読む。Kの定義と後続のbundle契約は当時の保存実験として保持する。
 
-| ID | Kind／owner／入力形式・metadata | 必須の実体と参照経路 | 分類・保持する意味／後継・担当 |
+| ID／保持する意味・owner | 移管先・固定identity | 参照期間・現在の取得保証 | 入手・再開／不足時の対応・再利用限界 |
 | --- | --- | --- | --- |
-| A0 | canonical expected／TSK-06.5 source＋matrix reader／JSON manifest＋condition body | `.test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-matrix/manifest.json`→productionArtifacts.conditionRecords80件 | 現行根拠。manifest394462 bytes／SHA `879af462bd3209ffaf18365a25598bbcf07e008b6164991d65355ad55cb1a95a`、body宣言計462712642 bytes。manifest一致と80件存在を再確認。後継なし（固定expected）。全本文hashはFの照合を条件付き再利用。STEP 2／TSK-09実caller |
-| A1 | 正式before／after性能とdamage比較／TSK-08／matrix・shard・receipt JSON、log | approvedClosureImplementation.finalAcceptanceのformalRuns／matrixReferences／protectedRecords、performance-canonical保存manifest | 固有履歴。正式3＋3、候補／damage／環境／script hashを保持。Fのfresh3runとは別条件。F.performanceが参照する根拠であり数値だけへの置換不可。STEP 2 |
-| A2 | 六失敗クラス／transaction・parity・control owner／runner manifest、raw capture、failure JSON、stdout／stderr | classJoin.finalFailureProbes6件→各artifacts。原診断と独立manifest bytes／SHA | 現行根拠＋固有履歴。意図した非zero／typed理由と実faultを保存。後継Fは成立範囲を再利用し元captureを代替しない。STEP 2 |
-| A3 | 元primitive／published proof／TSK-08 shared audit／inventory・paths JSON＋独立disk receipt | approvedClosureImplementation.finalAcceptanceのprimitiveInventory／publicProofs／independentHpDiskReceipts5件 | 現行根拠。runner宣言と独立disk receiptを区別、HP／OC／give／七宣言のschema-legal／published／native／recoveryを保存。件数への置換不可。STEP 2 |
-| A4 | saved-reader構造・gate反例／matrix acceptance owner／probe registry＋raw8shard＋condition＋log | serializedGateClosure.finalAcceptance→`.test-results/tsk-08-gate-closure-20261001/probe-results.json`41件と完全診断、retainedProof | 現行根拠＋固有履歴。元偽成功／generic失敗も保持。破損入力をnormal gameplayと扱わない。STEP 2 |
-| A5 | nonfinite writer／reader・latest normal／productionAuditValue等／JSON＋raw text | F.realCaller（reader5、writer1024）、F.normalMatrix3run×80＋8shard、merge-after3run、source-identity・audit-reachability・reconciliation | 現行根拠。value domain／first leaf path／原入力／全issue、before comparison／digest／writeの拒否を保存。後継なし（最終受入）。STEP 2 |
-| A6 | 適用auditの条件付き再利用／登録audit owner／runner manifestとartifact | `.test-results/2026-09-30T17-32-03-143Z-15-fa5942/manifest.json`、F.registeredAuditReuse.proof | 現行根拠。88tests、登録5file→不変10functionの到達証明。current cleanupの削除候補。単なるaudit成功文字列へ代替不可。STEP 2、pin運用はTSK-09 |
-| A7 | 最終qualityと失敗帰属／quality runner／親子manifest・各receipt・log・browser artifact | F.quality→`.test-results/2026-10-01T06-40-04-438Z-16-7a153c/manifest.json`、unit／production／playwright子run。earlierAttemptも保持 | 現行根拠＋固有履歴。成功manifest287630 bytes／SHA `87a76cf851e0aa141800c7383ed00030d899ec1dcc67ffcc85f1ba91f6ddc53a`、633 declarations／2333025843 logical bytes。5s timeout失敗を成功へ上書きしない。STEP 2 |
-| A8 | 歴史画像／E4 report／PNG＋Git object metadata | E4の消えたchromium画像3件。下記Git復元表 | 固有履歴。当時の画像を別baselineの現mobile画像で置換しない。STEP 3 |
-| A9 | 判定・検証probe／本STEP／JSON inventory・membership・log＋receipt | `.test-results/tsk-09-1-step1-20261001/`と先行probe。持続する結論は本書／Taskへ記録 | 固有履歴。probe自体は長期正本でなく、Kの唯一の定義にも使わない。STEP 2で必要な補助結果の保持を判断 |
+| A0 全承認済み期待値／source declaration・baseline reader | `tsk-06-5-production-closure.json::productionMatrix.canonicalRecords` → `packages/calculation-application/baselines/production-v1/manifest.json`＋80gzip。index376249 bytes／SHA `50cbcb378d8743a9a678df5415eae93e269ffcc12514ed18344ee6a2e074534a`、本文はindexの圧縮／展開receipt。originは元commit `60dea89944a884bbbe40464eb1ae7e65cb77ad4e`・manifest394462 bytes／SHA `879af462bd3209ffaf18365a25598bbcf07e008b6164991d65355ad55cb1a95a` | 現行consumerの利用期間。固定repository revisionから取得する契約。更新時は独立承認済み期待値へ移管し判断を残す。元manifest／80本文の存在は長期取得保証にしない | 同じrevisionのsource・master・baselineを取得して実readerへ。欠落・破損はtyped非zero、固定identityの再取得。新producer・別SHA・元run・bundleで補わない。replayは保存reader受入でありfresh damage成功ではない |
+| A1 正式before／after性能・damage比較／TSK-08・09.11測定owner | `tsk-08-parity-ratchet.json::approvedClosureImplementation.finalAcceptance` のformalRuns／performance／matrixReferences／protectedRecords、元source・環境の関連記録。本書09.11の変更reader3＋3・sample・Node版。原runごとのpath／receiptを維持 | 判断・元3＋3の条件はGit履歴の参照期間。原matrix／shard／ranking JSON／logは調査policy。原run全体の永続取得保証はない | 同じrevisionの判断記録を読む。原byte照合は元runとreceiptが揃う間だけ。raw不足後も当時の測定判断は残すが、原byte再照合・同条件fresh成功は主張しない。最新normal／reader3＋3で正式性能を代替しない |
+| A2 六失敗クラス／transaction・parity・control owner | `productionClosureAudit.test.ts`、`productionHpPublishedDependencyCoverage.test.ts` の小fixture＋`production-baseline-acceptance.mjs six`。元captureは同machine evidenceのclassJoin.finalFailureProbes6件（run・path・bytes／SHA・非zero・typed理由） | 契約・故障検出を利用する期間はrepositoryのfixture／commandを保持。元production capture／runner manifest／logは調査policy | 同じrevisionのsixを新directoryで実行しrunnerの完全artifactを読む。fixture不足はrevision再取得。原capture不足は過去runの照合未成立とし、必要ならfresh sixへ。同じ故障familyの再現を原captureのbyte／identity再現へ代入しない |
+| A3 primitive・published固有内容／raw data・shared audit・独立receipt owner | 現行schema-legal／native／published fixtureと七宣言のmachine evidence。固有原入力は`.test-results/tsk-06-48-a0/oc-inventory.json`のrawOc／metadata／published join、同machine evidenceのprimitiveInventory／publicProofs／independentHpDiskReceipts5件。個別identityと保持理由は下記A3節 | 意味規則／採用判断はGit参照期間。原調査artifactは調査policy、手動名directoryも永続保証なし。`data/raw/`はcleanup対象外で、新期限を設けず個別処遇保留。原固有内容をcanonical-only fixtureへ移管済みとは扱わない | 原pathと固定receiptを明示して取得・照合する。別path探索・別raw版で補わない。不足した原入力の採取・出自再監査は未成立。raw OC167／632や独立HP receiptをfixture件数・digestだけで証明しない。現在raw一式による当時の再採取も未成立 |
+| A4 saved-reader構造・gate反例／matrix acceptance owner | `productionRegressionBaseline.test.ts`＋実merge11反例のmutation定義。本書09.11受入と同machine evidenceのserializedGateClosure.finalAcceptanceは元41反例・偽成功／generic失敗・不正JSON／SHA不一致を記録 | reader契約の利用期間はrepositoryのtest／commandとGit判断記録。元raw8shard／condition／probe registry／完全診断は調査policy | matrix commandを新artifactで実行。元不正JSON／null宣言／SHA不一致は原文・宣言と観測の区別を保つ。raw不足後は歴史findingとし、現testから過去bugのbyteを再監査したとは言わない |
+| A5 nonfinite・normal／value-domain・writer／reader owner | 現行value-domain test、大量失敗生成、A0全期待値／inventory／digest、実merge。元reader5／writer1024／normal3run／merge-after3runの条件は同machine evidenceのnonfinite最終受入と本書 | 意味契約を利用する期間はtest／baseline／判断記録。過去normalの全コピーと1024件の診断は調査policy | 新artifactへ正常／非有限値／大量失敗を生成し完全保存する。過去raw不足は当時のbyte照合不能と明示。原normal3run・正式測定・保存入力replayを別条件として扱い、1024件のコピーを恒久fixtureにしない |
+| A6 適用auditの条件付き再利用／登録audit owner | 同machine evidenceの`implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance.registeredAuditReuse`、登録5file→不変10function、88test判断。元manifestは`.test-results/2026-09-30T17-32-03-143Z-15-fa5942/manifest.json` | 登録suite／採用判断はGit参照期間。原run／到達proof／全receiptは調査policy。cleanup候補であることを長期保持保証へ読み替えない | 元run・全receiptが揃いsource／入力／到達条件が一致する範囲でのみ照合付き再利用。不足後は歴史受入記録。将来Taskがfresh auditを必要と判断したら`pnpm test:audit`へ。pin／bundle復元を必須にしない |
+| A7 quality・失敗帰属／quality runner | 本書09.11最終受入（1603／157／29・全10step・warning0）と同machine evidenceのTSK-08最終受入／earlierAttempt。元09.11 manifest287630 bytes／SHA `049250ded638c25c2af38642b05858b773b7fed21daa5a8716f32379abbef048` | 成否・帰属・source条件の判断はGit参照期間。完全log／trace／親子manifest／receiptは調査policy | 失敗を成功で上書きしない。原親子graph不足後はbyte再監査不能とする。新しい製品／quality経路変更は新qualityで検証。同条件の文書記録変更へ09.11 qualityを再実行せず、今回の文書ゲートで閉じる |
+| A8 歴史画像／E4 report | 下記PNG3件の元commit／blob／bytes／SHA復元表。現画像への後継置換なし | 元画像の判断を参照する期間は指定Git履歴を取得可能にする。今回localの3blob一致は確認、別checkoutのhistory取得・link処遇はSTEP 3／6未実施 | 指定commitのhistoryを取得して元pathのPNGを復元・SHA照合。取得できなければ画像復元未成立。現在mobile画像で代替しない |
+| A9 判定・調査・移管receipt／本台帳・Task | 結論とsource／条件／移管identityは本書・TaskのGit記録。STEP 1、初回STEP 2、09.11、今回の詳細は各`.test-results/`。旧bundle固定index SHAは履歴節、prototypeは未追跡の実験owner | 判断の参照期間はGit記録。詳細は調査policy。手動名directory／約486 MB bundleの現在存在に永続保証・fresh clone必須入力の責務はない | registry→Task→本書から再開。調査raw不足は結論の出自・実行記録とbyte照合の能力を区別し、必要な局所commandだけ新artifactへ。bundle保管先選び・転送・復元から現行回帰を再開しない |
 
-Kの定義は開始HEADの上記A0〜A7から次の規則で得る（A8／tracked golden／masterは別集合）。**seedの実pathは後の全件表へ固定**する。
+Kの定義はSTEP 1開始HEADの原A0〜A7（下記seed全件）から次の規則で得る（A8／tracked golden／masterは別集合）。**seedの実pathは後の全件表へ固定**する。
 
 1. F、approvedClosureImplementation.finalAcceptance、classJoin.finalFailureProbes、serializedGateClosure.finalAcceptanceにある実file参照、A0固定manifestとA4 probe-resultsをseedとする。
 2. seedおよびそこから辿るmanifest／reconciliation／probe-resultsのrepository-relative `.test-results/` file参照を加える。本文説明、directory名、数値・code snippetはfile参照としない。
@@ -377,8 +377,8 @@ docs MarkdownのFM／status欠落42件（ADR本文22＋index1、evidence18、lic
 | U2 | 古いindex status／phase checkpointと最終受入の区別。TSK-08 root doneだがindexは途中in_progress説明を保持、flowのTSK-07 blocked等は履歴 | STEP 3 | F／Taskの現在statusへ参照を結び、元checkpoint・固有deltaを残す。resolved-attacker flowのFM Complete／index Active等のrole差を判断し、単純な最終Complete置換をしない |
 | U3 | 42欠落／8語彙外、kind別必須metadataの移管。採用判断・当時のUX確認・Verifiedの意味 | STEP 4→STEP 5 | 本台帳の各移管元本文・ADR status／index／承認記録を照合し、意味の保持先を確定してから明示metadataへ移す。licenseのprovenance／ADR本文を現行化しない。negative fixtureで未知値・欠落を拒否 |
 | U4 | root入口・AGENTS・CLAUDE aliasの検査契約と全Markdown構文 | STEP 4（必要metadata判断）→STEP 5 | symlinkとtracked解決先、reference-style／anchor／HTML／code fence、kind責務のfixtures。Task区間parserのUTC timestamp／最終区間不具合、bounded大量errorを既存ownerで修正。本STEPでinspectorを直さない |
-| U5 | 09.11の移管・検証能力はVerified。全参照復元集合Kと必要な保持を分離し、A0〜A9の移管先・期間・限界を本書の現行保持表へ記録した。元不正JSON／SHA不一致は保持 | TSK-09.11 done→09.1 STEP 2（文書処遇は未実行） | 現行期待値1セットの全意味値・inventory／digest一致、六失敗クラスと受入反例、判断記録への移管、固有根拠のretain理由を確認。Kの復元成功を検証上の最小性の証明にしない |
-| U6 | 09.11の元run禁止受入はVerified。repositoryのbaseline・fixtureだけから取得／実mergeでき、不足時は固定identityの再取得・typed拒否。調査artifactは期限付きで恒久baselineと分離 | TSK-09.11 done→09.1 STEP 2・6（契約／導線は未実行）、project closureはTSK-09 | baseline／fixture／記録の固定identity・入手・不足時拒否を接続し、元runなしの実consumerで確認。完全logは既存policyで保持し、全履歴bundleの非公開保管やpin機能を方式として必須にしない。rawの参照期間と再利用の限界を明示し、cleanupは実行しない |
+| U5 | STEP 2の保持分類・移管契約を収束。A0〜A9の現行表、A3固有内容のretain理由と原入力不足、Kの履歴境界を明示 | TSK-09.11／STEP 2 Verified（文書処遇はSTEP 3以降） | 同じ意味値・inventory／digestと実consumer証拠を継承。A3の固有原内容は原位置にretainし、移管済み・削除可能とは扱わない。K全件の復元を保持最小性へ代入しない |
+| U6 | STEP 2の固定identity・入手／不足時拒否・原rawの期間と限界を接続。09.11の元run禁止replay／実mergeを同条件で継承 | STEP 2 Verified、文書処遇後の別checkout導線はSTEP 6、project closureはTSK-09 | 実consumer受入は依存を共有した別rootの証拠。ネットワーク取得／新規依存install／全処遇後の文書再開は未受入。STEP 6でregistryから辿り、保持契約や元run禁止受入を同条件で繰り返さない |
 | U7 | 歴史画像3linkとGit-only18snapshotのfresh復元条件 | STEP 3（画像）／STEP 4（既存処遇継承）／STEP 6（checkout受入） | 上のcommit／blob／SHAとarchive indexから同一byteへ到達させる。shallow cloneは必要historyを明示取得し、現mobile画像への代入をしない |
 
 未確定事項はSTEP 1の分類・集合確定を妨げないが、TSK-09.1の全体Done gateを未達にする。処遇や保存検証の成功を先取りしない。
@@ -428,7 +428,7 @@ STEP 1のKを**K₀**と呼ぶ。K₀の全8,972 pathを保存・復元した後
 
 ### 保存対象・期間・取得／不足時の責務
 
-以下は必要な保持期間の契約条件であり、未確定の保管先でその期間が既に保証されたとの主張ではない。A0〜A7を支える最小byte実体はK₁の観測SHA単位object、元run／path／宣言はindexと変更しない原manifest／receiptが所有する。
+以下は初回実験で仮定した旧保存契約であり、現在の保持期間・取得方式を所有しない。当時も未確定の保管先による寿命保証は未成立だった。K₁は当時の全参照復元対象で、観測SHA単位objectと元run／path／宣言をindex・変更しない原manifest／receiptで対応付けた。現在の契約は冒頭A表と末尾STEP 2保持契約を参照する。
 
 | 意味 | 保存対象／保持期間 | 入手・復元／不足時の明示操作 |
 | --- | --- | --- |
@@ -535,7 +535,7 @@ baselineはゲーム検証用データと出自の固定metadataに限定する�
 
 ### 保持対象の移管先・期間・再利用の限界（09.11の成果）
 
-以下は09.11の保存・受入結果である。09.1 STEP 2の全処遇判定は再開後に行い、元証跡・prototype・bundleは削除していない。
+以下は09.11完了時の引継ぎsnapshotである。現在の保持契約は冒頭A表と末尾のSTEP 2保持契約を正本とし、下表の「09.1へ残す」は当時の次操作として読む。元証跡・prototype・bundleは削除していない。
 
 | 対象 | 移管先・保持期間 | 原byteと再利用の限界 |
 | --- | --- | --- |
@@ -578,4 +578,210 @@ baselineはゲーム検証用データと出自の固定metadataに限定する�
 
 実装受入後の利用者依頼により、09.11の実装・固定baseline・再現fixture・関連する正本更新を本commitへ収録する。開始時の4文書の関連記録も移行判断の出自として保持する。未変更の3prototypeは開始snapshotとbyte一致し、未追跡のままcommit対象外。必要なquality証拠のsource18fileは不変であり、今回の追記は文書検査で確認する。
 
-旧全履歴bundle `.test-results/tsk-09-1-step2-20261001/bundle-k1` はローカルのbyte保存・復元実験証跡として現存する。現状は2017 file、index・membershipを含む総容量485542196 bytes（約486 MB）。長期回帰baselineとしては採用せず、現行readerの入力や元runなしでの回帰検証に必要な取得物へ含めない。物理削除・cleanup・外部公開・転送は行わない。原byteの再監査に必要な固有根拠と保持期間の個別処遇は09.1 STEP 2の未達として継続し、削除可能や無期限保持保証とは判定しない。
+旧全履歴bundle `.test-results/tsk-09-1-step2-20261001/bundle-k1` はローカルのbyte保存・復元実験証跡として現存する。現状は2017 file、index・membershipを含む総容量485542196 bytes（約486 MB）。長期回帰baselineとしては採用せず、現行readerの入力や元runなしでの回帰検証に必要な取得物へ含めない。物理削除・cleanup・外部公開・転送は行わない。09.11完了時点では固有根拠と保持期間の個別処遇を09.1 STEP 2へ残した。現在の判定は末尾STEP 2受入を参照し、旧bundleの削除可能や無期限保持保証とは判定しない。
+
+
+## STEP 2 保持契約の収束
+
+利用者が現コード・正本に基づく計画と成果物イメージを確認し、同じsessionの文書更新・検証・Handoffまで承認した。開始HEADは`dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`。tracked差分なし、未追跡の3prototypeを保持。開始identity・原証跡照合は`.test-results/tsk-09-1-retention-closure-20261001/start-input.json`。変更境界は本書、Tasks、root README、テスト戦略§9、registry／evidence indexの6文書。実行コード・CI／cleanup・製品testが読むmachine evidence・baseline／fixtureを変更しない。
+
+### 保持期間と保証の責務
+
+repositoryは現行baseline1セット・小fixture・command・判断記録を所有する。取得単位は同じrevisionのsource declaration／master／baseline／fixtureであり、原runのpathを復元して利用する方式ではない。判断の参照期間はGit記録を保持し、原採取commit・source／環境・異なるrunの区別を残す。現在のfile／Git object存在は外部入手や無期限保存の保証とは別である。未取得revisionはrepository提供者へrevisionを指定して取得する。取得できなければ停止し、最新revisionや代替expectedで補わない。
+
+実行artifactは[テスト戦略§9](../requirements/test-strategy-redesign.md#9-artifact仕様)を適用する。CI uploadは14日、localは明示cleanupがtimestamp形式のdirect childに対して最新10完了runと実行中runを残す。手動名directoryはこのcleanupの対象外だが、一般削除／端末障害への保管保証ではない。「期限付き」はCIの期間とlocalの有限run数を指し、新しい日数を設定しない。
+
+生成責務は既存ownerにある。`productionRegressionBaseline.ts`は固定宣言・圧縮／展開receipt・schema・値・coverageを検査し、`verifyProductionMatrixRecords`／実mergeは全record／aggregate比較とactual本文のtransaction／gate観測を行う。replayは保存入力を構成し、acceptanceは故障fixture／mutationを実CLIへ接続する。runner／qualityは完全log・構造化結果・親子receiptを保存し、cleanupは既存の有限run選別だけを行う。文書分類をruntimeへ重複実装せず、prototype・pin・保存サービスを接続しない。
+
+`data/raw/`はrun cleanup対象ではない。個別入力の必要性・同一性を確認する前に処遇せず、新たな保存日数や永続取得保証を作らない。今回の原証跡・bundle・prototypeの保持は「削除してよい」の判定を含まない。後続の処遇で固有入力を削る場合は、残す意味と失われる再監査能力を個別に確認する。原byteが不足した際に他の保存先・raw版・SHAを探索して成功を補完しない。
+
+### A3 固有内容と原入力の境界
+
+固有原内容にはcanonical-only fixtureと同値な後継がないため、**原位置にretain**する。移管済みや重複とは分類しない。保持契約の収束はこの個別retainと能力制限の確定までで、原byteの無期限再監査・別環境への原入力移送を完了条件にしない。
+
+| 固有内容 | 固定identity／今回確認した実体 | 保持する能力／不足時の限界 |
+| --- | --- | --- |
+| OC planningの原cell・metadata・public join | `.test-results/tsk-06-48-a0/oc-inventory.json`、989349 bytes／SHA `7b191e653a3637de8ba8b83ace7ea959f7a57845488a34c7277708cbaf88c484`。head `c555e4ff9a208f8da01e56130fbd49e63848e192`、masterVersion `20260906.01`。rawOc167件／cells632、publishedOc97、rates29、writers199／context7、原path・function metadata・parameter／LB cellsを持つ | 保存された具体的cells・metadata joinの閲覧と検査を保持する。現fixtureの件数やdigestだけでは代替不能。全raw exportのbyte列・全metadataを保存したsnapshotではないため、これだけから原採取の再実行・完全出自を証明しない |
+| OC採取の四raw export | 上inventoryのdigestsはnice_servant `1abf690ac22bcdd427788e0ff545320af491ee9f90fbc08a56af9603a217118f`、nice_equip `bb339ac726f8201243410ec82b85a14496e6a8dace54b226071b556604fc27e5`、nice_mystic_code `ce6560440673fad4f36f8e08a97b20b4b5d9e2e0e1c5f262943bbf47d8b857cf`、referenced_skills `afdc02f3251dd901c133745203889a0c1c4d23409da17d24634140b5e75107f6` | 前三入力は現在fileのSHA一致。referenced_skillsの現在SHAは`0c4e082b5968fc337df597ad7abb1a844d2ac2078f09a7e14ad7d518d9e4e47c`で不一致。固定入力は現在の原位置から取得未成立で、当時の全raw採取再現も未成立。固定identityを採取ownerへ指定して取得できなければ、その能力を主張しない。別版への置換・探索はしない |
+| OC採取の旧published masterとnormalize入力 | 上headの`apps/web/public/master/master.json`は30127202 bytes／SHA `6e96b3f11fdbdef82997be12c84076d4236651d23f4ee7662a4b66a6a272c8f8`、Git object一致。現行master SHAはA0の`2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`で別入力。normalized-master CLIは四rawに加え`nice_item.json`を必要とする | 指定historyを取得して旧masterを新pathへ取り出しSHA照合できる。現行masterで過去joinを代替しない。normalizeは原raw・nice_item・source・保存snapshot／baselineが同条件で揃う場合だけ新artifactで実行する。nice_itemの当時の固定identityは上planning記録にないため、現fileの存在だけで完全normalize再現を主張しない |
+| HP primitive／pathsの独立disk receipt | `tsk-08-parity-ratchet.json::approvedClosureImplementation.finalAcceptance.independentHpDiskReceipts`5件。元timestamp runのcell inventory／calculator／ranking／CE／support pathsについて原path・bytes／SHAを照合、5/5一致。primitiveInventoryは15858817 bytes／SHA `e75e1a6df8f357761d3c18300b52c7194b6f64010578df1884ac7832089054b2` | runner宣言とは別のdisk実体、元入力・consumer path・原採取identityの検査を保持。新fixtureは意味規則を検証するが原入力の代替ではない。raw不足時は独立disk再照合と原path再監査を撤回し、Gitの当時の受入判断を残す |
+| HP published operation／dependency proof | 同finalAcceptance.publicProofs2件。元path・bytes／SHAと一致しoriginalArtifactとの同一性宣言を維持。operation3745283 bytes／SHA `8c7f21e35155f09c13c9e065e5bbb89cf5931a81239875373a069312d28cacb0`、dependency13843717 bytes／SHA `da5f0bed664c31b46226bd881d1cfa0caa1b076739e1b8c6b864aef61af707fe` | 当時のpublished requestとnative／consumerの具体joinを保持。今回確認は指定2fileの実receiptであり、全originalArtifactの再照合ではない。消失後の出自再監査をfixture成功へ代入しない |
+
+raw OC原cellsとpublic metadata joinを持つ保存inventory、HPの5＋2原内容は存在しreceipt一致で、処遇はretainに確定した。旧referenced_skills／nice_itemの完全原入力再現は現在保証しない。これは現行baseline／reader入手の不足ではなく歴史採取能力の明示限界であり、意味内容を捨てた・出自を新fixtureへ移管したとの扱いはしない。将来この能力を必須とするTaskでは固定原入力の取得がBlockingとなる。
+
+### 固定revisionからの入手と再開
+
+取得手順は[root READMEのProduction回帰baseline](../../README.md#production回帰baseline)を用いる。現在の取得identityは`dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`、source declaration SHA `650a360b6176126d2b02414f303c08e8d7e80b2ce548ddc538770c4c96be9f08`。partition fixtureは69065 bytes／SHA `cb3187313f96ea45c22dcbce4c2a0ecb1e8f2be179932bfbc5604c58b0c7bfa7`でbaselineManifestSha256へ結合する。full recordの二重baselineではない。
+
+固定revisionの取得→依存install→新出力でreplay→実merge→必要なmatrix／six反例、という操作を既存commandで行う。期待値の原byte再監査が目的なら必要な原path・receiptを取得して照合し、replayと混同しない。途中directoryを成功証拠にせず、同じ新出力への上書きを避ける。現在producerの回帰が目的なら既存auditのcanonical8shard→mergeを使うが、本STEPで再実行しない。
+
+入手・利用の実証は09.11の`isolation-receipt.json`を継承する。source／published master／baseline／fixtureを別rootへコピーし、元runのread／open／stat等を禁止したreplay／実merge成功、originalRunReads0・34640record・inventory／digest一致である。インストール済み依存は共有したため、ネットワークからの公開取得・新規依存install・処遇後の全文書checkout受入を今回成立したとは主張しない。文書処遇後の導線を辿る受入はU6のSTEP 6分へ残す。
+
+### 反証と証拠再利用
+
+| 反証する主張 | 今回の根拠と判定 |
+| --- | --- |
+| 参照pathは全部恒久保存しなければならない | A0の現行入力、A2／A4／A5のfixture、A1／A6／A7／A9のGit判断、A3の固有retain、A8のGit復元を区別。K参照closure／旧bundleは恒久baselineではない |
+| digest／判断記録が固有入力・出自まで証明する | A3の原cells／metadata／HP pathsを個別receiptで確認。旧raw不一致を成功に補完せず、完全採取再現は未成立と記録 |
+| raw消失後も全byte再監査できる | 原path・実体・receiptが揃う期間だけ照合を主張。消失後は歴史判断とfresh fixtureを区別し、元run再監査の主張を撤回 |
+| 手動名directory／CI uploadが永久保証になる | CI14日、local最新10完了run、手動名対象外を確認。現在の存在・cleanup除外・外部取得・保持保証を別に判定 |
+| 元run／旧形式／暗黙fallbackが入手経路になる | 現行readerの固定source→専用baseline、replay→実merge、元run禁止の別root受入を継承。旧bundle／prototypeを接続しない |
+| 保存reader受入がfresh damage／全project成功になる | saved-body replay、原全値移管比較、producer回帰、性能条件、最終quality、文書ゲートを区別。09.1全体・09の完了は主張しない |
+
+開始時に09.11 source18/18、indexの80gzip圧縮receipt、published master、8 proof、quality親manifest、A3原内容7件、旧bundle indexと容量、歴史PNG3blobを確認した。展開本文・全歴史receipt graphの再hashは行わず、09.11実mergeによる展開receiptと全意味値比較の有効証拠を継承する。docsだけのdeltaはREADMEの説明と保持・処遇記録で、製品testが読むmachine JSON・期待値・実行設定・検証入力は不変。fixture／反例・normal3/3・元run禁止受入・reader3＋3・qualityの実行証拠は[09.11最終受入](#tsk-0911-最終受入)を参照する。
+
+既存証拠の有効条件は関連source・master・入力・期待値・fixture・到達対象・設定が一致することである。rawがある場合の照合付き再利用と、raw不足後のGit歴史受入記録を区別する。新変更・反例・identity不一致が発生した範囲だけfresh局所検証へ戻り、同条件の全matrix／全audit／qualityを繰り返さない。補助probeの最初の作成commandは環境保護hookに拒否され未実行。読取対象を有限allowlistと固定形式に限定したprobeで上記照合を保存し、秘密値を取得していない。
+
+Flow closure: N/A: 保持契約・文書再開の収束のみ。canonical state／outcome・実行／書込経路は不変。反証は上表の保存能力と固有入力に限定する。
+
+### STEP 2 受入
+
+**判定: STEP 2完了、対象内Blocking0。09.1全体はin_progress、09はblocked。** 承認された6文書へA0〜A9の保持する意味・固定identity・移管先／retain理由・参照期間・取得／不足時操作・限界を反映した。旧bundle契約は履歴へ限定し、A0の現行入力を旧path復元から切り離した。A3の固有内容は原位置にretainし、旧referenced_skills／nice_itemの完全原入力再現を成立へ補完していない。この歴史能力の制限は現行回帰の入手条件を妨げず、後続の削除・処遇を承認する判断でもない。
+
+| STEP 2の条件／関連Contract | 判定・有効な証拠 | 残る全体義務 |
+| --- | --- | --- |
+| 全意味値・inventory／digest・移管元を保持 | Verified: 09.11のmigration原receipt、80条件／34640record・aggregate一致、固定source18件／80gzipの開始照合 | 新しい期待値承認・意味変更は範囲外 |
+| 固定identity・入手／再開・不足時拒否／DX-ART-001 | Verified: A表・README・A3個別retain、09.11の元run禁止別rootreplay／実mergeと11反例・六クラスを継承。部品／文書検査だけを実利用の根拠にしない | 処遇後の別checkout文書導線はU6／STEP 6 |
+| 固有根拠と原byteの期間・限界／DOC-CLOSE-001 | Verified: OC原inventory内容・入力差、HP5＋2実receipt、A8元3blobを確認。原byteの永続保証・完全原採取再現を主張しない | U1／U2／U7のrole・successor・歴史導線はSTEP 3、metadataと実処遇はSTEP 4 |
+| 文書契約・registry整合／DOC-REV-001・DOC-LINT-001 | Verified: `pnpm test:docs`6/6・docs integrity、6文書の書式、変更14参照・anchor／tracked target・A0〜A9全10row、差分境界を確認 | DOC-P6全tracked構文／kind／negative fixtureはSTEP 5／6未達。既存6test成功へ代入しない |
+| identity・判断・証拠・次操作／DX-HANDOFF-001 | Verified: start-input、review-before-record、最終差分検証とTask Handoff、09.11 source／入力同一条件の継承 | 09.1全体ContractとTS-FINAL-001／RK-FINAL-001は未完了 |
+
+初回文書ゲートは6test成功後にregistryのevidence index版同期漏れ1件でexit1となった。元logは`docs-before-record.{stdout,stderr}.log`へ保持し、修正後の`docs-pre-record.{stdout,stderr}.log`は6/6・docs integrity成功。書式logと`review-before-record.json`は38保全receipt・6文書境界・追加14参照・固定revisionのbaseline／fixture82file・10保持row・継承proofを確認する。HandoffへU1の未登録routing noteを直接参照した結果記録後の検査も、登録不足1件でexit1になった。`docs-final.{stdout,stderr}.log`に保持する。STEP 3の登録を先行せず、Handoffから台帳U1の対象rowを辿る再開操作へ修正した。U1は未解決のままで、対象を検査から除外したり登録済みと扱ったりしていない。修正後の最終文書・書式・差分ゲートで閉じる。詳細と最終差分identityは`.test-results/tsk-09-1-retention-closure-20261001/manifest.json`から辿る。調査manifestは長期正本やreader入力にしない。
+
+09.11の全値移管・実merge／反例・元run禁止受入・性能・qualityは同条件証拠を継承した。READMEの説明を除くsource17/17、直接owner・CI／cleanup・入力／fixture・machine evidenceは不変で、全matrix生成・全audit・qualityを再実行していない。今回の検証は原proof・identityと文書差分の照合で、展開本文／全歴史graphのfresh再hashやネットワーク取得の新成功を主張しない。
+
+U5とU6のSTEP 2分はVerified。未達はU1／U2／U7のSTEP 3処遇、U3／U4とU7のSTEP 4〜6、U6の処遇後checkout導線、09のproject closure。STEP 3の具体的再開はTask Handoffを正本とし、今回は実行しない。原証跡・旧bundle・未追跡3prototypeを保持し、cleanup／物理削除／外部公開・転送／commit／pushは行っていない。
+
+
+## 旧bundleの縮小・廃棄判断（TSK-09.12）
+
+**判定: TSK-09.12の判断完了、対象内Blocking0。A3のHP固有内容7object・全33原pathと出自metadataを別保存して取得受入後に旧bundle全体を廃棄する部分保持案。文書・局所反証の必須ゲートは成功。物理処遇・移管・取得受入は未実施。** 利用者は2026-10-02に現行コード・正本・固定入力に基づく計画へ「OK」で、限定調査・必要な補助実装・文書更新・検証・Handoffを承認した。削減量を目的にせず、原内容と能力から判断した。09.1 STEP 3〜6と09は実行していない。
+
+### 開始identity・直接経路と証拠の有効範囲
+
+HEADは`dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`。定義manifestに対して既存6文書差分・未追跡3prototypeのbytes／SHAが一致し、保存した開始snapshotは`.test-results/tsk-09-12-disposition-20261002/start-input.json`。別の編集sessionはprocess名・worktreeの観測範囲では検出しなかった。in_progress最大1件を守るため、判断中だけ09.1を完了済みSTEP 2と未達STEP 3〜6を保持したreadyへ置き、09.12をin_progressにした。判断受入後は09.1をin_progressへ戻す。09はblockedのまま。
+
+原bundleは`.test-results/tsk-09-1-step2-20261001/bundle-k1`。index2927670 bytes／SHA `b2e59bb66822b337a2a300524fb77c9c1403b9152619ddd8b0c0dbfea89f1a7a`、membership3501481 bytes／SHA `b73fca0d9b1db83efa93caa1f4c3687d5e2594b99f5c31ad6fae65f25e8d6eb4`。9,856entry、2,015object、metadataを含む2,017file／485542196 bytesを確認した。全圧縮objectのbytes／SHAと実file集合が固定indexに一致する。
+
+| 現在成立する経路 | 保持する能力と判断への含意 |
+| --- | --- |
+| `tsk-06-5-production-closure.json`のsource declaration→`productionRegressionBaseline.ts::readProductionBaselineManifest／Condition`→`production-matrix-records.ts::verifyProductionMatrixRecords`→`merge-oc-matrix.ts` | 固定repository baselineの全80条件・34640recordを受け入れる。manifest不足・破損はtyped失敗。旧bundle・元run・別版へfallbackしない。A0原manifest／本文のbyte再監査は別能力 |
+| `replay-production-baseline.ts`→同baseline・partition fixture→新8shard／condition出力→実merge | 保存本文readerの再開。damage producerを再実行した成功や歴史rawの復元とは区別。現行baselineの取得に旧bundleは不要 |
+| `evidence-preservation.mjs::packEvidence`→観測SHAごとのgzip・原path別entry・宣言差分、`readPreservationIndex／verifyBundle／restoreEvidence`→新root | 原byteを正規化せず保存し、固定metadata・圧縮／展開receiptを検証して原pathへ復元するlocal prototype。K1全履歴のbyte復元能力は現在このbundleで保持できる。別環境の取得契約・長期保存サービスとしては採用しない |
+| `evidence-preservation-references.mjs::collectOwnedReferences／checkRestoredReferences` | quality子manifestのbase、reconciliationのrepository-relative path、コピーされたshardのbaseを区別する。固定A0・全K1を要求する後者のCLIは部分保持案の受入には使わない |
+| `test-results-cleanup-lib.mjs::planTestResultsCleanup`、CI upload | canonical timestamp direct childの最新10完了run／running保護、手動名対象外、CI14日。原runの存在や手動名directoryの対象外は独立保持保証にならず、cleanupは実行しない |
+
+09.11 source17件（STEP 2で説明を変更したREADMEを除く）、直接owner9件、baseline／fixture82file、proof8件が固定receiptと一致した。全値移管、正常3/3、六クラス、実merge11反例、元run禁止の別rootreplay／実merge、reader3＋3、quality1603／157／29を同条件で継承する。K0全byte復元とK1同一entryの継承＋884追加、41,240参照／未解決0も継承。今回は全圧縮identity、必要な7本文と直接宣言owner8fileを確認し、全9,856path復元・全matrix・全audit・qualityは繰り返していない。ネットワーク取得・新規依存installの成功を追加していない。
+
+### 全entry／共有objectの対応と判定
+
+A0〜A9の現行契約を使う。元machine evidenceの意味ownerの固定pointer（formalRuns、classJoin、primitiveInventory、publicProofs、独立receipt、serializedGateClosure、nonfinite受入、audit、quality、調査記録）とA0移管先の`origin`から全89seedを対応付け、既存41,240edgeをforwardに辿った。全9,856entryに根拠root／pointer／到達ownerを持たせ、観測SHAで全2,015objectとその全aliasへ結合した。dirnameだけで意味を決めず、同一entryの複数A所属を保持する。rootからの所属と、同byteobjectの保持理由は別であり、aliasを同じ採取runとして統合しない。
+
+以下の「失う能力」は、原runに依存しない旧bundleからの復元・再監査能力を指す。元runと固定receiptが揃う間の条件付きbyte照合は可能だが、今回全entryについて独立した保管・外部取得保証は成立していない。原bundleが唯一のbyte実体かを全件断定せず、必要なA3原位置の存在確認と保証済み取得先を区別する。
+
+| 集合 | 判定・保持する結果 | この案の実処遇後に失う能力／不足時対応 |
+| --- | --- | --- |
+| A0 | 原81pathは削減候補。専用baseline80本文・index、source／master／fixtureは固定revisionから取得 | 原manifest形式と原runの全byte再監査は失う。回帰入力不足は同revisionを再取得し、旧bundle・新producerで補わない |
+| A1 | 原正式3＋3の判断・条件・性能はGitへ保持。旧matrix／shard／ranking／logは削減候補 | 元測定byte照合を失う。当時の正式測定とfresh／replayの条件を混同しない |
+| A2 | 六クラスの意味fixture・command・判断を保持。capture／完全runは削減候補。A3同byteobjectのaliasは保持 | 六原captureのbyte照合・当時のrunner graph再監査を失う。必要なら同revisionでfresh六クラスへ |
+| A3 | 以下の固有内容7object・全33aliasと原宣言40件を保持。OC inventoryはbundle外の原位置retain。HP proof coverage等のその他調査出力は削減候補 | 保存した原cells／consumer paths／published payloadは閲覧・検査できる。除外する完全manifest／run／環境logのbyte再監査は失う。原採取の完全再実行は現在も未成立 |
+| A4 | 現行reader test・実merge反例定義・歴史findingを保持。過去raw／破損JSON／宣言SHA不一致／registry／完全診断は削減候補 | 過去bugの実byte再監査を失う。現testで過去不正JSONの原文を再現したとは主張しない |
+| A5 | value-domain test・全expected・fresh生成command・採用判断を保持。旧normalコピー・1024診断・reader5反例は削減候補 | 元normal／writer／readerのbyte照合を失う。fresh生成と原runの再現を区別する |
+| A6 | audit suiteと登録／到達／再利用条件はGitへ保持。旧run／reachability／receiptは削減候補 | 全原receiptによる照合付き再利用を失う。原run不足後は歴史受入記録、必要な新Taskではfresh auditへ |
+| A7 | quality成功・失敗・帰属とsource条件はGitへ保持。完全log／trace／親子graphは削減候補 | 成功・失敗双方の全byte再監査を失う。新qualityの成功で過去失敗を上書きしない |
+| A8 | bundleに0entry。指定Gitの歴史PNG保持契約は不変 | 別checkoutのhistory取得・link処遇は09.1 STEP 3／6未達。今回新成功へ繰り上げない |
+| A9 | 本台帳／Taskの判断と固定identityを保持。全調査履歴は削減候補。部分保持用の新metadataは以下に固定 | 元調査receipt package全体のbyte再監査を失う。新artifactは判断補助で、現行reader入力や恒久正本にはしない |
+
+保持は固有内容・出自と必要な到達を基準にする。削減候補は現行回帰へ移管済みの旧入力、または能力損失を明示できる調査byteであり、参照だけを永久保持義務へ変換しない。所属・receipt・到達が不明なら不足保留とする。今回の未分類entry／object・不足保留は0。これは外部取得・移管が済んだという意味ではない。
+
+### A3の保持object・固定identity
+
+各objectは`objects/<下表SHA>.gz`。全33原path・圧縮receipt・各source pointerは補助artifactの`proposed-index.json`、`retention-provenance.json`へ固定した。SHA一致はbyteの同一性だけを表し、独立採取の回数・run identityを同一視しない。
+
+| 内容 | 原本文bytes | 圧縮bytes | 原path数 | 原本文SHA256 |
+| --- | ---: | ---: | ---: | --- |
+| HP cell inventory | 15858817 | 249227 | 5 | `e75e1a6df8f357761d3c18300b52c7194b6f64010578df1884ac7832089054b2` |
+| calculator paths | 76442496 | 3048482 | 5 | `1b6489abcec764eef5c8fca000a68f4c166315bbedd632871a7efadd0bd3b0f7` |
+| ranking paths | 454523 | 13042 | 5 | `0ccf3fcf069eda94872f00455af55263e26e85462c6d89324ad026e42590a2da` |
+| craft essence paths | 2633580 | 52030 | 5 | `be4c70c99862441030e3379a8f306f20d9310542191f39371a047786fabac729` |
+| support paths | 1201235 | 37683 | 5 | `8be7cf6f603a61d407f488aa2c6cb40667a38307f3fc3fb2365f06f1d8c120f7` |
+| published operation | 3745283 | 76320 | 4 | `8c7f21e35155f09c13c9e065e5bbb89cf5931a81239875373a069312d28cacb0` |
+| published dependency | 13843717 | 387603 | 4 | `da5f0bed664c31b46226bd881d1cfa0caa1b076739e1b8c6b864aef61af707fe` |
+
+HP内容の原位置7fileとbundle外OC inventory989349 bytes／SHA `7b191e653a3637de8ba8b83ace7ea959f7a57845488a34c7277708cbaf88c484`の一致も確認した。ただし原runの現存を独立した保持先の保証へ使わない。特にtimestamp原runはcleanup候補となり得る。OC inventory・raw exportsは今回の処遇対象へ加えず、前節A3のretainと`referenced_skills`不一致／`nice_item`当時identity不足を継承する。原raw再採取は再実行していない。
+
+retain条件は、保存された原cells・metadata／public join、独立HP内容、元consumer path・原宣言を検査できることである。小fixture・件数・digestだけへ置換する案は不成立。7本文は圧縮／展開bytes／SHAをfresh確認し、artifact path値の追加参照が0件だった。原位置不足時は固定identityを指定して取得し、取得できなければ該当原内容の再監査を未成立とする。能力を捨てるならA3 retain判断の変更と具体的損失を別途明示し、本案の削減候補へ暗黙に含めない。
+
+### 容量・共有到達と三案の比較
+
+| 指標 | 現在の全保持 | 部分保持案 | 削減候補object／path分 |
+| --- | ---: | ---: | ---: |
+| 原path数 | 9856 | 33 | 9823 |
+| distinct object数 | 2015 | 7 | 2008 |
+| 圧縮object bytes | 479113045 | 3864387 | 475248658 |
+| 全path復元bytes | 45838222236 | 553309255 | 45284912981 |
+| distinct object展開bytes | 9046896940 | 114179651 | 8932717289 |
+| metadata bytes | 6429151 | 66859 | 新旧metadataは別集合 |
+| package file bytes | 485542196 | 3931246 | 新package受入後の差は481610950 |
+
+部分保持metadataは提案index9320＋membership11851＋provenance45688 bytes。新保存実体・移管log・取得検証artifact、固定repository checkout2392104 bytesのmachine sourceや依存環境、filesystem overheadはpackage比較に含めない。file bytesをdisk占有量とは呼ばない。全33pathを復元する場合は553309255 bytes、object内容を一回ずつ扱う場合は114179651 bytesであり、両者を混同しない。
+
+- 全保持はK1の全原byte復元・歴史graph再監査を残すが、現行回帰には不要な全履歴と485542196 bytesを保持し続ける。外部取得保証と原raw不足も解決しないため採用しない。
+- 部分保持はA3の固有内容と原path／宣言の検査能力を残し、不要な全履歴再監査能力を明示して手放せる。33aliasを残しても圧縮object量は増えず、元path対応を保つ利益があるため採用する。
+- 無移管の全廃棄はA3内容を原runの現在存在に依存させるため不成立。別保存の取得受入後に旧bundleを全廃棄することは本部分保持案の最終操作であり、固有内容自体の全廃棄ではない。
+
+全2,015objectの到達pathを列挙し、保持pathが一つでも使うobjectはretainとした。保持objectの全alias33件を残すため、共有objectを削減できると誤判定しない。候補2,008objectは保持pathからの到達0である。
+
+### 参照整合・反証と能力損失
+
+部分保持index／membershipは33path・7objectで相互coverage一致、object未宣言・余剰object・dangling target0。保持原fileからの既存manifest参照edgeは0、7本文内のartifact path参照も0。元runner／reconciliationのうち保持本文を直接宣言する8ownerから原宣言40件を抽出し、原文のpath／bytes／SHA／baseとsource pointerを`retention-provenance.json`へ残した。40件のactive targetはすべて33保持pathへ到達する。
+
+同metadataの`owner／ownerReceipt`は、除外する元manifestの**historical locator**であり復元・取得依存ではない。元manifest本文を保持したとは主張せず、除外と能力損失を同metadataにも明示する。原宣言の内容を保つことと、原manifest全文・完全graphのbyte再監査を保つことは別である。固定machine sourceはrevision `dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`、2392104 bytes／SHA `bdb8ca0aae586ed52356a4a589b32239232561d2becf12539e1d6f03aac0a329`から取得する。
+
+元41,240edgeはすべて除外ownerの歴史graphとして処遇表へ記録し、縮小後の有効な復元参照として残さない。不正JSON1file、null宣言2観測、宣言SHA全0と観測SHAが違う1target／4edgeは元のまま記録し、削減候補にした。将来失う原反例byteを現test成功で代替したとは言わない。
+
+独立checkerは全entry／objectのcoverageと容量保存則、A3全alias／原宣言targetを検査し、memory内の6反例（共有objectだけ除去、aliasだけ除去、membership target追加、原宣言のtarget欠落、宣言SHA置換、未知index項目）を拒否した。初回checkerはrepository-relative原宣言を相対baseへ誤結合して失敗した。原参照ownerの既存規則に合わせて修正し、初回stderrを保持して最終成功と区別した。別path探索・別版・fallbackは追加していない。最初の文書ゲートは6test成功後に09.12のContract表未認識でexit1となった。既存parserが厳密な`Handoff:`を表の終端として要求するため、checkpointの見出しをその既存形式へ直した。parser実装や09.1 STEP 5は変更していない。
+
+### 別の明示依頼で実施する処遇手順と停止境界
+
+保持期間はA3の原内容・出自検査能力を参照する期間とし、新しい日数期限を設けない。新保存先の候補は未使用の`.test-results/tsk-09-12-a3-retained-20261002/`。local実体の保持owner・バックアップ／外部取得先・取得権限は未契約であり、実処遇依頼で必要な取得環境とともに指定する。手動名のcleanup対象外を永続保証へ読み替えない。移管先が決まらず必要能力の取得を受け入れられない間は、原bundleをそのまま保持する。
+
+1. 実処遇依頼で、保持33path／7object、候補9823path／2008object、上の能力損失、保存先・owner・取得環境を指定する。元run・OC inventory・raw exportsは削除対象にしない。
+2. 原index／membership・対象7objectと、以下の提案metadata identityを再確認する。不足・SHA不一致・原raw取得不能を別版／別pathで補わず停止する。調査artifactが不足した場合は本節の固定原identityから新artifactへ処遇表を再構成して照合し、既存正本のidentityを黙って置き換えない。
+3. 未使用の新保存先へ7gzipをbyteのままexclusive copyし、提案indexを`index.json`、membershipを`membership.json`、provenanceを`retention-provenance.json`として保存する。原bundleのmetadata・gzipを編集・再圧縮しない。これは今回未実施。
+4. 固定revisionの検証用checkoutへ下記SHAのprototypeを原位置から明示的に取得して配置し、下のverify／restoreを実行する。prototypeは同revisionのGit収録物ではない。これは既存local byte検証mechanismの限定利用であり、汎用サービス・product経路への採用ではない。source declarationも上の固定revision／SHAを取得する。元bundle・原runへアクセスできない別root／環境で新保存先だけから取得し、圧縮／展開receipt、33原path、原宣言40target、source identityを照合する。取得・復元・出自照合の完全receiptを保存する。
+5. 移管・取得受入成功と必要な保持契約を確認してから、旧bundle全体の廃棄を別の明示依頼の対象として実施する。new packageの不足時は固定packageを保持ownerへ再取得要求し、元run探索や別SHAで補わない。取得不能ならHP原内容再監査は未成立と記録する。
+
+固定提案metadata（まだ新保存実体ではない）:
+
+| file | bytes | SHA256 |
+| --- | ---: | --- |
+| `proposed-index.json`→新`index.json` | 9320 | `8f19d6c0cd037eef76047cff58ab97310396bb7e745081ac056b200978f629ae` |
+| `proposed-membership.json`→新`membership.json` | 11851 | `6675ef0283b04ac2381abfb4c433a828f3c7f06740e9391cf75142832b428c3e` |
+| `retention-provenance.json` | 45688 | `5464d5a3fb33cc49ebc56840fbe948a27b3d18673a1cd27fe57e44758c6d02b2` |
+
+取得後の検証command例（今回実行していない。保存先／復元先は未使用pathへ固定する）:
+
+```sh
+node scripts/evidence-preservation.mjs verify .test-results/tsk-09-12-a3-retained-20261002 8f19d6c0cd037eef76047cff58ab97310396bb7e745081ac056b200978f629ae
+node scripts/evidence-preservation.mjs restore .test-results/tsk-09-12-a3-retained-20261002 8f19d6c0cd037eef76047cff58ab97310396bb7e745081ac056b200978f629ae /tmp/fgo-tsk-09-12-a3-restored
+sha256sum .test-results/tsk-09-12-a3-retained-20261002/retention-provenance.json
+```
+
+prototype bytesの固定identityはpreservation12065 bytes／SHA `e9ab1f4a493f0ff33a76bf0662d2d02a10396382490ece5caa4fbca05a9681ec`、references6897 bytes／SHA `422f4d17be5cf1920ba524ac7aadf6295637163a57aebf965291f9add39e7769`、test7049 bytes／SHA `d841c880d920b4ccbccfc1f37b142771da50befd00d88cf8c1d5ff4ac1ec7220`。現在これらは未追跡であり、fresh checkoutからの取得保証はない。実処遇時にこのmechanismを利用するなら同byteの検証用取得も前提にし、利用できなければ移管検証を停止する。現行baselineはこれらに依存しない。
+
+原bundleの書換え・間引き・移動・再圧縮・物理削除、原run削除、results:clean、外部公開・転送は今回の停止境界外。現行baseline・expected・damage／ranking／state／outcome、旧prototype・raw exports・他の調査directoryを変更せず、commit／push、09.1 STEP 3〜6、09へ進まない。
+
+### 調査成果・検証・Handoff
+
+補助コードは新調査artifact内の`analyze.mjs`と`check-proposal.mjs`だけ。全entryの根拠・宣言／観測・共有object処遇、容量・参照と反例を検査する必要があり追加した。製品code・保存／cleanup設定は変更不要だった。原物を変更せず、完全結果は`.test-results/tsk-09-12-disposition-20261002/`へ保存した。
+
+- `root-map.json`、`entry-dispositions.json`、`object-dispositions.json`: 全entry／objectの根拠・保持／削減候補、全alias。
+- `object-identity.json`、`a3-content-inspection.json`、`reference-dispositions.json`: 全圧縮receipt、7本文の展開receipt・追加参照、全edge・元破損／宣言差分と処遇。
+- `proposed-index.json`、`proposed-membership.json`、`retention-provenance.json`、`summary.json`: 一つの部分保持案、metadata固定identity、容量、未実施条件。
+- `proposal-verification.json`、`reuse-identity.json`、完全stdout／stderr: 独立反証6件、原位置8file、source／baseline／owner／proofの同条件照合。初回checkerのbase解決失敗も保持。
+- `manifest.json`: 最終文書・書式・参照／状態・差分のgate、開始／最終identity、原物未変更、未移管・物理未実施と次操作。
+
+最終文書受入は`pnpm test:docs`6/6・docs integrity、4文書のPrettier、差分・参照／状態照合で閉じた。最初のContract表未認識とcheckerのbase誤結合は失敗logを保持し、成功で上書きしていない。結果記録後も同じ入力・原物を保持し、最終receiptは上記manifestを参照する。
+
+Flow closure: N/A: 原調査artifactの処遇判断のみ。canonical state／outcome・製品execution／write経路は不変。判断完了と物理処遇未実施を分け、最終進捗と次操作は[TSK-09.12 Handoff](../tasks/development-redesign-tasks.md#tsk-0912-旧bundleの縮小廃棄判断限定調査)を正本とする。

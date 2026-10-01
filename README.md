@@ -49,6 +49,17 @@ Codexへの接続は`.codex/config.toml`、TypeScript探索の設定は`.serena/
 
 承認済み期待値は `packages/calculation-application/baselines/production-v1/` の固定indexと80条件別gzip本文です。34,640 outcomeの全意味recordを保持し、`tsk-06-5-production-closure.json::productionMatrix.canonicalRecords` が形式・bytes・SHA・master identityを固定します。repositoryと依存関係から利用でき、過去のlocal runの復元は不要です。不足・破損時は同じrepository revisionのbaselineを再取得し、期待値を再生成して補わないでください。
 
+固定入力を取得する際は、source declaration・published master・baseline・fixtureを同じrevisionで揃えます。09.11の移管済み取得identityは`dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`です。既存repositoryでcommitの存在を確認し、新しいworktreeで取得する例は次のとおりです。pathは未使用の場所を指定してください。
+
+```sh
+git cat-file -e dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4^{commit}
+git worktree add --detach /tmp/fgo-lab-baseline-dd1a0eb dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4
+cd /tmp/fgo-lab-baseline-dd1a0eb
+pnpm install --frozen-lockfile
+```
+
+commitが未取得ならrepository提供者へそのrevisionを指定して取得します。取得できない場合は停止し、最新revision・別SHA・旧bundleで補わないでください。worktreeへの取得と依存installを終えてから、下のcommandをそのcheckout内で実行します。元run禁止の実利用は09.11で受入済みですが、その受入はインストール済み依存を共有した別rootのreplay／実mergeです。ネットワーク取得や新規依存installまで受入済みとは扱いません。
+
 現在のproducerの回帰は既存の `audit-oc-matrix.ts` を8 shardで実行し、同じ出力directoryを `merge-oc-matrix.ts` へ渡します。mergeは全production record／aggregateを期待値と比較し、actual本文のtransaction／gateも検査します。baselineを更新する場合は、独立した期待値の承認と全意味値・inventory／digestの移行照合が必要です。
 
 保存readerの再現だけを行う場合は、次のcommandを新しい出力directoryで実行します。replayはbaselineから実merge用の入力を構成し、damage producerの再実行とは区別します。
@@ -61,4 +72,6 @@ node scripts/production-baseline-acceptance.mjs six .test-results/baseline-six
 node scripts/production-baseline-isolation.mjs /tmp/fgo-baseline-new-checkout .test-results/baseline-isolation.json
 ```
 
-小さいpartition fixtureは同じbaselineの保存入力を再現するためのinventoryです。移管元、保持期間、過去raw artifactの条件付き再利用と限界は[判断台帳](docs/evidence/tsk-09-1-documentation-closure.md#tsk-0911-実装境界と反証2026-10-01)を参照してください。raw logは既存の調査artifact policy（CI14日・local最新10完了run）に従い、永久baselineとは分けます。
+小さいpartition fixtureは同じbaselineの保存入力を再現するためのinventoryです。六クラスの意味規則と実runner、保存readerのmutation反例は同じrevisionの既存test／acceptance commandが所有します。途中の出力directoryは成功証拠に使わず、再実行は新しい出力先を指定してください。
+
+A0〜A9の移管先・固定identity・期間・入手／不足時操作・原証跡の限界は[判断台帳の現行保持契約](docs/evidence/tsk-09-1-documentation-closure.md#step-2-保持契約の収束)を参照してください。判断はGit記録に保持し、raw log／trace／run receiptは[調査artifact policy](docs/requirements/test-strategy-redesign.md#9-artifact仕様)（CI14日・local最新10完了run）に従います。手動名directoryがcleanup対象外でも、永久保管や別環境の取得保証にはなりません。raw不足時は過去runのbyte再監査・照合付き再利用を主張せず、必要な契約をfresh commandで検証します。小fixtureやdigestを固有原入力・出自の代替にしないでください。旧全履歴bundleの取得・復元は現行readerの再開に不要です。

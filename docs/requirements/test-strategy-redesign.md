@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.3.1"
+document_version: "1.3.2"
 status: "Active"
 approved_at: "2026-08-30"
-updated_at: "2026-09-24"
+updated_at: "2026-10-01"
 created_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
@@ -302,10 +302,16 @@ timeout、signal、worker crash、out-of-memory、reporter crashでは、最後�
 
 - `.test-results/`はgit管理対象外とする。
 - ローカル整理は明示的な`pnpm results:clean`だけが行い、canonical timestamp形式のdirect childだけを対象とする。最新10完了run、実行中run、手動命名した計測／evidence directoryは削除しない。保持数は正の整数で上書きできる。
-- CIは失敗時に完全artifactを必ず保存する。
+- CIは失敗時に完全artifactを必ず保存する。現行workflowのuploadは`always()`、保持期間は14日とする。
 - Playwright HTML report、trace、screenshotは現在の設定を維持する。
 - artifact保存失敗をテスト成功で覆い隠さない。CIではinfra failureとして非0終了する。
 - secret、環境変数全体、ユーザーのローカルデータをartifactへ記録しない。
+
+調査artifactと回帰入力の保持責務を分ける。承認済み期待値1セット、意味規則の小fixture、再開command、採用判断・固定identityはrepositoryに保持し、現行consumerの利用期間は取得可能にする。期待値の更新は独立した承認と移管照合・判断記録を伴う。不足・破損は同じrevisionの固定入力を再取得し、変更producerによる再生成、旧形式、別保存先探索による補完をしない。
+
+完全log／trace／実行receiptは上記CI14日・local最新10完了runの調査policyに従う。localは日数期限ではなく、明示cleanup時の有限run数である。手動名directoryのcleanup対象外や現在の存在は永続保管・外部取得の保証ではない。原byteが不足したら当時の全byte再監査・照合付き再利用は主張せず、Gitの受入判断と必要に応じたfresh検証を区別する。参照だけを原run全体の恒久保存義務へ変換しない。
+
+固有入力・raw cells・原採取／独立receiptの内容はdigest・件数・再現fixtureだけで代替しない。個別にretainまたは意味を保持した移管先を決め、必要能力・固定identity・不足時操作・限界を判断記録へ残す。`data/raw/`の入力はrun cleanupの対象外であり、本節のCI日数を原raw exportの寿命へ適用しない。TSK-09.1のA0〜A9・旧bundle・原入力不足の具体的な処遇契約は[判断台帳](../evidence/tsk-09-1-documentation-closure.md#step-2-保持契約の収束)を正本とする。
 
 ## 10. 終了コードとprocess契約
 
@@ -587,6 +593,7 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 1.3.2 | 09.11移管結果からrepositoryの回帰入力／fixture／判断記録と調査artifactの保持責務・不足時の能力制限を明示（TS-ART-001） | approved 2026-10-01: user confirmed TSK-09.1 STEP 2 plan | TSK-09.1 STEP 2、TSK-09 | none: CI14日・local最新10完了run、実行経路・expected・damageは不変 |
 | 1.3.1 | 全件／特殊経路の高コストauditを排他的なopt-in suiteへ分け、通常のunit／production gateに代表fixtureと共有inventory整合を残す（TS-QUAL-001、TS-AUDIT-001） | approved 2026-09-24: user requested specialized sweeps stay out of ordinary tests | TSK-08、今後のproduction audit配置 | full production population／通常quality gateは不変。TSK-08 control auditは明示実行へ移動 |
 | 1.3.0 | quick feedback profileとbounded local artifact retentionを追加し、full quality集合を維持 | approved 2026-09-04 | test execution observability follow-up | none: production／E2E／damage gateは不変 |
 | 1.2.0 | phase／project closure、性能閾値、未計測counterをstable Contract IDへ収束 | retained: semantic／test集合は不変 | TSK-02.1〜09 | none: TSK-02計測値と397-test identityは不変 |
