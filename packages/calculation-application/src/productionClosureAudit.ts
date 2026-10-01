@@ -115,7 +115,13 @@ const digest = (value: unknown) =>
 export const productionClosureRecordDigest = digest;
 
 export function productionClosureMatrixDigest(
-  result: Omit<ProductionClosureAudit, 'digest' | 'eligibility'> & { eligibility: unknown },
+  result: Omit<ProductionClosureAudit, 'digest' | 'eligibility' | 'conditionSummaries'> & {
+    eligibility: unknown;
+    conditionSummaries: readonly (Omit<
+      ProductionClosureConditionRecord,
+      'records' | 'elapsedMs'
+    > & { elapsedMs?: number })[];
+  },
 ): string {
   return digest({
     ...result,

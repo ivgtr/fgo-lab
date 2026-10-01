@@ -151,6 +151,9 @@ importers:
       '@fgo-lab/schema':
         specifier: workspace:*
         version: link:../schema
+      zod:
+        specifier: 4.5.4
+        version: 4.5.4
     devDependencies:
       '@fgo-lab/data-pipeline':
         specifier: workspace:*

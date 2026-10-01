@@ -195,6 +195,25 @@ const shardAuditFields = {
 export function inspectProductionShardAuditShapes(
   audits: readonly unknown[],
 ): ProductionRecordComparison {
+  return inspectAuditShapes(audits, shardAuditFields);
+}
+
+export function inspectProductionMatrixAuditShapes(
+  audits: readonly unknown[],
+): ProductionRecordComparison {
+  const matrixEligibilityFields = {
+    conditionCount: 'count',
+    staticSemantics: staticFields,
+    admissions: { ...admissionFields, shardDigests: 'array' },
+    candidates: { ...candidateFields, shardDigests: 'array' },
+  } satisfies Record<Exclude<keyof RankingEligibilityAudit, 'digest'>, AuditFieldRule>;
+  return inspectAuditShapes(audits, { ...shardAuditFields, eligibility: matrixEligibilityFields });
+}
+
+function inspectAuditShapes(
+  audits: readonly unknown[],
+  fields: AuditFixedFields,
+): ProductionRecordComparison {
   const failures: ProductionRecordFailure[] = [];
   const countValid = (value: unknown) =>
     typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
@@ -255,7 +274,7 @@ export function inspectProductionShardAuditShapes(
             : Array.isArray(value);
       if (!valid) issue(path, rule === 'count' ? 'nonnegativeInteger' : rule, value);
     };
-    visit(audit, shardAuditFields, 'audit');
+    visit(audit, fields, 'audit');
   }
   return {
     status: failures.length ? 'failed' : 'passed',
@@ -379,7 +398,52 @@ export function inspectProductionConditionRecord(input: {
       { elapsedMsValid: true },
       { elapsedMsValid: false, value: summary.elapsedMs },
     );
-  const body = value['records'] as unknown[];
+  if (failures.length) return { status: 'failed', records: [], failures };
+  return inspectProductionConditionRecords({ ...input, records: value['records'] });
+}
+
+/** Shared body integrity; baseline summaries deliberately have no run elapsed time. */
+export function inspectProductionConditionRecords(input: {
+  records: unknown;
+  conditionKey: string;
+  summary: Omit<ProductionClosureConditionRecord, 'records' | 'elapsedMs'>;
+  profileCount: number;
+}):
+  | { status: 'accepted'; records: CanonicalAuditRecord[]; failures: ProductionRecordFailure[] }
+  | { status: 'failed'; records: []; failures: ProductionRecordFailure[] } {
+  const { conditionKey, summary } = input;
+  const identity = `production:${conditionKey}`;
+  const failures: ProductionRecordFailure[] = [];
+  const add = (reason: ProductionRecordFailureReason, expected: unknown, actual: unknown) => {
+    const failure = recordFailure(reason, identity, expected, actual);
+    if (failure) failures.push(failure);
+  };
+  const validity = inspectProductionAuditValue(input.records);
+  if (validity.status === 'failed') {
+    for (const issue of validity.issues) {
+      const failure = recordFailure(
+        'recordValueInvalid',
+        identity,
+        { auditValue: 'accepted' },
+        { issue },
+      )!;
+      failures.push({
+        ...failure,
+        firstDifference: {
+          identity,
+          path: issue.path,
+          expected: { auditValue: 'accepted' },
+          actual: { issue },
+        },
+      });
+    }
+    return { status: 'failed', records: [], failures };
+  }
+  if (!Array.isArray(input.records)) {
+    add('recordShapeInvalid', { type: 'array' }, { value: input.records });
+    return { status: 'failed', records: [], failures };
+  }
+  const body = input.records as unknown[];
   add('recordSummaryMismatch', { profileCount: input.profileCount }, { profileCount: body.length });
   const outcomes = {
     calculated: 0,
@@ -474,7 +538,12 @@ export function compareProductionConditionRecords(
 }
 
 export function inspectProductionAuditAggregate(
-  audit: ProductionClosureAudit,
+  audit: Pick<
+    ProductionClosureAudit,
+    'conditionCount' | 'outcomeCount' | 'outcomes' | 'parityCount' | 'parityFailures'
+  > & {
+    conditionSummaries: readonly Omit<ProductionClosureConditionRecord, 'records' | 'elapsedMs'>[];
+  },
   identity: string,
 ): ProductionRecordFailure[] {
   const outcomes = {

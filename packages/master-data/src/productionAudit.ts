@@ -209,6 +209,7 @@ export interface Tsk065ProductionAuditSource {
     eligibilityDigest: string;
     artifact: string;
     canonicalRecords: {
+      format: 'production-regression-v1';
       manifest: string;
       bytes: number;
       sha256: string;
@@ -310,14 +311,16 @@ export function createTsk065ProductionAuditSource(
   };
   assertSourceKeys(
     canonicalRecords,
-    ['manifest', 'bytes', 'sha256', 'identity', 'authority'],
+    ['format', 'manifest', 'bytes', 'sha256', 'identity', 'authority'],
     'canonicalRecords',
   );
   assertSourceKeys(
     recordIdentity,
-    ['head', 'worktree', 'masterDataVersion', 'masterSha256', 'command', 'matrix'],
+    ['masterDataVersion', 'masterSha256', 'command', 'matrix'],
     'canonicalRecords.identity',
   );
+  if (canonicalRecords.format !== 'production-regression-v1')
+    throw new TypeError('tsk06_5_source_invalid_format:canonicalRecords');
   const candidateEligibilityDigest = sourceDigest(
     candidateEligibility.digest,
     'candidateEligibility.digest',
@@ -362,6 +365,7 @@ export function createTsk065ProductionAuditSource(
       eligibilityDigest: matrixEligibilityDigest,
       artifact: sourceString(matrix.artifact, 'productionMatrix.artifact'),
       canonicalRecords: {
+        format: 'production-regression-v1',
         manifest: sourceString(canonicalRecords.manifest, 'canonicalRecords.manifest'),
         bytes: sourceCount(canonicalRecords.bytes, 'canonicalRecords.bytes'),
         sha256: sourceDigest(canonicalRecords.sha256, 'canonicalRecords.sha256'),
@@ -369,8 +373,8 @@ export function createTsk065ProductionAuditSource(
         identity: Object.fromEntries(
           Object.entries(recordIdentity).map(([key, value]) => [
             key,
-            key === 'worktree' && value === ''
-              ? value
+            key === 'masterSha256'
+              ? sourceDigest(value, `canonicalRecords.identity.${key}`)
               : sourceString(value, `canonicalRecords.identity.${key}`),
           ]),
         ),

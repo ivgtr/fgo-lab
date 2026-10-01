@@ -1,4 +1,3 @@
-import { inspectProductionAuditValue } from '../src/productionAuditValue';
 import {
   auditProductionPreparationTransactionObservations,
   type ProductionPreparationTransactionSummary,
@@ -11,14 +10,16 @@ import {
   type ProductionSerializedShard,
 } from '../src/productionShardAcceptance';
 import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
-import { verifyArtifactFiles } from '../../../scripts/test-observation-lib.mjs';
+import { resolve } from 'node:path';
+import {
+  readProductionBaselineManifest,
+  readProductionBaselineCondition,
+} from '../src/productionRegressionBaseline';
 import type { Tsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import {
   productionClosureConditions,
   productionClosureConditionKey,
   productionClosureMatrixDigest,
-  type ProductionClosureAudit,
 } from '../src/productionClosureAudit';
 import {
   compareProductionConditionRecords,
@@ -68,55 +69,11 @@ export async function verifyProductionMatrixRecords(input: {
     if (failure) failures.push(failure);
   };
   const reference = input.source.matrix.canonicalRecords;
-  const manifestPath = resolve(input.root, reference.manifest);
-  const referenceReceipt = verifyArtifactFiles(dirname(manifestPath), [
-    {
-      path: manifestPath,
-      format: 'json',
-      allowEmpty: false,
-      expectedBytes: reference.bytes,
-      expectedSha256: reference.sha256,
-    },
-  ]);
-  const unavailable = (errors: readonly string[]) => {
-    add(
-      'recordArtifactUnavailable',
-      'tsk-06.5:canonical-record-reference',
-      { available: true },
-      { available: false, errors },
-    );
-    return result();
-  };
-  let expected: {
-    identity: Record<string, string>;
-    audit: ProductionClosureAudit;
-    productionArtifacts: { conditionRecords: ConditionArtifact[] };
-  };
-  if (referenceReceipt.errors.length) return unavailable(referenceReceipt.errors);
-  const expectedValue: unknown = JSON.parse(await readFile(manifestPath, 'utf8'));
-  const expectedDomain = inspectProductionAuditValue(expectedValue);
-  if (expectedDomain.status === 'failed') {
-    add(
-      'recordValueInvalid',
-      'tsk-06.5:canonical-record-reference',
-      { auditValue: 'accepted' },
-      expectedValue,
-    );
-    return result();
-  }
-  expected = expectedDomain.value as unknown as typeof expected;
-  add(
-    'recordIdentityMismatch',
-    'tsk-06.5:canonical-record-reference',
-    reference.identity,
-    expected.identity,
-  );
-  add(
-    'recordIdentityMismatch',
-    'tsk-08:matrix-source-shape',
-    Object.keys(reference.identity).sort(),
-    Object.keys(input.identity).sort(),
-  );
+  const baseline = await readProductionBaselineManifest(input.root, reference);
+  const referenceReceipt = baseline.receipt;
+  failures.push(...baseline.failures);
+  if (baseline.status === 'failed') return result();
+  const expected = baseline.manifest;
   const requiredSource = {
     masterDataVersion: input.identity['masterDataVersion'],
     masterSha256: input.identity['masterSha256'],
@@ -162,7 +119,7 @@ export async function verifyProductionMatrixRecords(input: {
     { digest: productionClosureMatrixDigest(expectedAudit) },
   );
   const keys = productionClosureConditions().map(productionClosureConditionKey);
-  const declarations = expected.productionArtifacts.conditionRecords;
+  const declarations = expected.conditions;
   add(
     'recordSummaryMismatch',
     'tsk-06.5:expected-condition-coverage',
@@ -175,29 +132,8 @@ export async function verifyProductionMatrixRecords(input: {
     keys,
     expected.audit.conditionSummaries.map((s) => s.key),
   );
-  const declarationErrors = declarations.flatMap((d) =>
-    d.path !== `${d.conditionKey}.json` ||
-    !Number.isSafeInteger(d.bytes) ||
-    d.bytes <= 0 ||
-    !/^[a-f0-9]{64}$/.test(d.sha256)
-      ? [`${d.conditionKey}:invalid_declaration`]
-      : [],
-  );
-  if (declarationErrors.length || failures.length)
-    return unavailable(
-      declarationErrors.length ? declarationErrors : ['expected_reference_inconsistent'],
-    );
-  const expectedReceipts = verifyArtifactFiles(
-    dirname(manifestPath),
-    declarations.map((d) => ({
-      path: d.path,
-      format: 'json',
-      allowEmpty: false,
-      expectedBytes: d.bytes,
-      expectedSha256: d.sha256,
-    })),
-  );
-  if (expectedReceipts.errors.length) return unavailable(expectedReceipts.errors);
+  if (failures.length) return result();
+  const expectedReceipts: typeof expected.conditions = [];
   failures.push(...compareProductionMatrixAggregates(expected.audit, input.audit));
   for (const [index, shard] of input.shards.entries()) {
     add('recordIdentityMismatch', `tsk-08:shard:${index}`, input.identity, shard.identity);
@@ -229,24 +165,15 @@ export async function verifyProductionMatrixRecords(input: {
     const expectedDeclaration = declarations.find(
       (declaration) => declaration.conditionKey === key,
     )!;
-    const expectedValue: unknown = JSON.parse(
-      await readFile(resolve(dirname(manifestPath), expectedDeclaration.path), 'utf8'),
-    );
     const expectedSummary = expected.audit.conditionSummaries[index]!;
-    add(
-      'recordSummaryMismatch',
-      `production:${key}:conditions`,
-      productionClosureConditions()[index],
-      expectedSummary.conditions,
-    );
-    const expectedInspection = inspectProductionConditionRecord({
-      value: expectedValue,
-      conditionKey: key,
-      identity: expected.identity,
+    const expectedInspection = await readProductionBaselineCondition({
+      directory: baseline.directory,
+      declaration: expectedDeclaration,
       summary: expectedSummary,
       profileCount: expected.audit.attackProfileCount,
     });
     failures.push(...expectedInspection.failures);
+    if (expectedInspection.status === 'accepted') expectedReceipts.push(expectedDeclaration);
     const actualDeclaration = input.artifacts.find((d) => d.conditionKey === key);
     if (!actualDeclaration) {
       shardObservations[index % input.shards.length]!.complete = false;
@@ -276,11 +203,7 @@ export async function verifyProductionMatrixRecords(input: {
       productionClosureConditions()[index],
       summary.conditions,
     );
-    const {
-      elapsedMs: _expectedElapsed,
-      digest: _expectedDigest,
-      ...expectedSummaryValue
-    } = expectedSummary;
+    const { digest: _expectedDigest, ...expectedSummaryValue } = expectedSummary;
     const { elapsedMs: _actualElapsed, digest: _actualDigest, ...actualSummaryValue } = summary;
     add(
       'recordSummaryMismatch',
@@ -345,7 +268,7 @@ export async function verifyProductionMatrixRecords(input: {
   }
   return result(expectedReceipts);
 
-  function result(expectedReceipts?: ReturnType<typeof verifyArtifactFiles>) {
+  function result(expectedReceipts?: typeof expected.conditions) {
     const priority = (failure: ProductionRecordFailure) =>
       failure.reason === 'canonicalRecordMismatch'
         ? 0

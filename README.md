@@ -44,3 +44,21 @@ Codexへの接続は`.codex/config.toml`、TypeScript探索の設定は`.serena/
 `.serena/`内では、共通の探索設定を持つ`project.yml`だけをGit管理対象とします。端末固有の上書きは`project.local.yml`に置き、memory・cache・logを含むその他のファイルはGit対象外です。Serena本体は各開発環境へインストールします。
 
 全体onboardingは省略し、[文書index](docs/README.md)から今回の変更に必要な既存のTask／flowを参照します。ローカルmemoryは任意の参照補助であり、新しいcloneでの利用に必要ありません。生成master・rawデータをSerenaの探索から除外し、それらの確認には既存の検索・検証commandを使います。
+
+## Production回帰baseline
+
+承認済み期待値は `packages/calculation-application/baselines/production-v1/` の固定indexと80条件別gzip本文です。34,640 outcomeの全意味recordを保持し、`tsk-06-5-production-closure.json::productionMatrix.canonicalRecords` が形式・bytes・SHA・master identityを固定します。repositoryと依存関係から利用でき、過去のlocal runの復元は不要です。不足・破損時は同じrepository revisionのbaselineを再取得し、期待値を再生成して補わないでください。
+
+現在のproducerの回帰は既存の `audit-oc-matrix.ts` を8 shardで実行し、同じ出力directoryを `merge-oc-matrix.ts` へ渡します。mergeは全production record／aggregateを期待値と比較し、actual本文のtransaction／gateも検査します。baselineを更新する場合は、独立した期待値の承認と全意味値・inventory／digestの移行照合が必要です。
+
+保存readerの再現だけを行う場合は、次のcommandを新しい出力directoryで実行します。replayはbaselineから実merge用の入力を構成し、damage producerの再実行とは区別します。
+
+```sh
+node --import ./packages/data-pipeline/node_modules/tsx/dist/loader.mjs packages/calculation-application/scripts/replay-production-baseline.ts .test-results/baseline-replay
+node --import ./packages/data-pipeline/node_modules/tsx/dist/loader.mjs packages/calculation-application/scripts/merge-oc-matrix.ts .test-results/baseline-replay
+node scripts/production-baseline-acceptance.mjs matrix .test-results/baseline-replay .test-results/baseline-negative
+node scripts/production-baseline-acceptance.mjs six .test-results/baseline-six
+node scripts/production-baseline-isolation.mjs /tmp/fgo-baseline-new-checkout .test-results/baseline-isolation.json
+```
+
+小さいpartition fixtureは同じbaselineの保存入力を再現するためのinventoryです。移管元、保持期間、過去raw artifactの条件付き再利用と限界は[判断台帳](docs/evidence/tsk-09-1-documentation-closure.md#tsk-0911-実装境界と反証2026-10-01)を参照してください。raw logは既存の調査artifact policy（CI14日・local最新10完了run）に従い、永久baselineとは分けます。

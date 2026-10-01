@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.157"
+document_version: "1.7.163"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-01"
@@ -69,14 +69,15 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.5 | Ranking theoretical maximum and production closure | done | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | done | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | done | TSK-07 | test strategy T3/T4／ranking test gate |
-| TSK-09.1 | Documentation evidence／archive finalization | ready | TSK-08 | documentation maintenance DOC-P4〜P6 |
-| TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
+| TSK-09.11 | Permanent regression baselineと再現fixtureへの移行 | done | TSK-08 | 固定expected consumer／保持範囲の採用判断 |
+| TSK-09.1 | Documentation evidence／archive finalization | ready | TSK-09.11 | documentation maintenance DOC-P4〜P6 |
+| TSK-09 | 最終受入と運用手順の収束 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
 TSK-06.41 -> TSK-06.411
 TSK-06.41 -> TSK-06.412
-TSK-06.411 + TSK-06.412 -> TSK-06.42 -> TSK-06.43 -> TSK-06.44 -> TSK-06.45 -> TSK-06.46 -> TSK-06.47 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-06.411 + TSK-06.412 -> TSK-06.42 -> TSK-06.43 -> TSK-06.44 -> TSK-06.45 -> TSK-06.46 -> TSK-06.47 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.11 -> TSK-09.1 -> TSK-09
 TSK-06.46 -> TSK-06.48（TSK-06.47／TSK-06.5とは独立したpackage convergence follow-up）
 ```
 
@@ -2588,16 +2589,61 @@ Current bounded-unit handoff（2026-09-24、実装中のSet payload発見で保�
 計画にない条件、owner、保存／回復経路、意味論、依存、または不変条件との衝突が見つかったら、影響作業を止める。推測・分類緩和・fallback・範囲拡張で解決せず、findingで検証根拠が無効になっていない独立完成部分があれば先に検証・差分を確認してcommitする。不完全ならcommitせず理由を記録する。既存Task／evidenceへ事実・根拠symbol・実在するidentity／reason／first difference・artifact／checksum・未達・commit済み範囲・残存diff identityを更新し、改訂計画を提示して確認を待つ。通常の承認範囲内の技術判断では再承認を求めない。push、full production／audit／qualityは禁止のまま。
 
 
-### TSK-09.1: Documentation evidence／archive finalization
+### TSK-09.11: Permanent regression baselineと再現fixtureへの移行
 
 Depends on: TSK-08
 
-Current status: `ready`。TSK-08修正・受入のcommit `959f89e`で依存条件を満たした。残タスク整理commit `1fa4d18`を基準に先行調査を完了し、下記STEPで担当境界・入力・成果・終了条件を定めた。文書処遇・検査実装は未着手。現行進捗は本節とTask indexが所有し、TSK-08 evidence内の09系blockedは受入当時の履歴として扱う。
+Current status: `done`。利用者が保持範囲の設計判断を最初に対応する内容として指定したため、TSK-09.1 STEP 3とTSK-09より前の独立した実装Taskに定める。STEP 2の全履歴bundleはbyte復元の実験結果であり、長期保持方式として採用しない。
+
+利用者成果は、元端末の過去runを復元せずに、承認済みの期待値を使って全productionの回帰・field単位の差分・不正入力拒否を確認できること。保持判断と証拠の正本は[判定台帳の保持範囲](../evidence/tsk-09-1-documentation-closure.md#検証目的から定める保持範囲の設計提案)。新しい計画書・汎用保存サービスは作らない。
+
+- [x] 直接producer／reader／source declarationと意味fieldを確認し、現行期待値1セット・再現fixture・判断記録・期限付き調査artifactを分ける。過去の全manifest参照を恒久保持の必要性へ読み替えない。
+- [x] 元の固定manifestと80条件本文から、34,640 outcomeの意味値、inventory／digest、版・出自を保持した専用baselineを一方向に作成する。初回はrecordの意味fieldを削らず、run metadata・raw log・receipt graphとの責務を分離する。入力を検査してから保存表現へ変換し、承認済みexpectedを新producerで再生成しない。
+- [x] 実測容量とfield集合から保存表現・配置を確定し、元local runなしのcheckoutでbaselineを入手できる経路を接続する。原log・端末pathをGit／公開fixtureへ持ち込まない。容量目標、公開可否、外部保管先を未確認のまま決め打ちしない。
+- [x] `production-matrix-records.ts`と必要なsource schema／declarationのownerを移行し、現行形式だけを受け入れる。既存の全record／aggregate比較、actual本文からのtransaction／gate観測、typed失敗・完全診断・非zeroを保持する。旧／新形式fallbackや期待値生成器の併存は残さない。
+- [x] 六失敗クラスと保存受入反例を小さいfixture／実CLIへ接続する。既存の合法値、不正値、未知field、欠落、coverage／identity、receipt／格納破損、transaction／gateの非同値を確認し、大量失敗は生成して完全保存・bounded表示を確認する。既存testは有効範囲で再利用する。
+- [x] 元80条件／34,640 recordとの全意味値・inventory／digest一致、実mergeの正常入力と代表反例、元runなしでの入手・利用、影響readerの前後性能、直接consumerと最終差分の必要なゲートを閉じる。generator／damage構造を変えない移行へ全80条件再生成を無条件に追加しない。
+- [x] 固有根拠の移管先、原証跡を参照できる期間と履歴記録の限界、09.1 STEP 2が文書へ反映する保持契約、TSK-09が再利用する実caller証拠と未達を残す。元証跡・prototype script・bundleをこのTaskで物理削除しない。
+
+Done gate（全項目Verified、対象内Blocking0。証拠は判定台帳の最終受入）:
+
+- 現行期待値は1セットで、全80条件／433 profileの比較と差分診断能力を保持している。
+- baselineの意味値・inventory／digestは承認済み移行元と一致し、元local runなしで取得・検証できる。
+- 小さい反例と実CLIが不正・欠落・矛盾・部分適用を成功へ変えず、全失敗と必要な診断を保持する。
+- raw log／端末情報／過去runのreceipt graphが専用baselineに混入せず、保存容量と配置の根拠がある。
+- 対象内Blocking0、必要な局所・consumer・性能・最終ゲート成功、Task／台帳／入力と結果が一致する。
+
+停止境界: damage／ranking／製品state・outcomeの意味論を変更しない。移管が未成立の固有根拠を捨てず、外部公開・転送・物理削除・cleanupを開始しない。独立した性能最適化や旧経路全体監査へ広げない。
+
+Flow closure: N/A: 監査baselineの保存・受入経路を移行する。canonical execution stateとoutcome semanticsは不変。構造的なreader／writerの反証は既存の体系レビューガイドに従い、本Taskの比較・失敗matrixを台帳へ記録する。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `DOC-REV-001` | Apply（Verified） | `pnpm test:docs`、保持判断・source declaration・Task整合 | [最終受入](../evidence/tsk-09-1-documentation-closure.md#tsk-0911-最終受入) |
+| `DX-ART-001` | Apply（Verified） | baseline全値／identity／格納照合、反例の完全診断とbounded出力 | [最終受入](../evidence/tsk-09-1-documentation-closure.md#tsk-0911-最終受入) |
+| `DX-HANDOFF-001` | Apply（Verified） | 元local runなしでbaseline取得・同じ検証へ再開 | 本Task Handoff、判定台帳 |
+| `TS-ART-001` | Apply（Verified） | 直接consumerの正常／失敗artifactとreceipt確認 | [最終受入](../evidence/tsk-09-1-documentation-closure.md#tsk-0911-最終受入) |
+| `TS-PERF-002` | Apply（Verified） | 変更readerを同条件で前後各3process、未変更経路は一致証拠を再利用 | [最終受入](../evidence/tsk-09-1-documentation-closure.md#tsk-0911-最終受入) |
+| `RK-AUDIT-001` | Apply（Verified） | 全80条件／34,640 outcomeの移管一致、実mergeとnegative fixture | [最終受入](../evidence/tsk-09-1-documentation-closure.md#tsk-0911-最終受入) |
+| `TS-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
+| `RK-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
+
+Handoff: TSK-09.11完了（2026-10-01）。固定期待値80条件／34640 recordを専用baselineへ移管し、全意味値／inventory／digest一致、現行readerのみ、局所75test、六クラス実runner、実merge11反例、normal3/3、元run禁止の別rootreplay／実mergeを確認。最終qualityは `.test-results/2026-10-01T13-08-40-080Z-15-cbd2fe/manifest.json`（1603／157／29、全10step、warning／unexpected console／retry0）。source identity `3491612aac41d147b270c3de5514817994255525d65d29b52ba2c0f348480925` と最終差分を照合した。直接経路と保持範囲・性能・条件付き再利用の限界は[判定台帳の最終受入](../evidence/tsk-09-1-documentation-closure.md#tsk-0911-最終受入)を正本とする。
+
+09.1をreadyへ変更。次の操作は `git status --short` と本台帳の現行保持表・U5／U6を読み、09.1 STEP 2としてA0〜A9の移管先・原証跡の参照期間・不足時の主張撤回を既存文書の処遇契約へ反映すること。09.11の同条件証拠を継承し、元run／全履歴bundleの復元・保管先選び・全matrix再生成を繰り返さない。STEP 2の未移管・Blockingを解消してからSTEP 3へ進む。09.1 STEP 2以降と09は本Taskで未実行。追加の利用者依頼により、実装・baseline・関連する正本更新を本commitへ収録する。開始時の4文書の関連記録は保持し、未変更の3prototypeは未追跡のままcommit対象外とする。原証跡・bundleを保持し、外部公開／転送／物理削除／cleanupは行わない。
+
+### TSK-09.1: Documentation evidence／archive finalization
+
+Depends on: TSK-09.11
+
+Current status: `ready`（TSK-09.11 done、STEP 2再開待ち）。STEP 1とSTEP 2のlocal prototype検証は成立したが、全履歴bundleの保持戦略を再判断した。利用者指定により専用baseline・再現fixtureへの移行を最初に実施し、その成果でSTEP 2の保持契約を収束させてからSTEP 3〜6へ進む。現行進捗は本節とTask indexが所有し、TSK-08 evidence内の09系blockedは受入当時の履歴として扱う。
 
 利用者成果は、別環境の作業者が現行契約・最終受入・残作業を一意に辿り、必要な証跡を入手できること。DOC-P4〜P6の要件を変更せず、既存indexと検査ownerを拡張する。
 
 - [ ] DOC-P4: 全tracked evidence／machine-readable evidenceと必要なignored artifactを列挙し、現行根拠・固有の履歴・重複を分類する。indexの古い途中statusと最終受入への導線を収束させ、damage input／rule／inventory／digest／version／commit／未対応scopeを保持する。
-- [ ] DOC-P4: 正式matrix・反例・最終qualityの必要証跡について、保存先、保持期間、bytes／SHA、復元操作、復元不可時の操作を定める。巨大なlocal artifactを無条件にGitへ追加せず、現行の唯一のcanonical参照と復元可能性を照合する。
+- [ ] DOC-P4: TSK-09.11の現行baseline1セット・再現fixture・判断記録・調査artifactの移管結果から、保持範囲、期間、固定identity、入手・再開操作、不足時の操作を定める。原証跡の全参照復元と将来の検証能力を分け、K全件の長期保管を完了条件にしない。固有根拠の保持と限界を個別に確認する。
 - [ ] DOC-P5: superseded／complete plan、既存archive index、local quarantine、tracking policyを照合する。固有根拠の移管と復元性を確認した対象だけを統合・Git-only化し、既存の処遇判断を理由なく再実行しない。
 - [ ] DOC-P6: `scripts/docs-integrity-lib.mjs`と既存testを拡張し、全tracked Markdownのlocal linkがtracked targetへ到達すること、sub-indexを含む全件登録、文書kind別の必須frontmatter／statusを検査する。既存registry version／ADR／Task依存／Contract／evidence登録の検査は保持する。
 - [ ] DOC-P6: broken／untracked link、未登録文書、frontmatter欠落／未知statusを小さいfixtureで拒否し、fresh cloneの対象集合でも検査する。成功はcompact、失敗はpath／reason付きのbounded出力とする。
@@ -2608,7 +2654,7 @@ Current status: `ready`。TSK-08修正・受入のcommit `959f89e`で依存条�
 | --- | --- |
 | `scripts/docs-integrity-lib.mjs::validateRepository`、既存6test | registryにある行、ADR集合、Task／Contract等は検査済み。全tracked文書のlink・登録集合・kind別statusを網羅する走査はない。DOC-P6はこの不足を既存ownerで閉じる。 |
 | `docs/evidence/README.md`、`docs/archive/README.md`、既存documentation inventory／disposition | indexと処遇履歴は存在する。最新の最終受入と、途中checkpoint・古いbaselineを区別して照合する。掲載件数や更新日だけではobsoleteと判定しない。 |
-| `tsk-06-5-production-closure.json::productionMatrix.canonicalRecords.manifest`、`production-matrix-records.ts::verifyProductionMatrixRecords`、`.gitignore` | 実consumerは固定bytes／SHAの保存manifest・condition本文を読む。参照先`.test-results`はignored。現端末の成功を別環境での入手・再開成功へ代入せず、保持・復元契約をここで定め、実callerの復元検証をTSK-09へ渡す。 |
+| `tsk-06-5-production-closure.json::productionMatrix.canonicalRecords.manifest`、`production-matrix-records.ts::verifyProductionMatrixRecords`、`.gitignore` | 現consumerはrepository内の固定baseline manifest・80本文を読む。TSK-09.11で専用baselineと実readerの移行を完了し、本Taskは保持契約・導線・処遇へ反映する。元local runなしの実caller証拠をTSK-09へ継承し、同条件の受入を重複実行しない。 |
 | `package.json`、`quality-runner-lib.mjs`、`.github/workflows/ci.yml` | `pnpm test:docs`は既にcanonical quality内にあり、CIは`pnpm quality`を一回実行する。新しい検査経路や重複CI jobを作らない。 |
 
 実行順はDOC-P4のinventory／証跡保持判断 → DOC-P5の処遇 → DOC-P6の不足検査・最終参照確認。既存Taskを進捗の正本とし、結果は一つの`docs/evidence/tsk-09-1-documentation-closure.md`へ記録する。この結果文書は実行時に作成し、新しい計画書は増やさない。
@@ -2631,6 +2677,18 @@ Current status: `ready`。TSK-08修正・受入のcommit `959f89e`で依存条�
 
 局所調査fileは`.test-results/tsk-09-1-preinvestigation-20261001/`の`document-inventory.json`、`navigation-probes.json`、`artifact-dependencies.json`、`retention-probe.json`、`quarantine-probe.json`、`task-section-probe.json`。これは上表の補助結果であり正本や長期保管先ではない。navigationの正規表現probeはinline link候補だけを調べ、reference-style、anchor、HTMLを含む全Markdown検査の成功証拠にはしない。環境ファイル保護hookで拒否された最初のinventoryは実行結果に数えず、明示したtracked文書だけで取得し直した。
 
+**STEP 1結果（2026-10-01）**
+
+- [x] 全tracked文書＋root入口／aliasと必須artifactの判定台帳を作成し、evidence indexへ登録した。
+- 対象、kind／owner／metadata移管元、親を含む参照経路、分類・保持する意味・後継、必須artifactと未確定事項の解消STEPは[判定台帳](../evidence/tsk-09-1-documentation-closure.md)が所有する。
+- 文書／保存方式の処遇、metadata変換、docs inspector変更、cleanup、全matrix／audit再生成は行っていない。DOC-P4〜P6の全Done gateは未達で、TSK-09は`blocked`を維持する。
+
+**STEP 2初回local検証結果（2026-10-01、旧保持方式の履歴）**
+
+- 保存・復元prototypeを実装し、STEP 1のK₀8,972 pathから直接receipt依存の不足884件を解消したK₁9,856 pathを保存した。全bytes／SHAの復元と41,240参照／固定expected80条件の照合が成功。原文・元path・run・破損宣言の意味を保持した。方式比較、全coverage、固定identity、保持期間条件、操作・不足時の対応は[判定台帳STEP 2](../evidence/tsk-09-1-documentation-closure.md#step-2-保存復元prototypeと未達条件)が所有する。
+- 利用者は「今回はlocal検証まで行い、STEP 2を未完了で引き継ぐ」と指定。原証跡は公開Git／リリース成果物へ収録せず、非公開入手元・取得権限・保持責任者・実寿命の保証が未達。prototypeの成功を別環境の入手成立へ代入しない。
+- 当時は非公開bundleの保管契約を先に閉じる計画だった。現在はTSK-09.11の移行を最初に行い、STEP 2の保持判断を更新してからSTEP 3〜6へ進む。pin機能や外部保管を方式として必須にせず、原証跡の移管・調査期間・不足時の拒否を確認する。TSK-09はblockedを維持する。
+
 **セッションごとの担当STEP**
 
 各STEPを一つの主担当sessionの範囲とし、順に進める。STEP開始時に入力commitと差分を固定し、結果文書の判定表へ今回のdelta、Task Handoffへ成果・未達・次操作・検証・commitを残す。60分でcheckpoint、90分で新しいfamilyを開始せず現在の操作を終える。終了条件未達なら同じSTEPの残項目から次sessionで再開し、部分成功で次STEPを完了扱いにしない。
@@ -2638,24 +2696,24 @@ Current status: `ready`。TSK-08修正・受入のcommit `959f89e`で依存条�
 | STEP／依存 | 担当する範囲 | 成果とセッション終了条件 |
 | --- | --- | --- |
 | 1 判定台帳／STEP 0 | 全tracked文書と必須artifactの有限inventory、kind・owner・入力形式、root入口／aliasの検査責務、親noteを含む参照経路。内容処遇と保存方式はまだ実行しない。 | 一つの結果文書を開始し、全対象の現行根拠／固有履歴／重複／要追加確認と後継を記録。damage input・rule・inventory・digest・version・commitの所在、必須artifact集合、metadata移管元を明示。unknownを無視せず後続STEPの解消ownerを定め、保持／削除判断を進められる境界を確定。 |
-| 2 証跡保持・復元／STEP 1 | 正式expected、六失敗クラス、qualityとreceiptを持つ保存集合。固定bytes／SHA、保存先・期間・復元・不足時の操作、清掃との分離。 | local保存・Git復元・CI artifact等を容量／寿命／入手可能性で比較し、必須集合の処遇を確定。許可された場所への保存・復元prototypeで元bytes／SHAを確認し、canonical参照が復元後の同じ入力を指すことを示す。外部公開・物理削除は未承認のまま実行しない。復元不能があれば本STEP未完了。清掃pin機能等の運用codeとmatrix実caller受入はTSK-09へ明示handoff。 |
+| 2 保持契約の収束／STEP 1・TSK-09.11 | 専用baseline1セット、再現fixture、判断記録、期限付き調査artifactと個別の固有根拠。09.11の実装・受入結果を保持・処遇契約へ反映する。 | 全意味値・inventory／digestと移管元、固定identity・入手／不足時操作、原証跡の参照期間と限界を照合。全履歴bundleの長期保管を要求せず、rawを削る前に保持する意味の移管を確認する。原証跡の物理削除・外部公開は実行しない。実reader移行・反例・性能は09.11の有効証拠を継承し、未達があればSTEP 3へ進まない。 |
 | 3 DOC-P4収束／STEP 1・2 | evidenceの意味・role／successor、`docs/evidence/README.md`と現行Task／要件への導線、古いphase report・歴史画像link。 | 固有damage・inventory根拠を維持して現行証拠と途中／歴史証拠を区別。STEP 1の要追加確認を根拠付きで解消し、必要な統合だけ実施。切れた歴史参照は元commit／blobから復元でき、indexから全対象へ到達できる。統合が不要な対象はretain理由を記録。 |
 | 4 DOC-P5・metadata移管／STEP 1〜3 | superseded／complete文書、archive／tracking policy、意味を確定した42欠落・8語彙外とその他の必須metadata不足。既存Local-only9件は同一性を根拠に継承。 | 処遇前後で入力・rule・digest・採用判断を保存。必要な移動は参照とGit復元情報を同時更新し、metadataはkindの現行語彙へ明示移管。旧語彙を読むfallbackを追加しない。ADRの採用時の判断本文は現行化せず、metadataと本文statusの整合を保つ。義務を持たない資料を無条件に削除せず、全処遇・未知kind／statusの解消を記録。 |
 | 5 DOC-P6実装／STEP 3・4 | `scripts/docs-integrity-lib.mjs`、既存test／CLI。STEP 1の対象・構文・kind契約で全tracked集合を検査し、既存qualityへ接続する。 | tracked target／登録の到達経路、必須frontmatter／status、root／alias、broken・untracked link、未登録、未知kind／status、reference-style／anchor／code fence、UTC timestampを含むTask本文と最終Task区間をfixturesで確認。machine evidenceのdomain statusをMarkdown metadataへ変換しない。大量failureでも非zero、bounded path／reason、完全結果を既存artifact ownerで保存。現在の文書集合で全件成功、既存6契約も保持。 |
-| 6 統合受入・handoff／STEP 1〜5 | 処遇済み集合、全検査、固定証跡、別checkoutでの文書再開と本Taskの全Contract。新たな整理familyは追加しない。 | 別checkoutでregistry／参照／検査と復元手順を辿れる。全処遇・完全診断・receipt・正本を照合し、必須不明／未移管／Blocking0。TSK-09へ具体的な復元入力と未実行の実caller・性能・運用義務を渡す。最終差分の必要なゲート成功後にTSK-09.1 done／TSK-09 readyへ変更。 |
+| 6 統合受入・handoff／STEP 1〜5 | 処遇済み集合、全検査、baseline・fixture・判断記録への導線と別checkoutでの文書再開、本Taskの全Contract。新たな整理familyは追加しない。 | 別checkoutでregistry／参照／検査とbaseline入手・再開手順を辿れる。全処遇・診断・正本を照合し、必須不明／未移管／Blocking0。TSK-09へ09.11の有効な実caller・性能証拠と全体Contractの未達を渡し、未変更の復元受入を繰り返さない。最終差分の必要なゲート成功後にTSK-09.1 done／TSK-09 readyへ変更。 |
 
 同じroot／moduleを別STEPで変更する場合は前STEPのcommitを入力とし、同時編集しない。文書処遇の前に保持契約、検査の厳格化の前にmetadata移管を置く。STEP 3／4で固有根拠が未解決なら、STEP 5の許可語彙拡張やfallbackで成功へ変えない。
 
 計画の反証: ①既存docs6test成功でも42欠落／8語彙外／3画像linkを見逃すため、全件成立を主張しない。②直接indexにない30件のうち親noteから到達する反例があるため、全件を重複登録・削除しない。③現端末の80file存在とCI uploadでは寿命・別環境復元を保証せず、保存契約を独立して閉じる。④Local-only9件はSHA一致なので、資料整理を理由に再処遇しない。⑤画像・機械JSONの置換／再生成やmetadataの機械的なComplete化は、意味・元bytesを保持する対策にならない。
 
-検証は各STEPの差分に必要なものを行う。文書のみはdocs／書式／参照・処遇receipt、STEP 5は意味のあるnegative fixtureと実CLI、STEP 6は新しいtracked集合での全検査・再開を確認する。製品testが読むevidence JSON／canonical inputを変更した場合は記録だけの変更とせず、直接consumerの検証を行う。quality実行経路を変更した場合は対応するrunner検証と最終qualityを追加する。全80条件の再生成、damage性能、実matrix consumerの最終復元受入は本Taskの文書検査へ代入せず、TSK-09の責務を維持する。
+検証は各STEPの差分に必要なものを行う。文書のみはdocs／書式／参照・処遇receipt、STEP 5は意味のあるnegative fixtureと実CLI、STEP 6は新しいtracked集合での全検査・再開を確認する。製品testが読むevidence JSON／canonical inputを変更した場合は記録だけの変更とせず、直接consumerの検証を行う。quality実行経路を変更した場合は対応するrunner検証と最終qualityを追加する。baseline／reader移行の受入はTSK-09.11が所有し、その同条件証拠を文書再開へ継承する。全80条件の再生成やdamage性能を本Taskの文書検査へ追加せず、TSK-09のproject closureとは区別する。
 
 Done gate:
 
 - intentional damage差分、canonical input、semantic rule、inventory、digestを失っていない。
 - tracked report集合とtracking policyが一致する。
 - superseded／complete／historical文書をcurrent contractと誤認しない。
-- 必須証跡の固定identity・保持・復元操作が決まり、local-only artifactの存在をfresh cloneの成功証拠へ代入していない。
+- baseline・再現fixture・判断記録の固定identity・保持・入手／再開操作が決まり、固有根拠の未移管がない。local-only artifactの存在や全履歴bundleの復元成功をfresh cloneの検証能力へ代入していない。
 - docs integrity checkがcanonical quality pathで成功する。
 - 全tracked文書の登録／link／kind別frontmatterが検査対象となり、欠落・未知値をfixtureで拒否する。
 - ignored local資料のmaterialな物理削除は、別の明示承認なしに行っていない。
@@ -2676,25 +2734,54 @@ Contract closure matrix:
 | `TS-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
 | `RK-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
 
-Handoff: 先行調査・STEP分割完了、処遇／検査実装未着手（2026-10-01）。調査基準は`1fa4d18`（製品TSK-08完了は`959f89e`）、当時のworktreeはclean。TSK-08の受入は`tsk-08-parity-ratchet.json::implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`、qualityは`.test-results/2026-10-01T06-40-04-438Z-16-7a153c/manifest.json`。現在の未達はSTEP 1〜6であり、先行probeを全件成立へ代入しない。次の操作は現HEAD／差分と本節を照合し、STEP 1の全対象・参照・kind・固有根拠・必要artifactを一つの結果文書の判定台帳へ固定すること。既存artifactの清掃は実行しない。本Task完了後にTSK-09をreadyへ変更する。
+Handoff: TSK-09.11の移行・実受入完了によりready（2026-10-01）。STEP 1・初回STEP 2の有効証拠と関連文書の記録を保持する。未変更の3prototypeは09.11のcommit対象外。次は本TaskのSTEP 2を保持契約の収束として再開し、[判定台帳の現行保持表と最終受入](../evidence/tsk-09-1-documentation-closure.md#保持対象の移管先期間再利用の限界0911の成果)からA0〜A9の移管先・期間・固有根拠・不足時操作を文書処遇へ反映する。readerの移管一致・六クラス・実merge／別root・性能・qualityは09.11の同条件証拠を継承する。STEP 2以降は未実行であり、STEP 3〜6・TSK-09・全履歴bundleの保管先確定を先行しない。
+
+STEP 2初回時点のHandoff（履歴）: local保存・復元検証成立、当時は別環境向け保管契約未完了（2026-10-01）。開始HEADは`0a787e8efd144242e5858c0e3da8b8ed0a4ab6fe`、STEP 1の4文書の未commit差分を保持して開始した。判断・coverage・復元操作の正本は[判定台帳STEP 2](../evidence/tsk-09-1-documentation-closure.md#step-2-保存復元prototypeと未達条件)。当時の追加差分は保存／参照prototypeと局所testの3script、既存4文書の記録更新だけ。commit／pushなし。以下の非公開保管先・pin前提は当時の方針で、現在の次操作を所有しない。
+
+- 有効な証拠: K₀全件stream復元のbytes／SHAと、同一entryの証拠を再利用したK₁追加884件の復元。K₁全9,856 path／41,240参照／未解決0、固定expected80条件、既知破損原文・SHA不一致、quality親子、reconciliationを確認。最終receiptは`.test-results/tsk-09-1-step2-20261001/manifest.json`。代表経路・全coverageと別環境取得を区別する。
+- 検証結果: 保存／復元・参照ownerの局所6/6、文書6/6／docs integrity、対象7fileの書式、差分ゲートが成功。製品・runner・CI・固定machine evidence不変のため既存TSK-08成功を同じ条件の範囲で継承し、quality／全matrix／auditを再実行しない。
+- 未達: U6の非公開入手元・取得権限・保持責任者・実寿命保証。U5はlocal保存単位と復元まで成立。全体のU1〜U4／U7、STEP 3〜6は未着手。TSK-09.1はin_progress、TSK-09はblocked。
+- 次操作: 利用者のlocal限定を保持し、担当は**STEP 2の残項目**。保管先への保存が明示許可された後に固定bundle＋receipt packageを移送し、元local directoryを使わない別環境で取得・SHA・参照を受け入れる。STEP 3へ先行しない。TSK-09へpin／cleanup dry-run・matrix実caller・リリース時の混入防止と廃棄条件を渡す。
+
+STEP 1時点のHandoff（履歴）: 判定台帳完了、当時STEP 2〜6未着手（2026-10-01）。開始HEADは`0a787e8efd144242e5858c0e3da8b8ed0a4ab6fe`、開始worktreeはclean。成果・判断・有限対象・残る不確実性の正本は[判定台帳](../evidence/tsk-09-1-documentation-closure.md)。差分は同台帳／evidence index／Task／registryの4文書のみ、commit／pushなし。
+
+- 有効な証拠: tracked集合と先行probeの差分、最終受入source10/10、固定expected manifestのbytes／SHA、quarantine9/9、Git-only18/18と歴史画像3blobを照合。artifact列挙はreceiptの相対path ownerを区別し、本文全hash／matrix再計算は行っていない。詳細は台帳の検証節と`.test-results/tsk-09-1-step1-20261001/manifest.json`。
+- 文書検証: `pnpm test:docs`6/6・docs integrity、対象4文書Prettier、参照／台帳対象全件照合、`git diff --check`が成功。product／runner／CI／machine evidence不変で、既存TSK-08最終受入をsource同一性の範囲で再利用。先行probeやdocs成功をDOC-P6全件成立とは扱わない。
+- 未達: 台帳U1〜U7、STEP 2〜6の保存・復元／導線／metadata移管／検査実装／別checkout受入。TSK-09.1全体は`in_progress`、TSK-09は`blocked`。
+- 次操作: HEAD／4文書差分と台帳を照合し、STEP 2だけでA0〜A7／K、U5／U6を入力に保存・復元単位と寿命を決定する。既存cleanupは実行しない。全Task完了までTSK-09をreadyへ変更しない。
 
 再利用auditの固定pathは`.test-results/2026-09-30T17-32-03-143Z-15-fa5942/manifest.json`。区間parserの直接API probeは通常本文ならerror0、同じ本文へUTC timestampを加えるとmissing Contract closure matrixになる。原因は末尾の`\Z`がJavaScriptではliteral文字となること。STEP 5で修正・反証し、今回の計画は保存pathをHandoffへ置いて検証する。最初の文書検査失敗はこの再現として保持し、成功へ読み替えない。
 
 先行調査・STEP分割の文書検証: `pnpm test:docs`6/6・docs integrity、対象書式・差分検査が成功。stdout／stderrと補助probeのreceiptは先行調査directoryの`manifest.json`へ保存する。今回のtracked変更はTask／registryだけで、製品・runner・CIやTSK-08の固定検証sourceは不変。これは調査記録・計画の検証であり、DOC-P4〜P6の完了証拠ではない。
 
-### TSK-09: Performance、運用移行、旧経路削除
+### TSK-09: 最終受入と運用手順の収束
 
 Depends on: TSK-09.1
 
-Current status: `blocked`（TSK-09.1待ち）。2026-10-01の残タスク整理で範囲を具体化した。性能最適化や旧経路の削除対象は、存在・重複・意味の同等性をコードと計測で確認してから確定する。
+Current status: `blocked`（TSK-09.1待ち）。利用者の指定により保持範囲の移行をTSK-09.11で先に閉じ、その実caller／性能証拠を継承してproject全条件と運用手順を収束させる。性能最適化や旧経路削除は契約照合で必要性を確認した範囲だけを対象にする。
+
+**存在意義・範囲の再評価（2026-10-01、実装停止中）**
+
+利用者の見直し依頼により、STEP 2のlocal限定を入力に本Taskの目的と依存を再評価した。目的は`TS-FINAL-001`／`RK-FINAL-001`／`DX-FINAL-001`のproject closureと、標準command・診断・再開手順の収束である。保存サービス構築、性能短縮、削除件数を目的にしない。保持範囲の移行をTSK-09.11として最初に実施する順序を確定した。全最終Contractと品質の不変条件は維持し、実装はまだ開始していない。
+
+| 論点 | 確認した根拠／見直し判断 |
+| --- | --- |
+| TSK-09を残す理由 | test strategy 16章、ranking 17章、execution efficiency 10章の横断完了条件は独立して残る。TSK-08の`repairPlan.finalAcceptance`はdamage／audit／qualityの有効な受入証拠だが、09.1の後続差分とproject全条件の対応表はまだない。新しい実装を必ず追加するTaskではなく、既存証拠の成立範囲と未達を閉じるTaskとして再構成できる。 |
+| 性能・旧経路削除 | TSK-08の性能コストは説明済み、最適化の短縮率目標はない。旧経路の残存も未確定。契約照合で必要性を確認した範囲だけ修正・測定し、改善や削除対象を作るための全体監査へ広げない。未変更の有効証拠は再利用する。 |
+| 通常qualityと固定expected | `scripts/quality-runner-lib.mjs`はunit／production／build／E2E等を実行する。ignoredな固定expectedを読む`verifyProductionMatrixRecords`の直接callerは別の`merge-oc-matrix.ts`で、通常qualityにmatrix CLIの実行はない。原証跡の入手未達と、通常品質判定・文書導線整理の開始条件を一括にしない。ただしmatrixの復元成功を通常quality成功から推定しない。 |
+| 非公開保管・pin機能 | test strategy 9章はignored artifact、明示cleanup、最新10run等を定め、execution efficiencyは完全結果と正本からの再開を要求する。特定の非公開保管サービスやpin機能を方式として必須にはしていない。固定consumerの参照寿命を守る方法は必要性から選び、STEP 2未達の単なる移管で完了にしない。 |
+| STEP 3の依存 | 導線整理自体は非公開転送に依存しないが、利用者が保持範囲の見直しを最初に指定したためTSK-09.11→09.1 STEP 2→STEP 3の順に確定した。原証跡の処遇と復元保証の主張は移管の成立後に判断し、先行しない。 |
+| 採用した保持判断 | 全履歴bundleの外部保管を前提にせず、現行期待値1セット・小さい再現fixture・判断記録と期限付き調査artifactへ移行する。元runなしで必要な検証を再開できる条件を09.11で閉じ、全原byteの恒久再監査を一律に要求しない。固定expected／固有根拠の移管は省略せず、原証跡の削除も承認していない。 |
+
+再評価の根拠と保持判断は[判定台帳](../evidence/tsk-09-1-documentation-closure.md#検証目的から定める保持範囲の設計提案)を参照する。次の実装はTSK-09.11、その後は09.1 STEP 2から再開する。本Taskは同条件の移行受入を継承し、全体Contractの未達だけを閉じる。保存先選び・外部転送・削除・pin機能を先行する標準工程にはしない。
 
 - [ ] 最終Contract／受入条件を、既存証拠のidentity・有効範囲・未達へ対応付ける。TSK-08の局所成功や部品の存在からproject全体のUI／運用／再開完了を推定しない。
 - [ ] wall-clock、import／transform、master read／parse／compile、candidate、damage request、stdout bytesを同じ環境・workloadで比較する。変更した構造は変更前後各3processの中央値を記録し、未変更経路は依存・入力一致を根拠に有効な既存計測を再利用する。
-- [ ] TSK-08監査コストをprofiler／対象別計測で確認し、同じ受入snapshotに対する重複全値検査・コピーを減らせるか判断する。根拠のある変更だけを実装し、不正値拒否、合法省略のsource責務、保存／digestの同一snapshot、完全診断、正常digestを保持する。短縮率の新しい必達目標は設けない。
+- [ ] 性能Contractを既存・09.11の計測へ対応付け、未説明の退行や必要性のある重複が残る範囲だけprofile・修正する。不正値拒否、合法省略のsource責務、保存／digestの同一snapshot、完全診断、正常digestを保持する。説明済みコストだけを理由に最適化familyを新設せず、短縮率の新しい必達目標を設けない。
 - [ ] phaseごとのmodel call、poll回数、最大tool outputを観測可能な参考指標として記録する。履歴から取得できない値を0件とせず、canonical handoffによるnew thread再開を確認する。
 - [ ] contributor向けtest選択表、auditを要求する条件、CI／localの同一判定、artifactの入手・復元／失敗時診断手順を既存README／guideへ収束させる。
 - [ ] root／package scripts、runner／reporter、CI、ranking caller／URL／compatibility pathを有限inventoryで照合する。TSK-04／06.5／08で完了した削除は再実行せず、現在も到達する不要な二重経路だけを除去する。対象0件ならsource／caller根拠付きN/Aとし、必要なdiagnostic／audit経路を旧runnerと誤認しない。
-- [ ] 09.1で定めた保持・復元契約を使い、別のcheckout／threadから必要証跡を復元してmatrixの実consumerを確認する。不足時はtyped失敗と必要な操作を示し、別の保存先へのfallbackや再生成したexpectedへの置換を行わない。
+- [ ] 09.11のbaseline／実consumer受入と09.1の入手・再開手順を使い、別checkout／threadから必要な検証を再開できることを確認する。入力・経路が一致する受入証拠は継承し、不足／変更範囲だけ実検証する。全履歴bundleの復元を要求せず、不足時はtyped失敗と必要な操作を示し、fallbackやexpected再生成で補わない。
 - [ ] 最終差分の必要なproduction／parity／UI／fail-closed／performance／qualityを閉じ、全Contract、counter／digest、完全artifact／receipt、正本・再開操作を一致させる。
 
 着手時の性能基準はTSK-08 `repairPlan.finalAcceptance.performance`。新producerの全80条件3run中央値は1187.60秒（直前841.93秒、原正式baseline1049.34秒）、merge3run中央値は108.376秒（直前29.254秒）。追加全値検査・コピーのコストは説明済みだが、profilingによる重複削減の可否は未判定。ranking本体の原3＋3計測と、同一process内のproducer3pair診断は別指標として保持する。候補数・damage request・検査範囲・timeout／cap／ratchetを緩めて短縮しない。
@@ -2707,7 +2794,7 @@ Done gate:
 - 未説明のdamage、inventory、parity、UI、performance差分がない。
 - 1秒polling、無条件retry、巨大なfull-source出力が標準workflowに残っていない。
 - 新しいthreadがcanonical handoffだけから次作業を開始できる。
-- 必須artifactの復元・実consumer・不足時の拒否を確認し、現端末のignored保存だけへ依存していない。
+- 必要なbaseline・fixture・判断記録の入手・実consumer・不足時の拒否を確認し、元端末の過去runや全履歴bundleだけへ依存していない。完全な調査artifactは既存の実行・保持policyで保存する。
 - 全最終Contractの未達と対象内Blockingが0件であり、最終差分・検証・正本が一致する。
 
 Contract closure matrix:
@@ -2716,12 +2803,12 @@ Contract closure matrix:
 | --- | --- | --- | --- |
 | `TS-FINAL-001` | Apply | 最終差分`pnpm quality`、全10条件と性能比較／再利用条件照合 | `docs/evidence/tsk-09-final-acceptance.md`（実行時の結果） |
 | `RK-FINAL-001` | Apply | ranking要件17章のproduction／UI／parity／damage証拠対応表と必要な実経路検証 | `docs/evidence/tsk-09-final-acceptance.md`（実行時の結果） |
-| `DX-FINAL-001` | Apply | repository内handoffだけで別checkout／thread再開、固定artifact復元・実consumer確認 | `docs/evidence/tsk-09-final-acceptance.md`（実行時の結果） |
+| `DX-FINAL-001` | Apply | repository内handoffからbaseline／fixture／記録へ到達し別checkout／thread再開、09.11の実consumer証拠と不足時拒否の照合 | `docs/evidence/tsk-09-final-acceptance.md`（実行時の結果） |
 | `TS-PERF-002` | Apply | 変更したcanonical gate／audit構造を同条件で前後各3process、未変更は一致証拠再利用 | `docs/evidence/tsk-09-final-acceptance.md`（実行時の結果） |
 | `RK-PERF-001` | Apply | 変更したranking hot pathを同条件で前後各3process、counter／parity／既存計測照合 | `docs/evidence/tsk-09-final-acceptance.md`（実行時の結果） |
 | `DOC-LINT-001` | Apply | `pnpm test:docs`、最終command／registry／参照整合 | `docs/evidence/tsk-09-final-acceptance.md`（実行時の結果） |
 
-Handoff: 計画確定・未実行（2026-10-01）。依存するTSK-09.1の処遇結果と証跡保持・復元契約を開始条件とする。TSK-08完了commit `959f89e`、既存quality／performance／raw coverageは上述の正本から有効条件付きで継承する。次の操作は09.1完了後に現source／master／環境・workloadとContract未達表を固定し、既存runner／CI／ranking callerと監査hot pathの限定inventoryを作ること。この計画段階では性能run・製品実装・削除・外部公開へ進まない。
+Handoff: 最優先Task・順序確定、製品実装未実行（2026-10-01）。現在の次操作はTSK-09.11のbaseline／reader／再現fixture移行、本Taskは09.1完了待ちのblocked。TSK-08完了commit `959f89e`のquality／performance／coverageと、今後09.11の実caller／性能、09.1の文書受入を同条件の範囲で継承する。着手時は全最終Contractをこれらの証拠と未達へ対応付け、実装・検証が必要な残項目だけを閉じる。全履歴bundleの保管運用や独立した性能短縮・削除件数を完了目的にしない。
 
 ## 4. 更新規則
 

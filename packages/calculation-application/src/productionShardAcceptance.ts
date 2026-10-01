@@ -182,6 +182,27 @@ const conditionSummaryRule = fixed({
   digest: 'sha256',
 });
 
+/** Explicit formats: baseline forbids elapsedMs; run requires it. No fallback. */
+export function inspectProductionConditionSummaries(
+  value: unknown,
+  format: 'run' | 'baseline',
+): ProductionRecordComparison {
+  const failures: ProductionRecordFailure[] = [];
+  if (typeof conditionSummaryRule !== 'object' || !('fields' in conditionSummaryRule))
+    throw new Error('condition_summary_rule_invalid');
+  const baselineFields = Object.fromEntries(
+    Object.entries(conditionSummaryRule.fields).filter(([key]) => key !== 'elapsedMs'),
+  );
+  inspect(
+    value,
+    array(format === 'run' ? conditionSummaryRule : fixed(baselineFields)),
+    'audit.conditionSummaries',
+    0,
+    failures,
+  );
+  return comparison(failures);
+}
+
 export interface ProductionSerializedShard {
   identity: Record<string, string>;
   audit: ProductionClosureAudit;

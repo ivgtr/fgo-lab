@@ -13,7 +13,8 @@
     "@fgo-lab/battle-execution": "workspace:*",
     "@fgo-lab/master-data": "workspace:*",
     "@fgo-lab/schema": "workspace:*",
-    "@fgo-lab/profile-domain": "workspace:*"
+    "@fgo-lab/profile-domain": "workspace:*",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@fgo-lab/data-pipeline": "workspace:*"

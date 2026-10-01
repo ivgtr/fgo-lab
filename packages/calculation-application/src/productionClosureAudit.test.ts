@@ -1734,6 +1734,7 @@ it(
         },
       ],
     });
+    assertFailureProbe('inertControl', inertOperation);
     expect(inertOperation).toMatchObject({
       status: 'failed',
       failures: [

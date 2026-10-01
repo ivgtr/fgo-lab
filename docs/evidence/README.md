@@ -1,16 +1,17 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.134"
+document_version: "1.4.138"
 status: "Active"
-updated_at: "2026-09-29"
+updated_at: "2026-10-01"
 ---
 
 # Evidence report index
 
-このindexはtracked report 46件（Markdown）とmachine-readable evidenceの役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
+このindexはtracked report 47件（Markdown）とmachine-readable evidenceの役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
 
 | Report | Status | Evidence role | Successor | Related commit |
 | --- | --- | --- | --- | --- |
+| [TSK-09.1 documentation closure decision ledger](tsk-09-1-documentation-closure.md) | Active | canonical: 判定台帳・保存実験・採用した保持範囲。全履歴bundleは恒久保持方式に採用せず、現行期待値1セット・再現fixture・判断記録への移行を最優先に確定。専用baseline・現行reader・六クラス実runner・実merge反例・元run禁止受入を確認、最終quality1603／157／29・warning0で09.11完了。09.1はready、文書処遇／検査は未実施 | TSK-09.11→TSK-09.1 STEP 2→STEP 3〜6→TSK-09 | `0a787e8` baseline／既存STEP 1・2差分保持、09.11移管・実受入完了、09.1 STEP 2再開待ち |
 | [damage-condition-application](damage-condition-application.md) | Complete | supporting: schema 9／engine 7 conditional application change | damage execution requirement | `db0bb53` |
 | [damage-effect-dependency-audit](damage-effect-dependency-audit.md) | Superseded | supporting: 469／420 production unsupported baseline | E0以降のexecution inventory | `3dd4be9` |
 | [damage-effect-execution-e0](damage-effect-execution-e0.md) | Superseded | supporting: pre-migration inventory／UX baseline | E1 | `9f7c836` |
