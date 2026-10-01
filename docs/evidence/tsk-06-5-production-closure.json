@@ -149,7 +149,21 @@
     "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
     "artifact": "/tmp/fgo-lab-tsk08-s4-candidate-20260926/.test-results/tsk-08-s4-final-matrix/manifest.json",
     "command": "FGO_AUDIT_SHARDS=8 FGO_AUDIT_SHARD=<0..7> node --import ./packages/data-pipeline/node_modules/tsx/dist/loader.mjs packages/calculation-application/scripts/audit-oc-matrix.ts <output>; then node --import the same loader packages/calculation-application/scripts/merge-oc-matrix.ts <output>",
-    "currentArtifactProvenance": "Final-source eight-shard rerun; matrix digest excludes measured condition elapsedMs while summaries retain timings. Semantic record and candidate identity match the prior eight-shard run."
+    "currentArtifactProvenance": "Final-source eight-shard rerun; matrix digest excludes measured condition elapsedMs while summaries retain timings. Semantic record and candidate identity match the prior eight-shard run.",
+    "canonicalRecords": {
+      "manifest": ".test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-matrix/manifest.json",
+      "bytes": 394462,
+      "sha256": "879af462bd3209ffaf18365a25598bbcf07e008b6164991d65355ad55cb1a95a",
+      "identity": {
+        "head": "60dea89944a884bbbe40464eb1ae7e65cb77ad4e",
+        "worktree": " M pnpm-lock.yaml\n M pnpm-workspace.yaml\n",
+        "masterDataVersion": "20260920.3",
+        "masterSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+        "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts <output>",
+        "matrix": "naturalLimit|uniformLevel90 × four policies × ten legal NP/initial-OC pairs"
+      },
+      "authority": "Explicit Step 4 mapping to saved formal baseline-1 from approvedClosureImplementation.finalAcceptance.matrixReferences; original missing artifact pointer retained. Verify manifest receipt, source identity, all condition receipts and body/summary/matrix integrity before use. No regenerated expectation."
+    }
   },
   "oracleAndFixtures": {
     "finiteMaximumOracle": "rankingCandidateSpace.test.ts independent exhaustive oracle and finite-domain certificate",

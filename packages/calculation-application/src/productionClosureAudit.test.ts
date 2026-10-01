@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { expect, it, vi } from 'vitest';
 import * as portableOwner from './portableCalculation';
 import * as scenarioOwner from './scenario';
+import * as rankingOwner from './rankingPolicyCalculation';
+import { inspectProductionAuditValue } from './productionAuditValue';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { createTsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import type {
@@ -14,8 +16,10 @@ import fixture from '../../test-fixtures/master/fixture.json';
 import tsk065Evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
 import {
   auditProductionClosure,
+  type ProductionClosureAudit,
   productionClosureConditionKey,
   productionClosureConditions,
+  productionParityActions,
 } from './productionClosureAudit';
 import {
   evaluateProductionFinalOutcomeGate,
@@ -24,9 +28,19 @@ import {
   evaluateProductionPreparationTransactionGate,
   evaluateProductionParityGate,
   auditProductionUserControlObservations,
-  productionFinalOutcomeShardDifference,
 } from './productionParityDiagnostics';
 import { combineRankingEligibilityPartitionDigests } from './rankingEligibilityAudit';
+import {
+  compareProductionMatrixAggregates,
+  inspectProductionShardAuditShapes,
+} from './productionClosureRecordIntegrity';
+import {
+  acceptProductionShardManifests,
+  observeProductionShardRecords,
+  compareProductionShardGateBodies,
+  type ProductionSerializedShard,
+} from './productionShardAcceptance';
+import { productionRecordComparisonFailure } from './productionParityDiagnostics';
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
@@ -120,6 +134,344 @@ it('combines eligibility partition digests in canonical order and rejects incomp
     ),
   ).toThrow('ranking_eligibility_partition_digest_invalid');
 });
+
+function emptyProductionAudit() {
+  return {
+    conditionCount: 0,
+    attackProfileCount: 0,
+    outcomeCount: 0,
+    outcomes: {
+      calculated: 0,
+      unavailableUnderPolicy: 0,
+      inputRequired: 0,
+      invalid: 0,
+      unsupported: 0,
+    },
+    parityCount: 0,
+    parityFailures: [],
+    unavailable: [],
+    conditionSummaries: [],
+    digest: '0'.repeat(64),
+    eligibility: {
+      conditionCount: 0,
+      digest: '0'.repeat(64),
+      staticSemantics: {
+        servants: 0,
+        attackProfiles: 0,
+        sourcePrograms: 0,
+        sourceUses: 0,
+        skillSources: 0,
+        noblePhantasmSources: 0,
+        effects: 0,
+        semanticPrograms: 0,
+        operations: 0,
+        conditions: 0,
+        inputDefinitions: 0,
+        unsupportedPrograms: 0,
+        invalidPrograms: 0,
+        sourceKinds: {},
+        operationKinds: {},
+        digest: '0'.repeat(64),
+      },
+      admissions: {
+        observations: 0,
+        dispositions: 0,
+        byPolicy: {},
+        byKind: {},
+        digest: '0'.repeat(64),
+      },
+      candidates: {
+        observations: 0,
+        candidatePlans: 0,
+        generated: 0,
+        deduplicated: 0,
+        upperBound: 0,
+        maximumSingleProfileUpperBound: 0,
+        maximumSingleProfileGenerated: 0,
+        byStatus: { calculated: 0, unreachable: 0, inputRequired: 0, invalid: 0, unsupported: 0 },
+        byPolicy: {},
+        candidateSpaceStatus: {},
+        digest: '0'.repeat(64),
+      },
+    },
+  };
+}
+
+it(
+  'rejects malformed producer shard structures before projection and preserves map contracts',
+  productionAuditTestOptions(['production-shard-shape-diagnostics.json']),
+  async ({ task }) => {
+    const valid = emptyProductionAudit();
+    expect(inspectProductionShardAuditShapes([valid])).toMatchObject({
+      status: 'passed',
+      failures: [],
+    });
+    const cases: [string, string, unknown, boolean][] = [
+      ['audit', 'additionalAggregate', 1, false],
+      ['eligibility', 'eligibility.additionalAggregate', 1, false],
+      ['admissions', 'eligibility.admissions.additionalAggregate', 1, false],
+      ['candidates', 'eligibility.candidates.additionalAggregate', 1, false],
+      ['outcomes', 'outcomes.additionalAggregate', 1, false],
+      ['static', 'eligibility.staticSemantics.additionalAggregate', 1, false],
+      ['status', 'eligibility.candidates.byStatus.additionalAggregate', 1, false],
+      ['mergedMetadata', 'eligibility.admissions.shardDigests', ['0'.repeat(64)], false],
+      ['missingDigest', 'eligibility.digest', undefined, true],
+      ['wrongObject', 'eligibility.candidates', null, false],
+      ['wrongCount', 'eligibility.admissions.observations', -1, false],
+      ['wrongDigest', 'digest', 'invalid-sha', false],
+      ['wrongMapValue', 'eligibility.admissions.byPolicy.fixture', 'one', false],
+    ];
+    const results = cases.map(([name, path, value, missing]) => {
+      const actual = structuredClone(valid) as Record<string, unknown>;
+      const keys = path.split('.');
+      const field = keys.pop()!;
+      let parent = actual;
+      for (const key of keys) parent = parent[key] as Record<string, unknown>;
+      if (missing) Reflect.deleteProperty(parent, field);
+      else parent[field] = value;
+      const comparison = inspectProductionShardAuditShapes([valid, actual]);
+      const gate = productionRecordComparisonFailure(comparison);
+      const unknown = [
+        'audit',
+        'eligibility',
+        'admissions',
+        'candidates',
+        'outcomes',
+        'static',
+        'status',
+        'mergedMetadata',
+      ].includes(name);
+      expect(gate, name).toMatchObject({
+        status: 'failed',
+        reason: unknown ? 'shardAuditUnknownField' : 'shardAuditShapeInvalid',
+        canonicalIdentity: 'tsk-08:shard:1',
+        firstDifference: { path: `audit.${path}${unknown ? '' : '.type'}` },
+      });
+      return { name, actual, comparison, gate };
+    });
+    const maps = structuredClone(valid);
+    maps.eligibility.admissions.byPolicy = Object.fromEntries([
+      ['additionalAggregate', 1],
+      ['__proto__', 1],
+    ]);
+    maps.eligibility.admissions.byKind = { fixtureKind: 1 };
+    maps.eligibility.candidates.byPolicy = { fixturePolicy: 1 };
+    maps.eligibility.staticSemantics.sourceKinds = { fixtureSource: 1 };
+    expect(inspectProductionShardAuditShapes([maps]).failures).toEqual([]);
+    const prototypeField = { ...valid, ...Object.fromEntries([['__proto__', {}]]) };
+    expect(
+      productionRecordComparisonFailure(inspectProductionShardAuditShapes([prototypeField])),
+    ).toMatchObject({
+      status: 'failed',
+      reason: 'shardAuditUnknownField',
+      firstDifference: { path: 'audit.__proto__', actual: {} },
+    });
+    const many = {
+      ...valid,
+      ...Object.fromEntries(Array.from({ length: 1024 }, (_, index) => [`extra${index}`, index])),
+    };
+    const manyComparison = inspectProductionShardAuditShapes([many]);
+    expect(manyComparison.failures).toHaveLength(1024);
+    expect(
+      manyComparison.failures.every((failure) => failure.reason === 'shardAuditUnknownField'),
+    ).toBe(true);
+    await writeProductionClosureDiagnosticArtifact(
+      task.meta,
+      'production-shard-shape-diagnostics.json',
+      { valid, results, maps, manyComparison },
+    );
+  },
+);
+
+it(
+  'diagnoses complete matrix aggregates before derived checksums through the parity gate',
+  productionAuditTestOptions(['production-matrix-aggregate-diagnostics.json']),
+  async ({ task }) => {
+    // Independent values, not expectations computed by the comparison or merge.
+    const expected = {
+      conditionCount: 80,
+      attackProfileCount: 433,
+      outcomeCount: 34640,
+      outcomes: { calculated: 34600, unavailableUnderPolicy: 40 },
+      parityCount: 34600,
+      parityFailures: [],
+      unavailable: [
+        {
+          conditionKey: 'fixture-condition',
+          profileKey: 'fixture-profile',
+          reason: 'policyExcluded',
+        },
+      ],
+      conditionSummaries: [
+        {
+          key: 'fixture-condition',
+          elapsedMs: 1,
+          digest: 'record-sha',
+          damageCache: { cacheHitCount: 3 },
+        },
+      ],
+      eligibility: {
+        conditionCount: 80,
+        staticSemantics: { operations: 7, digest: 'static-sha' },
+        admissions: {
+          observations: 33760,
+          dispositions: { admitted: 4 },
+          digest: 'admission-sha',
+          shardDigests: ['partition-sha'],
+        },
+        candidates: {
+          generated: 12,
+          byPolicy: { baseline: 3 },
+          digest: 'candidate-sha',
+          shardDigests: ['partition-sha'],
+        },
+      },
+      digest: 'matrix-sha',
+    };
+    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+      masterDataVersion: 'fixture-master',
+      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+    });
+    const audit = {
+      conditionCount: source.matrix.conditionCount,
+      attackProfileCount: source.matrix.attackProfileCount,
+      outcomeCount: source.matrix.outcomeCount,
+      outcomes: source.matrix.outcomes,
+      parityCount: source.matrix.parityCount,
+      parityFailures: [],
+      digest: '0'.repeat(64),
+      eligibility: { candidates: { digest: 'changed-candidate-sha' } },
+    };
+    const cases: [string, unknown, string][] = [
+      [
+        'reason',
+        { ...expected, unavailable: [{ ...expected.unavailable[0], reason: 'changed' }] },
+        'unavailable[0].reason',
+      ],
+      [
+        'observations',
+        {
+          ...expected,
+          eligibility: {
+            ...expected.eligibility,
+            admissions: {
+              ...expected.eligibility.admissions,
+              observations: 33761,
+              digest: 'changed-sha',
+            },
+          },
+        },
+        'eligibility.admissions.observations',
+      ],
+      [
+        'static',
+        {
+          ...expected,
+          eligibility: {
+            ...expected.eligibility,
+            staticSemantics: { operations: 8, digest: 'changed-sha' },
+          },
+        },
+        'eligibility.staticSemantics.operations',
+      ],
+      [
+        'candidate',
+        {
+          ...expected,
+          eligibility: {
+            ...expected.eligibility,
+            candidates: {
+              ...expected.eligibility.candidates,
+              generated: 13,
+              digest: 'changed-sha',
+            },
+          },
+        },
+        'eligibility.candidates.generated',
+      ],
+      [
+        'disposition',
+        {
+          ...expected,
+          eligibility: {
+            ...expected.eligibility,
+            admissions: { ...expected.eligibility.admissions, dispositions: { admitted: 5 } },
+          },
+        },
+        'eligibility.admissions.dispositions.admitted',
+      ],
+      [
+        'candidatePolicy',
+        {
+          ...expected,
+          eligibility: {
+            ...expected.eligibility,
+            candidates: { ...expected.eligibility.candidates, byPolicy: { baseline: 4 } },
+          },
+        },
+        'eligibility.candidates.byPolicy.baseline',
+      ],
+      [
+        'summary',
+        {
+          ...expected,
+          conditionSummaries: [
+            { ...expected.conditionSummaries[0], damageCache: { cacheHitCount: 4 } },
+          ],
+        },
+        'conditionSummaries[0].damageCache.cacheHitCount',
+      ],
+      ['unknownField', { ...expected, additionalAggregate: 1 }, 'additionalAggregate'],
+      [
+        'outcomes',
+        { ...expected, outcomes: { ...expected.outcomes, calculated: 34601 } },
+        'outcomes.calculated',
+      ],
+      [
+        'missing',
+        { ...expected, eligibility: { ...expected.eligibility, admissions: {} } },
+        'eligibility.admissions.dispositions',
+      ],
+      [
+        'checksumOnly',
+        {
+          ...expected,
+          eligibility: {
+            ...expected.eligibility,
+            candidates: { ...expected.eligibility.candidates, digest: 'changed-sha' },
+          },
+        },
+        'eligibility.candidates.digest',
+      ],
+    ];
+    const results = cases.map(([name, actual, path]) => {
+      const failures = compareProductionMatrixAggregates(expected, actual);
+      const gate = evaluateProductionParityGate(source, audit, {
+        status: 'failed',
+        failures,
+        firstDifference: failures[0]?.firstDifference ?? null,
+      });
+      expect(gate, name).toMatchObject({
+        status: 'failed',
+        reason: 'canonicalAggregateMismatch',
+        firstDifference: { identity: 'tsk-06.5:production-matrix', path },
+      });
+      expect(gate.failures, name).toHaveLength(1);
+      return { name, actual, gate };
+    });
+    expect(results[1]?.gate.firstDifference).toMatchObject({ expected: 33760, actual: 33761 });
+    const measured = {
+      ...expected,
+      conditionSummaries: [{ ...expected.conditionSummaries[0], elapsedMs: 999 }],
+    };
+    expect(compareProductionMatrixAggregates(expected, measured)).toEqual([]);
+    await writeProductionClosureDiagnosticArtifact(
+      task.meta,
+      'production-matrix-aggregate-diagnostics.json',
+      { expected, results, measured },
+    );
+  },
+);
 
 it(
   'constructs exactly the 80 legal production conditions and reuses one supplied inventory',
@@ -398,7 +750,7 @@ it(
     });
     expect(digestMismatch).toMatchObject({
       status: 'failed',
-      reason: 'matrixMismatch',
+      reason: 'canonicalRecordsMissing',
       firstDifference: {
         identity: 'tsk-06.5:production-matrix',
         path: 'digest',
@@ -438,18 +790,6 @@ it(
       outcomes: { unsupported: 0, invalid: 0, inputRequired: 0 },
       failures: [],
     });
-    const missingShardGateDifference = productionFinalOutcomeShardDifference(undefined, 3);
-    const missingFirstDifferenceGate = Object.fromEntries(
-      Object.entries(passing).filter(([key]) => key !== 'firstDifference'),
-    );
-    const missingFirstDifferenceShardDifference = productionFinalOutcomeShardDifference(
-      missingFirstDifferenceGate,
-      2,
-    );
-    const mismatchedShardGateDifference = productionFinalOutcomeShardDifference(
-      { ...passing, actual: { unsupported: 1, invalid: 0, inputRequired: 0 } },
-      1,
-    );
     const failed = evaluateProductionFinalOutcomeGate({
       outcomes: { unsupported: 1, invalid: 1, inputRequired: 1 },
       failures: [
@@ -485,20 +825,6 @@ it(
         boundary: 'calculation-application-final-profile-outcomes',
         canonicalIdentity: passing.canonicalIdentity,
         passing,
-        shardObservations: [
-          { shardIndex: 0, gate: passing, difference: null },
-          { shardIndex: 3, gate: undefined, difference: missingShardGateDifference },
-          {
-            shardIndex: 2,
-            gate: missingFirstDifferenceGate,
-            difference: missingFirstDifferenceShardDifference,
-          },
-          {
-            shardIndex: 1,
-            gate: { ...passing, actual: { unsupported: 1, invalid: 0, inputRequired: 0 } },
-            difference: mismatchedShardGateDifference,
-          },
-        ],
         intentionalFailures: [failed, missingIdentity, duplicateIdentity],
       },
     );
@@ -523,26 +849,6 @@ it(
       firstDifference: null,
       failures: [],
     });
-    expect(productionFinalOutcomeShardDifference(passing, 0)).toBeNull();
-    expect(missingShardGateDifference).toMatchObject({
-      identity: 'tsk-08:final-profile-shard:3',
-      path: 'canonicalIdentity',
-      expected: 'tsk-06.5:final-profile-outcomes',
-      actual: null,
-    });
-    expect(missingFirstDifferenceShardDifference).toMatchObject({
-      identity: 'tsk-08:final-profile-shard:2',
-      path: 'hasFirstDifference',
-      expected: true,
-      actual: false,
-    });
-    expect(mismatchedShardGateDifference).toMatchObject({
-      identity: 'tsk-08:final-profile-shard:1',
-      path: 'validGateState',
-      expected: true,
-      actual: false,
-    });
-    expect(productionFinalOutcomeShardDifference(failed, 4)).toBeNull();
     expect(failed).toMatchObject({
       status: 'failed',
       canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
@@ -1506,3 +1812,965 @@ it(
     );
   },
 );
+
+it(
+  'rejects contradictory canonical record bodies and drills down before matrix SHA diagnostics',
+  productionAuditTestOptions(['production-record-integrity.json']),
+  async ({ task }) => {
+    const { inspectProductionConditionRecord, compareProductionConditionRecords } =
+      await import('./productionClosureRecordIntegrity');
+    const record = {
+      profileKey: 'fixture-profile',
+      status: 'calculated',
+      canonicalInput: { fouAtk: 1000 },
+    };
+    const records = [record];
+    const identity = { masterDataVersion: 'fixture-master', masterSha256: '1'.repeat(64) };
+    const summary = {
+      key: 'fixture-condition',
+      conditions: productionClosureConditions()[0]!,
+      elapsedMs: 0,
+      calculated: 1,
+      unavailableUnderPolicy: 0,
+      inputRequired: 0,
+      invalid: 0,
+      unsupported: 0,
+      parityCount: 1,
+      parityFailures: [],
+      damageCache: {
+        requestCount: 1,
+        distinctDamageInputCount: 1,
+        cacheHitCount: 0,
+        cacheHitRate: 0,
+      },
+      candidateInventory: {
+        semanticUpperBound: 1,
+        generatedCount: 1,
+        deduplicatedCount: 1,
+        damageRequestUpperBound: 1,
+        damageRequestCount: 1,
+        distinctDamageInputCount: 1,
+      },
+      digest: createHash('sha256').update(JSON.stringify(records)).digest('hex'),
+    };
+    const inspect = (value: unknown) =>
+      inspectProductionConditionRecord({
+        value,
+        identity,
+        summary,
+        conditionKey: summary.key,
+        profileCount: 1,
+      });
+    const expected = inspect({ identity, summary, records });
+    expect(expected.failures).toEqual([]);
+    const changed = { ...record, canonicalInput: { fouAtk: 1001 } };
+    const broken = inspect({ identity, summary, records: [changed] });
+    expect(broken.failures.map((failure) => failure.reason)).toContain('recordDigestMismatch');
+    const bodyFailures = compareProductionConditionRecords(expected.records, broken.records);
+    expect(bodyFailures).toMatchObject([
+      {
+        reason: 'canonicalRecordMismatch',
+        firstDifference: {
+          identity: 'production:fixture-condition:profile:fixture-profile',
+          path: 'canonicalInput.fouAtk',
+          expected: 1000,
+          actual: 1001,
+        },
+      },
+    ]);
+    const repairedSummary = {
+      ...summary,
+      digest: createHash('sha256')
+        .update(JSON.stringify([changed]))
+        .digest('hex'),
+    };
+    const internallyConsistent = inspectProductionConditionRecord({
+      value: { identity, summary: repairedSummary, records: [changed] },
+      identity,
+      summary: repairedSummary,
+      conditionKey: summary.key,
+      profileCount: 1,
+    });
+    expect(internallyConsistent.failures).toEqual([]);
+    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+      masterDataVersion: 'fixture-master',
+      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+    });
+    const gate = evaluateProductionParityGate(
+      source,
+      {
+        conditionCount: source.matrix.conditionCount,
+        attackProfileCount: source.matrix.attackProfileCount,
+        outcomeCount: source.matrix.outcomeCount,
+        outcomes: source.matrix.outcomes,
+        parityCount: source.matrix.parityCount,
+        parityFailures: [],
+        digest: '0'.repeat(64),
+        eligibility: { candidates: { digest: source.matrix.eligibilityDigest } },
+      },
+      {
+        status: 'failed',
+        failures: bodyFailures,
+        firstDifference: bodyFailures[0]!.firstDifference,
+      },
+    );
+    expect(gate).toMatchObject({
+      status: 'failed',
+      reason: 'canonicalRecordMismatch',
+      firstDifference: { path: 'canonicalInput.fouAtk', expected: 1000, actual: 1001 },
+    });
+    const missing = inspect({ identity, summary, records: [] });
+    const duplicate = inspect({ identity, summary, records: [record, record] });
+    const wrongIdentity = inspect({
+      identity: { ...identity, masterDataVersion: 'wrong' },
+      summary,
+      records,
+    });
+    const wrongStatus = inspect({ identity, summary, records: [{ ...record, status: 'unknown' }] });
+    const missingProfile = compareProductionConditionRecords(expected.records, missing.records);
+    expect(missing.failures.map((f) => f.reason)).toContain('recordSummaryMismatch');
+    expect(missingProfile[0]?.firstDifference).toMatchObject({
+      identity: 'production:fixture-condition:profile:fixture-profile',
+      path: 'present',
+      actual: false,
+    });
+    expect(duplicate.failures.map((f) => f.reason)).toContain('recordProfileDuplicate');
+    expect(wrongIdentity.failures.map((f) => f.reason)).toContain('recordIdentityMismatch');
+    expect(wrongStatus.failures.map((f) => f.reason)).toContain('recordShapeInvalid');
+    const manyExpected = Array.from({ length: 1024 }, (_, index) => ({
+      identity: `production:fixture-condition:profile:${index}`,
+      value: { canonicalInput: { fouAtk: 1000 } },
+    }));
+    const manyActual = manyExpected.map(({ identity }) => ({
+      identity,
+      value: { canonicalInput: { fouAtk: 1001 } },
+    }));
+    const manyFailures = compareProductionConditionRecords(manyExpected, manyActual);
+    expect(manyFailures).toHaveLength(1024);
+    expect(manyFailures.every((f) => f.firstDifference.path === 'canonicalInput.fouAtk')).toBe(
+      true,
+    );
+    await writeProductionClosureDiagnosticArtifact(task.meta, 'production-record-integrity.json', {
+      expected,
+      broken,
+      internallyConsistent,
+      gate,
+      missing,
+      duplicate,
+      wrongIdentity,
+      wrongStatus,
+      missingProfile,
+      manyFailures,
+    });
+  },
+);
+
+function acceptSerializedFixture(values: readonly unknown[]) {
+  return acceptProductionShardManifests(
+    values,
+    values.map(() => ['fixture-condition']),
+  );
+}
+function serializedShardFixture(): ProductionSerializedShard {
+  const audit: ProductionClosureAudit = emptyProductionAudit();
+  audit.conditionCount = 1;
+  audit.eligibility.conditionCount = 1;
+  audit.conditionSummaries = [
+    {
+      key: 'fixture-condition',
+      conditions: productionClosureConditions()[0]!,
+      elapsedMs: 0,
+      ...audit.outcomes,
+      parityCount: 0,
+      parityFailures: [],
+      damageCache: {
+        requestCount: 0,
+        distinctDamageInputCount: 0,
+        cacheHitCount: 0,
+        cacheHitRate: 0,
+      },
+      candidateInventory: {
+        semanticUpperBound: 0,
+        generatedCount: 0,
+        deduplicatedCount: 0,
+        damageRequestUpperBound: 0,
+        damageRequestCount: 0,
+        distinctDamageInputCount: 0,
+      },
+      digest: '0'.repeat(64),
+    },
+  ];
+  return {
+    identity: {
+      head: '0'.repeat(40),
+      worktree: '',
+      masterDataVersion: 'fixture',
+      masterSha256: '0'.repeat(64),
+      command: 'canonical producer',
+      matrix: 'canonical matrix',
+    },
+    audit,
+    productionArtifacts: {
+      conditionRecords: [
+        {
+          conditionKey: 'fixture-condition',
+          path: 'fixture-condition.json',
+          bytes: 1,
+          sha256: '0'.repeat(64),
+        },
+      ],
+    },
+    artifactVerification: {
+      verified: [
+        {
+          path: 'fixture-condition.json',
+          format: 'json',
+          allowEmpty: false,
+          bytes: 1,
+          sha256: '0'.repeat(64),
+        },
+      ],
+      errors: [],
+      firstDifference: null,
+    },
+    executionRatchets: {
+      finalProfileOutcomes: evaluateProductionFinalOutcomeGate({
+        outcomes: audit.outcomes,
+        failures: [],
+      }),
+      preparationTransactions: evaluateProductionPreparationTransactionGate({
+        expectedCalculatedProfiles: 0,
+        summary: { calculatedProfiles: 0, commandCount: 0, actionCount: 0, npUseReceiptCount: 0 },
+        failures: [],
+      }),
+    },
+  };
+}
+function changeSerializedFixture(
+  value: unknown,
+  path: string,
+  replacement: unknown,
+  remove = false,
+): unknown {
+  const copy = structuredClone(value);
+  const keys = path.split('.');
+  let parent = copy as Record<string, unknown>;
+  for (const key of keys.slice(0, -1)) parent = parent[key] as Record<string, unknown>;
+  const field = keys.at(-1)!;
+  if (remove) Reflect.deleteProperty(parent, field);
+  else parent[field] = replacement;
+  return copy;
+}
+
+it.each([
+  ['root unknown', 'foreign', 1, false, 'shardManifestUnknownField'],
+  [
+    'ratchets unknown',
+    'executionRatchets.foreign',
+    { status: 'failed' },
+    false,
+    'shardManifestUnknownField',
+  ],
+  ['artifacts unknown', 'productionArtifacts.foreign', 1, false, 'shardManifestUnknownField'],
+  ['identity unknown', 'identity.foreign', 1, false, 'shardManifestUnknownField'],
+  ['identity absent', 'identity', null, true, 'shardManifestShapeInvalid'],
+  [
+    'gate absent',
+    'executionRatchets.preparationTransactions',
+    null,
+    true,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'transaction failures absent',
+    'executionRatchets.preparationTransactions.failures',
+    null,
+    true,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'transaction actual absent',
+    'executionRatchets.preparationTransactions.actual',
+    null,
+    true,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'transaction summary count absent',
+    'executionRatchets.preparationTransactions.summary.commandCount',
+    null,
+    true,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'foreign transaction identity',
+    'executionRatchets.preparationTransactions.canonicalIdentity',
+    'foreign-owner',
+    false,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'unknown transaction count',
+    'executionRatchets.preparationTransactions.actual.foreign',
+    1,
+    false,
+    'shardManifestUnknownField',
+  ],
+  [
+    'transaction contradiction',
+    'executionRatchets.preparationTransactions.actual.resourceCommitMismatches',
+    1,
+    false,
+    'shardGateContractMismatch',
+  ],
+  [
+    'transaction string count',
+    'executionRatchets.preparationTransactions.summary.actionCount',
+    '0',
+    false,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'transaction negative count',
+    'executionRatchets.preparationTransactions.summary.npUseReceiptCount',
+    -1,
+    false,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'transaction fractional count',
+    'executionRatchets.preparationTransactions.summary.commandCount',
+    0.5,
+    false,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'transaction unsafe count',
+    'executionRatchets.preparationTransactions.summary.commandCount',
+    Number.MAX_SAFE_INTEGER + 1,
+    false,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'transaction null count',
+    'executionRatchets.preparationTransactions.summary.commandCount',
+    null,
+    false,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'final failures absent',
+    'executionRatchets.finalProfileOutcomes.failures',
+    null,
+    true,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'final expected absent',
+    'executionRatchets.finalProfileOutcomes.expected',
+    null,
+    true,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'final difference absent',
+    'executionRatchets.finalProfileOutcomes.firstDifference',
+    null,
+    true,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'unknown final count',
+    'executionRatchets.finalProfileOutcomes.actual.foreign',
+    1,
+    false,
+    'shardManifestUnknownField',
+  ],
+  [
+    'final string count',
+    'executionRatchets.finalProfileOutcomes.actual.unsupported',
+    '0',
+    false,
+    'shardManifestShapeInvalid',
+  ],
+  [
+    'failed without final failure',
+    'executionRatchets.finalProfileOutcomes.status',
+    'failed',
+    false,
+    'shardGateContractMismatch',
+  ],
+  [
+    'failed without transaction failure',
+    'executionRatchets.preparationTransactions.status',
+    'failed',
+    false,
+    'shardGateContractMismatch',
+  ],
+  [
+    'invalid final status',
+    'executionRatchets.finalProfileOutcomes.status',
+    'ignored',
+    false,
+    'shardManifestShapeInvalid',
+  ],
+  ['summary entry null', 'audit.conditionSummaries', [null], false, 'shardManifestShapeInvalid'],
+  [
+    'invalid receipt',
+    'artifactVerification.verified',
+    [{ path: 'foreign' }],
+    false,
+    'shardManifestShapeInvalid',
+  ],
+] as const)(
+  'rejects serialized shard %s before projection',
+  (_name, path, value, remove, reason) => {
+    const result = acceptSerializedFixture([
+      changeSerializedFixture(serializedShardFixture(), path, value, remove),
+    ]);
+    expect(result.shards).toBeNull();
+    const differencePaths: Record<string, string> = {
+      'executionRatchets.finalProfileOutcomes.status':
+        'executionRatchets.finalProfileOutcomes.failures',
+      'executionRatchets.preparationTransactions.status':
+        'executionRatchets.preparationTransactions.failures',
+      'audit.conditionSummaries': 'audit.conditionSummaries[0]',
+      'artifactVerification.verified': 'artifactVerification.verified[0].format',
+    };
+    const expectedPath =
+      reason === 'shardGateContractMismatch' ||
+      path === 'audit.conditionSummaries' ||
+      path === 'artifactVerification.verified'
+        ? (differencePaths[path] ?? path)
+        : path;
+    expect(result.comparison.failures).toContainEqual(
+      expect.objectContaining({
+        reason,
+        canonicalIdentity: 'tsk-08:shard:0',
+        firstDifference: expect.objectContaining({ path: expectedPath }) as unknown,
+      }),
+    );
+  },
+);
+
+it('rejects matching nonzero expectations and receipt-consistent declaration forgery', () => {
+  const final = serializedShardFixture();
+  final.audit.outcomes.unsupported = 1;
+  final.audit.conditionSummaries[0]!.unsupported = 1;
+  final.audit.outcomeCount = 1;
+  final.executionRatchets.finalProfileOutcomes = evaluateProductionFinalOutcomeGate({
+    outcomes: final.audit.outcomes,
+    failures: [{ conditionKey: 'fixture', profileKey: 'fixture-u', status: 'unsupported' }],
+  });
+  final.executionRatchets.finalProfileOutcomes.expected =
+    final.executionRatchets.finalProfileOutcomes.actual;
+  expect(acceptSerializedFixture([final]).comparison.failures).toContainEqual(
+    expect.objectContaining({
+      reason: 'shardGateContractMismatch',
+      firstDifference: expect.objectContaining({
+        path: 'executionRatchets.finalProfileOutcomes.expected.unsupported',
+      }) as unknown,
+    }),
+  );
+  const transaction = serializedShardFixture();
+  transaction.executionRatchets.preparationTransactions.expected = {
+    ...(transaction.executionRatchets.preparationTransactions.expected as object),
+    resourceCommitMismatches: 1,
+  };
+  transaction.executionRatchets.preparationTransactions.actual =
+    transaction.executionRatchets.preparationTransactions.expected;
+  expect(acceptSerializedFixture([transaction]).comparison.failures).toContainEqual(
+    expect.objectContaining({
+      reason: 'shardGateContractMismatch',
+      firstDifference: expect.objectContaining({
+        path: 'executionRatchets.preparationTransactions.expected.resourceCommitMismatches',
+      }) as unknown,
+    }),
+  );
+  const declaration = serializedShardFixture();
+  declaration.audit.conditionSummaries[0]!.key = 'fixture';
+  declaration.productionArtifacts.conditionRecords = [];
+  declaration.artifactVerification.verified = [];
+  declaration.productionArtifacts.conditionRecords.push({
+    conditionKey: 'fixture',
+    path: 'fixture.json',
+    bytes: 1,
+    sha256: '0'.repeat(64),
+  });
+  declaration.artifactVerification.verified.push({
+    path: 'fixture.json',
+    format: 'json',
+    allowEmpty: false,
+    bytes: 1,
+    sha256: '0'.repeat(64),
+  });
+  expect(acceptProductionShardManifests([declaration], [['fixture']]).comparison.status).toBe(
+    'passed',
+  );
+  expect(
+    acceptSerializedFixture([
+      changeSerializedFixture(declaration, 'productionArtifacts.conditionRecords.0.foreign', true),
+    ]).comparison.failures[0],
+  ).toMatchObject({
+    reason: 'shardManifestUnknownField',
+    firstDifference: { path: 'productionArtifacts.conditionRecords[0].foreign' },
+  });
+});
+
+function preparationRecordFixture() {
+  const command = { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null } as const;
+  const resource = { npLevel: 1, capacity: 10000, gauge: 10000 };
+  return {
+    profileKey: 'fixture-profile',
+    status: 'calculated',
+    scenario: { preNoblePhantasmPlan: [command] },
+    appliedPreparationActions: [
+      {
+        command,
+        sourceKind: 'skill',
+        sourceId: 'fixture-source',
+        actorFormId: { actorId: 'fixture-actor', limitCount: 0 },
+        selectedEffects: [],
+        activationFacts: [],
+        transition: null,
+        resourceBefore: resource,
+        resourceAfter: resource,
+        resourceTransaction: { afterConsumption: resource, mutations: [] },
+        baseOvercharge: null,
+        ocUse: null,
+        ocOutcomes: [],
+      },
+    ],
+  };
+}
+
+it('joins both failed gate unions to original body identities and retains real failures', () => {
+  const shard = serializedShardFixture();
+  const record = preparationRecordFixture();
+  const initial = observeProductionShardRecords({ records: [record] }, 'fixture-condition', 7);
+  expect(initial.failures).toEqual([]);
+  shard.audit.outcomes.calculated = 1;
+  shard.audit.conditionSummaries[0]!.calculated = 1;
+  shard.audit.outcomeCount = 1;
+  const transaction = auditProductionPreparationTransactionObservations(initial.preparation);
+  shard.executionRatchets.preparationTransactions = evaluateProductionPreparationTransactionGate({
+    expectedCalculatedProfiles: 1,
+    ...transaction,
+  });
+  expect(acceptSerializedFixture([shard]).comparison.status).toBe('passed');
+  expect(compareProductionShardGateBodies(shard, 7, transaction, []).status).toBe('passed');
+  const summaryForgery = structuredClone(shard);
+  summaryForgery.executionRatchets.preparationTransactions.summary.commandCount++;
+  expect(
+    compareProductionShardGateBodies(summaryForgery, 7, transaction, []).failures[0],
+  ).toMatchObject({
+    reason: 'shardGateBodyMismatch',
+    canonicalIdentity: 'tsk-08:shard:7',
+    firstDifference: { path: 'executionRatchets.preparationTransactions.summary.commandCount' },
+  });
+  record.appliedPreparationActions[0]!.resourceTransaction.afterConsumption = {
+    ...record.appliedPreparationActions[0]!.resourceBefore,
+    gauge: 0,
+  };
+  const failedObservation = observeProductionShardRecords(
+    { records: [record] },
+    'fixture-condition',
+    7,
+  );
+  const failedTransaction = auditProductionPreparationTransactionObservations(
+    failedObservation.preparation,
+  );
+  shard.executionRatchets.preparationTransactions = evaluateProductionPreparationTransactionGate({
+    expectedCalculatedProfiles: 1,
+    ...failedTransaction,
+  });
+  const failures = compareProductionShardGateBodies(shard, 7, failedTransaction, []);
+  expect(failures.failures).toHaveLength(1);
+  expect(failures.failures[0]).toMatchObject({
+    reason: 'shardExecutionFailed',
+    firstDifference: { path: 'executionRatchets.preparationTransactions.status' },
+  });
+  const gate = shard.executionRatchets.preparationTransactions;
+  expect(gate.status).toBe('failed');
+  expect(gate.failures[0]).toMatchObject({
+    reason: 'preparationResourceCommitMismatch',
+    conditionKey: 'fixture-condition',
+    profileKey: 'fixture-profile',
+    actionIndex: 0,
+  });
+  for (const path of [
+    'failures.0.canonicalIdentity',
+    'failures.0.firstDifference.path',
+    'failures.0.expected',
+    'firstDifference.path',
+  ]) {
+    const corrupted = changeSerializedFixture(
+      shard,
+      `executionRatchets.preparationTransactions.${path}`,
+      'foreign',
+    ) as ProductionSerializedShard;
+    expect(
+      compareProductionShardGateBodies(corrupted, 7, failedTransaction, []).failures[0]?.reason,
+    ).toBe('shardGateBodyMismatch');
+  }
+  const finalShard = serializedShardFixture();
+  finalShard.audit.outcomes.unsupported = 1;
+  finalShard.audit.conditionSummaries[0]!.unsupported = 1;
+  finalShard.audit.outcomeCount = 1;
+  const profileFailures = [
+    { conditionKey: 'fixture-condition', profileKey: 'fixture-u', status: 'unsupported' },
+  ] as const;
+  finalShard.executionRatchets.finalProfileOutcomes = evaluateProductionFinalOutcomeGate({
+    outcomes: finalShard.audit.outcomes,
+    failures: profileFailures,
+  });
+  expect(acceptSerializedFixture([finalShard]).comparison.status).toBe('passed');
+  const emptyPreparation = auditProductionPreparationTransactionObservations([]);
+  expect(
+    compareProductionShardGateBodies(finalShard, 7, emptyPreparation, profileFailures).failures[0]
+      ?.reason,
+  ).toBe('shardExecutionFailed');
+  const duplicate = structuredClone(finalShard);
+  duplicate.executionRatchets.finalProfileOutcomes.failures = [
+    ...duplicate.executionRatchets.finalProfileOutcomes.failures,
+    ...duplicate.executionRatchets.finalProfileOutcomes.failures,
+  ];
+  expect(
+    compareProductionShardGateBodies(duplicate, 7, emptyPreparation, profileFailures).failures[0]
+      ?.reason,
+  ).toBe('shardGateBodyMismatch');
+});
+
+it.each([
+  'scenario.preNoblePhantasmPlan',
+  'appliedPreparationActions.0.resourceTransaction',
+  'appliedPreparationActions.0.ocOutcomes',
+])('diagnoses missing serialized preparation input %s without a generic exception', (path) => {
+  const malformed = changeSerializedFixture(preparationRecordFixture(), path, null, true);
+  const observed = observeProductionShardRecords({ records: [malformed] }, 'fixture-condition', 0);
+  expect(observed.preparation).toEqual([]);
+  expect(observed.failures).toContainEqual(
+    expect.objectContaining({
+      canonicalIdentity: 'tsk-08:shard:0',
+      firstDifference: expect.objectContaining({
+        path: `conditions.fixture-condition.records[0].${path.replace('.0', '[0]')}`,
+      }) as unknown,
+    }),
+  );
+});
+
+it(
+  'retains every preprojection diagnostic for many malformed gates',
+  productionAuditTestOptions(['production-serialized-gate-diagnostics.json']),
+  async ({ task }) => {
+    const value = serializedShardFixture();
+    const malformed = {
+      ...value,
+      ...Object.fromEntries(Array.from({ length: 1024 }, (_, n) => [`unknown${n}`, n])),
+    };
+    const result = acceptSerializedFixture([malformed]);
+    expect(result.comparison.failures).toHaveLength(1024);
+    await writeProductionClosureDiagnosticArtifact(
+      task.meta,
+      'production-serialized-gate-diagnostics.json',
+      { malformed, result },
+    );
+  },
+);
+
+it('rejects duplicate declarations even with internally matching receipts and diagnoses nested OC corruption', () => {
+  const shard = serializedShardFixture();
+  const declaration = {
+    conditionKey: 'fixture',
+    path: 'fixture.json',
+    bytes: 1,
+    sha256: '0'.repeat(64),
+  };
+  shard.audit.conditionSummaries[0]!.key = 'fixture';
+  shard.productionArtifacts.conditionRecords = [declaration, declaration];
+  shard.artifactVerification.verified = [0, 1].map(() => ({
+    path: declaration.path,
+    format: 'json' as const,
+    allowEmpty: false as const,
+    bytes: declaration.bytes,
+    sha256: declaration.sha256,
+  }));
+  expect(
+    acceptProductionShardManifests([shard], [['fixture']]).comparison.failures[0],
+  ).toMatchObject({
+    reason: 'shardGateContractMismatch',
+    firstDifference: { path: 'productionArtifacts.conditionRecords[1]' },
+  });
+  const record = preparationRecordFixture();
+  const ocUse = {
+    actionId: 'fixture',
+    gaugeBefore: 10000,
+    baseOc: 1,
+    boostTotal: 1,
+    effectiveOc: 2,
+    participatingInstances: [0],
+    excludedInstances: [],
+    boostUses: [null],
+  };
+  const actual = changeSerializedFixture(record, 'appliedPreparationActions.0.ocUse', ocUse);
+  const observed = observeProductionShardRecords({ records: [actual] }, 'fixture-condition', 7);
+  expect(observed.preparation).toEqual([]);
+  expect(observed.failures[0]).toMatchObject({
+    reason: 'shardManifestShapeInvalid',
+    firstDifference: {
+      path: 'conditions.fixture-condition.records[0].appliedPreparationActions[0].ocUse.boostUses[0]',
+    },
+  });
+});
+
+it('accepts every shard shape before cross-shard joins and rejects missing or duplicate summaries', () => {
+  const valid = serializedShardFixture();
+  const malformed = changeSerializedFixture(valid, 'audit.eligibility.staticSemantics', null, true);
+  const shape = acceptProductionShardManifests(
+    [malformed, valid],
+    [['fixture-condition'], ['fixture-condition']],
+  );
+  expect(shape.shards).toBeNull();
+  expect(shape.comparison.failures[0]).toMatchObject({
+    reason: 'shardAuditShapeInvalid',
+    canonicalIdentity: 'tsk-08:shard:0',
+    firstDifference: { path: 'audit.eligibility.staticSemantics.type' },
+  });
+  const duplicate = structuredClone(valid);
+  duplicate.audit.conditionSummaries = [
+    ...duplicate.audit.conditionSummaries,
+    { ...duplicate.audit.conditionSummaries[0]! },
+  ];
+  expect(acceptSerializedFixture([duplicate]).comparison.failures[0]).toMatchObject({
+    reason: 'shardGateContractMismatch',
+    firstDifference: { path: 'audit.conditionSummaries[1]' },
+  });
+  const missing = structuredClone(valid);
+  missing.audit.conditionSummaries = [];
+  expect(acceptSerializedFixture([missing]).comparison.failures[0]).toMatchObject({
+    reason: 'shardGateContractMismatch',
+    firstDifference: { path: 'audit.conditionSummaries[0]' },
+  });
+  const changed = structuredClone(valid);
+  changed.audit.eligibility.staticSemantics.sourcePrograms++;
+  expect(
+    acceptProductionShardManifests([valid, changed], [['fixture-condition'], ['fixture-condition']])
+      .comparison.failures[0],
+  ).toMatchObject({
+    reason: 'shardGateContractMismatch',
+    canonicalIdentity: 'tsk-08:shard:1',
+    firstDifference: { path: 'audit.eligibility.staticSemantics.sourcePrograms' },
+  });
+});
+
+it('normalizes only declared optional HP snapshots and preserves presence-sensitive modifier states', () => {
+  const action = preparationRecordFixture().appliedPreparationActions[0]! as ReturnType<
+    typeof productionParityActions
+  >[number];
+  const source = { ...action, hpBefore: undefined, hpAfter: undefined };
+  const projected = productionParityActions([source]);
+  expect(Object.hasOwn(projected[0]!, 'hpBefore')).toBe(false);
+  expect(JSON.stringify(projected)).toBe(JSON.stringify([source]));
+  const withNull = productionParityActions([
+    { ...source, hpBefore: null } as unknown as typeof source,
+  ]);
+  expect(inspectProductionAuditValue(withNull)).toMatchObject({
+    status: 'accepted',
+    value: [{ hpBefore: null }],
+  });
+  const nested = productionParityActions([
+    {
+      ...source,
+      hpBefore: { actors: {}, receipts: [], modifiers: [{ unresolvedCondition: undefined }] },
+    } as unknown as typeof source,
+  ]);
+  expect(inspectProductionAuditValue(nested)).toMatchObject({
+    status: 'failed',
+    issues: [{ path: '0.hpBefore.modifiers.0.unresolvedCondition', kind: 'undefined' }],
+  });
+});
+
+it.each(['identity', 'summary', 'record', 'array', 'signedZero'])(
+  'rejects raw condition %s before digest and exposes no partial records',
+  async (place) => {
+    const { inspectProductionConditionRecord } = await import('./productionClosureRecordIntegrity');
+    const shard = serializedShardFixture();
+    const summary = shard.audit.conditionSummaries[0]!;
+    const raw = {
+      identity: shard.identity,
+      summary,
+      records: [{ profileKey: 'profile', status: 'unavailableUnderPolicy', value: null }],
+    };
+    const value = structuredClone(raw);
+    if (place === 'identity')
+      (value.identity as unknown as Record<string, unknown>)['masterSha256'] = Infinity;
+    if (place === 'summary') value.summary.elapsedMs = -Infinity;
+    if (place === 'record')
+      (value.records[0] as unknown as Record<string, unknown>)['value'] = Infinity;
+    if (place === 'array')
+      (value.records[0] as unknown as Record<string, unknown>)['nested'] = [1, { value: Infinity }];
+    if (place === 'signedZero')
+      (value.records[0] as unknown as Record<string, unknown>)['value'] = -0;
+    for (const envelope of [
+      value,
+      JSON.parse(
+        JSON.stringify(value).replace(
+          place === 'identity'
+            ? '"masterSha256":null'
+            : place === 'summary'
+              ? '"elapsedMs":null'
+              : place === 'signedZero'
+                ? '"value":0'
+                : '"value":null',
+          place === 'identity'
+            ? '"masterSha256":1e309'
+            : place === 'summary'
+              ? '"elapsedMs":-1e309'
+              : place === 'signedZero'
+                ? '"value":-0'
+                : '"value":1e309',
+        ),
+      ),
+    ]) {
+      const result = inspectProductionConditionRecord({
+        value: envelope,
+        identity: shard.identity,
+        summary,
+        conditionKey: summary.key,
+        profileCount: 1,
+      });
+      expect(result).toMatchObject({
+        status: 'failed',
+        records: [],
+        failures: [{ reason: 'recordValueInvalid' }],
+      });
+      expect((JSON.parse(JSON.stringify(result)) as typeof result).failures[0]!.actual).toEqual(
+        result.failures[0]!.actual,
+      );
+    }
+    const expectedInvalid = inspectProductionConditionRecord({
+      value: raw,
+      identity: { invalid: NaN },
+      summary,
+      conditionKey: summary.key,
+      profileCount: 1,
+    });
+    expect(expectedInvalid).toMatchObject({
+      status: 'failed',
+      records: [],
+      failures: [{ reason: 'recordValueInvalid' }],
+    });
+  },
+);
+
+it('rejects invalid shard values before any schema or cross-shard join and retains all issues', () => {
+  const value = serializedShardFixture();
+  const malformed = {
+    ...value,
+    ...Object.fromEntries(Array.from({ length: 1024 }, (_, n) => [`number${n}`, Infinity])),
+  };
+  const result = acceptSerializedFixture([malformed]);
+  expect(result.shards).toBeNull();
+  expect(result.comparison.failures).toHaveLength(1024);
+  expect(
+    result.comparison.failures.every((failure) => failure.reason === 'recordValueInvalid'),
+  ).toBe(true);
+  expect(inspectProductionAuditValue(result).status).toBe('accepted');
+});
+
+it('rejects source-side nonfinite compact records before observer or digest', async () => {
+  const master = masterSnapshotSchema.parse(fixture);
+  const versions = {
+    schemaVersion: SCHEMA_VERSION,
+    engineVersion: ENGINE_VERSION,
+    appVersion: APP_VERSION,
+    masterDataVersion: master.version,
+    gameRegion: 'JP' as const,
+    masterDataLocale: 'ja-JP' as const,
+  };
+  const conditions = productionClosureConditions()[0]!;
+  const ranking = rankingOwner.calculateRankingPolicy(
+    master,
+    { servantBuilds: {} },
+    conditions,
+    versions,
+  );
+  const calculated = Object.values(ranking.profileResults).find(
+    (outcome) => outcome.status === 'calculated',
+  );
+  if (calculated?.status !== 'calculated') throw new Error('fixture has no calculated profile');
+  calculated.detail.input.targetRarity = Infinity;
+  const observer = vi.fn();
+  const spy = vi.spyOn(rankingOwner, 'calculateRankingPolicy').mockReturnValue(ranking);
+  try {
+    await expect(
+      auditProductionClosure(master, { servantBuilds: {} }, versions, observer, [conditions]),
+    ).rejects.toMatchObject({
+      canonicalIdentity: `production:${productionClosureConditionKey(conditions)}`,
+      inspection: {
+        status: 'failed',
+        issues: [{ kind: 'nonFiniteNumber', representation: 'Infinity' }],
+      },
+    });
+    expect(observer).not.toHaveBeenCalled();
+  } finally {
+    spy.mockRestore();
+  }
+});
+
+it('rejects nonfinite transaction observations even when both resource sequence sides match', () => {
+  const record = preparationRecordFixture();
+  const action = record.appliedPreparationActions[0]!;
+  const resource = { ...action.resourceBefore, gauge: Infinity };
+  const corrupted = {
+    ...action,
+    resourceBefore: resource,
+    resourceAfter: resource,
+    resourceTransaction: { afterConsumption: resource, mutations: [] },
+  };
+  const observation = {
+    conditionKey: 'condition',
+    profileKey: 'profile',
+    commands: [action.command, action.command],
+    actions: [corrupted, corrupted],
+  };
+  const audit = auditProductionPreparationTransactionObservations([
+    observation as unknown as ProductionPreparationTransactionObservation,
+  ]);
+  expect(audit.failures).toMatchObject([
+    { reason: 'auditValueInvalid', firstDifference: { path: 'actions.0.resourceBefore.gauge' } },
+  ]);
+  expect(
+    evaluateProductionPreparationTransactionGate({ expectedCalculatedProfiles: 1, ...audit }),
+  ).toMatchObject({ status: 'failed', failures: [{ reason: 'auditValueInvalid' }] });
+  expect(inspectProductionAuditValue(audit).status).toBe('accepted');
+});
+
+it('retains producer value-failure metadata through shard acceptance without treating it as unknown', () => {
+  const producer = {
+    ...serializedShardFixture(),
+    status: 'failed',
+    stage: 'audit-conditions',
+    failure: { name: 'TypeError', reason: 'production_audit_value_invalid' },
+    auditValueFailure: {
+      reason: 'auditValueInvalid',
+      canonicalIdentity: 'production:condition',
+      status: 'failed',
+      issues: [{ path: 'records.0.input', kind: 'nonFiniteNumber', representation: 'Infinity' }],
+      diagnostic: {
+        records: [
+          { input: { auditValueInvalid: { kind: 'nonFiniteNumber', representation: 'Infinity' } } },
+        ],
+      },
+    },
+  };
+  const result = acceptSerializedFixture([producer]);
+  expect(result.shards).toBeNull();
+  expect(result.comparison.failures[0]).toMatchObject({
+    reason: 'recordValueInvalid',
+    firstDifference: { path: 'auditValueFailure' },
+  });
+  expect(
+    result.comparison.failures.some((failure) => failure.reason === 'shardManifestUnknownField'),
+  ).toBe(false);
+});

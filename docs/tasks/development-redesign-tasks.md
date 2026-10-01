@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.144"
+document_version: "1.7.155"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-29"
+updated_at: "2026-10-01"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -2333,12 +2333,15 @@ Handoff:
 
 Depends on: TSK-07
 
+Current status: `done`。承認済みR08-NONFINITE修正は、生成・live比較・transaction・保存・読込の値損失を投影前に拒否する。正規化はsource ownerが合法HP optionalを省略する時点に限定。局所66件、reader実CLI5反例／writer1024完全診断、新producer80条件×3、最終quality（unit1588／production157／E2E29）と全義務・receipt照合が成功した。正本はevidence `implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`。六失敗クラス／七宣言・raw／legacy固有証拠を成立範囲で保持し、性能増加も実測で記録。09.1／09は今回未着手のblockedを維持する。
+
 - [x] TSK-06.5が生成した唯一の全AttackProfile × NP1〜5 × 四policy inventory／digestを、data-pipelineと
       calculation-applicationの共有audit modelへ接続する。別generatorや並行digest正本を作らない。
-- [x] parity、unsupported、invalid、partial commit、inert control、stale mutationをratchet化する。
+- [x] parity、unsupported、invalid、partial commit、inert control、stale mutationをratchet化する（元六クラスの実executionを保持し、serialized本文の不正値受入も拒否する）。
 - [x] TSK-06.3の共通manifest／artifact ownerを再実装せず、domain typed reason、canonical identity、
       first canonical diffをbounded summaryと完全artifactへ登録する。
 - [x] 旧loader、scan、candidate list、重複fixtureを削除する。
+- [x] 追加Step 4でcondition record本文・summary・digestの整合をfail closedにし、matrix digest不一致からcondition／profile／canonical入力の差分へ到達させる（本文全値を投影前に検査する）。
 
 Done gate:
 
@@ -2353,17 +2356,17 @@ Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `TS-AUDIT-001` | Apply: passed | taskset -c 0-7 pnpm quality (production) + pnpm test:audit | `.test-results/2026-09-30T10-28-44-838Z-16-86ccc0/production/manifest.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance.contracts.TS-AUDIT-001` |
-| `TS-OUT-001` | Apply: passed | six final-source live class probes; README quality runner contracts | `.test-results/tsk-08-final-acceptance-20260930/structural-final/six-class-probes.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance.contracts.TS-OUT-001` |
-| `TS-ART-001` | Apply: passed | existing verifyArtifactFiles for every declaration/manifest receipt and preserved primitive disk artifact | `.test-results/tsk-08-final-acceptance-20260930/final-reconciliation.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance.contracts.TS-ART-001` |
-| `RK-AUDIT-001` | Apply: passed | existing canonical8shards(max4,two waves)+merge; all80 calculator/ranking/portable parity, final-status and transaction gates | `.test-results/tsk-08-final-acceptance-20260930/structural-final/performance-canonical/candidate-1-matrix/manifest.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance.contracts.RK-AUDIT-001` |
-| `RK-PERF-001` | Apply: passed | same original measure-ranking-resources workload, CPU0-7, separate3 processes each side | `.test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-ranking.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance.contracts.RK-PERF-001` |
-| `TS-PERF-002` | Apply: passed | same canonical80condition workload/max4/two waves, CPU0-7, separate3 coordinator processes each side | `.test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-matrix/manifest.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance.contracts.TS-PERF-002` |
-| `DX-HANDOFF-001` | Apply: passed | taskset -c 0-7 pnpm quality; result-only canonical record updates with docs verification | `.test-results/2026-09-30T10-28-44-838Z-16-86ccc0/manifest.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance.contracts.DX-HANDOFF-001` |
+| `TS-AUDIT-001` | Apply | 局所66／reader CLI5／writer1024／新80条件3run／`pnpm quality`／共通receipt照合 | [evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`。全義務Verified／明示N/A。 |
+| `TS-OUT-001` | Apply | 局所66／reader CLI5／writer1024／新80条件3run／`pnpm quality`／共通receipt照合 | [evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`。全義務Verified／明示N/A。 |
+| `TS-ART-001` | Apply | 局所66／reader CLI5／writer1024／新80条件3run／`pnpm quality`／共通receipt照合 | [evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`。全義務Verified／明示N/A。 |
+| `RK-AUDIT-001` | Apply | 局所66／reader CLI5／writer1024／新80条件3run／`pnpm quality`／共通receipt照合 | [evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`。全義務Verified／明示N/A。 |
+| `RK-PERF-001` | Apply | same original measure-ranking-resources workload, CPU0-7, separate3 processes each side | `.test-results/tsk-08-final-acceptance-20260930/performance-canonical/baseline-1-ranking.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance.contracts.RK-PERF-001` |
+| `TS-PERF-002` | Apply | 同canonical80条件/max4/two waves/CPU0-7の新3process＋原正式baseline3、merge3＋3を分離 | `.test-results/tsk-08-nonfinite-closure-20261001/candidate-1-matrix/manifest.json`；[evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance.performance` |
+| `DX-HANDOFF-001` | Apply | 局所66／reader CLI5／writer1024／新80条件3run／`pnpm quality`／共通receipt照合 | [evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`。全義務Verified／明示N/A。 |
 
 Handoff:
 
-最終受入（2026-09-30）: TSK-08はdone。六失敗クラス／七宣言の有限な元request・consumer照合、旧13回read／射影と非canonical single CLIの処分、全Done gate／Contract／入力lifecycleを完了した。raw OC167 occurrence／632 cellと公開join、現経路の固有assertion、dc798b3原snapshotで再現した歴史auditor9digestを保持する。全canonical damage／candidate／record差分0。各義務・完全artifact・全receipt・正式3+3run・最終qualityの正本は [evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance`。以下のbounded-unit記録は当時の履歴であり、過去の未達／次操作を現在へ適用しない。
+当時の最終受入（2026-09-30、Step 4起票前）: TSK-08はdoneと判定し、追加Step 4起票時に再開した。現在の状態は本節Current statusと末尾の最新受入を参照する。六失敗クラス／七宣言の有限な元request・consumer照合、旧13回read／射影と非canonical single CLIの処分、全Done gate／Contract／入力lifecycleを完了した。raw OC167 occurrence／632 cellと公開join、現経路の固有assertion、dc798b3原snapshotで再現した歴史auditor9digestを保持する。全canonical damage／candidate／record差分0。各義務・完全artifact・全receipt・正式3+3run・最終qualityの正本は [evidence](../evidence/tsk-08-parity-ratchet.json) `approvedClosureImplementation.finalAcceptance`。以下のbounded-unit記録は当時の履歴であり、過去の未達／次操作を現在へ適用しない。
 
 
 Current bounded-unit handoff（2026-09-21、production parity diagnostics／artifact reachability）:
@@ -4550,7 +4553,7 @@ checklist①／入力lifecycle①〜③は成立済みの範囲を維持。②�
 
 ### TSK-08 Step 2 の収束順序再整理（現状判定・引継ぎ、2026-09-30）
 
-Step 0／1／3は既存の一致するsource／input証拠で成立済み。Step 3の80条件matrix／eligibility成立は、Step 2の六失敗クラス、七宣言のconsumer遷移、最終受入の成立を含まない。Step 2／TSK-08は今回の承認済み収束と最終受入で`done`。OC rate限定実装`364e02f`の証拠を保持し、六クラス／七宣言の統合、旧経路処分、全Done gate／Contract／入力lifecycleまで閉じた。要件・damage semantics・検証入力・正本digestを変更していない。過去checkpointの未達／次操作は当時の履歴として保持し、本節と[evidence](../evidence/tsk-08-parity-ratchet.json) `currentStepConvergenceReview`／`approvedClosureImplementation.finalAcceptance`を現在の判定とする。TSK-09.1／09未着手、pushなし。
+Step 0／1／3は既存の一致するsource／input証拠で成立済み。Step 3の80条件matrix／eligibility成立は、Step 2の六失敗クラス、七宣言のconsumer遷移、最終受入の成立を含まない。Step 2は今回の承認済み収束と最終受入で成立したが、TSK-08全体は後掲Step 4の起票により`in_progress`へ再開した。OC rate限定実装`364e02f`の証拠を保持し、六クラス／七宣言の統合、旧経路処分、全Done gate／Contract／入力lifecycleまで閉じた。要件・damage semantics・検証入力・正本digestを変更していない。過去checkpointの未達／次操作は当時の履歴として保持し、本節と[evidence](../evidence/tsk-08-parity-ratchet.json) `currentStepConvergenceReview`／`approvedClosureImplementation.finalAcceptance`を現在の判定とする。TSK-09.1／09未着手、pushなし。
 
 | Step 2 の判定順 | 閉じる条件と進捗反証 | 現状態 |
 | --- | --- | --- |
@@ -4620,7 +4623,7 @@ quality再実行はunit1526全成功、production156成功・HP先頭1失敗で�
 
 指定8CPU条件の最終quality全10stepが成功（`.test-results/2026-09-30T10-28-44-838Z-16-86ccc0/manifest.json`）。unit1526／production157／Playwright29成功、warning／unexpected console／retry0、親子artifact照合error0。source／test／期待値／設定は固定したまま、最終candidate性能3runを他検証と重ねず実行中。結果だけの記録変更はquality対象の実装や入力を変えず、最終receipt／Contract／lifecycle照合後の文書検証で閉じる。TSK-08は正式性能と統合記録が揃うまでin_progress。
 
-### TSK-08 最終収束・受入（2026-09-30）
+### TSK-08 最終収束・受入（Step 0〜3の履歴、2026-09-30）
 
 六クラスの実execution反例をtyped reason／canonical first difference／bounded出力／完全artifact／固有manifest／全receiptへ接続した。元request3186、writer486、dependency71、writer観測2195／modifier read2113／candidate read126を最終auditとbyte一致で保持。七宣言ごとの実consumerとcanonical ruleから必要な遷移を照合し、正常非選択、元control-owner requestなし141、production0、終端後続なし、拒否、候補abort、明示repairを混同しない。別ownerの未達／未規定ゲーム意味論／対象内Blockingは0。
 
@@ -4641,4 +4644,171 @@ quality再実行はunit1526全成功、production156成功・HP先頭1失敗で�
 
 正式性能は同じmaster／TSK-06.5 source／workload／Node26.3.1／pnpm11.20.0／frozen lock／workspace／CPU0-7、canonical8shard・最大4process二wave・逐次3processずつ。matching baseline3runを再利用し、構造修正後candidate3runを再取得した。ranking中央値6522.721→5279.240ms（-19.06%）、matrix wall中央値1049.34→841.93秒（-19.77%）、未説明10%退行なし。以前のsingle source mismatchとquality失敗／skip診断は失敗として保持し、最終成功へ代入しない。
 
-Step0／1／3の一致証拠を保持し、Step2／TSK-08 done。全Contractの実artifact参照はTSK-08本節のclosure matrixとevidence `finalAcceptance.contracts`。正本以外の計画書は追加せず、この結果記録の文書検証と12対象限定local commitで依頼を閉じる。TSK-09.1／09未着手、pushなし。
+当時はStep0／1／3の一致証拠を保持し、Step2／TSK-08 doneと判定した。現在の全体状態は後掲Step 4を参照する。当時の全Contractの実artifact参照はTSK-08本節のclosure matrixとevidence `finalAcceptance.contracts`。正本以外の計画書は追加せず、この結果記録の文書検証と12対象限定local commitで依頼を閉じる。TSK-09.1／09未着手、pushなし。
+
+### TSK-08 Step 4: canonical matrix artifact整合とdigest診断（再開・起票、2026-09-30）
+
+Status: `done`（2026-10-01、R08-SHAPEの投影前受入と必要な最終ゲートを閉じた。本文／集約診断の成立を保持）。利用者の「追加のStepとして定義して起票」に基づく。開始／レビューHEADは `6de5e17fb7cc92c2aa3f0adc5cc3838d84efb380`、stage済み／未stage差分なし。レビューは完了commitの12ファイルに限定せず、既存merge・master-dataのcanonical比較・直接caller・assertion・保存artifactを追った。起票時の文書3件を保持し、追加の利用者依頼により計画・自己レビュー後に4a／4bを実装している。commit／push、TSK-09.1／09への着手は含まない。
+
+目的は、受入が使用するcanonical recordとsummary／digestの整合、およびdigest不一致から実record差分への診断接続を閉じること。現在のdamage数値不具合は観測していない。ゲーム意味論、candidate生成、damage式、原inventory／digestの期待値、七宣言の母集団境界は変更しない。共通原因・再現・source／artifact receiptは[evidence](../evidence/tsk-08-parity-ratchet.json) `step4AuditIntegrityAndDigestDiagnostics`が所有する。旧Step 2の六probe／七宣言／旧経路処分を、無関係な全体再監査へ広げない。
+
+| 単位 | 未達条件・責務境界 | 完了条件 |
+| --- | --- | --- |
+| 4a: artifact本文と集約の整合 | 起票時P2／受入Blocking `R08-RECORD`（最終受入Closed）。`merge-oc-matrix.ts:130-146`はreceipt・condition key・identityだけを確認し、本文recordsとsummary digest、shard summaryの整合を検証しない。元condition `naturalLimit-included-baseline-np1-oc1`／profile100100のcanonicalInput.fouAtkを1000→1001へ変え、receiptだけ更新してもmergeがexit0／全gate passed。ownerはapplicationのmatrix producerとmerge、bytes／SHAは既存共通artifact owner | 同じ反例を実mergeが拒否し、typed reason／condition・profile identity／first difference／完全失敗artifactへ接続する。保存record本文と既存producerのcanonical digest、summary、profile集合・status件数を整合させる。欠落・重複・矛盾する本文が正しいreceiptで通らず、現保存80条件の正常mergeが通る。candidate／damageを再生成しない |
+| 4b: digestからcanonical record差分 | 起票時P2／受入Blocking `R08-DIFF`（本文分岐Closed、集約分岐は2026-10-01再開後Closed）。`productionAudit.ts:383`の比較対象は集計値・SHAのみで、`productionParityDiagnostics.ts:1787`とmergeへ実record差分を渡さない。既存test:399はpath=digestまでを固定。ownerはmaster-dataのcanonical比較とapplicationのdomain diagnostics。元expected artifact参照先は欠落している | expected artifactを明示してreceipt／source identityを確認し、condition／profileで対応付け、既存canonical比較により同じ反例のcanonicalInput.fouAtk 1000→1001まで到達する。missing expected／identity矛盾は原因を保持して拒否する。本文差分と集約layout差分を区別し、bounded summaryと完全artifactを保持する。黙った保存先fallbackを追加しない |
+| 4c: Step 4最終受入 | checklist③・追加項目、Done gateのdigest差分／完全結果／fail-closed、TS-AUDIT-001／TS-OUT-001／TS-ART-001／RK-AUDIT-001／DX-HANDOFF-001、入力lifecycle⑤・⑦の全体成立が未達。①〜④・⑥・⑧と六クラスの元request証拠は確認済みscopeで保持 | 4a／4bの局所反証・正常経路・差分レビューを先に閉じる。最終差分に必要な型／lint／format、適用audit、README qualityとreceipt照合を実施し、対象内Blocking0、正本記録一致でTSK-08をdoneへ戻す。性能・80条件の再取得は影響またはsource identity不一致のある範囲だけとし、既存正式3＋3run／gameplay結果を一律再実行しない |
+
+**維持する証拠と未確認境界:** 保存正式6matrixの各80条件・全207,840 recordについて本文digest／summary／profile集合と前後の保護値を照合し差分0。68manifest／全receipt・最終source hashの不一致0、公開元request ledgerは元保存値とbyte一致。六failure probe、公開OC終端10件の後続なし、141宣言のcontrol-owner母集団外、production0件、raw OC167／632／公開join・歴史9digestを保持する。今回の人工的artifact変更はaudit受入の反例であり、実damage差分・公開到達件数・transaction失敗件数へ加えない。本文の整合を追加検証せずreceipt集計や旧passedを再掲するだけでは4aは閉じず、SHAのpathを返すだけでは4bは閉じない。
+
+**expected artifactの対応付け:** 旧pointerは欠落したまま履歴として保持する。TSK-06.5 evidence `productionMatrix.canonicalRecords`へ保存正式`baseline-1-matrix/manifest.json`を明示参照し、394462 bytes／SHA `879af462bd3209ffaf18365a25598bbcf07e008b6164991d65355ad55cb1a95a`、HEAD `60dea899`、master `20260920.3`／SHA `2d9f1b19…`、command／workloadを固定した。正式6manifestの保存receiptと全condition digest対応は一致。実mergeがexpectedの全80receipt・本文・summary・matrix整合を追加検証する。新生成expectedと暗黙fallbackはない。参照不能／receipt不一致／identity矛盾／coverageの曖昧さはtyped拒否する。詳細は同evidence `implementationPlan`と受入artifact `expected-authority.json`。
+
+**受入・停止境界:** canonical8shard＋merge、全80条件、六クラス／七宣言、sole producer、原expected digestとtimeout／ratchetを維持する。saved artifactの検証・比較で閉じられる範囲は再利用し、意味を再計算するgeneratorを追加しない。新たなcanonical input／execution／UI変更が必要と判明した場合だけ直接影響する責務まで再判断する。TSK-09.1／09はTSK-08の全体doneまでblocked、commit／pushは今回の依頼に含まない。
+
+
+**実装計画・自己レビュー判定（現コード、2026-09-30）:** producerのrecord digestを共有し、applicationのrecord integrityへ本文・profile集合・status／summaryを集約した。共通artifact ownerはreceipt検証、master-dataはcanonical first difference、application diagnosticsはtyped reasonと完全failure集合、実mergeはexpected参照・8shard集約・終了コードを所有する。receipt一致の破損、SHA止まり、孤立fixtureだけの成功、expected欠落の隠蔽を反例として計画を補強し、実mergeでの拒否／正常成立を必須にした。本文差分を優先し、timingを除くsummary差分はcondition単位で区別する。完全bodyはreceipted condition artifactを参照し、manifestに全failure／first differenceを保持してmatrix本文の重複を避ける。damage／candidate生成／原digest・inventory・timeout／ratchetは不変。
+
+**進捗と次の操作:** 局所12tests、root／script型検査、対象source lintは成功。最終sourceで実mergeの2反例と欠落・重複・矛盾・identity／expected不一致を検証中。六クラス／七宣言、入力lifecycle①〜④⑥⑧は元の成立範囲を保持し、⑤⑦とchecklist③・追加項目／Done gate／再開5 Contractの統合判定は未達。mergeの前後実測を分離し、適用audit・README quality・全receipt／正本照合を終えるまでdoneへ戻さない。検証先は `.test-results/tsk-08-step4-20260930/`。
+
+
+**Step 4最終quality前checkpoint:** 最終sourceの実merge12反例を拒否し、record差分2件はreceiptエラー0のまま`canonicalInput.fouAtk`1000→1001へ到達した。summary集計差分は`damageCache.cacheHitCount`、expected欠落・receipt破損・重複・identity矛盾は別typed reasonで拒否した。正常80条件／34640record・全receiptのmerge3/3成功、digest／damage／candidate差分0。merge前後各3process／CPU0-7の中央値9.142→28.200秒、追加19.058秒は保存matrix中央値841.93秒の2.264%。新しい全matrix時間とは呼ばず、原正式3＋3runと区別して記録する。適用audit5files／88tests・warnings0成功（`.test-results/2026-09-30T13-42-32-021Z-15-4ccd56/manifest.json`）。ソース・test・TSK-06.5参照・設定を固定し、README qualityと最終receipt／Contract／lifecycle記録が揃うまでTSK-08 in_progressを維持する。
+
+
+**最終quality第1回の保持:** `.test-results/2026-09-30T13-49-01-273Z-19-c4ae81/manifest.json`はunit1526成功／1失敗。既存HP noncommit canonical100の5150ms／既定5000ms超過で、Vitestがcreation stackを`STACK_TRACE_ERROR`として出した。HP owner／canonical比較本文は不変。全HPファイル71testsの単独再診断は成功（`.test-results/2026-09-30T13-55-32-161Z-19-72550d/manifest.json`、対象3999ms）。timeoutによる実行変動と判断し、閾値・worker・source・設定を変更せず同じ8CPU条件で全qualityを再確認する。局所成功をquality成功へ代入せずTSK-08 in_progressを維持する。
+
+
+**最終quality第2回の保持:** `.test-results/2026-09-30T13-59-41-082Z-16-d8f524/manifest.json`はunit1527成功、production156成功／1失敗。既存HP joinの5436ms／既定5000ms超過で後続`hp-proof-coverage.json` receiptが未生成。artifact failureを保持する。同じ8CPUの全HPファイル7testsは成功（`.test-results/2026-09-30T14-11-08-060Z-15-75e667/manifest.json`）。source・test・timeout・worker・設定を変えず第3回の全qualityを実行する。失敗した場合は必須gate未達としてin_progressを保持し、追加family／09系へ進まず引継ぐ。
+
+
+**当時のStep 4受入（2026-09-30、集約診断不足により全体判定を再開）:** R08-RECORD／R08-DIFFをClosed、TSK-08をdoneへ戻した。保存本文を変更しreceiptだけ更新した反例と、condition／shard／matrix digestも更新した反例は実mergeがともにexit1・receiptエラー0で拒否し、typed`canonicalRecordMismatch`／condition／profile／`canonicalInput.fouAtk`1000→1001をbounded出力と完全manifestへ届けた。欠落・重複・矛盾・identity・expected参照／receipt／coverageを含む実caller12反例、1024件の完全fixture診断、正常80条件／34640recordの最終merge3/3が成立。matrix／eligibility・record／damage／candidate差分0で、元の六クラス・七宣言、raw OC167／632／公開join・歴史9digest、公開終端10件の後続なしを保持した。原expected値は変更せず、正式baselineへの明示参照metadataだけを追加した。
+
+最終README qualityは `.test-results/2026-09-30T14-15-16-893Z-16-18e337/manifest.json`（SHA `8a017920eea708bf036012f15f0e499ca443da1aba437833f92bb2eb4c4a63fb`）、unit1527／production157／Playwright29、warning／unexpected console／retry0、全10step成功。最終source・test・TSK-06.5入力・設定は固定した。適用audit88成功、旧68manifest自身のreceiptと新21受入manifest・全3569固有receiptを既存共通ownerで再照合しerror0（`.test-results/tsk-08-step4-20260930/final-reconciliation.json`）。意図的な破損／欠落receipt3件は失敗入力として保持し、成功receiptへ代入していない。最初のquality2回は5秒deadline付近の既存HP timeout／未生成receiptの失敗として保持し、閾値・worker・sourceを変えない第3回の全成功だけを最終成功とした。
+
+checklist全項目、Done gate全5項目、再開5 Contract、入力lifecycle⑤⑦を今回の実caller／完全artifact／最終qualityで閉じた。①〜④⑥⑧と`RK-PERF-001`の原成立は保持し、`TS-PERF-002`は原正式3＋3runと変更mergeの前後3processを区別して対応付けた。新たな全matrix時間は主張しない。唯一のsemantic producer・timeout／ratchetは不変。対象内Blocking0。結果だけの記録更新を文書検証で閉じ、TSK-09.1／09・commit／pushには進まない。全対応とreceiptの正本は同evidence `finalAcceptance`。
+
+**Step 4b／4c集約診断の再開（2026-10-01）:** 保存candidate-1の本文／receiptを維持し、unavailable理由またはadmissions観測数を変更してshard digestを更新すると、実mergeはexit1でもrecord比較passed・path=digest・failures空となる。これはDone gateのcanonical first difference、checklist③／追加項目、TS-OUT-001／TS-ART-001／TS-AUDIT-001／RK-AUDIT-001／DX-HANDOFF-001、入力lifecycle⑤⑦が未達である。前回の全体done判定は撤回し、本文2反例・最終source8件・3569receipt／21manifest・旧quality1527／157／29は当時のsourceの成立範囲として保持する。
+
+確定方向は、明示された正式expected matrixと実mergeの全集約項目を既存canonical比較へ接続し、既知の派生digestより意味差分を先に診断すること。本文／集約typed reasonを分け、計測elapsedを除外し、未知項目を黙って捨てない。実callerの理由／観測数／欠落／重複反例・正常80条件・本文2反例、bounded／完全artifact、変更merge性能、差分レビュー、最終qualityとreceipt照合を順に閉じる。expected欠落のfallback、期待値再生成、damage／candidate変更は行わない。計画と未完了となる反例の自己点検はevidence `step4AuditIntegrityAndDigestDiagnostics.aggregateDiagnosticClosure`を正本とし、別計画書を増殖させない。
+
+集約診断の実装・局所検証: verified expected.auditと実merge auditを接続し、全意味項目→既知の派生digestの順で既存canonical比較を行う。typed `canonicalAggregateMismatch`を本文 `canonicalRecordMismatch`と区別し、本文を優先する。理由／観測数／unavailable要素欠落／重複の実merge4反例はexit1・receiptエラー0、具体的pathと完全manifestを保持。本文2反例も同じ実callerでfouAtkへ到達。独立11集約fixtureを含む局所13test成功。変更後の正常merge3/3・全80条件・34640record・原matrix／eligibility digestを維持した。全件audit88は変更moduleへのruntime依存がなく、既存source／入力が不変の範囲で明示再利用する（evidence `aggregateDiagnosticClosure.auditReuse`）。最終quality／receipt照合は未完了で、TSK-08はin_progressを維持する。
+
+**Step 4b／4c集約診断の最終受入（2026-10-01）:** 実mergeの理由／観測数変更はtyped `canonicalAggregateMismatch`で`unavailable[0].reason`、`eligibility.admissions.observations`33760→33761へ到達し、exit1・receiptエラー0。要素欠落／重複も具体的pathで拒否し、本文2反例は`canonicalRecordMismatch`／fouAtk1000→1001を優先する。全結果は固有manifestへ保存し、bounded出力上限内。正常80条件／34640recordの変更後merge3/3・原matrix／eligibility digestを維持した。変更merge中央値27.44→25.54秒は測定ばらつき込みで大きな追加負荷なしと判断し、高速化／新全matrix時間は主張しない。原正式3＋3runとruntime不変の全件audit88を明示再利用する。
+
+今回の固定差分の最終README qualityは`.test-results/2026-09-30T15-33-35-317Z-15-a41617/manifest.json`、unit1528／production157／E2E29、全10step成功、warning／unexpected console／retry0。共通ownerによる全4963固有receipt・新18受入manifest・保持3569receipt／21受入manifestの照合error0は`.test-results/tsk-08-step4-aggregate-20261001/final-reconciliation.json`。checklist③／追加項目、Done gate、再開5 Contract、入力lifecycle⑤⑦を閉じ、元六クラス／七宣言・raw OC167／632／公開join・歴史baseline・公開終端10件の後続なしを保持。対象内Blocking0でTSK-08をdoneへ戻す。旧成功を変更後の成功へ代入していない。結果だけのTask／evidence更新を文書ゲートで閉じ、TSK-09.1／09・commit／pushへ進まない。正本はevidence `aggregateDiagnosticClosure.finalAcceptance`。
+
+結果記録の文書検証: `pnpm test:docs`の6test／docs integrity成功、stdout／stderr／受入照合artifactの3receiptを共通ownerで確認してerror0（evidence `aggregateDiagnosticClosure.finalAcceptance.documentationVerification`）。quality後はTask／evidenceの結果記録だけを更新し、source／test／TSK-06.5入力／設定は固定時のchecksumと一致した。
+
+**Step4 R08-SHAPEの再開（2026-10-01）:** shard-0のaudit／eligibility.candidatesへ未知項目を追加しshard digestを更新しても、既知項目だけの投影で消えて実merge exit0／全gate passedとなる。前回のunknownField直接fixtureはこのcallerを通らず、全体done判定を撤回する。固定audit／outcomes／eligibility／staticSemantics／admissions／candidatesと固定status項目をproducer型に対応したschemaで投影前に検証し、未知・欠落・不正値をtyped reason／shard／pathで拒否する。合法shard digestとmerged限定shardDigests、数値辞書を区別する。raw shardと共通receipt検証を完全artifactへ保持し、実caller反例・正常80条件・前回6反例・変更merge性能・最終quality／全receiptを順に閉じる。計画と自己反証の正本はevidence `shardShapeClosure`。damage／candidate／期待値再生成、09系、commit／pushへ広げない。
+
+R08-SHAPEの辞書境界を追加確認: CountMapのown `__proto__`キーは通常objectの集計で失われ、canonical比較も欠落キーをprototype値として読むと空object追加を見逃す。この同じ未知項目familyに対し、辞書集計は全own keyを保持し、既存canonical比較はown fieldだけを比較する。schema未知項目と合法数値map entryを区別して実callerで拒否を検証する。共通比較ownerを変更したため、以前のaudit88は歴史証拠として保持し、局所反証・差分レビュー後に最終差分の適用audit88を再取得する。
+
+R08-SHAPEの局所反証・正常経路・差分レビュー完了: 最終sourceで実merge19件（元shard0の2反例、shard7、全固定投影、metadata／欠落／不正値、辞書／prototype境界、1024未知項目）をexit1・receiptエラー0で拒否し、前回の集約4件／本文2件のcanonical pathを保持した。構造反例は投影前raw8shardと全typed failureを固有manifestへ保存し、出力上限を維持。独立15test、型／lint／format成功。正常80条件／34640recordの変更後merge3/3、原matrix／eligibility digestを保持。単独CPU0-7の変更merge3＋3中央値26.538→27.095秒（+0.557秒）。原正式全matrix／ranking3＋3は保持し、これは全matrix再計測ではない。対象内の実装Blockingは解消し、fresh適用audit88・最終quality・全receipt／正本受入は未完了のためin_progressを維持する。最新証拠はevidence `shardShapeClosure`。
+
+R08-SHAPEの最終source適用audit: `taskset -c 0-7 pnpm test:audit`、5file／88test、warning0、272.20秒成功（`.test-results/2026-09-30T17-32-03-143Z-15-fa5942/manifest.json`）。共通canonical比較owner変更後の新規結果であり、旧auditを代入していない。局所25反例・正常3/3・独立15test・差分レビューを先に閉じた。以後source／test／TSK-06.5入力／設定／文書を固定して最終README qualityを行い、成功後は結果記録だけを文書ゲートで閉じる。
+
+R08-SHAPE受入checkpoint: 最終固定差分のREADME qualityは全10step成功、unit1530／production157／E2E29、warning／unexpected console／retry0、611.97秒（`.test-results/2026-09-30T17-39-32-694Z-15-6ec6f1/manifest.json`）。実行中の12対象／master checksum不変を確認した。source／test／TSK-06.5入力／設定は維持し、この追記は結果記録だけ。残る全receipt／固有manifest照合・正本最終受入・文書ゲートまでin_progress。次操作と固定入力の正本はevidence `shardShapeClosure.qualityCheckpoint`。
+
+**R08-SHAPE最終受入（2026-10-01）:** 元shard-0のaudit／eligibility.candidates追加は実mergeがexit1・receiptエラー0、typed `shardAuditUnknownField`／shard0／`audit.additionalAggregate`・`audit.eligibility.candidates.additionalAggregate`で投影前に拒否する。同じ固定構造、欠落／型不正、metadataと数値辞書／prototype境界を含む実caller19件、前回集約4件／本文2件、独立15testを確認。17構造失敗はraw8shardを固有manifestへ保持し、1024失敗も完全保存・bounded上限内。正常80条件／34640recordの変更後merge3/3、原matrix／eligibility digestを維持。
+
+fresh適用audit88と最終README quality1530／157／29、全10step、warning／unexpected console／retry0成功。最終qualityは`.test-results/2026-09-30T17-39-32-694Z-15-6ec6f1/manifest.json`。共通ownerによる全8371固有receipt・新37受入manifest・保持4963receipt／18受入manifestの照合error0は`.test-results/tsk-08-step4-shape-20261001/final-reconciliation.json`。旧sourceの破損merge成功2件はfinding原証拠として照合・保持し、現受入成功へ代入していない。変更merge3＋3中央値+0.557秒と原正式3＋3を区別し、新しい全matrix時間は主張しない。
+
+checklist追加項目・Done gate・再開Contract・入力lifecycle⑤⑦を閉じ、対象内Blocking0でTSK-08をdoneへ戻した。原六クラス／七宣言、raw OC167／632／公開join、歴史baseline、公開終端10件の後続なし、唯一producer、damage／candidate／inventory／expected digest、timeout／ratchetを保持。正本はevidence `shardShapeClosure.finalAcceptance`。quality後は結果記録だけを文書ゲートで閉じ、09系・commit／pushは行わない。
+
+R08-SHAPE結果記録の文書検証: `pnpm test:docs`6test／docs integrity成功、文書stdout／stderrと受入照合artifactの3receiptを共通ownerで確認してerror0（evidence `shardShapeClosure.finalAcceptance.documentationVerification`）。quality後の差分はTask／evidenceの結果記録2件だけで、実行入力／原期待値／設定／masterは固定checksumと一致した。
+
+### TSK-08 全体実装セルフレビュー（レビュー完了・製品未完了、2026-10-01）
+
+開始HEADは`6de5e17fb7cc92c2aa3f0adc5cc3838d84efb380`、Step 4の既存未commit差分12path（未追跡module2件を含む）を保持した。TSK-08開始前`34828eaa`、共有model前`5d82e380`、最終収束前`f85ef90`、正式性能基線`60dea899`を用途別に区別し、先行producer／owner／consumer・実callerまで照合した。最新実装／入力9hashは全一致、既存8371 receiptも共通ownerで全件一致した。以前のcheckpointの未達条件は持ち越していない。
+
+**P1／Blocking R08-GATE:** serialized shardの実行gateを投影前に受け入れる責務が不完全で、矛盾・欠落・未知項目が再集計した成功結果から消える。`merge-oc-matrix.ts::merge`、`productionParityDiagnostics.ts::productionFinalOutcomeShardDifference/evaluateProductionPreparationTransactionGate`が対象。実mergeで、transactionの`actual.resourceCommitMismatches=1`、`actual`／`summary.commandCount`欠落とforeign identity、final outcomeのexpected／actual双方をunsupported1へ再集計、audit外の未知項目という4反例がreceiptエラー0・exit0・全gate passedとなった。欠落countは成功manifestの`commandCount:null`へ変わる。`failures`欠落はexit1だがtyped identity／pathへ到達せずgeneric TypeErrorで終わる。対照の`audit.eligibility.candidates.unknownField`は現R08-SHAPEがtyped reason／shard／path付きで拒否した。
+
+原expected、master、80条件本文、digest、閾値は変更していない。これは保存artifact破損に対する受入不備であり、現在productionのgameplay不具合や公開failure件数の増加を示すものではない。原因のtransaction集計は`5d9540f4`、final gate相互一致は`0f7b549f`由来で、HEADと現定義は一致する。今回の未commit差分による新規regressionとは判定しない。前R08-SHAPEレビューが同じmanifest ownerのaudit外gate／宣言投影までrecurrence scopeを広げなかった不足を明示する。
+
+正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview`。findingの症状・発生機構・Contract・責務上の原因・再発範囲、全checklist／Done gate／Contract／入力lifecycle／七宣言の分類、未確認範囲、修正境界と最小検証を一か所に記録した。
+
+| 判定範囲 | 現在の結果 |
+| --- | --- |
+| checklist①④、単一producer、入力lifecycle①②③④⑥⑧ | Verified（元の有限義務内）。全433profile／80条件の既存正常証拠、七宣言と元request・実consumer／修復、旧13read／single branch退役、raw OC167／632／公開join・歴史9digestを保持。 |
+| checklist②③・追加Step 4、Done gateのfail-closed／typed first difference／完全診断、入力lifecycle⑤⑦ | Blocking R08-GATE。本文・集約診断と六クラスの実execution probeの成立範囲は保持するが、serialized consumerを含む全体成立とはしない。 |
+| `TS-AUDIT-001`／`RK-AUDIT-001`／`TS-OUT-001`／`TS-ART-001`／`DX-HANDOFF-001` | Blocking R08-GATE。receipt一致と以前のquality成功を破損gateの受入成立へ代入しない。 |
+| `RK-PERF-001`／`TS-PERF-002` | Verified（保存証拠の同条件比較）。原matrix／ranking正式3＋3と最新mergeだけの3＋3を分離し、新しい全matrix性能は主張しない。 |
+| 公開OC終端10件の合成後続grant／read要求、production0件の公開positive件数主張、09系／新ゲーム仕様 | N/A。schema-native義務は既存fixtureと実callerで確認。TSK-08必須義務を別ownerのDeferredへ移していない。 |
+
+今回の検証は実merge6反例（偽成功4／generic拒否1／typed拒否対照1）、`productionHpPublishedDependencyCoverage.test.ts`の実native／ordered／command修復20test成功・warning0・全16artifact receipt一致、既存8371 receipt照合・9source identity一致。六失敗probeの固有manifestも一致した。完全入力・出力・exit・receiptは`.test-results/tsk-08-self-review-20261001/`、局所test manifestは`.test-results/2026-09-30T18-35-34-859Z-15-566090/manifest.json`。元quality1530／157／29・audit88は現固定sourceの既存証拠として保持し、全件audit・80条件再計算・正式性能・`pnpm quality`は再実行していない。
+
+次の操作は、別途実装依頼がある場合にapplicationのserialized gate受入ownerで両unionの固定schema・canonical contract・audit／本文joinとtyped完全保存を閉じ、今回の反例familyを実mergeで拒否すること。単発field patch、共通receipt ownerへのFGO意味論追加、期待値／閾値変更、新generatorは修正境界に含めない。今回はレビューのみで製品修正に進まず、TSK-08を`in_progress`、09.1／09を`blocked`として記録・文書検証で停止する。
+
+結果記録の文書検証は`git diff --check`、`pnpm test:docs`6test／docs integrity成功、stdout／stderr receiptエラー0。初回のContract表Disposition書式エラーも保存し、適用範囲を示す`Apply`と現在の評価`Blocking`を別欄に記録して解消した。検査・期待値は変更していない。正本はevidence `implementationSelfReview.documentationVerification`。
+
+### TSK-08 serialized gate受入の承認済み実装開始（2026-10-01）
+
+利用者確認により、最新セルフレビューR08-GATEを両gate union・manifest／宣言固定構造・canonical contract・元audit／本文join・完全診断保存の共通原因として修正し、TSK-08全体の最終受入まで継続する。開始HEADと12path差分を保持し、Step 4実装／入力9hash、masterと明示canonicalRecords identityは一致。計画・自己反証・再利用条件はevidence `serializedGateClosure.plan`。六クラス／七宣言・sole producer・raw／歴史coverageの成立範囲を保持し、局所成功だけでdoneにしない。現在は変更前merge3run採取中。R08-GATE、局所／実caller受入、影響性能、README quality、全義務・receipt・正本一致は未達。09系・commit／pushなし。
+
+TSK-08 serialized gate局所checkpoint: strict manifest／両union、canonical expectedを既存evaluatorから取得、保存本文から既存transaction observerへjoinし、受入失敗ではexecution gateを再集約する前にtyped拒否する。raw shard・正常／破損condition入力のreceiptを失敗manifestへ保存し、宣言coverage／receipt不一致もtyped分類へ接続した。42局所test・root型・対象lint・script明示strict型検査成功。登録auditの依存5関数はbyte一致で既存88testを限定再利用する。既知6反例のtyped拒否と完全保存は成立範囲で保持し、追加実caller・最終正常3／merge性能・README quality・全義務／receipt統合は未達。source identityと詳細はevidence `serializedGateClosure`。全体in_progress、09系／commit／pushなし。
+
+TSK-08 最終owner局所checkpoint: 全shardの構造検査を完了してから意味joinへ進め、先頭shard破損の後続参照、summary欠落／重複、static inventory矛盾もtyped拒否へ集約した。43局所test・root型・対象lint・script型検査成功。最終ownerの実CLI反例集合を逐次確認中。六クラス／七宣言、原matrix／ranking正式性能とauditの不変依存証拠を保持する。正常3run／merge性能、最終差分レビュー、README quality、全receipt／義務統合は未達。最新sourceと境界判断はevidence `serializedGateClosure`。
+
+TSK-08 session約60分checkpoint（再起動後）: 最終ownerの実merge反例35件は成功結果を保存済み。停止した残り5件から再開し、正常3run／影響性能、最終差分、README quality、全義務とreceipt統合へ進む。途中成功を全体完了へ代入せず、90分時点では新しいfamilyへの着手を止め、既存工程の結果と未達条件を正本へ残す。
+
+TSK-08 R08-GATE局所完了: 実merge40反例がすべてtyped拒否・完全保存・非zero終了。1024failureも省略せずartifactへ保存、stdout／stderrは上限内。本文fouAtk差分と集約first differenceを保持した。全checklist／Done gate／Apply Contract／入力lifecycle①〜⑧／七宣言の再利用条件と今回閉じる義務はevidence `serializedGateClosure.obligationClosure`。必須Deferred0、製品Blocking0。正常3run／変更merge性能、README quality、最終receipt・結果記録まで全体in_progressを維持する。
+
+TSK-08 最終quality前checkpoint: 正常保存80条件／34640recordのmerge3/3成功、digest／parity／candidate988570不変、入力receipt88/runはerror0。変更merge中央値26.574→29.254秒（+2.680秒、10.1%）は34600profile／63950action／34640NP receiptの保存本文検証追加として説明し、原matrix841.93秒・ranking正式3＋3と分離する。閾値は変更しない。R08-GATE／局所／差分レビューを閉じ、固定sourceでREADME qualityへ進む。最終ゲートと正本一致までdoneにしない。
+
+TSK-08 最終quality後の限定反証: 前sourceのqualityはunit1565／production157／E2E29・warning／retry／unexpected console0で成功。valid-format master SHA矛盾がgeneric例外へ落ちる同じmanifest境界を追加修正し、実CLI41件目でtyped recordIdentityMismatch／shard0／identity.masterSha256／完全入力receipt／exit1を確認した。正常SHA branchは同一で、正常3run／性能証拠はこの条件で保持する。script strict型・差分を確認し、最終source qualityを再実行する。全体in_progress、原期待値／閾値／09系／commit／push不変。
+
+TSK-08 serialized gate最終受入（2026-10-01）: 実CLI41反例がすべてtyped reason／canonical identity／first difference、完全raw入力・failure・共通receipt、exit1へ接続した。正常80条件／34640recordは3/3成功、digest／parity／candidate不変。固定source qualityはunit1565／production157／E2E29・warning／unexpected console／retry0。全checklist・Done gate・Apply Contract・入力lifecycle①〜⑧・七宣言をVerified／明示N/Aへ対応付け、必須Deferred0・対象内Blocking0。原六クラス／raw OC167／632／公開join／歴史9digest・唯一producerを保持し、全件audit・80条件再計算・正式性能は同条件証拠を再利用した。変更mergeの3＋3性能は原正式3＋3と分離。正本と完全receipt照合はevidence `serializedGateClosure.finalAcceptance`。TSK-08をdoneへ更新し、品質後は結果記録の文書ゲートも成功。TSK-09.1／09は今回未着手のblockedを維持、commit／pushなし。
+
+TSK-08 結果記録の文書検証: `pnpm test:docs`6test／docs integrity成功。最終照合224receipt error0、文書／照合結果の追加5receipt error0、固定product／script／test／master／TSK-06.5 input hashは全一致。quality後はTask／evidenceの結果記録だけを更新し、全必須義務Verified／明示N/A、必須Deferred0、対象内Blocking0、正本一致で終了する。最初のreceipt照合harnessが空logを誤拒否した記録も保存し、既存quality ownerのbyte契約へ合わせて解消した。09系・commit／pushなし。
+
+
+### TSK-08 全体実装セルフレビュー再実施（レビュー完了・製品未完了、2026-10-01）
+
+開始HEAD `6de5e17fb7cc92c2aa3f0adc5cc3838d84efb380`、既存13path差分を保持。現source／input10hashと元audit owner5関数が一致し、既存quality／child／六失敗probeの10manifest・1321receiptを共通ownerで照合した。原正常matrix・正式性能・六クラス／七宣言・legacy／raw／歴史coverageは同条件の成立範囲を再利用し、全件を再計算していない。
+
+**P1／Blocking R08-NONFINITE:** 保存本文の`records[0].canonicalInput.targetRarity:null`を`1e309`へ変え、宣言bytes／SHAとreceiptを合わせた実mergeはexit0・全gate passed・88input receipt error0となった。`JSON.parse`の値はInfinityだが、`recordValue`とrecord digestの`JSON.stringify`がnullへ変換する。本文全leafの妥当性検査がなく、digest一致で本文diffも省略するため、不正入力が正常値と同一視される。scenario／areaContributionの正負overflowも同じ機構で3代表が偽受入、非nullable／finite変更とgate overflowの3対照は拒否された。現在の公開damage不具合とは区別する。
+
+先行R08-GATE／R08-SHAPEレビューが構造・gateと通常本文差分に集中し、本文値領域とround-tripによる情報損失を確認しなかった漏れを明示する。HEADのdigest方式にもJSON.stringifyは存在するが、HEADで同じ実mergeは未実行なので新規regressionとは判定しない。
+
+正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview.nonfiniteBodyReview`。全checklist／Done gate／Contract／入力lifecycle／七宣言の成立範囲を保持し、serialized本文受入に関わるchecklist②③⑤、入力lifecycle⑤⑦、first diff／完全失敗／fail-closedの全体成立をBlockingへ戻した。対象内Blocking1、必須義務をDeferredへ移していない。TSK-08 `in_progress`、09.1／09 `blocked`。
+
+今回の実反証と6局所case、完全raw本文・CLI出力・receiptは`.test-results/tsk-08-self-review-repeat-20261001/`。製品修正・新しいquality／全件audit／80条件計算／正式性能は実行していない。実mergeのNode DEP0205一件はraw logへ保持し、warning0とは呼ばない。次の修正境界はapplicationの本文受入ownerでcanonical値を投影・digest前に検査し、typed元path／完全raw保存／非zero終了へ接続すること。今回はレビューのみで、結果記録の文書検証で終了する。
+
+再レビューの結果記録は`git diff --check`と`pnpm test:docs`6test／docs integrity成功で検証した。詳細とlogはevidence `implementationSelfReview.nonfiniteBodyReview.documentationVerification`。製品差分を追加せず、未達R08-NONFINITEと次の修正境界を正本へ残してレビューを終了する。
+
+
+### TSK-08 R08-NONFINITE修正計画・自己反証（実装確認待ち、2026-10-01）
+
+利用者は対応を依頼し、まず現コードから実装計画と原因／対策の反証を提示し、確認後そのまま進めることを指定した。製品コードは変更していない。計画正本はevidence `implementationSelfReview.nonfiniteBodyReview.repairPlan`。
+
+本文の全値をcanonical入力として受け入れるownerを`productionClosureRecordIntegrity`へ置き、expected／actualのidentity・summary・recordsを投影／比較／digest前に検査する。検査結果をpassed／failedへ分け、不正本文をtransaction観測やgate joinへ渡さない。現callerは検査失敗でも観測へ進むため、拒否結果と通行制御を同じ修正に含める。`recordValue`の入力用途は検査済み値に限定し、診断用途は欠落／不正値の安全descriptorとして組み立てる。元profile／leaf path・raw text receipt・既存typed gate／bounded出力へ接続し、generic例外・null置換で済ませない。shard受入も同じ値domainと診断表現を使う。
+
+追加局所反証では`JSON.parse('-0')`を共有diffは区別するが、recordValue後の差分はnull、digestは0と同じだった。既存診断serializerも-0を拒否するため、保存本文の非canonical数値として正負Infinity／NaNと合わせて拒否する計画とした。これは公開damage不具合の主張ではない。検査モデル10例で不正8例を拒否、正当null／有限値2例を保持、安全descriptorが保存可能なことを確認した。モデル成功を製品実経路の成功証拠にしない。
+
+常時diffだけ、throwだけ、canonicalInput／数値fieldだけ、rawInfinityをdiagnosticへ入れる案、検査failure後も観測する案を反例で棄却した。product artifact codecはSet／Map等の保存を所有するため、現plain JSON入力の受入parserへ流用しない。producerの明示optional省略・元digest方式・gameplayは保持し、無検証consumer経路だけを閉じる。
+
+確認後は局所反例・typed完全保存・実mergeの本文／gate反例、正常80条件3run・影響性能、最終差分レビュー、README qualityと全TSK-08義務／receipt／正本の照合まで継続する。確認前の正式性能／全件qualityは行わない。TSK-08 in_progress、対象内Blocking R08-NONFINITE、09.1／09 blockedを維持する。実装は利用者の確認を待つ。
+
+
+### TSK-08 修正計画の視野・正規化時点セルフレビュー（実装承認済み、2026-10-01）
+
+前案はserialized readerの不正拒否に偏り、writerで既に情報が消える経路とlive parityを閉じていなかった。「producer不変」を無条件の境界とした判断を撤回した。現`compareProductionParity`は直接API反例でInfinity対null、両側NaN、-0対0を一致と判定する。現writer方式ではInfinityを持つ元recordが正常null recordと同じ保存本文/digestになり、読込側は元異常を回復できない。公開gameplay再現とは区別する。元fixture masterの1condition/1calculated profileでwriter/observerを接続した代表ではexplicit undefined0件で、全production/optional母集団の実観測とは呼ばない。
+
+正規化はapplication/execution結果から監査観測・記録を生成する責務が所有し、元値の検証後、比較・digest・保存の前に行う。現型/schemaが同値と定めるoptional省略と既存compact projectionだけを許可し、required欠落/null/unknown/非有限数を黙って変換しない。比較用と保存用のfield集合は目的に従って保ち、値domain・省略規則を共有する。writerの検査済みsnapshotをdigestと保存で使い、readerはその正規化済み形式を現schema/identityで受け入れ、後付け補正をしない。診断の不正値descriptorは入力正規化とは分離する。
+
+-0についてもartifact codecの制約だけでゲーム入力invalidにしない。共有diffが区別するobservable値は無断で0へ丸めず、監査で表現できない場合はtypedなaudit projection失敗として情報を保持する。field固有の同値正規化を採用するならgoverning ruleと明示projectionが必要。object key順はsemantic diffで無関係でも現record digestに影響するため、この修正でkey sort/新digest方式を追加しない。
+
+修正版の正本はevidence `implementationSelfReview.nonfiniteBodyReview.repairPlan`（`selfReviewDelta`、`normalizationTiming`、改訂decisions/scope/verification）。直接producer/live parity/reader/diagnosticを対象とし、gameplay/raw parser/UI/汎用serializer全体へ拡張しない。生成前の拒否、正当optional同値、非同値保持、同snapshotによる保存/digest、保存後受入、typed完全診断まで代表実経路で反証する。producer変更後は旧保存80条件を新writerの成功証拠へ代入せず、新producerの全80条件と影響hot pathを検証する。計画確認後に実装する。現在TSK-08 in_progress、Blocking R08-NONFINITE、09系blocked、製品変更なし。
+
+2026-10-01 利用者「OK」で修正版計画の実装・検証・全体受入を承認。共有監査値境界を生成／live比較／読込へ接続中。局所反証、新producer80条件・性能、最終qualityは未達であり、TSK-08はin_progressのまま。進捗はevidenceの`implementationSelfReview.nonfiniteBodyReview.repairPlan.implementationProgress`を正本とする。
+
+TSK-08実装checkpoint（2026-10-01）: 新producerの1回目80条件・34,640レコードが旧digest／34600 parity／candidate988570を維持し、最新readerの本文・execution gateを通過（1194.92s）。同familyの残り2回測定中。局所64件とwriter1024件完全診断、reader overflow exit1を確認済み。metadata fixture追加、5読込CLI反証、merge性能、影響するaudit、最終quality、全体receipt／正本受入は未達。evidenceの`repairPlan.implementationProgress.checkpoint`を正本とし、TSK-08はin_progress、09系は着手しない。
+
+
+### TSK-08 R08-NONFINITE修正・全体最終受入（2026-10-01）
+
+生成／live比較／transaction監査／digest／保存／読込の共通原因を、監査値の全leaf検査と受入済みsnapshotへ修正した。sourceで合法なHP任意項目だけを省略し、undefined・null・欠落・非有限数・signed zeroを黙って同一化しない。失敗入力は後段の観測／joinへ渡さず、typed reason・canonical identity・元leaf pathと完全診断を保存する。局所66件、reader実CLI5反例のexit1／88raw receipt、writer1024件完全保存、新producer80条件3/3（34640outcome／34600parity／candidate988570、digest・damage差分0）が成立。
+
+固定product sourceの`pnpm quality`はunit1588／production157／E2E29成功、warning／unexpected console／retry0。初回qualityの未変更HP fixture5秒timeoutは失敗記録を保持し、並行した大量receipt検査という条件差をenvironmentDependentと分類した。局所probeのassertion成功とskipによるrunner contract_failureも区別し、重い検証を重ねず全qualityを成功させた。登録opt-in88件は変更helperが到達しない10関数のbyte一致を根拠に限定再利用した。
+
+性能は全matrix中央値841.93→1187.60秒（+41.1%、原正式baseline1049.34秒比+13.2%）、merge29.254→108.376秒。生成側の同一条件3pairも14.057→17.124秒で、全値検査／コピーの追加監査コストを示す。candidate・damage・閾値・timeoutは変更せず、全wall差をcodeだけへ帰属しない。全checklist／Done gate／Apply Contract／入力lifecycle／七宣言はVerified／明示N/A、必須Deferred0・対象内Blocking0。元六クラス、raw OC167／632、旧13read処分・歴史9digestを保持した。正本は[evidence](../evidence/tsk-08-parity-ratchet.json) `implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`。共通receipt照合と結果記録の文書ゲートを最終条件としてTSK-08 done、09系は未着手、commit／pushなし。
+
+結果記録の文書ゲートは`pnpm test:docs`6件・docs integrity成功、`git diff --check`成功。全4604 receiptのbytes／SHA照合は不一致0。quality後のproduct／script／test hashは不変で、最終文書・検証log・照合結果のreceiptはevidence `repairPlan.finalAcceptance.documentationVerification`が参照する。全必須ゲート・正本一致を満たして終了する。

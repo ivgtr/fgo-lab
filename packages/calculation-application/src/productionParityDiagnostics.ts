@@ -1,3 +1,4 @@
+import { acceptedProductionAuditValue, inspectProductionAuditValue } from './productionAuditValue';
 import {
   rankingUserControlChecks,
   type RankingUserControlSource,
@@ -15,6 +16,10 @@ import {
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
 import type { Tsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import type {
+  ProductionRecordComparison,
+  ProductionRecordFailure,
+} from './productionClosureRecordIntegrity';
 import {
   DEFAULT_NP_RESOURCE_SEMANTICS,
   deriveBaseOvercharge,
@@ -167,7 +172,8 @@ export function auditProductionPreparationRejections(
 
 export type ProductionParityPath = 'calculator' | 'portable';
 
-export type ProductionParityFailureReason = 'executionNotExecutable' | 'canonicalMismatch';
+export type ProductionParityFailureReason =
+  'executionNotExecutable' | 'canonicalMismatch' | 'auditValueInvalid';
 
 export interface ProductionParityComparison {
   conditionKey: string;
@@ -190,7 +196,11 @@ export interface ProductionParityFailure {
   actual: CanonicalAuditValue;
 }
 
-export type ProductionParityGateFailureReason = 'matrixMismatch' | 'parityFailure';
+export type ProductionParityGateFailureReason =
+  | 'matrixMismatch'
+  | 'parityFailure'
+  | ProductionRecordFailure['reason']
+  | 'canonicalRecordsMissing';
 
 export type ProductionParityGateInput = {
   conditionCount: number;
@@ -219,7 +229,7 @@ export interface ProductionParityGateFailed {
   expected: CanonicalAuditValue;
   actual: CanonicalAuditValue;
   firstDifference: CanonicalAuditDifference;
-  failures: readonly ProductionParityFailure[];
+  failures: readonly (ProductionParityFailure | ProductionRecordFailure)[];
 }
 
 export type ProductionParityGate = ProductionParityGatePassed | ProductionParityGateFailed;
@@ -276,107 +286,6 @@ export interface ProductionFinalOutcomeGateInput {
 }
 
 /** Missing or malformed shard status evidence is distinct from an observed zero-failure shard. */
-export function productionFinalOutcomeShardDifference(
-  gate: unknown,
-  shardIndex: number,
-): CanonicalAuditDifference | null {
-  const candidate =
-    typeof gate === 'object' && gate !== null && !Array.isArray(gate)
-      ? (gate as Record<string, unknown>)
-      : null;
-  const failures = candidate?.['failures'];
-  const expectedValue = candidate?.['expected'];
-  const actualValue = candidate?.['actual'];
-  const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
-  const canonicalIdentity = candidate?.['canonicalIdentity'];
-  const valuesDifference =
-    isRecord(expectedValue) && isRecord(actualValue) && typeof canonicalIdentity === 'string'
-      ? firstCanonicalAuditDifference(
-          [{ identity: canonicalIdentity, value: canonicalValue(expectedValue) }],
-          [{ identity: canonicalIdentity, value: canonicalValue(actualValue) }],
-        )
-      : null;
-  const knownFailures =
-    Array.isArray(failures) &&
-    failures.every(
-      (failure) =>
-        isRecord(failure) &&
-        (failure['reason'] === 'finalProfileStatusPresent' ||
-          failure['reason'] === 'finalProfileOutcomeIdentityMismatch') &&
-        typeof failure['canonicalIdentity'] === 'string' &&
-        isRecord(failure['firstDifference']),
-    );
-  const firstDifference = candidate?.['firstDifference'];
-  const firstDifferenceMatches =
-    isRecord(firstDifference) &&
-    typeof canonicalIdentity === 'string' &&
-    (valuesDifference !== null
-      ? firstCanonicalAuditDifference(
-          [{ identity: canonicalIdentity, value: canonicalValue(firstDifference) }],
-          [{ identity: canonicalIdentity, value: canonicalValue(valuesDifference) }],
-        ) === null
-      : Array.isArray(failures) &&
-        failures.some(
-          (failure) =>
-            isRecord(failure) &&
-            isRecord(failure['firstDifference']) &&
-            firstCanonicalAuditDifference(
-              [{ identity: canonicalIdentity, value: canonicalValue(firstDifference) }],
-              [
-                {
-                  identity: canonicalIdentity,
-                  value: canonicalValue(failure['firstDifference']),
-                },
-              ],
-            ) === null,
-        ));
-  const status = candidate?.['status'];
-  const validGateState =
-    status === 'passed'
-      ? isRecord(expectedValue) &&
-        isRecord(actualValue) &&
-        valuesDifference === null &&
-        firstDifference === null &&
-        Array.isArray(failures) &&
-        failures.length === 0
-      : status === 'failed' &&
-        Array.isArray(failures) &&
-        failures.length > 0 &&
-        knownFailures &&
-        firstDifferenceMatches;
-  const expected = canonicalValue({
-    present: true,
-    canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
-    hasExpected: true,
-    hasActual: true,
-    hasFirstDifference: true,
-    validGateState: true,
-  });
-  const actual = canonicalValue({
-    present: candidate !== null,
-    canonicalIdentity: canonicalIdentity ?? null,
-    hasExpected: candidate !== null && Object.hasOwn(candidate, 'expected'),
-    hasActual: candidate !== null && Object.hasOwn(candidate, 'actual'),
-    validGateState,
-    hasFirstDifference: candidate !== null && Object.hasOwn(candidate, 'firstDifference'),
-  });
-  return firstCanonicalAuditDifference(
-    [
-      {
-        identity: `tsk-08:final-profile-shard:${String(shardIndex)}`,
-        value: expected,
-      },
-    ],
-    [
-      {
-        identity: `tsk-08:final-profile-shard:${String(shardIndex)}`,
-        value: actual,
-      },
-    ],
-  );
-}
-
 export type ProductionPreparationTransactionFailureReason =
   | 'preparationCommandActionMismatch'
   | 'preparationReceiptMismatch'
@@ -384,7 +293,8 @@ export type ProductionPreparationTransactionFailureReason =
   | 'preparationResourceSequenceMismatch'
   | 'preparationProfileCoverageMismatch'
   | 'preparationShardRatchetMissing'
-  | 'preparationAuditIdentityMismatch';
+  | 'preparationAuditIdentityMismatch'
+  | 'auditValueInvalid';
 
 export interface ProductionPreparationTransactionFailure {
   reason: ProductionPreparationTransactionFailureReason;
@@ -659,9 +569,8 @@ export interface ProductionUserControlGateInput {
   observations: readonly ProductionUserControlObservation[];
 }
 
-function canonicalValue(value: unknown): CanonicalAuditValue {
-  const serialized = JSON.stringify(value === undefined ? null : value);
-  return JSON.parse(serialized) as CanonicalAuditValue;
+function canonicalValue(value: unknown, identity: string): CanonicalAuditValue {
+  return acceptedProductionAuditValue(value, identity);
 }
 
 function productionUserControlIdentity(identity: ProductionUserControlIdentity): string {
@@ -1779,15 +1688,32 @@ function canonicalParityMatrixValue(
   };
 }
 
-/**
- * Compares one complete production matrix with the TSK-06.5 source.
- * The full typed failures remain attached to the result; callers decide how
- * to persist the result before returning a non-zero process outcome.
- */
+/** Shared typed failure result for both pre-projection shape and canonical record checks. */
+export function productionRecordComparisonFailure(
+  records?: ProductionRecordComparison,
+): Extract<ProductionParityGate, { status: 'failed' }> | null {
+  const recordFailure = records?.failures[0];
+  if (records && recordFailure)
+    return {
+      status: 'failed',
+      reason: recordFailure.reason,
+      canonicalIdentity: recordFailure.canonicalIdentity,
+      expected: recordFailure.expected,
+      actual: recordFailure.actual,
+      firstDifference: recordFailure.firstDifference,
+      failures: records.failures,
+    };
+  return null;
+}
+
+/** Compare the complete production matrix and retain full typed failures for callers. */
 export function evaluateProductionParityGate(
   source: Tsk065ProductionAuditSource,
   audit: ProductionParityGateInput,
+  records?: ProductionRecordComparison,
 ): ProductionParityGate {
+  const recordGate = productionRecordComparisonFailure(records);
+  if (recordGate) return recordGate;
   const canonicalIdentity = 'tsk-06.5:production-matrix';
   const { expected, actual } = canonicalParityMatrixValue(source, audit);
   const firstDifference = firstCanonicalAuditDifference(
@@ -1808,7 +1734,9 @@ export function evaluateProductionParityGate(
     reason:
       audit.parityFailures.length > 0 || firstDifference.path === 'parityFailures'
         ? 'parityFailure'
-        : 'matrixMismatch',
+        : firstDifference.path === 'digest' && !records
+          ? 'canonicalRecordsMissing'
+          : 'matrixMismatch',
     canonicalIdentity,
     expected,
     actual,
@@ -1828,8 +1756,8 @@ export function evaluateProductionFinalOutcomeGate(
     invalid: audit.outcomes.invalid,
     inputRequired: audit.outcomes.inputRequired,
   };
-  const expected = canonicalValue(expectedValue);
-  const actual = canonicalValue(actualValue);
+  const expected = canonicalValue(expectedValue, canonicalIdentity);
+  const actual = canonicalValue(actualValue, canonicalIdentity);
   const firstDifference = firstCanonicalAuditDifference(
     [{ identity: canonicalIdentity, value: expected }],
     [{ identity: canonicalIdentity, value: actual }],
@@ -1930,8 +1858,8 @@ function preparationTransactionDifference(
   actual: CanonicalAuditValue;
   difference: CanonicalAuditDifference | null;
 } {
-  const expected = canonicalValue(expectedValue);
-  const actual = canonicalValue(actualValue);
+  const expected = canonicalValue(expectedValue, canonicalIdentity);
+  const actual = canonicalValue(actualValue, canonicalIdentity);
   return {
     expected,
     actual,
@@ -1986,6 +1914,51 @@ export function auditProductionPreparationTransactionObservations(
 
   for (const observation of observations) {
     const profileIdentity = `production:${observation.conditionKey}:profile:${observation.profileKey}:preparation`;
+    // Project only transaction-owned fields. Missing fields remain absent for
+    // the existing shape/commit checks; explicit undefined is never erased.
+    const actionFields = {
+      command: true,
+      sourceKind: true,
+      baseOvercharge: true,
+      ocUse: true,
+      ocOutcomes: true,
+      resourceBefore: true,
+      resourceAfter: true,
+      resourceTransaction: true,
+    } satisfies Record<keyof ProductionPreparationTransactionAction, true>;
+    const auditValue = {
+      conditionKey: observation.conditionKey,
+      profileKey: observation.profileKey,
+      commands: observation.commands,
+      actions: observation.actions.map((action) => {
+        const projected = {};
+        for (const key of Object.keys(actionFields)) {
+          const descriptor = Object.getOwnPropertyDescriptor(action, key);
+          if (descriptor) Object.defineProperty(projected, key, descriptor);
+        }
+        return projected;
+      }),
+    };
+    const inspection = inspectProductionAuditValue(auditValue);
+    if (inspection.status === 'failed') {
+      const expected = { auditValue: 'accepted' };
+      const actual = { issues: inspection.issues, value: inspection.diagnostic };
+      failures.push({
+        reason: 'auditValueInvalid',
+        canonicalIdentity: profileIdentity,
+        conditionKey: observation.conditionKey,
+        profileKey: observation.profileKey,
+        expected,
+        actual,
+        firstDifference: {
+          identity: profileIdentity,
+          path: inspection.issues[0]!.path,
+          expected,
+          actual,
+        },
+      });
+      continue;
+    }
     if (observedProfileIdentities.has(profileIdentity)) {
       const duplicateFailure = preparationFailure(
         'preparationProfileCoverageMismatch',
@@ -2194,8 +2167,8 @@ export function evaluateProductionPreparationTransactionGate(
     expectedValue,
     actualValue,
   ).difference;
-  const expected = canonicalValue(expectedValue);
-  const actual = canonicalValue(actualValue);
+  const expected = canonicalValue(expectedValue, canonicalIdentity);
+  const actual = canonicalValue(actualValue, canonicalIdentity);
   const failures = [...input.failures];
   if (input.summary.calculatedProfiles !== input.expectedCalculatedProfiles) {
     const coverageFailure = preparationFailure(
@@ -2210,8 +2183,14 @@ export function evaluateProductionPreparationTransactionGate(
     failures.push({
       reason: 'preparationAuditIdentityMismatch',
       canonicalIdentity,
-      expected: canonicalValue(difference.expected),
-      actual: canonicalValue(difference.actual),
+      expected: canonicalValue(
+        difference.expected === undefined ? { auditValueAbsent: true } : difference.expected,
+        canonicalIdentity,
+      ),
+      actual: canonicalValue(
+        difference.actual === undefined ? { auditValueAbsent: true } : difference.actual,
+        canonicalIdentity,
+      ),
       firstDifference: difference,
     });
   }
@@ -2270,18 +2249,67 @@ export function compareProductionParity(
 ): ProductionParityFailure | null {
   const canonicalIdentity = identityOf(comparison);
   const executionIsExecutable = comparison.actualStatus === 'executable';
-  const expected = executionIsExecutable
-    ? canonicalValue(comparison.expected)
-    : canonicalValue({ status: 'executable' });
+  const expectedInspection = inspectProductionAuditValue(comparison.expected);
+  const actualInspection = inspectProductionAuditValue(comparison.actual);
+  if (expectedInspection.status === 'failed' || actualInspection.status === 'failed') {
+    const invalid =
+      expectedInspection.status === 'failed'
+        ? expectedInspection
+        : (actualInspection as Extract<typeof actualInspection, { status: 'failed' }>);
+    const expected = { auditValue: 'accepted' };
+    const actual = {
+      expected:
+        expectedInspection.status === 'failed'
+          ? { issues: expectedInspection.issues, value: expectedInspection.diagnostic }
+          : { status: 'accepted' },
+      actual:
+        actualInspection.status === 'failed'
+          ? { issues: actualInspection.issues, value: actualInspection.diagnostic }
+          : { status: 'accepted' },
+    };
+    const firstDifference = {
+      identity: canonicalIdentity,
+      path: invalid.issues[0]!.path,
+      expected,
+      actual,
+    };
+    return {
+      conditionKey: comparison.conditionKey,
+      profileKey: comparison.profileKey,
+      path: comparison.path,
+      reason: 'auditValueInvalid',
+      canonicalIdentity,
+      mismatch: firstDifference.path || '<record>',
+      firstDifference,
+      expected,
+      actual,
+    };
+  }
+  const expected = executionIsExecutable ? expectedInspection.value : { status: 'executable' };
   const actual = executionIsExecutable
-    ? canonicalValue(comparison.actual)
-    : canonicalValue({ status: comparison.actualStatus });
+    ? actualInspection.value
+    : { status: comparison.actualStatus };
   const expectedRecords: CanonicalAuditRecord[] = [
     { identity: canonicalIdentity, value: expected },
   ];
   const actualRecords: CanonicalAuditRecord[] = [{ identity: canonicalIdentity, value: actual }];
-  const firstDifference = firstCanonicalAuditDifference(expectedRecords, actualRecords);
-  if (!firstDifference) return null;
+  const difference = firstCanonicalAuditDifference(expectedRecords, actualRecords);
+  if (!difference) return null;
+  // Undefined here means an absent compared field, not an accepted undefined value.
+  const missing = difference.expected === undefined || difference.actual === undefined;
+  const firstDifference: CanonicalAuditDifference = {
+    ...difference,
+    expected: missing
+      ? difference.expected === undefined
+        ? { present: false }
+        : { present: true, value: difference.expected }
+      : difference.expected,
+    actual: missing
+      ? difference.actual === undefined
+        ? { present: false }
+        : { present: true, value: difference.actual }
+      : difference.actual,
+  };
   const reason: ProductionParityFailureReason = executionIsExecutable
     ? 'canonicalMismatch'
     : 'executionNotExecutable';

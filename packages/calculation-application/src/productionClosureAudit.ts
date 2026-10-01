@@ -1,3 +1,4 @@
+import { acceptedProductionAuditValue } from './productionAuditValue';
 import { createHash } from 'node:crypto';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
@@ -106,10 +107,15 @@ export function productionClosureConditionKey(conditions: RankingPolicyCondition
   return `${conditions.levelBasis}-${conditions.selfBuffs}-${conditions.conditionalEffects}-np${String(conditions.npLevelBasis.npLevel)}-oc${String(conditions.initialOvercharge)}`;
 }
 
-const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+const digest = (value: unknown) =>
+  createHash('sha256')
+    .update(JSON.stringify(acceptedProductionAuditValue(value)))
+    .digest('hex');
+
+export const productionClosureRecordDigest = digest;
 
 export function productionClosureMatrixDigest(
-  result: Omit<ProductionClosureAudit, 'digest'>,
+  result: Omit<ProductionClosureAudit, 'digest' | 'eligibility'> & { eligibility: unknown },
 ): string {
   return digest({
     ...result,
@@ -117,6 +123,16 @@ export function productionClosureMatrixDigest(
       ({ elapsedMs: _elapsedMs, ...summary }) => summary,
     ),
   });
+}
+
+export function productionParityActions(
+  actions: ReturnType<typeof calculateScenarioWithPolicy>['appliedPreparationActions'],
+): ReturnType<typeof calculateScenarioWithPolicy>['appliedPreparationActions'] {
+  return actions.map(({ hpBefore, hpAfter, ...action }) => ({
+    ...action,
+    ...(hpBefore === undefined ? {} : { hpBefore }),
+    ...(hpAfter === undefined ? {} : { hpAfter }),
+  }));
 }
 
 function compactPreparationActions(
@@ -136,8 +152,8 @@ function compactPreparationActions(
     resourceBefore: action.resourceBefore,
     resourceAfter: action.resourceAfter,
     resourceTransaction: action.resourceTransaction,
-    hpBefore: action.hpBefore,
-    hpAfter: action.hpAfter,
+    ...(action.hpBefore === undefined ? {} : { hpBefore: action.hpBefore }),
+    ...(action.hpAfter === undefined ? {} : { hpAfter: action.hpAfter }),
     baseOvercharge: action.baseOvercharge,
     ocUse: action.ocUse,
     ocOutcomes: action.ocOutcomes,
@@ -263,7 +279,9 @@ export async function auditProductionClosure(
                 effects: execution.effects,
                 effectInputs: execution.effectInputs,
                 warnings: execution.effectWarnings,
-                appliedPreparationActions: execution.appliedPreparationActions,
+                appliedPreparationActions: productionParityActions(
+                  execution.appliedPreparationActions,
+                ),
               }
             : null;
         const expected = {
@@ -273,7 +291,7 @@ export async function auditProductionClosure(
           effects: detail.effects,
           effectInputs: detail.effectInputs,
           warnings: detail.warnings,
-          appliedPreparationActions: detail.appliedPreparationActions,
+          appliedPreparationActions: productionParityActions(detail.appliedPreparationActions),
         };
         const failure = compareProductionParity({
           conditionKey: key,
@@ -333,6 +351,7 @@ export async function auditProductionClosure(
       });
     }
 
+    const acceptedRecords = acceptedProductionAuditValue(records, `production:${key}`) as unknown[];
     const summary: Omit<ProductionClosureConditionRecord, 'records'> = {
       key,
       conditions,
@@ -342,9 +361,9 @@ export async function auditProductionClosure(
       parityFailures: localFailures,
       damageCache: result.damageCache,
       candidateInventory: result.candidateInventory,
-      digest: digest(records),
+      digest: productionClosureRecordDigest(acceptedRecords),
     };
-    const record: ProductionClosureConditionRecord = { ...summary, records };
+    const record: ProductionClosureConditionRecord = { ...summary, records: acceptedRecords };
     await observe?.(record);
     summaries.push(summary);
   }

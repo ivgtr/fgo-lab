@@ -43,6 +43,26 @@ describe('canonical production audit records', () => {
     );
   });
 
+  it('compares own fields without treating prototype properties as saved canonical values', () => {
+    for (const key of ['__proto__', 'constructor', 'toString']) {
+      const expected = [{ identity: 'artifact:1', value: {} }];
+      const actual = [{ identity: 'artifact:1', value: Object.fromEntries([[key, {}]]) }];
+      expect(firstCanonicalAuditDifference(expected, actual)).toEqual({
+        identity: 'artifact:1',
+        path: key,
+        expected: undefined,
+        actual: {},
+      });
+      expect(firstCanonicalAuditDifference(actual, expected)).toEqual({
+        identity: 'artifact:1',
+        path: key,
+        expected: {},
+        actual: undefined,
+      });
+      expect(firstCanonicalAuditDifference(actual, actual)).toBeNull();
+    }
+  });
+
   it('fails closed before digesting or diffing duplicate identities', () => {
     const duplicates: CanonicalAuditRecord[] = [
       { identity: 'actor:1', value: 1 },

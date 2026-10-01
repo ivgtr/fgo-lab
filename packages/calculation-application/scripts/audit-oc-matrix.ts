@@ -1,3 +1,7 @@
+import {
+  acceptedProductionAuditValue,
+  ProductionAuditValueError,
+} from '../src/productionAuditValue';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -114,7 +118,7 @@ async function audit(): Promise<void> {
             status: value.status,
           });
       }
-      const content = `${JSON.stringify({ identity, summary, records })}\n`;
+      const content = `${JSON.stringify(acceptedProductionAuditValue({ identity, summary, records }))}\n`;
       await writeFile(resolve(output, `${summary.key}.json`), content);
       conditionArtifacts.push({
         conditionKey: summary.key,
@@ -244,6 +248,15 @@ async function audit(): Promise<void> {
 }
 
 void audit().catch(async (error: unknown) => {
+  if (error instanceof ProductionAuditValueError)
+    failureArtifact = {
+      ...failureArtifact,
+      auditValueFailure: {
+        reason: 'auditValueInvalid',
+        canonicalIdentity: error.canonicalIdentity,
+        ...error.inspection,
+      },
+    };
   const failure = {
     name: error instanceof Error ? error.name : 'Error',
     reason: error instanceof Error ? error.message : String(error),
@@ -259,6 +272,6 @@ void audit().catch(async (error: unknown) => {
       artifactError instanceof Error ? artifactError.message : String(artifactError);
     console.error(`production_closure_failure_artifact_write_failed:${artifactFailure}`);
   }
-  console.error(`${failure.name}:${failure.reason}`);
+  console.error(`${failure.name}:${failure.reason.slice(0, 512)}`);
   process.exitCode = 1;
 });

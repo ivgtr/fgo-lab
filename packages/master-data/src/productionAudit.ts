@@ -135,8 +135,8 @@ function firstValueDifference(
   const keys = [...new Set([...Object.keys(expectedObject), ...Object.keys(actualObject)])].sort();
   for (const key of keys) {
     const difference = firstValueDifference(
-      expectedObject[key],
-      actualObject[key],
+      Object.hasOwn(expectedObject, key) ? expectedObject[key] : undefined,
+      Object.hasOwn(actualObject, key) ? actualObject[key] : undefined,
       path.length === 0 ? key : `${path}.${key}`,
     );
     if (difference) return difference;
@@ -208,6 +208,13 @@ export interface Tsk065ProductionAuditSource {
     mergedDigest: string;
     eligibilityDigest: string;
     artifact: string;
+    canonicalRecords: {
+      manifest: string;
+      bytes: number;
+      sha256: string;
+      identity: Readonly<Record<string, string>>;
+      authority: string;
+    };
   };
 }
 
@@ -285,6 +292,32 @@ export function createTsk065ProductionAuditSource(
   const candidateEligibility = sourceRecord(root.candidateEligibility, 'candidateEligibility');
   const matrix = sourceRecord(root.productionMatrix, 'productionMatrix');
   const outcomes = sourceRecord(matrix.outcomes, 'productionMatrix.outcomes');
+  const canonicalRecords = sourceRecord(
+    matrix.canonicalRecords,
+    'productionMatrix.canonicalRecords',
+  );
+  const recordIdentity = sourceRecord(
+    canonicalRecords.identity,
+    'productionMatrix.canonicalRecords.identity',
+  );
+  const assertSourceKeys = (
+    record: Record<string, unknown>,
+    keys: readonly string[],
+    path: string,
+  ) => {
+    if (JSON.stringify(Object.keys(record).sort()) !== JSON.stringify([...keys].sort()))
+      throw new TypeError(`tsk06_5_source_invalid_keys:${path}`);
+  };
+  assertSourceKeys(
+    canonicalRecords,
+    ['manifest', 'bytes', 'sha256', 'identity', 'authority'],
+    'canonicalRecords',
+  );
+  assertSourceKeys(
+    recordIdentity,
+    ['head', 'worktree', 'masterDataVersion', 'masterSha256', 'command', 'matrix'],
+    'canonicalRecords.identity',
+  );
   const candidateEligibilityDigest = sourceDigest(
     candidateEligibility.digest,
     'candidateEligibility.digest',
@@ -328,6 +361,20 @@ export function createTsk065ProductionAuditSource(
       mergedDigest: sourceDigest(matrix.mergedDigest, 'productionMatrix.mergedDigest'),
       eligibilityDigest: matrixEligibilityDigest,
       artifact: sourceString(matrix.artifact, 'productionMatrix.artifact'),
+      canonicalRecords: {
+        manifest: sourceString(canonicalRecords.manifest, 'canonicalRecords.manifest'),
+        bytes: sourceCount(canonicalRecords.bytes, 'canonicalRecords.bytes'),
+        sha256: sourceDigest(canonicalRecords.sha256, 'canonicalRecords.sha256'),
+        authority: sourceString(canonicalRecords.authority, 'canonicalRecords.authority'),
+        identity: Object.fromEntries(
+          Object.entries(recordIdentity).map(([key, value]) => [
+            key,
+            key === 'worktree' && value === ''
+              ? value
+              : sourceString(value, `canonicalRecords.identity.${key}`),
+          ]),
+        ),
+      },
     },
   };
 }
