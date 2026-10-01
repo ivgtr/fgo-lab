@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.166"
+document_version: "1.7.167"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-02"
@@ -2812,6 +2812,8 @@ Handoff: 判断完了、物理処遇未実施（2026-10-02）。全entry／objec
 - 有効証拠: 全9856entry／2015objectの根拠・宣言／観測／共有到達を対応付け、全圧縮SHA、原内容7本文・直接宣言owner8件、原位置HP7＋OC1を照合。保持参照欠落0、未分類／保留0、独立6反例を拒否。元不正JSON・null宣言・SHA差分と、全41240edgeの歴史graph退役を明示。09.11 source17／owner9／baseline82／proof8同一条件から、全値移管・正常3/3・六クラス・11反例・元run禁止別root・reader3＋3・qualityを継承し、全bundle復元／全matrix／全audit／qualityは再実行しない。
 - 差分境界: 既存台帳／Task／registry／evidence indexの4文書と、新調査artifact内の分析・checkerのみ。root README／テスト戦略・製品code・baseline・prototypeは開始bytesを保持。初回checkerのrepository-relative原宣言base誤結合失敗と、初回文書ゲートの厳密な`Handoff:`終端不足をstdout／stderrに保持し、修正後成功と区別する。
 - 未達と次操作: 最終4文書のformat／docs6/6・integrity／参照・状態・差分を確認し、判断TaskのDone gateは完了。最終差分・gate・完全artifact receiptは`.test-results/tsk-09-12-disposition-20261002/manifest.json`。移管先のowner／取得環境、7gzip＋3metadataのexclusive copy、元bundle／原run禁止の別root取得・33path復元／原宣言target・全receipt受入は物理処遇前の条件。今回未実施であり判断Taskの未分類とは区別する。実処遇の明示依頼がないため原物保持で停止した。09.1はin_progressへ戻し、次の通常操作はそのSTEP 3 Handoffから再開する。09はblocked。
+
+後続の資料整理（2026-10-02）: 利用者依頼により、文書／規約commit `a6b7b5e`に続いて、原bytesの検証資料3scriptを`39844a1c622cd9ba13cd5f558ec9b50ea9339bb3`へ収録した。取得元と固定SHAは[台帳09.12節](../evidence/tsk-09-1-documentation-closure.md#旧bundleの縮小廃棄判断tsk-0912)。既存probeのimportと実処遇手順を維持し、調査artifactは既存`.test-results/`のignore下へ保つ。原bundle・原runの移管／取得・物理処遇、09.1 STEP 3〜6と09は未実施で、Task状態は変更しない。 固定Git objectの3/3 bytes／SHA・既存probe import、3script構文、対象書式、文書6/6・integrityと差分を確認した。既存の局所6testは同じprototype bytesを根拠に継承し、全bundle復元・qualityを再実行していない。
 
 ### TSK-09: 最終受入と運用手順の収束
 

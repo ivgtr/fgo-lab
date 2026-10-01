@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.141"
+document_version: "1.4.142"
 status: "Active"
 updated_at: "2026-10-02"
 ---
@@ -11,7 +11,7 @@ updated_at: "2026-10-02"
 
 | Report | Status | Evidence role | Successor | Related commit |
 | --- | --- | --- | --- | --- |
-| [TSK-09.1 documentation closure decision ledger](tsk-09-1-documentation-closure.md) | Active | canonical: A0〜A9の現行保持契約・固有入力のretain／原byte再監査の限界・保存実験履歴。09.11の専用baseline／fixture／実consumer／元run禁止受入とquality1603／157／29を同条件で継承。STEP 2の保持契約・文書ゲートを閉じ、09.1全体はin_progress。STEP 3〜6の処遇／検査は未実施。旧bundleの独立した処遇判断TSK-09.12はdone。A3原内容7object／全33path・出自metadataの部分保持案と全entry／object・参照／容量・文書受入を完了。移管・取得受入・物理処遇は未実施 | TSK-09.1 STEP 3〜6→TSK-09、TSK-09.12は独立 | `dd1a0eb`入力、6文書の保持契約差分。原証跡・旧bundle・未追跡3prototype保持 |
+| [TSK-09.1 documentation closure decision ledger](tsk-09-1-documentation-closure.md) | Active | canonical: A0〜A9の現行保持契約・固有入力のretain／原byte再監査の限界・保存実験履歴。09.11の専用baseline／fixture／実consumer／元run禁止受入とquality1603／157／29を同条件で継承。STEP 2の保持契約・文書ゲートを閉じ、09.1全体はin_progress。STEP 3〜6の処遇／検査は未実施。旧bundleの独立した処遇判断TSK-09.12はdone。A3原内容7object／全33path・出自metadataの部分保持案と全entry／object・参照／容量・文書受入を完了。移管・取得受入・物理処遇は未実施 | TSK-09.1 STEP 3〜6→TSK-09、TSK-09.12は独立 | `dd1a0eb`入力、保持契約／判断／規約は`a6b7b5e`、固定prototype資料3件は`39844a1`。原証跡・旧bundle保持 |
 | [damage-condition-application](damage-condition-application.md) | Complete | supporting: schema 9／engine 7 conditional application change | damage execution requirement | `db0bb53` |
 | [damage-effect-dependency-audit](damage-effect-dependency-audit.md) | Superseded | supporting: 469／420 production unsupported baseline | E0以降のexecution inventory | `3dd4be9` |
 | [damage-effect-execution-e0](damage-effect-execution-e0.md) | Superseded | supporting: pre-migration inventory／UX baseline | E1 | `9f7c836` |

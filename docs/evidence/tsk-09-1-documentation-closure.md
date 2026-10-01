@@ -1,6 +1,6 @@
 ---
 title: "TSK-09.1 documentation closure decision ledger"
-document_version: "1.4.2"
+document_version: "1.4.3"
 status: "Active"
 created_at: "2026-10-01"
 updated_at: "2026-10-02"
@@ -245,7 +245,7 @@ Kind＝machine evidence、owner＝rowのTaskが採用したaudit／差分／検�
 | A6 適用auditの条件付き再利用／登録audit owner | 同machine evidenceの`implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance.registeredAuditReuse`、登録5file→不変10function、88test判断。元manifestは`.test-results/2026-09-30T17-32-03-143Z-15-fa5942/manifest.json` | 登録suite／採用判断はGit参照期間。原run／到達proof／全receiptは調査policy。cleanup候補であることを長期保持保証へ読み替えない | 元run・全receiptが揃いsource／入力／到達条件が一致する範囲でのみ照合付き再利用。不足後は歴史受入記録。将来Taskがfresh auditを必要と判断したら`pnpm test:audit`へ。pin／bundle復元を必須にしない |
 | A7 quality・失敗帰属／quality runner | 本書09.11最終受入（1603／157／29・全10step・warning0）と同machine evidenceのTSK-08最終受入／earlierAttempt。元09.11 manifest287630 bytes／SHA `049250ded638c25c2af38642b05858b773b7fed21daa5a8716f32379abbef048` | 成否・帰属・source条件の判断はGit参照期間。完全log／trace／親子manifest／receiptは調査policy | 失敗を成功で上書きしない。原親子graph不足後はbyte再監査不能とする。新しい製品／quality経路変更は新qualityで検証。同条件の文書記録変更へ09.11 qualityを再実行せず、今回の文書ゲートで閉じる |
 | A8 歴史画像／E4 report | 下記PNG3件の元commit／blob／bytes／SHA復元表。現画像への後継置換なし | 元画像の判断を参照する期間は指定Git履歴を取得可能にする。今回localの3blob一致は確認、別checkoutのhistory取得・link処遇はSTEP 3／6未実施 | 指定commitのhistoryを取得して元pathのPNGを復元・SHA照合。取得できなければ画像復元未成立。現在mobile画像で代替しない |
-| A9 判定・調査・移管receipt／本台帳・Task | 結論とsource／条件／移管identityは本書・TaskのGit記録。STEP 1、初回STEP 2、09.11、今回の詳細は各`.test-results/`。旧bundle固定index SHAは履歴節、prototypeは未追跡の実験owner | 判断の参照期間はGit記録。詳細は調査policy。手動名directory／約486 MB bundleの現在存在に永続保証・fresh clone必須入力の責務はない | registry→Task→本書から再開。調査raw不足は結論の出自・実行記録とbyte照合の能力を区別し、必要な局所commandだけ新artifactへ。bundle保管先選び・転送・復元から現行回帰を再開しない |
+| A9 判定・調査・移管receipt／本台帳・Task | 結論とsource／条件／移管identityは本書・TaskのGit記録。STEP 1、初回STEP 2、09.11、今回の詳細は各`.test-results/`。旧bundle固定index SHAは履歴節、prototypeは固定bytesの実験資料（Git取得commitは09.12節） | 判断の参照期間はGit記録。詳細は調査policy。手動名directory／約486 MB bundleの現在存在に永続保証・fresh clone必須入力の責務はない | registry→Task→本書から再開。調査raw不足は結論の出自・実行記録とbyte照合の能力を区別し、必要な局所commandだけ新artifactへ。bundle保管先選び・転送・復元から現行回帰を再開しない |
 
 Kの定義はSTEP 1開始HEADの原A0〜A7（下記seed全件）から次の規則で得る（A8／tracked golden／masterは別集合）。**seedの実pathは後の全件表へ固定**する。
 
@@ -749,7 +749,7 @@ retain条件は、保存された原cells・metadata／public join、独立HP内
 1. 実処遇依頼で、保持33path／7object、候補9823path／2008object、上の能力損失、保存先・owner・取得環境を指定する。元run・OC inventory・raw exportsは削除対象にしない。
 2. 原index／membership・対象7objectと、以下の提案metadata identityを再確認する。不足・SHA不一致・原raw取得不能を別版／別pathで補わず停止する。調査artifactが不足した場合は本節の固定原identityから新artifactへ処遇表を再構成して照合し、既存正本のidentityを黙って置き換えない。
 3. 未使用の新保存先へ7gzipをbyteのままexclusive copyし、提案indexを`index.json`、membershipを`membership.json`、provenanceを`retention-provenance.json`として保存する。原bundleのmetadata・gzipを編集・再圧縮しない。これは今回未実施。
-4. 固定revisionの検証用checkoutへ下記SHAのprototypeを原位置から明示的に取得して配置し、下のverify／restoreを実行する。prototypeは同revisionのGit収録物ではない。これは既存local byte検証mechanismの限定利用であり、汎用サービス・product経路への採用ではない。source declarationも上の固定revision／SHAを取得する。元bundle・原runへアクセスできない別root／環境で新保存先だけから取得し、圧縮／展開receipt、33原path、原宣言40target、source identityを照合する。取得・復元・出自照合の完全receiptを保存する。
+4. 固定prototype収録commit `39844a1c622cd9ba13cd5f558ec9b50ea9339bb3`から下記SHAの3scriptを取得し、下のverify／restoreを実行する。回帰入力・source declarationの取得revisionは基準`dd1a0eb`のままとし、prototypeの収録commitと区別する。これは既存local byte検証mechanismの限定利用であり、汎用サービス・product経路への採用ではない。source declarationも上の固定revision／SHAを取得する。元bundle・原runへアクセスできない別root／環境で新保存先だけから取得し、圧縮／展開receipt、33原path、原宣言40target、source identityを照合する。取得・復元・出自照合の完全receiptを保存する。
 5. 移管・取得受入成功と必要な保持契約を確認してから、旧bundle全体の廃棄を別の明示依頼の対象として実施する。new packageの不足時は固定packageを保持ownerへ再取得要求し、元run探索や別SHAで補わない。取得不能ならHP原内容再監査は未成立と記録する。
 
 固定提案metadata（まだ新保存実体ではない）:
@@ -768,7 +768,7 @@ node scripts/evidence-preservation.mjs restore .test-results/tsk-09-12-a3-retain
 sha256sum .test-results/tsk-09-12-a3-retained-20261002/retention-provenance.json
 ```
 
-prototype bytesの固定identityはpreservation12065 bytes／SHA `e9ab1f4a493f0ff33a76bf0662d2d02a10396382490ece5caa4fbca05a9681ec`、references6897 bytes／SHA `422f4d17be5cf1920ba524ac7aadf6295637163a57aebf965291f9add39e7769`、test7049 bytes／SHA `d841c880d920b4ccbccfc1f37b142771da50befd00d88cf8c1d5ff4ac1ec7220`。現在これらは未追跡であり、fresh checkoutからの取得保証はない。実処遇時にこのmechanismを利用するなら同byteの検証用取得も前提にし、利用できなければ移管検証を停止する。現行baselineはこれらに依存しない。
+prototype bytesの固定identityはpreservation12065 bytes／SHA `e9ab1f4a493f0ff33a76bf0662d2d02a10396382490ece5caa4fbca05a9681ec`、references6897 bytes／SHA `422f4d17be5cf1920ba524ac7aadf6295637163a57aebf965291f9add39e7769`、test7049 bytes／SHA `d841c880d920b4ccbccfc1f37b142771da50befd00d88cf8c1d5ff4ac1ec7220`。判断時は未追跡だったが、後続の利用者依頼「資料などはコミットして掃除」により、同bytesの3fileをcommit `39844a1c622cd9ba13cd5f558ec9b50ea9339bb3`へ収録した。local Git objectから3/3のbytes／SHA一致を確認した。取得先repositoryにこのcommitがなければ指定commitの取得を依頼して停止し、別版で補わない。ネットワーク取得・移管後の別root受入は未実施で、現行baselineはこれらに依存しない。
 
 原bundleの書換え・間引き・移動・再圧縮・物理削除、原run削除、results:clean、外部公開・転送は今回の停止境界外。現行baseline・expected・damage／ranking／state／outcome、旧prototype・raw exports・他の調査directoryを変更せず、commit／push、09.1 STEP 3〜6、09へ進まない。
 
@@ -783,5 +783,7 @@ prototype bytesの固定identityはpreservation12065 bytes／SHA `e9ab1f4a493f0f
 - `manifest.json`: 最終文書・書式・参照／状態・差分のgate、開始／最終identity、原物未変更、未移管・物理未実施と次操作。
 
 最終文書受入は`pnpm test:docs`6/6・docs integrity、4文書のPrettier、差分・参照／状態照合で閉じた。最初のContract表未認識とcheckerのbase誤結合は失敗logを保持し、成功で上書きしていない。結果記録後も同じ入力・原物を保持し、最終receiptは上記manifestを参照する。
+
+後続の資料整理（2026-10-02）: 判断文書と保存規約は`a6b7b5e`へ収録済み。未追跡3prototypeは既存調査probe2件と実処遇の検証手順が直接参照するため、原path・bytesを保持した検証資料としてcommit `39844a1c622cd9ba13cd5f558ec9b50ea9339bb3`へ収録した。追加した保存実体は3file／26011 bytesで、新しい実装やproduct経路への接続はない。完全調査結果と補助probeは既存のignored `.test-results/`に置き、別のtmp directory・広いignore規則は増やさない。原bundle／原runは移管検証が未達のため維持し、削除・移動・再圧縮・results:cleanは実行していない。過去のmanifest／SHA・未追跡という判断時記録は書き換えず、取得条件の更新を本節とTaskへ記録する。
 
 Flow closure: N/A: 原調査artifactの処遇判断のみ。canonical state／outcome・製品execution／write経路は不変。判断完了と物理処遇未実施を分け、最終進捗と次操作は[TSK-09.12 Handoff](../tasks/development-redesign-tasks.md#tsk-0912-旧bundleの縮小廃棄判断限定調査)を正本とする。
