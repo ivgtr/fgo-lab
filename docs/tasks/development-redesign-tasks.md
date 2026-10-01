@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.156"
+document_version: "1.7.157"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-01"
@@ -2592,7 +2592,7 @@ Current bounded-unit handoff（2026-09-24、実装中のSet payload発見で保�
 
 Depends on: TSK-08
 
-Current status: `ready`。TSK-08修正・受入のcommit `959f89e`で依存条件を満たした。2026-10-01の残タスク整理では計画と着手条件だけを確定し、本Taskの整理・automation実装は開始していない。現行進捗は本節とTask indexが所有し、TSK-08 evidence内の09系blockedは受入当時の履歴として扱う。
+Current status: `ready`。TSK-08修正・受入のcommit `959f89e`で依存条件を満たした。残タスク整理commit `1fa4d18`を基準に先行調査を完了し、下記STEPで担当境界・入力・成果・終了条件を定めた。文書処遇・検査実装は未着手。現行進捗は本節とTask indexが所有し、TSK-08 evidence内の09系blockedは受入当時の履歴として扱う。
 
 利用者成果は、別環境の作業者が現行契約・最終受入・残作業を一意に辿り、必要な証跡を入手できること。DOC-P4〜P6の要件を変更せず、既存indexと検査ownerを拡張する。
 
@@ -2612,6 +2612,43 @@ Current status: `ready`。TSK-08修正・受入のcommit `959f89e`で依存条�
 | `package.json`、`quality-runner-lib.mjs`、`.github/workflows/ci.yml` | `pnpm test:docs`は既にcanonical quality内にあり、CIは`pnpm quality`を一回実行する。新しい検査経路や重複CI jobを作らない。 |
 
 実行順はDOC-P4のinventory／証跡保持判断 → DOC-P5の処遇 → DOC-P6の不足検査・最終参照確認。既存Taskを進捗の正本とし、結果は一つの`docs/evidence/tsk-09-1-documentation-closure.md`へ記録する。この結果文書は実行時に作成し、新しい計画書は増やさない。
+
+**先行調査の結果（2026-10-01、STEP 0完了）**
+
+基準HEADは`1fa4d18f4ed316b95e3da0a952a0b9919a36070a`、開始worktreeはclean。文書の内容やstatusを変更せず、tracked集合・metadata・navigation候補・保存manifestと直接consumer・清掃ownerを読み取りで照合した。
+
+| 調査対象 | 確認結果と対応境界 |
+| --- | --- |
+| tracked文書 | `docs/`のMarkdown98件、evidence JSON44件。補助入口はroot README／AGENTS／CLAUDEの3件（CLAUDEはalias）。STEP 1で全件のkind、owner、参照経路、保持する意味を確定する。 |
+| frontmatter／status | docs内42件がfrontmatter・status欠落（ADR本体22＋index1、evidence18、license1）、8件がkind別status語彙外。ADRのbody status等の意味は存在するため「意味がない42件」とは扱わない。STEP 4で意味を保持してmetadataを移管し、STEP 5で検査する。 |
+| navigation | 4 indexに直接linkがない候補30件。`oc-execution-diff-tsk-06-48.json`や`tsk-06-46-production-closure.json`は親noteから到達するので、30件を未登録と断定しない。`web-routing-flow-next-migration.md`はdocs内参照が見つからず、statusもImplementation。STEP 1で役割／到達経路を判定する。 |
+| 歴史画像link | `damage-effect-execution-e4.md`の旧chromium画像3件へのlinkが切れている。全3件は`99966f7`の親commitからGit blobを取得可能。現mobile画像は別baselineなので置換せず、STEP 3で元画像の復元情報を保った参照へ整理する。 |
+| 固定expected artifact | TSK-06.5の明示manifestは394462 bytes／SHA一致、条件80fileは存在し、宣言合計462712642 bytes。全本文hashの再検証はしていない。既存TSK-08照合を再利用し、STEP 2で保存・復元単位を定める。 |
+| 最終quality artifact | 成功manifestのreceipt633件、宣言合計2333025843 bytes。論理bytesでありhardlinkを含むdisk使用量とは異なる。最小保持集合は未確定で、判定前にraw artifactを捨てない。 |
+| 保存寿命 | CI uploadは14日保持。`planTestResultsCleanup`はtimestamp runの新しい10件とrunningを保持し、evidence参照によるpin保護はない。read-only planで9月30日の再利用auditが削除候補、最終qualityは保持対象（正確なpathはHandoffとretention probe）。STEP 2で寿命と固定参照の衝突を解決する。清掃は実行していない。 |
+| local quarantine | 既存処遇済み9件は全件存在し、元SHAと一致。変更・新しい根拠がなければ既存Local-only判定を継承し、STEP 4で移動・削除を繰り返さない。 |
+| 既存検査 | `validateRepository`は全tracked集合を走査せず、registry対象もversionのない行は省略する。Task区間parserの末尾escapeはJavaScriptで英字を終端と誤認し、本文にUTC timestampがあるとclosure matrix欠落を誤報する。CLIはerror全件をstderrへ出す。区間検査・全件coverage・大量failure時の出力はSTEP 5の責務とする。 |
+
+局所調査fileは`.test-results/tsk-09-1-preinvestigation-20261001/`の`document-inventory.json`、`navigation-probes.json`、`artifact-dependencies.json`、`retention-probe.json`、`quarantine-probe.json`、`task-section-probe.json`。これは上表の補助結果であり正本や長期保管先ではない。navigationの正規表現probeはinline link候補だけを調べ、reference-style、anchor、HTMLを含む全Markdown検査の成功証拠にはしない。環境ファイル保護hookで拒否された最初のinventoryは実行結果に数えず、明示したtracked文書だけで取得し直した。
+
+**セッションごとの担当STEP**
+
+各STEPを一つの主担当sessionの範囲とし、順に進める。STEP開始時に入力commitと差分を固定し、結果文書の判定表へ今回のdelta、Task Handoffへ成果・未達・次操作・検証・commitを残す。60分でcheckpoint、90分で新しいfamilyを開始せず現在の操作を終える。終了条件未達なら同じSTEPの残項目から次sessionで再開し、部分成功で次STEPを完了扱いにしない。
+
+| STEP／依存 | 担当する範囲 | 成果とセッション終了条件 |
+| --- | --- | --- |
+| 1 判定台帳／STEP 0 | 全tracked文書と必須artifactの有限inventory、kind・owner・入力形式、root入口／aliasの検査責務、親noteを含む参照経路。内容処遇と保存方式はまだ実行しない。 | 一つの結果文書を開始し、全対象の現行根拠／固有履歴／重複／要追加確認と後継を記録。damage input・rule・inventory・digest・version・commitの所在、必須artifact集合、metadata移管元を明示。unknownを無視せず後続STEPの解消ownerを定め、保持／削除判断を進められる境界を確定。 |
+| 2 証跡保持・復元／STEP 1 | 正式expected、六失敗クラス、qualityとreceiptを持つ保存集合。固定bytes／SHA、保存先・期間・復元・不足時の操作、清掃との分離。 | local保存・Git復元・CI artifact等を容量／寿命／入手可能性で比較し、必須集合の処遇を確定。許可された場所への保存・復元prototypeで元bytes／SHAを確認し、canonical参照が復元後の同じ入力を指すことを示す。外部公開・物理削除は未承認のまま実行しない。復元不能があれば本STEP未完了。清掃pin機能等の運用codeとmatrix実caller受入はTSK-09へ明示handoff。 |
+| 3 DOC-P4収束／STEP 1・2 | evidenceの意味・role／successor、`docs/evidence/README.md`と現行Task／要件への導線、古いphase report・歴史画像link。 | 固有damage・inventory根拠を維持して現行証拠と途中／歴史証拠を区別。STEP 1の要追加確認を根拠付きで解消し、必要な統合だけ実施。切れた歴史参照は元commit／blobから復元でき、indexから全対象へ到達できる。統合が不要な対象はretain理由を記録。 |
+| 4 DOC-P5・metadata移管／STEP 1〜3 | superseded／complete文書、archive／tracking policy、意味を確定した42欠落・8語彙外とその他の必須metadata不足。既存Local-only9件は同一性を根拠に継承。 | 処遇前後で入力・rule・digest・採用判断を保存。必要な移動は参照とGit復元情報を同時更新し、metadataはkindの現行語彙へ明示移管。旧語彙を読むfallbackを追加しない。ADRの採用時の判断本文は現行化せず、metadataと本文statusの整合を保つ。義務を持たない資料を無条件に削除せず、全処遇・未知kind／statusの解消を記録。 |
+| 5 DOC-P6実装／STEP 3・4 | `scripts/docs-integrity-lib.mjs`、既存test／CLI。STEP 1の対象・構文・kind契約で全tracked集合を検査し、既存qualityへ接続する。 | tracked target／登録の到達経路、必須frontmatter／status、root／alias、broken・untracked link、未登録、未知kind／status、reference-style／anchor／code fence、UTC timestampを含むTask本文と最終Task区間をfixturesで確認。machine evidenceのdomain statusをMarkdown metadataへ変換しない。大量failureでも非zero、bounded path／reason、完全結果を既存artifact ownerで保存。現在の文書集合で全件成功、既存6契約も保持。 |
+| 6 統合受入・handoff／STEP 1〜5 | 処遇済み集合、全検査、固定証跡、別checkoutでの文書再開と本Taskの全Contract。新たな整理familyは追加しない。 | 別checkoutでregistry／参照／検査と復元手順を辿れる。全処遇・完全診断・receipt・正本を照合し、必須不明／未移管／Blocking0。TSK-09へ具体的な復元入力と未実行の実caller・性能・運用義務を渡す。最終差分の必要なゲート成功後にTSK-09.1 done／TSK-09 readyへ変更。 |
+
+同じroot／moduleを別STEPで変更する場合は前STEPのcommitを入力とし、同時編集しない。文書処遇の前に保持契約、検査の厳格化の前にmetadata移管を置く。STEP 3／4で固有根拠が未解決なら、STEP 5の許可語彙拡張やfallbackで成功へ変えない。
+
+計画の反証: ①既存docs6test成功でも42欠落／8語彙外／3画像linkを見逃すため、全件成立を主張しない。②直接indexにない30件のうち親noteから到達する反例があるため、全件を重複登録・削除しない。③現端末の80file存在とCI uploadでは寿命・別環境復元を保証せず、保存契約を独立して閉じる。④Local-only9件はSHA一致なので、資料整理を理由に再処遇しない。⑤画像・機械JSONの置換／再生成やmetadataの機械的なComplete化は、意味・元bytesを保持する対策にならない。
+
+検証は各STEPの差分に必要なものを行う。文書のみはdocs／書式／参照・処遇receipt、STEP 5は意味のあるnegative fixtureと実CLI、STEP 6は新しいtracked集合での全検査・再開を確認する。製品testが読むevidence JSON／canonical inputを変更した場合は記録だけの変更とせず、直接consumerの検証を行う。quality実行経路を変更した場合は対応するrunner検証と最終qualityを追加する。全80条件の再生成、damage性能、実matrix consumerの最終復元受入は本Taskの文書検査へ代入せず、TSK-09の責務を維持する。
 
 Done gate:
 
@@ -2639,9 +2676,11 @@ Contract closure matrix:
 | `TS-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
 | `RK-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
 
-Handoff: 計画確定・未実行（2026-10-01）。開始基準は`959f89e`と現在worktree。TSK-08の受入は`tsk-08-parity-ratchet.json::implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`、qualityは`.test-results/2026-10-01T06-40-04-438Z-16-7a153c/manifest.json`。現在の残条件は上記DOC-P4〜P6であり、TSK-08を再監査する根拠はない。次の操作は`git status --short`／`git rev-parse HEAD`と`git ls-files docs`で開始identityと対象集合を固定し、index・固有根拠・必要artifactの有限な処遇inventoryを作ること。本Task完了後にTSK-09をreadyへ変更する。
+Handoff: 先行調査・STEP分割完了、処遇／検査実装未着手（2026-10-01）。調査基準は`1fa4d18`（製品TSK-08完了は`959f89e`）、当時のworktreeはclean。TSK-08の受入は`tsk-08-parity-ratchet.json::implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`、qualityは`.test-results/2026-10-01T06-40-04-438Z-16-7a153c/manifest.json`。現在の未達はSTEP 1〜6であり、先行probeを全件成立へ代入しない。次の操作は現HEAD／差分と本節を照合し、STEP 1の全対象・参照・kind・固有根拠・必要artifactを一つの結果文書の判定台帳へ固定すること。既存artifactの清掃は実行しない。本Task完了後にTSK-09をreadyへ変更する。
 
-計画更新の検証: `pnpm test:docs`6/6・docs integrity、対象書式・差分検査が成功。今回の変更はTask／registryだけで、製品・runner・CIやTSK-08の固定検証sourceは不変。これは残作業の計画の検証であり、DOC-P4〜P6の完了証拠ではない。
+再利用auditの固定pathは`.test-results/2026-09-30T17-32-03-143Z-15-fa5942/manifest.json`。区間parserの直接API probeは通常本文ならerror0、同じ本文へUTC timestampを加えるとmissing Contract closure matrixになる。原因は末尾の`\Z`がJavaScriptではliteral文字となること。STEP 5で修正・反証し、今回の計画は保存pathをHandoffへ置いて検証する。最初の文書検査失敗はこの再現として保持し、成功へ読み替えない。
+
+先行調査・STEP分割の文書検証: `pnpm test:docs`6/6・docs integrity、対象書式・差分検査が成功。stdout／stderrと補助probeのreceiptは先行調査directoryの`manifest.json`へ保存する。今回のtracked変更はTask／registryだけで、製品・runner・CIやTSK-08の固定検証sourceは不変。これは調査記録・計画の検証であり、DOC-P4〜P6の完了証拠ではない。
 
 ### TSK-09: Performance、運用移行、旧経路削除
 
