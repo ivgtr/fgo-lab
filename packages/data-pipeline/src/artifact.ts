@@ -11,6 +11,37 @@ export interface FileArtifact {
   content: string;
   required: boolean;
 }
+
+// Publication is a fixed declaration boundary. Do not strip unknown fields before validation.
+const publishedManifestSchema = masterManifestSchema
+  .extend({
+    source: masterManifestSchema.shape.source.strict(),
+    files: masterManifestSchema.shape.files.element.strict().array().min(1),
+  })
+  .strict();
+
+export function parsePublishedManifest(value: unknown): MasterManifest {
+  const manifest = publishedManifestSchema.parse(value);
+  const keys = new Set<string>();
+  const paths = new Set<string>();
+  for (const file of manifest.files) {
+    if (
+      file.file.startsWith('/') ||
+      file.file.includes('\\') ||
+      file.file.includes('\0') ||
+      file.file.split('/').some((part) => part === '' || part === '.' || part === '..')
+    )
+      throw new Error(`published_file_path_invalid:${file.file}`);
+    if (keys.has(file.key)) throw new Error(`published_file_key_duplicate:${file.key}`);
+    if (paths.has(file.file)) throw new Error(`published_file_path_duplicate:${file.file}`);
+    keys.add(file.key);
+    paths.add(file.file);
+  }
+  if (manifest.files.filter((file) => file.key === 'master' && file.required).length !== 1)
+    throw new Error('published_required_master_missing');
+  return manifest;
+}
+
 export function createManifest(input: {
   masterDataVersion: string;
   createdAt: string;
@@ -20,7 +51,7 @@ export function createManifest(input: {
   imagesEnabled: boolean;
   files: readonly FileArtifact[];
 }): MasterManifest {
-  return masterManifestSchema.parse({
+  return parsePublishedManifest({
     manifestVersion: 1,
     masterDataVersion: input.masterDataVersion,
     createdAt: input.createdAt,
@@ -54,7 +85,7 @@ export function validatePublishedArtifact(
   manifestValue: unknown,
   files: Readonly<Record<string, string>>,
 ) {
-  const manifest = masterManifestSchema.parse(manifestValue);
+  const manifest = parsePublishedManifest(manifestValue);
   const errors: string[] = [];
   for (const file of manifest.files) {
     const content = files[file.file];
@@ -66,7 +97,15 @@ export function validatePublishedArtifact(
     if (sha256(content) !== file.sha256) errors.push(`sha256:${file.file}`);
     if (file.key === 'master') {
       try {
-        const report = validateMasterSnapshot(JSON.parse(content));
+        const snapshot = JSON.parse(content) as unknown;
+        const report = validateMasterSnapshot(snapshot);
+        if (
+          snapshot === null ||
+          typeof snapshot !== 'object' ||
+          !('version' in snapshot) ||
+          snapshot.version !== manifest.masterDataVersion
+        )
+          errors.push(`version:${file.file}`);
         errors.push(
           ...report.errors.map((error) => `schema:${error}`),
           ...report.unknownAttackFunctions.map((type) => `unknown:${type}`),

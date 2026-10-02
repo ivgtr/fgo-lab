@@ -1,17 +1,17 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { masterManifestSchema } from '@fgo-lab/master-data';
 import {
   assertMasterVersionIdentity,
   createManifest,
   inventoryAtlasAttackFunctions,
   normalizeAtlasSnapshot,
+  parsePublishedManifest,
   validatePublishedArtifact,
 } from './index';
 const root = resolve(import.meta.dirname, '../../..');
 const command = process.argv[2];
 if (command === 'validate') {
-  const manifest = masterManifestSchema.parse(
+  const manifest = parsePublishedManifest(
     JSON.parse(
       await readFile(resolve(root, 'apps/web/public/master/manifest.json'), 'utf8'),
     ) as unknown,
@@ -36,9 +36,16 @@ if (command === 'validate') {
 } else if (command === 'normalize') {
   const version = process.argv[3] ?? new Date().toISOString().slice(0, 10).replaceAll('-', '');
   const manifestPath = resolve(root, 'apps/web/public/master/manifest.json');
-  const currentManifest = await readFile(manifestPath, 'utf8')
-    .then((content) => masterManifestSchema.parse(JSON.parse(content)))
-    .catch(() => undefined);
+  const currentManifest = parsePublishedManifest(JSON.parse(await readFile(manifestPath, 'utf8')));
+  const currentFiles: Record<string, string> = {};
+  for (const file of currentManifest.files)
+    currentFiles[file.file] = await readFile(
+      resolve(root, 'apps/web/public/master', file.file),
+      'utf8',
+    );
+  const currentReport = validatePublishedArtifact(currentManifest, currentFiles);
+  if (!currentReport.valid)
+    throw new Error(`current_published_artifact_invalid:${JSON.stringify(currentReport.errors)}`);
   const [servants, equips, mysticCodes, items, referencedSkills, battlePoints] = await Promise.all(
     [
       'nice_servant.json',
@@ -73,6 +80,11 @@ if (command === 'validate') {
     files: [{ key: 'master', file: 'master.json', content, required: true }],
   });
   assertMasterVersionIdentity(currentManifest, manifest);
+  const candidateReport = validatePublishedArtifact(manifest, { 'master.json': content });
+  if (!candidateReport.valid)
+    throw new Error(
+      `candidate_published_artifact_invalid:${JSON.stringify(candidateReport.errors)}`,
+    );
   await writeFile(resolve(root, 'apps/web/public/master/master.json'), content, 'utf8');
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
   console.log(

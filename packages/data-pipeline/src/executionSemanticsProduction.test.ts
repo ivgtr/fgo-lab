@@ -10,8 +10,67 @@ import {
 } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import { createSuiteAuditInput } from './suiteAuditInput.test-support';
+import { parsePublishedManifest } from './artifact';
 
 const root = resolve(import.meta.dirname, '../../..');
+const inputDirectory = resolve(root, 'packages/data-pipeline/test-inputs/raw-hp-v1');
+const fixedPublishedMaster = {
+  masterDataVersion: '20260920.3',
+  file: 'master.json',
+  bytes: 32_953_998,
+  sha256: '2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a',
+};
+const fixedRawInputs = [
+  {
+    rawPath: 'data/raw/nice_servant.json',
+    rawBytes: 68_622_616,
+    rawSha256: '1abf690ac22bcdd427788e0ff545320af491ee9f90fbc08a56af9603a217118f',
+    gzipFile: 'nice_servant.json.gz',
+  },
+  {
+    rawPath: 'data/raw/nice_equip.json',
+    rawBytes: 21_819_299,
+    rawSha256: 'bb339ac726f8201243410ec82b85a14496e6a8dace54b226071b556604fc27e5',
+    gzipFile: 'nice_equip.json.gz',
+  },
+];
+
+async function readRawHpDeclaration() {
+  const declaration = JSON.parse(
+    await readFile(resolve(inputDirectory, 'manifest.json'), 'utf8'),
+  ) as {
+    format: string;
+    owner: string;
+    consumer: string;
+    captureRevision: string;
+    publishedMaster: typeof fixedPublishedMaster;
+    inputs: ((typeof fixedRawInputs)[number] & { gzipBytes: number; gzipSha256: string })[];
+  };
+  expect(declaration).toEqual({
+    format: 'raw-hp-inputs-v2',
+    owner: '@fgo-lab/data-pipeline',
+    consumer: 'executionSemanticsProduction/raw-hp-before-relevance',
+    captureRevision: '6bba3310976287709dd3aabac9d533e4b1dfb4a9',
+    publishedMaster: fixedPublishedMaster,
+    inputs: declaration.inputs,
+  });
+  expect(declaration.inputs).toHaveLength(2);
+  for (const [index, fixed] of fixedRawInputs.entries()) {
+    const input = declaration.inputs[index]!;
+    expect(Object.keys(input).sort()).toEqual(
+      ['rawPath', 'rawBytes', 'rawSha256', 'gzipFile', 'gzipBytes', 'gzipSha256'].sort(),
+    );
+    expect({
+      rawPath: input.rawPath,
+      rawBytes: input.rawBytes,
+      rawSha256: input.rawSha256,
+      gzipFile: input.gzipFile,
+    }).toEqual(fixed);
+    expect(Number.isSafeInteger(input.gzipBytes) && input.gzipBytes > 0).toBe(true);
+    expect(input.gzipSha256).toMatch(/^[a-f0-9]{64}$/);
+  }
+  return declaration;
+}
 
 function allEffects(master: ReturnType<typeof masterSnapshotSchema.parse>): MasterEffect[] {
   return [
@@ -27,8 +86,28 @@ function allEffects(master: ReturnType<typeof masterSnapshotSchema.parse>): Mast
 
 // One borrowed published input per suite; the first consumer pays readiness within its 5s task.
 const publishedInput = createSuiteAuditInput({
-  read: () => readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8'),
-  parse: (input) => masterSnapshotSchema.parse(input),
+  read: async () => {
+    const [content, manifestContent, declaration] = await Promise.all([
+      readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8'),
+      readFile(resolve(root, 'apps/web/public/master/manifest.json'), 'utf8'),
+      readRawHpDeclaration(),
+    ]);
+    const manifest = parsePublishedManifest(JSON.parse(manifestContent));
+    const file = manifest.files.find((entry) => entry.key === 'master' && entry.required)!;
+    expect({ masterDataVersion: manifest.masterDataVersion, ...file }).toEqual({
+      ...declaration.publishedMaster,
+      key: 'master',
+      required: true,
+    });
+    expect(Buffer.byteLength(content)).toBe(file.bytes);
+    expect(createHash('sha256').update(content).digest('hex')).toBe(file.sha256);
+    return content;
+  },
+  parse: (input) => {
+    const master = masterSnapshotSchema.parse(input);
+    expect(master.version).toBe(fixedPublishedMaster.masterDataVersion);
+    return master;
+  },
   project: (master) => Object.freeze(allEffects(master)),
 });
 
@@ -130,55 +209,11 @@ describe('production canonical execution semantics', () => {
       return result;
     };
     // One shared, fixed full-raw input set; clean checkout/CI never borrows ignored local exports.
-    const inputDirectory = resolve(root, 'packages/data-pipeline/test-inputs/raw-hp-v1');
-    const declaration = JSON.parse(
-      await readFile(resolve(inputDirectory, 'manifest.json'), 'utf8'),
-    ) as {
-      format: string;
-      owner: string;
-      consumer: string;
-      inputs: {
-        rawPath: string;
-        rawBytes: number;
-        rawSha256: string;
-        gzipFile: string;
-        gzipBytes: number;
-        gzipSha256: string;
-      }[];
-    };
-    expect(declaration).toEqual({
-      format: 'raw-hp-inputs-v1',
-      owner: '@fgo-lab/data-pipeline',
-      consumer: 'executionSemanticsProduction/raw-hp-before-relevance',
-      inputs: declaration.inputs,
-    });
-    expect(declaration.inputs).toHaveLength(2);
-    const fixedInputs = [
-      {
-        rawPath: 'data/raw/nice_servant.json',
-        rawBytes: 68_622_616,
-        rawSha256: '1abf690ac22bcdd427788e0ff545320af491ee9f90fbc08a56af9603a217118f',
-        gzipFile: 'nice_servant.json.gz',
-      },
-      {
-        rawPath: 'data/raw/nice_equip.json',
-        rawBytes: 21_819_299,
-        rawSha256: 'bb339ac726f8201243410ec82b85a14496e6a8dace54b226071b556604fc27e5',
-        gzipFile: 'nice_equip.json.gz',
-      },
-    ];
+    await publishedInput();
+    const declaration = await readRawHpDeclaration();
     const rawInputs: unknown[] = [];
-    for (const [index, fixed] of fixedInputs.entries()) {
+    for (const [index] of fixedRawInputs.entries()) {
       const input = declaration.inputs[index]!;
-      expect(Object.keys(input).sort()).toEqual(
-        ['rawPath', 'rawBytes', 'rawSha256', 'gzipFile', 'gzipBytes', 'gzipSha256'].sort(),
-      );
-      expect({
-        rawPath: input.rawPath,
-        rawBytes: input.rawBytes,
-        rawSha256: input.rawSha256,
-        gzipFile: input.gzipFile,
-      }).toEqual(fixed);
       const compressed = await readFile(resolve(inputDirectory, input.gzipFile));
       expect(compressed.length).toBe(input.gzipBytes);
       expect(createHash('sha256').update(compressed).digest('hex')).toBe(input.gzipSha256);

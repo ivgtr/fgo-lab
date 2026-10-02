@@ -52,11 +52,27 @@ pnpmがscript開始前に停止した場合は依存整合とstore書込を確�
 
 製品実装phaseの完了は`pnpm quality`で判定します。文書・指示だけの変更は、書式、`pnpm test:docs`、変更した参照・設定・配置を確認して閉じます。コード・実行設定にも影響する場合は対応するゲートを使います。規約は[AGENTS.md](AGENTS.md)を正本とし、`CLAUDE.md`も同じ内容を参照します。
 
-通常productionの「damage relevanceで除外する前のraw HP条件」検査は、[data-pipelineの固定CI入力宣言](packages/data-pipeline/test-inputs/raw-hp-v1/manifest.json)と同directoryの全raw圧縮2件を読みます。Git checkoutで取得でき、可変な`data/raw/`や外部のlatest取得には依存しません。宣言・圧縮／復元bytes・SHAを照合してから元の全母集団を走査します。欠落・未知field・不一致・破損は失敗として停止し、同じsource revisionの入力を再取得して `pnpm test:diagnostic -- --suite=production packages/data-pipeline/src/executionSemanticsProduction.test.ts` から再開してください。別版・別path・小fixture・expected再生成で補いません。
+通常productionの「damage relevanceで除外する前のraw HP条件」検査は、[data-pipelineの固定CI入力宣言](packages/data-pipeline/test-inputs/raw-hp-v1/manifest.json)と同directoryの全raw圧縮2件を読みます。現行宣言は`raw-hp-inputs-v2`です。既存directory名は保存pathであり形式versionではありません。Git checkoutで取得でき、可変な`data/raw/`や外部のlatest取得には依存しません。consumerは宣言の現行形式・全field・有限2件・固定出自／raw identityと、対応するpublished masterのversion・bytes・SHAを確認します。gzipの保存／復元identityを照合してから元の全母集団を走査し、masterはsuite内で一度だけ読取・解析します。
 
-CI入力はTask別保存を増やさず、意味を所有するpackageの有限宣言と唯一の保存集合を共有します。現在のraw直接consumerは上記1件、入力は2件だけです。追加／更新時は、直接consumer、既存master／fixtureで閉じない必要能力、固定identity・出自、重複、取得方法、保持owner・参照期間・処遇条件を既存Task／evidenceへ記録し、保存範囲の拡張を明示判断します。raw全体、調査run、bundleを自動追加せず、既存宣言で足りるTaskは新しい保存集合を作りません。今回の採用と容量・限界は[最終受入正本](docs/evidence/tsk-09-final-acceptance.md)を参照してください。
+欠落・未知field／形式・不正値・identity不一致・破損・更新途中の組合せは失敗として停止します。表示されたArtifacts pathのmanifestと完全logから不足したpath／identityを確認し、同じ承認済みsource revisionの入力を同じpathへ再供給して、次の対象consumerから新出力で再開してください。別版・別path・小fixture・ignored raw・expected再生成で補いません。
 
-Atlas JPのraw exportを`data/raw/`へ配置した場合、`pnpm --filter @fgo-lab/data-pipeline normalize <version>`で配信用マスターを再生成できます。可変な`data/raw/`のrawファイルはGit管理しません。上記の固定CI入力は、それと責務を分けた全原内容の圧縮保存です。
+```sh
+pnpm test:diagnostic -- --suite=production packages/data-pipeline/src/executionSemanticsProduction.test.ts
+pnpm validate:master
+```
+
+CI入力の取得・更新・差戻し:
+
+1. 必要なのは承認済みsource revisionのtracked入力とconsumerです。fresh clone／明示提供元からその固定revisionを取得し、HEADと差分を照合してfrozen依存を準備します。固定baselineの提供条件は[TSK-09最終受入](docs/evidence/tsk-09-final-acceptance.md#contributor固定取得不足時操作)を別に確認します。通常qualityにreplay／実mergeや旧bundle取得を追加しません。
+2. データ更新は隔離checkoutで準備します。normalizeのproducer入力は`nice_servant.json`、`nice_equip.json`、`nice_mystic_code.json`、`nice_item.json`、`referenced_skills.json`、`battle_points.json`の6件です。後2件はtracked、前4件の可変exportはignoredです。供給元・取得条件・各全内容のbytes／SHAを更新Taskへ記録し、欠落を他の入力で補いません。この6件全体を通常CIの追加保存集合にはしません。
+3. `pnpm --filter @fgo-lab/data-pipeline normalize <明示version>`は既存published宣言と実体を検査してからcandidateを生成し、既存versionの異なる本文を拒否します。既存宣言の欠落・読取／解析失敗を初回生成扱いにはしません。原exportを扱う作業とGit供給用gzipの作成を分け、今回TSK-10では原exportやpublished本文を更新していません。
+4. 更新のレビュー単位はraw宣言、必要なgzip実体、consumer内の固定raw／master identity・出自、published本文／manifest、および依存する判定宣言です。`captureRevision`は固定内容を照合できる既存Git captureの出自であり、更新candidate自身の未来のcommit SHAを要求しません。現在のcaptureは`6bba3310976287709dd3aabac9d533e4b1dfb4a9`です。宣言のmaster対応は受入する組合せを示し、raw2件だけからmaster全体を生成したことを証明しません。出自を新しく主張する場合はその固定revision／path／bytesを確認し、確認できない出自を補いません。
+5. 上の対象consumerとvalidateで整合を確認し、変更に依存するproduction／audit／matrixを選びます。意味値の変更・回帰expectedの採用は別の明示判断を必要とし、更新作業の成功のためにexpectedやfixtureを再生成しません。対象内Blockingと局所検証・差分レビューを閉じ、固定差分で`pnpm quality`を実行してから一つの更新単位として公開します。
+6. 差戻しも同じレビュー単位の固定revisionへ戻します。master／raw／consumerの一部だけを戻した状態は受入しません。書込中断時は未受入の組合せとして停止し、既知の固定集合を再供給して検査から再開します。normalizeの2file書込自体をfilesystem transactionとして保証しません。
+
+CI入力はTask別保存を増やさず、意味を所有するpackageの有限宣言と唯一の保存集合を共有します。現在のraw直接consumerは上記1件、全内容gzipは2件だけです。追加／置換時は、直接consumer、既存master／fixtureで閉じない必要能力、固定identity・出自、重複、取得／不足時操作、保持owner・参照期間・処遇条件を既存Taskへ記録し、保存範囲の拡張・取得元変更・能力損失を明示判断します。Task追加や参照closureだけでは入力、raw全体、調査run、bundleを追加しません。
+
+保持量は保存path、distinct内容、圧縮／復元bytes、metadata、Git履歴に残るblobの増加を分けて記録します。既存pathの置換でも旧blobはGit履歴に残ります。入力と診断artifact・checkout・依存・buildの容量を混ぜず、削減率を採用基準にしません。入力ownerは直接consumerの参照期間中、固定revisionで供給可能な集合を維持します。参照終了時は他consumerと保持参照を確認して処遇を判断し、宣言からの除外だけで削除せず、能力損失・原物削除の承認を兼ねません。今回の固定入力取得受入を将来更新やhosted CI成功へ昇格しません。成果・受入・再開の正本は[TSK-10 Handoff](docs/tasks/development-redesign-tasks.md#tsk-10-ci入力ライフサイクルの設計と運用収束)、先行能力・限界は[TSK-09最終受入](docs/evidence/tsk-09-final-acceptance.md)です。
 
 ## Serena（任意の開発補助）
 

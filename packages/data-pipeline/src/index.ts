@@ -1,6 +1,7 @@
 export {
   assertMasterVersionIdentity,
   createManifest,
+  parsePublishedManifest,
   sha256,
   validatePublishedArtifact,
   type FileArtifact,

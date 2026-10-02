@@ -5,6 +5,7 @@ import {
   createManifest,
   inventoryAtlasAttackFunctions,
   normalizeAtlasSnapshot,
+  parsePublishedManifest,
   validatePublishedArtifact,
 } from './index';
 const content = JSON.stringify({
@@ -184,6 +185,58 @@ describe('immutable publish pipeline', () => {
       'master_version_reused:v1',
     );
     expect(() => assertMasterVersionIdentity(manifest, manifest)).not.toThrow();
+  });
+  it('rejects incomplete or unknown publication declarations before reading their paths', () => {
+    const manifest = createManifest({
+      masterDataVersion: 'v1',
+      createdAt: '2026-08-24T00:00:00.000Z',
+      retrievedAt: '2026-08-24T00:00:00.000Z',
+      minimalAppVersion: '0.1.0',
+      artifactKind: 'diagnostic',
+      imagesEnabled: false,
+      files: [{ key: 'master', file: 'master.json', content, required: true }],
+    });
+    const masterFile = manifest.files[0]!;
+    const rejected = [
+      { ...manifest, unknown: true },
+      { ...manifest, source: { ...manifest.source, unknown: true } },
+      { ...manifest, files: [{ ...masterFile, unknown: true }] },
+      { ...manifest, manifestVersion: 0 },
+      { ...manifest, files: [] },
+      { ...manifest, files: [{ ...masterFile, required: false }] },
+      { ...manifest, files: [{ ...masterFile, key: 'other' }] },
+      { ...manifest, files: [masterFile, { ...masterFile, file: 'other.json' }] },
+      { ...manifest, files: [masterFile, { ...masterFile, key: 'other' }] },
+      ...[
+        '../master.json',
+        '/master.json',
+        'a/../master.json',
+        'a\\master.json',
+        './master.json',
+      ].map((file) => ({ ...manifest, files: [{ ...masterFile, file }] })),
+    ];
+    for (const value of rejected) expect(() => parsePublishedManifest(value)).toThrow();
+    expect(parsePublishedManifest(manifest)).toEqual(manifest);
+    expect(validatePublishedArtifact(manifest, {})).toEqual({
+      valid: false,
+      errors: ['missing:master.json'],
+    });
+  });
+  it('rejects a body version mismatch even when its bytes and checksum are valid', () => {
+    const changedContent = JSON.stringify({ ...JSON.parse(content), version: 'v2' });
+    const manifest = createManifest({
+      masterDataVersion: 'v1',
+      createdAt: '2026-08-24T00:00:00.000Z',
+      retrievedAt: '2026-08-24T00:00:00.000Z',
+      minimalAppVersion: '0.1.0',
+      artifactKind: 'diagnostic',
+      imagesEnabled: false,
+      files: [{ key: 'master', file: 'master.json', content: changedContent, required: true }],
+    });
+    expect(validatePublishedArtifact(manifest, { 'master.json': changedContent })).toEqual({
+      valid: false,
+      errors: ['version:master.json'],
+    });
   });
   it('reports future damage functions instead of treating them as zero', () =>
     expect(

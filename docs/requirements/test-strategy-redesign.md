@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.3.3"
+document_version: "1.3.4"
 status: "Active"
-approved_at: "2026-08-30"
-updated_at: "2026-10-02"
+approved_at: "2026-10-03"
+updated_at: "2026-10-03"
 created_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
@@ -313,6 +313,10 @@ timeout、signal、worker crash、out-of-memory、reporter crashでは、最後�
 
 固有入力・raw cells・原採取／独立receiptの内容はdigest・件数・再現fixtureだけで代替しない。必要な固有能力は個別にretainまたは意味を保持した移管先を決め、必要能力・固定identity・不足時操作・限界を判断記録へ残す。現行・後続の必須consumer／契約がなく原内容・出自の再監査能力だけを手放す場合は、保持判断の変更理由・対象identity・具体的な能力損失を明示した承認と記録を必要とする。これは原内容を移管済み・代替済みとする判断ではなく、物理削除の承認も兼ねない。必須義務が不明なら不足保留とする。`data/raw/`の入力はrun cleanupの対象外であり、本節のCI日数を原raw exportの寿命へ適用しない。TSK-09.1のA0〜A9・旧bundle・原入力不足の具体的な処遇契約は[判断台帳](../evidence/tsk-09-1-documentation-closure.md#step-2-保持契約の収束)と、その09.12節末尾の[09.13最終処遇判断](../evidence/tsk-09-1-documentation-closure.md#0913-不使用方針による最終処遇判断)を正本とする。09.13で旧bundleのHP原内容保持を解除したが、bundle外OC inventory／raw exportsの契約は変更しない。
 
+通常CIの固定入力は、意味を所有するpackageの有限宣言と共有保存集合で供給する。Task追加・参照closure・調査runの存在だけでは保存集合を追加しない。追加／置換時は直接consumer、既存master／fixtureで不足する能力、固有内容・出自／固定identity、重複、取得／不足時操作、owner・参照期間・処遇条件を既存Taskへ記録し、保持範囲の拡張・取得元変更・能力損失を明示判断する。参照終了時は他consumer・保持参照を確認し、宣言除外だけで物理削除可能としない。
+
+入力の保存量はpath数、distinct内容、圧縮bytes、復元bytes、metadataを分ける。Gitの現行集合と履歴に残る増加も区別し、path置換を履歴からの削減としない。診断artifact、依存・checkout・buildの容量と混ぜず、削減率を採用の完了条件にしない。現行raw HPの具体的な有限宣言・master対応と操作は[README](../../README.md#開発)、取得／更新／差戻しの受入と保証限界は[TSK-10](../tasks/development-redesign-tasks.md#tsk-10-ci入力ライフサイクルの設計と運用収束)が所有する。
+
 ## 10. 終了コードとprocess契約
 
 - test runnerの非0終了をラッパーが0へ変換しない。
@@ -380,6 +384,10 @@ digestの更新だけで差分を承認してはならない。
 - production gateはdamage関連変更だけに条件分岐して省略しない。当面は全PRで実行する。
 - failure summaryをjob logへ表示し、完全reportをartifactへ保存する。
 - concurrency cancellationは許可するが、成功済みでないgateを成功扱いにしない。
+
+通常qualityに必要な入力とconsumerは同じ承認済みsource revisionで取得する。raw全内容・保存／復元identity、published master／manifest、consumer内固定identity・出自、依存する判定宣言を更新・差戻しのレビュー単位にする。欠落・破損・未知宣言・不正値・identity矛盾・部分更新を停止として扱い、同固定入力の再供給後に必要consumerから新出力で再開する。producerの既存宣言読取失敗を初回生成・別保存先で補わず、別版・latest・小fixture・expected再生成を復旧手段にしない。filesystem書込の中断は未受入として検査で拒否する。
+
+更新手順の検証は新しいデータ・expectedの採用と分ける。固定baselineの供給契約、opt-in audit／matrix／replay、完全診断の保持policyも通常CI入力と区別する。別checkoutの取得・実consumer受入を将来更新・外部origin供給・hosted CI成功へ自動昇格させない。
 
 ### 12.2 Pages公開
 
@@ -593,6 +601,7 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 1.3.4 | 有限CI入力のowner・保存追加判断・容量分類・同revisionの更新／差戻し・fail-closed／再開を明示（TS-ART-001、TS-QUAL-001、TS-RUN-001）。raw宣言は既存pathのv2にmaster対応・固定capture出自を追加 | approved 2026-10-03: user OK confirmed TSK-10 implementation plan | TSK-10のApply matrixとREADME運用。先行完了Taskの意味受入は維持 | none for damage／baseline／expected／fixture／全母集団・timeout／CI14日・local最新10run。CI raw metadata／consumer検査だけ改訂、gzip2件とpublished本文は不変 |
 | 1.3.3 | 必須consumer／契約のない歴史原内容の再監査能力を手放す承認・記録と物理処遇の分離を明示。09.13のHP保持解除を同期（TS-ART-001） | approved 2026-10-02: user OK confirmed TSK-09.13 full-disposal judgment plan | TSK-09.13、TSK-09.1 STEP 3〜6、TSK-09 | none: 現行baseline・fixture・expected・damage・CI14日・local最新10runは不変。旧HP原byteの再監査能力を手放す |
 | 1.3.2 | 09.11移管結果からrepositoryの回帰入力／fixture／判断記録と調査artifactの保持責務・不足時の能力制限を明示（TS-ART-001） | approved 2026-10-01: user confirmed TSK-09.1 STEP 2 plan | TSK-09.1 STEP 2、TSK-09 | none: CI14日・local最新10完了run、実行経路・expected・damageは不変 |
 | 1.3.1 | 全件／特殊経路の高コストauditを排他的なopt-in suiteへ分け、通常のunit／production gateに代表fixtureと共有inventory整合を残す（TS-QUAL-001、TS-AUDIT-001） | approved 2026-09-24: user requested specialized sweeps stay out of ordinary tests | TSK-08、今後のproduction audit配置 | full production population／通常quality gateは不変。TSK-08 control auditは明示実行へ移動 |

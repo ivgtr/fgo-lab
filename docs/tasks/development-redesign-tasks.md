@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.185"
+document_version: "1.7.186"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-03"
@@ -74,7 +74,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-09.12 | 旧bundleの縮小・廃棄判断（限定調査） | done | TSK-09.11 | 09.1 STEP 2保持契約／旧bundleの個別処遇 |
 | TSK-09.13 | 旧bundle非依存確認・廃棄条件確定 | done | TSK-09.12 | 旧bundle不使用方針／A3保持必要性と能力損失の再判断 |
 | TSK-09 | 最終受入と運用手順の収束 | done | TSK-09.1 | test strategy T5／全完了条件 |
-| TSK-10 | CI入力ライフサイクルの設計と運用収束 | ready | TSK-09 | test strategy §9／§12、execution efficiency §4／§7 |
+| TSK-10 | CI入力ライフサイクルの設計と運用収束 | done | TSK-09 | test strategy §9／§12、execution efficiency §4／§7 |
 
 ```text
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
@@ -2988,7 +2988,7 @@ Commit追補（2026-10-03）: 利用者のcommit指示により、最終受入�
 
 Depends on: TSK-09
 
-Current status: `ready`（2026-10-03、次Taskの整理だけ。設計採用・製品修正・新しい実行受入は未実施）。
+Current status: `done`（2026-10-03、全Checklist／Done gate／Apply成立、対象内Blocking0。利用者確認済み計画の範囲を既存data-pipelineで完了、未commit成果で停止）。
 
 目的は、contributorが通常CIに必要な固定入力を取得し、将来のデータ更新でも入力・consumer・判定を一貫して更新できること。Taskの追加が保存集合の自動追加にならず、不足・破損・更新途中では必要入力と再開操作を示して停止できる状態へ収束する。TSK-09の品質成功とproject closureを維持し、短縮率・削除件数・新しい保存サービスの導入を完了条件にしない。
 
@@ -3006,16 +3006,41 @@ Current status: `ready`（2026-10-03、次Taskの整理だけ。設計採用・�
 
 採用方式は直接consumerと必要能力から決める。現在の有限Git入力を継続する案も評価対象とし、Git履歴に残るbytes、必要な取得保証、外部供給の権限・障害、既存保存との重複を比較する。Gitから外部への移管、共有object保存、pin機構、新しいhelperを先に前提にしない。新機構は既存ownerで不足する理由と継続的なconsumerが確認された場合だけ提案する。
 
-- [ ] 通常qualityに必須のmaster／raw／fixtureと、opt-in audit・matrix／replay・診断だけの入力を直接callerで区別し、有限inventoryへ対応付ける。既存保持契約を全runの保存義務へ広げない。
-- [ ] 入力の取得・検査・更新・差戻し・参照終了を同じownerへ対応付ける。承認対象、固定出自／identity、rawとmasterの対応、manifestとconsumerの更新単位、取得不能時の必要入力を決める。
-- [ ] Taskごとの追加保存を防ぐ採用条件を既存README／要件へ収束する。保存path、distinct object、圧縮／復元bytes、metadata、Git履歴に残る増加を区別し、不要な重複を作らず必要能力を維持する。
-- [ ] 採用方式で現コードに不足する範囲だけ修正し、欠落／破損／未知宣言／identity不一致／更新途中の小反例を直接consumerで確認する。既存の有効な反例証拠は再利用する。
-- [ ] cleanな別checkoutから通常入力を取得し、必要consumerを実行し、不足時の停止／供給後再開を実証する。更新・差戻しの操作は現expectedや原rawを変更しない検証で確認し、新データの採用は別の明示判断にする。
-- [ ] 変更したconsumer／保存・取得経路だけの検証と差分レビューを先に閉じ、コード／実行設定変更がある場合は固定差分で最終`pnpm quality`を行う。文書だけなら明示書式・`pnpm test:docs`で閉じる。結果と必要入力・次操作を本Task Handoffへ残す。
+実装・受入checkpoint（2026-10-03、最終quality前の履歴。現行受入は下の最終受入とHandoff）:
+
+| 有限入力・既存owner | 直接consumer／固定identity・出自 | 取得・参照期間・処遇 |
+| --- | --- | --- |
+| published本文＋manifestの2path、data-pipeline | `20260920.3`、本文32953998 bytes／SHA `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`、Atlas JP／宣言時刻。production・validate・Web/build/E2E | 同source revisionのGit入力。現consumer参照中。本文・manifestの部分更新は拒否、参照終了は依存確認後の別判断 |
+| raw HP宣言＋gzip2の3path、data-pipeline | `raw-hp-inputs-v2`、固定capture `6bba3310976287709dd3aabac9d533e4b1dfb4a9`、原path／raw・gzip bytes/SHA＋上のmaster対応。`executionSemanticsProduction`の全母集団1consumer | 同source revisionで取得。gzip全内容不変。captureは採用済みbyteのGit出自で、2rawからmaster全体を生成した証明ではない |
+| 小fixture／golden9path、test-fixturesと既存意味owner | `master/fixture.json`／`manifest.json`、goldenの`external-differentials-v1`、`master-normalization-v1`、`mlb-only-effects-v1`、`np-damage-v1`、`np-functions-v1`、`ordered-effect-execution-v1`、`pre-existing-calculated-scenarios-v1.json.gz`。unit／productionの明示import／baseline検査 | 同Git revisionの実bytes/SHA。fixture manifestはtest templateであり、現在のfixture本文のreceipt成立を主張しない。意味・expectedを不変で共有 |
+| `tsk-06-5-production-closure.json`1path、master-data source declaration／既存Task | application／pipeline production auditとdocs検査。normal qualityのdomain入力は上記と合わせ15path。登録済み文書・machine evidenceはdocs gateが別に所有 | 本文の原run参照を全run保持へ昇格しない。正本の承認値を変更しない |
+| opt-in audit5suite、application | 既存fixture／published master、うち3suiteのnormalize importは同一snapshotNormalizationの実装・引数を使用。追加index exportにdomain副作用なし | 通常qualityと分離。source／入力・意味関数一致で先行証拠を継承し全auditを再実行しない |
+| matrix／replay、baseline reader・matrix records・replay／merge owner | 固定revision `dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`、manifest＋80本文gzip＋partition fixture、master／source declaration identity | 09.11／09.1の取得・reader／merge受入を依存一致で継承。主repository file transport受入と外部origin未保証を維持、通常CIへ追加しない |
+| normalize producer6入力、data-pipeline | 4可変nice export＋trackedな`referenced_skills.json`／`battle_points.json`（2path／105636 bytes）。normalizeだけが読む | 6入力を通常CI保持集合へ追加しない。原export・tracked2内容は不変。CLI反例は合成root、構造性能は合成6空配列と固定した全6入力を別証拠として検証 |
+| 診断・補助checkout／scratch、既存runner／session | `.test-results/tsk-10-20261003/`の有限receipt。CI14日／local最新10完了run等の既存policy | 受入／再開の参照期間だけ。手動名directoryを永続保持理由にせず、原物／旧directoryを変更・cleanupしない |
+
+現行Git入力継続を採用した理由は、固定取得と全内容が成立済みで直接raw consumer1件／payload2件に閉じ、外部サービス・共有object・pinの継続的consumerや不足能力が確認されなかったため。外部移管は新しい供給権限・障害・能力検証を増やすので採用しない。追加／置換・参照終了条件はREADMEとtest strategy §9／§12へ収束し、Task追加だけでは保持集合を増やさない。
+
+修正は既存artifact ownerの厳密published parser／version検査、CLIの既存宣言失敗の拒否・現入力／candidateの検査、同じproduction suiteの共有master readinessとraw宣言対応。`createSuiteAuditInput`・normalizerの意味関数・全raw走査・旧assertion・runner／suite／CI／timeoutは不変。raw保存集合は3path／3distinct内容、gzip7907911／復元90441915 bytesで不変、metadata820→1083（+263）bytes。sourceの旧blob3件の論理7908731 bytes／観測object保存7724105 bytesを保持し、未commitのため履歴増加はまだ0。将来commitすると新metadata blobの論理1083 bytesが追加され、旧820 bytesは残る。gzipの新blob追加0、pack／delta後の物理量は未保証。コード・文書blobと診断容量は別の増加である。
+
+実受入: 同HEADの新しいfile transport clone→cleanを確認、frozen offline installを同設定の正式審査で完了（初回SQLite権限失敗を保持、外部ネットワーク取得0）。候補は6fileの未commit overlayで、Git取得したmaster／gzip2とcapture revisionの実bytesが一致。ignored rawのread／open／statを拒否した実consumer14/14、禁止access0。新sourceのclean公開revision取得／hosted CI成功とは主張しない。production反例20件（欠落／JSON／未知field・形式／raw pin・transport receipt／unsafe path・不正bytes／gzip decoder／decoded identity／published欠落・破損／部分更新）を14case全体で非zero・skip0・warning0・receipt error0として拒否し、同固定入力供給後は14/14成功。CLI validate／normalizeは10状態×2callerを非zero拒否し失敗前後のpublished bytes不変、同versionの異なる本文も拒否。合成producerによる新version生成→validate→固定集合差戻し→validateが成功し、実データ／expectedの採用を行っていない。
+
+同環境・同入力・CPU0-11の独立3＋3process: reader14caseの中央値5.911692→5.716046秒（-3.31%）、published validate3.691461→3.482447秒（-5.66%）。合成6入力＋同固定published本文の実CLI normalizeは0.398926→2.764194秒（+2.365267秒、+592.91%）。増加は以前読まなかった32953998 bytesの既存本文read／parse／schema・identity検査とcandidate検査の必要仕事である。新しい全production producer／matrix／baseline reader／merge／ranking／同一process診断の測定へ代入しない。先行受入の関連13owner／設定・normalizer意味関数、runner／suite／workflowと入力のbyte一致を`inventory.json`に記録した。
+
+局所unit11case（追加2case内の14宣言反例とversion矛盾）、root型、対象lint・formatが成功。対象差分をレビューし既知の実装Blocking0。まだ最終固定差分quality、結果receiptと正本の一致、全Checklist／Done gate／Apply受入、結果記録後のdocs gateが未達。証拠の入口は`.test-results/tsk-10-20261003/`の`start.json`、`inventory.json`、`performance-comparison.json`、`git-only-acceptance.json`、`lifecycle-cases.json`／`lifecycle-restoration.json`、`published-cases.json`／`published-update-rollback.json`。各receiptは完全log・Vitest manifest／JSONへ接続する。補助code・合成root・case入力はこの受入を再確認する参照期間だけで、恒久helper／回帰入力への採用はしない。
+
+- [x] 通常qualityに必須のmaster／raw／fixtureと、opt-in audit・matrix／replay・診断だけの入力を直接callerで区別し、有限inventoryへ対応付ける。既存保持契約を全runの保存義務へ広げない。
+- [x] 入力の取得・検査・更新・差戻し・参照終了を同じownerへ対応付ける。承認対象、固定出自／identity、rawとmasterの対応、manifestとconsumerの更新単位、取得不能時の必要入力を決める。
+- [x] Taskごとの追加保存を防ぐ採用条件を既存README／要件へ収束する。保存path、distinct object、圧縮／復元bytes、metadata、Git履歴に残る増加を区別し、不要な重複を作らず必要能力を維持する。
+- [x] 採用方式で現コードに不足する範囲だけ修正し、欠落／破損／未知宣言／identity不一致／更新途中の小反例を直接consumerで確認する。既存の有効な反例証拠は再利用する。
+- [x] cleanな別checkoutから通常入力を取得し、必要consumerを実行し、不足時の停止／供給後再開を実証する。更新・差戻しの操作は現expectedや原rawを変更しない検証で確認し、新データの採用は別の明示判断にする。
+- [x] 変更したconsumer／保存・取得経路だけの検証と差分レビューを先に閉じ、コード／実行設定変更がある場合は固定差分で最終`pnpm quality`を行う。文書だけなら明示書式・`pnpm test:docs`で閉じる。結果と必要入力・次操作を本Task Handoffへ残す。
 
 不変条件・停止境界: damage／ranking／state／outcome、全母集団・assertion・timeout／cap／ratchet、現baseline・承認済みexpected・fixture意味を維持する。最新raw取得、別SHA／別path／小fixture、期待値再生成で不足を補わない。固定baseline `dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`の主repository file transport受入と外部origin未保証は維持し、外部供給を必要とする案には提供元・権限の明示判断を必要とする。09.13の旧bundle非依存・HP原内容再監査能力保持解除・物理処遇未実施を変更しない。新しい保持集合・取得元変更・能力損失は確認する。原物・既存調査directoryの変更／移動／削除、`results:clean`、外部転送・公開、commit／pushは本Task整理の承認に含まれない。
 
-Flow closure: N/A: 現時点は次Taskの定義だけでcanonical state／outcome／write pathを変更しない。採用設計が複数の保存・取得経路を変更する場合は、実装前に既存体系レビューガイドで対象familyのdeltaと反証を本Taskへ記録する。
+Flow closure（採用、2026-10-03）: 対象familyは固定入力の宣言→実体→直接consumerとnormalize／validate。semantic ownerは既存data-pipeline、Git取得・有限保存集合・全raw内容は継続する。raw宣言に受入済みpublished masterのidentityと確認可能なGit採用出自を結び、manifest／consumer固定値／published実体の部分更新を拒否する。normalizeの既存宣言読取失敗をundefinedへ変える経路を除去し、published検査で未知宣言・本文version矛盾を拒否する。これはraw2件だけからmaster全体を生成した出自証明ではない。反証は正常／欠落／破損／未知field・形式／identity矛盾／部分更新／停止後の同固定入力供給・再開／組合せの差戻し。domain state／outcome／baseline／expected／全母集団・assertionを変更しない。新しい保存helper・package・サービス・原物処遇は採用しない。
+
+開始checkpoint: HEAD `5c235d27ead1688bdd585d86a933dac389759f35`、worktree／index clean、TSK-09 done／10 ready／in_progress0を照合。実環境には同じcwdのCodex processが複数あるため新しい隔離checkoutで実装・測定し、主worktree統合前に担当差分を照合する。`/tmp`は空き不足、workspaceは約635GB空きであるため新artifact／process専用scratchはworkspaceの新namespaceを使う。既存directory・store・原物は変更／cleanupしない。新`.test-results/tsk-10-20261003/`は取得・性能・反例・最終受入receiptの参照期間だけの調査artifactであり、Git入力・恒久保持集合へ昇格しない。残義務は局所修正・別checkout受入・前後3process・固定差分quality・正本／全Apply／Handoff。Next command: 同固定HEADの隔離Git checkout取得と必要なfrozen依存準備。
 
 Done gate:
 
@@ -3024,23 +3049,43 @@ Done gate:
 - 原rawの全内容・検査母集団・回帰expected・完全失敗診断を維持し、保存量の変化と必要能力を対応付ける。診断artifactやGit履歴を自動削除していない。
 - 変更に必要な局所検証・性能比較／再利用条件・最終ゲートが成立し、対象内Blocking0、正本とsource／receipt／Handoffが一致する。
 
+最終受入（2026-10-03）:
+
+- 固定sourceの主worktree `pnpm quality` は全10step／exit0、1034505 ms。unit1607／production157／E2E29、skip／todo／retry／flaky／warning／unexpected0。productionのmaster read／parse／compileは各境界1、candidate6673／deduplicated4194、damage request2596／distinct1489を保持。parent／child照合と圧縮・復元receiptのerror0。実行前後859sourceのbytes／SHAが一致し、成功中に対象変更なし。canonical manifestは `.test-results/2026-10-02T17-04-58-085Z-22-449bca/manifest.json`、source／diff identityと解釈したArtifacts directoryは `quality-acceptance.json`／`pre-quality.json`。
+- 同環境・同入力・CPU0-11の実CLI全producer前後3processは、入力6件91993532 bytesを新しい測定rootへ供給して成功。前5.680778／5.521150／5.498278秒、後9.779876／9.303343／9.070059秒、中央値5.521150→9.303343秒（+3.782193秒、+68.50%）。6生成本文は32954004 bytes／SHA `13fadcce8bd71b87daf9fb7684ea3b1e2f6dd77d685b46299b10d9b5edcb40d1`で同一。既存publishedと全candidateの検査追加による必要仕事で、normalizerの意味関数は不変。`tsk10-full-probe`は性能用versionで採用しない。raw2件はGit固定gzipから復元、他4件は原入力を一度固定して同一bytesを供給。原export／published／expectedは変更なし。`full-normalize-inputs.json`／`full-normalize-comparison.json`を合成producer、reader、validateの3＋3とは分離し、matrix producer／baseline reader／merge／ranking／同一process診断の証拠へ代入しない。
+- `local-acceptance.json` は有限481file・31manifest・75caller receiptを照合してerror0。production20反例＋CLI20反例、同version異内容拒否、同固定入力供給後再開、新version候補→validate→差戻し→validateを確認。最大caller stdout12550／stderr5077 bytesで、完全結果・入力receiptは各manifestへ残る。既存共通writer／runnerの保存失敗・bounded診断契約はsource一致のTSK-09証拠と今回最終qualityを継承し、変更していない保存層の故障試験を追加しない。
+- `capacity-acceptance.json`の局所診断は481path／359distinct内容／232216809保存bytes、metadata部分537805 bytes。有効gzip23／復元3 bytesは診断反例の小入力であり、raw保存量ではない。不正gzipは復元不能として別記。独立6processの完全生成本文6件を省略していない。quality producerは別集合で637path／628distinct内容／272212886保存bytes、gzip59340792／復元1041643820 bytes、manifest metadata部分316226 bytes（parent manifest374621 bytesは別計上）。有限入力3path／gzip7907911／復元90441915／metadata+263とGit履歴増加0は上の保持契約を維持する。容量snapshot自身とその後の結果記録receiptは集計外と明示し、精度の異なるdirectory全体量へ混ぜない。
+- 取得checkout・依存・scratch・合成rootは補助作業物。`capacity-acceptance.json`のmetadata測定はcheckout640501974 bytes（内包.git45690984／依存479847465と重複）、合成root478182、全入力測定root125424501、scratch36105060 bytes。distinct／圧縮率は未測定であり、CI入力保存量へ加算しない。全入力測定rootのraw6件、生成本文／receipt、局所反例、補助codeは今回受入・再開の参照期間だけで、恒久input／helperに採用しない。参照終了時に依存確認後の既存policyで処遇し、今回は原物・旧directory・新artifactもcleanupしない。
+- 初回docs inspector失敗は本TaskのHandoff見出しを修正して解消し、最終qualityのdocsは28test／103Markdown／44machine evidence／912reference成功。明示書式は4文書のMarkdown／metadata／対象tableを照合する。Task旧TSK-06.48のtable幅はHEADと同一で今回の対象外（`table-width-attribution.json`）。開始／統合／品質の証拠を現在差分と橋渡しし、コード・入力不変の結果記録後に文書ゲートを閉じる。新しい全matrix／audit／baseline readerやhosted CI、外部origin取得の成功は主張しない。
+
+Done gate closure:
+
+| Gate | 判定 | 根拠 |
+| --- | --- | --- |
+| ①有限input／owner／identity／取得・寿命 | Verified | 上のinventory、README、test strategy §9／§12、`inventory.json`。Task追加に伴うinput／全run追加なし |
+| ②contributor取得・更新・差戻し・停止／再開 | Verified | `git-only-acceptance.json`、`lifecycle-restoration.json`、`published-update-rollback.json`。現Git供給と未保証の外部origin／hosted CIを分離 |
+| ③全内容／母集団／expected／完全診断・保存量 | Verified | 原payloadと関連13owner一致、consumer14case・原assertion維持、最終production、局所／quality receiptと上の分離容量。原物・履歴削除なし |
+| ④必要検証／性能／最終ゲート・記録一致 | Verified | 局所unit11・型／lint／format、reader／validate／合成・全producer各3＋3、固定source quality成功。対象内Blocking0。結果記録後`pnpm test:docs`成功・明示書式4文書成功、最終source橋渡しはHandoff／`final-source.json` |
+
 Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `TS-ART-001` | Apply | 有限入力inventory／取得・更新・差戻し／完全診断receiptと参照寿命の照合 | Handoff |
-| `TS-QUAL-001` | Apply | 通常qualityと追加検査の入力・direct caller照合。実行変更時は最終`pnpm quality`、文書だけなら`pnpm test:docs` | Handoff |
-| `TS-RUN-001` | Apply | 変更した取得・検査consumerの不足／破損／不一致反例と非zero終了・完全診断照合 | Handoff |
-| `TS-PERF-001` | Apply | runner変更時のみ同一集合の前後測定。未変更ならsource／依存一致で既存証拠再利用 | Handoff |
-| `TS-PERF-002` | Apply | 構造変更時は同環境・入力・workloadの前後各3process。reader／merge／producer／ranking／同一process診断を区別し、未変更は依存一致で再利用 | Handoff |
-| `DX-ART-001` | Apply | 不足時のbounded表示と完全診断・保存失敗の拒否、保存／復元identity照合 | Handoff |
-| `DX-HANDOFF-001` | Apply | 入口から必要入力・取得条件・不足時操作へ到達し別checkout／threadで再開 | Handoff |
-| `DOC-REV-001` | Apply | 要件を改訂する場合のversion／理由／承認／影響Task／baseline影響の照合。未改訂なら現Contract不変を記録 | Handoff |
-| `DOC-LINT-001` | Apply | 明示Markdown／metadata書式、`pnpm test:docs`、registry／参照／Task状態の照合 | Handoff |
+| `TS-ART-001` | Apply | Verified: 有限inventory、README更新／差戻し・参照終了、局所／品質全receipt照合 | Handoff、`inventory.json`／`capacity-acceptance.json` |
+| `TS-QUAL-001` | Apply | Verified: 固定source `pnpm quality` 全10step・1607／157／29、結果記録のdocs gate | Handoff、`quality-acceptance.json`／`pre-quality.json` |
+| `TS-RUN-001` | Apply | Verified: production20＋CLI20の拒否、停止後供給／再開、更新・差戻し | Handoff、`local-acceptance.json`／各case receipt |
+| `TS-PERF-001` | Apply | Verified: runner／設定byte不変、TSK-09同条件証拠継承。consumer測定をrunner比較へ代入しない | Handoff、`inventory.json`／TSK-09最終受入 |
+| `TS-PERF-002` | Apply | Verified: reader／validate／合成・全入力実CLI producer各前後3process。未変更merge／matrix／ranking等は依存一致で継承 | Handoff、`performance-comparison.json`／`full-normalize-comparison.json` |
+| `DX-ART-001` | Apply | Verified: 実caller非zero・bounded表示と完全結果／receipt、全圧縮・復元identity照合。未変更保存失敗ownerは先行証拠継承 | Handoff、`local-acceptance.json`／`quality-acceptance.json` |
+| `DX-HANDOFF-001` | Apply | Verified: README入口、Git-only取得・禁止raw access0、必要入力・再開操作、未commit差分と寿命を記録 | Handoff、`git-only-acceptance.json`／`final-source.json` |
+| `DOC-REV-001` | Apply | Verified: 要件1.3.4の理由／2026-10-03 user OK／TSK-10／baseline意味不変とregistry同期 | Handoff、test strategy改訂履歴／docs registry |
+| `DOC-LINT-001` | Apply | Verified: 明示Markdown／metadata4文書、結果記録後 `pnpm test:docs`、registry／Task一致 | Handoff、`acceptance-docs/receipt.json`／`final-docs-corrected/receipt.json`／`document-format-scoped.json` |
 | `RK-PERF-001` | N/A: ranking runtime／hot pathは本Taskの修正対象外 | - | - |
 | `TS-FINAL-001` | N/A: TSK-09のproject closureを継承し、新しいproject全体受入を目的にしない。変更時の品質ゲートはTS-QUAL-001で閉じる | - | - |
 
-Handoff: 次Taskの整理としてreadyへ登録した。開始identityはTSK-09 completion commit `6bba3310976287709dd3aabac9d533e4b1dfb4a9`、現在の追加差分は本Taskとregistryの文書だけ。09の局所・性能・最終quality1605／157／29と取得証拠は、source／入力一致の範囲で継承し、新しい更新・hosted CI成功へ昇格しない。次は`git status --short`／`git rev-parse HEAD`→本Task→TSK-09最終Handoff→上表の直接定義・callerから、更新操作で不足する契約と修正境界を確定する。実装開始後は通常の技術判断で継続し、新しい製品判断・保持範囲／取得元の拡張だけ確認する。未着手であり、本TaskのDone gateは未成立。
+Handoff: 2026-10-03、TSK-10 done。現行判断・有限inventory・全6Checklist／4Done gate／9ApplyのVerifiedと2N/Aは上の最終受入／matrixが所有し、必須Deferred0・対象内Blocking0。有限Git方式を継続し、既存data-pipelineでraw宣言・consumer固定値・publishedの更新単位とfail-closedを閉じた。保持は3path・原gzip7907911／復元90441915 bytes・全母集団／14case・原assertion不変、metadata+263 bytes。局所40実caller反例・同固定入力供給後再開・合成新version／差戻し・別checkout実consumer14、局所・reader／validate／合成・全入力producer各3＋3を受入し、未変更ownerの先行証拠を継承。canonical最終quality1607／157／29成功、637artifactと局所31manifest／75receipt照合error0、品質前後859source一致。品質後の変更は本Taskの結果記録のみで`pnpm test:docs`と明示書式成功、done結果記録も同文書ゲートへ接続する。証拠入口は `.test-results/tsk-10-20261003/quality-acceptance.json`、`local-acceptance.json`、`capacity-acceptance.json`、`final-source.json`とnamespace `manifest.json`（固定identity・受入・参照期間／処遇）。HEAD `5c235d27ead1688bdd585d86a933dac389759f35`、stage空、6source／入力宣言＋4文書の未commit成果で停止。実装commitはない。Next command: 次sessionで`git status --short`／`git rev-parse HEAD`→本Handoff／`final-source.json`を照合し、追加作業があればREADMEの更新単位と必要局所検証から開始する。現在の未達実装・必要入力なし。外部baseline origin／hosted CI、新sourceのclean公開revision供給は未保証として維持。不足時は同revision／宣言path／bytesを供給してconsumer検査から再開し、別版で補わない。新checkout／測定raw6件／生成本文／補助code／receiptは今回受入・再開参照中だけ、参照終了後は依存を確認して既存policyで処遇する。手動名namespaceは永続保持理由にしない。旧bundle非依存・09.13保持解除／物理処遇未実施を維持、原物変更・commit／push／cleanup／外部転送なし。
+
+Handoff（起票時の履歴）: 次Taskの整理としてreadyへ登録した。開始identityはTSK-09 completion commit `6bba3310976287709dd3aabac9d533e4b1dfb4a9`、現在の追加差分は本Taskとregistryの文書だけ。09の局所・性能・最終quality1605／157／29と取得証拠は、source／入力一致の範囲で継承し、新しい更新・hosted CI成功へ昇格しない。次は`git status --short`／`git rev-parse HEAD`→本Task→TSK-09最終Handoff→上表の直接定義・callerから、更新操作で不足する契約と修正境界を確定する。実装開始後は通常の技術判断で継続し、新しい製品判断・保持範囲／取得元の拡張だけ確認する。未着手であり、本TaskのDone gateは未成立。
 
 ## 4. 更新規則
 

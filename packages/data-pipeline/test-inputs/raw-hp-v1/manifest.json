@@ -1,7 +1,14 @@
 {
-  "format": "raw-hp-inputs-v1",
+  "format": "raw-hp-inputs-v2",
   "owner": "@fgo-lab/data-pipeline",
   "consumer": "executionSemanticsProduction/raw-hp-before-relevance",
+  "captureRevision": "6bba3310976287709dd3aabac9d533e4b1dfb4a9",
+  "publishedMaster": {
+    "masterDataVersion": "20260920.3",
+    "file": "master.json",
+    "bytes": 32953998,
+    "sha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a"
+  },
   "inputs": [
     {
       "rawPath": "data/raw/nice_servant.json",
