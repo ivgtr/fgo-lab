@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.3.2"
+document_version: "1.3.3"
 status: "Active"
 approved_at: "2026-08-30"
-updated_at: "2026-10-01"
+updated_at: "2026-10-02"
 created_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
@@ -311,7 +311,7 @@ timeout、signal、worker crash、out-of-memory、reporter crashでは、最後�
 
 完全log／trace／実行receiptは上記CI14日・local最新10完了runの調査policyに従う。localは日数期限ではなく、明示cleanup時の有限run数である。手動名directoryのcleanup対象外や現在の存在は永続保管・外部取得の保証ではない。原byteが不足したら当時の全byte再監査・照合付き再利用は主張せず、Gitの受入判断と必要に応じたfresh検証を区別する。参照だけを原run全体の恒久保存義務へ変換しない。
 
-固有入力・raw cells・原採取／独立receiptの内容はdigest・件数・再現fixtureだけで代替しない。個別にretainまたは意味を保持した移管先を決め、必要能力・固定identity・不足時操作・限界を判断記録へ残す。`data/raw/`の入力はrun cleanupの対象外であり、本節のCI日数を原raw exportの寿命へ適用しない。TSK-09.1のA0〜A9・旧bundle・原入力不足の具体的な処遇契約は[判断台帳](../evidence/tsk-09-1-documentation-closure.md#step-2-保持契約の収束)を正本とする。
+固有入力・raw cells・原採取／独立receiptの内容はdigest・件数・再現fixtureだけで代替しない。必要な固有能力は個別にretainまたは意味を保持した移管先を決め、必要能力・固定identity・不足時操作・限界を判断記録へ残す。現行・後続の必須consumer／契約がなく原内容・出自の再監査能力だけを手放す場合は、保持判断の変更理由・対象identity・具体的な能力損失を明示した承認と記録を必要とする。これは原内容を移管済み・代替済みとする判断ではなく、物理削除の承認も兼ねない。必須義務が不明なら不足保留とする。`data/raw/`の入力はrun cleanupの対象外であり、本節のCI日数を原raw exportの寿命へ適用しない。TSK-09.1のA0〜A9・旧bundle・原入力不足の具体的な処遇契約は[判断台帳](../evidence/tsk-09-1-documentation-closure.md#step-2-保持契約の収束)と、その09.12節末尾の[09.13最終処遇判断](../evidence/tsk-09-1-documentation-closure.md#0913-不使用方針による最終処遇判断)を正本とする。09.13で旧bundleのHP原内容保持を解除したが、bundle外OC inventory／raw exportsの契約は変更しない。
 
 ## 10. 終了コードとprocess契約
 
@@ -593,6 +593,7 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 1.3.3 | 必須consumer／契約のない歴史原内容の再監査能力を手放す承認・記録と物理処遇の分離を明示。09.13のHP保持解除を同期（TS-ART-001） | approved 2026-10-02: user OK confirmed TSK-09.13 full-disposal judgment plan | TSK-09.13、TSK-09.1 STEP 3〜6、TSK-09 | none: 現行baseline・fixture・expected・damage・CI14日・local最新10runは不変。旧HP原byteの再監査能力を手放す |
 | 1.3.2 | 09.11移管結果からrepositoryの回帰入力／fixture／判断記録と調査artifactの保持責務・不足時の能力制限を明示（TS-ART-001） | approved 2026-10-01: user confirmed TSK-09.1 STEP 2 plan | TSK-09.1 STEP 2、TSK-09 | none: CI14日・local最新10完了run、実行経路・expected・damageは不変 |
 | 1.3.1 | 全件／特殊経路の高コストauditを排他的なopt-in suiteへ分け、通常のunit／production gateに代表fixtureと共有inventory整合を残す（TS-QUAL-001、TS-AUDIT-001） | approved 2026-09-24: user requested specialized sweeps stay out of ordinary tests | TSK-08、今後のproduction audit配置 | full production population／通常quality gateは不変。TSK-08 control auditは明示実行へ移動 |
 | 1.3.0 | quick feedback profileとbounded local artifact retentionを追加し、full quality集合を維持 | approved 2026-09-04 | test execution observability follow-up | none: production／E2E／damage gateは不変 |

@@ -1,3 +1,11 @@
+---
+title: "Damage quality Q4 checkpoint"
+status: "Complete"
+status_scope: "Q4 evidence precision／external differentialの当時の完了記録"
+historical_status: "complete"
+date: "2026-08-25"
+---
+
 # Damage quality Q4 checkpoint
 
 - Date: 2026-08-25

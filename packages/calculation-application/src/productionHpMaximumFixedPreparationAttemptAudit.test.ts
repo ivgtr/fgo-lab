@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { type MasterEffect, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { normalizeAtlasSnapshot } from '@fgo-lab/data-pipeline';
@@ -19,7 +18,8 @@ import {
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 import {
   auditMaximumFixedAttemptIsolation,
@@ -494,8 +494,8 @@ function entry(spec: AttemptFixture, index: number, parity: boolean) {
 async function saveArtifact(task: { meta: unknown }, path: string, payload: unknown) {
   const encoded = encodeProductionAuditDiagnostic(payload);
   const receipt = await writeProductionAuditArtifact(task.meta, path, encoded);
-  const bytes = await readFile(`${process.env['FGO_TEST_ARTIFACT_DIR']!}/${path}`);
-  const decoded = decodeProductionAuditArtifact(bytes) as ReturnType<
+  const bytes = await readStoredProductionAuditArtifact(path);
+  const decoded = decodeStoredProductionAuditArtifact(bytes) as ReturnType<
     typeof encodeProductionAuditDiagnostic
   >;
   expect(receipt.expectedBytes).toBe(bytes.length);

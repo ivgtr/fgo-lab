@@ -1,6 +1,8 @@
 ---
 title: "Damage effect execution E3.3 unified constraint validation"
-status: "Complete - Review Findings Corrected"
+status: "Complete"
+historical_status: "Complete - Review Findings Corrected"
+status_scope: "E3.3実装・検証とReview closureで記録された修正の完了。現HEADの検証ではない"
 created_at: "2026-08-26"
 schema_version: 14
 engine_version: "11.2.0"

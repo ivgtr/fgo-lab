@@ -1,3 +1,9 @@
+---
+title: "ADR-017: class・attribute・familyを一つのTargetContextで検証する"
+status: "accepted"
+date: "2026-08-27"
+---
+
 # ADR-017: class・attribute・familyを一つのTargetContextで検証する
 
 - Status: accepted

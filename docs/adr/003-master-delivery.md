@@ -1,3 +1,9 @@
+---
+title: "ADR-003: マスターデータ配信"
+status: "accepted"
+date: "2026-08-24"
+---
+
 # ADR-003: マスターデータ配信
 
 - Status: accepted

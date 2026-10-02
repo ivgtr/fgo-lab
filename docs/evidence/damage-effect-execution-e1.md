@@ -1,6 +1,9 @@
 ---
 title: "Damage effect execution E1 contract"
-status: "Complete"
+status: "Superseded"
+historical_status: "Complete"
+status_scope: "E1 ordered execution contract記録の完了を保持。production未接続は当時の境界"
+superseded_by: "docs/evidence/damage-effect-execution-e2.md"
 created_at: "2026-08-25"
 source: "docs/damage-effect-execution-requirements.md v1.0.0"
 ---

@@ -1,0 +1,23 @@
+{
+  "format": "raw-hp-inputs-v1",
+  "owner": "@fgo-lab/data-pipeline",
+  "consumer": "executionSemanticsProduction/raw-hp-before-relevance",
+  "inputs": [
+    {
+      "rawPath": "data/raw/nice_servant.json",
+      "rawBytes": 68622616,
+      "rawSha256": "1abf690ac22bcdd427788e0ff545320af491ee9f90fbc08a56af9603a217118f",
+      "gzipFile": "nice_servant.json.gz",
+      "gzipBytes": 6814611,
+      "gzipSha256": "9f11e8279a859b39a7dadd1b7ced1174ec5e586e95ef1f12c3bec4c8878bf827"
+    },
+    {
+      "rawPath": "data/raw/nice_equip.json",
+      "rawBytes": 21819299,
+      "rawSha256": "bb339ac726f8201243410ec82b85a14496e6a8dace54b226071b556604fc27e5",
+      "gzipFile": "nice_equip.json.gz",
+      "gzipBytes": 1093300,
+      "gzipSha256": "22d5cb4c98a272c6a8a5bfe5aaf616cb3b261d039a042162198a7fbbf6b1a380"
+    }
+  ]
+}

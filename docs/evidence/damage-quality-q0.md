@@ -1,3 +1,11 @@
+---
+title: "ダメージ計算品質 Q0 調査・目標契約"
+status: "Complete"
+status_scope: "Q0調査・目標契約の採用記録。本文のapprovedを保持し、現行契約の承認を所有しない"
+historical_status: "approved"
+date: "2026-08-25"
+---
+
 # ダメージ計算品質 Q0 調査・目標契約
 
 - Date: 2026-08-25

@@ -1,3 +1,10 @@
+---
+title: "ダメージ効果 routing・条件式 監査"
+status: "Complete"
+status_scope: "当時のrouting実装結果・検証の完了記録。本文の実装完了・確認待ちをUX承認済みへ読み替えない"
+historical_status: "実装完了・確認待ち"
+---
+
 # ダメージ効果 routing・条件式 監査
 
 更新日: 2026-08-25  

@@ -1,3 +1,9 @@
+---
+title: "E4.1 ActorForm plan / AttackProfile completion"
+status: "Complete"
+status_scope: "E4.1 ActorForm／AttackProfileとinventory／digestの完了記録。E5未着手は当時の状態"
+---
+
 # E4.1 ActorForm plan / AttackProfile completion
 
 ## Outcome

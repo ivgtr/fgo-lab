@@ -1,11 +1,34 @@
 ---
 title: "Next.js route and browser-state flow"
-status: "Implementation"
+status: "Complete"
+historical_status: "Implementation"
+status_scope: "Next移行・master配信・route splitの4 commitに属する実装・測定記録。現HEADの性能・受入を所有しない"
 created_at: "2026-09-05"
 updated_at: "2026-09-05"
 ---
 
 # Next.js route and browser-state flow
+
+## Evidence scope and current contracts
+
+This note is supporting historical evidence for the Next migration and its route/master delivery
+measurements. The original implementation boundaries are `c216284e3edcdb4b741364f8548a617464ffea69`
+(Next migration), `2a818bdb024d07dadd2a2b2c71075c114314091b` (master cache),
+`2c1a978db1ce1b794748627fbf888ea678e09f55` (validated startup), and
+`907f2514f0f1c06d30d9d39419ba843a35ca043e` (route interaction bundles).
+The sizes, timing, test counts, and `Verified` references below belong to those measurements;
+they are not measurements or test identifiers for the current HEAD. No successor reproduces these
+before/after measurements, so the original values remain here.
+
+Current route and browser ownership is governed by [ADR-029](../adr/029-next-vercel-routing.md),
+[canonical data flow](../guides/data-flow.md), and the [UI contract](../requirements/ui-design-spec.md).
+The direct implementation is `app/layout.tsx → App.tsx` (pathname, lazy views, navigation),
+`app/startup.ts → adapters/repository.ts` (download, validation, atomic activation and receipt load),
+and `public/sw.js` (master-payload cache exclusion). Current receipt versions and test identifiers
+must be read from those owners; the historical receipt description below does not fix their versions.
+Current acceptance and remaining work are linked by the [evidence index](README.md#読み分けと現行の受入先)
+and [Tasks](../tasks/development-redesign-tasks.md). The original metadata value `Implementation` is preserved in `historical_status`.
+Frontmatter `Complete` describes this recorded migration scope; it does not claim current-HEAD acceptance.
 
 ## Outcome and ownership
 

@@ -1,3 +1,9 @@
+---
+title: "ADR-002: ローカル保存とmigration"
+status: "accepted"
+date: "2026-08-24"
+---
+
 # ADR-002: ローカル保存とmigration
 
 - Status: accepted

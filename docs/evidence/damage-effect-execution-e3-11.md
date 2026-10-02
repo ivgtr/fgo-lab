@@ -1,3 +1,10 @@
+---
+title: "Damage effect execution E3.11 completion report"
+status: "Complete"
+status_scope: "E3.11 attacker controlの完了記録。本文にあるE3.12での置換範囲を保持"
+date: "2026-08-27"
+---
+
 # Damage effect execution E3.11 completion report
 
 > この文書はE3.11時点の履歴である。攻撃役skill rowのactivation toggleと、effect除外後もsourceを維持する記述はE3.12で置換した。現行契約と検証結果は`damage-effect-execution-e3-12.md`を正とする。

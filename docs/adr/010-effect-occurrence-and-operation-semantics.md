@@ -1,3 +1,9 @@
+---
+title: "ADR-010: effect occurrenceとoperation semanticsを正規化する"
+status: "accepted"
+date: "2026-08-26"
+---
+
 # ADR-010: effect occurrenceとoperation semanticsを正規化する
 
 - Status: accepted

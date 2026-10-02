@@ -1,3 +1,9 @@
+---
+title: "ADR 020: ranking condition provenance and field policy"
+status: "accepted"
+recorded_commit: "0487e90e21766431cf8d790555c0841db2ef9eca"
+---
+
 # ADR 020: ranking condition provenance and field policy
 
 ## Status

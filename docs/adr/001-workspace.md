@@ -1,3 +1,10 @@
+---
+title: "ADR-001: 静的Web workspace"
+status: "superseded"
+date: "2026-08-24"
+superseded_by: "ADR-029"
+---
+
 # ADR-001: 静的Web workspace
 
 - Status: superseded

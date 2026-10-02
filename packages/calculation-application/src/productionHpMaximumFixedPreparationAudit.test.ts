@@ -27,7 +27,8 @@ import {
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 const base = masterSnapshotSchema.parse(fixture);
@@ -424,8 +425,8 @@ function entry(spec: Spec) {
 async function save(task: { meta: unknown }, path: string, payload: unknown) {
   const encoded = encodeProductionAuditDiagnostic(payload);
   const receipt = await writeProductionAuditArtifact(task.meta, path, encoded);
-  const bytes = await readFile(`${process.env['FGO_TEST_ARTIFACT_DIR']!}/${path}`);
-  const decoded = decodeProductionAuditArtifact(bytes) as ReturnType<
+  const bytes = await readStoredProductionAuditArtifact(path);
+  const decoded = decodeStoredProductionAuditArtifact(bytes) as ReturnType<
     typeof encodeProductionAuditDiagnostic
   >;
   expect(receipt.expectedBytes).toBe(bytes.length);

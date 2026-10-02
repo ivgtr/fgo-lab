@@ -1,3 +1,9 @@
+---
+title: "ADR-012: battle context inputと参照operationをcanonical化する"
+status: "accepted"
+date: "2026-08-26"
+---
+
 # ADR-012: battle context inputと参照operationをcanonical化する
 
 - Status: accepted

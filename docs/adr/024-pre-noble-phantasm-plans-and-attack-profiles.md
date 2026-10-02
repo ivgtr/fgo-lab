@@ -1,3 +1,9 @@
+---
+title: "ADR 024: 宝具前有限 plan と AttackProfile ranking"
+status: "accepted"
+recorded_commit: "57c0546eb88a9781cbce61771f1e3472f5f64cd7"
+---
+
 # ADR 024: 宝具前有限 plan と AttackProfile ranking
 
 ## Status

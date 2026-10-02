@@ -1,3 +1,9 @@
+---
+title: "ADR-009: 条件、ユーザーdecision、world factを分離する"
+status: "accepted"
+date: "2026-08-25"
+---
+
 # ADR-009: 条件、ユーザーdecision、world factを分離する
 
 - Status: accepted

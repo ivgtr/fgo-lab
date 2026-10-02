@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { gunzipSync } from 'node:zlib';
 
 export function sha256File(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
@@ -247,6 +248,36 @@ export function verifyArtifactFiles(root, artifacts) {
       } catch (cause) {
         errors.push(
           `${artifact.path}:invalid_json:${cause instanceof Error ? cause.message : String(cause)}`,
+        );
+        continue;
+      }
+    }
+    if (artifact.format === 'json-gzip') {
+      if (
+        !Number.isSafeInteger(artifact.expectedDecodedBytes) ||
+        artifact.expectedDecodedBytes <= 0 ||
+        typeof artifact.expectedDecodedSha256 !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(artifact.expectedDecodedSha256)
+      ) {
+        errors.push(`${artifact.path}:invalid_decoded_receipt`);
+        continue;
+      }
+      try {
+        const decoded = gunzipSync(readFileSync(path), {
+          maxOutputLength: artifact.expectedDecodedBytes,
+        });
+        if (decoded.length !== artifact.expectedDecodedBytes) {
+          errors.push(`${artifact.path}:decoded_bytes`);
+          continue;
+        }
+        if (createHash('sha256').update(decoded).digest('hex') !== artifact.expectedDecodedSha256) {
+          errors.push(`${artifact.path}:decoded_sha256`);
+          continue;
+        }
+        JSON.parse(decoded.toString('utf8'));
+      } catch (cause) {
+        errors.push(
+          `${artifact.path}:invalid_json_gzip:${cause instanceof Error ? cause.message : String(cause)}`,
         );
         continue;
       }

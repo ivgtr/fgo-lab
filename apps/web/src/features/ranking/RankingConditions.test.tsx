@@ -73,8 +73,11 @@ it.each([2, 3, 4])(
       return <RankingConditions conditions={conditions} onChange={setConditions} />;
     }
     const view = render(<Harness />);
+    expect(view.getByText('初期OC3・スキルLv10')).toBeTruthy();
     fireEvent.change(view.getByLabelText('宝具Lv'), { target: { value: String(npLevel) } });
     expect((view.getByLabelText('初期OC') as HTMLSelectElement).value).toBe('1');
+    expect(view.getByText('初期OC1・スキルLv10')).toBeTruthy();
+    expect(view.queryByText('初期OC3・スキルLv10')).toBeNull();
     const recovered = parseRankingUrlState(
       serializeRankingUrlState({
         ...DEFAULT_RANKING_URL_STATE,

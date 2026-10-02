@@ -1,6 +1,5 @@
 import { expect, it } from 'vitest';
 import { isDeepStrictEqual } from 'node:util';
-import { readFile } from 'node:fs/promises';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -23,7 +22,8 @@ import {
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 const base = masterSnapshotSchema.parse(fixture);
@@ -371,10 +371,8 @@ it(
       foreignEqualLeaf,
     };
     await writeProductionAuditArtifact(task.meta, 'hp-fixed-equal-leaf-identity.json', complete);
-    const disk = await readFile(
-      `${process.env['FGO_TEST_ARTIFACT_DIR']}/hp-fixed-equal-leaf-identity.json`,
-    );
-    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+    const disk = await readStoredProductionAuditArtifact('hp-fixed-equal-leaf-identity.json');
+    expect(decodeStoredProductionAuditArtifact(disk)).toEqual(complete);
   },
 );
 const groups = [
@@ -476,11 +474,13 @@ for (const spec of specs)
             'hp-fixed-proof-correspondence.json',
             proofPayload,
           );
-          const bytes = await readFile(
-            `${process.env['FGO_TEST_ARTIFACT_DIR']}/hp-fixed-proof-correspondence.json`,
+          const bytes = await readStoredProductionAuditArtifact(
+            'hp-fixed-proof-correspondence.json',
           );
           expect(bytes.length).toBe(receipt.expectedBytes);
-          expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), proofPayload)).toBe(true);
+          expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(bytes), proofPayload)).toBe(
+            true,
+          );
         }
         const negatives: {
           name: string;
@@ -955,8 +955,8 @@ for (const spec of specs)
         const encoded = encodeProductionAuditDiagnostic(payload);
         const path = `tsk-08-hp-${spec.name}-${group}.json`;
         await writeProductionAuditArtifact(task.meta, path, encoded);
-        const saved = decodeProductionAuditArtifact(
-          await readFile(`${process.env['FGO_TEST_ARTIFACT_DIR']}/${path}`),
+        const saved = decodeStoredProductionAuditArtifact(
+          await readStoredProductionAuditArtifact(path),
         ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
         expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(saved), payload)).toBe(true);
         expect(positive.gate.status, JSON.stringify(positive.gate.firstDifference)).toBe('passed');

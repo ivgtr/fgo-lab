@@ -1,13 +1,17 @@
-import { mkdtemp, readFile, mkdir, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { compareProductionParity } from './productionParityDiagnostics';
 import { resolve } from 'node:path';
 import { expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import {
+  decodeStoredProductionAuditArtifact,
   decodeProductionAuditArtifact,
   productionAuditTestOptions,
   serializeProductionAuditArtifact,
   writeProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 it('round trips omitted undefined properties, array undefined, null, and absent properties', () => {
@@ -55,8 +59,52 @@ it('preserves ordered Set and Map contents and nested missing values without cha
     expect(decodeProductionAuditArtifact(serializeProductionAuditArtifact(value))).toEqual(value);
 });
 
+it('restores metadata at every shared occurrence and preserves subsequent mutations', () => {
+  const shared = {
+    value: 1,
+    own: undefined,
+    array: [undefined],
+    set: new Set([{ value: 1 }, { value: 1 }, undefined]),
+    map: new Map([
+      [{ key: 1 }, undefined],
+      [{ key: 1 }, null],
+    ]),
+    nullObject: Object.assign(Object.create(null) as object, { own: undefined }),
+  };
+  const source = { first: shared, second: shared, nested: [shared] };
+  const bytes = serializeProductionAuditArtifact(source);
+  const restored = decodeProductionAuditArtifact(bytes) as typeof source;
+  expect(restored).toEqual(source);
+  for (const value of [restored.first, restored.second, restored.nested[0]!]) {
+    expect(Object.hasOwn(value, 'own')).toBe(true);
+    expect(value.set.size).toBe(3);
+    expect(value.map.size).toBe(2);
+    expect(Object.getPrototypeOf(value.nullObject)).toBeNull();
+    expect(Object.hasOwn(value.nullObject, 'own')).toBe(true);
+  }
+  shared.value = 2;
+  const next = decodeProductionAuditArtifact(
+    serializeProductionAuditArtifact(source),
+  ) as typeof source;
+  expect(next.first.value).toBe(2);
+  expect(next.second.value).toBe(2);
+  expect(restored.first.value).toBe(1);
+  const cycle: Record<string, unknown> = {};
+  cycle['self'] = cycle;
+  expect(() => serializeProductionAuditArtifact({ first: shared, second: cycle })).toThrow(
+    'artifact_cycle',
+  );
+});
+
 it('rejects malformed value metadata instead of guessing how to restore it', () => {
   for (const envelope of [
+    { artifactVersion: 2, payload: null, undefinedPaths: [], containers: [], futureField: true },
+    {
+      artifactVersion: 2,
+      payload: [],
+      undefinedPaths: [],
+      containers: [{ path: [], kind: 'set', futureField: true }],
+    },
     { artifactVersion: 1, payload: null, undefinedPaths: [], containers: [] },
     { artifactVersion: 2, payload: {}, undefinedPaths: [['a'], ['a']], containers: [] },
     {
@@ -129,11 +177,22 @@ it(
       throw new Error('intentional_producer_failure_before_publication');
     const malformedField = process.env['FGO_ARTIFACT_MALFORMED_FIELD'];
     if (malformedField) Reflect.deleteProperty(payload.failures[0]!, malformedField);
-    await writeProductionAuditArtifact(task.meta, 'tsk-08-artifact-contract.json', payload);
-    const bytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'tsk-08-artifact-contract.json'),
+    const receipt = await writeProductionAuditArtifact(
+      task.meta,
+      'tsk-08-artifact-contract.json',
+      payload,
     );
-    expect(decodeProductionAuditArtifact(bytes)).toEqual(payload);
+    const bytes = await readStoredProductionAuditArtifact('tsk-08-artifact-contract.json');
+    expect(decodeStoredProductionAuditArtifact(bytes)).toEqual(payload);
+    expect(receipt.path).toBe('tsk-08-artifact-contract.json.gz');
+    expect(receipt.expectedBytes).toBe(bytes.length);
+    expect(receipt.expectedSha256).toBe(createHash('sha256').update(bytes).digest('hex'));
+    const decodedBytes = gunzipSync(bytes);
+    expect(decodedBytes).toEqual(serializeProductionAuditArtifact(payload));
+    expect(receipt.expectedDecodedBytes).toBe(decodedBytes.length);
+    expect(receipt.expectedDecodedSha256).toBe(
+      createHash('sha256').update(decodedBytes).digest('hex'),
+    );
     for (const failure of payload.failures) {
       expect(failure?.canonicalIdentity).toEqual(expect.any(String));
       expect(failure?.reason).toBe('canonicalMismatch');
@@ -146,6 +205,19 @@ it(
   },
 );
 
+it('uses an explicit gzip disk transport and rejects plain or corrupt stored bytes', () => {
+  const bytes = serializeProductionAuditArtifact({ absent: undefined, actual: null });
+  const stored = gzipSync(bytes, { level: 1 });
+  expect(decodeStoredProductionAuditArtifact(stored)).toEqual({ absent: undefined, actual: null });
+  expect(() => decodeStoredProductionAuditArtifact(bytes)).toThrow();
+  expect(() =>
+    decodeStoredProductionAuditArtifact(stored.subarray(0, stored.length - 1)),
+  ).toThrow();
+  expect(() => productionAuditTestOptions(['already.json.gz'])).toThrow(
+    'logical_path_must_be_json',
+  );
+});
+
 it('rejects missing contracts, unsafe paths, duplicate publication and write failures', async () => {
   const root = await mkdtemp(resolve(tmpdir(), 'fgo-artifact-writer-'));
   vi.stubEnv('FGO_TEST_ARTIFACT_DIR', root);
@@ -154,6 +226,31 @@ it('rejects missing contracts, unsafe paths, duplicate publication and write fai
     await expect(writeProductionAuditArtifact({}, 'missing.json', {})).rejects.toThrow(
       'contract_missing',
     );
+    for (const target of ['contract', 'descriptor', 'receipt'] as const) {
+      const meta = options('unknown.json');
+      const contract = Reflect.get(meta, 'fgoProductionAuditArtifacts') as {
+        requiredArtifacts: object[];
+        receipts: object[];
+      };
+      if (target === 'contract') Reflect.set(contract, 'futureField', true);
+      if (target === 'descriptor') Reflect.set(contract.requiredArtifacts[0]!, 'futureField', true);
+      if (target === 'receipt')
+        contract.receipts.push({
+          path: 'unknown.json.gz',
+          expectedBytes: 1,
+          expectedSha256: '0'.repeat(64),
+          expectedDecodedBytes: 1,
+          expectedDecodedSha256: '0'.repeat(64),
+          futureField: true,
+        });
+      await expect(writeProductionAuditArtifact(meta, 'unknown.json', {})).rejects.toThrow(
+        target === 'contract'
+          ? 'contract_missing'
+          : target === 'descriptor'
+            ? 'declaration_invalid'
+            : 'receipt_invalid',
+      );
+    }
     for (const path of ['../escape.json', '/absolute.json', 'a/../escape.json', 'a\\escape.json'])
       expect(() => options(path)).toThrow('artifact_path');
     expect(() => productionAuditTestOptions(['a//b.json', 'a/b.json'])).toThrow('duplicate');
@@ -165,7 +262,7 @@ it('rejects missing contracts, unsafe paths, duplicate publication and write fai
     await expect(
       writeProductionAuditArtifact(options('nested/value.json'), 'nested/value.json', {}),
     ).rejects.toThrow('already_exists');
-    await mkdir(resolve(root, 'directory.json'));
+    await mkdir(resolve(root, 'directory.json.gz'));
     await expect(
       writeProductionAuditArtifact(options('directory.json'), 'directory.json', {}),
     ).rejects.toThrow('already_exists');
@@ -178,7 +275,7 @@ it('rejects missing contracts, unsafe paths, duplicate publication and write fai
     await expect(
       writeProductionAuditArtifact(options('escape/value.json'), 'escape/value.json', {}),
     ).rejects.toThrow('unsafe_parent');
-    await symlink(resolve(root, 'nested/value.json'), resolve(root, 'linked.json'));
+    await symlink(resolve(root, 'nested/value.json.gz'), resolve(root, 'linked.json.gz'));
     await expect(
       writeProductionAuditArtifact(options('linked.json'), 'linked.json', {}),
     ).rejects.toThrow('target_symlink');

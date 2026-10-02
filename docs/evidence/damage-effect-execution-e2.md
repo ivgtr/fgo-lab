@@ -1,6 +1,9 @@
 ---
 title: "Damage effect execution E2 central switch"
-status: "Complete"
+status: "Superseded"
+historical_status: "Complete"
+status_scope: "E2 central switch実装・検証の完了を保持。schema／engine／inventoryは当時の値"
+superseded_by: "docs/evidence/damage-effect-execution-e3.md"
 created_at: "2026-08-25"
 schema_version: 11
 engine_version: "8.0.0"

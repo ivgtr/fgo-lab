@@ -1,7 +1,5 @@
 import { expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type MasterDataSnapshot } from '@fgo-lab/master-data';
@@ -25,7 +23,8 @@ import {
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 const base = masterSnapshotSchema.parse(fixture);
@@ -305,13 +304,15 @@ async function save(meta: unknown, path: string, payload: unknown) {
     path,
     encodeProductionAuditDiagnostic(payload),
   );
-  const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path));
+  const bytes = await readStoredProductionAuditArtifact(path);
   expect(bytes.length).toBe(receipt.expectedBytes);
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(receipt.expectedSha256);
   expect(
     isDeepStrictEqual(
       decodeProductionAuditDiagnostic(
-        decodeProductionAuditArtifact(bytes) as ReturnType<typeof encodeProductionAuditDiagnostic>,
+        decodeStoredProductionAuditArtifact(bytes) as ReturnType<
+          typeof encodeProductionAuditDiagnostic
+        >,
       ),
       payload,
     ),

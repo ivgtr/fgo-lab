@@ -1,6 +1,9 @@
 ---
 title: "Damage effect execution E3 production and UX audit"
-status: "Complete - Awaiting User UX Confirmation"
+status: "Superseded"
+historical_status: "Complete - Awaiting User UX Confirmation"
+status_scope: "E3実装・検証の歴史記録。元UX確認待ちを保持し、後続Task doneからUX承認を推定しない"
+superseded_by: "docs/evidence/damage-effect-execution-e3-2.md"
 created_at: "2026-08-25"
 schema_version: 11
 engine_version: "8.0.0"

@@ -9,8 +9,6 @@ import {
   masterEffectSchema,
   noblePhantasmEffectSchema,
 } from '@fgo-lab/master-data';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
 import {
@@ -42,7 +40,8 @@ import {
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 function setup(
@@ -427,10 +426,8 @@ it(
       missingEvaluation,
     };
     await writeProductionAuditArtifact(task.meta, 'hp-native-condition-reads.json', complete);
-    const disk = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-native-condition-reads.json'),
-    );
-    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+    const disk = await readStoredProductionAuditArtifact('hp-native-condition-reads.json');
+    expect(decodeStoredProductionAuditArtifact(disk)).toEqual(complete);
   },
 );
 
@@ -493,10 +490,8 @@ it(
     ).toBe(true);
     expect(ledger.bindings.some((binding) => binding.stage === 'actualValueRead')).toBe(true);
     await writeProductionAuditArtifact(task.meta, 'hp-published-dependency-fixture.json', ledger);
-    const disk = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-published-dependency-fixture.json'),
-    );
-    expect(isDeepStrictEqual(decodeProductionAuditArtifact(disk), ledger)).toBe(true);
+    const disk = await readStoredProductionAuditArtifact('hp-published-dependency-fixture.json');
+    expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(disk), ledger)).toBe(true);
   },
 );
 
@@ -656,10 +651,8 @@ it(
       negativePublished,
       negativeOperation,
     });
-    const bytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-preflight-abort.json'),
-    );
-    expect(decodeProductionAuditArtifact(bytes)).toMatchObject({
+    const bytes = await readStoredProductionAuditArtifact('hp-preflight-abort.json');
+    expect(decodeStoredProductionAuditArtifact(bytes)).toMatchObject({
       scenario,
       plan: published.consumerPlans,
       publishedGate: published.gate,
@@ -734,10 +727,8 @@ it(
       'hp-published-dependency-negatives.json',
       negatives,
     );
-    const disk = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-published-dependency-negatives.json'),
-    );
-    expect(isDeepStrictEqual(decodeProductionAuditArtifact(disk), negatives)).toBe(true);
+    const disk = await readStoredProductionAuditArtifact('hp-published-dependency-negatives.json');
+    expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(disk), negatives)).toBe(true);
   },
 );
 
@@ -1053,10 +1044,10 @@ it(
       'hp-candidate-condition-leaf-identity.json',
       complete,
     );
-    const disk = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-candidate-condition-leaf-identity.json'),
+    const disk = await readStoredProductionAuditArtifact(
+      'hp-candidate-condition-leaf-identity.json',
     );
-    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+    expect(decodeStoredProductionAuditArtifact(disk)).toEqual(complete);
   },
 );
 
@@ -1112,10 +1103,8 @@ it(
       missing,
     };
     await writeProductionAuditArtifact(task.meta, 'hp-np-before-damage-value-read.json', complete);
-    const disk = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-np-before-damage-value-read.json'),
-    );
-    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+    const disk = await readStoredProductionAuditArtifact('hp-np-before-damage-value-read.json');
+    expect(decodeStoredProductionAuditArtifact(disk)).toEqual(complete);
   },
 );
 
@@ -1164,10 +1153,8 @@ it(
       result,
     };
     await writeProductionAuditArtifact(task.meta, 'hp-np-before-damage-sibling.json', complete);
-    const disk = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-np-before-damage-sibling.json'),
-    );
-    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+    const disk = await readStoredProductionAuditArtifact('hp-np-before-damage-sibling.json');
+    expect(decodeStoredProductionAuditArtifact(disk)).toEqual(complete);
   },
 );
 
@@ -1243,10 +1230,8 @@ it(
       'hp-np-before-damage-two-operations.json',
       complete,
     );
-    const disk = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-np-before-damage-two-operations.json'),
-    );
-    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+    const disk = await readStoredProductionAuditArtifact('hp-np-before-damage-two-operations.json');
+    expect(decodeStoredProductionAuditArtifact(disk)).toEqual(complete);
   },
 );
 
@@ -1300,10 +1285,8 @@ it(
       'hp-candidate-value-read-obligation.json',
       complete,
     );
-    const disk = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-candidate-value-read-obligation.json'),
-    );
-    expect(decodeProductionAuditArtifact(disk)).toEqual(complete);
+    const disk = await readStoredProductionAuditArtifact('hp-candidate-value-read-obligation.json');
+    expect(decodeStoredProductionAuditArtifact(disk)).toEqual(complete);
   },
 );
 
@@ -1610,12 +1593,12 @@ it(
       'hp-execution-class-witnesses.json',
       executionClasses,
     );
-    const executionBytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-execution-class-witnesses.json'),
+    const executionBytes = await readStoredProductionAuditArtifact(
+      'hp-execution-class-witnesses.json',
     );
-    expect(isDeepStrictEqual(decodeProductionAuditArtifact(executionBytes), executionClasses)).toBe(
-      true,
-    );
+    expect(
+      isDeepStrictEqual(decodeStoredProductionAuditArtifact(executionBytes), executionClasses),
+    ).toBe(true);
     expect(realRejection.witnesses).toHaveLength(1);
     expect(realRejection.witnesses[0]!.beforeSnapshot.appliedActions).toHaveLength(1);
     expect(realRejection.witnesses[0]!.beforeSnapshot.usedSkillSlots.has(2)).toBe(true);
@@ -1725,8 +1708,8 @@ it(
     };
     const path = 'hp-oc-rate-live-reads.json';
     await writeProductionAuditArtifact(task.meta, path, payload);
-    const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path));
-    expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+    const bytes = await readStoredProductionAuditArtifact(path);
+    expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(bytes), payload)).toBe(true);
     for (const ledger of ledgers) expect(ledger.gate.failures).toEqual([]);
     const rows = ledgers.map((ledger) => ledger.ocRateReads?.rows ?? []);
     expect(rows[0]).toHaveLength(2);

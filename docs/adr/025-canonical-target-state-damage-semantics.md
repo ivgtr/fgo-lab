@@ -1,3 +1,9 @@
+---
+title: "ADR 025: target-state mutationをdamage executionへ接続する"
+status: "accepted"
+recorded_commit: "3c8be663d6a3798332b538fdaa032f89b9730c4b"
+---
+
 # ADR 025: target-state mutationをdamage executionへ接続する
 
 Status: accepted

@@ -1,3 +1,9 @@
+---
+title: "ADR-018: rankingを少数の比較policyへ限定する"
+status: "accepted"
+date: "2026-08-27"
+---
+
 # ADR-018: rankingを少数の比較policyへ限定する
 
 - Status: accepted

@@ -1,3 +1,9 @@
+---
+title: "条件付き火力の適用契約統合レポート"
+status: "Complete"
+status_scope: "schema 9／engine 7のconditional application変更と監査の記録"
+---
+
 # 条件付き火力の適用契約統合レポート
 
 日付: 2026-08-25

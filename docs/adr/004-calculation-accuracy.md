@@ -1,3 +1,9 @@
+---
+title: "ADR-004: 計算精度と根拠"
+status: "accepted"
+date: "2026-08-24"
+---
+
 # ADR-004: 計算精度と根拠
 
 - Status: accepted

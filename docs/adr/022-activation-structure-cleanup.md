@@ -1,3 +1,9 @@
+---
+title: "ADR 022: activation structure cleanup boundaries"
+status: "accepted"
+recorded_commit: "fd536f8236ce6e5a08cf25f9b7ba80f28c775fc4"
+---
+
 # ADR 022: activation structure cleanup boundaries
 
 ## Status

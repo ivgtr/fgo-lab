@@ -1,6 +1,8 @@
 ---
 title: "Damage effect execution E3.2 condition/decision/fact redesign"
-status: "Complete - Awaiting User UX Confirmation"
+status: "Complete"
+historical_status: "Complete - Awaiting User UX Confirmation"
+status_scope: "E3.2実装・検証scopeの完了記録。UX確認待ちは元記録のままで、承認済みとは判定しない"
 created_at: "2026-08-25"
 schema_version: 13
 engine_version: "10.0.0"

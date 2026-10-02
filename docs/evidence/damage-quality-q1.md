@@ -1,3 +1,11 @@
+---
+title: "Damage quality Q1 checkpoint"
+status: "Complete"
+status_scope: "Q1 normalization／fail-closed移管の当時の完了記録"
+historical_status: "complete"
+date: "2026-08-25"
+---
+
 # Damage quality Q1 checkpoint
 
 - Date: 2026-08-25

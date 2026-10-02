@@ -13,11 +13,16 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await expect(oc.locator('option')).toHaveCount(1);
   await np.selectOption('5');
   await expect(oc.locator('option')).toHaveCount(3);
+  await page.getByText('計算基準', { exact: true }).click();
+  const calculationBasis = page.locator('.ranking-calculation-basis');
+  await oc.selectOption('2');
+  await expect(calculationBasis).toContainText('初期OC2・スキルLv10');
   await page.setViewportSize({ width: 320, height: 700 });
   await oc.focus();
   await page.keyboard.press('End');
   await page.keyboard.press('Enter');
   await expect(oc).toHaveValue('3');
+  await expect(calculationBasis).toContainText('初期OC3・スキルLv10');
   await expect(page).toHaveURL(/rOc=3/);
   await expect(page.getByRole('status')).toContainText('件を計算', { timeout: 30_000 });
   const first = page
@@ -42,6 +47,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await page.getByRole('combobox', { name: '対象', exact: true }).selectOption('all');
   await expect(np).toHaveValue('1');
   await expect(oc).toHaveValue('1');
+  await expect(calculationBasis).toContainText('初期OC1・スキルLv10');
   const invalid = new URL(page.url());
   invalid.searchParams.set('rOc', '5');
   await page.goto(invalid.toString());

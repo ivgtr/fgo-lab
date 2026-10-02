@@ -1,6 +1,8 @@
 ---
 title: "TSK-04 condition, target, and provenance flow closure"
-status: "Verified"
+status: "Complete"
+historical_status: "Verified"
+status_scope: "本文のTSK-04 condition／target／provenance flow検証scopeの完了記録。現HEADの全受入ではない"
 updated_at: "2026-08-31"
 ---
 

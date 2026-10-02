@@ -1,6 +1,9 @@
 ---
 title: "Damage effect execution E0 baseline"
-status: "Complete"
+status: "Superseded"
+historical_status: "Complete"
+status_scope: "E0 baseline採取の完了を履歴として保持。現行execution契約はrequirements／ADRが所有する"
+superseded_by: "docs/evidence/damage-effect-execution-e1.md"
 created_at: "2026-08-25"
 master_data_version: "2026-08-25-atlas-jp-calculator-v16"
 baseline_commit: "9f7c836"

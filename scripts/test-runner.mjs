@@ -3,6 +3,7 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-runner-lib.mjs';
+import { UNIT_TEST_PROJECTS } from './test-suites.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const requestedMode = process.argv[2];
@@ -39,8 +40,13 @@ const reporterArguments = [
   '--reporter=json',
   '--reporter=./scripts/vitest-observation-reporter.mjs',
 ];
-const suiteArgumentsForVitest =
-  suite === 'all' ? ['--project=unit', '--project=production'] : [`--project=${suite}`];
+const projects =
+  suite === 'all'
+    ? [...UNIT_TEST_PROJECTS, 'production']
+    : suite === 'unit'
+      ? UNIT_TEST_PROJECTS
+      : [suite];
+const suiteArgumentsForVitest = projects.map((project) => `--project=${project}`);
 const timeoutMs = Number.parseInt(process.env['FGO_TEST_TIMEOUT_MS'] ?? '600000', 10);
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
   console.error('FGO_TEST_TIMEOUT_MS must be a positive integer.');

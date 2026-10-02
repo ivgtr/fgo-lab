@@ -1,3 +1,9 @@
+---
+title: "E4.1.5 canonical activation facts completion"
+status: "Complete"
+status_scope: "E4.1.5 activation facts／production inventoryの完了記録。E5未着手は当時の状態"
+---
+
 # E4.1.5 canonical activation facts completion
 
 ## Outcome

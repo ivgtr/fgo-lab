@@ -1,3 +1,11 @@
+---
+title: "Damage quality Q3 checkpoint"
+status: "Complete"
+status_scope: "Q3 all-source resolution／production auditの当時の完了記録"
+historical_status: "complete"
+date: "2026-08-25"
+---
+
 # Damage quality Q3 checkpoint
 
 - Date: 2026-08-25

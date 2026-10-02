@@ -1,14 +1,15 @@
 import { randomBytes, createHash } from 'node:crypto';
-import { lstat, link, mkdir, unlink, writeFile } from 'node:fs/promises';
+import { lstat, link, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import type { TestOptions } from 'vitest';
 
 export const PRODUCTION_AUDIT_ARTIFACT_META_KEY = 'fgoProductionAuditArtifacts';
-export const PRODUCTION_AUDIT_ARTIFACT_CONTRACT_VERSION = 1;
+export const PRODUCTION_AUDIT_ARTIFACT_CONTRACT_VERSION = 2;
 
 export interface ProductionAuditArtifactDescriptor {
   path: string;
-  format: 'json';
+  format: 'json-gzip';
   allowEmpty: false;
 }
 
@@ -16,10 +17,12 @@ export interface ProductionAuditArtifactReceipt {
   path: string;
   expectedBytes: number;
   expectedSha256: string;
+  expectedDecodedBytes: number;
+  expectedDecodedSha256: string;
 }
 
 export interface ProductionAuditArtifactContract {
-  version: 1;
+  version: 2;
   requiredArtifacts: ProductionAuditArtifactDescriptor[];
   receipts: ProductionAuditArtifactReceipt[];
 }
@@ -137,16 +140,12 @@ export function serializeProductionAuditArtifact(value: unknown): Buffer {
   const containers: ArtifactContainer[] = [];
   const encoded = encodeLossless(value, [], undefinedPaths, new Set(), containers);
   return Buffer.from(
-    `${JSON.stringify(
-      {
-        artifactVersion: 2,
-        payload: encoded === OMIT ? null : encoded,
-        undefinedPaths,
-        containers,
-      },
-      null,
-      2,
-    )}\n`,
+    `${JSON.stringify({
+      artifactVersion: 2,
+      payload: encoded === OMIT ? null : encoded,
+      undefinedPaths,
+      containers,
+    })}\n`,
     'utf8',
   );
 }
@@ -156,6 +155,9 @@ export function decodeProductionAuditArtifact(bytes: Uint8Array): unknown {
   if (
     !envelope ||
     typeof envelope !== 'object' ||
+    Object.keys(envelope).some(
+      (key) => !['artifactVersion', 'payload', 'undefinedPaths', 'containers'].includes(key),
+    ) ||
     !('artifactVersion' in envelope) ||
     envelope.artifactVersion !== 2 ||
     !('payload' in envelope) ||
@@ -225,6 +227,7 @@ export function decodeProductionAuditArtifact(bytes: Uint8Array): unknown {
       if (
         !raw ||
         typeof raw !== 'object' ||
+        Object.keys(raw).some((key) => !['path', 'kind'].includes(key)) ||
         !('path' in raw) ||
         !('kind' in raw) ||
         !['set', 'map', 'nullObject'].includes(String(raw.kind))
@@ -272,15 +275,31 @@ export function decodeProductionAuditArtifact(bytes: Uint8Array): unknown {
   return payload;
 }
 
+/** Stored diagnostics use one explicit transport; plain JSON is only the in-memory codec. */
+export function decodeStoredProductionAuditArtifact(bytes: Uint8Array): unknown {
+  return decodeProductionAuditArtifact(gunzipSync(bytes));
+}
+
+/** The owner maps logical JSON names to stored transport paths for every disk consumer. */
+export async function readStoredProductionAuditArtifact(logicalPath: string): Promise<Buffer> {
+  const artifactRoot = process.env['FGO_TEST_ARTIFACT_DIR'];
+  if (!artifactRoot) throw new TypeError('production_audit_artifact_directory_missing');
+  return readFile(resolve(artifactRoot, storedArtifactPath(logicalPath)));
+}
+
 export function productionAuditTestOptions(paths: readonly string[]): ProductionAuditTestOptions {
-  const normalized = paths.map((path) => validateArtifactPath(path));
+  const normalized = paths.map((path) => storedArtifactPath(path));
   if (new Set(normalized).size !== normalized.length)
     throw new TypeError('duplicate_production_audit_artifact_path');
   return {
     meta: {
       fgoProductionAuditArtifacts: {
         version: PRODUCTION_AUDIT_ARTIFACT_CONTRACT_VERSION,
-        requiredArtifacts: normalized.map((path) => ({ path, format: 'json', allowEmpty: false })),
+        requiredArtifacts: normalized.map((path) => ({
+          path,
+          format: 'json-gzip',
+          allowEmpty: false,
+        })),
         receipts: [],
       },
     } as unknown as NonNullable<TestOptions['meta']>,
@@ -294,6 +313,13 @@ function validateArtifactPath(path: string): string {
   if (normalized.length === 0 || normalized.some((segment) => segment === '.' || segment === '..'))
     throw new TypeError('invalid_production_audit_artifact_path');
   return normalized.join('/');
+}
+
+function storedArtifactPath(path: string): string {
+  const normalized = validateArtifactPath(path);
+  if (!normalized.endsWith('.json'))
+    throw new TypeError('production_audit_artifact_logical_path_must_be_json');
+  return `${normalized}.gz`;
 }
 
 async function ensureNoSymlinkPath(root: string, target: string): Promise<void> {
@@ -348,6 +374,9 @@ export async function writeProductionAuditArtifact(
     throw new TypeError('production_audit_artifact_contract_missing');
   const contractRecord = rawContract as Record<string, unknown>;
   if (
+    Object.keys(contractRecord).some(
+      (key) => !['version', 'requiredArtifacts', 'receipts'].includes(key),
+    ) ||
     contractRecord['version'] !== PRODUCTION_AUDIT_ARTIFACT_CONTRACT_VERSION ||
     !Array.isArray(contractRecord['requiredArtifacts']) ||
     !Array.isArray(contractRecord['receipts'])
@@ -360,13 +389,14 @@ export async function writeProductionAuditArtifact(
       throw new TypeError('production_audit_artifact_declaration_invalid');
     const record = descriptor as Record<string, unknown>;
     if (
+      Object.keys(record).some((key) => !['path', 'format', 'allowEmpty'].includes(key)) ||
       typeof record['path'] !== 'string' ||
-      record['format'] !== 'json' ||
+      record['format'] !== 'json-gzip' ||
       record['allowEmpty'] !== false
     )
       throw new TypeError('production_audit_artifact_declaration_invalid');
     const declaredPath = validateArtifactPath(record['path']);
-    if (declaredPath !== record['path'])
+    if (declaredPath !== record['path'] || !declaredPath.endsWith('.json.gz'))
       throw new TypeError('production_audit_artifact_declaration_invalid');
     return declaredPath;
   });
@@ -377,18 +407,32 @@ export async function writeProductionAuditArtifact(
       throw new TypeError('production_audit_artifact_receipt_invalid');
     const record = receipt as Record<string, unknown>;
     if (
+      Object.keys(record).some(
+        (key) =>
+          ![
+            'path',
+            'expectedBytes',
+            'expectedSha256',
+            'expectedDecodedBytes',
+            'expectedDecodedSha256',
+          ].includes(key),
+      ) ||
       typeof record['path'] !== 'string' ||
       !Number.isSafeInteger(record['expectedBytes']) ||
       (record['expectedBytes'] as number) < 0 ||
       typeof record['expectedSha256'] !== 'string' ||
-      !/^[a-f0-9]{64}$/.test(record['expectedSha256'])
+      !/^[a-f0-9]{64}$/.test(record['expectedSha256']) ||
+      !Number.isSafeInteger(record['expectedDecodedBytes']) ||
+      (record['expectedDecodedBytes'] as number) <= 0 ||
+      typeof record['expectedDecodedSha256'] !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(record['expectedDecodedSha256'])
     )
       throw new TypeError('production_audit_artifact_receipt_invalid');
     if (validateArtifactPath(record['path']) !== record['path'])
       throw new TypeError('production_audit_artifact_receipt_invalid');
   }
   const typedContract = rawContract as unknown as ProductionAuditArtifactContract;
-  const normalizedPath = validateArtifactPath(path);
+  const normalizedPath = storedArtifactPath(path);
   const required = declaredPaths.filter((requiredPath) => requiredPath === normalizedPath);
   if (required.length !== 1)
     throw new TypeError('production_audit_artifact_not_declared_exactly_once');
@@ -396,11 +440,14 @@ export async function writeProductionAuditArtifact(
     throw new TypeError('duplicate_production_audit_artifact_receipt');
   const artifactRoot = process.env['FGO_TEST_ARTIFACT_DIR'];
   if (!artifactRoot) throw new TypeError('production_audit_artifact_directory_missing');
-  const bytes = serializeProductionAuditArtifact(value);
+  const decodedBytes = serializeProductionAuditArtifact(value);
+  const bytes = gzipSync(decodedBytes, { level: 1 });
   const receipt = {
     path: normalizedPath,
     expectedBytes: bytes.byteLength,
     expectedSha256: createHash('sha256').update(bytes).digest('hex'),
+    expectedDecodedBytes: decodedBytes.byteLength,
+    expectedDecodedSha256: createHash('sha256').update(decodedBytes).digest('hex'),
   };
   typedContract.receipts.push(receipt);
   const root = resolve(artifactRoot);

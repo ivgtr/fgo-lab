@@ -1,3 +1,9 @@
+---
+title: "ダメージ効果依存関係 監査結果"
+status: "Superseded"
+status_scope: "469／420 production unsupported baselineの歴史記録。E0以降の後継はevidence indexが案内する"
+---
+
 # ダメージ効果依存関係 監査結果
 
 ## 結論

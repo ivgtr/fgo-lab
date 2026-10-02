@@ -32,7 +32,8 @@ import {
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 type Spec = {
@@ -327,13 +328,15 @@ async function save(task: { meta: unknown }, path: string, payload: unknown) {
       path,
       encodeProductionAuditDiagnostic(payload),
     ),
-    bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path));
+    bytes = await readStoredProductionAuditArtifact(path);
   expect(bytes.length).toBe(receipt.expectedBytes);
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(receipt.expectedSha256);
   expect(
     isDeepStrictEqual(
       decodeProductionAuditDiagnostic(
-        decodeProductionAuditArtifact(bytes) as ReturnType<typeof encodeProductionAuditDiagnostic>,
+        decodeStoredProductionAuditArtifact(bytes) as ReturnType<
+          typeof encodeProductionAuditDiagnostic
+        >,
       ),
       payload,
     ),

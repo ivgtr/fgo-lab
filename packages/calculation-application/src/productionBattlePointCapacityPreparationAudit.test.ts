@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import { materializeBattlePointCapacityValue } from './productionBattlePointCapacityProof';
@@ -28,7 +26,9 @@ import {
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
   serializeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
   decodeProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 async function saveCapacityContract(
@@ -42,9 +42,9 @@ async function saveCapacityContract(
     decodeProductionAuditArtifact(serializeProductionAuditArtifact(encoded)) as typeof encoded,
   );
   await writeProductionAuditArtifact(meta, name, { encoded });
-  const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, name));
+  const bytes = await readStoredProductionAuditArtifact(name);
   const disk = decodeProductionAuditDiagnostic(
-    (decodeProductionAuditArtifact(bytes) as { encoded: typeof encoded }).encoded,
+    (decodeStoredProductionAuditArtifact(bytes) as { encoded: typeof encoded }).encoded,
   );
   expect(equalProductionAuditDiagnosticValues(memory, payload)).toBe(true);
   expect(equalProductionAuditDiagnosticValues(serialized, payload)).toBe(true);
@@ -1548,15 +1548,13 @@ for (const spec of specs)
             encoded: diagnostic,
           },
         );
-        const savedBytes = await readFile(
-          resolve(
-            process.env['FGO_TEST_ARTIFACT_DIR']!,
-            `tsk-08-bp-capacity-${spec.name}-${testGroup}.json`,
-          ),
+        const savedBytes = await readStoredProductionAuditArtifact(
+          `tsk-08-bp-capacity-${spec.name}-${testGroup}.json`,
         );
         const diskRoundTrip = equalProductionAuditDiagnosticValues(
           decodeProductionAuditDiagnostic(
-            (decodeProductionAuditArtifact(savedBytes) as { encoded: typeof diagnostic }).encoded,
+            (decodeStoredProductionAuditArtifact(savedBytes) as { encoded: typeof diagnostic })
+              .encoded,
           ),
           payload,
         );

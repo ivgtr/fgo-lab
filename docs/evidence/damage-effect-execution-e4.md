@@ -81,9 +81,11 @@ VRT:
 
 - [desktop closed ranking](../../e2e/ranking-baseline.spec.ts-snapshots/ranking-desktop-chromium-linux.png)
 - [desktop expanded detail](../../e2e/ranking-baseline.spec.ts-snapshots/ranking-detail-desktop-chromium-linux.png)
-- [390px ranking](../../e2e/ranking-baseline.spec.ts-snapshots/ranking-390px-chromium-linux.png)
-- [320px ranking](../../e2e/ranking-baseline.spec.ts-snapshots/ranking-320px-chromium-linux.png)
-- [320px closed row](../../e2e/ranking-baseline.spec.ts-snapshots/ranking-row-320px-chromium-linux.png)
+- [390px ranking — 原Git画像の復元](tsk-09-1-documentation-closure.md#e4歴史画像の復元)
+- [320px ranking — 原Git画像の復元](tsk-09-1-documentation-closure.md#e4歴史画像の復元)
+- [320px closed row — 原Git画像の復元](tsk-09-1-documentation-closure.md#e4歴史画像の復元)
+
+上の3件はE4当時のchromium画像で、元path・commit・blob・bytes・SHA-256と復元操作をリンク先の台帳に保持する。現mobile画像は別baselineであり、このVRTの代替ではない。
 
 | viewport | closed row | filter region | horizontal overflow |
 |---:|---:|---:|---:|

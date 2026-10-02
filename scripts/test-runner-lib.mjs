@@ -337,7 +337,10 @@ function declaredArtifactFiles(report, runDirectory, reservedPaths) {
         !contract ||
         typeof contract !== 'object' ||
         Array.isArray(contract) ||
-        contract.version !== 1 ||
+        Object.keys(contract).some(
+          (key) => !['version', 'requiredArtifacts', 'receipts'].includes(key),
+        ) ||
+        contract.version !== 2 ||
         !Array.isArray(contract.requiredArtifacts) ||
         !Array.isArray(contract.receipts)
       ) {
@@ -351,9 +354,10 @@ function declaredArtifactFiles(report, runDirectory, reservedPaths) {
           !descriptor ||
           typeof descriptor !== 'object' ||
           Array.isArray(descriptor) ||
+          Object.keys(descriptor).some((key) => !['path', 'format', 'allowEmpty'].includes(key)) ||
           typeof descriptor.path !== 'string' ||
           descriptor.path.length === 0 ||
-          descriptor.format !== 'json' ||
+          descriptor.format !== 'json-gzip' ||
           descriptor.allowEmpty !== false
         ) {
           errors.push(`${label}:required_artifact_${String(index)}_invalid`);
@@ -380,7 +384,7 @@ function declaredArtifactFiles(report, runDirectory, reservedPaths) {
           continue;
         }
         paths.add(path);
-        artifacts.push({ path, format: 'json', allowEmpty: false });
+        artifacts.push({ path, format: 'json-gzip', allowEmpty: false });
       }
       const receiptsByPath = new Map();
       for (const [index, receipt] of contract.receipts.entries()) {
@@ -388,11 +392,25 @@ function declaredArtifactFiles(report, runDirectory, reservedPaths) {
           !receipt ||
           typeof receipt !== 'object' ||
           Array.isArray(receipt) ||
+          Object.keys(receipt).some(
+            (key) =>
+              ![
+                'path',
+                'expectedBytes',
+                'expectedSha256',
+                'expectedDecodedBytes',
+                'expectedDecodedSha256',
+              ].includes(key),
+          ) ||
           typeof receipt.path !== 'string' ||
           !Number.isSafeInteger(receipt.expectedBytes) ||
           receipt.expectedBytes < 0 ||
           typeof receipt.expectedSha256 !== 'string' ||
-          !/^[a-f0-9]{64}$/.test(receipt.expectedSha256)
+          !/^[a-f0-9]{64}$/.test(receipt.expectedSha256) ||
+          !Number.isSafeInteger(receipt.expectedDecodedBytes) ||
+          receipt.expectedDecodedBytes <= 0 ||
+          typeof receipt.expectedDecodedSha256 !== 'string' ||
+          !/^[a-f0-9]{64}$/.test(receipt.expectedDecodedSha256)
         ) {
           errors.push(`${label}:receipt_${String(index)}_invalid`);
           continue;
@@ -419,10 +437,12 @@ function declaredArtifactFiles(report, runDirectory, reservedPaths) {
             if (hasSymlinkBetween(root, target)) errors.push(`${label}:symlink_path:${path}`);
             artifacts[artifacts.findIndex((artifact) => artifact.path === path)] = {
               path,
-              format: 'json',
+              format: 'json-gzip',
               allowEmpty: false,
               expectedBytes: receipt.expectedBytes,
               expectedSha256: receipt.expectedSha256,
+              expectedDecodedBytes: receipt.expectedDecodedBytes,
+              expectedDecodedSha256: receipt.expectedDecodedSha256,
             };
           }
         }

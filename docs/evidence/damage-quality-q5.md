@@ -1,3 +1,10 @@
+---
+title: "ダメージ計算品質 Q5 監査・置換計画"
+status: "Complete"
+status_scope: "Q5 scenario facade／history／shareの実装・検証記録。本文の完了（確認待ち）をUX承認済みへ読み替えない"
+historical_status: "完了（確認待ち）"
+---
+
 # ダメージ計算品質 Q5 監査・置換計画
 
 更新日: 2026-08-25  

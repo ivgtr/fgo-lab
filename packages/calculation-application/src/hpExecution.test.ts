@@ -7,10 +7,9 @@ import { preparationHpActionsFor } from '@fgo-lab/battle-execution/preparation-a
 import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import {
@@ -515,12 +514,12 @@ describe('HP initial intent through common preparation and recovery', () => {
           };
           const path = 'hp-recovery-command-edges.json';
           const receipt = await writeProductionAuditArtifact(task.meta, path, payload);
-          const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path));
+          const bytes = await readStoredProductionAuditArtifact(path);
           expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
             receipt.expectedBytes,
             receipt.expectedSha256,
           ]);
-          expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+          expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(bytes), payload)).toBe(true);
           expect(
             evidence.rows.some((row) => row.requestIndex === 0 && row.transaction === 'rejected'),
           ).toBe(true);
@@ -1073,14 +1072,12 @@ describe('HP initial intent through common preparation and recovery', () => {
         'hp-transfer-identity.json',
         payload,
       );
-      const bytes = await readFile(
-        resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-transfer-identity.json'),
-      );
+      const bytes = await readStoredProductionAuditArtifact('hp-transfer-identity.json');
       expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
         receipt.expectedBytes,
         receipt.expectedSha256,
       ]);
-      expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+      expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(bytes), payload)).toBe(true);
     },
   );
 });

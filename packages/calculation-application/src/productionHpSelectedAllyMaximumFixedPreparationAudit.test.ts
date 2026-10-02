@@ -3,7 +3,6 @@ import * as hpOwner from '../../battle-execution/src/preparationHp';
 import * as modifierOwner from '../../battle-execution/src/hpResource';
 import { isDeepStrictEqual } from 'node:util';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { firstCanonicalAuditDifference } from '@fgo-lab/master-data/production-audit';
@@ -33,7 +32,8 @@ import {
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 const base = masterSnapshotSchema.parse(fixture);
@@ -448,8 +448,8 @@ function entry(spec: Spec) {
 async function save(task: { meta: unknown }, path: string, payload: unknown) {
   const encoded = encodeProductionAuditDiagnostic(payload);
   const receipt = await writeProductionAuditArtifact(task.meta, path, encoded);
-  const bytes = await readFile(`${process.env['FGO_TEST_ARTIFACT_DIR']!}/${path}`);
-  const decoded = decodeProductionAuditArtifact(bytes) as ReturnType<
+  const bytes = await readStoredProductionAuditArtifact(path);
+  const decoded = decodeStoredProductionAuditArtifact(bytes) as ReturnType<
     typeof encodeProductionAuditDiagnostic
   >;
   expect(receipt.expectedBytes).toBe(bytes.length);

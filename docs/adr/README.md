@@ -1,3 +1,10 @@
+---
+title: "Architecture Decision Records"
+document_version: "1.0.0"
+status: "Active"
+updated_at: "2026-10-02"
+---
+
 # Architecture Decision Records
 
 ADRは採用時点のarchitecture判断を記録する。statusは`accepted`または`superseded`とし、重要な契約変更は承認時に新しいADRで置き換えて相互に参照する。承認前のproposalはrequirementsとflow noteで管理し、ADR indexへ登録しない。現在、ADR-015のselection契約をADR-026が、ADR-019／027のranking／portable契約をADR-028が置き換える。

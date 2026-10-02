@@ -1,3 +1,10 @@
+---
+title: "データ出典台帳"
+document_version: "1.0.0"
+status: "Active"
+updated_at: "2026-10-02"
+---
+
 # データ出典台帳
 
 | 対象                 | 出典                              | 扱い                                                            |

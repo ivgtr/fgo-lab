@@ -5,8 +5,6 @@ import type { PreNoblePhantasmState } from '@fgo-lab/battle-execution';
 import { it, expect, vi } from 'vitest';
 import * as hpOwner from '../../battle-execution/src/preparationHp';
 import { isDeepStrictEqual } from 'node:util';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { firstCanonicalAuditDifference } from '@fgo-lab/master-data/production-audit';
 import {
@@ -29,7 +27,8 @@ import {
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 import {
   battlePointPreparationRejectionObservationFor,
@@ -187,8 +186,8 @@ async function save(meta: unknown, path: string, payload: unknown) {
     path,
     encodeProductionAuditDiagnostic(payload),
   );
-  const saved = decodeProductionAuditArtifact(
-    await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path)),
+  const saved = decodeStoredProductionAuditArtifact(
+    await readStoredProductionAuditArtifact(path),
   ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
   expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(saved), payload)).toBe(true);
   return receipt;

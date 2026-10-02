@@ -1,3 +1,10 @@
+---
+title: "Damage effect execution E3.10 completion report"
+status: "Complete"
+status_scope: "E3.10 proc semanticsの当時の完了記録。現行proc契約を再定義しない"
+date: "2026-08-27"
+---
+
 # Damage effect execution E3.10 completion report
 
 - Date: 2026-08-27

@@ -1,3 +1,9 @@
+---
+title: "ADR-005: データ・画像・ライセンス境界"
+status: "accepted"
+date: "2026-08-24"
+---
+
 # ADR-005: データ・画像・ライセンス境界
 
 - Status: accepted

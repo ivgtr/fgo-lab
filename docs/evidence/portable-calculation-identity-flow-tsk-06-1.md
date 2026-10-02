@@ -6,6 +6,8 @@ updated_at: "2026-09-04"
 
 # TSK-06.1 portable calculation identity flow closure
 
+本noteはportable identity／保存・復元／exact-subject resetの意味説明とTSK-06.41までの固有履歴を保持する。以下の「authoritative current delta」はTSK-06.41採用時の呼称であり、現在のTask進捗や全受入を所有しない。現行契約は[product requirements](../requirements/fgo-lab-requirements-v0.3.md)と[UI contract](../requirements/ui-design-spec.md)、現在の進捗は[Tasks](../tasks/development-redesign-tasks.md)、最終受入と後続証拠は[evidence index](README.md#読み分けと現行の受入先)から辿る。元input／rule／version／commitと失敗・recovery scopeは履歴として保持し、最終Task doneを根拠に本文を現在値へ置換しない。
+
 ## TSK-06.41 runtime cutover — authoritative current delta
 
 ### Product correction closure — IRL-005 exact retained-request subject

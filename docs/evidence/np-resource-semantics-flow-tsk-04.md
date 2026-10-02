@@ -1,6 +1,8 @@
 ---
 title: "TSK-04 NP resource semantics flow closure"
-status: "Verified"
+status: "Complete"
+historical_status: "Verified"
+status_scope: "本文のTSK-04 NP gauge検証scopeとTSK-06.44 interface deltaの記録。後続resource scopeを完了扱いにしない"
 updated_at: "2026-09-08"
 ---
 

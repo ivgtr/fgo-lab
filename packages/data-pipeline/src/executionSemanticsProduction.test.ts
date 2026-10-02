@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { gunzipSync } from 'node:zlib';
 import {
   getNoblePhantasmVariants,
   masterSnapshotSchema,
@@ -128,12 +129,65 @@ describe('production canonical execution semantics', () => {
       for (const child of Object.values(value)) count(child, result);
       return result;
     };
-    const servants = JSON.parse(
-      await readFile(resolve(root, 'data/raw/nice_servant.json'), 'utf8'),
-    ) as unknown;
-    const craftEssences = JSON.parse(
-      await readFile(resolve(root, 'data/raw/nice_equip.json'), 'utf8'),
-    ) as unknown;
+    // One shared, fixed full-raw input set; clean checkout/CI never borrows ignored local exports.
+    const inputDirectory = resolve(root, 'packages/data-pipeline/test-inputs/raw-hp-v1');
+    const declaration = JSON.parse(
+      await readFile(resolve(inputDirectory, 'manifest.json'), 'utf8'),
+    ) as {
+      format: string;
+      owner: string;
+      consumer: string;
+      inputs: {
+        rawPath: string;
+        rawBytes: number;
+        rawSha256: string;
+        gzipFile: string;
+        gzipBytes: number;
+        gzipSha256: string;
+      }[];
+    };
+    expect(declaration).toEqual({
+      format: 'raw-hp-inputs-v1',
+      owner: '@fgo-lab/data-pipeline',
+      consumer: 'executionSemanticsProduction/raw-hp-before-relevance',
+      inputs: declaration.inputs,
+    });
+    expect(declaration.inputs).toHaveLength(2);
+    const fixedInputs = [
+      {
+        rawPath: 'data/raw/nice_servant.json',
+        rawBytes: 68_622_616,
+        rawSha256: '1abf690ac22bcdd427788e0ff545320af491ee9f90fbc08a56af9603a217118f',
+        gzipFile: 'nice_servant.json.gz',
+      },
+      {
+        rawPath: 'data/raw/nice_equip.json',
+        rawBytes: 21_819_299,
+        rawSha256: 'bb339ac726f8201243410ec82b85a14496e6a8dace54b226071b556604fc27e5',
+        gzipFile: 'nice_equip.json.gz',
+      },
+    ];
+    const rawInputs: unknown[] = [];
+    for (const [index, fixed] of fixedInputs.entries()) {
+      const input = declaration.inputs[index]!;
+      expect(Object.keys(input).sort()).toEqual(
+        ['rawPath', 'rawBytes', 'rawSha256', 'gzipFile', 'gzipBytes', 'gzipSha256'].sort(),
+      );
+      expect({
+        rawPath: input.rawPath,
+        rawBytes: input.rawBytes,
+        rawSha256: input.rawSha256,
+        gzipFile: input.gzipFile,
+      }).toEqual(fixed);
+      const compressed = await readFile(resolve(inputDirectory, input.gzipFile));
+      expect(compressed.length).toBe(input.gzipBytes);
+      expect(createHash('sha256').update(compressed).digest('hex')).toBe(input.gzipSha256);
+      const raw = gunzipSync(compressed);
+      expect(raw.length).toBe(input.rawBytes);
+      expect(createHash('sha256').update(raw).digest('hex')).toBe(input.rawSha256);
+      rawInputs.push(JSON.parse(raw.toString('utf8')) as unknown);
+    }
+    const [servants, craftEssences] = rawInputs;
 
     // script and originalScript contain the same condition; divide by the two evidence copies.
     const servantCounts = count(servants);

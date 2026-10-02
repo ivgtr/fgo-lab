@@ -1,3 +1,9 @@
+---
+title: "ADR 014: effect interactionと条件付きseriesの表示契約"
+status: "accepted"
+date: "2026-08-27"
+---
+
 # ADR 014: effect interactionと条件付きseriesの表示契約
 
 - Status: accepted

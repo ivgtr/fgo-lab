@@ -1,3 +1,11 @@
+---
+title: "Damage quality Q2 checkpoint"
+status: "Complete"
+status_scope: "Q2 kernel golden／benchmark baselineの当時の完了記録"
+historical_status: "complete"
+date: "2026-08-25"
+---
+
 # Damage quality Q2 checkpoint
 
 - Date: 2026-08-25

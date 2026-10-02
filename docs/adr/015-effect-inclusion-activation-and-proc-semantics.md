@@ -2,6 +2,7 @@
 title: "効果包含・ゲーム内発動・確率結果の分離"
 status: superseded
 date: 2026-08-27
+superseded_by: "ADR-026"
 ---
 
 # ADR 015: 効果包含・ゲーム内発動・確率結果の分離

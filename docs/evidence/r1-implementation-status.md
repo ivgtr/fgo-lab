@@ -1,3 +1,9 @@
+---
+title: "R1 implementation status"
+status: "Superseded"
+status_scope: "schema 1／engine 1のinternal previewとperformanceの歴史記録。exact public release gate未成立は当時の状態"
+---
+
 # R1 implementation status
 
 - Recorded: 2026-08-24

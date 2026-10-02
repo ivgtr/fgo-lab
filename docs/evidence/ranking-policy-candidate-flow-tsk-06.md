@@ -6,7 +6,7 @@ updated_at: "2026-09-21"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は2026-09-21のTSK-06.5 production eligibility／theoretical maximum closure追記。TSK-06.46、TSK-06.47、TSK-06.48、TSK-06.5は各Done gateを完了して`done`、TSK-07は`blocked`である。以下の過去deltaは当時の根拠として扱い、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+本noteはsource program／finite candidate／application policyの意味説明と固有の採用・測定履歴を保持する。2026-09-21のTSK-06.5 closureと、その時点のTSK-07 blockedは歴史checkpointであり、現在の進捗を所有しない。現行契約は[ranking requirements](../requirements/ranking-self-and-conditional-effects-requirements.md)、現行baselineは[TSK-06.5 production closure](tsk-06-5-production-closure.json)の`productionMatrix.canonicalRecords`、TSK-08最終受入は[parity ratchet](tsk-08-parity-ratchet.json)の`implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`へ進む。現在の進捗・残作業は[Tasks](../tasks/development-redesign-tasks.md)、証拠の読み分けは[evidence index](README.md#読み分けと現行の受入先)が所有する。本文の旧Blocking／Deferred／数値・version・commitは当時のscopeのまま保持する。
 
 ## c167e63再開delta（2026-09-09）
 

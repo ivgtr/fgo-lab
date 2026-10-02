@@ -1,3 +1,9 @@
+---
+title: "ADR 021: canonical activation facts"
+status: "accepted"
+recorded_commit: "d1f375a44dbaf570397e0ce13ce4c398ae41317d"
+---
+
 # ADR 021: canonical activation facts
 
 ## Status

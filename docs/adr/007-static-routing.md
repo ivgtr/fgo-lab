@@ -1,3 +1,10 @@
+---
+title: "ADR-007: GitHub Pages配信"
+status: "superseded"
+date: "2026-08-24"
+superseded_by: "ADR-029"
+---
+
 # ADR-007: GitHub Pages配信
 
 - Status: superseded

@@ -1,3 +1,10 @@
+---
+title: "Damage effect execution E3.8 completion report"
+status: "Complete"
+status_scope: "E3.8 implementation-unsupported 0と当時のIR移管の記録"
+date: "2026-08-26"
+---
+
 # Damage effect execution E3.8 completion report
 
 - Date: 2026-08-26

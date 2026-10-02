@@ -1,3 +1,9 @@
+---
+title: "ADR-006: backupと共有の境界"
+status: "accepted"
+date: "2026-08-24"
+---
+
 # ADR-006: backupと共有の境界
 
 - Status: accepted

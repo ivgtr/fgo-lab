@@ -1,3 +1,9 @@
+---
+title: "ADR-013: 特殊入力をeffect近接view modelへ投影する"
+status: "accepted"
+date: "2026-08-26"
+---
+
 # ADR-013: 特殊入力をeffect近接view modelへ投影する
 
 - Status: accepted

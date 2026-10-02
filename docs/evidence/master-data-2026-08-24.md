@@ -1,3 +1,9 @@
+---
+title: "Master data validation report: 2026-08-24-atlas-jp-skills"
+status: "Superseded"
+status_scope: "2026-08-24採取masterのsource checksum／artifact digest／469・420 inventoryの歴史記録"
+---
+
 # Master data validation report: 2026-08-24-atlas-jp-skills
 
 - Retrieved: 2026-08-24T04:38:07.769Z

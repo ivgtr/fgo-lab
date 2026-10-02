@@ -1,6 +1,8 @@
 ---
 title: "TSK-04 legacy runtime removal closure"
-status: "Verified"
+status: "Complete"
+historical_status: "Verified"
+status_scope: "本文のTSK-04 legacy runtime除去・strict schema反証scopeの完了記録。現HEADの全受入ではない"
 updated_at: "2026-08-31"
 ---
 

@@ -161,7 +161,7 @@ export function RankingConditions({
           </div>
           <div>
             <dt>宝具・スキル</dt>
-            <dd>OC1・スキルLv10</dd>
+            <dd>初期OC{conditions.initialOvercharge}・スキルLv10</dd>
           </div>
           <div>
             <dt>外部条件</dt>

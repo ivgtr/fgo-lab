@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab document governance contract"
-document_version: "1.0.1"
+document_version: "1.0.3"
 status: "Guideline"
-updated_at: "2026-09-01"
+updated_at: "2026-10-02"
 ---
 
 # FGO Lab document governance contract
@@ -56,7 +56,13 @@ ADRは採用済み判断だけを登録し、statusは`accepted | superseded`に
 
 ## Revision log
 
+Kind別metadata・case-sensitive status、元statusの意味移管、root入口／規約／symlink aliasの専用契約は[文書整備phase 4.7〜4.8](../tasks/documentation-maintenance-phases.md#47-frontmatter-status-vocabulary)を正本とする。STEP 4で本文・採用判断・承認記録を根拠に明示移管し、STEP 5で既存docs検査へ接続する。ADR本文の採用判断と歴史snapshotを現在値へ書き換えず、machine evidenceのdomain statusへMarkdown語彙を適用しない。移管済みmetadataの存在と、検査器の全件coverage完成を区別する。
+
+DOC-P6の現行実行・完全診断保存・不足時操作は[phase 4.8](../tasks/documentation-maintenance-phases.md#48-kind別metadataとroot契約)を参照する。検査のfield集合は既存metadata契約の型を明示し、未知fieldを捨てて成功にしない。新fieldが必要な場合は意味を所有する正本と検査を同じ変更で更新する。現在参照、歴史citation、literal、期限付きartifactの説明を区別し、失敗時はCLIが示す完全診断のpath／reasonから該当義務を修正する。
+
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 1.0.3 | 承認済みSTEP 5の全tracked登録・構文／metadata検査とCLI診断保存への導線を接続（`DOC-LINT-001`）。未知fieldの扱いと参照分類を明示 | retained: STEP 4の文書契約・ADR lifecycle・product承認は不変。利用者がSTEP 5計画を承認 | TSK-09.1 STEP 5〜6。別checkout受入・全体ApplyはSTEP 6 | none: docs inspectorのみ。damage／baseline／digest／固定evidence schema・quality step／CIは不変 |
 | 1.0.0 | Task closure、要件改訂、docs lintの運用契約を新設（`DOC-REV-001`、`DOC-CLOSE-001`、`DOC-LINT-001`） | approved 2026-08-30 | TSK-02.1以降 | none: product／damage semanticsと計測baselineは変更しない |
 | 1.0.1 | 既存ADR lifecycleの`accepted | superseded`限定とstatus lintを明文化（`DOC-LINT-001`） | retained: lifecycle semanticsは既存documentation maintenance契約から不変 | TSK-06.1以降 | none: docs validation only |
+| 1.0.2 | STEP 4のkind別metadata・元status・root／alias契約の正本と、STEP 5検査実装の境界を接続（`DOC-REV-001`、`DOC-LINT-001`） | approved 2026-10-02: 利用者がSTEP 4計画へOK。ADR lifecycle・product承認は不変 | TSK-09.1 STEP 4〜6。全体Applyの完了はSTEP 6 | none: 文書metadataと案内のみ。damage／baseline／digest／artifact schema・検査実装は不変 |

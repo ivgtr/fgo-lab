@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab 開発実行効率要件・統合実装計画"
-document_version: "1.3.0"
+document_version: "1.3.1"
 status: "Active"
-approved_at: "2026-09-19"
-updated_at: "2026-09-19"
+approved_at: "2026-10-02"
+updated_at: "2026-10-02"
 implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 created_at: "2026-08-30"
 related_documents:
@@ -88,14 +88,20 @@ total input
 - command出力上限、long-running processのyieldとpoll間隔
 - `/status`、`/compact`、new threadの使用判断
 - 失敗時にbounded summaryから必要なartifactだけを追加取得すること
+- 承認範囲と実行権限の切り分け、正式な権限審査の利用、失敗原因・必要入力・成立範囲のHandoffへの記録
 
 ### 4.3 Operator環境が所有するもの
 
 - `~/.codex/config.toml`のmodel、compaction、tool output上限
 - projectで不要なglobal skills、plugins、MCP、承認済みcommand prefixの整理
 - account／plan固有のusage limit確認
+- システムの所有者・permissions、SSH設定・認証情報と接続先の提供権限
 
 operator設定や個人のsession履歴をproduct testの入力にしない。repositoryは推奨値を文書化できるが、利用者のglobal設定を自動変更しない。
+
+sandbox内のmetadata表示・アクセス拒否はその実行環境の観測であり、実環境の設定不正の証明ではない。承認済み操作がsandbox境界で失敗した場合は、提供されている正式なsandbox外実行審査（`require_escalated`等）で必要なmetadata確認・同じ操作を行う。設定・認証情報・入力を変えて拒否を迂回せず、審査が拒否した場合は理由と未達操作を記録する。正式な実行手段がない場合も、その制約を明示する。
+
+環境修復を利用者へ依頼する前に、権限境界、接続／認証失敗、提供元の固定入力不足を実結果から区別する。システム設定の変更は根拠と明示承認を要する。固定revisionを提供元が持たない場合は必要なcommit／path／identityを示して停止し、取得元変更を暗黙のfallbackにしない。変更が明示承認された場合は、同じ固定identityをGitの取得経路で検証し、別checkout取得と外部remoteでの提供・取得の保証を区別して正本へ残す。
 
 ## 5. Canonical development execution path
 
@@ -293,3 +299,4 @@ exact token総量は、model、tool schema、cache、managed instructionsで変�
 | 1.1.0 | phase closureとproject closureをstable Contract IDで参照可能にした | retained: 実行効率とproduct qualityの意味は不変 | TSK-02.1〜09 | none: 観測baselineとratchet値は不変 |
 | 1.2.0 | 指示見直し依頼に基づき、技術的な再判断から実装を継続する境界、文書変更の比例検証、単独実行とsession上限の正本を整理。実行コード・既存Contract IDは不変 | approved 2026-09-12 | 全Taskの作業運用。個別受入条件とclosure matrixは不変 | none: damage／digest／artifact schemaは不変 |
 | 1.3.0 | 実装フロー改善の依頼に基づき、調査・再検証の範囲、最終qualityの開始と終了、途中checkpoint、並行sessionの作業分離を明確化（`DX-CMD-001`、`DX-HANDOFF-001`、`DX-PERF-001`） | approved 2026-09-19 | 全Taskの共通実行手順。既存Contractの適用先と個別Done gate・closure matrixは不変 | none: 作業運用の変更のみ。damage／digest／artifact schema、product検証・ratchetは不変 |
+| 1.3.1 | sandbox内観測を実環境の不正と断定した誤判断の再発防止。§4のSession／Operator責務へ正式な権限審査・原因分類・取得元変更の判断を統合（`DX-CMD-001`、`DX-HANDOFF-001`） | approved 2026-10-02: 利用者の指示整理・取得元変更判断 | 全Taskの共通運用、TSK-09.1／09のHandoff。既存Contract ID・Done gateは不変 | none: 固定baseline・意味論・artifact schema・quality／ratchet不変 |

@@ -1,3 +1,10 @@
+---
+title: "Damage effect execution E3.12 completion report"
+status: "Complete"
+status_scope: "E3.12 chained activation／自身の適用内容の当時の完了記録"
+date: "2026-08-27"
+---
+
 # Damage effect execution E3.12 completion report
 
 - Date: 2026-08-27

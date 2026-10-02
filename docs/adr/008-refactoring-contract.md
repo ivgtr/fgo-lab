@@ -1,3 +1,9 @@
+---
+title: "ADR-008: 現行要件へ収束させるリファクタリング契約"
+status: "accepted"
+date: "2026-08-24"
+---
+
 # ADR-008: 現行要件へ収束させるリファクタリング契約
 
 - Status: accepted

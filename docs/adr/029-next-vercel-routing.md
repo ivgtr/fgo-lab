@@ -1,3 +1,9 @@
+---
+title: "ADR-029: Next.js App RouterとVercel配信"
+status: "accepted"
+date: "2026-09-05"
+---
+
 # ADR-029: Next.js App RouterとVercel配信
 
 - Status: accepted

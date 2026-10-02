@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab 文書体系整備 Phase計画"
-document_version: "1.3.2"
+document_version: "1.3.4"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-08-30"
+updated_at: "2026-10-02"
 execution_tasks: "docs/tasks/development-redesign-tasks.md"
 governing_documents:
   - "AGENTS.md"
@@ -146,7 +146,7 @@ Git history
 | --- | --- |
 | Requirement | `Active | Proposed | Superseded` |
 | Registry／sub-index／license registry | `Active` |
-| Tasks／phase plan | `Active | Complete` |
+| Tasks／phase plan／task plan | `Active | Complete` |
 | Evidence | `Active | Complete | Superseded` |
 | Historical | `Active | Complete | Superseded` |
 | ADR | `accepted | superseded` |
@@ -162,7 +162,34 @@ DOC-P6実装前baseline（HEAD `7d4041a`）では、`docs/`配下のtracked Mark
 | `Complete - Review Findings Corrected` | 1 |
 | `Superseded by E4.1.3 activation witness closure` | 1 |
 
-欠落42件と独自status 4件はDOC-P6実装時に文書kindと意味を確認して正規化する。この既知baselineはTSK-00.4を再開せず、TSK-00の開始を妨げない。
+当時の計画では欠落42件と独自status 4件をDOC-P6実装時に正規化する予定だった。このbaselineはTSK-00.4を再開せず、TSK-00の開始を妨げなかった。現在はTSK-09.1 STEP 4がmetadataの意味を確定・移管し、STEP 5がその検査を実装する。現在集合の移管元・保持する意味・判定deltaは[既存判定台帳STEP 4](../evidence/tsk-09-1-documentation-closure.md#step-4-doc-p5metadata移管)を正本とする。
+
+### 4.8 Kind別metadataとroot契約
+
+kindはpathとregistryの明示分類から一意に決める。`docs/README.md`と各責務directoryの`README.md`はregistry／sub-index、`docs/licenses/`はlicense registryである。`docs/tasks/`のcanonical ledgerはTasks、文書整備計画はphase plan、完了済みTSK-06.48計画2件はtask planとする。`docs/evidence/`のMarkdownはEvidence、JSONはmachine evidenceであり別形式である。kind不明・分類矛盾は拒否し、ファイル名から未知kindを推定して既定値へ変換しない。
+
+| Kind | 必須metadataと意味 |
+| --- | --- |
+| docs Markdown共通 | 空でない`title`、4.7のcase-sensitiveな`status`。これらは文書の役割を表し、Task進捗・ゲーム内outcome・採取runの成功とは別である |
+| Requirement、registry／sub-index／license registry、Tasks／phase plan／task plan、Guide | `document_version`と`updated_at`。既存の承認gate・参照fieldも保持する。今回の更新日を過去の承認・採取日へ代入しない |
+| ADR | 本文・indexと一致する`accepted | superseded`。本文に採用時の日付がある場合は`date`をそのまま移管。日付記録のないADR-020〜025は`date`を捏造せず、accepted判断の導入を確認した40桁Git commitを`recorded_commit`へ保持する。これは採用日・承認日時ではない。superseded ADRには既存置換系列の`superseded_by`をADR IDで明示する |
+| Evidence／Historical | `title`と`status`。既存のdate／created_at／updated_at、文書版、input／rule／damage／inventory／digest／schema・master・engine版／commit／未対応scopeを保持する。元にない採取日・文書版は一律必須化せず、歴史identityを現在値で補わない |
+
+metadata移管時の`historical_status`は、元frontmatterまたは本文状態の原文字列をそのまま保持する空でないscalarである。未知の現行`status`を許容するfieldではなく、検査器はこの値から現在statusを復元・補完しない。`status_scope`は、移管した文書statusが成立する実装・採取・検証scopeと限界を説明する空でないscalarである。両fieldを追加する対象と根拠は判定台帳の個別rowに固定する。Evidenceの`superseded_by`は一件に確定したtracked後継pathだけを記録し、系列だけの場合は既存indexの案内を維持する。
+
+`Complete`は記載scopeの記録完了であり、UX承認済み、現HEADでの全件検証成功、project closureを含意しない。元`Awaiting User UX Confirmation`、本文の確認待ち、`Verified`、`Implementation`、review修正の意味は履歴fieldと本文へ分離する。Task doneからUX承認を推定しない。archive indexのsnapshot status、ADR採用本文、machine JSONのdomain statusへMarkdown語彙を適用しない。
+
+rootには一般docsのfrontmatter契約を適用しない。専用kindは[root登録表](../README.md#repository入口と規約)が所有し、`README.md`＝開発入口、`AGENTS.md`＝作業規約、`CLAUDE.md`＝aliasとする。READMEとAGENTSはtracked本文・役割に必要なdocs入口参照、CLAUDEはGit mode120000のsymlink・link値`AGENTS.md`・tracked解決先を検査する。aliasに別の本文・status・versionを持たせない。
+
+STEP 4はこの契約と明示移管を所有する。STEP 5は全tracked登録・link構文・kind別metadata・root／aliasを既存検査ownerで実装し、未知status・欠落・不一致をfixtureで拒否する。現行6testの成功を、この新しい全件検査の完成とは扱わない。
+
+STEP 5の実装は既存`docs-integrity-lib.mjs`をownerとする。Git indexの全Markdownとmachine evidence JSONを母集団とし、registry→sub-index→親noteの有効な参照から登録到達を判定する。Markdown／YAML／HTMLは既存Prettier parserで読み、未知kind／field、必須値の欠落・重複・矛盾、未対応参照構文を拒否する。現在参照のpath fieldと、版付きの歴史citation・本文literal・Git復元locatorを区別し、歴史statusやmachine JSONのdomain statusを現行metadataへ変換しない。
+
+`pnpm test:docs`はfixtureと実CLI、現tracked集合の検査を既存quality／CI入口から実行する。CLI単独は`node scripts/docs-integrity.mjs`、明示したGit fixtureを検査するときだけ`--root=<path>`を使う。成功は2行、失敗は代表5件・省略数・artifact pathを表示し、長いreasonもbyte上限で制限する。全診断JSON・完全診断log・bytes／SHA receipt付きmanifestは既存`.test-results/<run-id>/`へ保存し、quality内では既存`FGO_QUALITY_RUN_DIR/docs/`へ接続する。保存失敗は非zeroとし、別保存先へ補完しない。retentionと不足時操作は[テスト戦略§9](../requirements/test-strategy-redesign.md#9-artifact仕様)の既存契約に従う。
+
+Revision: v1.3.3（2026-10-02）は利用者承認済みSTEP 4に基づくkind／metadata・root契約とDOC-P5／P6責務の明示。既存status語彙・product／damage／baseline／digest／artifact schemaは不変。検査実装はTSK-09.1 STEP 5、統合・取得受入はSTEP 6に残す。
+
+Revision: v1.3.4（2026-10-02）は利用者承認済みSTEP 5の検査owner・参照分類・CLI診断保存の操作を接続する。STEP 4のmetadataの意味・許可status・保持判断と既存quality step／CIは不変。STEP 5の受入結果は[既存判定台帳](../evidence/tsk-09-1-documentation-closure.md#step-5-doc-p6検査実装)、別checkout／history取得はSTEP 6が所有する。
 
 ## 5. Blocking maintenance
 

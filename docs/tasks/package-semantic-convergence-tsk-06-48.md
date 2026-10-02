@@ -1,9 +1,9 @@
 ---
 title: "TSK-06.48 パッケージ別semantic complexity convergence計画"
-document_version: "1.0.9"
+document_version: "1.0.10"
 status: "Complete"
 created_at: "2026-09-20"
-updated_at: "2026-09-20"
+updated_at: "2026-10-02"
 task: "TSK-06.48"
 baseline_commit: "0c12261"
 current_worktree_base: "3e98828"
@@ -11,6 +11,8 @@ previous_bounded_unit_base: "128189f"
 ---
 
 # TSK-06.48 パッケージ別semantic complexity convergence計画
+
+本書は完了済みTSK-06.48の判断・実装境界・測定を保持するtask planである。本文の基点、ready／blocked、未実施表現は当時の状態で、現在の実装順序・進捗は[development redesign Tasks](development-redesign-tasks.md)が所有する。固有のowner判断とbounded scopeを保持するため現位置にretainし、Active ledgerとして扱わない。今回の文書版・更新日はこのscope案内の追加を表し、採用当時の基点・検証値を更新しない。
 
 ## 1. 目的
 

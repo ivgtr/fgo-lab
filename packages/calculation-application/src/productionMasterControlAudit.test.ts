@@ -182,7 +182,8 @@ import {
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 import {
   auditProductionUserControlObservations,
@@ -1669,15 +1670,18 @@ describe('production master inventory ratchet', () => {
         'production-hp-published-dependency.json',
         hpDependencyCoverage,
       );
-      const hpDependencyBytes = await readFile(
-        resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-hp-published-dependency.json'),
+      const hpDependencyBytes = await readStoredProductionAuditArtifact(
+        'production-hp-published-dependency.json',
       );
       expect([
         hpDependencyBytes.length,
         createHash('sha256').update(hpDependencyBytes).digest('hex'),
       ]).toEqual([hpDependencyReceipt.expectedBytes, hpDependencyReceipt.expectedSha256]);
       expect(
-        isDeepStrictEqual(decodeProductionAuditArtifact(hpDependencyBytes), hpDependencyCoverage),
+        isDeepStrictEqual(
+          decodeStoredProductionAuditArtifact(hpDependencyBytes),
+          hpDependencyCoverage,
+        ),
       ).toBe(true);
       expect(hpDependencyCoverage.gate.failures).toEqual([]);
       expect(hpDependencyCoverage.productClosure).toBe(false);
@@ -2308,10 +2312,10 @@ describe('production master inventory ratchet', () => {
           path,
           encodeProductionAuditDiagnostic(payload),
         );
-        const bytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, path));
+        const bytes = await readStoredProductionAuditArtifact(path);
         expect(bytes.length).toBe(receipt.expectedBytes);
         expect(createHash('sha256').update(bytes).digest('hex')).toBe(receipt.expectedSha256);
-        const saved = decodeProductionAuditArtifact(bytes) as ReturnType<
+        const saved = decodeStoredProductionAuditArtifact(bytes) as ReturnType<
           typeof encodeProductionAuditDiagnostic
         >;
         expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(saved), payload)).toBe(true);
@@ -2346,13 +2350,8 @@ describe('production master inventory ratchet', () => {
         'production-preparation-hp-maximum-fixed.json',
         encodeProductionAuditDiagnostic(maximumFixedProof),
       );
-      const savedMaximumFixed = decodeProductionAuditArtifact(
-        await readFile(
-          resolve(
-            process.env['FGO_TEST_ARTIFACT_DIR']!,
-            'production-preparation-hp-maximum-fixed.json',
-          ),
-        ),
+      const savedMaximumFixed = decodeStoredProductionAuditArtifact(
+        await readStoredProductionAuditArtifact('production-preparation-hp-maximum-fixed.json'),
       ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
       expect(
         isDeepStrictEqual(decodeProductionAuditDiagnostic(savedMaximumFixed), maximumFixedProof),
@@ -2405,12 +2404,9 @@ describe('production master inventory ratchet', () => {
         'production-preparation-hp-selected-ally-maximum-fixed.json',
         encodeProductionAuditDiagnostic(maximumFixedProof),
       );
-      const savedMaximumFixed = decodeProductionAuditArtifact(
-        await readFile(
-          resolve(
-            process.env['FGO_TEST_ARTIFACT_DIR']!,
-            'production-preparation-hp-selected-ally-maximum-fixed.json',
-          ),
+      const savedMaximumFixed = decodeStoredProductionAuditArtifact(
+        await readStoredProductionAuditArtifact(
+          'production-preparation-hp-selected-ally-maximum-fixed.json',
         ),
       ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
       expect(
@@ -2448,10 +2444,8 @@ describe('production master inventory ratchet', () => {
         'production-preparation-hp-receive.json',
         encodeProductionAuditDiagnostic(proof),
       );
-      const saved = decodeProductionAuditArtifact(
-        await readFile(
-          resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-preparation-hp-receive.json'),
-        ),
+      const saved = decodeStoredProductionAuditArtifact(
+        await readStoredProductionAuditArtifact('production-preparation-hp-receive.json'),
       ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
       expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(saved), proof)).toBe(true);
       expect(maximumFixedPopulationComplete).toBe(true);
@@ -2481,18 +2475,15 @@ describe('production master inventory ratchet', () => {
         'production-preparation-hp-receive-attempt.json',
         encodeProductionAuditDiagnostic(proof),
       );
-      const bytes = await readFile(
-        resolve(
-          process.env['FGO_TEST_ARTIFACT_DIR']!,
-          'production-preparation-hp-receive-attempt.json',
-        ),
+      const bytes = await readStoredProductionAuditArtifact(
+        'production-preparation-hp-receive-attempt.json',
       );
       expect(bytes.length).toBe(receipt.expectedBytes);
       expect(createHash('sha256').update(bytes).digest('hex')).toBe(receipt.expectedSha256);
       expect(
         isDeepStrictEqual(
           decodeProductionAuditDiagnostic(
-            decodeProductionAuditArtifact(bytes) as ReturnType<
+            decodeStoredProductionAuditArtifact(bytes) as ReturnType<
               typeof encodeProductionAuditDiagnostic
             >,
           ),
@@ -2736,18 +2727,15 @@ describe('production master inventory ratchet', () => {
         'production-hp-support-value-expression.json',
         supportHpArtifact,
       );
-      const supportHpBytes = await readFile(
-        resolve(
-          process.env['FGO_TEST_ARTIFACT_DIR']!,
-          'production-hp-support-value-expression.json',
-        ),
+      const supportHpBytes = await readStoredProductionAuditArtifact(
+        'production-hp-support-value-expression.json',
       );
       expect([
         supportHpBytes.length,
         createHash('sha256').update(supportHpBytes).digest('hex'),
       ]).toEqual([supportHpReceipt.expectedBytes, supportHpReceipt.expectedSha256]);
       expect(
-        isDeepStrictEqual(decodeProductionAuditArtifact(supportHpBytes), supportHpArtifact),
+        isDeepStrictEqual(decodeStoredProductionAuditArtifact(supportHpBytes), supportHpArtifact),
       ).toBe(true);
       expect(supportHpCoverage.gate.failures).toEqual([]);
       expect(supportHpOperationEvidence.gate.failures).toEqual([]);
@@ -3066,9 +3054,7 @@ describe('production master inventory ratchet', () => {
         'production-hp-no-healing.json',
         encodeProductionAuditDiagnostic(payload),
       );
-      const bytes = await readFile(
-        resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-hp-no-healing.json'),
-      );
+      const bytes = await readStoredProductionAuditArtifact('production-hp-no-healing.json');
       expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
         receipt.expectedBytes,
         receipt.expectedSha256,
@@ -3076,7 +3062,7 @@ describe('production master inventory ratchet', () => {
       expect(
         isDeepStrictEqual(
           decodeProductionAuditDiagnostic(
-            decodeProductionAuditArtifact(bytes) as ReturnType<
+            decodeStoredProductionAuditArtifact(bytes) as ReturnType<
               typeof encodeProductionAuditDiagnostic
             >,
           ),
@@ -3111,14 +3097,14 @@ describe('production master inventory ratchet', () => {
         'production-hp-operation-evidence.json',
         evidence,
       );
-      const bytes = await readFile(
-        resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'production-hp-operation-evidence.json'),
+      const bytes = await readStoredProductionAuditArtifact(
+        'production-hp-operation-evidence.json',
       );
       expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
         receipt.expectedBytes,
         receipt.expectedSha256,
       ]);
-      expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), evidence)).toBe(true);
+      expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(bytes), evidence)).toBe(true);
       expect(evidence.gate.failures).toEqual([]);
       expect(evidence.requestCount).toBe(3186);
       expect(evidence.rows.some((row) => row.attempted && row.transaction === 'committed')).toBe(

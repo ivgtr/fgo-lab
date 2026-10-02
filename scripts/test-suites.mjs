@@ -1,5 +1,28 @@
 export const ALL_TEST_INCLUDES = ['packages/**/*.test.ts', 'apps/**/*.test.{ts,tsx}'];
 
+// These fixture-based unit files preserve and restore complete execution diagnostics. They remain
+// mandatory unit tests, but run in a separate serial group so their large snapshots do not compete
+// with ordinary unit workers. Production and opt-in audit responsibilities stay unchanged.
+export const UNIT_DIAGNOSTIC_TEST_INCLUDES = [
+  'packages/calculation-application/src/hpExecution.test.ts',
+  'packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts',
+  'packages/calculation-application/src/productionBattlePointCapacityPreparationAudit.test.ts',
+  'packages/calculation-application/src/productionBattlePointPreparationAttemptAudit.test.ts',
+  'packages/calculation-application/src/productionBattlePointPreparationAudit.test.ts',
+  'packages/calculation-application/src/productionClosureAudit.test.ts',
+  'packages/calculation-application/src/productionHpGivePreparationAttemptAudit.test.ts',
+  'packages/calculation-application/src/productionHpGivePreparationAudit.test.ts',
+  'packages/calculation-application/src/productionHpMaximumFixedPreparationAudit.test.ts',
+  'packages/calculation-application/src/productionHpPreparationAttemptAudit.test.ts',
+  'packages/calculation-application/src/productionHpPreparationAudit.test.ts',
+  'packages/calculation-application/src/productionHpPublishedDependencyCoverage.test.ts',
+  'packages/calculation-application/src/productionScalarQuantityAudit.test.ts',
+  'packages/calculation-application/src/productionScalarQuantityRecoveryAudit.test.ts',
+  'packages/calculation-application/src/scenario.test.ts',
+];
+
+export const UNIT_TEST_PROJECTS = ['unit', 'unit-diagnostics'];
+
 // Production owns published-master audits, approved goldens/differentials,
 // calculator/ranking parity, and evidence integrity. Keep this list explicit so
 // a test cannot silently move between quality-gate responsibilities.

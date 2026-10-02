@@ -1,3 +1,9 @@
+---
+title: "ADR 023: canonical noble phantasm variant selection"
+status: "accepted"
+recorded_commit: "5844afca744dac03aaf1c6cef2d49ec76e7a59c9"
+---
+
 # ADR 023: canonical noble phantasm variant selection
 
 ## Status

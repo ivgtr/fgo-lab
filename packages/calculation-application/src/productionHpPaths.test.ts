@@ -61,8 +61,9 @@ import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
   decodeProductionAuditDiagnostic,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 import { isDeepStrictEqual } from 'node:util';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
@@ -221,14 +222,12 @@ it(
       'hp-operation-coverage.json',
       payload,
     );
-    const bytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-operation-coverage.json'),
-    );
+    const bytes = await readStoredProductionAuditArtifact('hp-operation-coverage.json');
     expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
       receipt.expectedBytes,
       receipt.expectedSha256,
     ]);
-    expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+    expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(bytes), payload)).toBe(true);
     expect(coverage.gate.failures).toEqual([]);
     expect([
       coverage.gate.sources,
@@ -264,14 +263,14 @@ it(
       'hp-proof-coverage.json',
       proofPayload,
     );
-    const proofBytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-proof-coverage.json'),
-    );
+    const proofBytes = await readStoredProductionAuditArtifact('hp-proof-coverage.json');
     expect([proofBytes.length, createHash('sha256').update(proofBytes).digest('hex')]).toEqual([
       proofReceipt.expectedBytes,
       proofReceipt.expectedSha256,
     ]);
-    expect(isDeepStrictEqual(decodeProductionAuditArtifact(proofBytes), proofPayload)).toBe(true);
+    expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(proofBytes), proofPayload)).toBe(
+      true,
+    );
     expect(proofPayload.writerPopulation).toBe(486);
     expect(proofCoverage.gate.failures).toEqual([]);
   },
@@ -716,15 +715,13 @@ it(
       'hp-give-coverage.json',
       encodeProductionAuditDiagnostic(payload),
     );
-    const bytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-give-coverage.json'),
-    );
+    const bytes = await readStoredProductionAuditArtifact('hp-give-coverage.json');
     expect(bytes.length).toBe(receipt.expectedBytes);
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(receipt.expectedSha256);
     expect(
       isDeepStrictEqual(
         decodeProductionAuditDiagnostic(
-          decodeProductionAuditArtifact(bytes) as ReturnType<
+          decodeStoredProductionAuditArtifact(bytes) as ReturnType<
             typeof encodeProductionAuditDiagnostic
           >,
         ),
@@ -746,8 +743,8 @@ it(
       'hp-give-native-noncommit-coverage.json',
       encodeProductionAuditDiagnostic(attemptPayload),
     );
-    const attemptBytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-give-native-noncommit-coverage.json'),
+    const attemptBytes = await readStoredProductionAuditArtifact(
+      'hp-give-native-noncommit-coverage.json',
     );
     expect([attemptBytes.length, createHash('sha256').update(attemptBytes).digest('hex')]).toEqual([
       attemptReceipt.expectedBytes,
@@ -756,7 +753,7 @@ it(
     expect(
       isDeepStrictEqual(
         decodeProductionAuditDiagnostic(
-          decodeProductionAuditArtifact(attemptBytes) as ReturnType<
+          decodeStoredProductionAuditArtifact(attemptBytes) as ReturnType<
             typeof encodeProductionAuditDiagnostic
           >,
         ),
@@ -892,14 +889,12 @@ it(
       'hp-transfer-evidence.json',
       payload,
     );
-    const bytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'hp-transfer-evidence.json'),
-    );
+    const bytes = await readStoredProductionAuditArtifact('hp-transfer-evidence.json');
     expect([bytes.length, createHash('sha256').update(bytes).digest('hex')]).toEqual([
       receipt.expectedBytes,
       receipt.expectedSha256,
     ]);
-    expect(isDeepStrictEqual(decodeProductionAuditArtifact(bytes), payload)).toBe(true);
+    expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(bytes), payload)).toBe(true);
     expect(evidence.gate.failures).toEqual([]);
     expect([declarations.length, requests.length, observations.length]).toEqual([2, 24, 24]);
     expect(

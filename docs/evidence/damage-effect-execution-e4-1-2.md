@@ -1,6 +1,9 @@
 ---
 title: "E4.1.2 ranking condition provenance completion"
-status: "Superseded by E4.1.3 activation witness closure"
+status: "Superseded"
+historical_status: "Superseded by E4.1.3 activation witness closure"
+status_scope: "E4.1.2 provenanceの歴史記録。activation witnessとchoice由来damageの未完成範囲は本文のまま保持"
+superseded_by: "docs/evidence/damage-effect-execution-e4-1-3.md"
 date: "2026-08-28"
 ---
 

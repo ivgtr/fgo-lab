@@ -1,13 +1,12 @@
 import { expect, it } from 'vitest';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { equalProductionAuditDiagnosticValues as equal } from './productionAuditDiagnosticEquality';
 import {
-  decodeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
   decodeProductionAuditDiagnostic,
   encodeProductionAuditDiagnostic,
   productionAuditTestOptions,
   writeProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 it('compares complete declared values independently of transport and alias topology', () => {
@@ -147,11 +146,11 @@ it(
     await writeProductionAuditArtifact(task.meta, 'tsk-08-restoration-comparison-contract.json', {
       encoded: diagnostic,
     });
-    const bytes = await readFile(
-      resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, 'tsk-08-restoration-comparison-contract.json'),
+    const bytes = await readStoredProductionAuditArtifact(
+      'tsk-08-restoration-comparison-contract.json',
     );
     const restored = decodeProductionAuditDiagnostic(
-      (decodeProductionAuditArtifact(bytes) as { encoded: typeof diagnostic }).encoded,
+      (decodeStoredProductionAuditArtifact(bytes) as { encoded: typeof diagnostic }).encoded,
     );
     expect(equal(payload, restored)).toBe(true);
   },

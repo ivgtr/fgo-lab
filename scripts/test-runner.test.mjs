@@ -12,8 +12,14 @@ import { tmpdir } from 'node:os';
 import { relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-runner-lib.mjs';
-import { AUDIT_TEST_INCLUDES, PRODUCTION_TEST_INCLUDES } from './test-suites.mjs';
+import {
+  AUDIT_TEST_INCLUDES,
+  PRODUCTION_TEST_INCLUDES,
+  UNIT_DIAGNOSTIC_TEST_INCLUDES,
+  UNIT_TEST_PROJECTS,
+} from './test-suites.mjs';
 import {
   classifyQualityOutcome,
   qualityRunConfiguration,
@@ -73,7 +79,7 @@ function fixtureScript({
       ${reportValue === undefined ? '' : `fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(reportValue))});`}
       ${observationValue === undefined ? '' : `if (process.env.FGO_TEST_OBSERVATION_PATH) fs.writeFileSync(process.env.FGO_TEST_OBSERVATION_PATH, ${JSON.stringify(JSON.stringify(observationValue))});`}
       for (const artifact of ${JSON.stringify(artifactWrites)})
-        fs.writeFileSync(require('node:path').join(process.env.FGO_TEST_ARTIFACT_DIR, artifact.path), artifact.contents);
+        fs.writeFileSync(require('node:path').join(process.env.FGO_TEST_ARTIFACT_DIR, artifact.path), artifact.encoding === 'base64' ? Buffer.from(artifact.contents, 'base64') : artifact.contents);
       ${signal ? `process.kill(process.pid, ${JSON.stringify(signal)});` : `process.exit(${exitCode});`}
     }, ${delayMs});
   `;
@@ -432,8 +438,8 @@ test('report metadata requires a receipt for every active declared artifact', as
   const reportValue = report(false, true);
   reportValue.testResults[0].assertionResults[0].meta = {
     fgoProductionAuditArtifacts: {
-      version: 1,
-      requiredArtifacts: [{ path: 'diagnostic.json', format: 'json', allowEmpty: false }],
+      version: 2,
+      requiredArtifacts: [{ path: 'diagnostic.json.gz', format: 'json-gzip', allowEmpty: false }],
       receipts: [],
     },
   };
@@ -446,28 +452,32 @@ test('report metadata requires a receipt for every active declared artifact', as
   assert.equal(result.exitCode, 1);
   assert.equal(result.manifest.outcome, 'artifact_failure');
   assert.deepEqual(result.manifest.artifactVerification.errors, [
-    'vitest.json:0:0:receipt_missing:diagnostic.json',
-    'diagnostic.json:missing',
+    'vitest.json:0:0:receipt_missing:diagnostic.json.gz',
+    'diagnostic.json.gz:missing',
   ]);
 });
 
 test('metadata receipts verify intended bytes and reject same-length mutation', async () => {
-  const intended = Buffer.from('{"value":1}\n');
+  const decoded = Buffer.from('{"value":1}\n');
+  const intended = gzipSync(decoded, { level: 1 });
   const reportValue = report(false, true);
   reportValue.testResults[0].assertionResults[0].meta = {
     fgoProductionAuditArtifacts: {
-      version: 1,
-      requiredArtifacts: [{ path: 'diagnostic.json', format: 'json', allowEmpty: false }],
+      version: 2,
+      requiredArtifacts: [{ path: 'diagnostic.json.gz', format: 'json-gzip', allowEmpty: false }],
       receipts: [
         {
-          path: 'diagnostic.json',
+          path: 'diagnostic.json.gz',
           expectedBytes: intended.byteLength,
           expectedSha256: createHash('sha256').update(intended).digest('hex'),
+          expectedDecodedBytes: decoded.length,
+          expectedDecodedSha256: createHash('sha256').update(decoded).digest('hex'),
         },
       ],
     },
   };
-  const altered = Buffer.from('{"value":2}\n');
+  const altered = Buffer.from(intended);
+  altered[4] = 1; // A changed gzip header preserves decoded JSON but changes stored identity.
   assert.equal(altered.byteLength, intended.byteLength);
   reportValue.testResults[0].assertionResults[0].meta.fgoProductionAuditArtifacts.receipts[0].expectedSha256 =
     createHash('sha256').update(intended).digest('hex');
@@ -475,14 +485,16 @@ test('metadata receipts verify intended bytes and reject same-length mutation', 
     'metadata-checksum-mismatch',
     fixtureScript({
       reportValue,
-      artifactWrites: [{ path: 'diagnostic.json', contents: altered.toString() }],
+      artifactWrites: [
+        { path: 'diagnostic.json.gz', contents: altered.toString('base64'), encoding: 'base64' },
+      ],
     }),
     2_000,
     { observationName: null },
   );
   assert.equal(result.exitCode, 1);
   assert.equal(result.manifest.outcome, 'artifact_failure');
-  assert.ok(result.manifest.artifactVerification.errors.includes('diagnostic.json:sha256'));
+  assert.ok(result.manifest.artifactVerification.errors.includes('diagnostic.json.gz:sha256'));
 });
 
 test('the real Vitest JSON reporter carries writer receipts into the generic runner', async () => {
@@ -507,7 +519,7 @@ test('the real Vitest JSON reporter carries writer receipts into the generic run
   assert.equal(result.manifest.outcome, 'test_failure');
   assert.deepEqual(result.manifest.artifactVerification.errors, []);
   const artifact = result.manifest.artifacts.find(
-    ({ path }) => path === 'tsk-08-artifact-contract.json',
+    ({ path }) => path === 'tsk-08-artifact-contract.json.gz',
   );
   assert.equal(typeof artifact?.sha256, 'string');
   const assertion = result.report.testResults
@@ -520,17 +532,29 @@ test('the real Vitest JSON reporter carries writer receipts into the generic run
   );
 });
 
-function artifactMetadata(path = 'diagnostic.json', contents = '{"value":1}\n') {
+function artifactMetadata(path = 'diagnostic.json.gz', contents = '{"value":1}\n') {
+  const decoded = Buffer.from(contents);
+  const stored = gzipSync(decoded, { level: 1 });
   return {
-    version: 1,
-    requiredArtifacts: [{ path, format: 'json', allowEmpty: false }],
+    version: 2,
+    requiredArtifacts: [{ path, format: 'json-gzip', allowEmpty: false }],
     receipts: [
       {
         path,
-        expectedBytes: Buffer.byteLength(contents),
-        expectedSha256: createHash('sha256').update(contents).digest('hex'),
+        expectedBytes: stored.length,
+        expectedSha256: createHash('sha256').update(stored).digest('hex'),
+        expectedDecodedBytes: decoded.length,
+        expectedDecodedSha256: createHash('sha256').update(decoded).digest('hex'),
       },
     ],
+  };
+}
+
+function gzipPublication(path, contents) {
+  return {
+    path,
+    contents: gzipSync(Buffer.from(contents), { level: 1 }).toString('base64'),
+    encoding: 'base64',
   };
 }
 
@@ -547,18 +571,78 @@ function artifactReport(contracts) {
 
 test('artifact obligations reject missing, malformed, duplicate, unsafe and altered publications', async () => {
   const cases = [
-    ['missing-file', (c) => c, [], 'diagnostic.json:missing'],
-    ['bytes', (c) => c, [{ path: 'diagnostic.json', contents: '{}' }], 'diagnostic.json:bytes:'],
+    ['missing-file', (c) => c, [], 'diagnostic.json.gz:missing'],
+    [
+      'bytes',
+      (c) => c,
+      [{ path: 'diagnostic.json.gz', contents: '{}' }],
+      'diagnostic.json.gz:bytes:',
+    ],
     [
       'invalid-json',
+      () => artifactMetadata('diagnostic.json.gz', 'not-json!!!!'),
+      [gzipPublication('diagnostic.json.gz', 'not-json!!!!')],
+      'diagnostic.json.gz:invalid_json_gzip:',
+    ],
+    ['empty', (c) => c, [{ path: 'diagnostic.json.gz', contents: '' }], 'diagnostic.json.gz:empty'],
+    [
+      'invalid-gzip',
+      (c) => c,
+      [
+        {
+          path: 'diagnostic.json.gz',
+          contents: Buffer.alloc(gzipSync(Buffer.from('{"value":1}\n')).length).toString('base64'),
+          encoding: 'base64',
+        },
+      ],
+      'diagnostic.json.gz:invalid_json_gzip:',
+    ],
+    [
+      'decoded-bytes',
       (c) => {
-        c.receipts[0].expectedBytes = 12;
+        c.receipts[0].expectedDecodedBytes += 1;
         return c;
       },
-      [{ path: 'diagnostic.json', contents: 'not-json!!!!' }],
-      'diagnostic.json:invalid_json:',
+      [gzipPublication('diagnostic.json.gz', '{"value":1}\n')],
+      'diagnostic.json.gz:decoded_bytes',
     ],
-    ['empty', (c) => c, [{ path: 'diagnostic.json', contents: '' }], 'diagnostic.json:empty'],
+    [
+      'decoded-output-limit',
+      (c) => {
+        c.receipts[0].expectedDecodedBytes -= 1;
+        return c;
+      },
+      [gzipPublication('diagnostic.json.gz', '{"value":1}\n')],
+      'diagnostic.json.gz:invalid_json_gzip:',
+    ],
+    [
+      'decoded-sha',
+      (c) => {
+        c.receipts[0].expectedDecodedSha256 = '0'.repeat(64);
+        return c;
+      },
+      [gzipPublication('diagnostic.json.gz', '{"value":1}\n')],
+      'diagnostic.json.gz:decoded_sha256',
+    ],
+    [
+      'missing-decoded-receipt',
+      (c) => {
+        delete c.receipts[0].expectedDecodedSha256;
+        return c;
+      },
+      [],
+      'receipt_0_invalid',
+    ],
+    [
+      'unknown-format',
+      (c) => {
+        c.requiredArtifacts[0].format = 'json';
+        return c;
+      },
+      [],
+      'required_artifact_0_invalid',
+    ],
+
     [
       'duplicate-required',
       (c) => {
@@ -571,7 +655,7 @@ test('artifact obligations reject missing, malformed, duplicate, unsafe and alte
     [
       'normalized-duplicate',
       (c) => {
-        c.requiredArtifacts.push({ ...c.requiredArtifacts[0], path: 'sub/../diagnostic.json' });
+        c.requiredArtifacts.push({ ...c.requiredArtifacts[0], path: 'sub/../diagnostic.json.gz' });
         return c;
       },
       [],
@@ -607,7 +691,7 @@ test('artifact obligations reject missing, malformed, duplicate, unsafe and alte
     [
       'bad-contract',
       (c) => {
-        c.version = 2;
+        c.version = 1;
         return c;
       },
       [],
@@ -665,20 +749,22 @@ test('artifact obligations reject missing, malformed, duplicate, unsafe and alte
 });
 
 test('directory discovery cannot replace an intended artifact receipt with observed bytes', async () => {
-  const metadata = artifactMetadata('nested/value.json');
+  const metadata = artifactMetadata('nested/value.json.gz');
   const result = await runFixture(
     'discovery-receipt',
     `require('node:fs').mkdirSync(require('node:path').join(process.env.FGO_TEST_ARTIFACT_DIR, 'nested'));\n${fixtureScript(
       {
         reportValue: artifactReport([metadata]),
-        artifactWrites: [{ path: 'nested/value.json', contents: '{"value":2}\n' }],
+        artifactWrites: [gzipPublication('nested/value.json.gz', '{"value":2}\n')],
       },
     )}`,
     2_000,
     { additionalArtifactDirectories: ['nested'] },
   );
   assert.equal(result.manifest.outcome, 'artifact_failure');
-  assert.ok(result.manifest.artifactVerification.errors.includes('nested/value.json:sha256'));
+  assert.ok(
+    result.manifest.artifactVerification.errors.includes('nested/value.json.gz:decoded_sha256'),
+  );
 });
 
 test('the real writer preserves malformed diagnostics before their producer assertions fail', async () => {
@@ -687,7 +773,9 @@ test('the real writer preserves malformed diagnostics before their producer asse
     assert.equal(result.manifest.outcome, 'test_failure', result.summary);
     assert.deepEqual(result.manifest.artifactVerification.errors, []);
     const saved = JSON.parse(
-      readFileSync(resolve(result.runDirectory, 'tsk-08-artifact-contract.json'), 'utf8'),
+      gunzipSync(
+        readFileSync(resolve(result.runDirectory, 'tsk-08-artifact-contract.json.gz')),
+      ).toString('utf8'),
     );
     assert.equal(saved.payload.failures.length, 6);
     assert.equal(Object.hasOwn(saved.payload.failures[0], field), false);
@@ -696,7 +784,7 @@ test('the real writer preserves malformed diagnostics before their producer asse
   assert.equal(early.manifest.outcome, 'artifact_failure');
   assert.ok(
     early.manifest.artifactVerification.errors.some((value) =>
-      value.includes('receipt_missing:tsk-08-artifact-contract.json'),
+      value.includes('receipt_missing:tsk-08-artifact-contract.json.gz'),
     ),
   );
 });
@@ -743,7 +831,7 @@ test('two real workers retain separate receipts and filtered tests create no mis
         const root = process.env.FGO_TEST_ARTIFACT_DIR!;
         if ('${name}' === 'first' && process.env.FGO_ARTIFACT_WAIT_SECOND === '1') {
           const deadline = Date.now() + 5000;
-          while (!existsSync(resolve(root, 'second.json'))) {
+          while (!existsSync(resolve(root, 'second.json.gz'))) {
             if (Date.now() > deadline) throw new Error('second worker did not publish');
             await new Promise(resolve => setTimeout(resolve, 20));
           }
@@ -779,9 +867,9 @@ test('two real workers retain separate receipts and filtered tests create no mis
       ['success', ...(filtered ? ['contract_failure'] : [])].includes(result.manifest.outcome),
       result.summary,
     );
-    assert.ok(result.manifest.artifacts.some(({ path }) => path === 'first.json'));
+    assert.ok(result.manifest.artifacts.some(({ path }) => path === 'first.json.gz'));
     assert.equal(
-      result.manifest.artifacts.some(({ path }) => path === 'second.json'),
+      result.manifest.artifacts.some(({ path }) => path === 'second.json.gz'),
       !filtered,
     );
     if (!filtered) {
@@ -1331,23 +1419,56 @@ test('unit, production, and opt-in audit suites form one exhaustive non-overlapp
   );
   const unit = all.filter((file) => !productionSet.has(file) && !auditSet.has(file));
   assert.equal(new Set([...unit, ...production, ...audit]).size, all.length);
+  assert.equal(new Set(UNIT_DIAGNOSTIC_TEST_INCLUDES).size, UNIT_DIAGNOSTIC_TEST_INCLUDES.length);
+  assert.deepEqual(
+    UNIT_DIAGNOSTIC_TEST_INCLUDES.filter((file) => !unit.includes(file)),
+    [],
+  );
+  const diagnostics = new Set(UNIT_DIAGNOSTIC_TEST_INCLUDES);
+  // New complete-state writers need an explicit workload placement; they cannot silently grow the
+  // concurrent unit workload. The three small writer/codec contracts exercise transport itself.
+  const transportContracts = new Set([
+    'packages/calculation-application/src/productionAuditArtifacts.test.ts',
+    'packages/calculation-application/src/productionAuditDiagnosticEquality.test.ts',
+    'packages/calculation-application/src/productionBattlePointCapacityProof.test.ts',
+  ]);
+  assert.deepEqual(
+    unit.filter(
+      (file) =>
+        readFileSync(resolve(root, file), 'utf8').includes('productionAuditArtifacts') &&
+        !diagnostics.has(file) &&
+        !transportContracts.has(file),
+    ),
+    [],
+  );
 });
 
 test('differently capped Vitest projects use distinct execution groups', () => {
   const config = readFileSync(resolve(root, 'vitest.config.ts'), 'utf8');
   const unitProject = config.slice(
     config.indexOf("name: 'unit'"),
+    config.indexOf("name: 'unit-diagnostics'"),
+  );
+  const diagnosticProject = config.slice(
+    config.indexOf("name: 'unit-diagnostics'"),
     config.indexOf("name: 'production'"),
   );
-  const productionProject = config.slice(config.indexOf("name: 'production'"));
+  const productionProject = config.slice(
+    config.indexOf("name: 'production'"),
+    config.indexOf("name: 'audit'"),
+  );
   const auditProject = config.slice(config.indexOf("name: 'audit'"));
 
   assert.match(unitProject, /sequence: \{ groupOrder: 0 \}/);
-  assert.match(productionProject, /maxWorkers: '50%'/);
-  assert.match(productionProject, /sequence: \{ groupOrder: 1 \}/);
+  assert.match(unitProject, /UNIT_DIAGNOSTIC_TEST_INCLUDES/);
+  assert.match(diagnosticProject, /include: UNIT_DIAGNOSTIC_TEST_INCLUDES/);
+  assert.match(diagnosticProject, /maxWorkers: 1/);
+  assert.match(diagnosticProject, /sequence: \{ groupOrder: 1 \}/);
+  assert.match(productionProject, /maxWorkers: 1/);
+  assert.match(productionProject, /sequence: \{ groupOrder: 2 \}/);
   assert.match(auditProject, /name: 'audit'/);
   assert.match(auditProject, /maxWorkers: 1/);
-  assert.match(auditProject, /sequence: \{ groupOrder: 2 \}/);
+  assert.match(auditProject, /sequence: \{ groupOrder: 3 \}/);
 });
 
 test('local, CI, and Vercel use the same canonical quality command', () => {
@@ -1396,7 +1517,9 @@ test('the exhaustive production-control audit is opt-in and outside canonical qu
   );
   const runner = readFileSync(resolve(root, 'scripts/test-runner.mjs'), 'utf8');
   assert.match(runner, /'all', 'unit', 'production', 'audit'/);
-  assert.match(runner, /suite === 'all' \? \['--project=unit', '--project=production'\]/);
+  assert.deepEqual(UNIT_TEST_PROJECTS, ['unit', 'unit-diagnostics']);
+  assert.match(runner, /suite === 'all'\s*\? \[\.\.\.UNIT_TEST_PROJECTS, 'production'\]/);
+  assert.match(runner, /suite === 'unit'\s*\? UNIT_TEST_PROJECTS/);
   const packageSuites = readFileSync(resolve(root, 'scripts/test-suites.mjs'), 'utf8');
   assert.match(packageSuites, /productionMasterControlAudit\.test\.ts/);
 });

@@ -1,7 +1,5 @@
 import { expect, it } from 'vitest';
 import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -34,7 +32,9 @@ import {
   encodeProductionAuditDiagnostic,
   decodeProductionAuditDiagnostic,
   serializeProductionAuditArtifact,
+  decodeStoredProductionAuditArtifact,
   decodeProductionAuditArtifact,
+  readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
 type Entry =
@@ -1431,10 +1431,11 @@ for (const spec of specs)
           savedRoundTrip,
           encoded: diagnostic,
         });
-        const savedBytes = await readFile(resolve(process.env['FGO_TEST_ARTIFACT_DIR']!, file));
+        const savedBytes = await readStoredProductionAuditArtifact(file);
         const diskRoundTrip = equalProductionAuditDiagnosticValues(
           decodeProductionAuditDiagnostic(
-            (decodeProductionAuditArtifact(savedBytes) as { encoded: typeof diagnostic }).encoded,
+            (decodeStoredProductionAuditArtifact(savedBytes) as { encoded: typeof diagnostic })
+              .encoded,
           ),
           payload,
         );
