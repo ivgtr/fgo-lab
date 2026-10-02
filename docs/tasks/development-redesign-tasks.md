@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.184"
+document_version: "1.7.185"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-03"
@@ -74,6 +74,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-09.12 | 旧bundleの縮小・廃棄判断（限定調査） | done | TSK-09.11 | 09.1 STEP 2保持契約／旧bundleの個別処遇 |
 | TSK-09.13 | 旧bundle非依存確認・廃棄条件確定 | done | TSK-09.12 | 旧bundle不使用方針／A3保持必要性と能力損失の再判断 |
 | TSK-09 | 最終受入と運用手順の収束 | done | TSK-09.1 | test strategy T5／全完了条件 |
+| TSK-10 | CI入力ライフサイクルの設計と運用収束 | ready | TSK-09 | test strategy §9／§12、execution efficiency §4／§7 |
 
 ```text
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
@@ -83,6 +84,7 @@ TSK-06.411 + TSK-06.412 -> TSK-06.42 -> TSK-06.43 -> TSK-06.44 -> TSK-06.45 -> T
 TSK-06.46 -> TSK-06.48（TSK-06.47／TSK-06.5とは独立したpackage convergence follow-up）
 TSK-09.11 -> TSK-09.12（09.1 STEP 2完了後の旧bundle処遇判断。調査はdone、物理処遇は未実施）
 TSK-09.12 -> TSK-09.13（done: 非依存・全廃棄条件確定、物理処遇未実施）-> TSK-09.1 STEP 3〜6 -> TSK-09（移管・物理削除を一律の依存にしない）
+TSK-09 -> TSK-10（将来の入力更新・取得・保持を既存ownerへ収束）
 ```
 
 ## 3. Tasks
@@ -2979,6 +2981,66 @@ Contract closure matrix:
 Next command: `git status --short`。集約manifest／final-source identityと現在差分を照合し、変更範囲に応じた検査をREADMEから選ぶ。runtime source／入力変更は必要な局所検証後のquality、結果文書だけならdocs gate。固定入力不足時は同revision／原内容の明示提供元・権限を確認して停止し、供給後は不足consumerから再開する。baselineの主repository file transport受入と外部origin未保証、local artifact消失後の歴史記録と完全receipt再照合を区別する。旧bundle非依存・HP再監査能力保持解除・物理処遇未実施を維持。run全体の新しい複製・results:clean／外部転送／commit／push／原物削除なし。
 
 Handoff: 2026-10-03、TSK-09 done、全Checklist8／Done6／Apply6成立、対象内Blocking0、未commit。既存共通writer／reader／verifierと17consumer43読取をgzip＋保存／復元identity検証へ収束。追加製品変更・CI入力追加0。同固定sourceのcanonical pnpm qualityは独立caller exit0・parent success・全10step、unit1605／production157／E2E29、warning／skip／retry／artifact error0。953.365s、実counter／digest・意味／expected／5秒不変。最終結果記録3文書だけのsource橋渡しと明示書式／docs inspectorを確認。正本は[最終受入](../evidence/tsk-09-final-acceptance.md)、current pointer `.test-results/tsk-09-transport-20261002/manifest.json`、quality／final-source／小patchは `resume-20261003/`。ENOSPC／SIGTERM失敗と前受入manifestを不変で保持し、SIGTERM発生元は未特定、長時間実行条件の成立を新exit0で実証。index一覧hashと物理bytehashの取り違えを正本で訂正、stage空・既存4intent・担当外833保持。次はdocs入口→本Handoff→正本→final-source identity→README検査選択。入力不足は同revision／原内容の明示提供元・権限を確認して停止、供給後に必要consumerから再開。外部baseline未保証・09.13旧bundle非依存／物理処遇未実施を維持。補助checkout／runは受入・再開参照中のみ、後日個別処遇。原物変更／cleanup／transfer／commit／pushなし。
+
+Commit追補（2026-10-03）: 利用者のcommit指示により、最終受入済みの全105差分を`6bba3310976287709dd3aabac9d533e4b1dfb4a9`へcommitした。親は`ce9cea06712642d67b51e0d1a8997d4a58077967`、treeは`da2cb978c9e33878a665a09f2b34363d22a115e2`。受入時binary diff SHA `33e9286dfa86b0b419a9ecc8553e4ffdfcfbc1732823695393eaa66c525340dd`とstaged差分、869sourceのbytes／SHA／modeが一致し、commit後worktree／indexはclean。追加製品変更・検証の再実行・pushなし。上記の未commit受入Handoffは当時の記録として維持し、後続はこのcommitから開始する。
+
+### TSK-10: CI入力ライフサイクルの設計と運用収束
+
+Depends on: TSK-09
+
+Current status: `ready`（2026-10-03、次Taskの整理だけ。設計採用・製品修正・新しい実行受入は未実施）。
+
+目的は、contributorが通常CIに必要な固定入力を取得し、将来のデータ更新でも入力・consumer・判定を一貫して更新できること。Taskの追加が保存集合の自動追加にならず、不足・破損・更新途中では必要入力と再開操作を示して停止できる状態へ収束する。TSK-09の品質成功とproject closureを維持し、短縮率・削除件数・新しい保存サービスの導入を完了条件にしない。
+
+受取根拠は[TSK-09最終受入](../evidence/tsk-09-final-acceptance.md#検証履歴とci入力の受入境界)とその最終Handoff。通常qualityのraw HP検査は、既存data-pipelineの宣言1件＋全raw gzip2件（圧縮7,907,911 bytes、復元90,441,915 bytes）を直接読む。現方式で固定入力を取得する実経路は受入済みだが、将来のmaster／raw更新時の操作・判定・保存の増加を一連で受入した証拠ではない。診断gzipの単発quality容量と、このGit入力の容量・Git履歴の増加は別に評価する。
+
+調査・修正境界:
+
+| 対象 | 現owner／直接経路 | 今回閉じる範囲 |
+| --- | --- | --- |
+| 通常CIの入力 | `.github/workflows/ci.yml` → `pnpm quality` → production／published master検査／build／E2E | 現行commitから必要な入力を取得する条件。ignored rawや元端末のrunを借りない |
+| 固定raw HP入力 | `packages/data-pipeline/test-inputs/raw-hp-v1/manifest.json` → `executionSemanticsProduction.test.ts` | 宣言とconsumer内固定identityの更新責務、出自、欠落・破損・不一致時操作 |
+| 配信用master | data-pipeline normalize／validate → published master → production／Webの直接reader | raw固定検査との対応と独立したversion／identityを確認し、同一revisionで揃える必要範囲を決める |
+| 回帰expected／再現fixture | `productionRegressionBaseline` → replay／`production-matrix-records` → 実merge | 通常qualityとは別の入力として既存契約を維持。変更依存がないreader／matrixは再実行しない |
+| 完全診断・作業出力 | 既存artifact writer／runner、CI upload、local明示cleanup | 入力へ昇格させない。更新検証で新artifactが必要な場合だけ用途・寿命・処遇を記録する |
+
+採用方式は直接consumerと必要能力から決める。現在の有限Git入力を継続する案も評価対象とし、Git履歴に残るbytes、必要な取得保証、外部供給の権限・障害、既存保存との重複を比較する。Gitから外部への移管、共有object保存、pin機構、新しいhelperを先に前提にしない。新機構は既存ownerで不足する理由と継続的なconsumerが確認された場合だけ提案する。
+
+- [ ] 通常qualityに必須のmaster／raw／fixtureと、opt-in audit・matrix／replay・診断だけの入力を直接callerで区別し、有限inventoryへ対応付ける。既存保持契約を全runの保存義務へ広げない。
+- [ ] 入力の取得・検査・更新・差戻し・参照終了を同じownerへ対応付ける。承認対象、固定出自／identity、rawとmasterの対応、manifestとconsumerの更新単位、取得不能時の必要入力を決める。
+- [ ] Taskごとの追加保存を防ぐ採用条件を既存README／要件へ収束する。保存path、distinct object、圧縮／復元bytes、metadata、Git履歴に残る増加を区別し、不要な重複を作らず必要能力を維持する。
+- [ ] 採用方式で現コードに不足する範囲だけ修正し、欠落／破損／未知宣言／identity不一致／更新途中の小反例を直接consumerで確認する。既存の有効な反例証拠は再利用する。
+- [ ] cleanな別checkoutから通常入力を取得し、必要consumerを実行し、不足時の停止／供給後再開を実証する。更新・差戻しの操作は現expectedや原rawを変更しない検証で確認し、新データの採用は別の明示判断にする。
+- [ ] 変更したconsumer／保存・取得経路だけの検証と差分レビューを先に閉じ、コード／実行設定変更がある場合は固定差分で最終`pnpm quality`を行う。文書だけなら明示書式・`pnpm test:docs`で閉じる。結果と必要入力・次操作を本Task Handoffへ残す。
+
+不変条件・停止境界: damage／ranking／state／outcome、全母集団・assertion・timeout／cap／ratchet、現baseline・承認済みexpected・fixture意味を維持する。最新raw取得、別SHA／別path／小fixture、期待値再生成で不足を補わない。固定baseline `dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`の主repository file transport受入と外部origin未保証は維持し、外部供給を必要とする案には提供元・権限の明示判断を必要とする。09.13の旧bundle非依存・HP原内容再監査能力保持解除・物理処遇未実施を変更しない。新しい保持集合・取得元変更・能力損失は確認する。原物・既存調査directoryの変更／移動／削除、`results:clean`、外部転送・公開、commit／pushは本Task整理の承認に含まれない。
+
+Flow closure: N/A: 現時点は次Taskの定義だけでcanonical state／outcome／write pathを変更しない。採用設計が複数の保存・取得経路を変更する場合は、実装前に既存体系レビューガイドで対象familyのdeltaと反証を本Taskへ記録する。
+
+Done gate:
+
+- 必須入力ごとに唯一のowner・直接consumer・固定identity／出自・取得条件・参照期間・処遇条件があり、Task追加だけでは保持集合が増えない。
+- contributorが取得・更新・差戻し・不足時停止／再開を辿れ、Git-only checkoutの実consumer結果と方式の保証限界が一致する。hosted CIは実行証拠がある範囲だけ成立を主張する。
+- 原rawの全内容・検査母集団・回帰expected・完全失敗診断を維持し、保存量の変化と必要能力を対応付ける。診断artifactやGit履歴を自動削除していない。
+- 変更に必要な局所検証・性能比較／再利用条件・最終ゲートが成立し、対象内Blocking0、正本とsource／receipt／Handoffが一致する。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `TS-ART-001` | Apply | 有限入力inventory／取得・更新・差戻し／完全診断receiptと参照寿命の照合 | Handoff |
+| `TS-QUAL-001` | Apply | 通常qualityと追加検査の入力・direct caller照合。実行変更時は最終`pnpm quality`、文書だけなら`pnpm test:docs` | Handoff |
+| `TS-RUN-001` | Apply | 変更した取得・検査consumerの不足／破損／不一致反例と非zero終了・完全診断照合 | Handoff |
+| `TS-PERF-001` | Apply | runner変更時のみ同一集合の前後測定。未変更ならsource／依存一致で既存証拠再利用 | Handoff |
+| `TS-PERF-002` | Apply | 構造変更時は同環境・入力・workloadの前後各3process。reader／merge／producer／ranking／同一process診断を区別し、未変更は依存一致で再利用 | Handoff |
+| `DX-ART-001` | Apply | 不足時のbounded表示と完全診断・保存失敗の拒否、保存／復元identity照合 | Handoff |
+| `DX-HANDOFF-001` | Apply | 入口から必要入力・取得条件・不足時操作へ到達し別checkout／threadで再開 | Handoff |
+| `DOC-REV-001` | Apply | 要件を改訂する場合のversion／理由／承認／影響Task／baseline影響の照合。未改訂なら現Contract不変を記録 | Handoff |
+| `DOC-LINT-001` | Apply | 明示Markdown／metadata書式、`pnpm test:docs`、registry／参照／Task状態の照合 | Handoff |
+| `RK-PERF-001` | N/A: ranking runtime／hot pathは本Taskの修正対象外 | - | - |
+| `TS-FINAL-001` | N/A: TSK-09のproject closureを継承し、新しいproject全体受入を目的にしない。変更時の品質ゲートはTS-QUAL-001で閉じる | - | - |
+
+Handoff: 次Taskの整理としてreadyへ登録した。開始identityはTSK-09 completion commit `6bba3310976287709dd3aabac9d533e4b1dfb4a9`、現在の追加差分は本Taskとregistryの文書だけ。09の局所・性能・最終quality1605／157／29と取得証拠は、source／入力一致の範囲で継承し、新しい更新・hosted CI成功へ昇格しない。次は`git status --short`／`git rev-parse HEAD`→本Task→TSK-09最終Handoff→上表の直接定義・callerから、更新操作で不足する契約と修正境界を確定する。実装開始後は通常の技術判断で継続し、新しい製品判断・保持範囲／取得元の拡張だけ確認する。未着手であり、本TaskのDone gateは未成立。
 
 ## 4. 更新規則
 
