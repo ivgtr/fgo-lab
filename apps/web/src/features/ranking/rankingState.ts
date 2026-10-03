@@ -37,6 +37,28 @@ export const DEFAULT_RANKING_URL_STATE: RankingUrlState = {
   },
 };
 
+const COMPARISON_QUERY_KEYS = [
+  'rGrowth',
+  'rPopulation',
+  'rLevelBasis',
+  'rNpBasis',
+  'rOc',
+  'rAffinity',
+  'rSelf',
+  'rConditional',
+] as const;
+const DISPLAY_QUERY_KEYS = [
+  'rMetric',
+  'rSearch',
+  'rClass',
+  'rRarity',
+  'rCard',
+  'rTarget',
+  'rOwned',
+] as const;
+const comparisonKeys = new Set<string>(COMPARISON_QUERY_KEYS);
+const displayKeys = new Set<string>(DISPLAY_QUERY_KEYS);
+
 function enumValue<T extends string>(
   params: URLSearchParams,
   key: string,
@@ -55,19 +77,11 @@ function nullableRarity(params: URLSearchParams): number | null {
 
 export function parseRankingUrlState(search: string): RankingUrlState {
   const params = new URLSearchParams(search);
-  const keys = [
-    'rGrowth',
-    'rPopulation',
-    'rLevelBasis',
-    'rNpBasis',
-    'rOc',
-    'rAffinity',
-    'rSelf',
-    'rConditional',
-  ];
-  const legacy = params.has('rMode') || params.has('rNp');
-  const absent = keys.every((key) => !params.has(key));
-  const complete = keys.every((key) => params.getAll(key).length === 1);
+  const unknown = [...params.keys()].some(
+    (key) => key.startsWith('r') && !comparisonKeys.has(key) && !displayKeys.has(key),
+  );
+  const absent = COMPARISON_QUERY_KEYS.every((key) => !params.has(key));
+  const complete = COMPARISON_QUERY_KEYS.every((key) => params.getAll(key).length === 1);
   const npToken = params.get('rNpBasis');
   const parsed = compileRankingSelection({
     initialOvercharge: /^[1-3]$/.test(params.get('rOc') ?? '') ? Number(params.get('rOc')) : null,
@@ -83,9 +97,9 @@ export function parseRankingUrlState(search: string): RankingUrlState {
     conditionalEffects: params.get('rConditional'),
   });
   const conditions =
-    !legacy && absent
+    !unknown && absent
       ? DEFAULT_RANKING_POLICY_CONDITIONS
-      : !legacy && complete && parsed.status === 'valid'
+      : !unknown && complete && parsed.status === 'valid'
         ? parsed.selection
         : null;
   return {
@@ -132,20 +146,7 @@ export function serializeRankingUrlState(state: RankingUrlState, currentSearch =
   } else {
     const invalid = new URLSearchParams(state.invalidCalculationQuery);
     for (const [key, value] of invalid)
-      if (
-        [
-          'rPopulation',
-          'rLevelBasis',
-          'rNpBasis',
-          'rOc',
-          'rAffinity',
-          'rSelf',
-          'rConditional',
-          'rMode',
-          'rNp',
-        ].includes(key)
-      )
-        params.append(key, value);
+      if (key.startsWith('r') && !displayKeys.has(key)) params.append(key, value);
   }
   setIf(params, 'rMetric', state.metric, state.metric !== 'average');
   setIf(params, 'rSearch', state.filters.search, state.filters.search.length > 0);

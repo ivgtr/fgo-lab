@@ -27,6 +27,11 @@ const execution = executePortableCalculation(request, master);
 if (execution.status !== 'executed') throw new Error('executable fixture required');
 const result = execution.execution.result;
 const repository = new IndexedDbProfileRepository();
+function nativeMethod<T extends object, K extends keyof T>(prototype: T, key: K): T[K] {
+  const value: unknown = Object.getOwnPropertyDescriptor(prototype, key)?.value;
+  if (typeof value !== 'function') throw new Error('native request function required');
+  return value as T[K];
+}
 async function collection() {
   const currentRequest = structuredClone(request);
   const currentResult = structuredClone(result);
@@ -222,14 +227,12 @@ it.each([
     if (target) request.addEventListener('success', () => controller.abort(), { once: true });
     return request;
   };
+  const originalPut = nativeMethod(IDBObjectStore.prototype, 'put');
+  const originalGet = nativeMethod(IDBObjectStore.prototype, 'get');
+  const originalDelete = nativeMethod(IDBObjectStore.prototype, 'delete');
   const putSpy = vi.spyOn(IDBObjectStore.prototype, 'put');
   const getSpy = vi.spyOn(IDBObjectStore.prototype, 'get');
   const deleteSpy = vi.spyOn(IDBObjectStore.prototype, 'delete');
-  const originalPut = putSpy.getMockImplementation();
-  const originalGet = getSpy.getMockImplementation();
-  const originalDelete = deleteSpy.getMockImplementation();
-  if (!originalPut || !originalGet || !originalDelete)
-    throw new Error('native request functions required');
   putSpy.mockImplementation(function (this: IDBObjectStore, value: unknown, key?: IDBValidKey) {
     return observe('put', this, key, originalPut.call(this, value, key));
   });
@@ -257,9 +260,8 @@ it('reports committed when invalidation arrives after durable commit, without a 
   const next = structuredClone(current);
   next.profiles[0]!.name = 'committed';
   const controller = new AbortController();
+  const original = nativeMethod(IDBDatabase.prototype, 'transaction');
   const transactionSpy = vi.spyOn(IDBDatabase.prototype, 'transaction');
-  const original = transactionSpy.getMockImplementation();
-  if (!original) throw new Error('native transaction function required');
   transactionSpy.mockImplementation(function (
     this: IDBDatabase,
     stores: string | string[],
@@ -280,6 +282,82 @@ it('reports committed when invalidation arrives after durable commit, without a 
   const connection = await db();
   expect(await connection.get('user', 'profiles')).toEqual(next);
   expect(await connection.getAllKeys('meta')).toEqual([]);
+  expect(await connection.getAllKeys('staging')).toEqual([]);
+  connection.close();
+});
+
+it.each(['stagePut', 'stageRead', 'backupPut', 'userPut', 'stageDelete'] as const)(
+  'rolls back %s request faults without losing the original pair, backup or foreign staging',
+  async (phase) => {
+    const current = await collection();
+    await repository.replace(current);
+    const next = structuredClone(current);
+    next.profiles[0]!.name = 'faulted replacement';
+    const connection = await db();
+    await connection.put('meta', { retained: true }, 'profiles-before-v42-switch');
+    await connection.put('staging', { foreign: true }, 'foreign-operation');
+    const fault = new Error(`request_fault:${phase}`);
+    const originalPut = nativeMethod(IDBObjectStore.prototype, 'put');
+    const originalGet = nativeMethod(IDBObjectStore.prototype, 'get');
+    const originalDelete = nativeMethod(IDBObjectStore.prototype, 'delete');
+    vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (
+      this: IDBObjectStore,
+      value: unknown,
+      key?: IDBValidKey,
+    ) {
+      const request = originalPut.call(this, value, key);
+      if (
+        (phase === 'stagePut' && this.name === 'staging') ||
+        (phase === 'backupPut' && this.name === 'meta') ||
+        (phase === 'userPut' && this.name === 'user' && key === 'profiles')
+      )
+        throw fault;
+      return request;
+    });
+    vi.spyOn(IDBObjectStore.prototype, 'get').mockImplementation(function (
+      this: IDBObjectStore,
+      key: IDBValidKey | IDBKeyRange,
+    ) {
+      const request = originalGet.call(this, key);
+      if (phase === 'stageRead' && this.name === 'staging') throw fault;
+      return request;
+    });
+    vi.spyOn(IDBObjectStore.prototype, 'delete').mockImplementation(function (
+      this: IDBObjectStore,
+      key: IDBValidKey | IDBKeyRange,
+    ) {
+      const request = originalDelete.call(this, key);
+      if (phase === 'stageDelete' && this.name === 'staging') throw fault;
+      return request;
+    });
+
+    await expect(repository.replaceAtomicallyWithBackup(next)).rejects.toBe(fault);
+    vi.restoreAllMocks();
+    expect(await connection.get('user', 'profiles')).toEqual(current);
+    expect(await connection.get('meta', 'profiles-before-v42-switch')).toEqual({ retained: true });
+    expect(await connection.getAllKeys('staging')).toEqual(['foreign-operation']);
+    expect(await connection.get('staging', 'foreign-operation')).toEqual({ foreign: true });
+    connection.close();
+  },
+);
+
+it('backs up the immediately preceding durable collection across concurrent repository instances', async () => {
+  const current = await collection();
+  await repository.replace(current);
+  const first = structuredClone(current);
+  const second = structuredClone(current);
+  first.profiles[0]!.name = 'first';
+  second.profiles[0]!.name = 'second';
+  expect(
+    await Promise.all([
+      repository.replaceAtomicallyWithBackup(first),
+      new IndexedDbProfileRepository().replaceAtomicallyWithBackup(second),
+    ]),
+  ).toEqual([{ status: 'committed' }, { status: 'committed' }]);
+  const connection = await db();
+  const stored: unknown = await connection.get('user', 'profiles');
+  const preceding: unknown = await connection.get('meta', 'profiles-before-v42-switch');
+  expect([stored, preceding]).toEqual(expect.arrayContaining([first, second]));
   expect(await connection.getAllKeys('staging')).toEqual([]);
   connection.close();
 });

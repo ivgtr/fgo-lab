@@ -1,5 +1,51 @@
-import { expect, test } from './observedTest';
+import { readFileSync } from 'node:fs';
+import { expect, test, type Page } from './observedTest';
 import { openTestHome } from './setup';
+import { masterSnapshotSchema } from '../packages/master-data/src/index';
+import { createStaticAttackProfiles } from '../packages/calculation-application/src/index';
+import { validateProfileCollection } from '../packages/workspace-domain/src/index';
+
+const published = masterSnapshotSchema.parse(
+  JSON.parse(readFileSync('apps/web/public/master/master.json', 'utf8')),
+);
+const savedSubject = published.servants.find(
+  (servant) =>
+    createStaticAttackProfiles(servant).length > 0 &&
+    servant.atkByLevel['90'] !== undefined &&
+    new Set(servant.skills.map(({ slot }) => slot)).size === 3 &&
+    published.servants.filter(({ name }) => name === servant.name).length === 1,
+);
+if (!savedSubject) throw new Error('saved ranking representative unavailable');
+
+async function storedProfiles(page: Page) {
+  const value = await page.evaluate(
+    () =>
+      new Promise<unknown>((resolve, reject) => {
+        const opening = indexedDB.open('fgo-lab', 1);
+        opening.onerror = () => reject(opening.error);
+        opening.onsuccess = () => {
+          const db = opening.result;
+          const read = db.transaction('user', 'readonly').objectStore('user').get('profiles');
+          read.onerror = () => {
+            db.close();
+            reject(read.error);
+          };
+          read.onsuccess = () => {
+            db.close();
+            resolve(read.result);
+          };
+        };
+      }),
+  );
+  const collection = await validateProfileCollection(value, (bytes) =>
+    crypto.subtle.digest('SHA-256', new Uint8Array(bytes)),
+  );
+  const active = collection.profiles.find(
+    ({ profileId }) => profileId === collection.activeProfileId,
+  );
+  if (!active) throw new Error('active profile unavailable');
+  return active;
+}
 
 test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desktop @journey', async ({
   page,
@@ -55,4 +101,144 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await expect(page.getByRole('status')).toBeFocused();
   await expect(page.getByRole('combobox', { name: '初期OC', exact: true })).toHaveValue('1');
   await expect(page.getByRole('combobox', { name: '宝具Lv', exact: true })).toHaveValue('1');
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: '所持・育成', exact: true }).click();
+  await page.getByLabel('名前で検索').fill(savedSubject.name);
+  await page
+    .getByRole('list', { name: 'サーヴァント一覧' })
+    .getByRole('listitem')
+    .filter({
+      has: page.getByText(savedSubject.name, { exact: true }),
+    })
+    .click();
+  await page.getByLabel('宝具Lv').selectOption('2');
+  await page.getByLabel('レベル', { exact: true }).fill('90');
+  await page.getByLabel('ATKフォウ', { exact: true }).fill('1234');
+  const savedSkills = page.locator('.skill-field').getByRole('spinbutton');
+  await savedSkills.nth(0).fill('2');
+  for (const [index, level] of ['1', '5', '9'].entries()) await savedSkills.nth(index).fill(level);
+  await expect
+    .poll(async () => {
+      const build = (await storedProfiles(page)).servantBuilds[savedSubject.id];
+      return (
+        build && {
+          level: build.level,
+          npLevel: build.npLevel,
+          fouAtk: build.fouAtk,
+          skills: build.skills,
+        }
+      );
+    })
+    .toEqual({ level: 90, npLevel: 2, fouAtk: 1234, skills: { '1': 1, '2': 5, '3': 9 } });
+
+  await page.getByRole('button', { name: '火力ランキング', exact: true }).click();
+  await page.getByRole('combobox', { name: '対象', exact: true }).selectOption('owned');
+  await page.getByText('計算基準', { exact: true }).click();
+  await page.getByRole('combobox', { name: '育成基準', exact: true }).selectOption('saved');
+  await oc.selectOption('2');
+  await expect(page).toHaveURL(/rGrowth=saved/);
+  await expect(page.getByRole('combobox', { name: 'レベル', exact: true })).toBeDisabled();
+  await expect(np).toHaveValue('owned');
+  await expect(np).toBeDisabled();
+  await expect(page.getByRole('status')).toContainText('件を計算', { timeout: 30_000 });
+  const savedRow = page
+    .getByRole('list', { name: '宝具火力ランキング' })
+    .getByRole('listitem')
+    .first();
+  await expect(savedRow).toContainText(savedSubject.name);
+  const rankingAverage = Number(
+    (await savedRow.locator('.ranking-primary-damage strong').textContent())?.replaceAll(',', ''),
+  );
+  await savedRow.getByRole('button', { name: /の計算詳細を開く/ }).click();
+  await expect(savedRow.getByRole('region', { name: /の計算詳細/ })).toContainText(
+    /開始NP\s*200%/,
+    { timeout: 15_000 },
+  );
+  await savedRow.getByRole('button', { name: '同じ条件で計算機を開く' }).click();
+  await expect(page.getByLabel('計算条件の版情報')).toContainText(
+    'ランキングから引き継いだ計算条件',
+  );
+  await expect
+    .poll(async () => (await storedProfiles(page)).draft?.request.executionIntent.kind)
+    .toBe('ranking');
+  const pinned = (await storedProfiles(page)).draft!;
+  if (pinned.request.executionIntent.kind !== 'ranking') throw new Error('ranking draft required');
+  expect(pinned.request.executionIntent.basis).toMatchObject({
+    servantId: savedSubject.id,
+    growthBasis: 'saved',
+    level: 90,
+    npLevel: 2,
+    fouAtk: 1234,
+    skillLevels: { '1': 1, '2': 5, '3': 9 },
+    initialOvercharge: 2,
+  });
+  const calculatorAverage = async () =>
+    Number(
+      (
+        await page
+          .getByRole('row', { name: /NP2.*現在/ })
+          .locator('td.average')
+          .textContent()
+      )?.replaceAll(',', ''),
+    );
+  expect(await calculatorAverage()).toBe(rankingAverage);
+  await page.reload();
+  await expect(page.getByLabel('計算条件の版情報')).toContainText(
+    'ランキングから引き継いだ計算条件',
+    { timeout: 30_000 },
+  );
+  expect((await storedProfiles(page)).draft?.request).toEqual(pinned.request);
+  expect((await storedProfiles(page)).draft?.result).toEqual(pinned.result);
+
+  await page.getByRole('button', { name: '所持・育成', exact: true }).click();
+  await page.getByLabel('名前で検索').fill(savedSubject.name);
+  await page
+    .getByRole('list', { name: 'サーヴァント一覧' })
+    .getByRole('listitem')
+    .filter({
+      has: page.getByText(savedSubject.name, { exact: true }),
+    })
+    .click();
+  await page.getByLabel('ATKフォウ', { exact: true }).fill('2000');
+  await expect
+    .poll(async () => (await storedProfiles(page)).servantBuilds[savedSubject.id]?.fouAtk)
+    .toBe(2000);
+  await page.goto('/calculator');
+  await expect(page.getByLabel('計算条件の版情報')).toContainText(
+    'ランキングから引き継いだ計算条件',
+    { timeout: 30_000 },
+  );
+  expect(await calculatorAverage()).toBe(rankingAverage);
+  expect((await storedProfiles(page)).draft?.requestFingerprint).toBe(pinned.requestFingerprint);
+  expect((await storedProfiles(page)).draft?.request).toEqual(pinned.request);
+
+  await page.getByRole('button', { name: 'ホーム', exact: true }).click();
+  await page.getByRole('button', { name: 'データ管理', exact: true }).click();
+  const downloading = page.waitForEvent('download');
+  await page.getByRole('button', { name: '全データをバックアップ' }).click();
+  const stream = await (await downloading).createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  await page.getByLabel('バックアップを復元').setInputFiles({
+    name: 'saved-ranking-round-trip.json',
+    mimeType: 'application/json',
+    buffer: Buffer.concat(chunks),
+  });
+  const preview = page.getByRole('region', { name: '復元内容のプレビュー' });
+  await expect(preview).toContainText('プロフィール 1件');
+  await expect(preview.getByRole('button', { name: '全置換を実行' })).toBeDisabled();
+  const beforeImport = page.waitForEvent('download');
+  await preview.getByRole('button', { name: '復元前バックアップを保存' }).click();
+  await beforeImport;
+  await preview.getByRole('button', { name: '全置換を実行' }).click();
+  await expect(page.getByText('検証済みデータへ全置換しました')).toBeVisible();
+  const restored = await storedProfiles(page);
+  expect(restored.draft?.request).toEqual(pinned.request);
+  expect(restored.draft?.result).toEqual(pinned.result);
+  expect(
+    restored.history.some(
+      ({ requestFingerprint }) => requestFingerprint === pinned.requestFingerprint,
+    ),
+  ).toBe(true);
 });

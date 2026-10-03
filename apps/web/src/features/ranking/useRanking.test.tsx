@@ -17,6 +17,7 @@ import {
 import { useRanking } from './useRanking';
 import { rankingResponseFixture } from './rankingResponseFixture';
 import { presentRankingDetailEvidence } from './rankingDetailPresentation';
+import { parseRankingUrlState } from './rankingState';
 
 class FakeWorker {
   static instance: FakeWorker | undefined;
@@ -44,6 +45,30 @@ afterEach(() => {
 });
 
 describe('ranking worker response ordering', () => {
+  it('does not create a worker or request a summary for a rejected URL', () => {
+    vi.stubGlobal('Worker', FakeWorker);
+    const master = masterSnapshotSchema.parse(fixture);
+    const versions = {
+      schemaVersion: SCHEMA_VERSION,
+      masterDataVersion: master.version,
+      engineVersion: ENGINE_VERSION,
+      appVersion: APP_VERSION,
+      gameRegion: 'JP' as const,
+      masterDataLocale: 'ja-JP' as const,
+    };
+    const { result } = renderHook(() =>
+      useRanking({
+        master,
+        profile: { servantBuilds: {} },
+        conditions: parseRankingUrlState('?rField=active').conditions,
+        versions,
+      }),
+    );
+    expect(FakeWorker.instance).toBeUndefined();
+    expect(result.current.rows).toEqual([]);
+    expect(result.current.loading).toBe(false);
+  });
+
   it.each(['conditionalEffects', 'initialOvercharge'] as const)(
     'does not expose an older summary after a newer %s request wins',
     async (axis) => {

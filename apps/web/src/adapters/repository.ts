@@ -201,9 +201,8 @@ export async function fetchMasterSnapshot(
   };
 }
 async function discardMasterCache(db: IDBPDatabase<LabDb>): Promise<void> {
-  const transaction = db.transaction(['master', 'staging'], 'readwrite');
+  const transaction = db.transaction('master', 'readwrite');
   await transaction.objectStore('master').clear();
-  await transaction.objectStore('staging').clear();
   await transaction.done;
 }
 export async function loadActiveMaster(): Promise<ActiveMasterLoadResult> {

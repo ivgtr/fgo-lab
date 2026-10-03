@@ -134,8 +134,15 @@ export function resolveRankingBasis(
   const missingSlots = skillSlots.filter(
     (slot) => skillLevels[slot as '1' | '2' | '3'] === undefined,
   );
-  if (missingSlots.length > 0)
-    throw new RankingBasisFailure('rankingBuildIncomplete', missingSlots.join(','));
+  if (!hasCanonicalRankingSkillSlots(servant, skillLevels)) {
+    const unexpectedSlots = Object.keys(skillLevels).filter((slot) => !skillSlots.includes(slot));
+    throw new RankingBasisFailure(
+      'rankingBuildIncomplete',
+      missingSlots.length > 0
+        ? missingSlots.join(',')
+        : `unexpectedSlots:${unexpectedSlots.join(',')}`,
+    );
+  }
   return resolvedRankingBasisSchema.parse({
     growthBasis: selection.growthBasis,
     fouAtk: selection.growthBasis === 'saved' ? build!.fouAtk : 1000,
@@ -147,6 +154,15 @@ export function resolveRankingBasis(
     levelSource: selection.levelBasis,
     npSource: selection.npLevelBasis.kind,
   });
+}
+
+export function hasCanonicalRankingSkillSlots(
+  servant: ServantMaster,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
+): boolean {
+  const canonical = new Set(servant.skills.map(({ slot }) => String(slot)));
+  const supplied = Object.keys(skillLevels);
+  return supplied.length === canonical.size && supplied.every((slot) => canonical.has(slot));
 }
 
 export function rankingInitialOcOptions(selection: RankingSelection): readonly (1 | 2 | 3)[] {

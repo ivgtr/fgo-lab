@@ -154,6 +154,38 @@ describe('validated master activation receipt', () => {
     db.close();
   });
 
+  it.each([
+    { value: null, reason: 'invalid_record' },
+    { value: {}, reason: 'invalid_schema' },
+  ] as const)(
+    'retains user, backup and foreign staging when discarding $reason',
+    async ({ value, reason }) => {
+      const current: ProfileCollection = {
+        schemaVersion: SCHEMA_VERSION,
+        activeProfileId: profileId,
+        profiles: [{ ...legacyProfile, draft: null, history: [] }],
+      };
+      await new IndexedDbProfileRepository().replace(current);
+      const db = await userStore();
+      await db.put('meta', current, 'profiles-before-v42-switch');
+      await db.put('staging', current, 'profiles/interrupted-import');
+      await db.put('staging', { retained: true }, 'unassigned-operation');
+      await db.put('master', value, 'active');
+      const originalUser = await db.getAll('user');
+      const originalMeta = await db.getAll('meta');
+      const originalStaging = await db.getAll('staging');
+      const originalStageKeys = await db.getAllKeys('staging');
+
+      expect(await loadActiveMaster()).toEqual({ state: 'discarded', reason });
+      expect(await db.get('master', 'active')).toBeUndefined();
+      expect(await db.getAll('user')).toEqual(originalUser);
+      expect(await db.getAll('meta')).toEqual(originalMeta);
+      expect(await db.getAll('staging')).toEqual(originalStaging);
+      expect(await db.getAllKeys('staging')).toEqual(originalStageKeys);
+      db.close();
+    },
+  );
+
   it('loads a transactionally validated snapshot through its small activation receipt', async () => {
     await stageAndActivate(manifest, fixture, new Date('2026-09-05T00:00:00.000Z'));
 
