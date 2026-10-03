@@ -8,9 +8,10 @@ import {
 import type { ProfileCollection } from '@fgo-lab/schema';
 import {
   migrateStoredProfileCollectionV40,
+  migrateStoredProfileCollectionV41,
   parseStoredProfileCollection,
   profileCollectionSchema,
-  validateHistoricalV40Identities,
+  validateHistoricalCalculationIdentities,
 } from '@fgo-lab/schema';
 import { portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
 import type { ProfileRepository } from '@fgo-lab/profile-domain';
@@ -51,8 +52,12 @@ export class IndexedDbProfileRepository implements ProfileRepository {
           );
           return { collection, upgraded: true, discardedCalculationSnapshots: false };
         }
+        if (typeof value === 'object' && value !== null && (value as Record<string,unknown>)['schemaVersion'] === 41) {
+          const collection = await migrateStoredProfileCollectionV41(value, (request)=>portableCalculationFingerprint(request,async(data)=>crypto.subtle.digest('SHA-256',new Uint8Array(data))));
+          return {collection,upgraded:true,discardedCalculationSnapshots:false};
+        }
         const parsed = parseStoredProfileCollection(value);
-        await validateHistoricalV40Identities(parsed.collection, (request) =>
+        await validateHistoricalCalculationIdentities(parsed.collection, (request) =>
           portableCalculationFingerprint(request, async (data) =>
             crypto.subtle.digest('SHA-256', new Uint8Array(data)),
           ),
@@ -76,14 +81,14 @@ export class IndexedDbProfileRepository implements ProfileRepository {
   async replaceAtomicallyWithBackup(collection: ProfileCollection) {
     const db = await database();
     const parsed = profileCollectionSchema.parse(collection);
-    await db.put('staging', parsed, 'profiles-v41');
-    const staged = profileCollectionSchema.parse(await db.get('staging', 'profiles-v41'));
+    await db.put('staging', parsed, 'profiles-v42');
+    const staged = profileCollectionSchema.parse(await db.get('staging', 'profiles-v42'));
     const transaction = db.transaction(['user', 'staging', 'meta'], 'readwrite');
     const original = await transaction.objectStore('user').get('profiles');
     if (original !== undefined)
-      await transaction.objectStore('meta').put(original, 'profiles-before-v41-switch');
+      await transaction.objectStore('meta').put(original, 'profiles-before-v42-switch');
     await transaction.objectStore('user').put(staged, 'profiles');
-    await transaction.objectStore('staging').delete('profiles-v41');
+    await transaction.objectStore('staging').delete('profiles-v42');
     await transaction.done;
   }
 }

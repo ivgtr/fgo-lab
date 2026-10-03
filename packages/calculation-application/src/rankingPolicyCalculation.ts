@@ -1,4 +1,4 @@
-import { compileRankingSelection } from './rankingBasis';
+import { compileRankingSelection, RankingBasisFailure } from './rankingBasis';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
 import { attackProfileKey, createStaticAttackProfiles, type AttackProfile } from './attackProfile';
@@ -75,8 +75,8 @@ export function calculateRankingPolicyDetail(
       status: 'invalid',
       attackProfile: attackProfile ?? null,
       issues: [],
-      reason: 'unexpectedRankingFailure',
-      detail: error instanceof Error ? error.message : String(error),
+      reason: error instanceof RankingBasisFailure ? error.reason : 'unexpectedRankingFailure',
+      detail: error instanceof RankingBasisFailure ? error.detail : error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -120,8 +120,8 @@ export function calculateRankingPolicy(
           status: 'invalid',
           attackProfile,
           issues: [],
-          reason: 'unexpectedRankingFailure',
-          detail: error instanceof Error ? error.message : String(error),
+          reason: error instanceof RankingBasisFailure ? error.reason : 'unexpectedRankingFailure',
+          detail: error instanceof RankingBasisFailure ? error.detail : error instanceof Error ? error.message : String(error),
         };
         profileResults[profileKey] = result;
         exclusions.push(createRankingPolicyExclusion(servant, profileKey, result));
@@ -152,8 +152,8 @@ export function calculateRankingPolicy(
           status: 'invalid',
           attackProfile,
           issues: [],
-          reason: 'unexpectedRankingFailure',
-          detail: error instanceof Error ? error.message : String(error),
+          reason: error instanceof RankingBasisFailure ? error.reason : 'unexpectedRankingFailure',
+          detail: error instanceof RankingBasisFailure ? error.detail : error instanceof Error ? error.message : String(error),
         };
         profileResults[profileKey] = result;
         exclusions.push(createRankingPolicyExclusion(servant, profileKey, result));

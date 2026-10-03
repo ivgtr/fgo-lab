@@ -56,6 +56,7 @@ function nullableRarity(params: URLSearchParams): number | null {
 export function parseRankingUrlState(search: string): RankingUrlState {
   const params = new URLSearchParams(search);
   const keys = [
+    'rGrowth',
     'rPopulation',
     'rLevelBasis',
     'rNpBasis',
@@ -70,6 +71,7 @@ export function parseRankingUrlState(search: string): RankingUrlState {
   const npToken = params.get('rNpBasis');
   const parsed = compileRankingSelection({
     initialOvercharge: /^[1-3]$/.test(params.get('rOc') ?? '') ? Number(params.get('rOc')) : null,
+    growthBasis: params.get('rGrowth'),
     population: params.get('rPopulation'),
     levelBasis: params.get('rLevelBasis'),
     npLevelBasis:
@@ -116,6 +118,7 @@ export function serializeRankingUrlState(state: RankingUrlState, currentSearch =
   params.set('page', 'ranking');
   const conditions = state.conditions;
   if (conditions) {
+    params.set('rGrowth', conditions.growthBasis);
     params.set('rPopulation', conditions.population);
     params.set('rLevelBasis', conditions.levelBasis);
     params.set(

@@ -27,6 +27,7 @@ export function RankingRoute({
 }) {
   return (
     <Ranking
+      onEditSavedBuild={() => replaceRoute('servants')}
       master={master}
       profile={{
         servantBuilds: profile.servantBuilds,

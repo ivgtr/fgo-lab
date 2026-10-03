@@ -11,6 +11,7 @@ import {
   type CalculationVersionContext,
   type PortableCalculationRequest,
   type PortableCalculationRequestV40,
+  type PortableCalculationRequestV41,
   type ServantBuild,
   type VersionContext,
 } from '@fgo-lab/schema';
@@ -114,18 +115,28 @@ export function currentCalculationVersionContext(
   };
 }
 
-/** Explicitly creates a new portable identity from a validated historical v40 intent. */
-export function createV41RequestFromHistoricalV40(
-  historical: PortableCalculationRequestV40,
+/** Explicitly creates a new identity from an exact historical snapshot; never upgrades the stored record. */
+export function createCurrentRequestFromHistoricalCalculation(
+  historical: PortableCalculationRequestV40 | PortableCalculationRequestV41,
   master: MasterDataSnapshot,
 ): PortableCalculationRequest {
+  let executionIntent: unknown = historical.executionIntent;
+  if (historical.executionIntent.kind === 'ranking') {
+    const intent = historical.executionIntent;
+    const servant = master.servants.find(({id})=>id===intent.basis.servantId);
+    if (!servant) throw new TypeError('historical_ranking_servant_missing');
+    const skillLevels = Object.fromEntries(servant.skills.map(({slot})=>[String(slot),10]));
+    executionIntent = {
+      ...historical.executionIntent,
+      policy: {...historical.executionIntent.policy,growthBasis:'common'},
+      basis: {...historical.executionIntent.basis,growthBasis:'common',fouAtk:1000,skillLevels},
+    };
+  }
   return portableCalculationRequestSchema.parse({
     versionContext: currentCalculationVersionContext(master),
-    scenario:
-      historical.scenario.mode === 'resolved'
-        ? { ...historical.scenario, enemyDefenseBuff: 0 }
-        : historical.scenario,
-    executionIntent: historical.executionIntent,
+    scenario: historical.scenario.mode === 'resolved' && !('schemaVersion' in historical.versionContext)
+      ? {...historical.scenario,enemyDefenseBuff:0} : historical.scenario,
+    executionIntent,
   });
 }
 

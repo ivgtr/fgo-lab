@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.188"
+document_version: "1.7.190"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-03"
@@ -78,7 +78,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-11 | 既存最終受入の範囲照合と残条件の確定 | done | TSK-10 | product R1／§13、UI育成受入、既存TSK-09／10証拠 |
 | TSK-12 | 確認済みR1育成未達の収束 | ready | TSK-11 | R11-GROWTH、product育成契約／UI §17〜18 |
 | TSK-13 | Ranking最終製品判断と改修前調査 | done | TSK-11 | ranking §20、R11-DOCの再判断、現コードの直接経路 |
-| TSK-14 | Ranking最終方針の実装と正本収束 | ready | TSK-13 | ranking §20、TSK-13の実装差・局所受入条件 |
+| TSK-14 | Ranking最終方針の実装と正本収束 | in_progress | TSK-13 | ranking §20、TSK-13の実装差・局所受入条件 |
 
 ```text
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
@@ -3268,7 +3268,7 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 Depends on: TSK-13
 
-Current status: `ready`（TSK-13の実装事実・改修境界・受入条件を受領。起票のみ、実装未承認／未着手）。
+Current status: `in_progress`（2026-10-03、承認計画で着手後、固定identity regressionと構造版移行の衝突で強制停止。利用者は破壊的変更・fallback不要の方向性を了承し、本sessionは実装を再開せず、調査記録と既存作業のcommitで閉じるよう指示した。TSK-14は未完了のまま引継ぐ。開始HEAD `2c86a96f5c9a69de9b28d58910653f63aa320c57`、開始worktree／index clean、in_progress0件を照合して本Taskのみ開始。開始時のcommit禁止に従って開始commitは作らず、終了checkpointの作業commitだけを最新指示で許可する）。
 
 - [ ] ranking §20とTSK-13の実装差に基づき、共通／保存育成basisと通常／理想の候補・寄与を共通application／executionへ接続する。
 - [ ] UI／URL／worker／portable／保存復元／入力修復を同じidentityへ収束し、既存選択能力とcalculator parityを維持する。
@@ -3302,7 +3302,36 @@ Contract closure matrix:
 | `TS-PERF-002` | Apply | 構造変更した経路の同条件前後3process、未変更範囲の一致証拠継承 | Handoff |
 | `DX-HANDOFF-001` | Apply | source／入力／diff／有効証拠・未達条件・次操作の照合 | Handoff |
 
-Handoff: 起票のみ。TSK-13完了後に実装事実と受入条件を受け取り、実装依頼を受けてから着手する。通常の技術判断で再承認せず、新しい製品判断・実質的な範囲拡張・保持／取得元変更・能力損失だけ確認する。TSK-12のgrowth修正と独立し、原物／旧directory／raw exports／Local-only資料、固定baseline取得元・HP原入力・09.13保持解除／物理処遇未実施を維持する。
+承認計画（2026-10-03）: schema／applicationがstrictな共通／保存育成basisを一度解決し、scenarioと全ordered skill commandへ束縛する。候補admissionは条件生成・回復の後続関連性を扱い、executionの実行時点の確定根拠を通常寄与とOCへ同じ規則で接続する。資源transaction・subset／使用順／choice・保存容器を再利用し、basis→UI／worker→detail→portable→calculator→draft保存／reloadの代表経路を早期接続する。旧request／result／fingerprintを歴史値として保全する構造版移行を含む。旧runtime／補完fallbackを追加せず、新方針の明示再計算へ新identityを発行する。詳細なowner／直接経路と反証は[既存ranking flow](../evidence/ranking-policy-candidate-flow-tsk-06.md#tsk-14-最終方針の承認計画2026-10-03)を正本とする。
+
+検証順序: 同環境・入力・workloadの変更前3独立process→basis／保存skill・通常寄与・NP／rollbackのfocused反証→実worker／UI／portable／復旧→必要なproduction全matrix／差分説明・変更後3独立process→対象内Blocking0・差分レビュー→固定差分の最終pnpm quality。既存80条件の影響を限定するproofがない場合は全matrixを実施する。旧baseline／expected／fixtureの意味・母集団・assertion・timeout／cap／ratchetは維持し、既存mergeの旧record不一致を成功へ読み替えない。期待値変更等が必要と判明したら停止・確認する。
+
+強制停止: 承認前提・責務・実装可能性が不成立、境界内で閉じないdamage／state／outcome・保存影響や共通原因、新意味論・別経路・取得元／保持変更・能力損失、expected／fixture・母集団・timeout／cap／ratchet変更による回避、原因を説明できない例外修正の継続が判明した時点で実装を停止する。判断不能時も停止。既存差分を保持し、原因説明の読み取り・既存証拠照合と本Task／Handoff停止記録だけを行い、発生条件・事実／仮説・食い違った前提・差分／検証／利用者経路・選択肢／推奨／保証限界を報告して利用者確認を待つ。未達のN/A化・Task分割・部分成功でdoneにしない。
+
+Handoff: 承認計画で開始。開始時はTSK-13 source18件・tmp以外artifact21件のbytes／SHAが一致。オルガマリー2profileの共通basis資源使用順・portable replayだけを再利用し、新保存basis／通常寄与の受入へ拡張しない。同cwdのCodex4processを正式審査で確認、編集活動は未確定で開始差分clean。TSK-12はreadyを維持し、再臨／形態対応とappendの戦闘IRは未確定の調査・製品判断境界として残す。新namespace `.test-results/tsk-14-ranking-implementation-20261003/` はTSK-14がowner。用途は開始／最終identity・完全log・差分説明・独立性能／同一process診断・実UI証拠。参照期間は本Taskと受入で参照する間、参照終了後はconsumerを確認して既存policyで処遇し、恒久raw／baseline／run保持集合を拡張しない。補助計測codeは一時的な診断で恒久採用しない。TMPDIRは同namespace内のcommand-local診断一時領域に限定する。原物／旧directory／raw exports／Local-only資料、固定baseline取得元・HP宣言1件＋gzip2件（圧縮7,907,911／復元90,441,915 bytes）・09.13保持解除／物理処遇未実施を維持する。次操作は下記停止checkpointの対応方針を利用者へ確認すること。最終quality・新製品受入は未成立。
+
+
+停止checkpoint／Handoff（2026-10-03、実装修正停止）:
+
+- 発生条件・事実: `apps/web/src/adapters/v40Migration.test.ts`の「preserves a v40 draft and history as historical records」は`ENGINE_VERSION`と現行再計算constructorから入力を作る一方、旧fingerprint `6a26406c67d1db3d0a66e553dfacd937a2144c9bff70bd623b62df4a5159834d`／`347e8dcb3aa9603491371e257cc2f2b3a22fed8663179cd7b81ead31f4a35d6a`、新requestのschema41を固定assertする。承認した新basis・通常規則の構造版42／計算版49.0.0への切替では、入力生成と固定identityが一致しなくなる。期待値は未変更。testのconstructor名だけは開始後に新しい明示再計算constructorへ更新した。
+- 食い違った前提: 承認計画は構造版移行と旧expected／fixtureの意味維持を併せて要求するが、既存の移行testを現行版依存の入力生成のまま保存版を更新して閉じることはできない。旧入力を固定した歴史identity検査と新currentへの明示再計算検査を分けるには、当該fixture／assertionの適用先を再判断する必要がある。利用者の強制停止条件「expected／fixture変更で問題を回避する必要」「判断できない場合は停止」に従い、この事実を読取確認した時点で停止した。通常調整として続行しない。
+- 未検証の仮説: 旧fixtureの入力・schema・engineを当時の固定値へ束縛し、旧hash／schema41のassertionを原identity検査へ残したうえで、新版への明示再計算を独立した新検査へ接続すれば、期待値再生成や旧runtime併存を避けられる可能性がある。具体的なinput／assertion移管・新expectedの独立根拠は未設計／未検証であり、承認済みとは扱わない。
+- 未commit成果: 共通／保存growthBasisのstrict union、resolved Fou／skill Lv、basisからscenario／ordered skill sourceへのbinding、欠落skillを`rankingBuildIncomplete`として保存育成編集へ導く回復command、control／URL／worker fingerprint、構造版42・計算版49.0.0とv41 snapshotの歴史保全／明示再計算の途中実装を保持する。停止直前はtracked26file、untracked製品test1file（`rankingSavedBasis.test.ts`）、index空。通常admission／寄与は未改修で、構造版移行・Web接続は未完成。HEADは開始版のまま。差分は作業中状態で公開・製品受入可能ではない。
+- 有効証拠: 新namespaceの`before-1.json`／`before-2.json`／`before-3.json`は同script／master／workloadの独立3process。ranking 7729.452／7130.874／7082.995ms、中央値7130.874ms、各433row／除外0、candidate2665、damageRequest2596、distinctInput1489。scriptは一process一回のproduction rankingで、reader／merge／producer測定ではない。`basis-2.stdout.log`の4/4は構造版変更前の局所binding、`basis-3.stdout.log`の4/4（runner `.test-results/2026-10-03T04-17-52-214Z-29-926dcc`）は構造版42の保存basis・共通値維持・欠落skill拒否／編集回復・固定request replayの局所受入。実UI／worker／IndexedDB／history／share／backup／通常寄与の受入へ拡張しない。最初の`basis.stdout.log`は新テストが汎用fixtureにactive skillが存在すると誤って仮定したimport前失敗。原fixtureを変更せず、新設test内にcommand-binding用の明示semantic fixtureを作り、再診断した。期待値再生成／production入力置換には使っていない。
+- 型検査: `typecheck-1.stdout.log`／`typecheck-1.stderr.log`はexit2。その後承認境界内で型の局所調整を行ったが、`typecheck-2.stdout.log`／`typecheck-2.stderr.log`もexit2（rankingActionAdmission.test／rankingPolicy.testの新basis欠落、rankingPolicyMatrixのsaved unionへの指定NP組合せ、workspace-domain testのbasis representation未伝播）。停止後に既に終了したprocessを確認し、追加修正・再検証は行わない。v40 migration testは今回未実行で、失敗再現済みとは主張しない。停止事実はsource上の固定identity／schema assertionと今回version変更の不整合である。
+- 影響する経路・未達: 新比較UI→worker→detail→portable→calculator→draft／history／share／backup→restore／repairの統合は未受入。旧recordの歴史保全／明示再計算、通常寄与／OC、資源cell bindingのproduction、再臨／append直接経路調査、全matrix差分／parity、変更後3process、差分レビュー、正本／ADR収束、最終quality／docsは未達。Done checklistと全Applyを未達のまま維持し、N/A・別Task分割で閉じない。TSK-14受入・R1全体受入とも未成立。
+- 続行選択肢: (A) 旧移行fixtureを固定歴史identityへ束縛し、旧hash／schema41 assertionを同じ原入力の検査として維持する。新currentへの明示再計算は別の新検査・独立した根拠へ分け、その限定的なfixture／assertion適用先の変更を明示承認してから実装する。(B) 既存testを変更しない条件で構造版／再計算責務を再設計する。その成立は未確認で、新旧runtimeの併存・保存能力損失・fallbackを許可しない。推奨はA: 原identityを維持して新受入を分けられる可能性があり、旧expectedを現actualから更新する必要を避ける。保存・通信全経路への影響と新identityの独立根拠は別途検証が必要で、保証を先取りしない。
+- 次操作: 上記事実・前提・差分／検証・選択肢／推奨と保証限界を利用者へ報告し、方針確認を待つ。確認が来るまで原因説明に必要なread-only照合とTask／Handoff記録以外は再開しない。停止後のdocs／qualityは未実行。既存原物・旧namespace・raw exports・Local-only・baseline／expected・timeout／cap／ratchet・取得元・保持判断を変更せず、cleanup／外部公開・転送／stage／commit／pushは行っていない。
+
+session終了checkpoint／Handoff（2026-10-03、調査と作業commitに限定）:
+
+- 最新指示と範囲: 利用者は「破壊的変更は許容」「フォールバックは不要」と明示し、現行schemaだけを受け入れる方向性を了承した。その後「このセッションでは実装をせず、調査と作業のcommitに閉じる」と指示した。停止後の製品code／testは変更せず、既存差分と調査結果の記録・文書検証・作業commitだけを行う。commit禁止は今回の作業commitに限り撤回された。push／公開／転送／cleanupは許可されていない。
+- 再評価結果: 現repository load、share、backupには旧形式移行があり、今回追加したv41歴史表示／保全／明示再計算もその互換責務を維持していた。新方針ではschema42の現行profile／draft／history／share／backup／Ranking URLだけを受け入れ、旧形式を明示拒否する。旧形式の読込・変換・実行互換は設けず、今回追加した歴史保全処理と直接経路に残る旧互換処理を整理する。旧データを新版で利用できなくなる能力損失は明示された方向性に含む。一方、拒否時の保存実体の非更新・非削除と、自動初期化／上書きに進まないことは受入義務として残す。保存値不足の修復と旧形式変換を混同しない。
+- 検査契約の境界: 旧形式互換の受入検査は新しいcurrent契約のゲートから退役させ、旧形式拒否／保存非更新とcurrentのroundtrip／pinned replayの検査へ接続する方向。旧原証拠・固定identityは保持し、旧hashを現actualで更新しない。productionのdamage baseline／expected／fixtureの意味・母集団・assertion、timeout／cap／ratchetは変更しない。旧互換検査の具体的な退役対象とcaller closureは再開時に差分から確定する。この記録は旧検査を変更・削除したことや新schemaを受入済みとするものではない。
+- commit対象と保証限界: 開始HEADからのtracked26fileと新設`rankingSavedBasis.test.ts`1fileを、調査記録を含む未完成の作業checkpointとして保存する。code／test24fileの部分実装とdocs3fileであり、構造版42・計算版49.0.0、basis binding、Web接続、旧互換処理の途中差分を含む。最新版の提案へcodeは修正していない。型検査exit2、通常寄与／admission未実装、旧identity検査未実行、実UI／production／変更後性能／quality未実施の状態を維持する。startupの旧share処理には`sourceSchemaVersion: 40`固定が残っており、追加したv41経路も統合受入できていない。修正せず、撤回対象の未完成経路として引継ぐ。製品完成・TSK-14受入・R1全体受入はすべて未成立。全Done checkbox／Applyを未達のまま維持する。
+- 証拠と処遇: 上記停止checkpointのbefore3process・局所basis4件・型失敗logを再利用し、製品検証を再実行しない。調査artifactは既存`.test-results/tsk-14-ranking-implementation-20261003/`へ残し、Gitへ追加しない。文書検証のstdout／stderrは同namespaceの`session-close-docs.stdout.log`／`session-close-docs.stderr.log`へ保存する。参照期間・処遇は本Taskの既存Handoffの診断用途のまま。原物・旧調査directory・raw exports・Local-only・HP入力・固定baseline取得元／保持判断は不変。
+- 終了時の文書検証: `pnpm test:docs`は28/28、skip／todo／failure0、docs integrityは103 Markdown／44 machine evidence／929 referencesで成功。manifestは`.test-results/2026-10-03T04-43-21-887Z-560-09b1f2/manifest.json`、outcome success／exit0／artifactVerification errors0。stderrはpnpmのcommand表示だけで検査warningなし。この結果記録を含む文書の最終検査は同namespaceの`session-close-final-docs.stdout.log`／`session-close-final-docs.stderr.log`へ保存する。文書成功をcodeの型検査・製品quality成功へ読み替えない。code／test24fileの終了時内容digestは`91fc3aefe5665c3b7d95ce5fc7af5c0164b5bf0ab3b02fad8fbaad4cf669b60d`（path昇順にpath・NUL・全byte・NULをSHA-256）。commit前後に同一内容を照合する。
+- 次操作: 本checkpointを含む作業commitを起点にHEAD／worktree／index／並行session／in_progress最大1件と保存入力identityを再照合する。再開依頼があるまで実装修正を行わない。再開時は今回の旧互換差分の撤回と直接caller closure、型のrepresentation伝播を先に閉じ、currentのbasis→実worker／UI→portable→保存／reload／repairの代表経路を接続する。その後通常寄与／admission・NP／rollback、再臨／appendの調査境界、必要なproduction matrix／差分説明・前後性能、正本／ADR、差分レビュー・固定quality・最終判定／Handoffへ進む。新たな製品判断や元の強制停止条件は維持する。TSK-12には着手しない。
 
 ## 4. 更新規則
 

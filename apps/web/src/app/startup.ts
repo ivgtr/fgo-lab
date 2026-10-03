@@ -8,7 +8,7 @@ import {
 } from '@fgo-lab/profile-domain';
 import type {
   CalculationResult,
-  HistoricalCalculationDraftV40,
+  HistoricalCalculationDraft,
   LocalProfile,
   PortableCalculationRequest,
   ProfileCollection,
@@ -36,7 +36,7 @@ interface StartupBase {
     request: PortableCalculationRequest | undefined;
     storedResult: CalculationResult | undefined;
     source: 'share' | 'draft' | undefined;
-    historical?: HistoricalCalculationDraftV40 | undefined;
+    historical?: HistoricalCalculationDraft | undefined;
   };
   warning: string;
   offline: boolean;

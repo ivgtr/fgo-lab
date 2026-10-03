@@ -18,7 +18,8 @@ export function validatePinnedRankingBasis(
     (policy.levelBasis !== 'naturalLimit' ||
       basis.level === naturalServantLevel(servants[0]!.rarity)) &&
     attacker.source === 'master' &&
-    attacker.fouAtk === fixed.fouAtk &&
+    attacker.fouAtk === basis.fouAtk &&
+    (basis.growthBasis !== 'common' || basis.fouAtk === fixed.fouAtk) &&
     initialOvercharge === request.executionIntent.basis.initialOvercharge &&
     craftEssence === fixed.craftEssence &&
     mysticCode === fixed.mysticCode &&
@@ -35,7 +36,9 @@ export function validatePinnedRankingBasis(
           ? defaultTargetClassRelation(servants[0]!.classId)
           : 'neutral')) &&
     request.scenario.preNoblePhantasmPlan.every(
-      (command) => command.kind !== 'useSkillSlot' || command.skillLevel === fixed.skillLevel,
+      (command) => command.kind !== 'useSkillSlot' ||
+        (command.skillLevel === basis.skillLevels[String(command.slot) as '1' | '2' | '3'] &&
+          (basis.growthBasis !== 'common' || command.skillLevel === fixed.skillLevel)),
     )
   );
 }

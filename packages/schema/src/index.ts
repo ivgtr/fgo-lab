@@ -2,6 +2,8 @@ import {
   initialOverchargeSchema,
   rankingSelectionSchema,
   resolvedRankingBasisSchema,
+  rankingSelectionV41Schema,
+  resolvedRankingBasisV41Schema,
 } from './rankingSelection';
 export * from './rankingSelection';
 import { z } from 'zod';
@@ -29,8 +31,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 41 as const;
-export const ENGINE_VERSION = '48.0.0' as const;
+export const SCHEMA_VERSION = 42 as const;
+export const ENGINE_VERSION = '49.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -574,10 +576,14 @@ const rankingExecutionIntentSchema = z
     basis: resolvedRankingBasisSchema,
   })
   .strict();
-const legacyRankingExecutionIntentV37Schema = rankingExecutionIntentSchema
+const rankingExecutionIntentV41Schema = rankingExecutionIntentSchema.extend({
+  policy: rankingSelectionV41Schema,
+  basis: resolvedRankingBasisV41Schema,
+}).strict();
+const legacyRankingExecutionIntentV37Schema = rankingExecutionIntentV41Schema
   .extend({
-    policy: z.object(rankingSelectionSchema.shape).omit({ initialOvercharge: true }).strict(),
-    basis: resolvedRankingBasisSchema.omit({ initialOvercharge: true }),
+    policy: z.object(rankingSelectionV41Schema.shape).omit({ initialOvercharge: true }).strict(),
+    basis: resolvedRankingBasisV41Schema.omit({ initialOvercharge: true }),
   })
   .strict();
 const portableCalculationRequestV35Schema = z.union([
@@ -624,6 +630,8 @@ const resolvedPortableCalculationRequestSchema = z
         basis.servantId === scenario.attacker.servantId &&
         basis.level === scenario.attacker.level &&
         basis.npLevel === scenario.attacker.npLevel &&
+        basis.growthBasis === policy.growthBasis &&
+        basis.fouAtk === scenario.attacker.fouAtk &&
         basis.levelSource === policy.levelBasis &&
         basis.npSource === policy.npLevelBasis.kind &&
         (policy.npLevelBasis.kind !== 'specified' ||
@@ -651,7 +659,7 @@ export const portableCalculationRequestV40Schema = z.union([
     .object({
       versionContext: calculationVersionContextV40Schema,
       scenario: resolvedScenarioV40Schema,
-      executionIntent: z.union([calculatorExecutionIntentSchema, rankingExecutionIntentSchema]),
+      executionIntent: z.union([calculatorExecutionIntentSchema, rankingExecutionIntentV41Schema]),
     })
     .strict(),
   manualPortableCalculationRequestSchema.extend({
@@ -659,6 +667,27 @@ export const portableCalculationRequestV40Schema = z.union([
   }),
 ]);
 export type PortableCalculationRequestV40 = z.infer<typeof portableCalculationRequestV40Schema>;
+export const portableCalculationRequestV41Schema = z.union([
+  z.object({
+    versionContext: calculationVersionContextSchema.extend({schemaVersion:z.literal(41)}),
+    scenario: resolvedScenarioSchema,
+    executionIntent:z.union([calculatorExecutionIntentSchema,rankingExecutionIntentV41Schema]),
+  }).strict().refine(({scenario,executionIntent:intent})=>intent.kind !== 'ranking' || (
+    intent.initialNpGauge === scenario.initialOvercharge * 10000 &&
+    intent.basis.initialOvercharge === scenario.initialOvercharge &&
+    intent.policy.initialOvercharge === scenario.initialOvercharge &&
+    intent.basis.servantId === scenario.attacker.servantId &&
+    intent.basis.level === scenario.attacker.level && intent.basis.npLevel === scenario.attacker.npLevel &&
+    intent.basis.levelSource === intent.policy.levelBasis && intent.basis.npSource === intent.policy.npLevelBasis.kind &&
+    (intent.policy.npLevelBasis.kind !== 'specified' || intent.basis.npLevel === intent.policy.npLevelBasis.npLevel) &&
+    (intent.policy.levelBasis !== 'uniformLevel90' || intent.basis.level === 90)
+  ),{message:'ranking_basis_scenario_mismatch'}),
+  manualPortableCalculationRequestSchema.extend({
+    versionContext:calculationVersionContextSchema.extend({schemaVersion:z.literal(41)}),
+  }),
+]);
+export type PortableCalculationRequestV41 = z.infer<typeof portableCalculationRequestV41Schema>;
+
 
 const portableCalculationRequestV33Schema = z.union([
   z
@@ -801,6 +830,14 @@ export const calculationResultV40Schema = z.discriminatedUnion('status', [
   unsupportedResultSchema.extend({ versions: resultVersionsV40Schema }),
 ]);
 export type CalculationResultV40 = z.infer<typeof calculationResultV40Schema>;
+export const calculationResultV41Schema = z.discriminatedUnion('status', [
+  calculatedResultSchema.extend({versions:versionContextSchema.extend({schemaVersion:z.literal(41)})}),
+  unavailableResultSchema.extend({versions:versionContextSchema.extend({schemaVersion:z.literal(41)})}),
+  inputRequiredResultSchema.extend({versions:versionContextSchema.extend({schemaVersion:z.literal(41)})}),
+  unsupportedResultSchema.extend({versions:versionContextSchema.extend({schemaVersion:z.literal(41)})}),
+]);
+export type CalculationResultV41 = z.infer<typeof calculationResultV41Schema>;
+
 
 const calculationSnapshotShape = {
   profileId: z.uuid(),
@@ -815,7 +852,7 @@ function requireMatchingCalculationVersions(
     request: {
       versionContext: { schemaVersion?: number; masterDataVersion: string; engineVersion: string };
     };
-    result: CalculationResult;
+    result: { versions: {schemaVersion:number; masterDataVersion:string; engineVersion:string} };
   },
   context: z.core.$RefinementCtx,
 ) {
@@ -875,6 +912,15 @@ const historicalCalculationV40Shape = {
 };
 export const historicalCalculationDraftV40Schema = z.object(historicalCalculationV40Shape);
 export type HistoricalCalculationDraftV40 = z.infer<typeof historicalCalculationDraftV40Schema>;
+const historicalCalculationDraftV41Schema = historicalCalculationDraftV40Schema.extend({
+  sourceSchemaVersion:z.literal(41),scenario:calculationScenarioSchema,result:calculationResultV41Schema,
+});
+export const historicalCalculationDraftSchema = z.union([historicalCalculationDraftV40Schema,historicalCalculationDraftV41Schema]);
+export type HistoricalCalculationDraft = z.infer<typeof historicalCalculationDraftSchema>;
+const historicalCalculationHistoryEntryV41Schema = historicalCalculationDraftV41Schema.extend({
+  historyId:z.uuid(),finalizedAt:z.iso.datetime(),lastUsedAt:z.iso.datetime(),
+});
+
 const historicalCalculationHistoryEntryV40Schema = historicalCalculationDraftV40Schema.extend({
   historyId: z.uuid(),
   finalizedAt: z.iso.datetime(),
@@ -897,9 +943,10 @@ export const historicalCalculationHistoryEntrySchema = z.union([
     sourceSchemaVersion: z.literal(38),
     legacyResultSchemaVersion: z.literal(38),
     scenario: resolvedScenarioV40Schema,
-    legacyRankingIntent: z.union([rankingExecutionIntentSchema, calculatorExecutionIntentSchema]),
+    legacyRankingIntent: z.union([rankingExecutionIntentV41Schema, calculatorExecutionIntentSchema]),
   }),
   historicalCalculationHistoryEntryV40Schema,
+  historicalCalculationHistoryEntryV41Schema,
 ]);
 export const storedCalculationHistoryEntrySchema = z.union([
   calculationHistoryEntrySchema,
@@ -951,7 +998,7 @@ const localProfileShape = {
 export const localProfileSchema = z.object({
   ...localProfileShape,
   draft: calculationDraftSchema.nullable(),
-  historicalDraft: historicalCalculationDraftV40Schema.nullish(),
+  historicalDraft: historicalCalculationDraftSchema.nullish(),
   history: z.array(storedCalculationHistoryEntrySchema).max(20),
 });
 export type LocalProfile = z.infer<typeof localProfileSchema>;
@@ -992,6 +1039,55 @@ const calculationHistoryEntryV40Schema = calculationSnapshotV40Schema.extend({
   finalizedAt: z.iso.datetime(),
   lastUsedAt: z.iso.datetime(),
 });
+const calculationSnapshotV41Schema = calculationSnapshotV40Schema.extend({
+  request:portableCalculationRequestV41Schema,result:calculationResultV41Schema,
+}).strict().superRefine(requireMatchingCalculationVersions);
+const calculationHistoryEntryV41Schema = calculationSnapshotV41Schema.safeExtend({
+  historyId:z.uuid(),finalizedAt:z.iso.datetime(),lastUsedAt:z.iso.datetime(),
+});
+export function parseHistoricalCalculationSnapshot(value:unknown) {
+  if (value === null || typeof value !== 'object' || !('request' in value)) throw new TypeError('historical_snapshot_invalid');
+  const version = z.object({request:z.object({versionContext:z.object({schemaVersion:z.number().int().optional()})})}).parse(value).request.versionContext.schemaVersion;
+  if (version === undefined) return parseHistoricalCalculationSnapshotV40(value);
+  if (version !== 41) throw new TypeError('historical_schema_version_unsupported');
+  return 'historyId' in value ? calculationHistoryEntryV41Schema.parse(value) : calculationSnapshotV41Schema.parse(value);
+}
+const profileCollectionV41Schema = z.object({
+  schemaVersion:z.literal(41),activeProfileId:z.uuid(),profiles:z.array(z.object({
+    ...localProfileShape,draft:z.unknown().nullable(),historicalDraft:historicalCalculationDraftV40Schema.nullish(),history:z.array(z.unknown()).max(20),
+  })).min(1).max(20),
+});
+/** Preserves exact v41 snapshots; publishes only a validated historical envelope, never a runnable old request. */
+export async function migrateStoredProfileCollectionV41(value:unknown, fingerprint:(request:PortableCalculationRequestV40|PortableCalculationRequestV41)=>Promise<string>):Promise<ProfileCollection> {
+  const source = profileCollectionV41Schema.parse(value);
+  const profiles = await Promise.all(source.profiles.map(async(profile)=>{
+    const preserve = async(value:unknown,history:boolean)=>{
+      const snapshot = parseHistoricalCalculationSnapshot(value);
+      if((!('schemaVersion' in snapshot.request.versionContext) || snapshot.request.versionContext.schemaVersion !== 41) || await fingerprint(snapshot.request) !== snapshot.requestFingerprint) throw new TypeError('v41_snapshot_identity_mismatch');
+      const record={...snapshot,disposition:'historicalOnly' as const,sourceSchemaVersion:41 as const,scenario:snapshot.request.scenario,legacySnapshot:value};
+      return history ? historicalCalculationHistoryEntryV41Schema.parse(record) : historicalCalculationDraftV41Schema.parse(record);
+    };
+    const historicalDraft = profile.draft === null ? profile.historicalDraft : await preserve(profile.draft,false);
+    if(profile.draft !== null && profile.historicalDraft != null) throw new TypeError('v41_conflicting_drafts');
+    const history = await Promise.all(profile.history.map(entry=>{
+      if(entry !== null && typeof entry === 'object' && 'disposition' in entry) return historicalCalculationHistoryEntrySchema.parse(entry);
+      return preserve(entry,true);
+    }));
+    return {...profile,draft:null,historicalDraft,history};
+  }));
+  const result=profileCollectionSchema.parse({...source,schemaVersion:SCHEMA_VERSION,profiles});
+  await validateHistoricalCalculationIdentities(result,fingerprint);
+  return result;
+}
+export async function validateHistoricalCalculationIdentities(collection:ProfileCollection,fingerprint:(request:PortableCalculationRequestV40|PortableCalculationRequestV41)=>Promise<string>):Promise<void> {
+  await validateHistoricalV40Identities(collection,fingerprint);
+  for(const profile of collection.profiles) for(const record of [profile.historicalDraft,...profile.history]) {
+    if(!record || !('sourceSchemaVersion' in record) || record.sourceSchemaVersion !== 41) continue;
+    const snapshot=parseHistoricalCalculationSnapshot(record.legacySnapshot);
+    if((!('schemaVersion' in snapshot.request.versionContext) || snapshot.request.versionContext.schemaVersion !== 41) || snapshot.profileId !== record.profileId || snapshot.calculationSessionId !== record.calculationSessionId || snapshot.updatedAt !== record.updatedAt || snapshot.requestFingerprint !== record.requestFingerprint || JSON.stringify(snapshot.request.scenario) !== JSON.stringify(record.scenario) || JSON.stringify(snapshot.result) !== JSON.stringify(record.result) || await fingerprint(snapshot.request) !== record.requestFingerprint || ['historyId','finalizedAt','lastUsedAt'].some(key=>(snapshot as Record<string,unknown>)[key] !== (record as Record<string,unknown>)[key])) throw new TypeError('historical_v41_identity_mismatch');
+  }
+}
+
 export function parseHistoricalCalculationSnapshotV40(value: unknown) {
   const snapshot =
     value !== null && typeof value === 'object' && 'historyId' in value
@@ -1090,7 +1186,7 @@ export async function validateHistoricalV40Identities(
         (entry) => 'disposition' in entry && entry.sourceSchemaVersion === 40,
       ),
     ]) {
-      if (!record || !('legacySnapshot' in record)) continue;
+      if (!record || record.sourceSchemaVersion !== 40 || !('legacySnapshot' in record)) continue;
       const snapshot = parseHistoricalCalculationSnapshotV40(record.legacySnapshot);
       if (
         snapshot.profileId !== record.profileId ||
@@ -1503,6 +1599,19 @@ const calculationShareSnapshotV40Schema = z.object({
   request: portableCalculationRequestV40Schema,
   result: calculationResultV40Schema,
 });
+const calculationShareSnapshotV41Schema = calculationShareSnapshotV40Schema.extend({
+  schemaVersion:z.literal(41),request:portableCalculationRequestV41Schema,result:calculationResultV41Schema,
+}).superRefine(requireMatchingCalculationVersions);
+export function parseHistoricalCalculationShareSnapshot(value:unknown) {
+  const version=z.object({schemaVersion:z.number().int()}).parse(value).schemaVersion;
+  if(version===40)return parseCalculationShareSnapshotV40(value);
+  if(version===41)return calculationShareSnapshotV41Schema.parse(value);
+  throw new TypeError('historical_share_schema_unsupported');
+}
+export async function migrateUserDataBackupV41(value:unknown,fingerprint:(request:PortableCalculationRequestV40|PortableCalculationRequestV41)=>Promise<string>):Promise<UserDataBackup> {
+  const source=userDataBackupV40Schema.extend({schemaVersion:z.literal(41),profiles:profileCollectionV41Schema}).parse(value);
+  return userDataBackupSchema.parse({...source,schemaVersion:SCHEMA_VERSION,profiles:await migrateStoredProfileCollectionV41(source.profiles,fingerprint)});
+}
 export function parseCalculationShareSnapshotV40(value: unknown) {
   const snapshot = calculationShareSnapshotV40Schema.parse(value);
   requireV40ResultMatchesRequest(snapshot.request, snapshot.result);

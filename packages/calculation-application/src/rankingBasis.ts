@@ -3,6 +3,8 @@ import { DEFAULT_NP_RESOURCE_SEMANTICS } from '@fgo-lab/battle-execution';
 import {
   rankingSelectionSchema,
   rankingNpLevelSchema,
+  servantBuildSchema,
+  rankingSkillLevelsSchema,
   type RankingSelection,
   type ResolvedRankingBasis,
 } from '@fgo-lab/schema';
@@ -34,6 +36,7 @@ export function compileRankingSelection(value: unknown): RankingSelectionResult 
 }
 export type RankingSelectionCommand =
   | { kind: 'reset' }
+  | { kind: 'setGrowthBasis'; value: RankingSelection['growthBasis'] }
   | { kind: 'setInitialOvercharge'; value: RankingSelection['initialOvercharge'] }
   | { kind: 'setPopulation'; value: RankingSelection['population'] }
   | { kind: 'setLevelBasis'; value: RankingSelection['levelBasis'] }
@@ -48,12 +51,17 @@ export function applyRankingSelectionCommand(
   switch (command.kind) {
     case 'reset':
       return compileRankingSelection(DEFAULT_RANKING_POLICY_CONDITIONS);
+    case 'setGrowthBasis':
+      return compileRankingSelection(command.value === 'saved'
+        ? { ...selection, growthBasis: 'saved', levelBasis: 'ownedLevel', npLevelBasis: { kind: 'owned' } }
+        : { ...selection, growthBasis: 'common' });
     case 'setInitialOvercharge':
       return compileRankingSelection({ ...selection, initialOvercharge: command.value });
     case 'setPopulation':
       return compileRankingSelection({
         ...selection,
         population: command.value,
+        growthBasis: command.value === 'all' ? 'common' : selection.growthBasis,
         initialOvercharge:
           command.value === 'all' && selection.npLevelBasis.kind === 'owned'
             ? 1
@@ -95,9 +103,12 @@ export function resolveRankingBasis(
   profile: RankingProfileInput,
   selection: ValidatedRankingSelection,
 ): ResolvedRankingBasis {
-  const build = profile.servantBuilds[servant.id];
+  const providedBuild = profile.servantBuilds[servant.id];
+  const build = providedBuild === undefined ? undefined : servantBuildSchema.parse(providedBuild);
+  if (build !== undefined && build.servantId !== servant.id)
+    throw new RankingBasisFailure('rankingBuildIdentityMismatch');
   if (selection.population === 'owned' && !isOwned(build))
-    throw new TypeError('rankingServantOutsidePopulation');
+    throw new RankingBasisFailure('rankingServantOutsidePopulation');
   const level =
     selection.levelBasis === 'naturalLimit'
       ? naturalServantLevel(servant.rarity)
@@ -107,7 +118,17 @@ export function resolveRankingBasis(
   const npLevel = rankingNpLevelSchema.parse(
     selection.npLevelBasis.kind === 'specified' ? selection.npLevelBasis.npLevel : build!.npLevel,
   );
+  const skillSlots = [...new Set(servant.skills.map(({ slot }) => String(slot)))];
+  const skillLevels = selection.growthBasis === 'saved'
+    ? rankingSkillLevelsSchema.parse(build!.skills)
+    : Object.fromEntries(skillSlots.map((slot) => [slot, 10]));
+  const missingSlots = skillSlots.filter((slot) => skillLevels[slot as '1' | '2' | '3'] === undefined);
+  if (missingSlots.length > 0)
+    throw new RankingBasisFailure('rankingBuildIncomplete', missingSlots.join(','));
   return {
+    growthBasis: selection.growthBasis,
+    fouAtk: selection.growthBasis === 'saved' ? build!.fouAtk : 1000,
+    skillLevels,
     servantId: servant.id,
     level,
     npLevel,
@@ -122,4 +143,10 @@ export function rankingInitialOcOptions(selection: RankingSelection): readonly (
     DEFAULT_NP_RESOURCE_SEMANTICS,
     selection.npLevelBasis.kind === 'specified' ? selection.npLevelBasis.npLevel : null,
   );
+}
+
+export class RankingBasisFailure extends TypeError {
+  constructor(readonly reason: 'rankingBuildIncomplete' | 'rankingBuildIdentityMismatch' | 'rankingServantOutsidePopulation', readonly detail = '') {
+    super(reason);
+  }
 }

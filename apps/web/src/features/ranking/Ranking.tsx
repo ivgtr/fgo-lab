@@ -39,6 +39,7 @@ export function Ranking({
   onOpenCalculator,
   onOpenCalculatorForAttackProfile,
   onReload,
+  onEditSavedBuild,
 }: {
   master: MasterDataSnapshot;
   profile: RankingProfileInput;
@@ -49,6 +50,7 @@ export function Ranking({
     attackProfile: AttackProfile;
   }) => void;
   onReload?: () => void;
+  onEditSavedBuild?: () => void;
 }) {
   const [urlState, setUrlState] = useRankingUrlState();
   const [openEntryId, setOpenEntryId] = useState<string | null>(null);
@@ -199,6 +201,10 @@ export function Ranking({
                         })
                       }
                     >
+                      {rankingExclusionRecoveryLabel(exclusion.recovery)}
+                    </button>
+                  ) : exclusion.recovery.kind === 'editSavedBuild' ? (
+                    <button type="button" aria-describedby={descriptionIds} onClick={onEditSavedBuild}>
                       {rankingExclusionRecoveryLabel(exclusion.recovery)}
                     </button>
                   ) : exclusion.recovery.kind === 'resetRankingConditions' ? (

@@ -18,8 +18,8 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import {
-  parseCalculationShareSnapshotV40,
-  parseHistoricalCalculationSnapshotV40,
+  parseHistoricalCalculationShareSnapshot,
+  parseHistoricalCalculationSnapshot,
 } from '@fgo-lab/schema';
 import type { EffectProjection } from '@fgo-lab/calculation-application';
 import {
@@ -29,7 +29,7 @@ import {
   attemptPortableCalculationVersionUpgrade,
   createDefaultCalculatorPortableRequest,
   currentCalculationVersionContext,
-  createV41RequestFromHistoricalV40,
+  createCurrentRequestFromHistoricalCalculation,
   executePortableCalculation,
   recoverPortableCalculation,
   attemptPortableCalculationScenarioChange,
@@ -211,10 +211,10 @@ export function CalculatorRoute({
     entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
   ) {
     const mutationToken = beginCalculationMutation();
-    if (entry.sourceSchemaVersion === 40) {
+    if ((entry.sourceSchemaVersion === 40 || entry.sourceSchemaVersion === 41)) {
       try {
-        const historical = parseHistoricalCalculationSnapshotV40(entry.legacySnapshot);
-        const request = createV41RequestFromHistoricalV40(historical.request, master);
+        const historical = parseHistoricalCalculationSnapshot(entry.legacySnapshot);
+        const request = createCurrentRequestFromHistoricalCalculation(historical.request, master);
         const outcome = executePortableCalculation(request, master);
         if (outcome.status === 'executed')
           await startHistoryDraft(request, outcome.execution.result, 'history', mutationToken);
@@ -319,9 +319,9 @@ export function CalculatorRoute({
                   const raw = calculation.historical?.legacySnapshot;
                   const historical =
                     typeof raw === 'object' && raw !== null && 'kind' in raw
-                      ? parseCalculationShareSnapshotV40(raw)
-                      : parseHistoricalCalculationSnapshotV40(raw);
-                  const request = createV41RequestFromHistoricalV40(historical.request, master);
+                      ? parseHistoricalCalculationShareSnapshot(raw)
+                      : parseHistoricalCalculationSnapshot(raw);
+                  const request = createCurrentRequestFromHistoricalCalculation(historical.request, master);
                   const outcome = executePortableCalculation(request, master);
                   if (outcome.status !== 'executed') {
                     setResetError(

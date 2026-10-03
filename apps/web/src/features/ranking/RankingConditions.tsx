@@ -37,6 +37,7 @@ export function RankingConditions({
         <label>
           レベル
           <select
+            disabled={conditions.growthBasis === 'saved'}
             value={conditions.levelBasis}
             onChange={(event) =>
               dispatch({
@@ -55,6 +56,7 @@ export function RankingConditions({
         <label>
           宝具Lv
           <select
+            disabled={conditions.growthBasis === 'saved'}
             value={
               conditions.npLevelBasis.kind === 'owned' ? 'owned' : conditions.npLevelBasis.npLevel
             }
@@ -147,6 +149,15 @@ export function RankingConditions({
       </div>
       <details className="ranking-calculation-details">
         <summary>計算基準</summary>
+        <label>
+          育成基準
+          <select value={conditions.growthBasis} onChange={(event) => dispatch({
+            kind: 'setGrowthBasis', value: event.target.value as RankingPolicyConditions['growthBasis'],
+          })}>
+            <option value="common">共通条件</option>
+            <option value="saved" disabled={conditions.population !== 'owned'}>保存育成状態</option>
+          </select>
+        </label>
         <dl className="ranking-calculation-basis">
           <div>
             <dt>育成</dt>
@@ -156,12 +167,12 @@ export function RankingConditions({
                 : conditions.levelBasis === 'uniformLevel90'
                   ? 'Lv.90統一'
                   : '保有レベル'}
-              ・Fou1000
+              {conditions.growthBasis === 'saved' ? '・保存Fou ATK' : '・Fou1000'}
             </dd>
           </div>
           <div>
             <dt>宝具・スキル</dt>
-            <dd>初期OC{conditions.initialOvercharge}・スキルLv10</dd>
+            <dd>初期OC{conditions.initialOvercharge}・{conditions.growthBasis === 'saved' ? '保存スキルLv' : 'スキルLv10'}</dd>
           </div>
           <div>
             <dt>外部条件</dt>

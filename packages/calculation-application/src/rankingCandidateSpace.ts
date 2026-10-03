@@ -442,7 +442,7 @@ export function compileRankingCandidateSpaces(
   let unsupportedAttackProfileKeys: ReadonlySet<string> = new Set();
   try {
     const admission = compileCandidateLocalActionAdmission(
-      compileStaticRankingPreparationPrograms(servant),
+      compileStaticRankingPreparationPrograms(servant, basis.skillLevels),
       conditions,
       {
         semantics: master.npResourceSemantics,

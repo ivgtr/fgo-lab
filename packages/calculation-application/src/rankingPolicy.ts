@@ -39,7 +39,7 @@ export function createRankingBaseScenario(
       source: 'master',
       level: basis.level,
       npLevel: basis.npLevel,
-      fouAtk: STANDARD_RANKING_SCENARIO_POLICY.fouAtk,
+      fouAtk: basis.fouAtk,
     },
     initialOvercharge: basis.initialOvercharge,
     targetContext,

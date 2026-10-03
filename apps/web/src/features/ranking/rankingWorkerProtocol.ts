@@ -73,6 +73,7 @@ export type RankingWorkerResponse = ResponseIdentity &
   );
 export function rankingConditionsFingerprint(conditions: RankingPolicyConditions): string {
   return JSON.stringify([
+    conditions.growthBasis,
     conditions.population,
     conditions.levelBasis,
     conditions.npLevelBasis.kind === 'owned'

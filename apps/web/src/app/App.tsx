@@ -24,7 +24,7 @@ import {
 } from '@fgo-lab/profile-domain';
 import type {
   CalculationResult,
-  HistoricalCalculationDraftV40,
+  HistoricalCalculationDraft,
   CraftEssenceCopy,
   PortableCalculationRequest,
   ServantBuild,
@@ -103,7 +103,7 @@ export interface CalculationWorkspace {
   request: PortableCalculationRequest | undefined;
   storedResult: CalculationResult | undefined;
   source: 'share' | 'draft' | 'history' | undefined;
-  historical?: HistoricalCalculationDraftV40 | undefined;
+  historical?: HistoricalCalculationDraft | undefined;
   upgradeAttempt?: Extract<PortableVersionUpgradeResult, { status: 'rejected' }>;
 }
 

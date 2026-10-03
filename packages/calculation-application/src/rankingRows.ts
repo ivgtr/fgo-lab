@@ -73,7 +73,9 @@ export function createRankingPolicyExclusion(
     result.status === 'inputRequired'
       ? { kind: 'openCalculator' }
       : result.status === 'invalid'
-        ? result.reason === 'rankingSelectionInvalid'
+        ? result.reason === 'rankingBuildIncomplete'
+          ? { kind: 'editSavedBuild' }
+          : result.reason === 'rankingSelectionInvalid'
           ? { kind: 'resetRankingConditions' }
           : { kind: 'reload' }
         : { kind: 'none' };

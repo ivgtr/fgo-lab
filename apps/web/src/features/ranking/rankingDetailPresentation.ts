@@ -93,6 +93,8 @@ export function rankingExclusionLabel(
     selectedAttackProfileChanged: '選択中とは別の攻撃宝具が選ばれました',
     candidateExecutionUnsupported: '候補の実行意味論に未対応部分があります',
     unsupportedActionAdmission: '実行条件を判定できない候補があります',
+    rankingBuildIncomplete: '保存スキルLvが不足しています。育成状態を編集してください',
+    rankingBuildIdentityMismatch: '保存育成データのサーヴァントが一致しません',
     unexpectedRankingFailure: 'ランキング計算で予期しない失敗が発生しました',
     staticPreparationInvalid: '準備手順の定義が不正です',
     semanticDomainInvalid: '計算条件の意味領域が不正です',
@@ -126,6 +128,8 @@ export function rankingExclusionRecoveryLabel(recovery: RankingExclusionRecovery
       return '通常の計算機で入力を補う';
     case 'resetRankingConditions':
       return 'ランキング条件をリセット';
+    case 'editSavedBuild':
+      return '保存育成状態を編集';
     case 'reload':
       return 'ページを再読み込み';
     case 'none':

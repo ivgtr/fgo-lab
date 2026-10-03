@@ -21,7 +21,7 @@ const selectionShape = {
   selfBuffs: z.enum(['included', 'excluded']),
   conditionalEffects: z.enum(['baseline', 'satisfied']),
 };
-export const rankingSelectionSchema = z
+export const rankingSelectionV41Schema = z
   .object(selectionShape)
   .strict()
   .refine(
@@ -30,8 +30,8 @@ export const rankingSelectionSchema = z
       (selection.levelBasis !== 'ownedLevel' && selection.npLevelBasis.kind !== 'owned'),
     { message: 'ranking_owned_basis_requires_owned_population' },
   );
-export type RankingSelection = z.infer<typeof rankingSelectionSchema>;
-export const resolvedRankingBasisSchema = z
+
+export const resolvedRankingBasisV41Schema = z
   .object({
     servantId: z.string().min(1),
     level: z.number().int().min(1).max(120),
@@ -41,4 +41,31 @@ export const resolvedRankingBasisSchema = z
     npSource: z.enum(['specified', 'owned']),
   })
   .strict();
+
+
+export const rankingGrowthBasisSchema = z.enum(['common', 'saved']);
+export const rankingSkillLevelsSchema = z.partialRecord(
+  z.enum(['1', '2', '3']),
+  z.number().int().min(1).max(10),
+);
+export const rankingSelectionSchema = z.discriminatedUnion('growthBasis', [
+  z.object({ ...selectionShape, growthBasis: z.literal('common') }).strict().refine(
+    (selection) => selection.population === 'owned' ||
+      (selection.levelBasis !== 'ownedLevel' && selection.npLevelBasis.kind !== 'owned'),
+    { message: 'ranking_owned_basis_requires_owned_population' },
+  ),
+  z.object({
+    ...selectionShape,
+    growthBasis: z.literal('saved'),
+    population: z.literal('owned'),
+    levelBasis: z.literal('ownedLevel'),
+    npLevelBasis: z.object({ kind: z.literal('owned') }).strict(),
+  }).strict(),
+]);
+export type RankingSelection = z.infer<typeof rankingSelectionSchema>;
+export const resolvedRankingBasisSchema = resolvedRankingBasisV41Schema.extend({
+  growthBasis: rankingGrowthBasisSchema,
+  fouAtk: z.number().int().min(0).max(3000),
+  skillLevels: rankingSkillLevelsSchema,
+}).strict();
 export type ResolvedRankingBasis = z.infer<typeof resolvedRankingBasisSchema>;

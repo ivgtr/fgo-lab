@@ -1,12 +1,29 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-21"
+updated_at: "2026-10-03"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
 
 本noteはsource program／finite candidate／application policyの意味説明と固有の採用・測定履歴を保持する。2026-09-21のTSK-06.5 closureと、その時点のTSK-07 blockedは歴史checkpointであり、現在の進捗を所有しない。現行契約は[ranking requirements](../requirements/ranking-self-and-conditional-effects-requirements.md)、現行baselineは[TSK-06.5 production closure](tsk-06-5-production-closure.json)の`productionMatrix.canonicalRecords`、TSK-08最終受入は[parity ratchet](tsk-08-parity-ratchet.json)の`implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`へ進む。現在の進捗・残作業は[Tasks](../tasks/development-redesign-tasks.md)、証拠の読み分けは[evidence index](README.md#読み分けと現行の受入先)が所有する。本文の旧Blocking／Deferred／数値・version・commitは当時のscopeのまま保持する。
+
+## TSK-14 最終方針の承認計画（2026-10-03）
+
+現行判断はranking §20、進捗・承認・強制停止は[TSK-14](../tasks/development-redesign-tasks.md#tsk-14-ranking最終方針の実装と正本収束)が所有する。開始HEAD `2c86a96f5c9a69de9b28d58910653f63aa320c57`、master `20260920.3`／SHA `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`。以下は着手時の承認境界と当時の未実装状態であり、過去のclosureを新方針の受入へ拡張しない。部分実装後の停止・検証・最新方針・次操作はTaskのsession終了checkpointを参照する。利用者は破壊的変更・fallback不要の方向性を了承し、このsessionを調査と既存作業のcommitに限定した。下表portableの旧形式歴史保全／明示再計算は当初計画の履歴であり、現行schemaのみ受入・旧形式明示拒否へ改める方向。提案をcodeへ反映しておらず、旧互換経路を含む途中差分は製品受入されていない。
+
+| Family／owner | Forward／alternate／recovery直接経路 | 反証・完了条件 | 状態 |
+| --- | --- | --- | --- |
+| basis／schema・application | rankingSelection→resolveRankingBasis→base scenario／全skill command、共通と保存育成のstrict union | 保存Lv・NP・Fou・skills、欠落slot／skills空／NP0／build欠落／identity不一致、共通能力維持 | Blocking: 未実装 |
+| admission／application | static subset・choice・使用順→candidate space→candidate-local admission | 純条件生成／回復の後続関連性、自己buffなし、排他・有限certificate、全候補失敗 | Blocking: 未実装 |
+| 通常寄与／execution | canonical初期state・ordered mutation→read→effectiveContributions／ocSourceBinding | field／attacker・target state／marker／HP、解除・nested all/any/not、外部仮定／確率由来、rollback・OC間接寄与を同じ確定根拠ownerで判定 | Blocking: 未実装 |
+| NP／共通executor | preparationTransaction→action使用条件→cost／gain／capacity→attack NP | 消費→回復成功、逆順clip、遡及成立なし、形態別source非混成・確率回復・死亡・rollback。TSK-13の2profile局所証拠を土台だけに再利用 | Blocking: 新skill binding受入未実施 |
+| UI／worker | conditions→command→URL→protocol／fingerprint→summary成功1件／detail0件→React active最大1件 | 共通⇔保存、profile変更、非法入力／OC修復、stale summary／detail／handoff、filterだけで再計算なし、実workerの代表経路 | Blocking: 未実装 |
+| portable／schema・application・Web writer | detail→createRankingPortableRequest→pinned basis→executor→commitPortableDraft→history／share／backup→restore／repair | 固定実使用値の再現、保存後profile変更、改竄・version・capacity不一致、旧request／result／fingerprintの歴史値保全・明示再計算、途中失敗で原保存維持 | Blocking: 未実装 |
+| 再臨／形態・append調査境界 | 保存ascension／appends→pipeline採用IR→application／executionへの直接bindingを確認 | 保存fieldだけで能力を推定しない。既存AttackProfile列挙／非混成・保存編集能力維持。新反映規則／戦闘IR／取得が必要なら停止確認 | Blocking: 直接経路調査未完 |
+| production／性能・正本 | shared inventory／immutable baseline→変更差分→parity／有限性→同条件前後各3独立process→固定差分quality | 旧expected・母集団・assertion・timeout／cap／ratchet維持、意図的damage差をinput／plan／ruleで説明、必要な全matrix、product／UI／ranking／ADR整合 | Blocking: 未実施 |
+
+新診断namespaceの用途・identity／期間／処遇はTask Handoffを参照する。永続保存集合・取得元は変更しない。最初の操作は同環境の変更前3独立processを取得し、basis→worker→portable保存／reloadを早期接続すること。通常寄与の確定根拠は独立damage evaluatorやaction consequence summaryへ複製せず、既存state transition／transaction／condition ownerへ接続する。
 
 ## c167e63再開delta（2026-09-09）
 

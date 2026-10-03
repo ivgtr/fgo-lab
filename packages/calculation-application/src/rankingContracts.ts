@@ -25,15 +25,16 @@ export type RankingConditionalEffects = 'baseline' | 'satisfied';
 export type RankingPolicyConditions = RankingSelection;
 export type { ResolvedRankingBasis } from '@fgo-lab/schema';
 
-export const DEFAULT_RANKING_POLICY_CONDITIONS: RankingPolicyConditions = {
+export const DEFAULT_RANKING_POLICY_CONDITIONS = {
   population: 'all',
+  growthBasis: 'common',
   initialOvercharge: 1,
   levelBasis: 'naturalLimit',
   npLevelBasis: { kind: 'specified', npLevel: 1 },
   classAffinity: 'neutral',
   selfBuffs: 'included',
   conditionalEffects: 'baseline',
-};
+} as const satisfies RankingPolicyConditions;
 
 export const STANDARD_RANKING_SCENARIO_POLICY = {
   level: 'naturalLimit',
@@ -137,6 +138,7 @@ export type RankingBlockerClass =
 
 export type RankingExclusionRecovery =
   | { kind: 'openCalculator' }
+  | { kind: 'editSavedBuild' }
   | { kind: 'resetRankingConditions' }
   | { kind: 'reload' }
   | { kind: 'none' };

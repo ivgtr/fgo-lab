@@ -7,7 +7,7 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   calculateScenario,
   createDefaultResolvedScenario,
-  createV41RequestFromHistoricalV40,
+  createCurrentRequestFromHistoricalCalculation,
   executePortableCalculation,
   requireExecutableCalculation,
 } from '@fgo-lab/calculation-application';
@@ -49,7 +49,7 @@ it('preserves a v40 draft and history as historical records', async () => {
   const fingerprint = (request: unknown) =>
     Promise.resolve(createHash('sha256').update(canonicalize(request)).digest('hex'));
   const oldFingerprint = await fingerprint(oldRequest);
-  const v41 = createV41RequestFromHistoricalV40(
+  const v41 = createCurrentRequestFromHistoricalCalculation(
     portableCalculationRequestV40Schema.parse(oldRequest),
     master,
   );
@@ -253,7 +253,7 @@ it('keeps a v40 manual request historical until explicit recalculation', async (
     requestFingerprint: oldFingerprint,
     result: { versions: { schemaVersion: 40 } },
   });
-  const v41 = createV41RequestFromHistoricalV40(oldRequest, master);
+  const v41 = createCurrentRequestFromHistoricalCalculation(oldRequest, master);
   expect(oldFingerprint).toBe('3f438a0c206d8b1fcc3b12a0a121b215fa0932c493d22692ddd8ccfce514315f');
   expect(createHash('sha256').update(canonicalize(v41)).digest('hex')).toBe(
     '4a5d35208663228fa1810175776d5e7445e18bc2cfc0c03f5583461d03171ea8',

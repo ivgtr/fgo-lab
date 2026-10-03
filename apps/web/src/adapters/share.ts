@@ -1,10 +1,11 @@
 import type { CalculationShareSnapshot, UserDataBackup } from '@fgo-lab/schema';
 import {
   migrateUserDataBackupV40,
+  migrateUserDataBackupV41,
   parseCalculationShareSnapshot,
-  parseCalculationShareSnapshotV40,
+  parseHistoricalCalculationShareSnapshot,
   parseUserDataBackup,
-  validateHistoricalV40Identities,
+  validateHistoricalCalculationIdentities,
 } from '@fgo-lab/schema';
 import { portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
 export const MAX_SHARE_FRAGMENT_LENGTH = 16_384;
@@ -33,7 +34,7 @@ export function readShareFragment(fragment: string):
   | CalculationShareSnapshot
   | {
       disposition: 'historicalOnly';
-      snapshot: ReturnType<typeof parseCalculationShareSnapshotV40>;
+      snapshot: ReturnType<typeof parseHistoricalCalculationShareSnapshot>;
       raw: unknown;
     }
   | null {
@@ -44,9 +45,9 @@ export function readShareFragment(fragment: string):
   if (
     typeof raw === 'object' &&
     raw !== null &&
-    (raw as Record<string, unknown>)['schemaVersion'] === 40
+    [40,41].includes((raw as Record<string, unknown>)['schemaVersion'] as number)
   )
-    return { disposition: 'historicalOnly', snapshot: parseCalculationShareSnapshotV40(raw), raw };
+    return { disposition: 'historicalOnly', snapshot: parseHistoricalCalculationShareSnapshot(raw), raw };
   return parseCalculationShareSnapshot(raw);
 }
 export function exportBackup(backup: UserDataBackup): string {
@@ -73,8 +74,10 @@ export async function importBackupWithMigration(
         crypto.subtle.digest('SHA-256', new Uint8Array(data)),
       ),
     );
+  if (typeof value === 'object' && value !== null && (value as Record<string,unknown>)['schemaVersion'] === 41)
+    return migrateUserDataBackupV41(value,(request)=>portableCalculationFingerprint(request,async(data)=>crypto.subtle.digest('SHA-256',new Uint8Array(data))));
   const backup = parseUserDataBackup(value);
-  await validateHistoricalV40Identities(backup.profiles, (request) =>
+  await validateHistoricalCalculationIdentities(backup.profiles, (request) =>
     portableCalculationFingerprint(request, async (data) =>
       crypto.subtle.digest('SHA-256', new Uint8Array(data)),
     ),

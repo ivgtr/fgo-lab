@@ -1,3 +1,4 @@
+import type { ResolvedRankingBasis } from '@fgo-lab/schema';
 import {
   terminalMarkerReads,
   noblePhantasmReadsOc,
@@ -5,7 +6,6 @@ import {
   terminalHpReaders,
   type ResourceActor,
 } from '@fgo-lab/battle-execution';
-import { STANDARD_RANKING_SCENARIO_POLICY } from './rankingContracts';
 import {
   actorFormEquals,
   actorFormKey,
@@ -89,10 +89,13 @@ function staticStateKey(state: StaticState): string {
 function skillCommands(
   servant: ServantMaster,
   state: StaticState,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
 ): readonly Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] {
   const commands: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] = [];
   for (const skill of getSkillsForActorForm(servant, state.currentFormId)) {
     const slot = skill.slot;
+    const skillLevel = skillLevels[String(slot) as '1' | '2' | '3'];
+    if (skillLevel === undefined) throw new TypeError('ranking_skill_level_missing');
     if (state.usedSkillSlots.has(slot)) continue;
     const choices = [
       ...new Map(
@@ -112,7 +115,7 @@ function skillCommands(
       commands.push({
         kind: 'useSkillSlot',
         slot,
-        skillLevel: STANDARD_RANKING_SCENARIO_POLICY.skillLevel,
+        skillLevel,
         choice: null,
       });
     else
@@ -120,7 +123,7 @@ function skillCommands(
         ...choices.map((choice) => ({
           kind: 'useSkillSlot' as const,
           slot,
-          skillLevel: STANDARD_RANKING_SCENARIO_POLICY.skillLevel,
+          skillLevel,
           choice: { groupKey: choice.key, candidateKey: choice.candidate },
         })),
       );
@@ -206,6 +209,7 @@ function structuralBranches(
 
 export function compileStaticRankingPreparationPrograms(
   servant: ServantMaster,
+  skillLevels: ResolvedRankingBasis['skillLevels'] = { '1': 10, '2': 10, '3': 10 },
 ): readonly StaticRankingPreparationProgram[] {
   const profiles = createStaticAttackProfiles(servant);
   const formProfiles = createStaticActorFormProfiles(servant);
@@ -279,7 +283,7 @@ export function compileStaticRankingPreparationPrograms(
               ]
             : [],
       });
-    for (const command of skillCommands(servant, state)) {
+    for (const command of skillCommands(servant, state, skillLevels)) {
       const skill = getSkillsForActorForm(servant, state.currentFormId).find(
         ({ slot }) => slot === command.slot,
       );
