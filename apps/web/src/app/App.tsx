@@ -3,7 +3,7 @@
 import './shell.css';
 import type { Route } from 'next';
 import { usePathname, useRouter } from 'next/navigation';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   activeProfile,
@@ -24,7 +24,6 @@ import {
 } from '@fgo-lab/profile-domain';
 import type {
   CalculationResult,
-  HistoricalCalculationDraft,
   CraftEssenceCopy,
   PortableCalculationRequest,
   ServantBuild,
@@ -38,7 +37,7 @@ import { t } from '../ui/i18n';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
 import { StartupScreen } from './StartupScreen';
 import { useProfileCollection } from './useProfileCollection';
-import type { CalculationMutationGate } from './portableDraft';
+import { createCalculationMutationGate, type UpdateActiveProfile } from './portableDraft';
 
 export type Page =
   'home' | 'calculate' | 'ranking' | 'servants' | 'ce' | 'support' | 'growth' | 'data';
@@ -103,7 +102,6 @@ export interface CalculationWorkspace {
   request: PortableCalculationRequest | undefined;
   storedResult: CalculationResult | undefined;
   source: 'share' | 'draft' | 'history' | undefined;
-  historical?: HistoricalCalculationDraft | undefined;
   upgradeAttempt?: Extract<PortableVersionUpgradeResult, { status: 'rejected' }>;
 }
 
@@ -111,7 +109,7 @@ function Setup({
   onComplete,
   startupWarning,
 }: {
-  onComplete: (result: ReadyStartupResult) => void;
+  onComplete: (result: ReadyStartupResult) => Promise<void>;
   startupWarning?: string;
 }) {
   const [state, setState] = useState<'idle' | 'running' | 'error'>('idle');
@@ -120,7 +118,7 @@ function Setup({
     setState('running');
     setError('');
     try {
-      onComplete(
+      await onComplete(
         await setupApplication(repository, clock, ids, {
           baseUrl: '/',
           development: process.env.NODE_ENV !== 'production',
@@ -153,11 +151,14 @@ export function App() {
   const [master, setMaster] = useState<MasterDataSnapshot>();
   const [loading, setLoading] = useState(true);
   const [startupWarning, setStartupWarning] = useState('');
+  const [calculationMutation] = useState(createCalculationMutationGate);
   const {
     profiles,
     undoSnapshot,
     initialize: initializeProfiles,
-    updateActive: updateActiveProfile,
+    updateActive,
+    importCollection: importProfiles,
+    clear: clearProfiles,
     undo: undoLastChange,
   } = useProfileCollection(repository);
   const [calculation, setCalculation] = useState<CalculationWorkspace>({
@@ -170,14 +171,16 @@ export function App() {
   );
   const [recoveryFocus, setRecoveryFocus] = useState<'result' | 'error' | null>(null);
   const [calculationSessionId, setCalculationSessionId] = useState(() => crypto.randomUUID());
-  const calculationMutationRef = useRef(0);
-  const calculationMutation: CalculationMutationGate = {
-    begin: () => {
-      calculationMutationRef.current += 1;
-      return calculationMutationRef.current;
+  const updateActiveProfile = useCallback<UpdateActiveProfile>(
+    (update, guard) => {
+      if (!guard) calculationMutation.begin();
+      return updateActive(update, guard);
     },
-    isCurrent: (token) => calculationMutationRef.current === token,
-  };
+    [calculationMutation, updateActive],
+  );
+  useLayoutEffect(() => {
+    calculationMutation.begin();
+  }, [calculationMutation, pathname]);
   const calculationFinalizer = useRef<(() => Promise<void>) | null>(null);
   useEffect(() => {
     async function bootstrap() {
@@ -187,8 +190,14 @@ export function App() {
         fragment: location.hash,
         now: new Date(),
       });
+      calculationMutation.begin();
+      const initialized = await initializeProfiles(result.profiles);
+      if (initialized.status !== 'initialized') {
+        setStartupWarning('保存データが変わったため初期化できません。再読み込みしてください');
+        setLoading(false);
+        return;
+      }
       setMaster(result.master);
-      initializeProfiles(result.profiles);
       setCalculation(result.calculation);
       setStartupWarning(result.warning);
       if (result.offline) setOnline(false);
@@ -200,7 +209,7 @@ export function App() {
       setLoading(false);
     }
     void bootstrap();
-  }, [initializeProfiles, router]);
+  }, [calculationMutation, initializeProfiles, router]);
   useEffect(() => {
     if (
       'serviceWorker' in navigator &&
@@ -230,9 +239,11 @@ export function App() {
     return (
       <Setup
         startupWarning={startupWarning}
-        onComplete={(result) => {
+        onComplete={async (result) => {
+          calculationMutation.begin();
+          const initialized = await initializeProfiles(result.profiles);
+          if (initialized.status !== 'initialized') throw new Error('profile_initialization_stale');
           setMaster(result.master);
-          initializeProfiles(result.profiles);
           setCalculation(result.calculation);
           setStartupWarning(result.warning);
           if (result.offline) setOnline(false);
@@ -464,12 +475,21 @@ export function App() {
           {page === 'growth' && <Growth master={currentMaster} profile={profile} />}{' '}
           {page === 'data' && (
             <DataPage
+              onClear={async () => {
+                calculationMutation.begin();
+                await clearProfiles();
+                location.reload();
+              }}
               profiles={profiles}
               masterVersion={currentMaster.version}
               onImport={async (next) => {
-                calculationMutation.begin();
-                await repository.replaceAtomicallyWithBackup(next);
-                initializeProfiles(next);
+                const token = calculationMutation.begin();
+                const importedResult = await importProfiles(next, {
+                  isCurrent: () => calculationMutation.isCurrent(token),
+                  signal: calculationMutation.signalFor(token),
+                });
+                if (importedResult.status === 'aborted') throw new Error('profile_import_stale');
+                if (!calculationMutation.isCurrent(token)) return;
                 const imported = activeProfile(next);
                 setCalculation(
                   imported.draft
@@ -481,10 +501,7 @@ export function App() {
                     : {
                         request: undefined,
                         storedResult: undefined,
-                        source: imported.historicalDraft ? 'draft' : undefined,
-                        ...(imported.historicalDraft
-                          ? { historical: imported.historicalDraft }
-                          : {}),
+                        source: undefined,
                       },
                 );
                 setCalculationSessionId(crypto.randomUUID());

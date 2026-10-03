@@ -4,7 +4,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { DEFAULT_RANKING_POLICY_CONDITIONS } from '@fgo-lab/calculation-application';
+import {
+  DEFAULT_RANKING_POLICY_CONDITIONS,
+  type RankingPolicyConditions,
+} from '@fgo-lab/calculation-application';
 import {
   rankingConditionsFingerprint,
   parseRankingWorkerResponse,
@@ -44,7 +47,7 @@ describe('ranking worker response ordering', () => {
   it.each(['conditionalEffects', 'initialOvercharge'] as const)(
     'does not expose an older summary after a newer %s request wins',
     async (axis) => {
-      const baseline = {
+      const baseline: RankingPolicyConditions = {
         ...DEFAULT_RANKING_POLICY_CONDITIONS,
         npLevelBasis: { kind: 'specified' as const, npLevel: 2 as const },
       };
@@ -60,7 +63,8 @@ describe('ranking worker response ordering', () => {
         masterDataLocale: 'ja-JP' as const,
       };
       const { result, rerender } = renderHook(
-        ({ conditions }) => useRanking({ master, profile, conditions, versions }),
+        ({ conditions }: { conditions: RankingPolicyConditions }) =>
+          useRanking({ master, profile, conditions, versions }),
         { initialProps: { conditions: baseline } },
       );
       const worker = FakeWorker.instance!;

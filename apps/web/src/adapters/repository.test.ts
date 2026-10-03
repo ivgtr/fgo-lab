@@ -49,11 +49,11 @@ function mismatchedProfileCollection(
             servantId: 'servant-b',
             level: 1,
             ascension: 0,
-            npLevel: 0,
+            ...(mapName === 'servantBuilds' ? { npLevel: 0 } : {}),
             fouAtk: 0,
             skills: {},
             appends: {},
-            planned: true,
+            ...(mapName === 'servantTargets' ? { planned: true } : {}),
             updatedAt: '2026-08-25T00:00:00.000Z',
           },
         },
@@ -71,25 +71,20 @@ describe('profile repository migration boundary', () => {
     db.close();
   });
 
-  it('migrates exact schema 32 transactionally and persists only current data', async () => {
+  it('rejects retired schema 32 without changing user, metadata or staging data', async () => {
+    const original = { schemaVersion: 32, activeProfileId: profileId, profiles: [legacyProfile] };
     const db = await userStore();
-    await db.put(
-      'user',
-      { schemaVersion: 32, activeProfileId: profileId, profiles: [legacyProfile] },
-      'profiles',
-    );
+    await db.put('user', original, 'profiles');
     db.close();
     const loaded = await new IndexedDbProfileRepository().load();
     expect(loaded).toMatchObject({
-      state: 'ready',
-      discardedCalculationSnapshots: true,
-      collection: {
-        schemaVersion: SCHEMA_VERSION,
-        profiles: [{ profileId, draft: null, history: [] }],
-      },
+      state: 'invalid',
+      reason: 'profile_parse_failed',
     });
     const check = await userStore();
-    expect(await check.get('user', 'profiles')).toMatchObject({ schemaVersion: SCHEMA_VERSION });
+    expect(await check.get('user', 'profiles')).toEqual(original);
+    expect(await check.get('meta', 'profiles-before-v42-switch')).toBeUndefined();
+    expect(await check.getAllKeys('staging')).toEqual([]);
     check.close();
   });
 

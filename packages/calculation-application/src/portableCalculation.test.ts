@@ -571,7 +571,7 @@ describe('portable calculation application owner', () => {
   });
 });
 
-it('retains schema 38 ranking history with its exact initial OC basis and old engine identity', () => {
+it('rejects schema 38 ranking history without modifying its initial OC basis or engine identity', () => {
   const ranking = calculateRankingPolicy(
     master,
     profile,
@@ -645,26 +645,16 @@ it('retains schema 38 ranking history with its exact initial OC basis and old en
     reason: 'insufficientNpGauge',
   });
   expect(() => parseStoredProfileCollection(contradictory)).toThrow();
-  const migrated = parseStoredProfileCollection(collection);
-  expect(migrated.collection.profiles[0]).toMatchObject({
-    draft: null,
-    history: [
-      {
-        disposition: 'historicalOnly',
-        sourceSchemaVersion: 38,
-        legacyRankingIntent: request.executionIntent,
-        scenario: request.scenario,
-        result: { versions: { schemaVersion: SCHEMA_VERSION, engineVersion: '37.0.0' } },
-      },
-    ],
-  });
-  expect(
+  const original = JSON.stringify(collection);
+  expect(() => parseStoredProfileCollection(collection)).toThrow();
+  expect(() =>
     parseUserDataBackup({
       kind: 'fgo-lab-user-backup',
       schemaVersion: 38,
       exportedAt: timestamp,
       appVersion: APP_VERSION,
       profiles: collection,
-    }).profiles,
-  ).toEqual(migrated.collection);
+    }),
+  ).toThrow();
+  expect(JSON.stringify(collection)).toBe(original);
 });

@@ -8,18 +8,10 @@ import {
 } from '@fgo-lab/calculation-application';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { handoffRankingCalculation } from './rankingHandoff';
-import type { UpdateActiveProfile } from './portableDraft';
+import { createCalculationMutationGate, type UpdateActiveProfile } from './portableDraft';
 
 const master = masterSnapshotSchema.parse(fixture);
 const sessionId = '00000000-0000-4000-8000-000000000046';
-
-function calculationMutation() {
-  let current = 0;
-  return {
-    begin: () => ++current,
-    isCurrent: (token: number) => token === current,
-  };
-}
 
 function calculatedRankingDetail() {
   const ranking = calculateRankingPolicy(
@@ -65,7 +57,7 @@ describe('ranking handoff', () => {
     const setCalculationSessionId = vi.fn();
     const updateActiveProfile = vi.fn();
     const replaceRoute = vi.fn();
-    const mutation = calculationMutation();
+    const mutation = createCalculationMutationGate();
     const randomUUID = vi.spyOn(crypto, 'randomUUID').mockReturnValue(sessionId);
 
     const outcome = await handoffRankingCalculation({
@@ -101,12 +93,12 @@ describe('ranking handoff', () => {
     const updateActiveProfile = vi.fn<UpdateActiveProfile>((update) => {
       committedProfile = update(profile);
       events.push('durable');
-      return Promise.resolve();
+      return Promise.resolve({ status: 'committed' });
     });
     const setCalculation = vi.fn(() => events.push('workspace'));
     const setCalculationSessionId = vi.fn(() => events.push('session'));
     const replaceRoute = vi.fn(() => events.push('route'));
-    const mutation = calculationMutation();
+    const mutation = createCalculationMutationGate();
     vi.spyOn(crypto, 'randomUUID').mockReturnValue(sessionId);
 
     const outcome = await handoffRankingCalculation({
@@ -141,7 +133,7 @@ describe('ranking handoff', () => {
     const setCalculation = vi.fn();
     const setCalculationSessionId = vi.fn();
     const replaceRoute = vi.fn();
-    const mutation = calculationMutation();
+    const mutation = createCalculationMutationGate();
     vi.spyOn(crypto, 'randomUUID').mockReturnValue(sessionId);
 
     await expect(

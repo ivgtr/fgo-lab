@@ -6,12 +6,9 @@ import {
   SCHEMA_VERSION,
   portableCalculationRequestSchema,
   type CalculationResult,
-  type CalculationHistoryEntry,
   type CalculationScenario,
   type CalculationVersionContext,
   type PortableCalculationRequest,
-  type PortableCalculationRequestV40,
-  type PortableCalculationRequestV41,
   type ServantBuild,
   type VersionContext,
 } from '@fgo-lab/schema';
@@ -89,7 +86,7 @@ export type PortableVersionUpgradeResult =
       status: 'rejected';
       retainedRequest: PortableCalculationRequest;
       retainedResult: CalculationResult;
-      attemptedRequest: PortableCalculationRequest;
+      attemptedRequest: PortableCalculationRequest | null;
       failure: PortableCalculationFailure;
     };
 
@@ -113,31 +110,6 @@ export function currentCalculationVersionContext(
     masterDataVersion: master.version,
     engineVersion: ENGINE_VERSION,
   };
-}
-
-/** Explicitly creates a new identity from an exact historical snapshot; never upgrades the stored record. */
-export function createCurrentRequestFromHistoricalCalculation(
-  historical: PortableCalculationRequestV40 | PortableCalculationRequestV41,
-  master: MasterDataSnapshot,
-): PortableCalculationRequest {
-  let executionIntent: unknown = historical.executionIntent;
-  if (historical.executionIntent.kind === 'ranking') {
-    const intent = historical.executionIntent;
-    const servant = master.servants.find(({id})=>id===intent.basis.servantId);
-    if (!servant) throw new TypeError('historical_ranking_servant_missing');
-    const skillLevels = Object.fromEntries(servant.skills.map(({slot})=>[String(slot),10]));
-    executionIntent = {
-      ...historical.executionIntent,
-      policy: {...historical.executionIntent.policy,growthBasis:'common'},
-      basis: {...historical.executionIntent.basis,growthBasis:'common',fouAtk:1000,skillLevels},
-    };
-  }
-  return portableCalculationRequestSchema.parse({
-    versionContext: currentCalculationVersionContext(master),
-    scenario: historical.scenario.mode === 'resolved' && !('schemaVersion' in historical.versionContext)
-      ? {...historical.scenario,enemyDefenseBuff:0} : historical.scenario,
-    executionIntent,
-  });
 }
 
 export function createCalculatorPortableRequest(
@@ -475,10 +447,23 @@ export function attemptPortableCalculationVersionUpgrade(
   versionContext: CalculationVersionContext,
   master: MasterDataSnapshot,
 ): PortableVersionUpgradeResult {
-  const attemptedRequest = upgradePortableCalculationRequestVersion(
-    retainedRequest,
-    versionContext,
-  );
+  let attemptedRequest: PortableCalculationRequest;
+  try {
+    attemptedRequest = upgradePortableCalculationRequestVersion(retainedRequest, versionContext);
+  } catch (cause) {
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest: null,
+      failure: {
+        status: 'invalid',
+        request: retainedRequest,
+        reason: 'scenarioInvalid',
+        detail: cause instanceof Error ? cause.message : String(cause),
+      },
+    };
+  }
   if (!resultMatchesRequestVersions(retainedRequest, retainedResult))
     return {
       status: 'rejected',
@@ -549,18 +534,4 @@ export function recoverPortableCalculation(
   )
     return { status: 'invalid', request, reason: 'storedResultMismatch' };
   return outcome;
-}
-
-/** Regeneration preserves historical evidence and creates a new calculator request for its subject. */
-export function regenerateHistoricalCalculatorRequest(
-  entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
-  master: MasterDataSnapshot,
-  builds: Readonly<Record<string, ServantBuild>>,
-): PortableCalculationRequest | null {
-  const scenario = entry.scenario;
-  if (!('attacker' in scenario)) return null;
-  const subject = master.servants.find((servant) => servant.id === scenario.attacker.servantId);
-  return subject
-    ? createDefaultCalculatorPortableRequest(master, builds[subject.id], subject)
-    : null;
 }

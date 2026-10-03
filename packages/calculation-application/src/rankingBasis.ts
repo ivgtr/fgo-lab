@@ -5,6 +5,7 @@ import {
   rankingNpLevelSchema,
   servantBuildSchema,
   rankingSkillLevelsSchema,
+  resolvedRankingBasisSchema,
   type RankingSelection,
   type ResolvedRankingBasis,
 } from '@fgo-lab/schema';
@@ -52,9 +53,16 @@ export function applyRankingSelectionCommand(
     case 'reset':
       return compileRankingSelection(DEFAULT_RANKING_POLICY_CONDITIONS);
     case 'setGrowthBasis':
-      return compileRankingSelection(command.value === 'saved'
-        ? { ...selection, growthBasis: 'saved', levelBasis: 'ownedLevel', npLevelBasis: { kind: 'owned' } }
-        : { ...selection, growthBasis: 'common' });
+      return compileRankingSelection(
+        command.value === 'saved'
+          ? {
+              ...selection,
+              growthBasis: 'saved',
+              levelBasis: 'ownedLevel',
+              npLevelBasis: { kind: 'owned' },
+            }
+          : { ...selection, growthBasis: 'common' },
+      );
     case 'setInitialOvercharge':
       return compileRankingSelection({ ...selection, initialOvercharge: command.value });
     case 'setPopulation':
@@ -119,13 +127,16 @@ export function resolveRankingBasis(
     selection.npLevelBasis.kind === 'specified' ? selection.npLevelBasis.npLevel : build!.npLevel,
   );
   const skillSlots = [...new Set(servant.skills.map(({ slot }) => String(slot)))];
-  const skillLevels = selection.growthBasis === 'saved'
-    ? rankingSkillLevelsSchema.parse(build!.skills)
-    : Object.fromEntries(skillSlots.map((slot) => [slot, 10]));
-  const missingSlots = skillSlots.filter((slot) => skillLevels[slot as '1' | '2' | '3'] === undefined);
+  const skillLevels =
+    selection.growthBasis === 'saved'
+      ? rankingSkillLevelsSchema.parse(build!.skills)
+      : Object.fromEntries(skillSlots.map((slot) => [slot, 10]));
+  const missingSlots = skillSlots.filter(
+    (slot) => skillLevels[slot as '1' | '2' | '3'] === undefined,
+  );
   if (missingSlots.length > 0)
     throw new RankingBasisFailure('rankingBuildIncomplete', missingSlots.join(','));
-  return {
+  return resolvedRankingBasisSchema.parse({
     growthBasis: selection.growthBasis,
     fouAtk: selection.growthBasis === 'saved' ? build!.fouAtk : 1000,
     skillLevels,
@@ -135,7 +146,7 @@ export function resolveRankingBasis(
     initialOvercharge: selection.initialOvercharge,
     levelSource: selection.levelBasis,
     npSource: selection.npLevelBasis.kind,
-  };
+  });
 }
 
 export function rankingInitialOcOptions(selection: RankingSelection): readonly (1 | 2 | 3)[] {
@@ -146,7 +157,11 @@ export function rankingInitialOcOptions(selection: RankingSelection): readonly (
 }
 
 export class RankingBasisFailure extends TypeError {
-  constructor(readonly reason: 'rankingBuildIncomplete' | 'rankingBuildIdentityMismatch' | 'rankingServantOutsidePopulation', readonly detail = '') {
+  constructor(
+    readonly reason:
+      'rankingBuildIncomplete' | 'rankingBuildIdentityMismatch' | 'rankingServantOutsidePopulation',
+    readonly detail = '',
+  ) {
     super(reason);
   }
 }

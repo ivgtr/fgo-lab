@@ -66,7 +66,6 @@ function renderCalculator(scenario: CalculationScenario, onScenarioChange = vi.f
       onSupportSave={vi.fn()}
       onFinalize={vi.fn()}
       onHistorySelect={vi.fn()}
-      onRegenerateHistory={vi.fn()}
       onResetPortableRequest={vi.fn()}
     />,
   );

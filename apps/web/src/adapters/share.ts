@@ -1,13 +1,6 @@
 import type { CalculationShareSnapshot, UserDataBackup } from '@fgo-lab/schema';
-import {
-  migrateUserDataBackupV40,
-  migrateUserDataBackupV41,
-  parseCalculationShareSnapshot,
-  parseHistoricalCalculationShareSnapshot,
-  parseUserDataBackup,
-  validateHistoricalCalculationIdentities,
-} from '@fgo-lab/schema';
-import { portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
+import { parseCalculationShareSnapshot, parseUserDataBackup } from '@fgo-lab/schema';
+import { validateProfileCollection } from '@fgo-lab/workspace-domain';
 export const MAX_SHARE_FRAGMENT_LENGTH = 16_384;
 export const RESULT_CARD_EXPORT_WIDTH = 560;
 function encode(value: unknown): string {
@@ -26,63 +19,28 @@ function decode(value: string): unknown {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 export function createShareFragment(snapshot: CalculationShareSnapshot): string {
-  const fragment = `share=${encode(snapshot)}`;
+  const fragment = `share=${encode(parseCalculationShareSnapshot(snapshot))}`;
   if (fragment.length > MAX_SHARE_FRAGMENT_LENGTH) throw new RangeError('share_too_large');
   return fragment;
 }
-export function readShareFragment(fragment: string):
-  | CalculationShareSnapshot
-  | {
-      disposition: 'historicalOnly';
-      snapshot: ReturnType<typeof parseHistoricalCalculationShareSnapshot>;
-      raw: unknown;
-    }
-  | null {
+export function readShareFragment(fragment: string): CalculationShareSnapshot | null {
   if (fragment.length > MAX_SHARE_FRAGMENT_LENGTH + 1) throw new RangeError('share_too_large');
   const value = new URLSearchParams(fragment.replace(/^#/, '')).get('share');
-  if (!value) return null;
-  const raw = decode(value);
-  if (
-    typeof raw === 'object' &&
-    raw !== null &&
-    [40,41].includes((raw as Record<string, unknown>)['schemaVersion'] as number)
-  )
-    return { disposition: 'historicalOnly', snapshot: parseHistoricalCalculationShareSnapshot(raw), raw };
-  return parseCalculationShareSnapshot(raw);
+  return value ? parseCalculationShareSnapshot(decode(value)) : null;
 }
-export function exportBackup(backup: UserDataBackup): string {
-  return JSON.stringify(backup, null, 2);
+export async function exportBackup(backup: UserDataBackup): Promise<string> {
+  const parsed = parseUserDataBackup(backup);
+  await validateProfileCollection(parsed.profiles, digestProfileRequest);
+  return JSON.stringify(parsed, null, 2);
 }
-export function importBackup(text: string, maxBytes = 5_000_000): UserDataBackup {
+export async function importBackup(text: string, maxBytes = 5_000_000): Promise<UserDataBackup> {
   if (new Blob([text]).size > maxBytes) throw new RangeError('backup_too_large');
-  return parseUserDataBackup(JSON.parse(text));
-}
-
-export async function importBackupWithMigration(
-  text: string,
-  maxBytes = 5_000_000,
-): Promise<UserDataBackup> {
-  if (new Blob([text]).size > maxBytes) throw new RangeError('backup_too_large');
-  const value: unknown = JSON.parse(text);
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as Record<string, unknown>)['schemaVersion'] === 40
-  )
-    return migrateUserDataBackupV40(value, (request) =>
-      portableCalculationFingerprint(request, async (data) =>
-        crypto.subtle.digest('SHA-256', new Uint8Array(data)),
-      ),
-    );
-  if (typeof value === 'object' && value !== null && (value as Record<string,unknown>)['schemaVersion'] === 41)
-    return migrateUserDataBackupV41(value,(request)=>portableCalculationFingerprint(request,async(data)=>crypto.subtle.digest('SHA-256',new Uint8Array(data))));
-  const backup = parseUserDataBackup(value);
-  await validateHistoricalCalculationIdentities(backup.profiles, (request) =>
-    portableCalculationFingerprint(request, async (data) =>
-      crypto.subtle.digest('SHA-256', new Uint8Array(data)),
-    ),
-  );
+  const backup = parseUserDataBackup(JSON.parse(text));
+  await validateProfileCollection(backup.profiles, digestProfileRequest);
   return backup;
+}
+function digestProfileRequest(data: Uint8Array): Promise<ArrayBuffer> {
+  return crypto.subtle.digest('SHA-256', new Uint8Array(data));
 }
 
 async function blobDataUrl(blob: Blob): Promise<string> {

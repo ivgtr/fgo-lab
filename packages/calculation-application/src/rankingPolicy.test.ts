@@ -9,7 +9,10 @@ import {
   type RankingProfileInput,
 } from './rankingContracts';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
-import { calculateRankingPolicyMatrix } from './rankingPolicyMatrix';
+import {
+  calculateRankingPolicyMatrix,
+  type RankingPolicyMatrixConditions,
+} from './rankingPolicyMatrix';
 import { calculateScenarioWithPolicy } from './scenario';
 import { selectRankingCandidateIndexes } from './rankingCandidateSelection';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
@@ -158,7 +161,8 @@ describe('ranking comparison policy', () => {
   });
 
   it('uses five complete policy executions as the canonical NP matrix oracle', () => {
-    const conditions: Omit<RankingPolicyConditions, 'npLevelBasis'> = {
+    const conditions: RankingPolicyMatrixConditions = {
+      growthBasis: 'common',
       initialOvercharge: 1,
       population: DEFAULT_RANKING_POLICY_CONDITIONS.population,
       levelBasis: DEFAULT_RANKING_POLICY_CONDITIONS.levelBasis,

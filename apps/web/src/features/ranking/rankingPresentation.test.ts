@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { RankingRowSummary } from '@fgo-lab/calculation-application';
+import {
+  DEFAULT_RANKING_POLICY_CONDITIONS,
+  type RankingRowSummary,
+} from '@fgo-lab/calculation-application';
 import { countChangedRankingConditions, filterAndRankRows } from './rankingPresentation';
 import { DEFAULT_RANKING_URL_STATE } from './rankingState';
 
@@ -122,7 +125,7 @@ describe('ranking presentation', () => {
     expect(countChangedRankingConditions(DEFAULT_RANKING_URL_STATE.conditions!)).toBe(0);
     expect(
       countChangedRankingConditions({
-        ...DEFAULT_RANKING_URL_STATE.conditions!,
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
         npLevelBasis: { kind: 'specified', npLevel: 5 },
         conditionalEffects: 'satisfied',
       }),

@@ -6,15 +6,13 @@ import {
   validateMasterSnapshot,
 } from '@fgo-lab/master-data';
 import type { ProfileCollection } from '@fgo-lab/schema';
-import {
-  migrateStoredProfileCollectionV40,
-  migrateStoredProfileCollectionV41,
-  parseStoredProfileCollection,
-  profileCollectionSchema,
-  validateHistoricalCalculationIdentities,
-} from '@fgo-lab/schema';
-import { portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
-import type { ProfileRepository } from '@fgo-lab/profile-domain';
+import { profileCollectionSchema } from '@fgo-lab/schema';
+import { canonicalize, validateProfileCollection } from '@fgo-lab/workspace-domain';
+import type {
+  ProfileRepository,
+  ProfileWriteOptions,
+  ProfileWriteResult,
+} from '@fgo-lab/profile-domain';
 
 interface LabDb extends DBSchema {
   meta: { key: string; value: unknown };
@@ -34,64 +32,106 @@ function database() {
   }));
 }
 export class IndexedDbProfileRepository implements ProfileRepository {
+  async clear() {
+    await (await database()).clear('user');
+  }
   async load() {
     const db = await database();
     const value = await db.get('user', 'profiles');
     if (value === undefined) return { state: 'empty' as const };
-    const stored = await (async () => {
-      try {
-        if (
-          typeof value === 'object' &&
-          value !== null &&
-          (value as Record<string, unknown>)['schemaVersion'] === 40
-        ) {
-          const collection = await migrateStoredProfileCollectionV40(value, (request) =>
-            portableCalculationFingerprint(request, async (data) =>
-              crypto.subtle.digest('SHA-256', new Uint8Array(data)),
-            ),
-          );
-          return { collection, upgraded: true, discardedCalculationSnapshots: false };
-        }
-        if (typeof value === 'object' && value !== null && (value as Record<string,unknown>)['schemaVersion'] === 41) {
-          const collection = await migrateStoredProfileCollectionV41(value, (request)=>portableCalculationFingerprint(request,async(data)=>crypto.subtle.digest('SHA-256',new Uint8Array(data))));
-          return {collection,upgraded:true,discardedCalculationSnapshots:false};
-        }
-        const parsed = parseStoredProfileCollection(value);
-        await validateHistoricalCalculationIdentities(parsed.collection, (request) =>
-          portableCalculationFingerprint(request, async (data) =>
-            crypto.subtle.digest('SHA-256', new Uint8Array(data)),
-          ),
-        );
-        return parsed;
-      } catch {
-        return null;
-      }
-    })();
-    if (!stored) return { state: 'invalid' as const, reason: 'profile_parse_failed' as const };
-    if (stored.upgraded) await this.replaceAtomicallyWithBackup(stored.collection);
-    return {
-      state: 'ready' as const,
-      collection: stored.collection,
-      discardedCalculationSnapshots: stored.discardedCalculationSnapshots,
-    };
+    try {
+      const collection = await validateProfileCollection(value, digestProfileRequest);
+      return { state: 'ready' as const, collection };
+    } catch {
+      return { state: 'invalid' as const, reason: 'profile_parse_failed' as const };
+    }
   }
-  async replace(collection: ProfileCollection) {
-    await (await database()).put('user', profileCollectionSchema.parse(collection), 'profiles');
-  }
-  async replaceAtomicallyWithBackup(collection: ProfileCollection) {
+  async replace(
+    collection: ProfileCollection,
+    options: ProfileWriteOptions = {},
+  ): Promise<ProfileWriteResult> {
+    const isCurrent = () =>
+      !options.guard || (!options.guard.signal.aborted && options.guard.isCurrent());
+    if (!isCurrent()) return { status: 'aborted', reason: 'stale' };
+    const parsed = await validateProfileCollection(collection, digestProfileRequest);
     const db = await database();
-    const parsed = profileCollectionSchema.parse(collection);
-    await db.put('staging', parsed, 'profiles-v42');
-    const staged = profileCollectionSchema.parse(await db.get('staging', 'profiles-v42'));
-    const transaction = db.transaction(['user', 'staging', 'meta'], 'readwrite');
-    const original = await transaction.objectStore('user').get('profiles');
-    if (original !== undefined)
-      await transaction.objectStore('meta').put(original, 'profiles-before-v42-switch');
-    await transaction.objectStore('user').put(staged, 'profiles');
-    await transaction.objectStore('staging').delete('profiles-v42');
-    await transaction.done;
+    if (!isCurrent()) return { status: 'aborted', reason: 'stale' };
+    const stageKey = 'profiles/' + crypto.randomUUID();
+    const transaction = db.transaction(
+      options.backup ? ['user', 'staging', 'meta'] : ['user'],
+      'readwrite',
+    );
+    void transaction.done.catch(() => undefined);
+    const stale = new Error('profile_write_stale');
+    const abort = () => {
+      try {
+        transaction.abort();
+      } catch {
+        /* Commit or abort has already completed. */
+      }
+    };
+    const requireCurrent = () => {
+      if (!isCurrent()) throw stale;
+    };
+    options.guard?.signal.addEventListener('abort', abort, { once: true });
+    try {
+      requireCurrent();
+      if (options.requireEmpty) {
+        const original = await transaction.objectStore('user').get('profiles');
+        requireCurrent();
+        if (original !== undefined) throw stale;
+      }
+      let staged = parsed;
+      if (options.backup) {
+        await transaction.objectStore('staging').put(parsed, stageKey);
+        requireCurrent();
+        staged = profileCollectionSchema.parse(
+          await transaction.objectStore('staging').get(stageKey),
+        );
+        requireCurrent();
+        if (canonicalize(staged) !== canonicalize(parsed))
+          throw new TypeError('profile_staging_identity_mismatch');
+        const original = await transaction.objectStore('user').get('profiles');
+        requireCurrent();
+        if (original !== undefined) {
+          await transaction.objectStore('meta').put(original, 'profiles-before-v42-switch');
+          requireCurrent();
+        }
+      }
+      await transaction.objectStore('user').put(staged, 'profiles');
+      requireCurrent();
+      if (options.backup) {
+        await transaction.objectStore('staging').delete(stageKey);
+        requireCurrent();
+      }
+      await transaction.done;
+      return { status: 'committed' };
+    } catch (cause) {
+      abort();
+      await transaction.done.catch(() => undefined);
+      if (
+        cause === stale ||
+        (options.guard?.signal.aborted &&
+          cause instanceof DOMException &&
+          cause.name === 'AbortError')
+      )
+        return { status: 'aborted', reason: 'stale' };
+      throw cause;
+    } finally {
+      options.guard?.signal.removeEventListener('abort', abort);
+    }
+  }
+  async replaceAtomicallyWithBackup(
+    collection: ProfileCollection,
+    options: Omit<ProfileWriteOptions, 'backup'> = {},
+  ) {
+    return this.replace(collection, { ...options, backup: true });
   }
 }
+function digestProfileRequest(data: Uint8Array): Promise<ArrayBuffer> {
+  return crypto.subtle.digest('SHA-256', new Uint8Array(data));
+}
+
 export interface ActiveMaster {
   manifest: MasterManifest;
   snapshot: MasterDataSnapshot;
@@ -283,7 +323,4 @@ function requiredMasterFile(manifest: MasterManifest) {
 
 function findRequiredMasterFile(manifest: MasterManifest) {
   return manifest.files.find((file) => file.key === 'master' && file.required);
-}
-export async function clearUserData(): Promise<void> {
-  await (await database()).clear('user');
 }

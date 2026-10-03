@@ -104,7 +104,6 @@ export function Calculator({
   onSupportSave,
   onFinalize,
   onHistorySelect,
-  onRegenerateHistory,
   onResetPortableRequest,
   resetPending,
   resetError,
@@ -133,9 +132,6 @@ export function Calculator({
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
   onFinalize: () => Promise<void>;
   onHistorySelect: (entry: CurrentCalculationHistoryEntry) => Promise<void>;
-  onRegenerateHistory: (
-    entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
-  ) => Promise<void>;
   onResetPortableRequest: () => Promise<void>;
   resetPending?: boolean | undefined;
   resetError?: string | undefined;
@@ -1414,7 +1410,7 @@ export function Calculator({
             {history.length ? (
               <ul className="calculation-history-list">
                 {[...history].reverse().map((entry) => {
-                  const scenario = 'request' in entry ? entry.request.scenario : entry.scenario;
+                  const scenario = entry.request.scenario;
                   const attackerId =
                     scenario.mode === 'manual'
                       ? scenario.manual.attackerId
@@ -1432,10 +1428,8 @@ export function Calculator({
                     <li key={entry.historyId}>
                       <button
                         type="button"
-                        disabled={!('request' in entry) && !servant}
                         onClick={() => {
-                          if ('request' in entry) void onHistorySelect(entry);
-                          else void onRegenerateHistory(entry);
+                          void onHistorySelect(entry);
                           setHistoryDialogOpen(false);
                         }}
                       >
@@ -1443,7 +1437,6 @@ export function Calculator({
                           <strong>{servant?.name ?? attackerId}</strong>
                           <small>
                             NP{npLevel}・{new Date(entry.lastUsedAt).toLocaleString('ja-JP')}
-                            {'request' in entry ? '' : '・旧版履歴（現在の仕様で新規作成）'}
                           </small>
                         </span>
                         <span>

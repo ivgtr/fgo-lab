@@ -49,7 +49,7 @@ export function HomeRoute({
   const selectedAttacker =
     master.servants.find(({ id }) => id === selectedAttackerId) ?? defaultServant;
   const selectedBuild = profile.servantBuilds[selectedAttacker.id];
-  const result = calculation.historical ? undefined : execution?.result;
+  const result = execution?.result;
 
   return (
     <Home

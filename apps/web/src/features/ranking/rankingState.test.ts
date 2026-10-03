@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from '@fgo-lab/calculation-application';
 import {
   DEFAULT_RANKING_URL_STATE,
   parseRankingUrlState,
@@ -10,7 +11,7 @@ describe('ranking URL state', () => {
     const state = {
       ...DEFAULT_RANKING_URL_STATE,
       conditions: {
-        ...DEFAULT_RANKING_URL_STATE.conditions!,
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
         initialOvercharge: 3 as const,
         population: 'owned' as const,
         npLevelBasis: { kind: 'specified' as const, npLevel: 5 as const },

@@ -33,13 +33,13 @@ const profiles = createProfileCollection(
   { next: () => '00000000-0000-4000-8000-000000000001' },
 );
 const profilesRepository: ProfileRepository = {
+  clear: () => Promise.resolve(),
   load: () =>
     Promise.resolve({
       state: 'ready',
       collection: profiles,
-      discardedCalculationSnapshots: false,
     }),
-  replace: () => Promise.resolve(),
+  replace: () => Promise.resolve({ status: 'committed' }),
 };
 
 describe('startup master delivery', () => {

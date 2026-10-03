@@ -119,8 +119,8 @@ const contributionPolicySchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('calculator') }),
   z.object({
     kind: z.literal('ranking'),
-    selfBuffs: rankingSelectionSchema.shape.selfBuffs,
-    conditionalEffects: rankingSelectionSchema.shape.conditionalEffects,
+    selfBuffs: rankingSelectionSchema.options[0].shape.selfBuffs,
+    conditionalEffects: rankingSelectionSchema.options[0].shape.conditionalEffects,
     areaView: z.enum(['included', 'excluded']),
   }),
 ]);

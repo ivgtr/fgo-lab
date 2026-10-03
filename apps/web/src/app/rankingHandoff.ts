@@ -35,6 +35,8 @@ export async function handoffRankingCalculation({
   mutationToken?: number;
 }) {
   const activeMutationToken = mutationToken ?? calculationMutation.begin();
+  if (!calculationMutation.isCurrent(activeMutationToken))
+    return { status: 'aborted' as const, reason: 'stale' as const };
   const request = createRankingPortableRequest(detail, currentCalculationVersionContext(master));
   const outcome = executePortableCalculation(request, master);
   const result =
@@ -51,11 +53,17 @@ export async function handoffRankingCalculation({
     setCalculation,
     mutationToken: activeMutationToken,
     isCurrent: calculationMutation.isCurrent,
+    signal: calculationMutation.signalFor(activeMutationToken),
   });
-  if (!committed || !calculationMutation.isCurrent(activeMutationToken)) return outcome;
+  if (
+    committed.status !== 'committed' ||
+    !committed.published ||
+    !calculationMutation.isCurrent(activeMutationToken)
+  )
+    return { ...outcome, persistence: committed };
   setCalculationSessionId(sessionId);
   replaceRoute('calculate');
-  return outcome;
+  return { ...outcome, persistence: committed };
 }
 
 export async function handoffRankingAttackProfileCalculation({
@@ -82,6 +90,8 @@ export async function handoffRankingAttackProfileCalculation({
   mutationToken?: number;
 }) {
   const activeMutationToken = mutationToken ?? calculationMutation.begin();
+  if (!calculationMutation.isCurrent(activeMutationToken))
+    return { status: 'aborted' as const, reason: 'stale' as const };
   const servant = master.servants.find(({ id }) => id === servantId);
   if (!servant) return null;
   let request;
@@ -110,9 +120,15 @@ export async function handoffRankingAttackProfileCalculation({
     setCalculation,
     mutationToken: activeMutationToken,
     isCurrent: calculationMutation.isCurrent,
+    signal: calculationMutation.signalFor(activeMutationToken),
   });
-  if (!committed || !calculationMutation.isCurrent(activeMutationToken)) return outcome;
+  if (
+    committed.status !== 'committed' ||
+    !committed.published ||
+    !calculationMutation.isCurrent(activeMutationToken)
+  )
+    return { ...outcome, persistence: committed };
   setCalculationSessionId(sessionId);
   replaceRoute('calculate');
-  return outcome;
+  return { ...outcome, persistence: committed };
 }

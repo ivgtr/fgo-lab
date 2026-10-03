@@ -58,7 +58,9 @@ export function CalculationContextNotice(props: CalculationContextNoticeProps) {
                 ? props.upgradeAttempt.failure.reason
                 : '現在のエンジンではこの計算条件を実行できません'}
             </p>
-            <VersionMetadata request={props.upgradeAttempt.attemptedRequest} />
+            {props.upgradeAttempt.attemptedRequest && (
+              <VersionMetadata request={props.upgradeAttempt.attemptedRequest} />
+            )}
             <p>元の履歴値を保持しています。条件を確認して再試行できます。</p>
           </div>
         )}

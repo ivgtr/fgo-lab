@@ -66,12 +66,12 @@ const readCurrentShare = (fragment: string): CalculationShareSnapshot => {
 };
 
 describe('portable input limits', () => {
-  it('rejects oversized backups before schema use', () =>
-    expect(() => importBackup('x'.repeat(101), 100)).toThrow('backup_too_large'));
-  it('rejects a servant identity mismatch at the backup import boundary', () => {
+  it('rejects oversized backups before schema use', async () =>
+    await expect(importBackup('x'.repeat(101), 100)).rejects.toThrow('backup_too_large'));
+  it('rejects a servant identity mismatch at the backup import boundary', async () => {
     const profileId = '00000000-0000-4000-8000-000000000047';
     const timestamp = '2026-09-05T00:00:00.000Z';
-    expect(() =>
+    await expect(
       importBackup(
         JSON.stringify({
           kind: 'fgo-lab-user-backup',
@@ -109,7 +109,7 @@ describe('portable input limits', () => {
           },
         }),
       ),
-    ).toThrow(/servant_record_identity_mismatch/);
+    ).rejects.toThrow(/servant_record_identity_mismatch/);
   });
   it('keeps a bounded URL limit large enough for traced proc scenarios', () =>
     expect(MAX_SHARE_FRAGMENT_LENGTH).toBe(16_384));

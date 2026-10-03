@@ -1,8 +1,8 @@
-import type {
-  CalculationResult,
-  LocalProfile,
-  PortableCalculationRequest,
-  PortableCalculationRequestV40,
+import type { CalculationResult, LocalProfile, PortableCalculationRequest } from '@fgo-lab/schema';
+import {
+  portableCalculationRequestSchema,
+  profileCollectionSchema,
+  type ProfileCollection,
 } from '@fgo-lab/schema';
 
 export function canonicalize(value: unknown): string {
@@ -14,12 +14,29 @@ export function canonicalize(value: unknown): string {
     .join(',')}}`;
 }
 export async function portableCalculationFingerprint(
-  request: PortableCalculationRequest | PortableCalculationRequestV40,
+  request: PortableCalculationRequest,
   digest: (data: Uint8Array) => Promise<ArrayBuffer>,
 ): Promise<string> {
-  const bytes = new TextEncoder().encode(canonicalize(request));
+  const parsed = portableCalculationRequestSchema.parse(request);
+  const bytes = new TextEncoder().encode(canonicalize(parsed));
   const hash = new Uint8Array(await digest(bytes));
   return [...hash].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+export async function validateProfileCollection(
+  value: unknown,
+  digest: (data: Uint8Array) => Promise<ArrayBuffer>,
+): Promise<ProfileCollection> {
+  const collection = profileCollectionSchema.parse(value);
+  for (const profile of collection.profiles) {
+    const snapshots = profile.draft ? [profile.draft, ...profile.history] : profile.history;
+    for (const snapshot of snapshots) {
+      const fingerprint = await portableCalculationFingerprint(snapshot.request, digest);
+      if (fingerprint !== snapshot.requestFingerprint)
+        throw new TypeError('calculation_request_fingerprint_mismatch');
+    }
+  }
+  return collection;
 }
 export interface FinalizeHistoryCommand {
   sessionId: string;
@@ -35,11 +52,10 @@ export function finalizeHistory(
 ): LocalProfile {
   if (command.result.status !== 'calculated') return profile;
   const sessionIndex = profile.history.findIndex(
-    (entry) => !('disposition' in entry) && entry.calculationSessionId === command.sessionId,
+    (entry) => entry.calculationSessionId === command.sessionId,
   );
   if (sessionIndex >= 0) {
     const existing = profile.history[sessionIndex]!;
-    if ('disposition' in existing) throw new TypeError('historical_calculation_is_immutable');
     const updated = {
       ...existing,
       request: command.request,
@@ -59,11 +75,7 @@ export function finalizeHistory(
     };
   }
   const previous = profile.history.at(-1);
-  if (
-    previous &&
-    !('disposition' in previous) &&
-    previous.requestFingerprint === command.fingerprint
-  ) {
+  if (previous && previous.requestFingerprint === command.fingerprint) {
     const history = [
       ...profile.history.slice(0, -1),
       {

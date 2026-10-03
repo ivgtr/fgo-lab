@@ -38,6 +38,7 @@ export function Ranking({
   versions,
   onOpenCalculator,
   onOpenCalculatorForAttackProfile,
+  onComparisonChange,
   onReload,
   onEditSavedBuild,
 }: {
@@ -49,6 +50,7 @@ export function Ranking({
     servantId: string;
     attackProfile: AttackProfile;
   }) => void;
+  onComparisonChange?: () => void;
   onReload?: () => void;
   onEditSavedBuild?: () => void;
 }) {
@@ -57,6 +59,20 @@ export function Ranking({
   const rankingStatusRef = useRef<HTMLParagraphElement>(null);
   const focusStatusAfterResetRef = useRef(false);
   const ranking = useRanking({ master, profile, conditions: urlState.conditions, versions });
+  useLayoutEffect(() => {
+    onComparisonChange?.();
+  }, [
+    onComparisonChange,
+    urlState.conditions,
+    master,
+    profile.servantBuilds,
+    versions.schemaVersion,
+    versions.masterDataVersion,
+    versions.engineVersion,
+    versions.appVersion,
+    versions.gameRegion,
+    versions.masterDataLocale,
+  ]);
   const rows = useMemo(
     () => filterAndRankRows(ranking.rows, urlState.filters, urlState.metric),
     [ranking.rows, urlState.filters, urlState.metric],
@@ -204,7 +220,11 @@ export function Ranking({
                       {rankingExclusionRecoveryLabel(exclusion.recovery)}
                     </button>
                   ) : exclusion.recovery.kind === 'editSavedBuild' ? (
-                    <button type="button" aria-describedby={descriptionIds} onClick={onEditSavedBuild}>
+                    <button
+                      type="button"
+                      aria-describedby={descriptionIds}
+                      onClick={onEditSavedBuild}
+                    >
                       {rankingExclusionRecoveryLabel(exclusion.recovery)}
                     </button>
                   ) : exclusion.recovery.kind === 'resetRankingConditions' ? (

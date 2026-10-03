@@ -27,6 +27,7 @@ export function RankingRoute({
 }) {
   return (
     <Ranking
+      onComparisonChange={calculationMutation.begin}
       onEditSavedBuild={() => replaceRoute('servants')}
       master={master}
       profile={{

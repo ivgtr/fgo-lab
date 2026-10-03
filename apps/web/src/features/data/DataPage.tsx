@@ -1,26 +1,29 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   APP_VERSION,
   SCHEMA_VERSION,
   type ProfileCollection,
   type UserDataBackup,
 } from '@fgo-lab/schema';
-import { clearUserData } from '../../adapters/repository';
-import { exportBackup, importBackupWithMigration } from '../../adapters/share';
+import { exportBackup, importBackup } from '../../adapters/share';
 import './data.css';
 
 export function DataPage({
   profiles,
   masterVersion,
   onImport,
+  onClear,
 }: {
   profiles: ProfileCollection;
   masterVersion: string;
   onImport: (profiles: ProfileCollection) => Promise<void>;
+  onClear: () => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
+  const previewEpoch = useRef(0);
+  const [importPending, setImportPending] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<UserDataBackup>();
-  const [preImportBackupSaved, setPreImportBackupSaved] = useState(false);
+  const [preImportBackupSaved, setPreImportBackupSaved] = useState<ProfileCollection>();
   const backup = useMemo<UserDataBackup>(
     () => ({
       kind: 'fgo-lab-user-backup',
@@ -31,17 +34,22 @@ export function DataPage({
     }),
     [profiles],
   );
-  function downloadBackup(value: UserDataBackup, filename: string) {
-    const url = URL.createObjectURL(new Blob([exportBackup(value)], { type: 'application/json' }));
+  async function downloadBackup(value: UserDataBackup, filename: string) {
+    const text = await exportBackup(value);
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
   }
-  function download() {
-    downloadBackup(backup, 'fgo-lab-backup.json');
-    setMessage('バックアップを保存しました');
+  async function download() {
+    try {
+      await downloadBackup(backup, 'fgo-lab-backup.json');
+      setMessage('バックアップを保存しました');
+    } catch {
+      setMessage('バックアップを保存できませんでした。保存データは変更していません。');
+    }
   }
   const importCounts = pendingBackup
     ? pendingBackup.profiles.profiles.reduce(
@@ -67,7 +75,7 @@ export function DataPage({
           <dd>{SCHEMA_VERSION}</dd>
         </div>
       </dl>
-      <button className="primary" onClick={download}>
+      <button className="primary" onClick={() => void download()}>
         全データをバックアップ
       </button>
       <label className="file">
@@ -75,18 +83,25 @@ export function DataPage({
         <input
           type="file"
           accept="application/json"
+          disabled={importPending}
           onChange={(event) => {
+            const epoch = ++previewEpoch.current;
+            setPendingBackup(undefined);
+            setPreImportBackupSaved(undefined);
             const file = event.target.files?.[0];
             if (file)
               void file
                 .text()
                 .then(async (text) => {
-                  const parsed = await importBackupWithMigration(text);
+                  const parsed = await importBackup(text);
+                  if (previewEpoch.current !== epoch) return;
                   setPendingBackup(parsed);
-                  setPreImportBackupSaved(false);
+                  setPreImportBackupSaved(undefined);
                   setMessage('形式を検証しました。内容と全置換を確認してください。');
                 })
-                .catch(() => setMessage('復元できませんでした'));
+                .catch(() => {
+                  if (previewEpoch.current === epoch) setMessage('復元できませんでした');
+                });
           }}
         />
       </label>
@@ -100,32 +115,57 @@ export function DataPage({
             {importCounts.history}件
           </p>
           <p>現在の全ユーザーデータを置き換えます。マスターデータは変更しません。</p>
+          {preImportBackupSaved && preImportBackupSaved !== profiles && (
+            <p>保存データが変わりました。復元前バックアップをもう一度保存してください。</p>
+          )}
           <div className="toolbar">
             <button
               onClick={() => {
-                downloadBackup(backup, 'fgo-lab-before-import.json');
-                setPreImportBackupSaved(true);
-                setMessage('復元前バックアップを保存しました');
+                const epoch = previewEpoch.current;
+                void downloadBackup(backup, 'fgo-lab-before-import.json')
+                  .then(() => {
+                    if (previewEpoch.current !== epoch) return;
+                    setPreImportBackupSaved(backup.profiles);
+                    setMessage('復元前バックアップを保存しました');
+                  })
+                  .catch(() => {
+                    if (previewEpoch.current !== epoch) return;
+                    setPreImportBackupSaved(undefined);
+                    setMessage(
+                      '復元前バックアップを保存できませんでした。保存データは変更していません。',
+                    );
+                  });
               }}
             >
               復元前バックアップを保存
             </button>
             <button
               className="danger"
-              disabled={!preImportBackupSaved}
+              disabled={preImportBackupSaved !== profiles || importPending}
               onClick={() => {
+                setImportPending(true);
                 void onImport(pendingBackup.profiles)
                   .then(() => {
                     setPendingBackup(undefined);
-                    setPreImportBackupSaved(false);
+                    setPreImportBackupSaved(undefined);
                     setMessage('検証済みデータへ全置換しました');
                   })
-                  .catch(() => setMessage('復元に失敗しました。元データは維持されています。'));
+                  .catch(() => setMessage('復元に失敗しました。元データは維持されています。'))
+                  .finally(() => setImportPending(false));
               }}
             >
               全置換を実行
             </button>
-            <button onClick={() => setPendingBackup(undefined)}>キャンセル</button>
+            <button
+              disabled={importPending}
+              onClick={() => {
+                previewEpoch.current += 1;
+                setPendingBackup(undefined);
+                setPreImportBackupSaved(undefined);
+              }}
+            >
+              キャンセル
+            </button>
           </div>
         </section>
       )}
@@ -133,7 +173,7 @@ export function DataPage({
         className="danger"
         onClick={() => {
           if (confirm('全ユーザーデータを削除しますか？ マスターデータは残ります。'))
-            void clearUserData().then(() => location.reload());
+            void onClear().catch(() => setMessage('削除処理に失敗しました。'));
         }}
       >
         全ユーザーデータを削除

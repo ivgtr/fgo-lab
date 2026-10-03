@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { createHash } from 'node:crypto';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Home } from '../features/home/Home';
@@ -11,11 +10,6 @@ import {
   createDefaultCalculatorPortableRequest,
   executePortableCalculation,
 } from '@fgo-lab/calculation-application';
-import {
-  historicalCalculationDraftV40Schema,
-  portableCalculationRequestV40Schema,
-} from '@fgo-lab/schema';
-import { portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
 
 afterEach(cleanup);
 
@@ -40,7 +34,7 @@ describe('HomeRoute damage headline', () => {
   });
 });
 
-it('does not present a historical draft as the current damage headline', async () => {
+it('does not present a current-format unavailable-engine pair as the current damage headline', () => {
   const master = masterSnapshotSchema.parse(fixture);
   const profile = createProfileCollection(
     'test',
@@ -51,45 +45,23 @@ it('does not present a historical draft as the current damage headline', async (
   if (current.scenario.mode !== 'resolved') throw new Error('resolved fixture required');
   const outcome = executePortableCalculation(current, master);
   if (outcome.status !== 'executed') throw new Error('executable fixture required');
-  const { schemaVersion, ...oldVersionContext } = current.versionContext;
-  const { enemyDefenseBuff, initialBattlePointPoints, ...oldScenario } = current.scenario;
-  expect(schemaVersion).toBe(41);
-  expect(enemyDefenseBuff).toBe(0);
-  expect(initialBattlePointPoints).toEqual({});
-  const oldRequest = portableCalculationRequestV40Schema.parse({
+  const request = {
     ...current,
-    versionContext: oldVersionContext,
-    scenario: oldScenario,
-  });
-  const raw = {
-    profileId: profile.profileId,
-    calculationSessionId: profile.profileId,
-    request: oldRequest,
-    result: {
-      ...outcome.execution.result,
-      versions: { ...outcome.execution.result.versions, schemaVersion: 40 },
-    },
-    requestFingerprint: await portableCalculationFingerprint(oldRequest, (data) =>
-      Promise.resolve(Uint8Array.from(createHash('sha256').update(data).digest()).buffer),
-    ),
-    updatedAt: '2026-09-25T00:00:00.000Z',
+    versionContext: { ...current.versionContext, engineVersion: 'unavailable-engine' },
   };
-  const historical = historicalCalculationDraftV40Schema.parse({
-    disposition: 'historicalOnly',
-    sourceSchemaVersion: 40,
-    ...raw,
-    scenario: oldScenario,
-    result: raw.result,
-    legacySnapshot: raw,
-  });
+  const result = {
+    ...outcome.execution.result,
+    versions: { ...outcome.execution.result.versions, engineVersion: 'unavailable-engine' },
+  };
   render(
     <HomeRoute
       master={master}
       profile={profile}
-      calculation={{ request: undefined, storedResult: undefined, source: 'draft', historical }}
+      calculation={{ request, storedResult: result, source: 'draft' }}
       navigate={vi.fn()}
     />,
   );
   expect(screen.getByText('新しい計算を始める')).toBeTruthy();
   expect(screen.queryByText('47,344.965')).toBeNull();
+  return Promise.resolve();
 });

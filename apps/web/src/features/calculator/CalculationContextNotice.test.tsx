@@ -6,9 +6,11 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   DEFAULT_RANKING_POLICY_CONDITIONS,
   attemptPortableCalculationVersionUpgrade,
+  compileRankingSelection,
   createCalculatorPortableRequest,
   createDefaultResolvedScenario,
   currentCalculationVersionContext,
+  resolveRankingBasis,
 } from '@fgo-lab/calculation-application';
 import {
   APP_VERSION,
@@ -27,6 +29,12 @@ const calculatorRequest = createCalculatorPortableRequest(
   resolvedScenario,
   currentCalculationVersionContext(master),
 );
+const selection = compileRankingSelection({
+  ...DEFAULT_RANKING_POLICY_CONDITIONS,
+  initialOvercharge: 2,
+  npLevelBasis: { kind: 'specified', npLevel: 2 },
+});
+if (selection.status !== 'valid') throw new Error(selection.detail);
 const rankingRequest = portableCalculationRequestSchema.parse({
   ...calculatorRequest,
   scenario: {
@@ -44,14 +52,7 @@ const rankingRequest = portableCalculationRequestSchema.parse({
       selfBuffs: 'excluded' as const,
       conditionalEffects: 'satisfied' as const,
     },
-    basis: {
-      servantId: master.servants[0]!.id,
-      level: resolvedScenario.attacker.level,
-      npLevel: 2,
-      initialOvercharge: 2,
-      levelSource: 'naturalLimit',
-      npSource: 'specified',
-    },
+    basis: resolveRankingBasis(master.servants[0]!, { servantBuilds: {} }, selection.selection),
   },
 });
 const historicalResult: CalculationResult = {
@@ -181,6 +182,54 @@ describe('calculation context recovery presentation', () => {
 
     expect(screen.getByRole('heading', { name: '履歴値・再計算されていません' })).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toContain('元の履歴値を保持しています');
+    fireEvent.click(screen.getByRole('button', { name: '現在のバージョンで再計算' }));
+    expect(onUpgrade).toHaveBeenCalledOnce();
+  });
+
+  it('retains the original metadata and result when the attempted request cannot be constructed', () => {
+    if (
+      rankingRequest.scenario.mode !== 'resolved' ||
+      rankingRequest.executionIntent.kind !== 'ranking'
+    )
+      throw new Error('resolved ranking request required');
+    const retainedRequest = {
+      executionIntent: rankingRequest.executionIntent,
+      versionContext: {
+        schemaVersion: SCHEMA_VERSION,
+        masterDataVersion: historicalResult.versions.masterDataVersion,
+        engineVersion: historicalResult.versions.engineVersion,
+      },
+      scenario: {
+        ...rankingRequest.scenario,
+        attacker: {
+          ...rankingRequest.scenario.attacker,
+          level: rankingRequest.scenario.attacker.level + 1,
+        },
+      },
+    };
+    const attempt = attemptPortableCalculationVersionUpgrade(
+      retainedRequest,
+      historicalResult,
+      currentCalculationVersionContext(master),
+      master,
+    );
+    if (attempt.status !== 'rejected') throw new Error('failed attempt required');
+    expect(attempt.attemptedRequest).toBeNull();
+    expect(attempt.retainedRequest).toBe(retainedRequest);
+    expect(attempt.retainedResult).toBe(historicalResult);
+    const onUpgrade = vi.fn(() => Promise.resolve());
+    render(
+      <CalculationContextNotice
+        state="historicalOnly"
+        request={retainedRequest}
+        result={historicalResult}
+        upgradeAttempt={attempt}
+        onUpgrade={onUpgrade}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('scenarioInvalid');
+    expect(screen.getByRole('alert').textContent).toContain('元の履歴値を保持しています');
+    expect(screen.getAllByText(/マスター old-master ／ エンジン old-engine/)).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: '現在のバージョンで再計算' }));
     expect(onUpgrade).toHaveBeenCalledOnce();
   });

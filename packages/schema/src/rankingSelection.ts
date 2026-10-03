@@ -21,27 +21,13 @@ const selectionShape = {
   selfBuffs: z.enum(['included', 'excluded']),
   conditionalEffects: z.enum(['baseline', 'satisfied']),
 };
-export const rankingSelectionV41Schema = z
-  .object(selectionShape)
-  .strict()
-  .refine(
-    (selection) =>
-      selection.population === 'owned' ||
-      (selection.levelBasis !== 'ownedLevel' && selection.npLevelBasis.kind !== 'owned'),
-    { message: 'ranking_owned_basis_requires_owned_population' },
-  );
 
-export const resolvedRankingBasisV41Schema = z
-  .object({
-    servantId: z.string().min(1),
-    level: z.number().int().min(1).max(120),
-    npLevel: rankingNpLevelSchema,
-    initialOvercharge: initialOverchargeSchema,
-    levelSource: selectionShape.levelBasis,
-    npSource: z.enum(['specified', 'owned']),
-  })
-  .strict();
-
+const resolvedBasisShape = {
+  servantId: z.string().min(1),
+  level: z.number().int().min(1).max(120),
+  npLevel: rankingNpLevelSchema,
+  initialOvercharge: initialOverchargeSchema,
+};
 
 export const rankingGrowthBasisSchema = z.enum(['common', 'saved']);
 export const rankingSkillLevelsSchema = z.partialRecord(
@@ -49,23 +35,49 @@ export const rankingSkillLevelsSchema = z.partialRecord(
   z.number().int().min(1).max(10),
 );
 export const rankingSelectionSchema = z.discriminatedUnion('growthBasis', [
-  z.object({ ...selectionShape, growthBasis: z.literal('common') }).strict().refine(
-    (selection) => selection.population === 'owned' ||
-      (selection.levelBasis !== 'ownedLevel' && selection.npLevelBasis.kind !== 'owned'),
-    { message: 'ranking_owned_basis_requires_owned_population' },
-  ),
-  z.object({
-    ...selectionShape,
-    growthBasis: z.literal('saved'),
-    population: z.literal('owned'),
-    levelBasis: z.literal('ownedLevel'),
-    npLevelBasis: z.object({ kind: z.literal('owned') }).strict(),
-  }).strict(),
+  z
+    .object({ ...selectionShape, growthBasis: z.literal('common') })
+    .strict()
+    .refine(
+      (selection) =>
+        selection.population === 'owned' ||
+        (selection.levelBasis !== 'ownedLevel' && selection.npLevelBasis.kind !== 'owned'),
+      { message: 'ranking_owned_basis_requires_owned_population' },
+    ),
+  z
+    .object({
+      ...selectionShape,
+      growthBasis: z.literal('saved'),
+      population: z.literal('owned'),
+      levelBasis: z.literal('ownedLevel'),
+      npLevelBasis: z.object({ kind: z.literal('owned') }).strict(),
+    })
+    .strict(),
 ]);
 export type RankingSelection = z.infer<typeof rankingSelectionSchema>;
-export const resolvedRankingBasisSchema = resolvedRankingBasisV41Schema.extend({
-  growthBasis: rankingGrowthBasisSchema,
-  fouAtk: z.number().int().min(0).max(3000),
-  skillLevels: rankingSkillLevelsSchema,
-}).strict();
+export const resolvedRankingBasisSchema = z.discriminatedUnion('growthBasis', [
+  z
+    .object({
+      ...resolvedBasisShape,
+      growthBasis: z.literal('common'),
+      levelSource: selectionShape.levelBasis,
+      npSource: z.enum(['specified', 'owned']),
+      fouAtk: z.literal(1000),
+      skillLevels: rankingSkillLevelsSchema.refine(
+        (levels) => Object.values(levels).every((level) => level === 10),
+        { message: 'ranking_common_skill_level_must_be_ten' },
+      ),
+    })
+    .strict(),
+  z
+    .object({
+      ...resolvedBasisShape,
+      growthBasis: z.literal('saved'),
+      levelSource: z.literal('ownedLevel'),
+      npSource: z.literal('owned'),
+      fouAtk: z.number().int().min(0).max(3000),
+      skillLevels: rankingSkillLevelsSchema,
+    })
+    .strict(),
+]);
 export type ResolvedRankingBasis = z.infer<typeof resolvedRankingBasisSchema>;

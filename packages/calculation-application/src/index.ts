@@ -34,7 +34,6 @@ export * from './rankingBasis';
 
 export { initialOcOptions, changeResolvedNpLevel, changeResolvedInitialOc } from './initialOc';
 export { rankingInitialOcOptions } from './rankingBasis';
-export { regenerateHistoricalCalculatorRequest } from './portableCalculation';
 export {
   isConsistentNpOcUseReceipt,
   type AppliedPreparationAction,

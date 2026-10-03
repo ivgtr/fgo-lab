@@ -123,6 +123,7 @@ const withoutAction: StaticRankingPreparationProgram = {
   sourceUses: [],
 };
 const baseline: RankingPolicyConditions = {
+  growthBasis: 'common',
   classAffinity: 'neutral',
   population: 'all',
   initialOvercharge: 1,

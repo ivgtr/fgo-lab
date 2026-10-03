@@ -1,5 +1,5 @@
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
-import type { VersionContext } from '@fgo-lab/schema';
+import { rankingSelectionSchema, type VersionContext } from '@fgo-lab/schema';
 import type {
   RankingPolicyCalculation,
   RankingPolicyConditions,
@@ -7,7 +7,10 @@ import type {
 } from './rankingContracts';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
 
-const NP_LEVELS = [1, 2, 3, 4, 5] as const;
+export type RankingPolicyMatrixConditions = Omit<
+  Extract<RankingPolicyConditions, { growthBasis: 'common' }>,
+  'npLevelBasis'
+>;
 
 export type RankingPolicyCalculationMatrix = readonly [
   RankingPolicyCalculation,
@@ -26,15 +29,16 @@ export type RankingPolicyCalculationMatrix = readonly [
 export function calculateRankingPolicyMatrix(
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
-  conditions: Omit<RankingPolicyConditions, 'npLevelBasis'>,
+  conditions: RankingPolicyMatrixConditions,
   versions: VersionContext,
 ): RankingPolicyCalculationMatrix {
-  return NP_LEVELS.map((npLevel) =>
+  rankingSelectionSchema.options[0].shape.growthBasis.parse(conditions.growthBasis);
+  const calculate = (npLevel: 1 | 2 | 3 | 4 | 5) =>
     calculateRankingPolicy(
       master,
       profile,
       { ...conditions, npLevelBasis: { kind: 'specified', npLevel } },
       versions,
-    ),
-  ) as unknown as RankingPolicyCalculationMatrix;
+    );
+  return [calculate(1), calculate(2), calculate(3), calculate(4), calculate(5)];
 }

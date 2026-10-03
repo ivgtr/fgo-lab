@@ -6,11 +6,13 @@ import type {
   PortableCalculationRequest,
 } from '@fgo-lab/schema';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { createHash } from 'node:crypto';
 import {
   canonicalize,
   filterRanking,
   finalizeHistory,
   portableCalculationFingerprint,
+  validateProfileCollection,
 } from './index';
 
 const scenario = {
@@ -154,10 +156,10 @@ describe('workspace derivations', () => {
           initialActorFormId: { actorId: '1', limitCount: 0 },
           source: 'master' as const,
           level: 90,
-          npLevel: 1,
+          npLevel: 2,
           fouAtk: 1000,
         },
-        initialOvercharge: 1 as const,
+        initialOvercharge: 2 as const,
         targetContext: {
           class: { kind: 'relative' as const, relation: 'neutral' as const },
           attribute: { kind: 'relative' as const, relation: 'neutral' as const },
@@ -179,19 +181,23 @@ describe('workspace derivations', () => {
       executionIntent: {
         kind: 'ranking' as const,
         basis: {
-          initialOvercharge: 1 as const,
+          initialOvercharge: 2 as const,
+          growthBasis: 'common' as const,
+          fouAtk: 1000 as const,
+          skillLevels: {},
           servantId: '1',
           level: 90,
-          npLevel: 1 as const,
+          npLevel: 2 as const,
           levelSource: 'uniformLevel90' as const,
           npSource: 'specified' as const,
         },
         initialNpGauge: 20_000,
         policy: {
-          initialOvercharge: 1 as const,
+          initialOvercharge: 2 as const,
+          growthBasis: 'common' as const,
           population: 'all' as const,
           levelBasis: 'uniformLevel90' as const,
-          npLevelBasis: { kind: 'specified' as const, npLevel: 1 as const },
+          npLevelBasis: { kind: 'specified' as const, npLevel: 2 as const },
           classAffinity: 'neutral' as const,
           selfBuffs: 'excluded' as const,
           conditionalEffects: 'satisfied' as const,
@@ -202,7 +208,21 @@ describe('workspace derivations', () => {
     const differentGauge = await portableCalculationFingerprint(
       {
         ...resolvedRequest,
-        executionIntent: { ...resolvedRequest.executionIntent, initialNpGauge: 10_000 },
+        scenario: {
+          ...resolvedRequest.scenario,
+          initialOvercharge: 1,
+          attacker: { ...resolvedRequest.scenario.attacker, npLevel: 1 },
+        },
+        executionIntent: {
+          ...resolvedRequest.executionIntent,
+          initialNpGauge: 10_000,
+          basis: { ...resolvedRequest.executionIntent.basis, initialOvercharge: 1, npLevel: 1 },
+          policy: {
+            ...resolvedRequest.executionIntent.policy,
+            initialOvercharge: 1,
+            npLevelBasis: { kind: 'specified', npLevel: 1 },
+          },
+        },
       },
       digest,
     );
@@ -275,5 +295,107 @@ describe('workspace derivations', () => {
         historyId: '00000000-0000-4000-8000-000000000020',
       }).history,
     ).toEqual([]);
+  });
+});
+
+describe('current persisted calculation identity', () => {
+  const digest = (data: Uint8Array) =>
+    Promise.resolve(new Uint8Array(createHash('sha256').update(data).digest()).buffer);
+  async function collection() {
+    const owner = profile();
+    const snapshot = {
+      profileId: owner.profileId,
+      calculationSessionId: '00000000-0000-4000-8000-000000000010',
+      request,
+      result: calculatedResult,
+      requestFingerprint: await portableCalculationFingerprint(request, digest),
+      updatedAt: owner.updatedAt,
+    };
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      activeProfileId: owner.profileId,
+      profiles: [
+        {
+          ...owner,
+          draft: snapshot,
+          history: [
+            {
+              ...snapshot,
+              historyId: '00000000-0000-4000-8000-000000000011',
+              finalizedAt: owner.updatedAt,
+              lastUsedAt: owner.updatedAt,
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  it('preserves draft and history values and fingerprints through a JSON roundtrip', async () => {
+    const original = await collection();
+    expect(await validateProfileCollection(JSON.parse(JSON.stringify(original)), digest)).toEqual(
+      original,
+    );
+  });
+
+  it.each([
+    'missingActive',
+    'duplicateProfile',
+    'draftOwner',
+    'historyOwner',
+    'draftHash',
+    'historyHash',
+    'duplicateHistory',
+    'unknownField',
+  ] as const)('rejects %s without mutating the supplied collection', async (fault) => {
+    const value = await collection();
+    const owner = value.profiles[0]!;
+    switch (fault) {
+      case 'missingActive':
+        value.activeProfileId = '00000000-0000-4000-8000-000000000099';
+        break;
+      case 'duplicateProfile':
+        value.profiles.push(structuredClone(owner));
+        break;
+      case 'draftOwner':
+        owner.draft.profileId = '00000000-0000-4000-8000-000000000099';
+        break;
+      case 'historyOwner':
+        owner.history[0]!.profileId = '00000000-0000-4000-8000-000000000099';
+        break;
+      case 'draftHash':
+        owner.draft.requestFingerprint = 'a'.repeat(64);
+        break;
+      case 'historyHash':
+        owner.history[0]!.requestFingerprint = 'b'.repeat(64);
+        break;
+      case 'duplicateHistory':
+        owner.history.push(structuredClone(owner.history[0]!));
+        break;
+      case 'unknownField':
+        Object.assign(owner.draft.request.scenario, { unknown: 1 });
+        break;
+    }
+    const retained = structuredClone(value);
+    await expect(validateProfileCollection(value, digest)).rejects.toThrow();
+    expect(value).toEqual(retained);
+  });
+
+  it('rejects explicit undefined before invoking the hash provider', async () => {
+    const invalid = {
+      ...request,
+      scenario: { mode: 'manual', manual: { ...scenario.manual, defenseBuff: undefined } },
+    };
+    let calls = 0;
+    const hash = async (data: Uint8Array) => {
+      calls++;
+      return digest(data);
+    };
+    await expect(
+      portableCalculationFingerprint(invalid as unknown as PortableCalculationRequest, hash),
+    ).rejects.toThrow('explicit_undefined_not_allowed');
+    expect(calls).toBe(0);
+    expect(Object.hasOwn(invalid.scenario.manual, 'defenseBuff')).toBe(true);
+    expect(invalid.scenario.manual.defenseBuff).toBeUndefined();
   });
 });

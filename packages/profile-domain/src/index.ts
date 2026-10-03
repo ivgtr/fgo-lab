@@ -23,12 +23,22 @@ export type ProfileLoadResult =
   | {
       state: 'ready';
       collection: ProfileCollection;
-      discardedCalculationSnapshots: boolean;
     };
 export interface ProfileRepository {
   load(): Promise<ProfileLoadResult>;
-  replace(collection: ProfileCollection): Promise<void>;
+  clear(): Promise<void>;
+  replace(
+    collection: ProfileCollection,
+    options?: ProfileWriteOptions,
+  ): Promise<ProfileWriteResult>;
 }
+export type ProfileWriteGuard = { isCurrent: () => boolean; signal: AbortSignal };
+export type ProfileWriteOptions = {
+  guard?: ProfileWriteGuard;
+  backup?: boolean;
+  requireEmpty?: boolean;
+};
+export type ProfileWriteResult = { status: 'committed' } | { status: 'aborted'; reason: 'stale' };
 
 export function createProfileCollection(
   name: string,
