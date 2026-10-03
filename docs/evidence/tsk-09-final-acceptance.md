@@ -1,6 +1,6 @@
 ---
 title: "TSK-09 final acceptance and contributor operations"
-document_version: "1.0.8"
+document_version: "1.0.10"
 status: "Active"
 updated_at: "2026-10-03"
 ---
@@ -8,6 +8,10 @@ updated_at: "2026-10-03"
 # TSK-09 final acceptance and contributor operations
 
 ## 判定・開始identity
+
+現行の受入範囲: 本書の最終受入はテスト戦略・ranking・開発実行効率の再設計契約（TS10／RK27／DX8）の範囲を所有する。product §13とUI全画面のR1受入を一律に証明するものではない。[TSK-11の範囲照合](../tasks/development-redesign-tasks.md#tsk-11-既存最終受入の範囲照合と残条件の確定)で育成素材の確認済み未達とranking正本記述差を確定したため、R1全体受入は未成立。下の歴史受入・固定identity・既存検証結果は元の範囲で維持し、失敗へ書き換えず今回のfresh成功にも読み替えない。詳細finding・対応先・今回の検証と最終判定はTSK-11が所有する。
+
+2026-10-03の[ranking最終製品判断§20](../requirements/ranking-self-and-conditional-effects-requirements.md#20-2026-10-03の最終製品判断)と[TSK-13の実装差調査](../tasks/development-redesign-tasks.md#tsk-13-ranking最終製品判断と改修前調査)は、本書の旧RK27受入後に追加された契約である。保存Fou／skill比較と新しい通常寄与の受入へ本書を拡張せず、実装・正本収束はTSK-14で閉じる。
 
 TSK-09を未commit成果として最終受入した。全Checklist8／Done gate6／Apply6成立、対象内Blocking0。完全診断transportを既存writer／reader／verifierへ収束し、固定差分のcanonical pnpm qualityは親exit0・全10step・unit1605／production157／E2E29成功、warning／skip／retry／unexpected observation／親子receipt error0。結果正本は本書だけ、Task／registryは本書を参照する。現在pointerは `.test-results/tsk-09-transport-20261002/manifest.json`、最終quality／source橋渡しは同namespaceの `resume-20261003/`。前受入とENOSPC／SIGTERM途中失敗は固定履歴で保持し、子成功を当時の全体成功へ昇格していない。保持判断は[09.1台帳](tsk-09-1-documentation-closure.md#step-2-保持契約の収束)が所有する。
 

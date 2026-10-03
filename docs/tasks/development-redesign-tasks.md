@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.186"
+document_version: "1.7.188"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-03"
@@ -75,6 +75,10 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-09.13 | 旧bundle非依存確認・廃棄条件確定 | done | TSK-09.12 | 旧bundle不使用方針／A3保持必要性と能力損失の再判断 |
 | TSK-09 | 最終受入と運用手順の収束 | done | TSK-09.1 | test strategy T5／全完了条件 |
 | TSK-10 | CI入力ライフサイクルの設計と運用収束 | done | TSK-09 | test strategy §9／§12、execution efficiency §4／§7 |
+| TSK-11 | 既存最終受入の範囲照合と残条件の確定 | done | TSK-10 | product R1／§13、UI育成受入、既存TSK-09／10証拠 |
+| TSK-12 | 確認済みR1育成未達の収束 | ready | TSK-11 | R11-GROWTH、product育成契約／UI §17〜18 |
+| TSK-13 | Ranking最終製品判断と改修前調査 | done | TSK-11 | ranking §20、R11-DOCの再判断、現コードの直接経路 |
+| TSK-14 | Ranking最終方針の実装と正本収束 | ready | TSK-13 | ranking §20、TSK-13の実装差・局所受入条件 |
 
 ```text
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
@@ -85,6 +89,8 @@ TSK-06.46 -> TSK-06.48（TSK-06.47／TSK-06.5とは独立したpackage convergen
 TSK-09.11 -> TSK-09.12（09.1 STEP 2完了後の旧bundle処遇判断。調査はdone、物理処遇は未実施）
 TSK-09.12 -> TSK-09.13（done: 非依存・全廃棄条件確定、物理処遇未実施）-> TSK-09.1 STEP 3〜6 -> TSK-09（移管・物理削除を一律の依存にしない）
 TSK-09 -> TSK-10（将来の入力更新・取得・保持を既存ownerへ収束）
+TSK-10 -> TSK-11 -> TSK-12（育成未達。rankingとは独立）
+TSK-11 -> TSK-13（最終製品判断・改修前調査）-> TSK-14（ranking実装・正本収束）
 ```
 
 ## 3. Tasks
@@ -3089,6 +3095,214 @@ Handoff: 2026-10-03、TSK-10 done。現行判断・有限inventory・全6Checkli
 Commit追補（2026-10-03、利用者のcommit指示）: 成果commitは `75937fec366b16676386a37aaf7951e3d0ee98d1`（6source／入力宣言＋4文書）。commit直前に859source・namespace receipt参照・10fileのbinary diffを最終受入identityと照合し、staged diffも完全一致。成果treeは受入済みsource／入力と同一で、quality1607／157／29と結果docsゲートの証拠を継承する。上の未commit／stage空／実装commitなし／履歴増加0は最終受入時点の履歴であり、この追補でcommit済みへ更新する。raw宣言の新Git blobは論理1083 bytes、旧820 bytesは履歴に残り、gzip2件に新blob追加なし。コード・文書blobは別増加、pack／deltaの物理増加は未測定。追補は結果文書だけなので明示書式と `pnpm test:docs` で閉じ、製品quality・全matrix等を繰り返さない。次sessionの開始HEADは本追補を含む最新commitを `git rev-parse HEAD` で確認し、成果commitのtreeと本Handoffを照合する。Task一覧は全件done／ready0／in_progress0で、後続Task・製品目的は未定義。次の依頼は現コード・直接consumerと正本から必要性・実装境界・受入方法を計画し、利用者の確認を待つ。push／外部公開・転送／cleanupは行わない。
 
 Handoff（起票時の履歴）: 次Taskの整理としてreadyへ登録した。開始identityはTSK-09 completion commit `6bba3310976287709dd3aabac9d533e4b1dfb4a9`、現在の追加差分は本Taskとregistryの文書だけ。09の局所・性能・最終quality1605／157／29と取得証拠は、source／入力一致の範囲で継承し、新しい更新・hosted CI成功へ昇格しない。次は`git status --short`／`git rev-parse HEAD`→本Task→TSK-09最終Handoff→上表の直接定義・callerから、更新操作で不足する契約と修正境界を確定する。実装開始後は通常の技術判断で継続し、新しい製品判断・保持範囲／取得元の拡張だけ確認する。未着手であり、本TaskのDone gateは未成立。
+
+### TSK-11: 既存最終受入の範囲照合と残条件の確定
+
+Depends on: TSK-10
+
+Current status: `done`（2026-10-03、承認された縮小調査の判定・根拠・次操作と文書gateを完了。R1全体受入は未成立、製品・検査実装の修正は含めない）。
+
+目的は、既存最終受入が現行要件のどの範囲を保証し、何が残るかを確定すること。TSK-09のowner／caller、TS10／RK27／DX8とTSK-10の入力受入表を参照し、同じ表・全経路監査・別報告書を作り直さない。追加コード調査は、読取で差が見つかった育成素材の必須範囲とgrowth生成／ledger／表示の直接経路に限定する。rankingの記述差は現行要件と承認履歴の照合で扱い、具体的反例のないWeb境界再監査は対象外。既存成功を更新するための全matrix／audit／quality・性能再測定・新checkout／install／取得は予定しない。
+
+開始identity: HEAD `6bbde4752beca19b35e2f1afe567bbbd72b34004`、worktree／index clean、全先行Task done・in_progress0。最新commitはTSK-10成果`75937fec366b16676386a37aaf7951e3d0ee98d1`のCommit追補だけ。正式審査で同repository cwdの複数Codex processを確認したが、編集活動は未確定。共有fileの同時変更を検知したらそのidentityの再利用を止め、他session差分を上書きしない。実体のない過去worktree登録3件を入力に使わず整理もしない。
+
+- [x] 縮小した調査の承認範囲・開始identity・並行session観測を記録する。
+- [x] 既存最終受入とproduct／UI必須範囲の対応・保証限界を確定する。
+- [x] 育成素材の生成・集計・直接表示経路と既存testの成立範囲を照合し、必要な具体的反例だけ検証する。
+- [x] findingを症状・発生条件・原因・要件・利用者経路・再発範囲・根拠・次操作へ対応付ける。
+- [x] 調査完了と製品受入を別判定し、必要な対応Task・文書gate・最終差分・Handoffを閉じる。
+
+受入範囲の照合結果:
+
+| 対象 | 判定・成立範囲 | 根拠・次操作 |
+| --- | --- | --- |
+| TSK-09／10の既存受入 | 元の範囲で維持。09はテスト戦略10・ranking27・実行効率8条件の再設計受入、10は有限CI入力lifecycleの受入 | [09の既存対応表](../evidence/tsk-09-final-acceptance.md#checklistdone-gate)と[10のHandoff](#tsk-10-ci入力ライフサイクルの設計と運用収束)を参照。product §13／UI全画面のR1全体受入へ拡張しない |
+| 育成素材の実経路 | Blocking: レベル目標の必要素材が欠落し、管理画面の必要素材表示も未実装 | 下のR11-GROWTH。生成・集計・表示をTSK-12へ対応付ける |
+| ranking記述差 | 確認済み正本不整合。runtime不具合とは未判定 | 下のR11-DOCと再判断追補。旧「3FR行だけの整合」案は採用せず、TSK-13の最終製品判断と実装差調査→TSK-14の実装・正本収束へ対応する |
+| 既存証拠のidentity | 開始HEADは指定どおりclean。計画時にTSK-10変更source・raw宣言／gzip2・published・lock・quality／suite／CIの14pathと既存source map、quality親manifest bytes／SHA、baseline index bytes／SHAを照合して一致 | 859source／全子artifact／80本文を今回全再照合したとはしない。今回のprobe入力・直接sourceと最終Git差分を照合する |
+| 取得・保持・品質の保証限界 | 主repository file transportによる固定baseline受入と外部origin未保証、hosted CI未実証、旧bundle非依存・09.13のHP原内容再監査能力保持解除／物理処遇未実施を維持 | 既存09.1台帳／10 Handoffが正本。今回新checkout／install／取得・削除・能力変更なし |
+| 今回未再監査の経路 | 既存証拠を元の成立範囲で参照。Web境界、全schema-legal state、全ブラウザ／操作性能を今回新しく保証しない | 新しい矛盾・反例・identity不一致がない範囲で追加familyを開始しない。必須R1未達を保証範囲外へ移していない |
+
+R11-GROWTH（確認済みR1未達・製品Blocking）:
+
+- 発生条件・症状: published `20260920.3`の5星Servant `100100`に、他の目標差を作らずLv1→2、90→100、100→120のplanned目標を設定すると、全3入力でledgerが空。目標レベル・plannedは現行schemaのJSON roundtrip後も保持される。同じproduction入力のskill1→2は素材6001×5とQP200000を返す。破損・未所持除外・計画フラグ消失による空集合ではない。
+- 原因・直接経路: `snapshotNormalization.ts::growthSteps`とgrowth組立は再臨／skill／appendだけを生成する。今回一度parseした公開masterのgrowth familyもこの3種類だけ。`profile-domain::calculateGrowthLedger`は`target.level`／`build.level`を読まず、上記stepだけを集計する。`Servants`の目標input／shortcut→`App.updateTarget`→`updateServantTarget`→profile書込queue→`Growth`の同ledgerという直接経路で、保存されたレベル目標を素材へ変換するownerがない。
+- 利用者への影響: `Growth`はledger空を「計画中の育成目標はありません」と表示するため、存在するlevel計画を不存在として案内する。`Servants`は必要素材を表示するprops／render経路を持たず、育成目標tabに必要素材内訳がない。この表示判定はsource確認であり、live browserで実行した観測とは区別する。
+- 要件: product `FR-PLAN-002/003/010/011`、`FR-SVT-010`、UI §17.4／17.5／18.1／18.6。レベル育成の種火・QP、条件に必要な聖杯・コイン等を省略できない。正確な必要個数は本調査で推測せず、現行データ／採用規則で算出する能力が不足していると判定する。
+- 再発範囲: level-onlyの計画、skill／再臨等とlevelを同時に上げる計画のlevel部分、全対象の管理画面必要素材。同じsemantic ownerと直接表示consumerの範囲であり、damage／rankingへ調査を広げない。
+- 検出範囲の差: 既存`profile-domain/src/index.test.ts`の素材検査はskill素材1遷移＋QP、level90→100の別検査は目標値の保存だけ。最終qualityの成功件数からlevel素材の完了を推定できない。実装者の意図は断定しない。
+- 根拠: `.test-results/tsk-11-final-review-20261003/growth-probe.ts`／`growth-probe.json`／完全stdout・stderr。固定master32953998 bytes／SHA `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`、Node26.3.1。実commandとschema roundtrip・実ledgerの局所再現であり、IndexedDB故障試験・live browser・全素材の独立expectedではない。
+- 次操作・受入: TSK-12でpipeline／canonical growth、profile-domain集計、Servants／Growthの責務を閉じる。level-only・通常上限超え・混合計画・計画解除／再on・保存再開を直接経路で確認し、採用規則に基づく素材総数と使用先内訳、実UIを検証する。実装・新データ取得・意味値の採用は本調査では行わない。
+
+R11-DOC（確認済み正本不整合・R1全体受入の未達、runtime障害とは区別）:
+
+- 症状・条件: product `FR-RANK-007`は保存Fou／skill反映、013は旧6条件、018は一騎一行とpowerMod／npSpecial中心を要求する。最新ranking §3〜5／17とUIの比較条件は固定Fou／skill・独立した母集団／Lv／NP・初期OCを含む7入力・AttackProfile単位であり、正本を読み分けると異なる受入条件になる。
+- 原因・承認根拠: ranking revision 0.9.0（2026-09-02）、0.10.0（2026-09-05）、0.10.2（2026-09-06）の明示承認とUI 1.5.0、ADR-028のsource-program判断が後続契約を所有する。productの上記FR行が整合していない。承認済み変更がない、またはruntimeが不具合だとは主張しない。
+- 影響・再発範囲: 初回参照、比較条件・所持値・行identityの実装／レビュー／受入で旧条件を採用する余地。再発範囲はこの3条項と直接参照するproduct／ranking／UI／Taskの対応。その他の条項をこのfindingから一律に再監査しない。
+- 次操作・受入: TSK-12で承認済み意味をproduct FR行へ明示反映し、document governanceのversion／理由／approval retainedの根拠／影響Task／baseline影響を記録する。新しいFou／skill反映や旧6条件・一騎一行へのruntime変更は行わない。
+
+R11-DOC再判断追補（2026-10-03）: 上の原因・3条項・文書だけの整合案は初回調査時の履歴。利用者が現実装との再照合を求め、通常寄与のHP／markerとfieldの扱いの差、accepted ADR-018／020と後続契約の差も確認したため、記述差だけの修正とする判断を撤回した。利用者は共通／保存育成の両比較、通常の自前確定寄与、合法な組合せ・使用順とNP消費後の自前補完、成立込みの単体理想火力を明示した。判断正本は[ranking §20](../requirements/ranking-self-and-conditional-effects-requirements.md#20-2026-10-03の最終製品判断)。対応先は[TSK-13](#tsk-13-ranking最終製品判断と改修前調査)→[TSK-14](#tsk-14-ranking最終方針の実装と正本収束)。初回調査doneと旧証拠の元範囲の成立は維持するが、新方針の実装・受入を成立としない。TSK-12からrankingを分離し、R11-GROWTHを残す。
+
+追加検証の選択: level素材の欠落は既存skill素材test・目標保存testから判定できず、公開masterと実command／schema／ledgerの局所probeを一度実行した（exit0、欠落の再現成功であり製品成功ではない）。他経路の全matrix／audit／quality／reader・merge／E2E・性能計測は、未変更の既存受入を更新する目的では実行しない。文書gateは`pnpm test:docs`28test、103Markdown／44machine evidence／917reference成功。Markdown／metadata YAMLの明示構文parseと新Task区間のtable列数も確認した。done／readyと最終Handoffの記録更新は検査入力の変更なので、最終文書gateで閉じる。同じ製品検証の再実行ではない。
+
+最終判定: 承認された範囲照合・育成追加調査・ranking記述差の判定は完了。製品Blocking R11-GROWTHと正本不整合R11-DOCが未解消のため、R1全体受入は未成立。既存再設計の受入と固定入力・保持境界は元の成立範囲で維持する。製品未達を本調査のN/Aへ移さず、TSK-12へ実施責務と受入条件を明示した。今回の未達修正なし。Apply4件はTask閉鎖・書式／文書gate・完全log／receipt・再開Handoffで確認し、性能1件のN/Aは構造無変更によるもの。新しい全実装の再保証は行っていない。
+
+Done gate:
+
+- 承認した受入範囲照合、育成素材、ranking記述差に判定・根拠・未達条件・次操作があり、未確認と不具合を混同していない。
+- 既存証拠の成立範囲と今回の追加確認を分離し、同条件の成功を反復せず、製品BlockingをN/Aへ移していない。
+- 調査結果を本Taskと既存正本への必要な差分だけに記録し、文書gate・明示書式・最終identity・Handoffが一致する。
+- 本Taskの完了は調査の完了を意味する。必須R1未達が残る場合は製品の全体受入を成立と呼ばず、対応先を明示する。
+
+Flow closure: N/A: canonical state／outcome／実行・書込経路は変更しない。構造的findingの直接経路と反例は体系レビューガイドに従い本Taskへ記録する。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `DOC-CLOSE-001` | Apply | Task matrix／依存／調査と製品判定の照合、`pnpm test:docs` | Handoff |
+| `DOC-LINT-001` | Apply | 明示Markdown／metadata／table／registry照合、`pnpm test:docs` | Handoff |
+| `DX-HANDOFF-001` | Apply | HEAD／差分／index、既存証拠と未達・次操作の照合 | Handoff |
+| `DX-ART-001` | Apply | 必要な追加probe／docsの完全log・入力identity・receipt照合 | Handoff |
+| `TS-PERF-002` | N/A: 構造・workloadを変更しない調査。新しい性能成功を主張しない | - | - |
+
+Handoff: 2026-10-03、TSK-11 done、TSK-12 ready・実装未着手、in_progress0。R11-GROWTH／R11-DOCと次操作の正本は本Task上記finding。製品のR1全体受入は未成立、既存09／10の元範囲の受入は維持。HEAD `6bbde4752beca19b35e2f1afe567bbbd72b34004`・index空、未commit成果は本Tasks／docs registry／09受入正本への範囲注記の3文書だけ。局所再現は一度、最終文書検査は同namespaceの `final-docs.stdout.log`／`final-docs.stderr.log`、書式は`format.json`、source・diff・exit・artifact receiptの橋渡しは`manifest.json`。失敗の場合は本Taskを未完了へ戻し原因を記録する。新namespaceのownerはTSK-11、用途は局所反例・文書gate・identity照合、参照期間は調査と対応受入で使用する間、終了後は残るconsumerを確認して既存policyで処遇する。補助`growth-probe.ts`は固有反例の再開用で、この参照期間だけ保持し恒久helperへ採用しない。保存入力・expected・全run保持を増やさず、HP原gzip7907911／復元90441915 bytes、固定baseline `dd1a0ebc8723e8b12a2f75a7ab3256b8dc33b5a4`の取得元境界と09.13保持解除／物理処遇未実施を維持。原物・旧directory・raw exports・Local-only資料、commit／push・外部公開／転送・cleanupなし。Next command: `git status --short`／`git rev-parse HEAD`→本findingとmanifestを照合し、修正依頼を受けた場合にTSK-12の生成・集計・表示責務と必要入力を確定する。必要な修正をN/Aへ移しておらず、調査doneと製品Blocking解消を同じ条件にしない。
+
+### TSK-12: 確認済みR1育成未達の収束
+
+Depends on: TSK-11
+
+Current status: `ready`（R11-GROWTHの対応先。実装未着手、修正は今回の承認範囲外。R11-DOCは最終製品判断に基づきTSK-13／14へ分離）。
+
+- [ ] R11-GROWTHの生成・canonical growth・集計・管理／計画画面を、現行product／UI契約と固定入力に基づいて閉じる。
+- [ ] 変更に必要な局所反証、採用規則による素材総数・使用先内訳、保存復元と実UI、構造変更時の同条件前後3process、差分レビュー・最終quality・正本／Handoffを閉じる。
+
+Done gate:
+
+- R11-GROWTHが根拠付きで解消し、必要なlevel素材・管理画面表示をN/Aへ移していない。R11-DOCの対応先はTSK-13／14であり、本Taskの成功へ含めない。
+- 既存のdamage／ranking／expected／母集団／timeout／cap／ratchet・保持／取得元の契約を維持し、変更が必要な場合は明示判断を得ている。
+- 最終差分の必須gateと正本が一致する。全R1の未調査範囲まで修正成功から保証しない。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `DOC-CLOSE-001` | Apply | 未達と修正責務・局所受入・最終gateの対応、Task matrix照合 | Handoff |
+| `DOC-REV-001` | Apply | 育成契約の改訂が必要な場合のversion／理由／承認／影響／baseline対応の照合 | Handoff |
+| `DOC-LINT-001` | Apply | 明示書式と`pnpm test:docs` | Handoff |
+| `TS-QUAL-001` | Apply | 必要な局所反証・差分レビュー後、固定差分の`pnpm quality` | Handoff |
+| `TS-PERF-002` | Apply | 変更した構造の同環境・入力・workload前後各3process、未変更経路は一致証拠継承 | Handoff |
+| `DX-HANDOFF-001` | Apply | source／入力／差分／有効証拠・保証限界・次操作の照合 | Handoff |
+
+Handoff: 起票のみ。findingの正本と再現入力は[TSK-11](#tsk-11-既存最終受入の範囲照合と残条件の確定)。2026-10-03のranking再判断により本Taskは育成へ限定し、ranking対応はTSK-13／14へ移した。R11-GROWTHの修正責務と受入を決め、実装依頼を受けてから着手する。新しい製品判断・取得元／保持拡張・能力損失は技術判断へ含めず確認する。原物・raw exports・旧directory・Local-only資料は変更しない。次操作はHEAD／差分／indexとTSK-11の最終Handoffを照合し、育成未達の修正範囲と必要入力を確定すること。今回このTaskの実装・test・install・取得・commit／pushは行わない。
+
+### TSK-13: Ranking最終製品判断と改修前調査
+
+Depends on: TSK-11
+
+Current status: `done`（2026-10-03、承認済み最終製品判断・有限6項目の実装事実／改修点・受入設計を記録。製品コード修正は対象外、ranking新方針の実装受入は未成立）。
+
+目的: [ranking §20](../requirements/ranking-self-and-conditional-effects-requirements.md#20-2026-10-03の最終製品判断)の承認済み製品判断を起点に、現コードの実装事実、共通原因、改修責務と最小受入条件を確定する。過去Taskのdone／数値一致を新方針の実装完了へ読み替えず、意味論の正本を本Taskへ複製しない。
+
+開始identity: HEAD `6bbde4752beca19b35e2f1afe567bbbd72b34004`、index空。既存未commit差分はTSK-11のTasks／registry／09受入注記3文書。in_progress0から本Task一件だけを開始する。正式権限審査で同repository cwdの複数Codex processを確認し、編集活動は未確定。source／入力の開始18pathと既存文書差分を `.test-results/tsk-13-ranking-decision-20261003/start.json` に固定した。commit禁止の利用者指示を優先し、開始commitは作らない。
+
+- [x] 利用者の最終製品判断と通常／理想・保存育成・合法NP経路をranking要件の新versionへ記録し、旧文書だけの整合案と対応先を更新する。
+- [x] 有限な直接経路を比較基準、通常寄与、候補／NP、UI／worker、保存／handoff、正本伝播へ対応付ける。
+- [x] 実装済み・新方針との差・未確認を分け、共通原因と改修owner、必要な局所反証・統合／性能／最終gateを確定する。
+- [x] 既存証拠の再利用範囲、新しい入力／identity／期待値に必要な差分検証を明記し、後続実装Taskへ渡す。
+- [x] 明示Markdown／metadata／表／参照と `pnpm test:docs`、最終source／差分／index、Handoffを閉じる。
+
+調査inventory: (1) schema／profile→basis→scenario／source command、(2) field／state／marker／HPの通常寄与分類、(3) ordered skill組合せ・NP消費／自前補完・候補admission、(4) UI control／URL→worker context／fingerprint、(5) detail→portable→calculator→draft／history／share／backup、(6) product／UI／ranking／ADR／Taskと既存evidenceの成立範囲。damage式・raw再解釈・全matrix／audit／quality再実行・growth・新戦闘機能・install／取得元／保持能力変更は対象外。
+
+実装事実と改修点（2026-10-03、上記6項目の判定）:
+
+| ID／判定 | 現実装の定義・直接経路 | 改修owner・次操作／受入 |
+| --- | --- | --- |
+| I1／新方針の未実装をsourceで確認 | `schema::servantBuildSchema`はLv・再臨・NP・Fou・skills・appendsを保持するが、`rankingSelection`／`ResolvedRankingBasis`は母集団／Lv／NP／OCだけ。`rankingBasis::resolveRankingBasis`→`rankingPolicy::createRankingBaseScenario`はFou1000を固定し、`rankingStaticPreparation::skillCommands`はskill Lv10を固定する。`rankingBasis.test.ts`も保存Fou2000・skills1/2/3から固定1000／10になる旧契約を検査する | schema／calculation-application。明示的な保存育成basisを一度解決し、同じ値をscenarioと全ordered skill commandへ束縛する。既存の共通・Lv／NP選択能力を維持する。欠落skill slotを既定Lv1へ補わず、`skills:{}`等のschema-legal入力、NP0、欠落build、profile map identityを拒否／修復へ結ぶ |
+| I2／通常寄与・admissionの新方針との差をsourceで確認。数値影響の全件再現は未実施 | `rankingCandidateSpace::compileRankingCandidateSpaces`→`rankingActionAdmission::classifyPrograms/optionalAdmission`は通常actionにintrinsic／無条件の直接寄与またはresource関連性を要求する。executionの`effectiveContributions::hpExecutionDependency`は実行後HP・既知markerを分類上alwaysへ置くがfieldは残す。`contributionPolicyDecisions`→`contributionIsIncluded`／`contribution`と`ocSourceBinding::bindOcSourceOperation`へ到達し、同じ判定がdamageとOC sourceを変える。外部target／fieldは`conditionSemantics::classifyContributionCondition`でconditionalのまま | applicationの候補admissionとexecutionの寄与owner。自前で確定した生成→解除→readと外部仮定を区別し、HP／marker／fieldの個別例外へ増殖させず、実execution結果から同じ採用規則へ収束する。純field生成・target状態生成、HP cost、nested all/any/not、確率由来、自己buffなし、解除／失敗／partial rollback、OC間接寄与を反証する。単にtrueになった条件を全部通常へ入れない |
+| I3／合法組合せ・NP補完の土台は既存。指定例は局所実経路で確認 | `compileStaticRankingPreparationPrograms`はsubset／使用順／player choiceと形態別profileを列挙する。`compileRankingCandidateSpaces`がbasisの開始NP・capacity・自前sourceを`ocGaugeDependencies`／`ocRelevantSourceIndexes`へ渡し、resource関連skillをadmitする。`preparationTransaction::planPreparationResourceTransaction`がaction使用時点のrequirementと順序付き資源更新を共通executorで処理する | 資源処理を作り直さない。保存skill Lvをbindした際にNP回復量・costのcell選択とadmissionも同じ値であることを確認する。消費→回復成功、逆順のcapacity clip、回復前の使用条件不足、回復だけのskill、形態別source非混成、全候補失敗、stochastic回復、rollbackを局所反証する |
+| I4／transport土台は既存、新basisは未実装 | `RankingConditions`→`applyRankingSelectionCommand`→`rankingState::parseRankingUrlState`は現7項目。`RankingRoute`は保存buildをworkerへ渡す。`useRanking`はbuild全体をprofile context identityへ含め、`rankingConditionsFingerprint`は7選択をkey化し、workerはsummary成功1件／detail0件。profile変更でworker contextとactive detailを破棄する | Web／schema／application。保存育成の明示control・command・URL・worker request・fingerprintを同じschemaへ結ぶ。profile編集後の再計算、共通⇔保存切替、非法URL／worker、NP／OC修復、stale summary/detail、表示filterだけでは再計算しない実UIを確認する。理想火力の説明文は追加しない |
+| I5／固定条件への検証が新basisを拒否する。保存容器と同一結果handoffは既存 | `RankingRoute`→`rankingHandoff::handoffRankingCalculation`→`createRankingPortableRequest`→`executePortableCalculation`→`commitPortableDraft`。`rankingPortableBasis::validatePinnedRankingBasis`はsource master・Fou1000・全skill10を必須にし、constructorで保存値を入れるだけでは実行できない。requestはscenarioとranking policy／basisを保存し、profileの後日変更とは独立してreplayする | schema／application／Web direct writer。比較basisに応じて保存した実使用値を検証し、改竄・version／capacity不一致を拒否する。draft／history／share／backup／fingerprint／明示version再計算の既存portable consumerへ新identityを伝播する。未変更の保存容器を新設せず、保存後profile変化・restore後も同じrequest値を再現する |
+| I6／旧正本・旧証拠との範囲差を確認 | product FR-RANK-004/007/011/012/013/018、UI §12／受入、ranking §4〜7／11.5の旧6-field表／§17、accepted ADR-018／020は意味・入力・自前条件の扱いが混在する。TSK-09のRK27、06.5／08の80条件・34600parityは旧比較／寄与契約の証拠であり、保存Fou／skillと新通常採用規則を証明しない | TSK-14でproduct／UI／rankingの新versionとADRの有効判断・歴史本文・superseded導線を整合する。TSK-13はranking §20とContract改訂・今回の対応先だけを所有する。古い本文や固定machine evidenceを新判断に書き換えず、旧条件からの意図的damage差と変わらないshared executionを分けて記録する |
+
+保存育成の保証限界: `ServantBuild`にはascension／appendsが存在するが、現scenarioのdefault constructorはascension／appendsを読まず、現pipelineのappend参照はgrowth material生成だけ。published masterにはactive skill／passiveと形態graphがあるが、保存append Lvをdamageへ結ぶ専用IR／command経路を今回確認できていない。単に保存fieldがあることを反映能力の証拠としない。TSK-14は少なくとも§20のLv・NP・Fou ATK・active skill反映を閉じ、再臨／形態への束縛とappend影響は採用IR・必要入力・直接経路を確定してから扱う。未保存HP Fou editor、別raw取得、append戦闘機能等の新製品／取得判断が必要なら確認する。現在の再臨／appendの保存・編集能力は削除しない。
+
+オルガマリーの局所観測: `.test-results/tsk-13-ranking-decision-20261003/olga-source.json` は公開master `20260920.3`／32953998 bytes／SHA `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`のNP sourceと形態graphを抽出した記録で、raw再監査・実計算ではない。`olga-probe.ts`はこの全masterを一度parseし、明示した診断用owned build一件で母集団を限定して実`calculateRankingPolicy`を一度呼ぶ。共通自然上限90／指定NP1／初期OC1／自己buffあり／通常で2profileともcalculated。第1・第2再臨の採用順はskill1→3→2→攻撃NP、gaugeは10000→10000→0→10000→0、NP1平均27261.025。第3再臨はskill1→攻撃NP、平均17849.775。形態ごとの異なるskill2の回復を混ぜていない。両portable replayは `isDeepStrictEqual` によりresultの値が一致した。live browser、全policy／NP／保存skill、新通常寄与規則の実装受入とは区別する。
+
+診断履歴: 初回probeは補助scriptの相対importが一段上を指し、application実行前にexit1。pathを訂正した次runはexit0だったが、JSON文字列のproperty順まで比較してreplay不一致と観測した。診断を値の構造比較へ修正して確認した第3runはexit0・両一致、文字列順だけは不一致。前runの完全stdout／stderrとJSONを残し、実製品不具合へ分類しない。再実行開始時にsandbox `/tmp/.git`のENOSPCで起動不能となり、正式審査で `/tmp` tmpfs 9.8GiB使用／空き0、repo側625GiB空き・inode空きを確認した。同じsource／入力／loaderの正式権限実行で第3runを完了した。Node26.3.1／既存tsx loaderのDEP0205警告を完全stderrへ保持し、製品quality warning0と主張しない。権限拒否・設定修復・cleanupは行っていない。
+
+受入設計・既存証拠の再利用:
+
+- 検証済みの資源transaction・使用順探索・AttackProfile非混成・portable保存容器・bounded cacheは同じ定義／入力の範囲で再利用する。保存skillのbindingと通常寄与が変わる部分には新しい期待結果が必要で、旧quality件数・parity成功だけでは閉じない。
+- 先にI1〜I5の代表経路と小さい独立期待値を接続する。共通／保存（Fou0/2000、skill1/10、slot欠落）、自前field／target marker／HP、外部条件／確率、NP消費→回復と逆順clip、保存後profile変更／URL repair／stale／portable復元を選ぶ。小fixtureは意味論の反証用で、production全入力の代替にしない。
+- productionは変更ownerから影響inventoryを抽出し、旧／新のdamage・outcome・candidate差を全件説明する。共通の寄与／candidate変更が複数policyやaggregate baseline consumerへ到達する場合、または影響範囲を限定するproofがない場合は対応する全matrix（必要なら既存80条件）を実行する。未変更の全auditや原HP再監査は一律に再実行しない。
+- 構造変更時は同環境・入力・workloadの前後各3processでrankingを比較する。reader／merge／producerを変更した場合は各workloadを別に測り、同一process診断を独立測定へ代用しない。候補数・damage requestと最大4096のcertificateを維持し、cap／timeout／ratchetを緩和して閉じない。
+- 対象内Blocking、必要な局所反証と差分レビュー後に差分を固定し、最終 `pnpm quality` を実行する。本Taskはコード／実行設定を変更しないため、全quality／matrix／audit／E2E／性能の成功を新しく主張せず、明示書式とdocs gateで閉じる。
+
+Done gate:
+
+- 最終製品判断の正本が一意で、調査inventoryにsource定義・直接caller、判定、改修owner、根拠、次操作がある。
+- 未検証の製品挙動を確認済み不具合へ変換せず、既存証拠を新方針の受入へ拡張していない。
+- 改修と受入の責務がTSK-14へ具体的に渡り、必要な製品未達をN/Aへ移していない。
+- 文書gateと最終差分が一致する。本Task doneは決定・調査の完了であり、ranking新方針／R1製品受入の成立ではない。
+
+Flow closure: N/A: runtime／canonical state／outcome／保存書込経路は変更しない。体系レビューガイドの直接owner／caller、alternate path、repair／restore、schema-legal反証の選択を調査結果へ対応付け、実行の未確認はTSK-14の受入へ残す。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `DOC-REV-001` | Apply | ranking version／§20承認・理由・影響Task／baseline影響と旧対応先の照合 | Handoff |
+| `DOC-CLOSE-001` | Apply | 有限inventory／判定／改修owner／局所受入／Task依存の照合 | Handoff |
+| `DOC-LINT-001` | Apply | 明示Markdown／metadata／表／registryと `pnpm test:docs` | Handoff |
+| `DX-HANDOFF-001` | Apply | source／入力／差分／index、有効証拠・保証限界・次操作の照合 | Handoff |
+| `DX-ART-001` | Apply | docs完全log・source／diff identity・receipt照合 | Handoff |
+| `TS-QUAL-001` | N/A: 文書・読取調査のみ。新ranking runtimeの成功を主張しない | - | - |
+| `TS-PERF-002` | N/A: 構造／workloadを変更しない。改修時の比較条件をTSK-14へ渡す | - | - |
+
+Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新方針の未実装、sourceで確認した差、実挙動未確認を分けて確定した。新方針／R1製品受入は未成立。TSK-14をreadyへ渡し、実装依頼後にこのinventoryの未達から着手する。TSK-12はgrowthだけを所有する。HEADは開始版のまま、index空、変更はranking要件／Task／registry／09受入注記の4文書、開始記録の製品source／固定入力14pathはbytes／SHA一致。Markdown／YAMLの既存parserと新表列数の明示確認は `format.json`、docs gateは28 tests・103 Markdown／44 machine evidence／927 references成功。終了状態記録後の最終docs gateは `final-docs.stdout.log`／`final-docs.stderr.log`、最終diffとsource／入力／artifact identityは `final.patch`／`manifest.json` に固定する。コード変更なしのため全quality／matrix／audit／性能を再実行しない。
+
+新namespace `.test-results/tsk-13-ranking-decision-20261003/` のownerはTSK-13。用途は開始／最終identity、公開masterの限定source抽出、現実経路probeと失敗診断、文書gate。補助probeは一時的な調査codeで恒久採用せず、原raw／expectedの新入力や既存全runの保持も新設しない。参照期間は本調査と後続改修の受入で参照する間、参照終了後は残るconsumerを確認して既存policyで処遇する。docs実行は空き0のsystem `/tmp` に代えて、command単位の `TMPDIR` を同namespaceの `tmp/` へ指定した。これは新しい合成docs fixtureの一時置場だけで、product／raw／baselineの保存先やsystem設定を変更しない。正式権限審査で実行し、拒否迂回・cleanup／原物移動／旧directory変更／commit／pushは行わない。
+
+### TSK-14: Ranking最終方針の実装と正本収束
+
+Depends on: TSK-13
+
+Current status: `ready`（TSK-13の実装事実・改修境界・受入条件を受領。起票のみ、実装未承認／未着手）。
+
+- [ ] ranking §20とTSK-13の実装差に基づき、共通／保存育成basisと通常／理想の候補・寄与を共通application／executionへ接続する。
+- [ ] UI／URL／worker／portable／保存復元／入力修復を同じidentityへ収束し、既存選択能力とcalculator parityを維持する。
+- [ ] product／UI／ranking本文とaccepted ADRの有効範囲を新version／判断へ整合し、古い意味を履歴として辿れるようにする。
+- [ ] 対象内Blocking、局所反証・差分レビュー、必要な対象production／同条件前後3process、固定差分の最終quality／docsとHandoffを閉じる。
+
+Done gate:
+
+- TSK-13で確定した新方針との差が解消し、両比較・自前確定寄与・合法なNP補完が利用者の直接経路で成立する。
+- 保存値不足・不正state・未知semantics・部分適用・stale結果を数値fallbackせず、schema-legalな反例と保存／再開を検証する。
+- damage差はcanonical input・ordered plan・governing ruleで説明し、期待値の再生成だけを修正としない。能力損失・新製品判断・取得元／保持拡張は明示確認する。
+- 必要な局所gate・性能・最終quality／docs・正本・Handoffが同じ最終差分に一致する。全R1の未調査範囲を成功へ拡張しない。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-IR-001` | Apply | 保存basis・condition／resourceのtyped input、direct producer／consumer照合 | Handoff |
+| `RK-EXEC-001` | Apply | 合法使用順・NP消費／回復／容量・途中拒否／rollbackの局所反証 | Handoff |
+| `RK-POLICY-001` | Apply | 通常自前確定／理想・自己buff二値の寄与／admission・最大候補反証 | Handoff |
+| `RK-UI-001` | Apply | 共通／保存control、URL／worker、invalid修復・実UI | Handoff |
+| `RK-HANDOFF-001` | Apply | 同一requestのcalculator／draft／history／share／backup再現とfail-closed | Handoff |
+| `RK-CACHE-001` | Apply | 新basis・profile変更・context／fingerprint・stale／bounded cache照合 | Handoff |
+| `RK-AUDIT-001` | Apply | 変更familyのproduction inventory／damage差／parity、必要なmatrix範囲の確定 | Handoff |
+| `RK-PERF-001` | Apply | 同環境・入力・workload前後各3process、candidate／damage／rankingと診断の区別 | Handoff |
+| `RK-FINAL-001` | Apply | §20・TSK-13受入項目の閉鎖と残る全体保証限界の照合 | Handoff |
+| `DOC-REV-001` | Apply | 新version／承認／影響Task／baseline、旧ADR有効範囲・相互参照の照合 | Handoff |
+| `DOC-CLOSE-001` | Apply | 各改修owner／局所gate／最終受入のTask対応 | Handoff |
+| `DOC-LINT-001` | Apply | 明示書式／registry／参照と `pnpm test:docs` | Handoff |
+| `TS-QUAL-001` | Apply | 対象内Blocking・局所検証・差分レビュー後の最終 `pnpm quality` | Handoff |
+| `TS-PERF-002` | Apply | 構造変更した経路の同条件前後3process、未変更範囲の一致証拠継承 | Handoff |
+| `DX-HANDOFF-001` | Apply | source／入力／diff／有効証拠・未達条件・次操作の照合 | Handoff |
+
+Handoff: 起票のみ。TSK-13完了後に実装事実と受入条件を受け取り、実装依頼を受けてから着手する。通常の技術判断で再承認せず、新しい製品判断・実質的な範囲拡張・保持／取得元変更・能力損失だけ確認する。TSK-12のgrowth修正と独立し、原物／旧directory／raw exports／Local-only資料、固定baseline取得元・HP原入力・09.13保持解除／物理処遇未実施を維持する。
 
 ## 4. 更新規則
 

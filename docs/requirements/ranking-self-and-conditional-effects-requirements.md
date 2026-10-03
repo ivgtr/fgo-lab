@@ -1,10 +1,10 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.10.3"
+document_version: "0.11.0"
 status: "Active"
 approval: "approved"
-approved_at: "2026-09-06"
-updated_at: "2026-09-08"
+approved_at: "2026-10-03"
+updated_at: "2026-10-03"
 created_at: "2026-08-30"
 related_adrs:
   - "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md"
@@ -18,6 +18,8 @@ implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 ---
 
 # ランキング自己バフ・条件効果統合仕様
+
+2026-10-03の最終製品判断は[§20](#20-2026-10-03の最終製品判断)を正本とする。§4〜7／17の比較基準・通常寄与・action admissionに相違がある場合は§20を適用する。旧条件の歴史的承認と実装済み証拠を新方針の受入へ読み替えない。具体的な実装差と既存product／UI／ADRへの伝播はTSK-13で調査し、実装修正と正本の全面整合は後続Taskで閉じる。
 
 ## 1. WHY
 
@@ -956,15 +958,15 @@ damage差分、性能見積もりを提示してから再開する。
 
 | Contract ID | Governing sections | Contract |
 | --- | --- | --- |
-| `RK-IR-001` | 3〜8、12 | AttackProfile、condition、choice、resource、action cost、contribution identityをdata pipelineがcanonical typed IRへ収束させる。 |
-| `RK-EXEC-001` | 9、12 | preparationをordered／transactionalに実行し、invalid stateとpartial commitをfail-closedにする。 |
-| `RK-POLICY-001` | 5〜7、10、11 | ranking policyはaction admissionとindependent contribution decisionsを制御し、execution semanticsを再実装しない。 |
-| `RK-UI-001` | 4、11、12 | Web／workerはcanonical stateと7入力を扱い、母集団／レベル／宝具Lvを分離し、旧policy／URL／protocolを併存させない。 |
-| `RK-HANDOFF-001` | 11.4、12 | 採用ranking calculationを版付きportable requestとしてcalculatorへ渡し、application constructorとWeb immediate handoffの責務を分けて同一結果を再現する。 |
-| `RK-CACHE-001` | 11.5、12、15.3 | summary cacheをevidence-freeにし、workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
-| `RK-AUDIT-001` | 3.2、14、15、17 | 全playable AttackProfile、四policy、NP1〜5、parityを共有production inventoryで監査し、現行masterのunsupported／invalid／inputRequiredによる順位外を0件にする。 |
+| `RK-IR-001` | 3〜8、12、20 | AttackProfile、condition、choice、resource、action cost、contribution identityをdata pipelineがcanonical typed IRへ収束させる。保存育成basisはapplicationがtyped inputへ解決する。 |
+| `RK-EXEC-001` | 9、12、20 | preparationをordered／transactionalに実行し、NP消費後の自前補完を同じ資源stateで判定する。invalid stateとpartial commitをfail-closedにする。 |
+| `RK-POLICY-001` | 5〜7、10、11、20 | ranking policyはaction admissionとindependent contribution decisionsを制御し、通常の自前確定寄与と理想火力を§20に従って選ぶ。execution semanticsを再実装しない。 |
+| `RK-UI-001` | 4、11、12、20 | Web／workerはcanonical比較stateを扱い、母集団／レベル／宝具Lvと共通／保存育成を明示する。旧policy／URL／protocolを併存させず、既存選択能力を維持する。 |
+| `RK-HANDOFF-001` | 11.4、12、20 | 採用ranking calculationと固定した育成basisを版付きportable requestとしてcalculatorへ渡し、application constructorとWeb immediate handoffの責務を分けて同一結果を再現する。 |
+| `RK-CACHE-001` | 11.5、12、15.3、20 | summary cacheをevidence-freeにし、比較basis／profile変更をidentityへ反映する。workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
+| `RK-AUDIT-001` | 3.2、14、15、17、20 | 全playable AttackProfile、四policy、NP1〜5と共通／保存育成のparityを共有production inventoryで監査する。現行masterの合法条件で実装unsupported／invalid／inputRequiredによる順位外0件を維持し、選択条件の合法性によるunavailableと区別する。 |
 | `RK-PERF-001` | 15.3 | 2^N探索を避け、candidate／damage requestを説明し、主要suiteの10%超の未説明退行を拒否する。 |
-| `RK-FINAL-001` | 17 | 17章のUI、IR、execution、parity、damage evidenceをproject closureで全て満たす。 |
+| `RK-FINAL-001` | 17、20 | §20の最終製品判断と17章の有効なUI、IR、execution、parity、damage evidenceをproject closureで全て満たす。 |
 
 ## 19. Revision log
 
@@ -983,3 +985,36 @@ damage差分、性能見積もりを提示してから再開する。
 | 0.10.1 | 現行published masterの全playable攻撃宝具を数値計算対象とし、typed `unsupported`を理由にしたproduction順位外を完了状態として許容しない。有限な準備phaseのtrigger／timing／resource readerをcanonical executionへ収束させる | approved 2026-09-05: user required all attack NPs to be included in the implementation plan | TSK-06.45、TSK-06.5、TSK-08 | planning baselineは433 AttackProfiles中393 calculated／40 unsupported、calculator defaultは422中420 calculated／2 unsupported。実装後は現行masterのunsupported／invalid／inputRequired順位外0件。将来unknownのfail-closed型は維持する |
 | 0.10.2 | 初期OC1／2／3を第7条件として固定し、成立込みの開始NP自動最大化を廃止。自前OC加算と発動時OCを分離（RK-IR／EXEC／POLICY／UI／HANDOFF／CACHE／AUDIT／PERF） | approved 2026-09-06: user confirmed initial OC only without external support and requested insertion into the existing plan | TSK-06.44、TSK-06.45、TSK-06.5、TSK-07〜09 | docs phaseはruntime不変。実装時はNP5順位・OC加算damage、schema／URL／worker／portable identity、production digestを意図的に更新する |
 | 0.10.3 | 初期最大HPを選択Lvのmaster HP＋固定HPフォウ1000へ明示。通常計算機は装備礼装HPも加算し、canonical成長表から解決する。HPフォウ編集UIなし | approved 2026-09-08: user specified separate ranking／calculator HP conditions | TSK-06.45 | 今回は要件反映のみ。実装時にHP依存damage、canonical master／schema／復元identityを更新する。欠損HPの0補完とATK由来推定は禁止 |
+| 0.11.0 | 共通条件と保存育成状態の両対応、自前で確実に成立する通常寄与、合法な組合せ・使用順とNP消費後の自前補完、単体の理想火力を最終製品判断として確定（`RK-IR-001`、`RK-EXEC-001`、`RK-POLICY-001`、`RK-UI-001`、`RK-HANDOFF-001`、`RK-CACHE-001`、`RK-AUDIT-001`、`RK-FINAL-001`）。詳細は§20 | approved 2026-10-03: 利用者が両比較への対応、通常の確定条件採用、成立込みの理想火力・説明文追加不要、合法な組合せとNP消費後の自前補完を明示し、最終意思決定Taskの作成を指示 | TSK-13（決定・実装事実／改修前調査）、TSK-14（実装・正本伝播）。TSK-12の旧ranking文書整合案を分離 | docs phaseはruntime／保存入力／expected／digest不変。実装時は保存育成basis、通常寄与、候補、URL／worker／portable identityと意図的damage差が変わり得る。基準の更新範囲はTSK-13の差分調査で確定し、今回再生成しない |
+
+## 20. 2026-10-03の最終製品判断
+
+### 20.1 利用者成果と比較基準
+
+- 共通条件での性能比較と、保存育成状態による現在の戦力比較の両方へ対応する。保有母集団への絞込みと育成基準は別の意味として保持する。
+- 共通比較では、現行の自然上限／Lv.90統一／保有レベル、指定NP／保有宝具レベルの選択能力を維持する。保存育成状態の比較は、少なくとも保存Lv・NP Lv・Fou ATK・active skill Lvを反映し、固定Fou1000／skill Lv10を保存値の代わりに使わない。
+- 再臨・形態・アペンド等の既存保存値が計算に影響する直接経路も調査する。未保存の値のeditorや新しい戦闘機能を、この判断から自動的に追加しない。欠落・不正値はtypedな拒否／不足入力として扱い、共通値へfallbackしない。
+- 具体的なcontrol構成、canonical basis schemaとidentityの変更境界はTSK-13の実装事実調査で確定する。既存選択能力の削除はこの承認に含めない。
+
+### 20.2 通常のみと成立込み
+
+- 自己バフあり・通常のみは、選択した比較基準・初期stateから自前の合法なskill組合せと使用順を実行し、確実に成立する寄与を含めた最大火力を採用する。全skill使用を必須にせず、排他的な選択肢を同時使用しない。
+- 自己生成field、attacker／target state、marker、HP変化等の条件は、実際のordered executionで確実に成立するなら採用する。条件付きという静的分類だけで除外せず、生成・解除・後続readの順序と実際の適用結果で決める。
+- 元々の敵特性・外部field・他者の支援等、選択初期stateと自前行動から確定できない条件を通常へ捏造しない。確率的寄与の成功も通常では仮定せず、確定する部分と確率部分を区別する。
+- 成立込みは単体スペックとしての理想火力を採用する。既存のtyped対象条件・確率結果・宣言済み最大stack等のうち、共存可能な候補だけを同じexecutorで評価する。外部support／礼装の採用や、turn経過／skill再使用を一般シミュレーションする機能を追加しない。
+- この意味を説明する新しいUIの一文は追加しない。採用条件・使用順・寄与の根拠は既存detail／calculator handoffの責務で保持する。
+- 自己バフなしの既存選択能力は維持する。任意自前skillを復活させず、AttackProfile到達に必要な構造actionとNP／passiveの実行結果は既存境界で扱う。
+
+### 20.3 NP資源と合法性
+
+- 選択初期OCに対応する開始NPから、各action使用時点の前提・NP消費／回復・容量上限を順序どおりに適用する。途中のNP低下だけで候補全体を拒否せず、自前skillで補完して攻撃宝具へ合法に到達できる組合せを採用する。
+- 直接damage modifierを持たないNP回復・条件生成skillも、後続の採用寄与または宝具到達へ必要なら候補に含める。後続回復で過去のaction使用条件を遡及成立させず、容量clip・排他・死亡・unsupported・rollbackを無視しない。
+- 成立込みでも開始NPを暗黙に増やさない。オルガマリーは利用者が挙げた実データ確認対象であり、ID・名称によるruntime例外の根拠ではない。
+
+### 20.4 責務・参考条件・受入境界
+
+data pipelineがrawをcanonical IRへ変換し、applicationが比較基準と合法候補を選び、executionがordered transactionと実際の寄与を決める。calculator／rankingは同じapplication／execution／damageを使い、UI／workerは選択・表示・ordering／cacheだけを扱う。AttackProfile単位を維持し、HP・marker・field等に個別のranking damage evaluatorを増やさない。
+
+参考条件は[神ゲー攻略の宝具威力ランキング](https://kamigame.jp/fgo/%E5%88%9D%E5%BF%83%E8%80%85%E6%94%BB%E7%95%A5/%E5%AE%9D%E5%85%B7%E5%A8%81%E5%8A%9B%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0.html)を2026-10-03に閲覧した。自前buff／debuff、共通育成、通常と特殊条件の分離を参考にする。同siteは確率buff成功を仮定するが、本決定では通常の確定分と成立込みの成功仮定を分ける。[遊びゴコロの指定ページ](https://asobigokoro.work/Game-strategy-site/fgo-hougu-iryoku-ranking/)は同日の取得が失敗しており、条件を確認済みと扱わない。参考siteの数値を原raw／master／expectedの代替入力に採用しない。
+
+本決定の承認は新runtimeの受入ではない。TSK-13で既存実装・正本・同条件証拠との差を確定し、TSK-14で必要な局所反証、保存復元／入力修復、calculator handoff、対象production差分・同条件性能・固定差分の最終qualityを閉じる。旧baseline／expected／fixtureの意味と母集団を今回変更せず、改修時の意図的差分と適用契約を明示して受け入れる。
