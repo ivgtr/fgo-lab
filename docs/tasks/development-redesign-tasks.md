@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.190"
+document_version: "1.7.194"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-03"
@@ -3268,7 +3268,7 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 Depends on: TSK-13
 
-Current status: `in_progress`（2026-10-03、承認計画で着手後、固定identity regressionと構造版移行の衝突で強制停止。利用者は破壊的変更・fallback不要の方向性を了承し、本sessionは実装を再開せず、調査記録と既存作業のcommitで閉じるよう指示した。TSK-14は未完了のまま引継ぐ。開始HEAD `2c86a96f5c9a69de9b28d58910653f63aa320c57`、開始worktree／index clean、in_progress0件を照合して本Taskのみ開始。開始時のcommit禁止に従って開始commitは作らず、終了checkpointの作業commitだけを最新指示で許可する）。
+Current status: `in_progress`（2026-10-03、HEAD `f9ccc663ed46ce9718a9bbdfdf3b3253e5161e4d`の未完成checkpointから詳細調査を完了。利用者の「破壊的変更は許容・フォールバック不要」を反映し、旧互換・旧whole-record一致・旧engine同一性の契約を現行契約へ置き換える実行計画を採用。A／B案の承認待ちは解消した。製品実装は再開していない。最新判断・検証・次操作は本Task末尾の懸念再現調査checkpointと既存flowを参照する。過去の停止・session終了checkpointは履歴として保持する）。
 
 - [ ] ranking §20とTSK-13の実装差に基づき、共通／保存育成basisと通常／理想の候補・寄与を共通application／executionへ接続する。
 - [ ] UI／URL／worker／portable／保存復元／入力修復を同じidentityへ収束し、既存選択能力とcalculator parityを維持する。
@@ -3302,13 +3302,13 @@ Contract closure matrix:
 | `TS-PERF-002` | Apply | 構造変更した経路の同条件前後3process、未変更範囲の一致証拠継承 | Handoff |
 | `DX-HANDOFF-001` | Apply | source／入力／diff／有効証拠・未達条件・次操作の照合 | Handoff |
 
-承認計画（2026-10-03）: schema／applicationがstrictな共通／保存育成basisを一度解決し、scenarioと全ordered skill commandへ束縛する。候補admissionは条件生成・回復の後続関連性を扱い、executionの実行時点の確定根拠を通常寄与とOCへ同じ規則で接続する。資源transaction・subset／使用順／choice・保存容器を再利用し、basis→UI／worker→detail→portable→calculator→draft保存／reloadの代表経路を早期接続する。旧request／result／fingerprintを歴史値として保全する構造版移行を含む。旧runtime／補完fallbackを追加せず、新方針の明示再計算へ新identityを発行する。詳細なowner／直接経路と反証は[既存ranking flow](../evidence/ranking-policy-candidate-flow-tsk-06.md#tsk-14-最終方針の承認計画2026-10-03)を正本とする。
+現行実行計画（2026-10-03）: schema／applicationがstrictな共通／保存育成basisを一度解決し、scenarioと全ordered skill commandへ束縛する。候補admissionは条件生成・回復の後続関連性を扱い、executionの読取時点の確定根拠を通常寄与とOCへ接続する。資源transaction・subset／使用順／choice・保存容器を再利用し、basis→UI／実worker→detail→portable→calculator→draft保存／reload／repairを早期接続する。現行schemaのみを受け入れ、旧形式は原保存を更新・削除せず拒否する。旧runtime／補完fallback／旧modeを残さず、現行version・参照不足の復旧とatomic backup importは維持する。詳細なowner・caller closure・反証・検査契約は[既存ranking flow](../evidence/ranking-policy-candidate-flow-tsk-06.md#tsk-14-詳細調査と実行計画2026-10-03)を正本とする。
 
-検証順序: 同環境・入力・workloadの変更前3独立process→basis／保存skill・通常寄与・NP／rollbackのfocused反証→実worker／UI／portable／復旧→必要なproduction全matrix／差分説明・変更後3独立process→対象内Blocking0・差分レビュー→固定差分の最終pnpm quality。既存80条件の影響を限定するproofがない場合は全matrixを実施する。旧baseline／expected／fixtureの意味・母集団・assertion・timeout／cap／ratchetは維持し、既存mergeの旧record不一致を成功へ読み替えない。期待値変更等が必要と判明したら停止・確認する。
+検証順序: 同環境・入力・workloadの変更前3独立process→basis／保存skill・通常寄与・NP／rollbackのfocused反証→実worker／UI／portable／復旧→全80条件matrixと別saved production／全意味差説明・変更後3独立process→対象内Blocking0・差分レビュー→固定差分の最終pnpm quality。原baseline／数値expected／fixtureの意味・母集団・timeout／cap／ratchetを維持する。旧whole-record一致と旧engine＝現engineという廃止契約のassertionは、今回の破壊的変更許容に基づき現行契約検査へ置換する。旧不一致を一致成功へ読み替えず、原資料との差を全件説明する。数値expectedの再生成等で回避が必要なら停止・確認する。
 
 強制停止: 承認前提・責務・実装可能性が不成立、境界内で閉じないdamage／state／outcome・保存影響や共通原因、新意味論・別経路・取得元／保持変更・能力損失、expected／fixture・母集団・timeout／cap／ratchet変更による回避、原因を説明できない例外修正の継続が判明した時点で実装を停止する。判断不能時も停止。既存差分を保持し、原因説明の読み取り・既存証拠照合と本Task／Handoff停止記録だけを行い、発生条件・事実／仮説・食い違った前提・差分／検証／利用者経路・選択肢／推奨／保証限界を報告して利用者確認を待つ。未達のN/A化・Task分割・部分成功でdoneにしない。
 
-Handoff: 承認計画で開始。開始時はTSK-13 source18件・tmp以外artifact21件のbytes／SHAが一致。オルガマリー2profileの共通basis資源使用順・portable replayだけを再利用し、新保存basis／通常寄与の受入へ拡張しない。同cwdのCodex4processを正式審査で確認、編集活動は未確定で開始差分clean。TSK-12はreadyを維持し、再臨／形態対応とappendの戦闘IRは未確定の調査・製品判断境界として残す。新namespace `.test-results/tsk-14-ranking-implementation-20261003/` はTSK-14がowner。用途は開始／最終identity・完全log・差分説明・独立性能／同一process診断・実UI証拠。参照期間は本Taskと受入で参照する間、参照終了後はconsumerを確認して既存policyで処遇し、恒久raw／baseline／run保持集合を拡張しない。補助計測codeは一時的な診断で恒久採用しない。TMPDIRは同namespace内のcommand-local診断一時領域に限定する。原物／旧directory／raw exports／Local-only資料、固定baseline取得元・HP宣言1件＋gzip2件（圧縮7,907,911／復元90,441,915 bytes）・09.13保持解除／物理処遇未実施を維持する。次操作は下記停止checkpointの対応方針を利用者へ確認すること。最終quality・新製品受入は未成立。
+Handoff: 開始時の履歴。最新判断・次操作は末尾checkpointを参照。承認計画で開始。開始時はTSK-13 source18件・tmp以外artifact21件のbytes／SHAが一致。オルガマリー2profileの共通basis資源使用順・portable replayだけを再利用し、新保存basis／通常寄与の受入へ拡張しない。同cwdのCodex4processを正式審査で確認、編集活動は未確定で開始差分clean。TSK-12はreadyを維持し、再臨／形態対応とappendの戦闘IRは未確定の調査・製品判断境界として残す。新namespace `.test-results/tsk-14-ranking-implementation-20261003/` はTSK-14がowner。用途は開始／最終identity・完全log・差分説明・独立性能／同一process診断・実UI証拠。参照期間は本Taskと受入で参照する間、参照終了後はconsumerを確認して既存policyで処遇し、恒久raw／baseline／run保持集合を拡張しない。補助計測codeは一時的な診断で恒久採用しない。TMPDIRは同namespace内のcommand-local診断一時領域に限定する。原物／旧directory／raw exports／Local-only資料、固定baseline取得元・HP宣言1件＋gzip2件（圧縮7,907,911／復元90,441,915 bytes）・09.13保持解除／物理処遇未実施を維持する。次操作は下記停止checkpointの対応方針を利用者へ確認すること。最終quality・新製品受入は未成立。
 
 
 停止checkpoint／Handoff（2026-10-03、実装修正停止）:
@@ -3332,6 +3332,54 @@ session終了checkpoint／Handoff（2026-10-03、調査と作業commitに限定�
 - 証拠と処遇: 上記停止checkpointのbefore3process・局所basis4件・型失敗logを再利用し、製品検証を再実行しない。調査artifactは既存`.test-results/tsk-14-ranking-implementation-20261003/`へ残し、Gitへ追加しない。文書検証のstdout／stderrは同namespaceの`session-close-docs.stdout.log`／`session-close-docs.stderr.log`へ保存する。参照期間・処遇は本Taskの既存Handoffの診断用途のまま。原物・旧調査directory・raw exports・Local-only・HP入力・固定baseline取得元／保持判断は不変。
 - 終了時の文書検証: `pnpm test:docs`は28/28、skip／todo／failure0、docs integrityは103 Markdown／44 machine evidence／929 referencesで成功。manifestは`.test-results/2026-10-03T04-43-21-887Z-560-09b1f2/manifest.json`、outcome success／exit0／artifactVerification errors0。stderrはpnpmのcommand表示だけで検査warningなし。この結果記録を含む文書の最終検査は同namespaceの`session-close-final-docs.stdout.log`／`session-close-final-docs.stderr.log`へ保存する。文書成功をcodeの型検査・製品quality成功へ読み替えない。code／test24fileの終了時内容digestは`91fc3aefe5665c3b7d95ce5fc7af5c0164b5bf0ab3b02fad8fbaad4cf669b60d`（path昇順にpath・NUL・全byte・NULをSHA-256）。commit前後に同一内容を照合する。
 - 次操作: 本checkpointを含む作業commitを起点にHEAD／worktree／index／並行session／in_progress最大1件と保存入力identityを再照合する。再開依頼があるまで実装修正を行わない。再開時は今回の旧互換差分の撤回と直接caller closure、型のrepresentation伝播を先に閉じ、currentのbasis→実worker／UI→portable→保存／reload／repairの代表経路を接続する。その後通常寄与／admission・NP／rollback、再臨／appendの調査境界、必要なproduction matrix／差分説明・前後性能、正本／ADR、差分レビュー・固定quality・最終判定／Handoffへ進む。新たな製品判断や元の強制停止条件は維持する。TSK-12には着手しない。
+
+詳細調査checkpoint／Handoff（2026-10-03、計画の実行準備）:
+
+- 最新依頼・範囲: 利用者は「計画が実行できる状態をゴールとして、詳細な調査まで完了」を依頼。起点HEAD `f9ccc663ed46ce9718a9bbdfdf3b3253e5161e4d`、worktree／index clean。製品code／test・保存実体・indexを変更せず、install／取得／製品検証／性能計測を行わない。既存Task／flowとregistryだけに今回の調査・計画を記録する。TSK-14はin_progress、TSK-13 done／TSK-12 readyを維持する。過去のsession終了・停止checkpointは履歴として保持し、今回の最新方針は本項と[詳細調査・実行計画](../evidence/ranking-policy-candidate-flow-tsk-06.md#tsk-14-詳細調査と実行計画2026-10-03)を参照する。
+- 調査成果: 旧互換撤去のschema→repository／share／backup→startup／App／CalculatorRoute→application／fingerprint caller closure、現行復旧との区別、basis→skill／resource→worker／detail→portable／draft／reload／repair、通常admissionとread-time確定根拠の既存owner、全Applyと検証順を具体化した。現行atomic backup importとversion／参照不足の復旧は残す。startupはinvalid保存をsetup表示へ送るが、setupの再load guardがreplace前に拒否するため、自動上書きを観測したという主張は撤回し、既存guard保持と実caller反証を計画する。条件／profile変更中handoffの失効不足は既存context／fingerprint／mutation gateへ接続する。
+- 範囲の確定: NP0／build欠落は所持母集団外と、所持NP1以上のskill不足を分ける。保存ascensionは育成進捗、canonical formはsignificant limit／costume／transformであり、既存の保存値→form bindingはない。appendは保存・編集・素材consumerのみでbattle IRがない。§20の既存経路調査は完了し、現行AttackProfile列挙・非混成と保存編集能力を維持する。今回4育成値へ新form対応・append戦闘機能を追加せず、反映済みとは保証しない。TSK-12へ必須受入を移さない。
+- 必要な明示判断A: 全80条件matrixの旧record basisは6項目、現producerはgrowthBasis／Fou／skill Lvを保存するため、旧全record一致はdamage不変でも成立しない。原baseline・母集団・旧default merge／assertionを保持し、旧不一致を失敗証拠として残す。既存mergeへ明示的な現行契約modeを追加し、全body／receipt／coverage／parity／transaction／outcome／capと全意味差のinput・ordered plan・rule説明で新契約を判定する案を提示する。旧失敗を成功へ変換せず、新baselineを再生成しない。旧一致成功も現producer必須のままなら現版境界では実行可能な閉鎖計画にならない。
+- 必要な明示判断B: qualityのproductionにある`npFunctionGolden`／`mlbOnlyEffectsGolden`／`externalDifferential`3件は原engine48を現ENGINE_VERSIONと比較するため49計画と衝突する。原JSON bytes・case／input・数値expected／precision／engine48出自を保持し、version assertionを原出自へ束縛したうえで同じ固定数値を現engine49で検査する適用先変更案。旧互換退役の了承をこの3件へ拡張しない。422 calculator parity digest・指定NP固定数値・既存screenshot／timeout／cap／ratchetは変更しない。追加変更が必要なら対象差分を示して停止確認する。A／Bは未承認で、製品code／testに未反映。
+- 再利用証拠・限界: master `20260920.3`／32,953,998 bytes／SHA `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`、TSK-13資源順序・portable証拠、既存start receiptの製品14source hashと旧Git object、before3のscript・master・workload identityを照合した。旧before中央値7,130.873903msは参考値として保持するが、loader／affinity／並行負荷／全dependency identityの不足により厳密な同環境前後比較の主証拠にはしない。同じ固定旧source `2c86a96f5c9a69de9b28d58910653f63aa320c57`と入力でbefore3を再取得し、最終source after3と比較する計画。新savedは旧同等実装がないため特性値として3processを測る。reader／merge／producer／同一process診断を分ける。旧artifactを変更・複製せず、不足を別入力で補わない。
+- 並行編集・入力・保存境界: 正式審査で同cwdのCodex4process（3638／4786／55969／388927）を再確認。編集活動は未確定、調査中Git clean。実装開始時は差分と編集ownerを再照合し、競合時は作業を分離する。HP宣言1件＋gzip2件、固定baseline取得契約、09.13判断、原証拠・旧namespace・raw／Local-onlyを維持する。診断以外の保持集合・取得元・indexは変更しない。
+- 文書検証artifact: 今回の有限namespace `.test-results/tsk-14-plan-readiness-20261003/`はTSK-14がowner。直接consumerは本調査checkpointの文書検証。固有内容は今回docs差分identity・command／環境・完全stdout／stderr・runner receiptで、旧run／master／rawのコピーは保存しない。参照期間はTSK-14の計画確認・受入中、参照終了後はconsumer確認と既存保持policyで処遇する。恒久raw／baseline保持を増やさない。command-local TMPDIRは同namespace内へ限定する。製品検証の証拠とは扱わない。
+- 文書検証結果: gate-1はtest28/28成功だがregistry自身のversion参照漏れによりintegrity exit1。参照をv1.5.220へ修正し、gate-2は28/28・skip／todo／failure0、integrity103 Markdown／44 machine evidence／930 references、outcome success／exit0／artifactVerification errors0。完全logとmanifestは上記namespaceの各gateへ保存し、初回失敗も残す。この結果記録後の最終docs検査はgate-3へ保存する。差分レビューはdocs3fileに限定し、製品code／test・index・HEAD不変を確認する。今回A／Bの確認質問を提示したが、返信前に承認済みとは扱わない。
+- 判定・次操作: 詳細調査から具体的なowner・実装順・反証・検査入口・性能条件・全Apply・停止境界は揃った。実装へ進める条件はA／Bの明示判断であり、承認を推定しない。まずこの具体案を提示し、了承後に承認記録・固定identity再照合→旧互換撤去／型伝播→代表保存経路→通常寄与／NP→production・性能→正本／差分レビュー／固定qualityへ進む。今回依頼は調査までで、実装開始・Task done・製品受入・R1全体受入は宣言しない。
+
+再評価checkpoint／Handoff（2026-10-03、破壊的変更・fallback不要を計画へ反映）:
+
+- 最新指示と採用判断: A／Bの確認提示後、利用者は「破壊的変更は許容しますフォールバックは不要です。この前提で考えてみて」と指示した。この前提で、旧契約を現行経路へ併存させる必要を再評価した。旧whole-record一致成功と旧engine＝現engineのassertionを退役し、現行契約への置換を計画へ採用する。前案の旧default merge＋新modeは撤回する。同じ旧互換責務の維持について再承認を求めず、A／B待ちを実行準備のBlockingとして残さない。廃止契約の置換範囲と維持する数値保証は[現行flow](../evidence/ranking-policy-candidate-flow-tsk-06.md#破壊的変更fallback不要を反映した検査契約)を参照する。
+- 単一の現行gate: `merge-oc-matrix`は現行schema42／engine49の完全recordを検査し、旧actual・unknown・不正値を拒否する。形式自動判別・旧mode・補完は設けない。原baselineは明示的な固定比較資料としてbyte／SHA／coverageを検証して読み、actualへ移行しない。全body・receipt・parity・transaction・outcome・capと全意味差のinput／ordered plan／governing rule説明を維持する。first differenceだけで意味差を隠さず、旧比較不一致を一致成功とは扱わない。
+- caller closureと能力維持: `verifyProductionMatrixRecords`・`evaluateProductionParityGate`・mergeのgate順序、READMEのproducer／replay入口、`production-baseline-acceptance.mjs`のmerge callerを現行契約へ一緒に収束する。旧baseline再構成→現行merge成功という責務は退役する。一方、原manifest／gzipを読むreader・`productionRegressionBaseline.test.ts`、receipt／byte／SHA／coverageとmutation拒否能力、六クラスの数値／意味fixtureは比較資料の保全として維持する。旧sourceの履歴検査を現行codeのcompatibility modeにしない。取得元・原保存・恒久保持集合は変更しない。
+- goldenと停止境界: golden3件は原JSON bytes・case／input・数値expected／precision・engine48出自を保持する。旧engine同一性のassertionを、出自検査と現engine49の同じ固定数値検査へ置換する。破壊的変更許容をdamage expectedの自動再生成、母集団変更、timeout／cap／ratchet緩和、新戦闘機能、原保存削除へ拡張しない。説明不能なdamage／state／outcome差、追加の新製品判断・取得／保持変更・能力損失、停止該当性不明は従来どおり停止する。
+- 成果と検証範囲: 前checkpointの利用者成果・schema／application／execution owner・basis／保存／worker／復旧caller・通常寄与／NP反証・saved production入力・同条件性能・全Applyを継承する。今回の追加照合で旧merge callerと基準資料readerの責務も分離できた。成果物は既存flow／Task／registryの3文書。製品code／test・index・HEADは変更しない。新accepted ADRや要件本文の実装整合は製品実装時に行い、今回の計画判断を製品受入へ拡張しない。
+- 診断artifact: `.test-results/tsk-14-plan-readiness-20261003/destructive-review/`はTSK-14がownerで、直接consumerは今回改訂した3文書の検証。固有内容はdocs差分identity・command／環境receipt・完全stdout／stderr・docs manifest。原raw／master／旧logを複製せず、親namespaceの計画確認・受入中という参照期間と、参照終了後の既存consumer／保持policyを継承する。command-local TMPDIRもこの有限path内へ限定する。製品検証は実行しない。
+- 文書検証結果: destructive-review gate-1はtest28/28成功だが、Handoff見出し変更によるTask規約違反でintegrity exit1。`Handoff:`形式を維持して履歴注記を本文へ移し、gate-2は28/28・skip／todo／failure0、103 Markdown／44 machine evidence／931 references、outcome success／exit0／artifactVerification errors0。初回失敗logを残し、この結果記録後の最終docs検査をgate-3へ保存する。製品型検査・quality・実UI・productionの成功証拠とは扱わない。
+- 最終判定と次操作: 詳細調査と実行計画を現行指示へ収束し、旧契約との前提衝突を解消した。計画作成の完了とTSK-14の製品Done gateを分け、TSK-14 in_progress／TSK-12 readyを維持する。今回の範囲は調査・計画まで。次の製品実装依頼時は固定identity・並行編集再照合→旧source before3→旧互換撤去／型伝播／現行検査契約置換→代表保存経路→通常寄与／NP→全matrix・saved production／性能→正本／差分レビュー／固定qualityへ進む。追加のA／B承認待ちは置かない。
+
+懸念追加調査checkpoint／Handoff（2026-10-03）:
+
+- 最新依頼と範囲: 利用者は、ゴールを維持したまま修正過程で懸念になる箇所も調査するよう依頼した。現HEAD `f9ccc663ed46ce9718a9bbdfdf3b3253e5161e4d`、前の計画差分docs3file・index空から継続。製品code／test・保存実体・HEAD／indexを変更せず、install／取得／製品検証／計測を行わない。前の破壊的変更許容・fallback不要・現行契約一本化を維持する。
+- 調査結果の正本: [修正過程の懸念P1〜P8](../evidence/ranking-policy-candidate-flow-tsk-06.md#修正過程で懸念になる箇所の追加調査2026-10-03)に、source上の事実・起こり得る問題・owner・最初の検知／対応を記録した。実際のfailureを実行観測した証拠とは分ける。リスク一覧を別計画書や別Taskへ複製せず、同じTSK-14の実装順へ接続する。
+- 先に閉じる不足: P1は保存callback前後のtoken確認だけではdb.put中の失効をabortできず、import／initializeが通常writeQueueを迂回する。現stale testは後続成功writeまでで、後続なし／失敗を証明しない。P4は現行schemaのactive profile参照／一意性・draft／history owner・current fingerprintの整合不足。代表保存経路の前に、commit時点・取消／commit済みのtyped outcome・write owner／epoch・原保存非更新を局所反証する。保存後の補償writeで新編集やimportを巻き戻さない。
+- 条件・検査の修正境界: P2は終端形態のintrinsic traitを初期world factに使い、preparation condition stateで現在形態のtraitへ上書きする経路。変身前の使用条件を変身後のfactで成立させない。P3はrecord inspectorの全nested shape不足と、acceptedでもdigest failureが残る型であり、旧literal比較撤去後にhash整合だけで意味を保証しない。初期／終端の使用合法性とstrict record／再hash改竄を、対応するowner変更と同時に反証する。
+- 実装・実測時のリスク: P5は新certainty／clockと既存world／population縮約のproof、P6は4096 certificateより前のstatic探索費用、P7は一未知programからprofile全体へのunsupported波及、P8は純damage matrix cacheと候補別plan／detailの境界。既存の反証・性能計画へ小全列挙／cache on-off・phase別費用・unknown optional／structural分類を追加し、未検証の安全性を既存production成功から推定しない。cap／timeout緩和、候補truncate、unknownの黙殺、別evaluatorは採用しない。
+- Apply・次操作: P1／P4→RK-HANDOFF／CACHE／UI／IR、P2／P5／P7→RK-EXEC／POLICY／IR、P3→RK-AUDIT／FINAL、P6／P8→RK-PERF／CACHE／TS-PERFへ対応付ける。全Applyは維持する。実装開始後、P1／P4を保存代表経路の前、P2を通常寄与の前、P3を旧比較退役と同じ差分、P5／P7をadmission拡張と同じ差分、P6／P8を局所性能へ接続する。今回の追加調査をTSK-14実装完了や新runtime受入とは扱わず、TSK-14 in_progress／TSK-12 readyを維持する。
+- 診断artifact: `.test-results/tsk-14-plan-readiness-20261003/implementation-risk-review/`はTSK-14がowner。直接consumerは今回の3文書の検証、固有内容は差分・環境・command receipt、完全stdout／stderr、docs manifest。原raw／master／旧logを複製せず、親namespaceの参照期間・consumer確認後の既存保持policyを継承する。command-local TMPDIRも同path内へ限定し、恒久保持集合を増やさない。製品testは実行しない。
+- 文書検証結果: implementation-risk-review gate-1は28/28・skip／todo／failure0、103 Markdown／44 machine evidence／932 references、outcome success／exit0／artifactVerification errors0。この結果と最新checkpointの案内を含む最終検査はgate-2へ保存する。変更3文書の差分・HEAD／indexとreceiptを照合し、source確認を実際のfailure再現・製品gate成功へ読み替えない。
+
+懸念の再現調査開始／Handoff（2026-10-03）:
+
+- 利用者の「可能性は埋めていきましょう」を受け、P1〜P8の未確定点を固定入力・小fixture・故障順序・限定したinventoryで判定する。製品code／test・実利用者保存・HEAD／indexは変更しない。既存実装を実行する再現調査であり、修正完了や最終gateの代用とはしない。
+- 新有限namespace `.test-results/tsk-14-plan-readiness-20261003/risk-reproductions/` のownerはTSK-14、直接consumerは既存flowのP1〜P8判定と実装時の局所反証。固有内容は補助probe、固定source／入力／環境identity、実行順序、完全stdout／stderr、結果JSON、docs検証。fake IndexedDBのprocess内保存だけを使い、元保存・master・固定baselineを変更／複製しない。参照期間はTSK-14受入中、終了後はconsumerを確認して既存保持policyで処遇し、補助codeを恒久採用しない。command-local TMPDIRを同namespace内へ限定する。取得／install・全matrix・qualityはこの調査では実行しない。
+
+懸念再現調査checkpoint／Handoff（2026-10-03）:
+
+- 成果: P1〜P8を既存実装への実行入力で判定し、[再現結果と採用判断](../evidence/ranking-policy-candidate-flow-tsk-06.md#p1p8の再現結果と採用判断2026-10-03)へ統合した。保存失効・import／staging競合、form traitの過去流入／固定seedの残留、record shape／failure扱い、現行保存参照／hashの不足を再現済み修正対象にした。縮約・unsupported・cacheの現在の責務と探索費用の確認点を具体化し、未規定の製品判断やfallbackを残していない。
+- 証拠と限界: risk-reproductionsのstorage-record、semantics／semantics-clock、import-population／population-schema-legal、profile-unsupported、cache、search-inventoryのsource・全log・JSONとreceiptを参照する。actual React hook／repositoryはprocess内fake IndexedDB／jsdom、条件は小fixture、static／admission inventoryは固定master全469体／433profile、projectionはstatic件数上位3体の24case。cache比較90候補とportable90件は限定fixtureの成功であり、実UI／worker・新runtime・全production・性能前後の受入ではない。診断補助codeと初回入力設定失敗も保持し、製品expected／assertion／cap／timeout／ratchetは変更しない。
+- 範囲・状態: HEAD `f9ccc663ed46ce9718a9bbdfdf3b3253e5161e4d`、index空、tracked差分は既存3文書だけ。製品code／test・実利用者保存・master／固定baselineを変更せず、取得／installを行っていない。TaskはTSK-14 in_progress／TSK-13 done／TSK-12 readyを維持する。調査・実行計画を完了とする判定と、未達の製品Done gateを分ける。
+- 次操作: 固定identity／並行編集を照合して旧sourceの正式before3を採る。旧互換撤去・型伝播と同時にP1／P4の保存owner／operation stage／current identityを閉じ、P2を現在formのintrinsic ownerとtransitionへ接続する。P3は旧比較退役と同時にstrict現行gateを閉じる。P5／P7のproofを保持して通常admission・寄与／OCを接続し、P6／P8の計数・同条件測定・実worker cacheを代表経路で確認する。その後にNP反証、80matrix＋saved production、正本・差分レビュー・固定qualityへ進む。全Applyを維持し、今回の計画に追加の承認待ちは置かない。
+- artifact契約: 調査開始時に記録した有限namespaceとTSK-14 owner／受入中の参照期間を継承する。原artifact／固定入力は非更新、恒久raw／baseline集合は増やさない。終了後はconsumerを確認して既存保持policyへ従い、補助probeを恒久採用しない。docs gate-1は28/28、skip／todo／failure0、103 Markdown／44 machine evidence／933 references、outcome success／exit0／artifactVerification errors0。この結果とschema-legal population反証の記録を含むgate-2も28/28・integrity成功。この完了記録後の最終docs検査をgate-3へ保存し、最終diff／receiptを照合する。
 
 ## 4. 更新規則
 
