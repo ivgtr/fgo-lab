@@ -250,6 +250,7 @@ export function createPreparationState(
   const form = findActorForm(servant, initialFormId);
   const placeholder: PreNoblePhantasmState = {
     conditionWriteProofs: emptyConditionFactProofs(),
+    npQuantityWrites: [],
     battlePoints: emptyBattlePointState(),
     hp: {
       actors: {

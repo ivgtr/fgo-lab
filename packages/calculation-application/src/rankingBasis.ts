@@ -6,6 +6,7 @@ import {
   servantBuildSchema,
   rankingSkillLevelsSchema,
   resolvedRankingBasisSchema,
+  type ServantBuild,
   type RankingSelection,
   type ResolvedRankingBasis,
 } from '@fgo-lab/schema';
@@ -130,7 +131,7 @@ export function resolveRankingBasis(
   const skillLevels =
     selection.growthBasis === 'saved'
       ? rankingSkillLevelsSchema.parse(build!.skills)
-      : Object.fromEntries(skillSlots.map((slot) => [slot, 10]));
+      : commonPreparationSkillLevels(servant);
   const missingSlots = skillSlots.filter(
     (slot) => skillLevels[slot as '1' | '2' | '3'] === undefined,
   );
@@ -180,4 +181,25 @@ export class RankingBasisFailure extends TypeError {
   ) {
     super(reason);
   }
+}
+
+/** Explicit common preparation policy; every canonical active slot uses Lv10. */
+export function commonPreparationSkillLevels(
+  servant: ServantMaster,
+): ResolvedRankingBasis['skillLevels'] {
+  return Object.fromEntries(servant.skills.map(({ slot }) => [String(slot), 10]));
+}
+
+export function calculatorPreparationSkillLevels(
+  servant: ServantMaster,
+  providedBuild: ServantBuild | undefined,
+): ResolvedRankingBasis['skillLevels'] {
+  if (providedBuild === undefined) return commonPreparationSkillLevels(servant);
+  const build = servantBuildSchema.parse(providedBuild);
+  if (build.servantId !== servant.id) throw new RankingBasisFailure('rankingBuildIdentityMismatch');
+  if (build.npLevel === 0) return commonPreparationSkillLevels(servant);
+  const levels = rankingSkillLevelsSchema.parse(build.skills);
+  if (!hasCanonicalRankingSkillSlots(servant, levels))
+    throw new RankingBasisFailure('rankingBuildIncomplete');
+  return levels;
 }

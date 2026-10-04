@@ -1,3 +1,4 @@
+import { commonPreparationSkillLevels } from './rankingBasis';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -342,7 +343,13 @@ describe('unsupported convergence production golden', () => {
       const initiallyHiddenByInput = occurrenceId.startsWith('23594:');
       const servant = master.servants.find((candidate) => candidate.id === servantId)!;
       const targetOccurrenceId = automaticInput ? '21814:0' : occurrenceId;
-      const candidate = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1)
+      const candidate = planPreNoblePhantasmCandidates(
+        servant,
+        master.npResourceSemantics,
+        commonPreparationSkillLevels(servant),
+        1,
+        1,
+      )
         .candidates.filter(
           ({ terminalState }) =>
             automaticInput ||

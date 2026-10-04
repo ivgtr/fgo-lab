@@ -8,6 +8,318 @@ updated_at: "2026-10-04"
 
 本noteはsource program／finite candidate／application policyの意味説明と固有の採用・測定履歴を保持する。2026-09-21のTSK-06.5 closureと、その時点のTSK-07 blockedは歴史checkpointであり、現在の進捗を所有しない。現行契約は[ranking requirements](../requirements/ranking-self-and-conditional-effects-requirements.md)、現行baselineは[TSK-06.5 production closure](tsk-06-5-production-closure.json)の`productionMatrix.canonicalRecords`、TSK-08最終受入は[parity ratchet](tsk-08-parity-ratchet.json)の`implementationSelfReview.nonfiniteBodyReview.repairPlan.finalAcceptance`へ進む。現在の進捗・残作業は[Tasks](../tasks/development-redesign-tasks.md)、証拠の読み分けは[evidence index](README.md#読み分けと現行の受入先)が所有する。本文の旧Blocking／Deferred／数値・version・commitは当時のscopeのまま保持する。
 
+## TSK-14 起点a3dc85aの再調査と実装計画（2026-10-04・確認待ち）
+
+**今回の確認対象:** 起点 `a3dc85a7f68fc5e4e5b9a72ab31a8598277917f5`（親 `6074dbda45257bdfb8f96fc9cca004118017b85f`）からの新計画。本節より下の「確認待ち」・09:30確認・11:00上限・旧HEAD／差分件数は当時の履歴identityであり、今回の確認を代替しない。開始11:10 UTCにHEAD／親とworktree／index cleanを照合し、読み取り・既存証拠照合だけで再調査した。全15 Apply未Verified、TSK-14 in_progress／TSK-13 done／TSK-12 ready。**本計画への明示確認まで製品code／test・保存・index変更、install／取得、新規検証／計測、記録後docs検証を開始しない。**
+
+**今回の確認・再開（2026-10-04 12:46:59 UTC）:** 利用者の「OK」で本a3dc85a再調査計画を確認済み。HEAD a3dc85a／index空、変更は計画記録2文書だけと再照合した。Aの探索前skill cell束縛から実装し、A〜Gの成果・owner・停止境界・固定検証契約を維持する。60分checkpoint13:46:59 UTC／90分上限14:16:59 UTC。全15 Apply未Verified、TSK-14 in_progress。見出しと提示時の確認待ち記述は履歴identityとして保持する。
+
+### 完成stateを返す実行契約への改訂案（2026-10-04 15:10 UTC・確認待ち）
+
+**確認／checkpoint引継ぎ（2026-10-04 15:15 UTC）:** 利用者の「OK,commitしてから次の作業を作業者に依頼するプロンプトを作成して」で本15:10案の方向を確認し、既存27 tracked path（製品／test25＋既存正本2）の部分実装と判断記録のcheckpoint commitを許可された。完成版／最終受入のcommitではない。今回追加したのは既存Task／flowの計画・確認記録だけで、製品／test修正、新規test／typecheck／lint／docs／性能の実行はしていない。親a3dc85aと空index、対象差分をcommit前に照合する。commit後の実HEAD／親／worktree／indexは依頼プロンプトに固定し、対象外差分があれば保持して明示する。自起動processなし。全15 Apply未Verified、固定counter／最終受入未達。
+
+**次の作業者への権限境界:** 利用者は「いきなり実装させず、まずコードからどの様に実装させるかを計画させる」「確認後そのまま進める」と指示した。したがって本15:10方向と13:47以前のOK、今回のcheckpoint commit許可は、新しい作業者の具体実装計画の確認を代替しない。最初は現コードの生成・利用・書込経路と既存証拠を読み、採否・修正境界・owner・直接consumer・依存・反証・完了条件を既存Task／flowに提示し、明示確認を待つ。確認前は読み取り・既存証拠照合・既存Task／flow計画記録だけで、製品／test／保存／index変更、install／取得、新規検証／計測、記録後docs検証は禁止。確認後は同範囲の通常不具合を修正して継続できるが、下記強制停止条件に達したら自己判断で計画を書き換えて再開しない。依頼プロンプトはこの会話で渡し、新しい計画書／恒久artifactを増設しない。
+
+checkpointの記録読取と `git diff --check` を含むcommandは自動承認審査に実行前拒否された。理由は「readは許可されるがdiff --checkは次計画確認前の新規検証」。同検査を別経路で実行／再試行せず、許可済みreadと明示されたcheckpoint commitだけを行う。新たな差分検証成功は主張しない。
+
+**今回の判断範囲:** 利用者の再度の「破壊的変更は許容しますフォールバックは不要です。この前提で考えてみて」を受け、13:41確認済み案のR1を直接producer／consumerから再評価した。今回の発言は下記改訂への確認ではない。現在は読取と既存Task／flow記録のみ。製品／test／保存／index変更、新しい検証・計測・docs検証・取得は開始していない。HEAD a3dc85a、index空、既存27 tracked pathの部分差分を保持する。自起動processは前Handoffで全終了済み。全15 Apply未Verified／TSK-14 in_progress、固定counter未解消。
+
+**前案との差・採否:** NP helperのmandatory receipt／sourceStageは限定的な途中成果として保持するが、最終APIとして採用しない。R1の置換境界を「個々のwriteにreceiptを追加」から「sourceの値・根拠のcommitと、action完了stateの返却」へ具体化する。既存R0帰属とR2〜R4の成果・検証契約は維持する。内部型／APIを壊してよいことと、現行保存・固定検査・能力を撤去してよいことを分ける。
+
+#### 直接経路からの根拠
+
+- `PreparationResourcePlanResult.ready` はNP transaction、HP、BP、OC、buff、population、contextState／proof等を別々に返す。`reducePreparationSkillAction`／`reducePreparationTransformNoblePhantasmAction`／`prepareAttackNoblePhantasm` がこれらを元stateへ組み直す。skill／transform側は `findPreparationTransition` と `resolvePreparationIdentityOutcome` を元stateと適用effectから再評価する。一方 `preparationOc` のsource完了は既に `resolvePreparationStructuralOutcome` で形態／NP選択を更新している。後段の整合性検査は維持すべきだが、同じidentityの決定・state生成ownerを二つ残す必要はない。
+- `reducePreNoblePhantasm` はaction成功後にもform activation／BP reconcileを適用し、失敗なら原stateへ戻す。終端automatic sourceも別段で実行する。したがってsourceだけの成功をaction全体のcommitとして公開してはならない。
+- preparationは値と `conditionWriteProofs`／NP専用write列を別管理し、`bindPreparationWriteProofs` は差分から後付けする。通常executionの `traitFactLayers` とtrait／count／proofの投影も並存する。`TraitFact` のpresent／countへ単一proofを割り当てるだけでは、presenceは確定・exact countはpossibleという状態を表現できない。存在、量、既知absence、unknownの根拠を各writerとreaderで区別する必要がある。
+- NP APIのcaller指定 `phase` はpending writeを許可する途中の制御であり、外へ完成receiptだけを返す型境界の代わりにはならない。compilerの未実行template、到達sourceの実read／proc receipt、未到達／非対象traceも型を分ける必要がある。
+
+#### 成果・owner・維持する境界
+
+利用者成果はranking §20、13:41案の共通／保存basis・通常保証平均の最大／理想合法最大・共通calculator経路のまま。applicationが一度のbasis解決、明示cell／command、plan選択を所有し、battle-executionがordered read／write、source commit、action完了、実寄与／OC／rollbackを所有する。actionの既存form整合検査・使用済みslot／NP・automatic activationもexecutionの完了境界へ含める。既存数式やcanonical operationを新しい汎用戦闘IR／別evaluatorへ置換しない。NP／HP／BP等の物理計算は既存規則を使う。
+
+内部stateは値とその生成根拠・依存を同じownerで更新する。trait／count／proof等のconsumer用投影を残す場合は導出した読取viewとし、独立write経路にしない。pending stateはsource transaction内部だけに保持する。source commitは完成した値／根拠と実receiptを返し、action commitは使用記録・既存形態整合・automatic source／BP reconcileまで含む完成stateを返す。callerは断片の合成／形態の再決定をしない。拒否はtyped理由・attempt／修復情報と原committed stateを返す。source失敗ではsource stageを、action失敗ではaction前stateを復元し、有限OC使用も戻す。
+
+`schema42 request/basis → application resolved basis/cell → shared execution committed state/result → worker strict DTO/UI → portable pinned request → workspace-domain/repository → reload/history/share/backup/repair` を実callerで閉じる。内部receiptの保存必須項目化は行わず、現行requestのreplayで導出する。旧内部API撤去と旧形式fallback不要を採用し、正常な現行保存の復元、共通Lv／NP選択、保存・編集・AttackProfileを維持する。失敗時の原request/result/save保持・stale summary/detail/handoff拒否を維持する。schema42／engine49／保存format・固定入力／取得元／保持契約を変える必要が出た時点で停止する。
+
+#### 実装単位・依存順・最初の反証
+
+| 単位 | 対象と直接consumer | 最初の反証／閉じる条件 |
+| --- | --- | --- |
+| R1-a: 値／根拠とsource commitの型境界 | `conditionRead`／`traitFactLayers`／`preparationContracts`／`preparationProofs`／`preparationTransaction`／`preparationOc` と各quantity／HP／BP／buff／marker／population／trait／form writer。未実行templateと実receiptを分離し、scalar二重判定、後付けledger、NP専用finalizer、caller指定phaseを撤去する | possible前値への確定同値write、確定source＋possible amount／donor、presence確定＋count不確定、削除→notとunknown、同一OC clockのproc相関、source失敗の全write／OC rollback。小さいschema-legal fixtureから代表の複合順序を先に接続する |
+| R1-b: action完成stateと全forward／recovery writer | `preparationSkillReducer`／`preparationTransformNpReducer`／`preparationAttackNp`／`preNoblePhantasm`、`sourceCollection`／`auxiliarySources`／`operationCompiler`／`candidatePreparation`／`candidateExecution`／rollback／`effectiveContributions`／`ocState`。既存BattleOperationと物理reducerを維持し、準備／通常・preapply／projection／automaticの実writerを同じread/write・commit ownerへ接続する | skill→後続condition→NP/OC→形態／automatic→攻撃の整合、source成功後のaction拒否→retry、source true→terminal false／逆、順序違いと原snapshot保持。代表calculator／portable／workerの型接続をこの段階で先行し、全family接続と旧write/caller経路撤去を確認する |
+| R2: admission・全関連分岐・同値性・certificate | 13:41 R2のmoduleと規則を継承。BP×procを同じ具体集合で扱い、通常は全関連枝の合法性／確定寄与で保証平均、理想は合法な具体枝の最大を選ぶ。raw clockはtraceに保持し、将来の値・根拠・資源・command・rollbackの同値proofでのみquotientする | 独立小有限oracle、illegal witness identityと拒否clock、決定的順序、枝順序変更、全段counter・4096上限・最大漏れ。起点でも失敗した固定counterを退役／期待値更新せず閉じる。両立不能なら停止して個別判断を求める |
+| R3: 全basisと現行復旧の実consumer | `rankingBasis`／planner／`actorFormGraph`／`scenario`／`portableCalculation`、Calculator／RankingRoute／useRanking、worker protocol/runtime、workspace／repository／startup／history/share/backup／repair | savedの実Lv/NP/cellと探索入力の一致、全form／choice／4policy、production buildの実module worker／Chromium／IDB、正常current復元、各修復失敗の原保存保持、late結果拒否。局所fixture／旧E2E成功を現行の実経路へ拡張しない |
+| R4: 独立strictから最終受入 | `productionClosureRecordIntegrity` のproducer／reader／replay／merge、runner／config／固定入力と直接consumerも対象。13:41 R4と旧I4〜I6の順序を継承 | 再hashした意味改竄の拒否、80条件＋別S0/S1 saved production、全意味差、正式after各3process、差分レビュー／対象内Blocking0→固定差分のpnpm quality→結果記録後docs検証 |
+
+この順序は旧I2（実UI／保存）の未達をR1-bの代表経路とR3で閉じ、I3（共通execution）をR1-a/b→R2で閉じてからI4→I5→I6へ進む。部分NP実装を完成契約として維持する案は棄却し、代表経路を後回しにする案も棄却する。全面matrix／qualityを部品段階で重複実行する順序は採らない。
+
+**P1〜P8:** P1 queue／epoch／atomic durable write、P4 strict current／normal recovery、P7 typed未知・不足・unsupported拒否、P8 complete damage inputだけの純damage cacheは維持。P2は本R1-a/bの完成state契約へ置換。P3独立current strictは必須・未完了。P5は将来意味の証明に基づくquotientへ置換、P6は全段counter／有限上限／certificateと固定検査を維持する。それぞれの最初の反証は13:41案と確認済みA〜Gを継承し、P2だけ上表で具体化する。
+
+#### 既存証拠・完了条件・停止境界
+
+R0 `baselineReproducedUnchanged` はcounter署名の帰属だけ、R1局所89／標準typecheck／対象lintは前Handoffのsource・範囲だけに有効。今回変更後の証拠へ流用しない。原診断／formal before／固定6入力・保存実体・出自は原pathのまま継承する。同条件かつ対象差分の影響を受けない証拠だけ再利用し、不足を別版・再生成・暗黙の取得元変更で補わない。06:29旧executionの実E2Eと382／113の過去source成功も今回current実UI／production／性能成功として扱わない。
+
+完了にはTaskの全15 Applyを同じ最終差分の有効証拠へ対応付け、局所／代表経路、current実UI・worker・保存復元／修復／stale、独立current strict、固定80条件＋別S0/S1 saved、正式beforeと同入力・toolchain・workloadのafter各3process、全damage/state/outcome/save意味差を閉じる。runner・設定・固定入力・直接consumerまで差分レビューし、対象内Blocking0後に固定 `pnpm quality`、記録後 `pnpm test:docs`。既存の限定確認済み退役以外のexpected／assertion／audit／runtime counter／VRT／timeout／cap／ratchet変更は含めない。
+
+成果・不変条件・意味owner・範囲・依存・検証契約の変更、計画規則で説明不能な差、合法性／certainty／rollback／identityの保証不能（判断不能を含む）、新形態規則／IR／能力削除／形式・取得元・保持変更、候補切捨て／unknown黙殺／fallback／検査緩和が必要なら即停止する。最初の反証・原log・差分・process状態・有効証拠／未達と具体改訂案を既存Task/Handoffへ残し、確認まで読み取りと記録だけ。確認後の実装sessionは実行効率要件の60分checkpoint／90分上限を新たに照合する。調査・部分成功・checkpointをDone／R1全体受入と呼ばない。
+
+**提示時の次操作／利用者判断:** 本15:10案のR1-a/b（値／根拠のsource commitと完成action state、全direct caller撤去）への明示確認を待つ、という提示時記録。方向の確認とcheckpoint引継ぎは上の15:15記録へ進む。次の作業者は新しい具体計画への明示確認を待ち、過去のOK／commit許可を代入しない。
+
+### 破壊的な内部実行契約置換の改訂案（2026-10-04 13:41 UTC・確認待ち）
+
+**確認・再開／60分checkpoint（2026-10-04 13:47:57 UTC）:** 利用者のOKで本13:41改訂を確認済み。HEAD a3dc85a／親6074dbd、停止時26path・index空を再照合した。R0から継続し、既存sessionの90分上限14:16:59 UTCは維持する。13:23の原counter failureとA/B限定証拠を保持、全Apply未Verified。今回新namespace `approved-run-0819/resume-1347/` はTSK-14 owner、R0のlocal Git source隔離・workspace参照receipt・固定入力identity・完全帰属log専用。恒久bundle／原入力の代替ではなく、参照期間は本帰属とTSK-14受入中、終了後はconsumerと既存policyに従う。新helperは一時診断用で恒久採用せず、master原pathを同取得元のまま参照する。install／取得／保存format・fixed contract変更なし。次は起点とcurrentの同command診断。
+
+#### 上限Handoff（2026-10-04 14:20 UTC・R0帰属／R1 NP consumer部分接続）
+
+13:47のOKで本13:41改訂を確認済み。既存sessionの14:16:59上限で新familyを開始せず、上限前に開始したR1 atomic sliceの型／対象lintと記録を閉じた。次sessionは本確認済み計画の未達R1から続ける。通常の同範囲修正に再承認は不要だが、既定の強制停止条件とfixed counter／保存format等の境界は維持する。
+
+**R0帰属:** `resume-1347/r0-attribution-receipt.json` は `baselineReproducedUnchanged`。起点a3dc85a Git archiveとcurrent A/B差分を、同じinstalled workspaceのpnpm／canonical runner、同じconfig／Node26.3.1・pnpm11.20.0・fixed master、同一production fileで比較した。どちらも2成功／1失敗、warning0・artifactVerification errors0、generated8683／deduplicated8673／exactDuplicates10／terminal7596／maxSemantic181で一致。今回A/Bによるcounter署名の変化を観測しなかったという限定帰属であり、意味全体への無関係・counterの正しさ・受入成功は主張しない。元fixed inventory assertionと未到達の後続assertionを保持し、Blockingとして残す。
+
+- 原baseline／current run: `resume-1347/r0-baseline-root/production/manifest.json`、`r0-current-root/production/manifest.json` と各完全log／vitest.json。wrapperは `r0-baseline-root-wrapper.log`／`r0-current-root-wrapper.log`。有効commandはinstalled元workspaceの `pnpm test:diagnostic -- --suite=production --root <archiveまたはcurrent> --config <同root>/vitest.config.ts packages/calculation-application/src/productionMasterAudit.test.ts`。両者のsource rootだけを比較対象として変えた。runnerのGit metadataは外側worktreeを参照するため、archiveの正確なsource identityは別receiptが所有する。
+- source／input出自: `r0-isolation-receipt.json` のlocal Git公開453path、`r0-resolution-receipt.json` の15 workspace参照がすべてarchiveへ解決。root依存は既存installと共有し、package／lock／configは起点と現行で同一。logical `apps/web/public/master`／fixture／baselineは元のfixed providerへ明示linkし、別版・再生成・暗黙の提供元変更で補っていない。固定6pathをliteralのsha256sumで13:53 UTCに検査し、元 `i1-start-input.sha256` と全件一致。formal beforeの取得／測定条件と保存能力は変更しない。
+- 最初の隔離commandは環境file保護PreToolUse hookに実行前拒否され、書込／読取未実行。そのcommand内の宣言からの動的入力readを廃し、固定6pathのliteral検査と、読取前に正の集合／regular blobを検査する公開source archiveへ分離した。保護設定は変更していない。安全なcommandは正式権限審査で実行した。auto-review否決ではない。
+- archive cwdの最初／web manifest補充後の2起動はpnpm `ERR_PNPM_VERIFY_DEPS_BEFORE_RUN` でtest開始前に拒否。`r0-baseline-wrapper.log`／`r0-baseline-corrected-wrapper.log` を保持する。installed workspace metadataが元の絶対path集合を所有することを確認し、既存 `test-runner.test.mjs` のsource root指定を用いて、元workspaceで同じ依存検査を実施した。verifyDepsBeforeRun/error・workspace metadata・runner guardを無効化／書換していない。install／fetchなし。起動拒否をtest failureやbaseline成功へ読み替えない。
+- 親6074→a3の既存diffは、plannerがstochastic可能枝を実行する変更と、effect keyのstochasticOutcomeをsourceActivation全体へ換える変更を含む。raw clock／枝増加が候補同値性へ影響し得るが、それぞれの寄与とsound quotientは独立oracle未検証。原旧数値へ戻すkey調整やclockの無条件削除を行っていない。
+
+**R1実装・検証の範囲:** `preparationResourcePlan.applyPreparationNpOperation` の入力をscalar付きactivationからmandatory `sourceActivation` と明示 `phase: sourceStage | resolvedSource` へ破壊的に変更した。唯一の製品caller `preparationOc` はsource transaction内のactual receiptを渡す。既存direct fixture callerも同じAPIへ移し、元condition/proc指定をreceiptへ束縛した。旧API adapter／fallback・期待値変更なし。condition false／実proc failureは非write、receipt未読は容量clipのno-opでも拒否、proc未読の仮writeはsourceStage内に限定し、resolvedSourceでは拒否する。mixed sourceが失敗したときのstage破棄／NP rollbackは既存transaction反証で確認した。
+
+- 最初のR1反証 `r1-first/unit/manifest.json`: 新APIのreceipt／stage検査1失敗・68選択外skip、原log保持。最初のassertionで止まり後続のnegative断言に未到達。またこの新fixtureにはcanonical unit／recipient／5段cellの接続ミスがあり、最初のfailureを単独の全意味反証とみなさない。
+- 初回接続後 `r1-transaction/unit/manifest.json`: 3file88成功／新fixture1失敗、warning0。最初の `r1-typecheck.log` exit2は新fixtureのbasisPoints／sourceActorと不足OC列／null LBによる型不一致。新fixtureだけを現行sourceSelf／fixed／5段cellへ直し、NP量1000と全assertion、fixed input・既存expectedは変えていない。各原log保持。
+- 修正後 `r1-corrected/unit/manifest.json`: transaction69＋conditionRead14＋rankingSavedBasis6の計3file89成功、skip／warning0、artifactVerification errors0。実clock／same-value／量依存・recipient、mixed NP/OC proc失敗rollback、receipt必須／pending stage、saved basisの限定成功。手で構築した低層receiptの検査であり、full master witnessの独立合法性・全certificate・current実browser／worker／IDBの保証に拡張しない。
+- `r1-typecheck-corrected.log` exit0は標準 `pnpm typecheck`（tsc build＋Next typegen／web tsc）。`r1-lint.log` は常に真のoperation.kind二重条件1件でexit1、その型上冗長な一項だけ削除し `r1-lint-corrected.log` は同3fileexit0。最後のtypecheck／局所89は最終整形とこの意味不変な冗長条件除去の直前を含む限定証拠で、fixed final qualityとしては扱わない。format原logも保持する。追加全件検証・production／正式性能・docs検証・qualityは開始していない。
+
+**現在identity／process:** HEAD a3dc85a・index空・27 tracked path（製品／test25＋既存正本2）、`r1-handoff-source.json` と `r1-handoff-product.patch` が今回上限の公開製品差分identityを所有する。master／raw・fixed input／保存・package／lock／versionは未編集。自起動processはすべて終了済み、他sessionのprocess／差分は撤回していない。archive／scratch／helper／logは登録済みTSK-14診断用途・受入参照期間のままで、恒久保持／原証拠の移管／cleanupは行っていない。
+
+**未達／次操作:** 全15 Apply未Verified・TSK-14 in_progress／TSK-13 done／TSK-12 ready。R1はNP direct readerだけであり、`PreparationEffectActivation` 全体の二重scalar、`bindPreparationWriteProofs`／NP専用finalizer、全writerの同値write／削除／amount依存、automatic source／compile template／実行receiptの型分離とtransaction commitは残る。次はこれらのvalue ownerを同じsource transactionへ接続し、上記NPの明示sourceStageも外部へ確定proofとして公開しない最終型へ収束する。その後確認済みR2（BP×proc全枝・保証／理想選択・certificate／同値性／fixed counter／最大oracle）→R3（全basis・実UI/worker/portable・正常current保存／repair失敗保持・stale）→R4（独立current strict・80＋別S0/S1 saved・正式after各3process・全意味差・reviewBlocking0→fixed quality→記録後docs）。fixed counterは未解消、R0帰属／部分NP成功をApply完了／TSK-14 Done／R1全体受入にしない。説明不能差・保証不能・境界変更・fixed検査退役が必要なら再停止し、改訂確認を待つ。
+
+**判断と確認範囲:** 利用者の「破壊的変更は許容しますフォールバックは不要です。この前提で考えてみて」を受け、内部API／未完成型／後付けproofの維持を前提にせず再評価した。本発言は改訂計画への確認ではない。13:23停止を維持し、この調査は読取と既存Task／flow記録だけで、新run／検証／計測／取得／製品・test・保存・index変更はない。前の限定案を今回の確認対象へ代入しない。
+
+**前案から変える判断:** 「旧counterの数値へ戻す」を設計目標にする順序を棄却する。実行意味を定義するownerと、候補をまとめられる根拠を先に揃える。現在26pathにあるfixed／ratio NP専用receiptや `finalizePreparationNpQuantityWrites` も完成仕様として保存せず、下記の一つのsource transaction契約へ置換する。旧ledger・scalar・未読からのdefaultを残す互換adapterは作らない。ただしcounter契約を退役する許可とは区別し、元assertionはBlockingとして残す。
+
+#### 読取で確定したこと／未確定のこと
+
+- `PreparationEffectActivation` はmandatory `sourceActivation` と `procOutcome`／`conditionOutcome` を同時に持ち、`preparationTransaction` と `preparationOc` の実callerはscalarで採否を決める。receiptの追加だけでは判定ownerを一本化できない。
+- `bindPreparationWriteProofs` はafterの差分を走査する。NP同値write、削除されたmarker、数量が同値の再確立、amount／donor／population等の依存をこの機構だけで判定できない。新NP専用finalizerもclockのJSON文字列でproofを後から置換するため、全familyの生成ownerへ接続する契約の代わりにならない。
+- `canonicalEffectKey` は `sourceActivation` 全体を含み、planner keyはそのclockをそのまま候補同値性へ持ち込む一方、完全なHP／fact proof／absence等を含まない。実行履歴の相違と、将来の意味の相違を同じkeyに任せない。
+- rankingの `compileStaticRankingPreparationPrograms` はcommand列を含むstatic BFS、calculator側 `planPreNoblePhantasmCandidates` はexecution state BFSである。二つを別damage evaluatorへ発展させない。static側は既存command／AttackProfileとcandidate-local admissionの列挙に責務を限定し、真偽・資源・寄与・縮約の意味をexecutionへ戻す。
+- `scenario` はproc分岐ごとにBP witnessを乱数maximumで先に選び、その後NP averageでprocを選ぶ。全相関集合／通常保証と一つの具体executionを結び付ける選択へ置換する。
+- 起点a3dc85aの `availablePreparationSkillCommands` もslotごとのLv10を生成していた。今回auditのexplicit common Lv10は元のcellと同じであり、「Lv1→10だからcounter増加」とは説明できない。keyのbodyも今回不変。13:22不一致の起点再現／今回変更への帰属、合法集合の不足／過剰はまだ未確定である。
+
+#### 利用者成果・不変条件・owner・型伝播
+
+成果とゲーム規則は確認済みA〜Gのまま維持する。共通／保存basis、自己buff二値、通常の全関連可能枝の合法性と確定寄与による保証平均の最大、成立込みの共存可能な合法最大、AttackProfile・合法なNP使用順を同じapplication／executionで成立させる。damage式・master／raw・growth／editor・append戦闘・turn／再使用・新形態規則／新ゲームIRは対象外。
+
+applicationがstrict入力と一度のbasis解決・明示command cell・有限plan／初期witness／policy選択を所有し、battle-executionがread clockでの値・真偽・確定根拠・proc相関・write・実寄与・OC・rollbackを所有する。data pipelineが既存canonical IRを所有する境界は変えない。新unionは既存operationの内部実行result／receiptであり、別の戦闘言語を追加しない。repositoryのatomic durable write、workspaceの所属／identity、UI／workerのcommand・輸送・表示のownerも維持する。
+
+`schema42 selection／basis／request → application resolved basis → shared command／source transaction → concrete execution／certificate → worker strict DTO／UI → portable pinned request → workspace → repository → reload／history／share／backup／repair` を直接consumerとして閉じる。新しい内部receiptを保存本文へ必須項目として増設せず、現行requestのreplayで導出する。正常なcurrent request＋resultの同値復元を維持し、旧形式fallback撤去とcurrent復旧能力を分ける。schema42／engine49／保存format・固定入力／提供元・保持契約は不変。これらの変更が必要ならその場で停止する。
+
+#### 置換単位と依存順
+
+| 単位 | 修正する契約・module／主要symbol | 最初の反証／ゲート |
+| --- | --- | --- |
+| R0: 帰属、製品writeに先行 | local Gitのa3起点と現在source、同じfixed published master／runner／Node・pnpm／explicit Lv10・NP1・OC1でinventoryをbounded診断。前13:23案の隔離source・論理path／実提供元・一時集合の制約を継承 | 原assertion／原failureを保存したまま、どのsource／cell／read／keyの差からgenerated・duplicate・terminalが変わるかを説明する。install／fetch／入力再生成はしない。同条件／同取得元で成立しなければ停止 |
+| R1: B/Cを一つのtransaction familyとして置換、A bindingを利用 | `conditionRead／traitFactLayers／preparationProofs／preparationContracts／preparationTransaction／preparationOc` と各quantity／HP／BP／buff／marker／population／trait／form writer。値ownerがoperationごとにbefore／after、同値write／削除・absence、実cell／amount・前値／capacity／modifier／donor等の読取依存を同時に生成。source/action snapshotに値と根拠を収める | possible前値への確定同値write、確定source＋possible amount、presenceとexact countの確定性の違い、削除→not、先のreadを後の回復で成立させない順序、失敗source／action→retry |
+| R1のactivation接続、別scalarを全撤去 | `sourceCollection／auxiliarySources／operationCompiler／candidatePreparation／candidateExecution／stochasticOutcomes／effectiveContributions／ocState`。compiler未実行templateと実行済みreceiptを別型にし、到達sourceにunreadを許さない。未到達／非対象／実readとproc／入力不足／invalidを既存outcomeに沿うunionで返し、そのreceiptだけで採否を決定 | automatic initial／terminalとused skillが同ownerを通ること、実OC-rate clockとcanonical proc groupの相関、source true→terminal false・逆、mixed sourceの全write／OC有限使用／proofのrollback |
+| R2: DとP5/P6の意味境界、R1後 | `stochasticPossibilities／scenario／rankingActionAdmission／rankingCandidateSpace／rankingPolicyCandidates／rankingWorldObservation／rankingCandidateCertificate／preNoblePhantasmPlanner`。BP初期witness×procを一つの有限具体集合にし、unknown／illegal identityと拒否clock・理由も保持。static列挙は意味を再評価しない | 小有限の独立最大／保証oracle、全関連枝の合法性、BP/proc相関、全stage counterとbranch coverage、branch順序を変えても同一選択・同一結果。普通は各選べるplan/BPに対し全関連proc枝の保証平均のminを取り、そのmaxを選ぶ。理想は合法枝のaverage max。NP列／乱数列／OCを枝間合成しない |
+| R2の同値性・identity | raw execution／detailのexact clock・source/witness identityは保持。候補の同値keyは、将来command集合・資源／HP／BP／OC／buff有限使用・fact値と確定根拠／absence・readの因果依存／寄与／rollbackが同じことを既存型内で証明する。ordinalだけの相違は証明された場合に限りまとめる。JSON receipt全体の一致も、clockの無条件削除も同値proofにしない | commuting順と条件生成→解除順を独立oracleで区別。proof不明のmemberをmergeしない。全semantic積の上限4096と前段費用を保証し、candidate切捨て／cap引上げなし。元固定inventory assertionはそのまま実行し、両立しないと判明すれば追加の契約案を示して停止 |
+| R3: EとI2実経路、R1/R2後・代表経路は型接続時に先行 | ranking basis／planner／actorFormGraph／scenario／portableCalculationの実cell束縛、worker protocol/runtime/DTO／useRanking／RankingRoute・Calculator、workspace／repository／startup／history/share/backup／repair。全basis／form／choice×4policyを実callerで接続 | common選択維持・saved値が探索前と実使用で一致、current正常pair実復元、repair各失敗で原pair／保存保持、late summary／detail／handoff拒否。実production build／module worker／Chromium／IDBを閉じ、jsdom成功を拡張しない |
+| R4: F→G、R3後 | `productionClosureRecordIntegrity` とproducer／reader／replay／merge／runnerを含む独立current strict、対象productionと正式after、既存正本・最終review/quality | nested shape／status/version/identity・branch/read/write/resourceの意味・選択結果を独立検査し、failure非空はreject。意味改竄＋再hashを拒否し、固定rule由来の独立fixtureとcanonical replayを併用。80条件＋別S0/S1 saved、正式beforeと同条件after各3process・全意味差→Blocking0／差分レビュー→固定pnpm quality→結果記録後docs |
+
+source内部の仮state／pending dependencyはtransaction外へ確定値・確定proofとして公開しない。実procがOC clockで決まるsourceはそのclockの読取と同一groupの結果を一度束縛し、commitで実依存を完成させる。後段でclock文字列だけを頼りに別sourceのproofを書き換えない。source失敗はstageを破棄してattemptを保持、action拒否は原stateへ戻す。既存canonical orderingで因果循環やcommitできない根拠が生じるなら、新IR／defaultで補わず停止する。
+
+#### P1〜P8・旧I2〜I6の採否
+
+P1 queue／epoch／durable writeとP4 strict current／normal recoveryは維持して実callerの残scheduleを閉じる。P2はreceiptを足す採用から、value owner＋一つのtransaction／activation resultへの内部契約置換へ改める。P3独立current strictは必須・未完了のままR4へ接続する。P5はbooleanやreceipt全体の一致に依存する同値化を撤去し、上記将来意味とread因果の同値proofへ置換する。P6は全stage計数・finite bound・certificate identityを接続し、**固定counter検査を維持**する。P7未知／不足／unsupportedのtyped拒否、P8complete damage inputだけの純damage cacheを維持する。P1／P3／P4／P7／P8の個別反証と境界は確認済みA〜G表を継承する。
+
+旧I2のbasis／実UI・保存残件をR1〜R3、I3のwrite／activation／相関と候補をR1/R2、I4をR4のstrict／production、I5を正式性能・意味差・review、I6を最後の固定quality／記録後docsへ対応づける。局所成功→実caller→productionの依存は採用するが、未完成NP専用型を横へ継ぎ足す順序と、counter数値を目標にした個別key修正を不採用とする。
+
+#### 維持する検証契約・停止境界・現在状態
+
+13:22の原counter failureと13:23停止報告を保持する。R0の既知failure再現は帰属診断であり受入成功に数えない。R1/R2で直すのは説明できる実owner／同値性の欠陥であって、固定値への調整ではない。fixed inventory／runtime counter／VRT／audit／expected／timeout／cap／ratchetの新たな変更・退役は本改訂に含めない。正しい候補集合との両立不能が分かった時点で、対象assertion、失う保証、代替する独立検査と履歴比較の具体案を別に提示して確認を待つ。既存whole-record等の限定退役は当時の明示確認範囲のまま維持する。
+
+全15 Applyとその検証ownerはTask表のまま。closureはpackages/*/srcだけでなくUI/e2e・worker・保存direct consumer、runner／設定／固定input／loader・matrix／strict reader／merge／正式測定helperを含む。各Applyに最終sourceと有効証拠を対応づけ、局所・代表経路・current実UI/worker/保存・strict・80＋別saved・同条件正式after・全意味差・対象内Blocking0・差分reviewが揃うまでVerified／Doneにしない。09:30引継ぎ382／113、06:29実E2E、今回A/Bの局所成功はそれぞれのsource／input／consumer範囲でだけ再利用する。新しい型・read/rollbackの変更が影響する範囲は再検証し、正式before／原固定6入力／historical baseline／母集団／原証拠をactualへ書き換えない。
+
+現在HEAD a3dc85a・26 tracked path・index空、製品／testは停止時のまま、自起動process全終了。TSK-14 in_progress・全Apply未Verified。破壊的内部置換を許容するという前提でも、共通Lv/NP・保存編集・AttackProfile・current復元等の能力削除は許可に含めない。成果／owner／境界／依存／検証をさらに変える必要、説明できないdamage/state/outcome/保存差、保証不能、入力／提供元／保持／version変更、切捨て／unknown黙殺／fallback／検査緩和、または判断不能なら再停止する。停止後はreadと既存Task／Handoff記録だけ。60分checkpoint／90分上限・process管理は実行効率要件に従い、既存12:46:59開始の上限を本読取再評価で解除・延長しない。
+
+**今回求める確認:** 前13:23限定案に代えて、R0帰属→R1内部transaction／activation契約の一括置換→R2相関集合／証明する同値性→R3直接consumer→R4 strict／production／正式性能／review／qualityという改訂範囲と依存順。旧API・ledger・scalar・NP専用finalizerへの互換fallbackを残さない。保存format／version・固定検証契約の追加退役は承認対象に含めない。本具体案への明示確認まで実装／新検証／docs検証は停止したまま。
+
+### 固定inventory counterの停止報告と限定改訂案（2026-10-04 13:23 UTC・確認待ち）
+
+**停止判定:** 13:22 UTCの実caller診断で `productionMasterAudit.test.ts` の固定inventory assertionが失敗した。13:23 UTCに検知し、実装・新規検証／計測・docs検証を停止した。本計画P6／実装ゲートの「既存固定counter失敗は退役せず停止」と、候補切捨て／検査緩和禁止が停止根拠。通常の実装不具合として自己判断で停止解除せず、以下の限定改訂確認を待つ。
+
+#### 現象・原証拠・帰属の限界
+
+原run: `.test-results/2026-10-04T13-22-16-018Z-704795-3a99c3/manifest.json`、完全stdout／stderr／vitest.json。commandは `pnpm test:diagnostic -- --suite=all packages/battle-execution/src/preparationTransaction.test.ts packages/calculation-application/src/preNoblePhantasmPlanner.test.ts apps/web/src/features/calculator/Calculator.reachable-choice.test.tsx packages/calculation-application/src/productionMasterAudit.test.ts`。run wrapper原logは `approved-run-0819/resume-1246/ab-direct-production.log`。Node26.3.1／pnpm11.20.0、HEAD a3dc85a・dirty、4file／76test中75成功・1失敗、warning／skip0。68 transaction・4 planner・1 published-master calculator component choice、production file残2testは成功したが、run全体はfailureのまま保持する。
+
+| 固定counter | expected | actual |
+| --- | ---: | ---: |
+| generated | 6,673 | 8,683 |
+| deduplicated | 4,194 | 8,673 |
+| exactDuplicates | 2,479 | 10 |
+| terminal | 3,640 | 7,596 |
+| maximumSemanticStates | 56 | 181 |
+
+servants422、form nodes／profiles484、attack626／nonattack101、rejected7（insufficientNpGauge7）、maximum actions4等の表示された他fieldは一致。数値を期待値へ書き換えず、fixture／counter契約／timeout／cap4096を変更していない。後続の固定 `terminalKeys.size` assertion等へ到達していないため、同一runの未実行assertionを成功としない。
+
+現在のdiffでは `canonicalEffectKey`／`preNoblePhantasmSemanticStateKey` のbodyを変更していない。起点に既にある `activeEffects.sourceActivation` 全体には、`preparation:<action ordinal>:<kind>` のsource-use clockが含まれる。NP量write receiptは新規だがsemantic keyへ直接は含まれず、NP量proofの変更がsource readへ間接影響する可能性と、起点に既存のexact clock identityによる区別を切り分けられていない。これは読取からの原因候補であり、起点同条件runが未実施のため今回変更への帰属も起点再現も断定しない。過去の局所382／113成功や旧beforeの数値で、このcurrent inventory failureを無効にしない。
+
+#### 承認計画との差・owner・現在差分
+
+Aは、全canonical slot Lvを明示引数として探索前に検査し、実skill commandとplanner cacheへ束縛した。common Lv10はapplicationが明示生成し、保存buildはschema／servant identity／canonical slot集合を検査する。calculator初期化・manualからの切替・attacker選択・AttackProfile portable factory・reachable form・形態変更へ接続し、探索後のLv差替えを撤去した。形態変更の既存command Lvと、新しく選択する未使用slotの既定Lv10はapplication `preparationSkillLevelsForScenario` が探索前に決める。未保有／NP0の新規calculator仕様defaultを保持し、保存不足をLv1で補わない。
+
+BはNPのfixed／currentGaugeRatioに限る部分接続。`commitPreparationNpQuantityWrite` は実before／after、canonical cell、capacity、前値のproof・依存、operation clock、source receiptを同時に保持する。同値writeも記録し、全物理domainを埋めるfixed deltaだけが前値依存を外す。mixed NP／OC sourceはsource commit時に実proc receiptへ束縛し、失敗source／actionは原stateのreceipt／proofへ戻す。別recipientへattacker writeを捏造しない。**buff／population／donor／HP／BP／trait・削除・form等のwrite owner、旧after-diff ledger全撤去、scalar二重経路撤去、全分岐／BP相関・certificate・quotientは未実装／未Verified。** 現NP receiptの全consumer／worker／portable意味検査への伝播も未完了で、B/C完了を主張しない。
+
+計画は意味を保証した候補同値性と固定counter維持を同時に求める。実counterが不一致の現在、どのclock／read差を保持すべきか、どの状態が同値かを追加の帰属・独立oracleなしで決められない。このためB/Cをそのまま進める承認済み依存順ではなく、最初にboundedなinventory帰属と同値性反証を置く限定改訂を提案する。ownerはapplication planner／candidate quotientとexecution read／write identity、検証ownerは既存production inventory。damage式、master／raw、schema42／engine49／保存format、固定入力／取得元／保持契約を変える提案ではない。
+
+HEAD a3dc85a、index空、現在26 tracked path（計画／停止記録2文書を含む）。製品差分はpreparationCommands／Contracts／State／Oc／Proofs／Transaction、rankingBasis／planner／scenario／scenarioCommands／actorFormGraph／portableCalculation／Calculatorと直接test／audit caller。保存・固定master／fixture／lock／loader・original gzipは編集していない。並行sessionの差分を撤回していない。stage／commit／install／取得／cleanupなし。今回起動した全processは終了済み（最後のrun exit1）；他session processは終了していない。
+
+**停止後の操作逸脱:** 読取commandに `git diff --check` を含めて実行してしまった（書込なし・exit0）。停止後の新規検証禁止に反するため、有効な受入証拠として扱わない。以後は読取と本Task／flow記録だけ。追加lint／typecheck／test／docs／hash検証やartifact生成を行っていない。
+
+#### 有効証拠と未達
+
+- A初回局所 `.test-results/2026-10-04T12-58-23-519Z-698880-d68957/manifest.json`: 4file45成功。Lv1のNP lossでNP不足／Lv10合法、cache分離、保存slot不足・identity拒否を追加した。後のscenario owner整理／B変更より前の限定証拠。
+- A owner整理後 `.test-results/2026-10-04T13-04-33-671Z-700143-146e74/manifest.json`: 5file43成功。このcommandに存在しない `Calculator.test.tsx` filterを含めてしまったが実行集合はmanifestの5fileであり、UI成功へ拡張しない。
+- B最初の反証 `.test-results/2026-10-04T13-08-27-294Z-701527-f7fcae/manifest.json`: NP同値write clock・前値依存・ratio・全domain clipの4hard assertion失敗、-t選択外63skip。期待値／原logを保持し、成功runへ上書きしていない。
+- B修正後 `.test-results/2026-10-04T13-12-48-024Z-703223-623b48/manifest.json`: 4file94成功。conditionRead／transaction／saved basis／Calculator.direct-inputs component。requested reachable-choiceはproduction所属でこのunit runには含まれず、closureへ足さない。
+- 最終実caller反証run（上記13:22）: 最後の製品source・追加receipt／recipient assertionを含む。transaction68・planner4・published calculator choice1・production2の限定成功とinventory failureを分ける。component/jsdomでありcurrent実browser／worker／IDBの成功ではない。
+- `resume-1246/a-typecheck-first.log`: 内部contextへの不要field混入でexit2。通常の接続ミスとして削除し、`a-typecheck-corrected.log` exit0。`b-typecheck.log` もexit0でNP製品変更後の標準typecheck成功。ただし最後のtest-only receipt assertion追加より前であり、最終固定差分quality／typecheckの代用にしない。formatter各logは局所整形に限る。対象lint・正本記録後docs・qualityは未実行。
+
+全15 Applyは未Verified。Aの全form／choice×4policy・正常current保存の実復元／修復／stale、B/Cの全ownerと必要根拠、Dの全合法分岐・BP/proc相関、Eのadmission／quotient／counter／最大oracle・実UI／worker、Fの独立current strict、Gの80＋別S0/S1 saved・正式after各3process／全意味差、対象内Blocking0・最終差分レビュー・正本／固定quality／結果後docsは未達。TSK-14 in_progress／TSK-13 done／TSK-12 ready、Done／R1受入ではない。元before／固定6入力の保証範囲・原保存実体・保持契約を維持する。
+
+#### 具体的な限定改訂と必要な判断
+
+本改訂への確認後だけ、次の順をA〜Gに先行するcounter gateとして追加する。
+
+1. **帰属を最初に確定する。** 親が起点a3dc85aと現在差分について、同じ固定published master、現行Node／pnpm／loader／runner、common全slot Lv10・NP1／OC1の `productionMasterAudit.test.ts` inventoryを限定実行する。起点sourceはlocal Git objectから隔離し、install／fetch、master／fixture／gzip再生成、原run上書きはしない。隔離sourceから元の固定public inputへ至る直接consumer・論理pathと実取得元を明示し、同一提供元／固定identityを保持できない場合は再停止する。新source checkout／task-local scratchはTSK-14帰属診断の一時実行集合に限り、原入力・原証拠や恒久保持bundleの代替にしない。取得元変更／能力削除の承認をこの改訂へ含めない。
+2. **固定counterのまま意味同値性を反証する。** `canonicalEffectKey`／`preNoblePhantasmSemanticStateKey` とそのdirect callerを対象に、独立した小有限oracleで、同じ将来action集合／各readの値・根拠・clock間の依存順／NP・HP・BP・OC／寄与／rollbackを持つcommuting順だけが同値となる条件を調べる。exact ordinalの違いを無条件で消さず、source readの前後が意味を変える順序は保持する。原因が現在変更ならそのownerを修正、起点再現なら起点の同値性欠陥として修正する。個々の具体execution／detail／handoffの実clockとraw receiptは保持する。counterと意味保証が両立する修正だけを許可範囲にする。
+3. **同じoriginal assertionを再度通してからA〜Gへ戻る。** 固定inventory、通常／理想小最大oracleとcalculator／portable parity、局所write／rollbackを閉じ、結果とsource範囲を記録する。その後B/Cの残write owner・scalar撤去→D→E→F→Gを元計画のまま継続する。今回の反証で成功した同条件の範囲は必要な変更がなければ再利用し、余分な正式beforeやmatrixを反復しない。
+
+**確認を求める内容は、この「帰属→証明可能な同値性修正→元counter assertion→A〜G」という依存順追加とbounded診断／修正範囲。** expected／assertion／固定audit／runtime counter／VRT／timeout／cap／ratchetの更新・退役は一切含めない。正しい候補集合と固定数値を両立できない、具体damage/state/outcome/保存差を元ruleで説明できない、予定ownerでclock／certainty／identityを保証できない、またはこの範囲で判断不能なら再停止し、実差・必要な能力・契約の具体案を提示して別の明示確認を待つ。現在は本限定改訂の確認待ちであり、読み取りとTask／flow記録以外を再開しない。
+
+
+### 成果・責務・変更境界
+
+利用者成果は、共通育成と保存Lv／NP／Fou ATK／active skill Lvの両比較で、AttackProfileごとに合法な自前subset／choice／使用順を実行し、通常の確定寄与による保証平均火力の最大と、成立込みの共存可能な合法理想平均火力の最大を得ること。通常の保証値は同一planの全関連可能分岐が合法であることを前提に、その分岐で保証された寄与を同じdamage式へ渡した平均の最小値とする。確率buff成功を確定へ昇格せず、乱数minimum／average／maximumやNP列を異なる分岐から合成しない。選ばれた一つの具体executionの全row・input・receiptをdetail／handoffへ束縛する。
+
+不変条件は、calculator／ranking／portableの同じapplication／execution、選択初期OC相当の開始NP、各actionの前提→消費→回復→容量clip→攻撃NPの順、死亡・排他・transaction／rollback、未知／不足／矛盾のfail-closed、正常current保存復元と失敗時原request／result／保存保持、stale summary／detail／handoff拒否。normal非適用、policy除外、確率失敗、修正可能入力、invalid、unsupported、合法条件下のunavailableを区別する。
+
+| 意味owner | 責務と直接consumer |
+| --- | --- |
+| data-pipeline／master-data | 既存canonical IR・proc group・condition scopeと参照検査。各formが共通servant.skillsを参照する契約を維持し、未知参照はmaster validatorが拒否 |
+| schema／calculation-application | strict現行selection／basis／request、利用者command、一度のbasis解決、有限plan・world・witness選択と最大／保証値の比較。scenario／rankingPolicyScenario／portableCalculationが共通入口 |
+| battle-execution | 各clockでの物理read／proc・量式／write、根拠・合法性、具体分岐の相関、source／action commit・rollback、実寄与とOC。applicationはその結果を選び、意味を再実装しない |
+| workspace-domain／profile-domain／repository | parsed requestのfingerprint・所属／参照／一意性、queue／epochとatomic durable write。hashはtransport identityであり意味保証ではない |
+| UI／worker | typed command／結果の表示と輸送、context／request／fingerprint／profile identity、bounded summary／detail、durable後の公開。ID／labelから規則を推測しない |
+
+対象外はdamage式、master／raw更新、TSK-12 growth、新editor、append戦闘、turn／skill再使用、外部support／CE採用、新形態対応規則／新ゲームIR。保存ascension／appendsの編集・素材経路と既存AttackProfile列挙・非混成を維持するが、新damage bindingは追加しない。共通自然上限／Lv90／保有Lv、指定／保有NP、母集団とbasisの独立性、未保有から新規calculatorを開く仕様defaultを維持する。schema42／engine49／保存format・固定入力・取得元・保持契約は変更しない。
+
+### 現コードの事実と採否
+
+以下は読取で確認した機構と計画上の未閉鎖であり、新test／productionで再現済みという主張ではない。
+
+| 現在の直接経路・根拠 | 採否・修正境界 |
+| --- | --- |
+| `preparationProofs.bindPreparationWriteProofs` はafter側の値差だけを走査。npGauge／HP／BP・stack・markerの同値更新や削除、量式依存をsource条件＋procだけで表す | **後付け差分ledgerを不採用。** 値のwrite ownerで対象address・before／after・実operation clock・使用cell・condition／proc・量／capacity／donor／marker等のread依存を同時に生成する。削除はabsence／suppressionの明示write。同値writeでも実writeと非適用を区別し、旧依存を保持する必要と置換可能なwriteを既存operationの意味から決める。guaranteedWriteという名称だけで前値／量入力のpossible根拠を消さない |
+| `PreparationEffectActivation` にprocOutcome／conditionOutcomeと必須sourceActivationが並存。`preparationTransaction`・`preparationOc` はscalarを読む。`stochasticOutcomes` はreceipt未読からdefaultOutcomeへ落ちる | **scalarによる第二の判定経路を撤去。** 必須receiptを唯一のactivation結果とし、未到達・非対象・既知・不足／invalidをunionで区別。compilerの未実行templateは保持しても、到達sourceを未読のまま実行しない。calculatorのdeclared outcomeとrankingのpossible witnessを同ownerで束縛し、未読の旧経路へのfallbackを残さない |
+| `auxiliarySources` 等はunread sourceを生成。`candidatePreparation.resolveStochasticOutcomes` はoperation開始前にprocを解決。`effectiveContributions` はraw proc率で通常採否を決める | automatic initial／terminal passive・NPと使用skillを既存の正しいclockへ接続。source read、buff-use条件、amount、action前提、NP使用、実OC率、terminal damageを混同しない。実activation receipt／量依存から確定寄与を判定。全関連可能枝での保証を局所scalarやcanonical defaultだけから推定しない |
+| `scenario.prepareCalculationScenarioWithPolicy` はproc列挙の内側でBP witnessをmaximumで先に選び、その後proc別averageのmin／maxを選ぶ。certificateはBPで棄却されたexecutionを含まない | **この二段選択を不採用。** BP初期witness・proc group／rate cellを一つの相関した具体execution集合として保持。applicationが選べる合法な初期witness／planの各々について、通常は全関連proc枝の合法性と保証平均、成立込みは合法枝の最大平均を比較する。BPとprocの別々の最大値を合成しない |
+| `rankingActionAdmission` はstructural／optional／policyNoOp／unsupportedを分けるが、有限候補と後続条件・automatic source依存のclosureは未受入。`rankingWorldObservation` はboolean simplifyと一部target解除の観測 | 必要な純charge・条件生成を残すadmissionを維持し、各readの依存closureへ接続。terminal truthで過去actionを切らない。world／population quotientは実readの値・根拠・clock、合法性／資源・OC・寄与・rollbackの同値proofを必要とし、boolean一致だけの縮約を置換。normalの外部world全列挙は復活させない |
+| `stochasticPossibilities` はillegal witnessをkey文字列で保持し、certificateは件数のみ。選択同点は探索順依存。worker schemaは形／範囲中心 | witness全identity、拒否位置／clock・許されるchoiceと理由を保持し、canonical key／choiceの決定的順序でtie-break。countや再hashに依存しない独立意味検査を接続する。欠落／重複／未到達key／非合法cell／不正なselectedWitness／選択average改竄を拒否 |
+| `rankingPolicyScenario` はbasisを一度解決してstatic skill commandへ渡す。一方 `createCalculatorPortableRequestForAttackProfile` はplanner探索後に保存skill Lvをcommandへ付ける。planner cacheはskill Lv／完全fact proofをidentityに含めない | rankingの一度解決を採用。AttackProfile編集開始も必要slotの明示Lvを探索前に渡し、同じcommand／実cellで到達を検査する。全direct callerの明示common／saved値とcache identityを揃える。探索後の置換・欠落slot補完・終端formから初期form推定を残さない |
+| `productionClosureRecordIntegrity.inspectProductionConditionRecords` はprofile／status等が中心で、digestだけのfailureならaccepted＋failuresを返す | P3未完了を維持。独立current strictをstatus別nested bodyと意味検査へ拡張し、failure非空は常にreject。誤summary同士の一致・再hashによる通過を認めない |
+
+共通原因は、値／read／activation／writeのidentityが実ownerより後段で付与され、consumerが別のscalar／default／terminal stateを再解釈できること。検出済み局所testの成功は、同値write×amount依存×automatic source×BP／proc×recoveryまでの証拠になっていない。再発範囲は上記直接reader／writerとpreapply・projection・OC・rollback・cache・worker／保存に限定し、同じfamilyをまとめて反証する。
+
+### 型・identityのforward／recovery経路
+
+`rankingSelectionSchema`／`resolvedRankingBasisSchema` → `compileRankingSelection`／`resolveRankingBasis` → `rankingStaticPreparation`／`rankingPolicyScenario` → shared scenario／preparation／candidate executor → detail／summary → worker strict DTO／useRanking／RankingRoute → `createRankingPortableRequest` → workspace fingerprint／`commitPortableDraft` → repository → draft／history／share／backup → startup／CalculatorRoute／`recoverPortableCalculation` を一つの直接経路として閉じる。
+
+basisはservantごとに一度解決し、Lv／NP／Fou／canonical slot Lv／initial form／開始NPを実command・skill／NP cell・resource量・canonicalInput・detailへ束縛。portableは可変profileを再読込せずpinned basis／scenario／policyをreplayする。worker contextにはprofile／master／version、summary／detailにはrequestId／fingerprint／entry／AttackProfile identityを維持。read／write／branch certificateは必須内部導出型と現行worker DTOへ伝播し、保存request／resultの新formatを作らない。derived metadataを新規current replayで得ることと、保存不足の黙った補完を区別する。
+
+recoveryは不足slot・invalid選択／OC・未知・storedResultMismatchをtypedに返し、既存保存育成編集／明示repairへ接続。正常な現行request＋resultはload／reload／history／share／backup往復で同じ実使用値とresultを復元する。current version不在のhistoricalOnly／versionUnavailable、利用者の明示reset／upgradeAttemptは復旧能力として保持し、旧形式の実行／変換とは分ける。修復構築・再計算・hash・commitの各失敗で原pair／user／meta／他operationのstage／workspace／sessionを保持し、commit済みwriteを補償writeで巻き戻さない。意味的に正常なcurrent保存を新実装が再現できずformat／version変更が必要なら停止する。
+
+### P1〜P8の今回の採否・最初の反証
+
+| 項目 | 採否／残修正ownerと維持境界 | 確認後最初に試す反証 |
+| --- | --- | --- |
+| P1 | 採用: useProfileCollection queue／epoch、portableDraft durable後公開、repository atomic write。discardMasterCacheは現在master storeだけclearで、過去のstaging全clear findingは修正済み機構として扱う。initialize／edit／undo／import／clear／setup／handoffの実caller残scheduleを閉じる | commit前失効・write故障は保存／公開0、commit後失効はcommitted／非公開・補償write0。edit→import→initialize、queued undo、別repository backup、master破損×foreign stage保持 |
+| P2 | 改修して採用: conditionRead／fact層／source transactionを土台に、上記write-owner receipt・scalar撤去・全clock／全可能分岐保証へ接続。physical scope／all・any・not／既知absenceとunknownの境界は維持 | possible前値への確定同値write／clip、削除→not、possible amountのguaranteed source、source true→terminal false／逆順。mixed proc・外部magicBullet／intrinsic交換・rollbackの原hard反証を維持 |
+| P3 | 採用・未実装残あり: productionClosureRecordIntegrityと実writer／reader／mergeに独立current strict。歴史baseline decoderは固定旧format／出自の比較資料専用 | canonicalInput／basis／damageRows欠落、nested未知・range／nonfinite・status/version/identity不正、合法shape average改竄＋再hash、誤summary相互一致、accepted＋failure非空をreject |
+| P4 | 採用: current schema／workspace validator、所属・参照・一意性、parsed request hash、load／replace／share／backup／startup／repairの直接経路。旧形式fallback不要、正常current復旧維持 | current正常pair往復／保存後profile変更と元pinned replay。active不在・duplicate・別owner draft/history・偽hash・explicit undefined・mixed old/currentの拒否と原物保持 |
+| P5 | 改修して採用: ideal world quotient／population equivalenceを共通execution-owned read依存・相関観測へ接続。同値未証明memberをmergeしない。loss／input reader／transform／unsupported等の既存同値proof拒否境界を保持 | 同boolean別proof／clock、同damage別NP合法性／OC、解除・possible loss・BPとproc相関。小有限全状態oracleとquotient代表のmaximum／保証値・soundness／各condition true/falseを比較 |
+| P6 | 採用・接続追加: static BFS／admission／raw world／representative／complete bound／materialized／BP・proc attempted／illegal／executable／damage request／distinctを分離計数。全semantic積と動的branch treeの有限性を公開前に証明 | 全candidate coverageとcertificate count／identity一致、baseline包含、順序保持、cap4096／切捨て0。前段費用・新branch費用を後段capだけで保証したとしない。既存固定counter失敗は退役せず停止 |
+| P7 | 採用: 最大に影響する未知optionalはprofile unsupported、必須未知はtyped拒否。自己buffなしは構造actionとNP／passiveを既存境界で実行 | known subset＋未知optional、必須未知、対象外proof、全合法資源不足、確率失敗、inputRequiredを区別。未知枝を捨ててbaselineへfallbackしない |
+| P8 | 採用: PreparedDamageMatrixCacheはcomplete damage input／variantから純damageだけを再利用。plan／basis／receipt／branch／detailは候補固有。worker成功summary1件／detail cache0・React active detail最大1を維持 | shared／fresh全execution・portable parity、同input別plan／proof、common/saved・Fou/skill/HP/OC差、profile／条件変更中late summary／detail／handoff拒否 |
+
+### 実装単位・依存順と検証closure
+
+旧I2→I6の成果とゲートの依存順は採用する。I2全体を完了済みとはしない。I3のa/b/cは新型を足すだけでなく、write owner→activation→相関具体execution→直接consumerを同一familyとして接続する単位に組み直す。BP内側最大化、after差分ledger、第二のscalar判定、booleanだけのquotientは不採用。I4を先に全件走らせる順序、I5を成功数で代替、I6をcheckpointへ前倒しする案も不採用。代表UI／portableは早期に接続し、最終実経路をEで閉じる。
+
+| 単位／依存 | 対象module／主要symbol・直接consumer | 検証入口と閉じる条件 |
+| --- | --- | --- |
+| A: I2残binding | rankingBasis／rankingStaticPreparation／preNoblePhantasmPlanner（planPreNoblePhantasmCandidates・semanticStateKey）／portableCalculationのAttackProfile factory、rankingPortableBasis、schema／workspace・ranking controls／URL | rankingBasis・rankingSavedBasis・rankingSelection・portableCalculation・attackProfile／planner tests。Lv/NP/Fou/skillを一つずつ変え、境界／欠落／余剰／NP0／build不在を検査。探索前cellと実使用cell、全initial／transform form・choice×4policy、common全選択を閉じる |
+| B: I3 write／read、Aの実cellを使用 | conditionRead／condition／traitFactLayers／conditionState／preparationProofs・Facts・State・Oc、npResource／hpResource・preparationHp／battlePointResource／buffInstances・markerExecution／populationFunctions／state、projection・量expressionの直接writer／reader | conditionRead／condition property／preparationTransaction／resourceQueries／npTransfer／HP／BP／marker fixture。source条件だけでなくamount／前値／capacity／modifier／donor／population／count readのproofを合成し、同値write・absence・量依存・clone／form／source失敗→retryを反証。通常loopとpreapply／projectionの値・根拠一致 |
+| C: I3 activation／transaction、Bと一体接続 | preparationSourceFacts／stochasticOutcomes／preparationTransaction／各skill・transform・attack reducer／sourceCollection・auxiliarySources／operationCompiler／candidatePreparation・candidateExecution・candidateOperationContext／effectiveContributions／ocSourceBinding・ocState／npDamageExecution | 原source使用順対、mixed・確率gain/loss両default、実OC500、確定／確率sibling・同group。source rollbackは値・proof・OC有限使用・mutation receiptを戻しattemptだけ保持、action拒否はprior stateへ戻す。calculator／ranking／portableの同一executionを局所で確認 |
+| D: I3相関可能分岐・保証、B/C後 | stochasticPossibilities／scenario（prepareCalculationScenarioWithPolicy・BP witness・concrete preparation）／execution certificate、候補選択の平均／stable tie-break | stochasticPossibilities／rankingSavedBasis／scenario・contributionPolicyと小最大oracle。BP×procの全具体集合、通常全枝合法・保証寄与／最小平均、理想合法最大を独立期待で検査。将来回復による遡及禁止・clip・消費後補完・死亡・全資源不足、枝の順序置換不変。未知枝は数値へ集約しない |
+| E: I2/I3候補と直接UI／保存closure、A〜D後 | rankingActionAdmission／rankingCandidateSpace・Certificate／rankingWorldObservation・Quotient／populationGaugeEquivalence／rankingPolicyScenario・Candidates／rankingExecution・damage cache、worker response schema／protocol／runtime／useRanking・Ranking／RankingRoute／handoff、workspace／repository／startup／CalculatorRoute／history/share/backup/repair | admission／candidate/worldOracle／cache／worker／route／durable tests＋実production build・module worker・Chromium・IDBのranking-baseline／initial-oc／smoke E2E。certificateの独立branch-tree／witness／read／resource／selected input/result検査をcommon checkerに集約し、DTO shapeだけで通さない。正常current保存・全basis・form/policy・修復失敗原pair・staleを実callerで確認 |
+| F: I4独立current strict、E後（小mutationは型接続時に先行） | productionClosureRecordIntegrity／productionRegressionBaseline／productionClosureAudit／productionShardAcceptance／productionParityDiagnostics、production-matrix-records／audit-oc-matrix／merge-oc-matrix／replay／production-baseline-acceptance、application productionAuditの直接consumer | status別strict body、全nested値・current version／identity／coverage・receipt・certificate・transaction、拒否mutationを先に閉じる。current replay／固定独立数値fixtureと全意味差分類を併用。旧decoder／expectedをactualに書き換えず、accepted＋failureを禁止 |
+| G: I4対象production→I5→I6、Fと局所／実経路完了後 | 全80matrix producer→保存本文→実merge、別S0/S1 saved producer、影響production／登録audit、正式after runner、要件本文／README／accepted ADR有効範囲／Taskと本flow | 80＋saved・全意味差・正式性能→差分レビュー／Blocking0→固定pnpm quality→結果記録後pnpm test:docs。最後の記録まで全15 Apply／有効証拠／未達／次操作を一致させる |
+
+検証はREADMEのcanonical runnerで `pnpm test:diagnostic -- --suite=unit <対象file>` 等の対象所属に合ったsuiteを使う。過去固定28fileのsuite=allは再利用範囲の入口であり、毎patchの全件反復を要求しない。productionは必要な対象fileのsuite=production／登録audit、実E2Eは既存case契約、matrixは8shard→実mergeを使い、runnerのskip／warning／artifact failureを成功へ変えない。
+
+closureにはpackages/*/srcだけでなくapps/web・e2e／snapshot／case宣言、package／lock／workspace／tsconfig／Vitest／Playwright設定、test／quality runner・reporter／allowances／runtime-counter contract、matrix／replay／測定helper、master／fixture manifest・固定baselineと直接consumerを含める。新しい必要pathはowner・結果への影響から正の集合へ追加し、件数でclosureを証明しない。shared production master／inventoryを一度読取・解析し、caseごとのmaster再読込を避ける。
+
+### 既存証拠の照合・再利用条件
+
+今回の読取照合で `resume-0551/i3-0930-handoff-source.sha256` の610公開path・7,631,281bytes・digest `2caec9ed247fa9f2cfd853476b3f21c3c44452e1a10f7822903c3eeec8b399d2` は現HEAD実体に一致、不一致0。読取前に正のroot／suffix・通常file／親／実pathを検査した。`resume-1620/i1-start-input.sha256` の固定6入力は同path checksum一致。Handoffの106pathは親からのcheckpoint差分で、現在worktree差分ではない。
+
+原診断receiptはHEAD f9ccc663・Node+tsx／jsdom／fake IDB・小fixture／static inventory等の限定scope。宣言probe32artifactのbytes／SHAを照合して不一致0。P5の不完全import-populationを合法性証拠に採用せず、既存population-schema-legalを使う。原sourceとcurrentの変更範囲を区別し、旧診断成功をcurrent成功へ転用しない。
+
+指定28file382成功（10:52）、最後のsource完了修正後4file113成功（10:57）、旧実E2E（06:29）の各manifestと宣言artifact全17件はbytes／SHA一致。382成功は最終source完了修正前、113成功はその4fileだけ。06:29実worker／IDB・保存／履歴／共有はcurrent execution変更前。current実UI・全form／policy／修復／stale・production／性能の成功へ拡張しない。標準typecheck／対象lint／docsは最新Handoffの原logに記録された限定証拠を継承し、新しい差分の最終成功とはしない。
+
+正式beforeは `approved-run-0819/before-identity.json`／before-summary／before-processes／before-completeを読み、source／input inventory宣言SHAが一致。固定旧source2c86a96・33process・8shard最大4並列2wave・独立3sampleの歴史成功を継承する。過去の全240条件artifact照合記録を再利用し、今回は全復元／全再計測していない。D0の4929record・差855はtraceのschema41→42だけという帰属とcheckpoint同一性をそのscopeで継承し、current correctnessとはしない。再利用はsource・入力・runner／設定・意味・環境条件が同じ範囲だけ。変更／新反例／不足があるconsumerだけ再検証し、不足を別入力・別path・再生成・別取得元で補わない。
+
+既存TSK-14 namespaceの原log／保存実体を上書き・削除しない。確認後の必要な新runは同namespaceの未使用出力にsource／入力／command／完全log／receiptを保持する。補助codeはTSK-14受入の診断用途・参照期間限定、恒久consumerのない新bundle／保持集合へ昇格しない。
+
+### 全15 Apply・production／性能・終了ゲート
+
+| Apply | Verifiedへ移す必要証拠 |
+| --- | --- |
+| RK-IR-001 | A/B/Cのstrict basis・実cell／read／write型と全direct producer／consumer |
+| RK-EXEC-001 | B/C/Dの全clock・資源順序・合法性・source/action rollback |
+| RK-POLICY-001 | D/Eの通常保証／理想最大・4policy・admission／quotient・有限全状態oracle |
+| RK-UI-001 | Eの全basis control／URL・実worker／UI・修復／stale |
+| RK-HANDOFF-001 | Eのpinned calculator・draft/history/share/backup復元・原pair保持 |
+| RK-CACHE-001 | Eのshared/fresh・candidate固有proof・context/profile失効・bounded cache |
+| RK-AUDIT-001 | F/Gの独立current strict・対象inventory・80＋別saved・全差説明／parity |
+| RK-PERF-001／TS-PERF-002 | Gの同条件before/after各3独立process・全段counter／費用説明 |
+| RK-FINAL-001 | §20／TSK-13の全成果・対象内Blocking0・必要Deferred0と保証限界 |
+| DOC-REV-001／DOC-CLOSE-001 | product/UI/ranking本文・accepted ADR有効範囲・registry／Task／flowの一貫した正本伝播 |
+| DOC-LINT-001 | 最終結果記録後の明示書式／参照とpnpm test:docs |
+| TS-QUAL-001 | 全局所／実経路／production・差分レビュー／Blocking0後の固定差分pnpm quality |
+| DX-HANDOFF-001 | 最終source／入力／差分／全Apply証拠・採否・判定・未達・次操作の一致 |
+
+80条件は旧2level×4policy×10合法NP/初期OC・433profile／34,640outcomeを維持。歴史34,600calculated／40unavailableやdigestをcurrentへ上書きせず、status差も全件ruleで説明する。別savedは承認済みS0（自然上限・NP1・Fou1000・全canonical slot10、OC1×4policy）とS1（Lv90・NP2・Fou1234・存在slot1/2/3=1/5/9、OC1/2×4policy）。S0の同値common parity、S1の全profile実cell／resource／portable replayを実producer→保存本文→実mergeまで閉じる。80へsavedを混ぜない。
+
+P3はnested missing／unknown／range／finite／status/version/identity、counter／summary／coverageの独立検査と全record意味検査を所有する。全差をbasis・command/cell・read clock/proof・witness・resource/OC・damage input/row・effect/outcome・保存に分類し、承認済みruleとownerへ対応づける。first differenceや全damage wildcard、request hash／再hash、同じproducer summary一致だけで受入しない。calculator/ranking同経路parityだけに依存せず、小fixtureの独立hard期待・最大oracle・既存固定数値も維持する。
+
+限定退役は過去に明示確認された旧whole-record／aggregate一致、golden3件の旧engine＝current assertion、application audit旧7b一致、mixed旧nullable期待一件だけ。原baseline・数値expected・fixture・母集団・出自／原証拠を保持し、独立current strictと全差説明を同時成立させる。固定inventory／resource digest／criticalStarPaths、runtime counter／VRT、assertion／timeout／cap4096／ratchetの追加退役や緩和は本計画に含めない。
+
+正式afterは固定master20260920.3／SHA2d9f1b19…、Node26.3.1／pnpm11.20.0、frozen lock／loader／同workload helper・CPU／affinity／並行負荷／filesystem／task-local scratch条件を正式beforeと揃える。common ranking・matrix producer（8shard最大4並列2wave、CPU0–7）・reader／mergeは各3独立process。旧固定bodyへのreader費用と新current strict／body費用を分け、異なるbodyの所要時間を同条件改善率へしない。savedは旧同等実装がないため3processの別特性値。80の正式after sampleは受入source／入力／receiptが一致する場合だけproduction証拠と兼用し、余分な全matrixを反復しない。BFS／admission／raw/quotient／bound/materialized／BP/proc／damage/distinct/cache／phase時間・memoryを説明し、未説明の増加や固定counter失敗を期待値更新で消さない。
+
+対象内Blocking0・必須Deferred0、代表経路／局所反証／current実UI・worker・正常保存復元／独立strict／80＋S0/S1／正式性能・全意味差説明、正本と最終差分レビューが揃ってから、source・test・設定・文書を固定してpnpm qualityを実行する。quality中の変更は成功証拠を失効させ、必要な対象からやり直す。成功後は結果記録だけをTask／本flowへ追記しpnpm test:docsで閉じる。全Apply最終判定が揃うまでTSK-14 Doneにせず、TSK-12等が残るR1全体受入と区別する。
+
+### 確認待ち・実行境界
+
+本調査開始11:10 UTC、60分checkpoint12:10 UTC／90分上限12:40 UTC。今回起動した読取processは全終了、新test/build/measurementなし。同cwdのCodex PID3638／4786／55969／388927を確認したが編集活動は未確定。確認後の開始でもHEAD／index／差分を再照合し、他session変更を撤回せず、共有fileの同時編集を避ける。実装sessionは開始時刻を記録して同じ60／90分規約を適用する。
+
+sandboxのsynthetic mount起動がENOSPCで失敗し、正式require_escalated審査で同じ読取を実行できた。dfはproject filesystemに621G空き、/tmp tmpfsは空き0。権限拒否・hook拒否・auto-review否決・製品検査失敗とは区別し、system設定・guardrail・保存物・取得元・保持契約を変更／cleanupしていない。確認後も必要操作の正式審査を使い、拒否を別経路で迂回しない。
+
+成果／不変条件／意味owner／変更範囲／依存／検証契約の変更、ruleで説明不能なdamage/state/outcome/保存差、予定ownerで合法性・certainty・rollback・identity保証不能、新形態規則／IR／戦闘機能／version・format／固定入力／取得元／保持変更・能力削除、候補切捨て／unknown黙殺／fallback／期待値更新／検査緩和／別Task退避が必要、または停止該当を判断不能なら即停止。承認済み範囲の通常実装不具合だけを根拠付きで修正する。停止後は読取と既存Task／Handoff記録のみでdocs検証も再開しない。原反証／log・差分・自起動process終了状態、有効証拠／未達、計画との差・owner／具体改訂案と必要判断を報告し、利用者の改訂確認まで再開しない。
+
+**次操作:** この新計画への明示確認を待つ。確認後Aの実cell束縛とB/Cの最初の同値write／削除／amount依存・source receipt反証から共通executionへ接続し、D→E→F→Gを進める。過去OKやcheckpoint commit許可を本計画確認として扱わない。
+
+
 ## TSK-14 起点6074dbdの実装計画（2026-10-04・確認待ち）
 
 本節が今回の確認対象。開始HEAD `6074dbda45257bdfb8f96fc9cca004118017b85f`、worktree／index clean。TSK-14 in_progress／TSK-13 done／TSK-12 ready。過去のOK・U1確認・作業commit許可を今回の計画確認へ代入しない。**新計画確認まで読み取り・既存証拠照合・Task／本flowへの計画記録だけ。製品code／test・保存・index変更、install／取得、新規検証・計測、計画記録後のdocs検証は開始しない。** 下の起点65b26c1計画は履歴・判断材料とする。

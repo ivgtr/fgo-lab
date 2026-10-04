@@ -21,6 +21,8 @@ import {
   type CanonicalNpResourceSemantics,
   type ServantMaster,
 } from '@fgo-lab/master-data';
+import { rankingSkillLevelsSchema, type ResolvedRankingBasis } from '@fgo-lab/schema';
+import { hasCanonicalRankingSkillSlots } from './rankingBasis';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { CalculationScenario } from '@fgo-lab/schema';
 
@@ -161,10 +163,11 @@ function preparationCommands(
   servant: ServantMaster,
   state: PreNoblePhantasmState,
   context: PreparationExecutionContext,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
 ): readonly PreNoblePhantasmCommand[] {
   const transform = availableTransformNoblePhantasmCommand(servant, state, context);
   return [
-    ...availablePreparationSkillCommands(servant, state),
+    ...availablePreparationSkillCommands(servant, state, skillLevels),
     ...(transform ? [transform] : []),
   ].sort((left, right) => commandKey(left).localeCompare(commandKey(right)));
 }
@@ -172,12 +175,17 @@ function preparationCommands(
 export function planPreNoblePhantasmCandidates(
   servant: ServantMaster,
   resourceSemantics: CanonicalNpResourceSemantics,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: PreparationExecutionContext['npLevel'],
   overcharge: PreparationExecutionContext['overcharge'],
   initialGauge: number = resourceSemantics.noblePhantasmUse.requirement,
   canonicalInputValues: Readonly<Record<string, number>> = {},
 ): PlannedPreNoblePhantasmCandidates {
+  skillLevels = rankingSkillLevelsSchema.parse(skillLevels);
+  if (!hasCanonicalRankingSkillSlots(servant, skillLevels))
+    throw new TypeError('preparation_skill_levels_incomplete');
   const cacheKey = JSON.stringify({
+    skillLevels: Object.entries(skillLevels).sort(([left], [right]) => left.localeCompare(right)),
     stochasticSelection: { kind: 'declared' },
     resourceSemantics,
     npLevel,
@@ -252,7 +260,7 @@ export function planPreNoblePhantasmCandidates(
         });
       }
     }
-    for (const command of preparationCommands(servant, item.state, context)) {
+    for (const command of preparationCommands(servant, item.state, context, skillLevels)) {
       for (const result of preparationPlanningAlternatives(context, (branch) =>
         reducePreNoblePhantasmAction(servant, item.state, command, branch),
       )) {
@@ -291,6 +299,7 @@ export function planPreNoblePhantasmCandidates(
 export function defaultPreNoblePhantasmCandidate(
   servant: ServantMaster,
   resourceSemantics: CanonicalNpResourceSemantics,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: PreparationExecutionContext['npLevel'],
 ): PreNoblePhantasmPlanCandidate {
   const defaultForm = getDefaultInitialActorForm(servant);
@@ -299,6 +308,7 @@ export function defaultPreNoblePhantasmCandidate(
     servant,
     defaultForm.id,
     resourceSemantics,
+    skillLevels,
     npLevel,
   );
 }
@@ -307,11 +317,13 @@ export function defaultPreNoblePhantasmCandidateForInitialForm(
   servant: ServantMaster,
   initialFormId: ActorFormId,
   resourceSemantics: CanonicalNpResourceSemantics,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: PreparationExecutionContext['npLevel'],
 ): PreNoblePhantasmPlanCandidate {
   const candidates = planPreNoblePhantasmCandidates(
     servant,
     resourceSemantics,
+    skillLevels,
     npLevel,
     1,
   ).candidates.filter(({ terminalState }) =>
@@ -360,11 +372,13 @@ export function defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
   servant: ServantMaster,
   initialFormId: ActorFormId,
   resourceSemantics: CanonicalNpResourceSemantics,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: PreparationExecutionContext['npLevel'],
 ): PreNoblePhantasmPlanCandidate {
   const candidates = planPreNoblePhantasmCandidates(
     servant,
     resourceSemantics,
+    skillLevels,
     npLevel,
     1,
   ).candidates.filter(({ terminalState }) =>
@@ -405,6 +419,7 @@ export function defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
       servant,
       initialFormId,
       resourceSemantics,
+      skillLevels,
       npLevel,
     );
   return explicitBaseVariantCandidates.sort(
@@ -417,6 +432,7 @@ export function defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
 export function defaultCalculatorPreNoblePhantasmCandidate(
   servant: ServantMaster,
   resourceSemantics: CanonicalNpResourceSemantics,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: PreparationExecutionContext['npLevel'],
 ): PreNoblePhantasmPlanCandidate {
   const defaultForm = getDefaultInitialActorForm(servant);
@@ -425,6 +441,7 @@ export function defaultCalculatorPreNoblePhantasmCandidate(
     servant,
     defaultForm.id,
     resourceSemantics,
+    skillLevels,
     npLevel,
   );
 }

@@ -1,3 +1,4 @@
+import { commonPreparationSkillLevels } from './rankingBasis';
 import {
   selectedAllyMaximumFixedMaySelect,
   selectedAllyMaximumFixedSelection,
@@ -929,6 +930,7 @@ describe('production master inventory ratchet', () => {
             const planned = planPreNoblePhantasmCandidates(
               servant,
               master.npResourceSemantics,
+              commonPreparationSkillLevels(servant),
               1,
               1,
             );

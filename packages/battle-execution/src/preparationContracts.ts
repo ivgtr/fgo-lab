@@ -1,3 +1,4 @@
+import type { PreparationNpQuantityWrite } from './preparationProofs';
 import type { StochasticSelection } from './stochasticPossibilities';
 import type { SourceActivationReceipt, ConditionFactProofs } from './conditionRead';
 import type { HpState } from './hpResource';
@@ -89,6 +90,7 @@ export interface AppliedPreparationAction {
 
 export interface PreNoblePhantasmState {
   conditionWriteProofs: ConditionFactProofs;
+  npQuantityWrites: readonly PreparationNpQuantityWrite[];
   battlePoints: BattlePointState;
   hp?: HpState | undefined;
   populationEvents: readonly PopulationEvent[];

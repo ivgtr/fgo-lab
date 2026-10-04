@@ -1,9 +1,15 @@
+import { hasCanonicalRankingSkillSlots, commonPreparationSkillLevels } from './rankingBasis';
 import {
   type EffectProjection,
   type OperationSource,
   type AppliedPreparationAction,
 } from '@fgo-lab/battle-execution';
-import type { AttackerSkillUse, CalculationScenario, SupportSource } from '@fgo-lab/schema';
+import type {
+  ResolvedRankingBasis,
+  AttackerSkillUse,
+  CalculationScenario,
+  SupportSource,
+} from '@fgo-lab/schema';
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import {
   actorFormEquals,
@@ -111,6 +117,25 @@ export function setPreparationSkillChoice(
   return changed;
 }
 
+export function preparationSkillLevelsForScenario(
+  servant: ServantMaster,
+  scenario: CalculationScenario,
+): ResolvedRankingBasis['skillLevels'] {
+  // New unused slots use the explicit calculator command default.
+  const levels = commonPreparationSkillLevels(servant);
+  if (scenario.mode === 'manual') return levels;
+  const selectedSlots = new Set<number>();
+  for (const command of scenario.preNoblePhantasmPlan) {
+    if (command.kind !== 'useSkillSlot') continue;
+    if (selectedSlots.has(command.slot)) throw new TypeError('duplicate_preparation_skill_slot');
+    selectedSlots.add(command.slot);
+    levels[String(command.slot) as '1' | '2' | '3'] = command.skillLevel;
+  }
+  if (!hasCanonicalRankingSkillSlots(servant, levels))
+    throw new TypeError('preparation_skill_levels_incomplete');
+  return levels;
+}
+
 export function setInitialActorForm(
   scenario: ResolvedScenario,
   servant: ServantMaster,
@@ -125,15 +150,12 @@ export function setInitialActorForm(
   )
     throw new TypeError('unknown_initial_actor_form');
   if (actorFormEquals(scenario.attacker.initialActorFormId, initialActorFormId)) return scenario;
-  const currentSkills = new Map(
-    scenario.preNoblePhantasmPlan.flatMap((command) =>
-      command.kind === 'useSkillSlot' ? [[command.slot, command.skillLevel] as const] : [],
-    ),
-  );
+  const skillLevels = preparationSkillLevelsForScenario(servant, scenario);
   const candidate = defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
     servant,
     targetForm.id,
     resourceSemantics,
+    skillLevels,
     scenario.attacker.npLevel as 1 | 2 | 3 | 4 | 5,
   );
   const removedDecisionKeys = new Set(
@@ -144,11 +166,7 @@ export function setInitialActorForm(
   return {
     ...scenario,
     attacker: { ...scenario.attacker, initialActorFormId },
-    preNoblePhantasmPlan: candidate.commands.map((command) =>
-      command.kind === 'useSkillSlot'
-        ? { ...command, skillLevel: currentSkills.get(command.slot) ?? command.skillLevel }
-        : command,
-    ),
+    preNoblePhantasmPlan: [...candidate.commands],
     effectDecisions: scenario.effectDecisions.filter(
       ({ decisionKey }) => !removedDecisionKeys.has(decisionKey),
     ),

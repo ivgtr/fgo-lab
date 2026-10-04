@@ -1,6 +1,6 @@
 import { npProgramEffects } from './npProgramScope';
 import { getSkillsForActorForm, type MasterEffect, type ServantMaster } from '@fgo-lab/master-data';
-import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
+import type { ResolvedRankingBasis, PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { PreNoblePhantasmState, PreparationFailureCode } from './preparationContracts';
 
 export function selectPreparationEffects(
@@ -43,6 +43,7 @@ export function selectPreparationEffects(
 export function availablePreparationSkillCommands(
   servant: ServantMaster,
   state: PreNoblePhantasmState,
+  skillLevels: ResolvedRankingBasis['skillLevels'],
 ): readonly Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] {
   const commands: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] = [];
   for (const skill of getSkillsForActorForm(servant, state.currentFormId)) {
@@ -62,15 +63,17 @@ export function availablePreparationSkillCommands(
       ).values(),
     ];
     const slot = skill.slot;
+    const skillLevel = skillLevels[String(slot) as '1' | '2' | '3'];
+    if (skillLevel === undefined) throw new TypeError('preparation_skill_level_missing');
     if (choices.length === 0) {
-      commands.push({ kind: 'useSkillSlot', slot, skillLevel: 10, choice: null });
+      commands.push({ kind: 'useSkillSlot', slot, skillLevel, choice: null });
       continue;
     }
     commands.push(
       ...choices.map((choice) => ({
         kind: 'useSkillSlot' as const,
         slot,
-        skillLevel: 10,
+        skillLevel,
         choice: { groupKey: choice.key, candidateKey: choice.candidate },
       })),
     );

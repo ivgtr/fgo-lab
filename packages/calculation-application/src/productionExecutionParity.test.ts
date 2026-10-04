@@ -1,3 +1,4 @@
+import { commonPreparationSkillLevels } from './rankingBasis';
 import { calculateScenarioWithPolicy } from './scenario';
 import { createRankingPortableRequest } from './portableCalculation';
 import { createStaticAttackProfiles } from './attackProfile';
@@ -51,8 +52,13 @@ describe('production execution parity ratchet', () => {
     const typedUnsupported = new Set<string>();
     const records = master.servants.flatMap((servant) => {
       if (
-        planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1).candidates
-          .length === 0
+        planPreNoblePhantasmCandidates(
+          servant,
+          master.npResourceSemantics,
+          commonPreparationSkillLevels(servant),
+          1,
+          1,
+        ).candidates.length === 0
       )
         return [];
       const scenario = createDefaultResolvedScenario(master, undefined, servant);

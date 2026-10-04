@@ -1,3 +1,4 @@
+import { commonPreparationSkillLevels } from './rankingBasis';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
@@ -33,7 +34,12 @@ describe('production canonical target context', () => {
     const master = await loadMaster();
     const attackers = master.servants.filter(
       (servant) =>
-        getAttackReachableInitialActorForms(servant, master.npResourceSemantics, 1).length > 0,
+        getAttackReachableInitialActorForms(
+          servant,
+          master.npResourceSemantics,
+          commonPreparationSkillLevels(servant),
+          1,
+        ).length > 0,
     );
     const inventory = { advantage2: 0, advantage15: 0, neutral: 0, disadvantage: 0 };
     for (const attacker of attackers) {
@@ -100,7 +106,12 @@ describe('production canonical target context', () => {
     let compared = 0;
     for (const servant of master.servants.filter(
       (candidate) =>
-        getAttackReachableInitialActorForms(candidate, master.npResourceSemantics, 1).length > 0,
+        getAttackReachableInitialActorForms(
+          candidate,
+          master.npResourceSemantics,
+          commonPreparationSkillLevels(candidate),
+          1,
+        ).length > 0,
     )) {
       if (defaultTargetClassRelation(servant.classId) !== 'advantage2') continue;
       const scenario = createDefaultResolvedScenario(master, undefined, servant);
@@ -229,7 +240,12 @@ describe('production canonical target context', () => {
     const master = await loadMaster();
     for (const attacker of master.servants.filter(
       (servant) =>
-        getAttackReachableInitialActorForms(servant, master.npResourceSemantics, 1).length > 0,
+        getAttackReachableInitialActorForms(
+          servant,
+          master.npResourceSemantics,
+          commonPreparationSkillLevels(servant),
+          1,
+        ).length > 0,
     ))
       for (const relation of ['advantage2', 'advantage15', 'neutral', 'disadvantage'] as const) {
         const candidates = targetClassCandidates(attacker.classId, { kind: 'relative', relation });

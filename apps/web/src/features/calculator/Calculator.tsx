@@ -1,3 +1,7 @@
+import {
+  preparationSkillLevelsForScenario,
+  calculatorPreparationSkillLevels,
+} from '@fgo-lab/calculation-application';
 import { EffectInlineInput } from './EffectInlineInput';
 import { useEffect, useRef, useState } from 'react';
 import type { AppliedPreparationAction } from '@fgo-lab/calculation-application';
@@ -207,6 +211,7 @@ export function Calculator({
     ? getAttackReachableInitialActorForms(
         attacker,
         master.npResourceSemantics,
+        preparationSkillLevelsForScenario(attacker, scenario),
         input.npLevel as 1 | 2 | 3 | 4 | 5,
       )
     : [];
@@ -384,6 +389,7 @@ export function Calculator({
     const defaultPlan = defaultCalculatorPreNoblePhantasmCandidate(
       attacker,
       master.npResourceSemantics,
+      calculatorPreparationSkillLevels(attacker, saved),
       input.npLevel as 1 | 2 | 3 | 4 | 5,
     );
     void onScenarioChange(
@@ -408,14 +414,7 @@ export function Calculator({
           enemyDefenseBuff: input.defenseBuff,
           canonicalInputValues: {},
           craftEssence: null,
-          preNoblePhantasmPlan: defaultPlan.commands.map((command) =>
-            command.kind === 'useSkillSlot'
-              ? {
-                  ...command,
-                  skillLevel: source === 'owned' ? (saved?.skills[String(command.slot)] ?? 1) : 10,
-                }
-              : command,
-          ),
+          preNoblePhantasmPlan: [...defaultPlan.commands],
           mysticCode: null,
           support: null,
           effectDecisions: [],
@@ -438,6 +437,7 @@ export function Calculator({
     const defaultPlan = defaultCalculatorPreNoblePhantasmCandidate(
       candidate,
       master.npResourceSemantics,
+      calculatorPreparationSkillLevels(candidate, saved),
       candidateNpLevel,
     );
     const noblePhantasm = defaultPlan.terminalState.selectedNoblePhantasmVariant
@@ -478,15 +478,7 @@ export function Calculator({
                 npLevel: Math.max(1, saved?.npLevel ?? 1),
                 fouAtk: saved?.fouAtk ?? 1000,
               },
-              preNoblePhantasmPlan: defaultPlan.commands.map((command) =>
-                command.kind === 'useSkillSlot'
-                  ? {
-                      ...command,
-                      skillLevel:
-                        source === 'owned' ? (saved?.skills[String(command.slot)] ?? 1) : 10,
-                    }
-                  : command,
-              ),
+              preNoblePhantasmPlan: [...defaultPlan.commands],
               effectDecisions: [],
               worldFactAssertions: [],
               attackerHpPermille: 1000,

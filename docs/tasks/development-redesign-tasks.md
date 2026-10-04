@@ -3268,7 +3268,7 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 Depends on: TSK-13
 
-Current status: `in_progress`（2026-10-04、HEAD6074dbd・開始worktree／index clean、現在29path未commit差分・index空。05:51 UTCの利用者OKで限定audit置換を含むD0→I2〜I6の改訂計画を確認済み。D0全差帰属、I2保存basis／handoff／current復元・実saved経路の限定成功を記録。I3は共通source条件の終端再評価と通常の確率NP採用のhard反証が未解消。標準typecheck／I3対象lint・source／固定入力identityは成功、旧audit失敗はI4のP3同時置換まで維持。保証範囲と原logは最新Handoff／flowを参照。全15 Apply未Verified、I2全経路／I3〜I6・対象production／80＋saved／正式after／Blocking0／最終qualityは未達）。
+Current status: `in_progress`（2026-10-04、起点a3dc85a・親6074dbd・開始worktree／index clean。106fileの部分実装checkpointを現コードから再調査した計画を12:46 UTCに確認済み。A／Bを部分接続したが13:23 UTCに固定inventory counter不一致で強制停止。破壊的変更・fallback不要の再指示を受け、13:41 UTCのR0帰属→R1内部transaction／activation置換→R2相関と同値proof→R3実consumer→R4最終gate改訂を13:47 UTCに利用者OKで確認済み。R0は起点／current同条件でcounter署名不変を再現、R1 NP direct readerを必須receipt／明示sourceStageへ部分接続。90分上限で新familyを止め、局所89・標準typecheck・対象lint成功を限定Handoffへ記録。固定counter未解消・保存format維持。全15 Apply未Verified。write-owner根拠／activation単一路／BP・proc相関と通常保証／candidate・certificate／current実UI・保存／P3独立strict／80＋別saved／正式after／Blocking0／最終qualityは未達。15:10 UTCの再評価でR1を値／根拠のsource commitと完成action state返却へ具体化し、15:15 UTCに方向とcheckpoint commitを利用者OKで確認。次の作業者は現コードから新しい具体計画を提示し、その確認まで読み取りと既存Task／flow記録のみ。最新Handoffとflowが根拠・採否・検証境界を所有する）。
 
 - [ ] ranking §20とTSK-13の実装差に基づき、共通／保存育成basisと通常／理想の候補・寄与を共通application／executionへ接続する。
 - [ ] UI／URL／worker／portable／保存復元／入力修復を同じidentityへ収束し、既存選択能力とcalculator parityを維持する。
@@ -3302,7 +3302,15 @@ Contract closure matrix:
 | `TS-PERF-002` | Apply | 構造変更した経路の同条件前後3process、未変更範囲の一致証拠継承 | Handoff |
 | `DX-HANDOFF-001` | Apply | source／入力／diff／有効証拠・未達条件・次操作の照合 | Handoff |
 
-最新の確認対象（2026-10-04 09:26 UTC提示・09:30 UTC確認済み）: [内部実行契約を置換する再評価案](../evidence/ranking-policy-candidate-flow-tsk-06.md#内部実行契約を置換する再評価案2026-10-04-0926-utc確認待ち)。今回のOKで本具体案を確認済み、09:06停止を限定改訂範囲で解除しI3-aから再開する。最新Handoffと同flowが差分・原証拠・保証範囲・未達を所有する。
+最新Handoff（2026-10-04 15:15 UTC・checkpoint／次の具体計画待ち）: [完成stateを返す実行契約への改訂案と確認記録](../evidence/ranking-policy-candidate-flow-tsk-06.md#完成stateを返す実行契約への改訂案2026-10-04-1510-utc確認待ち)。利用者のOKで15:10方向と既存27 tracked pathのcheckpoint commitを確認した。完成版ではない。次の作業者は現コードから具体実装計画を再判断・提示し、明示確認を待つ。過去のOKと今回のcommit許可は新計画の確認を代替しない。R1-a値／根拠のsource commit→R1-b完成action state返却と全direct caller撤去が提案の具体境界で、R0帰属とR2〜R4・P1〜P8・全15 Applyの検証契約は継承する。親a3dc85a・commit前index空、全15 Apply未Verified、TSK-14 in_progress・固定counter未解消、自起動processなし。新規製品／test修正・検証／計測／docs検証／取得なし。schema42／engine49／保存format・固定入力／取得元／保持契約と共通選択・正常current復元を維持。commit後HEAD／親／clean状態を依頼文へ固定し、次は読取と既存Task／flowへの計画記録だけ。新計画確認後は同範囲の実装・検証を継続するが、計画逸脱・保証不能・説明不能差（判断不能を含む）では即停止し、改訂確認まで再開しない。
+
+確認済み前案（2026-10-04 13:41 UTC提示・13:47 UTC確認）: [破壊的な内部実行契約置換の改訂案](../evidence/ranking-policy-candidate-flow-tsk-06.md#破壊的な内部実行契約置換の改訂案2026-10-04-1341-utc確認待ち)。R0帰属→R1 transaction／activation→R2相関／同値性→R3実consumer→R4最終gateの成果と固定検証契約を継承するが、R1の新しい具体的な置換境界の確認を代替しない。
+
+前の停止報告と当時の限定改訂（2026-10-04 13:23 UTC）: [原反証・差分・有効証拠](../evidence/ranking-policy-candidate-flow-tsk-06.md#固定inventory-counterの停止報告と限定改訂案2026-10-04-1323-utc確認待ち)。停止事実は継承する。13:41案の確認・実装履歴を経て、最新確認対象は上の15:10案へ収束する。
+
+今回の確認履歴（2026-10-04 12:46 UTC）: 利用者のOKで[起点a3dc85aの再調査計画A〜G](../evidence/ranking-policy-candidate-flow-tsk-06.md#tsk-14-起点a3dc85aの再調査と実装計画2026-10-04確認待ち)を確認しA／Bを実装した。この確認を上の停止後改訂へ代入しない。
+
+前回の確認対象（2026-10-04 09:26 UTC提示・09:30 UTC確認済み）: [内部実行契約を置換する再評価案](../evidence/ranking-policy-candidate-flow-tsk-06.md#内部実行契約を置換する再評価案2026-10-04-0926-utc確認待ち)。今回のOKで本具体案を確認済み、09:06停止を限定改訂範囲で解除しI3-aから再開する。最新Handoffと同flowが差分・原証拠・保証範囲・未達を所有する。
 
 前回の確認と再開履歴（2026-10-04 07:44 UTC提示・07:50 UTC確認済み）: [共通executionのread／確定根拠の一括置換案](../evidence/ranking-policy-candidate-flow-tsk-06.md#共通executionの条件読取確定根拠を一括置換する再評価案2026-10-04-0744-utc確認待ち)を当時の「おｋ」で確認し、I3-a／bを再開した。05:51 UTCに確認された[起点6074dbd計画](../evidence/ranking-policy-candidate-flow-tsk-06.md#tsk-14-起点6074dbdの実装計画2026-10-04確認待ち)と[限定audit置換・D0→I2〜I6](../evidence/ranking-policy-candidate-flow-tsk-06.md#固定application-auditの旧一致契約を置換する改訂案2026-10-04確認待ち)は成果・不変条件・維持契約の土台として継承するが、当時のOKを新具体案へ代入しない。D0帰属・I2限定成功・I3原反証と差分を保持する。以下の元計画と過去の停止は履歴と判断材料。
 
@@ -3543,6 +3551,20 @@ identity改訂承認後の再開（2026-10-03 11:38 UTC）:
 - 改訂案・次操作: 原反証／入力／歴史baselineを保持し、原因帰属の診断だけ再開する案への確認を待つ。既存同条件audit証拠が不足なら起点6074dbdを隔離source・同じ固定入力と既存runner／契約で一度検証し、現4,929recordとの全差をrule／owner／変更時点へ帰属する。製品・expected・assertion・固定audit／counter／VRT・保持契約は変更しない。診断結果を提示して修正／契約の扱いを具体的な改訂計画へ収束し、再確認まで実装へ戻らない。今回の停止義務を自己解除せず、停止後のdocs／qualityも未実行。
 
 固定application audit契約の改訂案／Handoff（2026-10-04・利用者確認待ち）:
+
+- 最新上限Handoff（2026-10-04 14:20 UTC）: [確認済み内部契約案のR0帰属・R1 NP consumerと残件](../evidence/ranking-policy-candidate-flow-tsk-06.md#上限handoff2026-10-04-1420-utcr0帰属r1-np-consumer部分接続)を最新状態の正本とする。baselineReproducedUnchanged（起点／currentともgenerated8683／terminal7596等で同じfixed inventory failure）、原反証・guard起動拒否・安全なsource隔離の実条件を保持。NP writerを必須receipt＋sourceStage/resolvedSourceへ接続、局所3file89成功・標準typecheck・3file lint成功は限定証拠。HEAD a3dc85a・27path・index空、製品25pathのidentity／diffはresume-1347/r1-handoff-*、全自起動process終了、保存／fixed input／install／取得／stage／commitなし。14:16:59上限で新familyを開始せず、開始済みatomic検査と記録だけを閉じた。R1全writer／scalar・ledger撤去→R2相関／同値性・固定counter→R3実経路／保存→R4 strict・production・性能・全意味差・reviewBlocking0／quality／docsが未達。全15 Apply未Verified・TSK-14 in_progress／Done／R1受入ではない。次sessionは同じ確認済み計画のR1残件を継続し、既定の強制停止条件を維持する。
+
+- 最新確認／60分checkpoint（2026-10-04 13:47:57 UTC）: 利用者OKで13:41改訂を確認し、停止時HEAD／26path／index空からR0を再開。詳細・namespace／保持owner／参照期間はflow同節へ記録、全15 Apply未Verified、14:16:59 UTC上限を維持。新計画の成果・owner・検証契約・停止条件を変えず、原counter failureを保持してbounded帰属を行う。
+
+- 改訂提示履歴（2026-10-04 13:41 UTC）: [破壊的な内部実行契約置換案](../evidence/ranking-policy-candidate-flow-tsk-06.md#破壊的な内部実行契約置換の改訂案2026-10-04-1341-utc確認待ち)へ判断・owner・依存順・P1〜P8／I2〜I6・全Apply closureを収束。旧ledger／scalar／default fallback、未完成NP専用receipt＋clock文字列finalizeの維持を棄却し、value ownerが値と実read依存を生成する単一source transactionへ置換する。起点もplanner Lv10なので今回explicit common10だけではcounter増加を説明できず、帰属は未確定。raw clock identityと意味同値proofを分け、旧counterへ戻すことを設計目標にしない。固定inventory等の検査・schema42／engine49／保存format／固定入力・取得元・保持は不変、両立不能なら追加改訂確認へ停止。利用者の前提再指示は具体案承認ではない。HEAD a3dc85a・26path・index空、製品／test／保存は停止時のまま・全自起動process終了、読取と既存正本2文書の計画記録だけ。新検証・計測・docs検証なし。全15 Apply未Verified／TSK-14 in_progress、次操作は本具体案への明示確認待ち。
+
+- 停止履歴／当時の限定改訂（2026-10-04 13:23 UTC）: [固定inventory counterの原反証・差分・証拠と改訂案](../evidence/ranking-policy-candidate-flow-tsk-06.md#固定inventory-counterの停止報告と限定改訂案2026-10-04-1323-utc確認待ち)を最新状態の正本とする。Aの探索前skill cell束縛とBのfixed／ratio NP write receiptは部分接続。13:22 runは75成功／1失敗、固定generated6673→8683／terminal3640→7596／maxSemantic56→181等が不一致。期待値・原log・fixed input保持、帰属は未確定。HEAD a3dc85a・26path・index空、全自起動process終了、実装／新検証／docs停止。停止後git diff --checkを誤実行した事実と非受入扱いもflowに記録した。改訂はboundedな起点帰属→clock依存を保持した同値性修正→元counter assertion→A〜Gの依存順追加だけで、counter／expected／cap等の退役を含めない。利用者の本改訂確認まで読取と正本記録だけ。全15 Apply未Verified／TSK-14 in_progress、Done／R1受入ではない。
+
+- 今回の診断namespace: `.test-results/tsk-14-ranking-implementation-20261003/approved-run-0819/resume-1246/`（未使用path）。owner TSK-14、用途は今回A〜Gの局所原log・source／固定入力identity・差分説明。参照期間はTSK-14受入中、終了後はconsumerと既存保持policyに従う。原証拠／固定入力の代替や恒久bundleではない。/tmp ENOSPCのため局所commandのTMPDIRだけ同namespace/scratchへ限定し、正式性能条件と分ける。
+
+- 今回の確認・再開（2026-10-04 12:46:59 UTC）: 利用者のOKでa3dc85a再調査計画A〜Gを確認済み。HEAD a3dc85a／index空・計画記録2文書だけを再照合し、Aのbasis実cell束縛から継続する。60分checkpoint13:46:59 UTC／90分上限14:16:59 UTC、固定検証契約と強制停止を維持。全15 Apply未Verified、TSK-14 in_progress。最新の具体計画と採否はflow同節を正本とする。
+
+- 新計画Handoff（2026-10-04、起点a3dc85a・利用者確認待ち）: [今回の再調査・採否・実装単位・全15 Applyゲート](../evidence/ranking-policy-candidate-flow-tsk-06.md#tsk-14-起点a3dc85aの再調査と実装計画2026-10-04確認待ち)へ収束。HEAD a3dc85a7f68fc5e4e5b9a72ab31a8598277917f5／親6074dbd、開始worktree／index clean。610公開source・固定6入力・指定3manifestの宣言artifact17件・原probe32件の既存bytes／SHAに不一致0。原before宣言／D0帰属と旧限定成功の保証範囲を保持。新run／test／計測／保存／index／install／取得／docs検証なし。変更はTaskと既存flowの計画記録2文書だけ。後付けwrite ledger・第二scalar・BP内側最大化・boolean-only quotientを置換するA〜G、独立strict・80＋S0/S1・同条件after各3process・差分レビュー／Blocking0→固定quality→記録後docsを新確認対象とした。全Apply未Verified／TSK-14 in_progress、Done／R1受入ではない。全自起動読取process終了、同cwd他sessionの編集活動は未確定で、他processを終了しない。sandbox起動ENOSPCは正式読取審査で成立、/tmp空き0とproject空き621Gを区別し、cleanup／設定変更なし。次操作は今回の計画への明示確認を待つ。
 
 - session引継ぎ（2026-10-04 11:00 UTC上限）: [確認済み内部契約案の最新引継ぎ](../evidence/ranking-policy-candidate-flow-tsk-06.md#内部実行契約を置換する再評価案2026-10-04-0926-utc確認待ち)へ最終差分・source／固定入力identity・原反証・source別有効証拠・未達と次操作を収束。HEAD6074dbd・106path・index空、source／tracked製品diffは `resume-0551/i3-0930-handoff-*`。proc proof変更後28file382成功、最後のsource完了記録修正後4file113成功・標準typecheck／対象lint成功。記録後docsのlogも同namespaceへ保存する。全15 Apply未Verified、I3のwrite依存根拠・二重activation退役／全分岐保証・相関とquotient／current実UI・P3／80＋saved production・正式after・Blocking0／正本／最終qualityは未達。全process終了、install／取得／stage／commitなし。確認済み09:26案を次sessionで継続し、変更が必要または判断不能なら強制停止する。TSK-14 in_progress／TSK-13 done／TSK-12 ready、Done／R1受入ではない。
 

@@ -1,3 +1,4 @@
+import { commonPreparationSkillLevels } from './rankingBasis';
 import { observeResourceProgram, type ResourceProgramObservation } from './resourceProgramAudit';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { naturalServantLevel, type MasterDataSnapshot } from '@fgo-lab/master-data';
@@ -147,7 +148,13 @@ export function compileCalculationApplicationProductionAudit(
   const levelPairKey = (servantId: string, level: number) => `${servantId}:${String(level)}`;
 
   for (const servant of master.servants) {
-    const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1);
+    const planned = planPreNoblePhantasmCandidates(
+      servant,
+      master.npResourceSemantics,
+      commonPreparationSkillLevels(servant),
+      1,
+      1,
+    );
     generatedCandidateCount += planned.inventory.generatedStateCount;
     deduplicatedCandidateCount += planned.inventory.deduplicatedStateCount;
     if (planned.candidates.length === 0) continue;

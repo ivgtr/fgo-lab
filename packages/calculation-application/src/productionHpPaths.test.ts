@@ -1,3 +1,4 @@
+import { commonPreparationSkillLevels } from './rankingBasis';
 import {
   hpCoverageSources,
   reconcileHpCoverage,
@@ -670,6 +671,7 @@ it(
             const original = planPreNoblePhantasmCandidates(
               servant,
               master.npResourceSemantics,
+              commonPreparationSkillLevels(servant),
               npLevel,
               overcharge,
             );

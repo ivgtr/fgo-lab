@@ -138,7 +138,11 @@ export type PreparationResourcePlanResult =
       buffInstances: PreNoblePhantasmState['buffInstances'];
       contextState: Pick<
         PreNoblePhantasmState,
-        'stackCounts' | 'stateTraits' | 'initialTraitSuppressions' | 'conditionWriteProofs'
+        | 'stackCounts'
+        | 'stateTraits'
+        | 'initialTraitSuppressions'
+        | 'conditionWriteProofs'
+        | 'npQuantityWrites'
       >;
       ocInputDefinitions: readonly CanonicalInputDefinition[];
       uncertainContextWrites: PreNoblePhantasmState['uncertainContextWrites'];
@@ -320,6 +324,7 @@ export function planPreparationResourceTransaction(args: {
     buffInstances: oc.structuralState.buffInstances,
     contextState: {
       conditionWriteProofs: oc.structuralState.conditionWriteProofs,
+      npQuantityWrites: oc.structuralState.npQuantityWrites,
       stackCounts: oc.structuralState.stackCounts,
       stateTraits: oc.structuralState.stateTraits,
       initialTraitSuppressions: oc.structuralState.initialTraitSuppressions,

@@ -39,6 +39,7 @@ function fixtureResourceRead(
   truth: boolean | null,
   source: SourceEffect,
   valueSetIndex: number,
+  procOutcome: 'success' | 'failure' = 'success',
 ): Extract<SourceActivationReceipt, { kind: 'read' }> {
   const clock: ConditionRead['clock'] = {
     phase: 'sourceUse',
@@ -68,9 +69,9 @@ function fixtureResourceRead(
     kind: 'read',
     proc: {
       kind: 'resolved',
-      outcome: 'success',
-      certainty: 'guaranteed',
-      ratePermille: 1000,
+      outcome: procOutcome,
+      certainty: procOutcome === 'success' ? 'guaranteed' : 'possible',
+      ratePermille: procOutcome === 'success' ? 1000 : 500,
       selection: 'declared',
     },
     read:
@@ -1320,6 +1321,18 @@ describe('OC on the preparation command path', () => {
             selection: 'declared',
           },
         });
+        expect(result.state.npQuantityWrites).toHaveLength(witness);
+        if (witness === 1)
+          expect(result.state.npQuantityWrites[0]?.sourceActivation).toMatchObject({
+            kind: 'read',
+            proc: {
+              kind: 'resolved',
+              outcome: 'success',
+              ratePermille: 500,
+              certainty: 'possible',
+            },
+          });
+        expect(initial.state.npQuantityWrites).toEqual([]);
         expect(initial.state.npResource.gauge).toBe(10000);
       }
     },
@@ -1931,11 +1944,8 @@ it('selects live buff count coefficients from normal/LB and OC cells without a m
       },
       operation: canonical.execution[0]!,
       valueSetIndex,
-      activation: {
-        conditionOutcome: true,
-        procOutcome: 'success',
-        sourceActivation: fixtureResourceRead(true, source, valueSetIndex),
-      },
+      sourceActivation: fixtureResourceRead(true, source, valueSetIndex),
+      phase: 'resolvedSource',
       buffInstances: [
         { identity: 'live', actor: 'attacker', traits: ['counted'], lifetime: 'active', count },
       ],
@@ -2004,10 +2014,13 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
       source: { ...source, limitBreak },
       operation: canonical.execution[0]!,
       valueSetIndex,
-      activation: {
-        ...activation,
-        sourceActivation: fixtureResourceRead(activation.conditionOutcome, source, valueSetIndex),
-      },
+      sourceActivation: fixtureResourceRead(
+        activation.conditionOutcome,
+        source,
+        valueSetIndex,
+        activation.procOutcome,
+      ),
+      phase: 'resolvedSource',
     });
   expect(run(false, 1)).toMatchObject({ status: 'applied', state: { gauge: 12000 } });
   expect(run(true, 4)).toMatchObject({ status: 'applied', state: { gauge: 20000 } });
@@ -2032,11 +2045,8 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
       source,
       operation: canonical.execution[0]!,
       valueSetIndex: 0,
-      activation: {
-        conditionOutcome: null,
-        procOutcome: 'success',
-        sourceActivation: fixtureResourceRead(null, source, 0),
-      },
+      sourceActivation: fixtureResourceRead(null, source, 0),
+      phase: 'resolvedSource',
     }),
   ).toMatchObject({ status: 'applied', state: saturated });
   expect(
@@ -2050,11 +2060,8 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
         recipient: 'enemy',
       } as MasterEffect['execution'][number],
       valueSetIndex: 0,
-      activation: {
-        conditionOutcome: true,
-        procOutcome: 'success',
-        sourceActivation: fixtureResourceRead(true, source, 0),
-      },
+      sourceActivation: fixtureResourceRead(true, source, 0),
+      phase: 'resolvedSource',
     }),
   ).toMatchObject({ status: 'applied', state: initial.state.npResource });
 });
@@ -2160,11 +2167,8 @@ it.each(['fixed', 'currentGaugeRatio'] as const)(
         source,
         operation: unknown.execution[0]!,
         valueSetIndex: 0,
-        activation: {
-          conditionOutcome: true,
-          procOutcome: 'success',
-          sourceActivation: fixtureResourceRead(true, source, 0),
-        },
+        sourceActivation: fixtureResourceRead(true, source, 0),
+        phase: 'resolvedSource',
       }),
     ).toMatchObject({
       status: 'rejected',
@@ -2517,4 +2521,183 @@ it('rolls BP, HP, NP, context and receipts back together when a later effect fai
   expect(committed.state.hp?.actors.attacker).toMatchObject({ current: 9000 });
   expect(committed.state.npResource.gauge).toBe(11_000);
   expect(committed.state.stateTraits.attackerState.has('temporary')).toBe(true);
+});
+
+describe('NP write ownership and quantity dependencies', () => {
+  it.each([
+    ['fixed', 0, 10000, 'possibleOutcome'],
+    ['fixed', 1000, 11000, 'possibleOutcome'],
+    ['currentGaugeRatio', 100, 11000, 'possibleOutcome'],
+    ['fixed', 20000, 20000, 'guaranteedWrite'],
+  ] as const)(
+    'records an actual %s write (%s) without losing the previous quantity proof',
+    (kind, amount, gauge, expectedProof) => {
+      const servant = servantWithSkill([
+        effect('owned-np-write', null, [
+          {
+            kind: 'resourceMutation',
+            resource: 'npGauge',
+            direction: 'gain',
+            unit: 'fixed',
+            recipient: 'sourceSelf',
+            subjectId: null,
+            amount: { kind, values: [[amount], [], [], [], []] },
+          },
+        ]),
+      ]);
+      const created = createPreNoblePhantasmState(servant, baseForm, context);
+      if (created.status !== 'applied') throw new Error(created.code);
+      const prior = created.state.conditionWriteProofs.quantities.get('npGauge:attacker');
+      if (!prior) throw new Error('initial NP proof required');
+      (created.state.conditionWriteProofs.quantities as Map<string, typeof prior>).set(
+        'npGauge:attacker',
+        { ...prior, kind: 'possibleOutcome' },
+      );
+      const result = reducePreNoblePhantasmAction(
+        servant,
+        created.state,
+        {
+          kind: 'useSkillSlot',
+          slot: 1,
+          skillLevel: 1,
+          choice: null,
+        },
+        context,
+      );
+      expect(result.status).toBe('applied');
+      expect(result.state.npResource.gauge).toBe(gauge);
+      expect(result.state.conditionWriteProofs.quantities.get('npGauge:attacker')).toMatchObject({
+        kind: expectedProof,
+        clock: { phase: 'operation', valueSetIndex: 0, valueIndex: 0 },
+      });
+      expect(result.state.npQuantityWrites).toHaveLength(1);
+      expect(result.state.npQuantityWrites[0]).toMatchObject({
+        quantity: 'npGauge:attacker',
+        mutation: { kind, direction: 'gain', cell: amount },
+        before: 10000,
+        after: gauge,
+        sourceActivation: { kind: 'read', proc: { kind: 'resolved', outcome: 'success' } },
+        reads: [
+          {
+            kind: 'previousQuantity',
+            value: 10000,
+            proof: { kind: 'possibleOutcome' },
+            influencesResult:
+              amount < context.resourceSemantics.capacityByNpLevel[context.npLevel - 1]!,
+          },
+          { kind: 'capacity', value: 20000 },
+          { kind: 'canonicalCell', value: amount },
+        ],
+      });
+      expect(created.state.npQuantityWrites).toEqual([]);
+      expect(created.state.npResource.gauge).toBe(10000);
+      expect(created.state.conditionWriteProofs.quantities.get('npGauge:attacker')?.kind).toBe(
+        'possibleOutcome',
+      );
+    },
+  );
+});
+
+it('does not invent an attacker NP write for a different canonical recipient', () => {
+  const servant = servantWithSkill([
+    effect('other-np-write', null, [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'enemy',
+        subjectId: null,
+        amount: { kind: 'fixed', values: [[1000], [], [], [], []] },
+      },
+    ]),
+  ]);
+  const created = createPreNoblePhantasmState(servant, baseForm, context);
+  if (created.status !== 'applied') throw new Error(created.code);
+  const result = reducePreNoblePhantasmAction(
+    servant,
+    created.state,
+    { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+    context,
+  );
+  expect(result).toMatchObject({
+    status: 'applied',
+    state: { npQuantityWrites: [], npResource: { gauge: 10000 } },
+  });
+  expect(result.state.conditionWriteProofs.quantities.get('npGauge:attacker')).toEqual(
+    created.state.conditionWriteProofs.quantities.get('npGauge:attacker'),
+  );
+});
+
+it('requires the NP writer receipt and keeps pending proc inside the source stage', async () => {
+  const { applyPreparationNpOperation } = await import('./preparationResourcePlan');
+  const { preparationEffectSource } = await import('./preparationOc');
+  const mutation = {
+    kind: 'resourceMutation',
+    resource: 'npGauge',
+    recipient: 'sourceSelf',
+    direction: 'gain',
+    unit: 'fixed',
+    subjectId: null,
+    amount: { kind: 'fixed', values: [[1000], [1000], [1000], [1000], [1000]] },
+  } satisfies Extract<MasterEffect['execution'][number], { kind: 'resourceMutation' }>;
+  const canonical = effect('receipt-owned-np', null, [mutation]);
+  const servant = servantWithSkill([]);
+  const initial = createPreNoblePhantasmState(servant, baseForm, context);
+  if (initial.status !== 'applied') throw new Error(initial.code);
+  const source = preparationEffectSource({
+    servant,
+    state: initial.state,
+    effect: canonical,
+    origin: 'attacker',
+    sourceInstanceId: 'attacker',
+    skillId: 'receipt-owned-skill',
+    skillName: '',
+    valueSetIndex: 0,
+    valueIndex: 0,
+  });
+  const read = fixtureResourceRead(true, source, 0);
+  const run = (
+    sourceActivation: SourceActivationReceipt,
+    phase: 'sourceStage' | 'resolvedSource',
+    gauge = 10000,
+  ) =>
+    applyPreparationNpOperation({
+      semantics,
+      initial: { ...initial.state.npResource, gauge },
+      source,
+      operation: mutation,
+      valueSetIndex: 0,
+      buffInstances: [],
+      sourceActivation,
+      phase,
+    });
+  expect(run(read, 'resolvedSource')).toMatchObject({ status: 'applied', state: { gauge: 11000 } });
+  expect(run({ kind: 'unread' }, 'resolvedSource', 20000)).toMatchObject({
+    status: 'rejected',
+    code: 'ambiguousCondition',
+    state: { gauge: 20000 },
+  });
+  const pending = { ...read, proc: { kind: 'unread' as const } };
+  expect(run(pending, 'resolvedSource', 20000)).toMatchObject({
+    status: 'rejected',
+    code: 'ambiguousCondition',
+    state: { gauge: 20000 },
+  });
+  expect(run(pending, 'sourceStage')).toMatchObject({ status: 'applied', state: { gauge: 11000 } });
+  expect(
+    run(
+      {
+        ...read,
+        proc: {
+          kind: 'resolved',
+          outcome: 'failure',
+          certainty: 'possible',
+          ratePermille: 500,
+          selection: 'declared',
+        },
+      },
+      'resolvedSource',
+    ),
+  ).toMatchObject({ status: 'applied', state: { gauge: 10000 } });
 });

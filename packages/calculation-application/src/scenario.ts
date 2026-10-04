@@ -1,3 +1,4 @@
+import { calculatorPreparationSkillLevels } from './rankingBasis';
 import type {
   ExecutionPossibilityCertificate,
   StochasticSelection,
@@ -84,6 +85,7 @@ import { createEffectControlViewModels, type EffectControlViewModel } from './ef
 import {
   defaultCalculatorPreNoblePhantasmCandidate,
   defaultPreNoblePhantasmCandidate,
+  type PreNoblePhantasmPlanCandidate,
 } from './preNoblePhantasmPlanner';
 
 interface ResolvedCalculationInputCommon {
@@ -215,7 +217,22 @@ export function createDefaultResolvedScenario(
   servant: ServantMaster = master.servants[0]!,
 ): ResolvedCalculationScenario {
   const npLevel = Math.max(1, build?.npLevel ?? 1) as 1 | 2 | 3 | 4 | 5;
-  const candidate = defaultPreNoblePhantasmCandidate(servant, master.npResourceSemantics, npLevel);
+  const candidate = defaultPreNoblePhantasmCandidate(
+    servant,
+    master.npResourceSemantics,
+    calculatorPreparationSkillLevels(servant, build),
+    npLevel,
+  );
+  return resolvedScenarioForPreparationCandidate(master, build, servant, candidate, npLevel);
+}
+
+function resolvedScenarioForPreparationCandidate(
+  master: MasterDataSnapshot,
+  build: ServantBuild | undefined,
+  servant: ServantMaster,
+  candidate: PreNoblePhantasmPlanCandidate,
+  npLevel: 1 | 2 | 3 | 4 | 5,
+): ResolvedCalculationScenario {
   const initialFormId = candidate.terminalState.initialFormId;
   const noblePhantasm = candidate.terminalState.selectedNoblePhantasmVariant
     ? findNoblePhantasmVariant(servant, candidate.terminalState.selectedNoblePhantasmVariant)
@@ -241,14 +258,7 @@ export function createDefaultResolvedScenario(
     initialBattlePointPoints: {},
     canonicalInputValues: {},
     craftEssence: null,
-    preNoblePhantasmPlan: candidate.commands.map((command) =>
-      command.kind === 'useSkillSlot'
-        ? {
-            ...command,
-            skillLevel: build?.npLevel ? (build.skills[String(command.slot)] ?? 1) : 10,
-          }
-        : command,
-    ),
+    preNoblePhantasmPlan: [...candidate.commands],
     mysticCode: null,
     support: null,
     effectDecisions: [],
@@ -329,22 +339,11 @@ export function createDefaultCalculatorScenario(
   const candidate = defaultCalculatorPreNoblePhantasmCandidate(
     servant,
     master.npResourceSemantics,
+    calculatorPreparationSkillLevels(servant, build),
     npLevel,
   );
-  const scenario = createDefaultResolvedScenario(master, build, servant);
   return excludeDefaultAttackerSkillContributions(
-    {
-      ...scenario,
-      attacker: { ...scenario.attacker, initialActorFormId: candidate.terminalState.initialFormId },
-      preNoblePhantasmPlan: candidate.commands.map((command) =>
-        command.kind === 'useSkillSlot'
-          ? {
-              ...command,
-              skillLevel: build?.npLevel ? (build.skills[String(command.slot)] ?? 1) : 10,
-            }
-          : command,
-      ),
-    },
+    resolvedScenarioForPreparationCandidate(master, build, servant, candidate, npLevel),
     master,
   );
 }

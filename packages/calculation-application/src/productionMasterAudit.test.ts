@@ -1,3 +1,4 @@
+import { commonPreparationSkillLevels } from './rankingBasis';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
@@ -105,7 +106,13 @@ describe('production preparation semantics audit', () => {
     };
     const terminalKeys = new Set<string>();
     for (const servant of master.servants) {
-      const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1);
+      const planned = planPreNoblePhantasmCandidates(
+        servant,
+        master.npResourceSemantics,
+        commonPreparationSkillLevels(servant),
+        1,
+        1,
+      );
       const actorFormProfiles = createActorFormProfiles(
         servant,
         planned.candidates.map(({ terminalState }) => terminalState),
@@ -204,6 +211,7 @@ describe('production preparation semantics audit', () => {
       for (const candidate of planPreNoblePhantasmCandidates(
         servant,
         master.npResourceSemantics,
+        commonPreparationSkillLevels(servant),
         1,
         1,
       ).candidates)

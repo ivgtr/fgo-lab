@@ -1,3 +1,4 @@
+import { commonPreparationSkillLevels } from './rankingBasis';
 import { rankingBasisFixture } from './rankingBasisFixture';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
@@ -97,7 +98,13 @@ describe('portable calculation application owner', () => {
     );
     expect(request.executionIntent).toEqual({ kind: 'calculator', initialNpGauge: 10_000 });
     if (request.scenario.mode !== 'resolved') throw new Error('resolved request required');
-    const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1);
+    const planned = planPreNoblePhantasmCandidates(
+      servant,
+      master.npResourceSemantics,
+      commonPreparationSkillLevels(servant),
+      1,
+      1,
+    );
     const profiles = createStaticActorFormProfiles(servant);
     const expected = planned.candidates.find((candidate) => {
       try {

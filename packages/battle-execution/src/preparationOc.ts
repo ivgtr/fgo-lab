@@ -1,4 +1,8 @@
-import { bindPreparationWriteProofs } from './preparationProofs';
+import {
+  bindPreparationWriteProofs,
+  commitPreparationNpQuantityWrite,
+  finalizePreparationNpQuantityWrites,
+} from './preparationProofs';
 import { conditionWriteProof, sourceProcRead, type ConditionFactProof } from './conditionRead';
 import { selectBinaryStochasticPossibility, stochasticGroupKey } from './stochasticPossibilities';
 import {
@@ -345,6 +349,7 @@ export function executePreparationOc(args: {
     let sourceApplies = true;
     let sourceState = current;
     let sourceResourceMutationCount = resourceMutations.length;
+    let sourceNpWriteStart = current.npQuantityWrites.length;
     let sourceStochasticFailureSteps: number[] | undefined;
     const sourceStep = steps.length;
     const transactionKey = JSON.stringify([
@@ -365,6 +370,7 @@ export function executePreparationOc(args: {
       }
       sourceState = current;
       sourceResourceMutationCount = resourceMutations.length;
+      sourceNpWriteStart = current.npQuantityWrites.length;
       if (!source.sourceEnabled) {
         sourceApplies = false;
         activation.set(source.effect, {
@@ -1411,7 +1417,8 @@ export function executePreparationOc(args: {
             initial: current.npResource,
             source,
             operation,
-            activation: activation.get(source.effect),
+            sourceActivation: requiredPreparationConditionRead(source.effect, activation),
+            phase: 'sourceStage',
             valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
             buffInstances: current.buffInstances,
             population: currentFacts()
@@ -1441,19 +1448,59 @@ export function executePreparationOc(args: {
               reason: 'preparationResource',
             };
           }
-          if (resource.state.gauge !== current.npResource.gauge) {
+          const writesQuantity =
+            operation.kind === 'resourceMutation' &&
+            operation.resource === 'npGauge' &&
+            resolveResourceTargetPolicy(source.origin, operation.recipient) === 'attacker' &&
+            (operation.amount.kind === 'fixed' || operation.amount.kind === 'currentGaugeRatio') &&
+            sourceApplies &&
+            activation.get(source.effect)?.conditionOutcome === true;
+          if (resource.state.gauge !== current.npResource.gauge)
             resourceMutations.push({
               step: resourceStep,
               occurrenceId: source.effect.occurrenceId,
               before: current.npResource,
               after: resource.state,
             });
+          if (
+            writesQuantity &&
+            (operation.amount.kind === 'fixed' || operation.amount.kind === 'currentGaugeRatio')
+          ) {
+            const activationReceipt = requiredPreparationConditionRead(source.effect, activation);
+            if (activationReceipt.kind !== 'read')
+              throw new TypeError('missing_np_write_activation');
+            const valueSetIndex = receipt ? receipt.effectiveOc - 1 : source.valueSetIndex;
+            const cell = (
+              source.limitBreak ? operation.amount.limitBreakValues : operation.amount.values
+            )?.[valueSetIndex]?.[source.valueIndex];
+            if (cell === null || cell === undefined) throw new TypeError('missing_np_write_cell');
+            current = commitPreparationNpQuantityWrite({
+              state: current,
+              after: resource.state,
+              kind: operation.amount.kind,
+              direction: operation.direction,
+              cell,
+              clock: {
+                ...activationReceipt.read.clock,
+                phase: 'operation',
+                operationId: JSON.stringify([
+                  args.actionId,
+                  source.sourceInstanceId,
+                  source.effect.occurrenceId,
+                  operationIndex,
+                ]),
+                valueSetIndex,
+                valueIndex: source.valueIndex,
+              },
+              sourceActivation: activationReceipt,
+              activationProof: sourceProof(),
+            });
+          } else if (resource.state.gauge !== current.npResource.gauge)
             current = bindPreparationWriteProofs(
               current,
               { ...current, npResource: resource.state },
               sourceProof(),
             );
-          }
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -1614,6 +1661,16 @@ export function executePreparationOc(args: {
     };
     const completeSource: (typeof steps)[number] = (state, outcomes) => {
       const step = completePhysicalSource(state, outcomes);
+      if (step.kind === 'skip' && current.npQuantityWrites.length > sourceNpWriteStart) {
+        const receipt = requiredPreparationConditionRead(source.effect, activation);
+        if (receipt.kind !== 'read') throw new TypeError('missing_committed_np_write_activation');
+        current = finalizePreparationNpQuantityWrites(
+          current,
+          sourceNpWriteStart,
+          receipt,
+          sourceProof(),
+        );
+      }
       return step.kind === 'skip'
         ? {
             kind: 'finishSource',

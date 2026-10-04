@@ -10,7 +10,7 @@ import {
 } from './npResource';
 import { resolveTargetPolicy, resolveResourceTargetPolicy } from './effectRouting';
 import type { SourceEffect } from './sourceCollection';
-import type { PreparationEffectActivation } from './preparationTransaction';
+import type { SourceActivationReceipt } from './conditionRead';
 import { countBuffInstances, type CountedBuffInstance } from './buffInstances';
 import { readPopulationCount, type PopulationEvent } from './populationCounts';
 import type { ConditionEvaluationState } from './condition';
@@ -106,16 +106,25 @@ export function applyPreparationNpOperation(args: {
   initial: NpResourceState;
   source: SourceEffect;
   operation: Operation;
-  activation: PreparationEffectActivation | undefined;
+  sourceActivation: SourceActivationReceipt;
+  phase: 'sourceStage' | 'resolvedSource';
   valueSetIndex: number;
   buffInstances: readonly CountedBuffInstance[];
   population?: { facts: ConditionEvaluationState; events: readonly PopulationEvent[] } | undefined;
 }): PreparationSourceResourceResult {
-  const { initial, source, operation, activation, valueSetIndex } = args;
+  const { initial, source, operation, sourceActivation, valueSetIndex } = args;
   const unchanged = { status: 'applied' as const, state: initial, baseOvercharge: null };
   if (!effectExecutesInNpProgram(source.effect)) return unchanged;
-  if (activation?.procOutcome === 'failure' || activation?.conditionOutcome === false)
+  if (sourceActivation.kind === 'notApplicable') return unchanged;
+  if (sourceActivation.kind === 'unread')
+    return { status: 'rejected', code: 'ambiguousCondition', state: initial };
+  const { read, proc } = sourceActivation;
+  if (read.truth === false || (proc.kind === 'resolved' && proc.outcome === 'failure'))
     return unchanged;
+  // Only the source transaction may stage a write before its OC proc clock.
+  // A resolved-source consumer cannot turn an unread proc into a successful no-op.
+  if (proc.kind === 'unread' && args.phase !== 'sourceStage')
+    return { status: 'rejected', code: 'ambiguousCondition', state: initial };
   const mutation = selectedNpMutation(
     source,
     operation,
@@ -129,7 +138,9 @@ export function applyPreparationNpOperation(args: {
     mutations: [mutation],
   });
   if (probe.status === 'rejected') return probe;
-  if (activation?.conditionOutcome !== true || activation.procOutcome !== 'success') {
+  const canStage = proc.kind === 'unread' && args.phase === 'sourceStage';
+  const procSucceeded = proc.kind === 'resolved' && proc.outcome === 'success';
+  if (read.truth !== true || (!procSucceeded && !canStage)) {
     // Saturation proves this individual write a no-op; cancelling later writes do not.
     if (probe.state.gauge === initial.gauge) return unchanged;
     return { status: 'rejected', code: 'ambiguousCondition', state: initial };
