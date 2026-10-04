@@ -59,6 +59,8 @@ describe('ranking loading presentation', () => {
           masterDataLocale: 'ja-JP',
         }}
         onOpenCalculator={vi.fn()}
+        onOpenCalculatorForAttackProfile={vi.fn()}
+        onEditSavedBuild={vi.fn()}
       />,
     );
 
@@ -123,6 +125,7 @@ describe('ranking loading presentation', () => {
         versions={versions}
         onOpenCalculator={vi.fn()}
         onOpenCalculatorForAttackProfile={openCalculator}
+        onEditSavedBuild={vi.fn()}
         onReload={reload}
       />,
     );

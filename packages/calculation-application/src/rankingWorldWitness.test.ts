@@ -10,6 +10,7 @@ import {
 } from '@fgo-lab/battle-execution';
 import {
   masterSnapshotSchema,
+  getDefaultInitialActorForm,
   type MasterDataSnapshot,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -145,6 +146,7 @@ describe('ranking target witness completeness', () => {
         master,
         rankingBasisFixture(servant),
         DEFAULT_RANKING_POLICY_CONDITIONS,
+        getDefaultInitialActorForm(servant)!.id,
       ),
       conditions,
       ...(quotient ? { canonicalCombinedState: { transitionTraits: new Set<string>() } } : {}),
@@ -225,7 +227,7 @@ describe('ranking target witness completeness', () => {
       expect(targetConditionWitnessSpace(condition).traitFacts.length > 0).toBe(
         source === 'worldFacts',
       );
-      expect(evaluateConditionExpression(condition, worldState)).toBe(
+      expect(evaluateConditionExpression(condition, worldState).truth).toBe(
         source === 'worldFacts' ? true : null,
       );
     }
@@ -266,7 +268,8 @@ describe('ranking target witness completeness', () => {
     expect(
       candidates([mixedAny]).some(
         (candidate) =>
-          evaluateConditionExpression(mixedAny, stateFor(servant, candidate, master)) === true,
+          evaluateConditionExpression(mixedAny, stateFor(servant, candidate, master)).truth ===
+          true,
       ),
     ).toBe(true);
 
@@ -276,15 +279,17 @@ describe('ranking target witness completeness', () => {
       expect(
         candidates([condition]).some(
           (candidate) =>
-            evaluateConditionExpression(condition, stateFor(servant, candidate, master)) === true,
+            evaluateConditionExpression(condition, stateFor(servant, candidate, master)).truth ===
+            true,
         ),
       ).toBe(false);
     }
     expect(targetConditionWitnessSpace(negatedEffectLocal).traitFacts).toEqual([]);
     const outcomes = (quotient: boolean) =>
       new Set(
-        candidates([mixedAll], quotient).map((candidate) =>
-          evaluateConditionExpression(mixedAll, stateFor(servant, candidate, master)),
+        candidates([mixedAll], quotient).map(
+          (candidate) =>
+            evaluateConditionExpression(mixedAll, stateFor(servant, candidate, master)).truth,
         ),
       );
     expect(outcomes(true)).toEqual(outcomes(false));
@@ -337,7 +342,8 @@ describe('ranking target witness completeness', () => {
       expect(
         generated.some(
           (candidate) =>
-            evaluateConditionExpression(condition, stateFor(servant, candidate, master)) === true,
+            evaluateConditionExpression(condition, stateFor(servant, candidate, master)).truth ===
+            true,
         ),
         JSON.stringify(condition),
       ).toBe(true);
@@ -390,7 +396,7 @@ describe('ranking target witness completeness', () => {
     expect(
       generated.some(
         (candidate) =>
-          evaluateConditionExpression(mixed, stateFor(servant, candidate, master)) === true,
+          evaluateConditionExpression(mixed, stateFor(servant, candidate, master)).truth === true,
       ),
     ).toBe(true);
     expect(
@@ -414,7 +420,7 @@ describe('ranking target witness completeness', () => {
       conditions.reduce(
         (total, condition, index) =>
           total +
-          (evaluateConditionExpression(condition, state) === true ? [30, 50, 70][index]! : 0),
+          (evaluateConditionExpression(condition, state).truth === true ? [30, 50, 70][index]! : 0),
         0,
       );
     const generatedMaximum = Math.max(
@@ -470,14 +476,18 @@ describe('ranking target witness completeness', () => {
       expect(
         generated.some(
           (candidate) =>
-            evaluateConditionExpression(condition, stateFor(servant, candidate, master)) === true,
+            evaluateConditionExpression(condition, stateFor(servant, candidate, master)).truth ===
+            true,
         ),
       ).toBe(true);
   });
 
   it('audits every production world-fact-only target condition for a canonical true witness', () => {
     const productionConditions = master.servants.flatMap((candidateServant) =>
-      compileStaticRankingPreparationPrograms(candidateServant).flatMap((program) =>
+      compileStaticRankingPreparationPrograms(
+        candidateServant,
+        rankingBasisFixture(candidateServant).skillLevels,
+      ).flatMap((program) =>
         compileStaticRankingSemantics(candidateServant, program, 1).conditions.map((condition) => ({
           servant: candidateServant,
           program,
@@ -523,8 +533,8 @@ describe('ranking target witness completeness', () => {
       });
       return generated.some(
         (candidate) =>
-          evaluateConditionExpression(condition, stateFor(candidateServant, candidate, master)) ===
-          true,
+          evaluateConditionExpression(condition, stateFor(candidateServant, candidate, master))
+            .truth === true,
       )
         ? []
         : [`${candidateServant.id}:${program.key}:${JSON.stringify(condition)}`];

@@ -41,6 +41,7 @@ describe('effect decision application command', () => {
       gameActivation: 'skillUse',
       sourceActive: true,
       proc: { kind: 'guaranteed' },
+
       procRatePermille: 1_000,
       valuePermille: 200,
       value: 0.2,
@@ -116,6 +117,7 @@ describe('effect decision application command', () => {
       gameActivation: 'skillUse',
       sourceActive: true,
       proc: { kind: 'guaranteed' },
+
       procRatePermille: 1_000,
       valuePermille: 500,
       value: 0.5,
@@ -302,6 +304,7 @@ describe('effect decision application command', () => {
         index: 0,
         maximumSuccesses: 5,
       },
+
       procRatePermille: 800,
       valuePermille: 500,
       value: 0.5,

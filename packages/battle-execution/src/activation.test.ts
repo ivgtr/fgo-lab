@@ -52,6 +52,7 @@ describe('attacker skill mutation activation planning', () => {
       gameActivation: 'skillUse' as const,
       proc: { kind: 'guaranteed' as const },
       stochasticOutcome: null,
+      sourceActivation: { kind: 'unread' as const },
       procRatePermille: 1_000,
       activation: { kind: 'sourceDefault' as const },
       evidence: { rawPath: 'test', functionId: '100' },

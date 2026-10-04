@@ -15,6 +15,8 @@ import {
   type StaticRankingPreparationProgram,
 } from './rankingStaticPreparation';
 import type { CalculationExecution } from './scenario';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
+import { compileRankingSelection, resolveRankingBasis } from './rankingBasis';
 
 type EligibilityStatus = 'calculated' | 'unreachable' | 'inputRequired' | 'invalid' | 'unsupported';
 
@@ -163,6 +165,8 @@ function staticProgramRecords(master: MasterDataSnapshot): {
   programsByServant: ReadonlyMap<string, readonly StaticRankingPreparationProgram[]>;
   inventory: RankingStaticSemanticsInventory;
 } {
+  const commonSelection = compileRankingSelection(DEFAULT_RANKING_POLICY_CONDITIONS);
+  if (commonSelection.status === 'invalid') throw new TypeError(commonSelection.reason);
   const programsByServant = new Map<string, readonly StaticRankingPreparationProgram[]>();
   const records: StaticProgramRecord[] = [];
   const sourceKinds: CountMap = {};
@@ -180,7 +184,8 @@ function staticProgramRecords(master: MasterDataSnapshot): {
   let invalidPrograms = 0;
 
   for (const servant of master.servants) {
-    const programs = compileStaticRankingPreparationPrograms(servant);
+    const basis = resolveRankingBasis(servant, { servantBuilds: {} }, commonSelection.selection);
+    const programs = compileStaticRankingPreparationPrograms(servant, basis.skillLevels);
     programsByServant.set(servant.id, programs);
     attackProfiles += new Set(programs.map(({ attackProfile }) => attackProfileKey(attackProfile)))
       .size;

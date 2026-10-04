@@ -1,3 +1,4 @@
+import { requiredPreparationConditionRead } from './preparationState';
 import { actorFormEquals, getSkillsForActorForm, type ServantMaster } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import { selectPreparationEffects } from './preparationCommands';
@@ -106,7 +107,7 @@ export function reducePreparationSkillAction(
             actorFormId: state.currentFormId,
             occurrenceId: effect.occurrenceId,
             effect,
-            stochasticOutcome: resource.activation.get(effect)?.procOutcome ?? null,
+            sourceActivation: requiredPreparationConditionRead(effect, resource.activation),
           })),
           activationFacts: assemblePreparationActivationFacts(
             servant,

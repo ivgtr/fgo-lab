@@ -1,3 +1,4 @@
+import type { ConditionFactProof } from './conditionRead';
 import { isBuffCountInput, markerTraitRead } from './buffInstances';
 import type {
   CanonicalInputDefinition,
@@ -53,6 +54,15 @@ export function seedStackQuantities(
           )
         : { ...state.traitCounts[scope], [trait]: count };
     (state.traits[scope] as Map<string, boolean>).set(trait, count > 0);
+    const proof: ConditionFactProof = {
+      kind: 'selectedInitialResource',
+      clock: state.conditionReadClock,
+    };
+    (state.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(trait, proof);
+    (state.conditionFactProofs.inputs as Map<string, ConditionFactProof>).set(
+      definition.key,
+      proof,
+    );
   }
 }
 

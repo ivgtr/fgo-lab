@@ -16,11 +16,12 @@ import type { OperationActivation } from './candidateSelection';
 import type { ContributionApplicationPolicy, PreparedOrderedScenario } from './executionTypes';
 import {
   activationRequirementsSatisfied,
-  evaluateCondition,
+  readOperationCondition,
   type ConditionReadAudit,
 } from './condition';
 import { contributionIsIncluded } from './effectiveContributions';
 import { resolveModifierValue } from './projection';
+import type { ConditionRead } from './conditionRead';
 
 export function operationEnabled(
   activation: OperationActivation,
@@ -38,9 +39,9 @@ export function operationEnabled(
 export function includedByPolicy(
   operation: BattleOperation,
   policy: ContributionApplicationPolicy,
-  state: ExecutableBattleState,
+  read: ConditionRead,
 ): boolean {
-  return contributionIsIncluded(operation, operation.condition, policy, state);
+  return contributionIsIncluded(operation, read, policy);
 }
 
 export function modifierValue(
@@ -86,6 +87,8 @@ export function applyOrderedActorFormTransition(
   state.actorFormId = changed.actorFormId;
   state.traits = changed.traits;
   state.traitCounts = changed.traitCounts;
+  state.conditionFactProofs = changed.conditionFactProofs;
+  state.conditionReadClock = { ...state.conditionReadClock, actorFormId: changed.actorFormId };
   return null;
 }
 export function effectOperationGroups(operations: readonly BattleOperation[]): BattleOperation[][] {
@@ -102,14 +105,21 @@ export function evaluateConditionAgainstKnownFacts(
   operation: BattleOperation,
   state: ExecutableBattleState,
   onConditionRead?: (read: ConditionReadAudit) => void,
-): boolean | null {
-  const evaluated = evaluateCondition(operation.condition, state, onConditionRead);
-  if (evaluated !== null) return evaluated;
+): ConditionRead {
+  const evaluated = readOperationCondition(operation, state, onConditionRead);
+  if (evaluated.truth !== null) return evaluated;
   const satisfiable = validateConstraintSet({
     fixedFacts: fixedConstraintFactsFromState(state, operation.operationId),
     expressions: [{ sourceKey: operation.operationId, expression: operation.condition }],
   });
-  return satisfiable.status === 'conflict' ? false : null;
+  if (satisfiable.status !== 'conflict') return evaluated;
+  return {
+    ...evaluated,
+    kind: 'known',
+    truth: false,
+    certainty: 'possible',
+    support: [{ kind: 'externalAssumption', clock: evaluated.clock }],
+  };
 }
 
 function quantityOperationIsNotRelevant(

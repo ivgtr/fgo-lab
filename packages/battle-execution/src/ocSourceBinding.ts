@@ -1,5 +1,10 @@
 import type { CanonicalInputDefinition, OcExecutionOperation } from '@fgo-lab/master-data';
-import { containsUnsupportedCondition, type ConditionEvaluationState } from './condition';
+import {
+  containsUnsupportedCondition,
+  evaluateCondition,
+  type ConditionEvaluationState,
+} from './condition';
+import { procIsGuaranteed } from './conditionRead';
 import { contributionPolicyDecisions } from './effectiveContributions';
 import { resolveContributionScope, resolveTargetPolicy } from './effectRouting';
 import type { ContributionApplicationPolicy } from './executionTypes';
@@ -82,9 +87,14 @@ export function bindOcSourceOperation(
       gameActivation: source.effect.gameActivation,
       contributionScope: resolveContributionScope(source.origin, operation.route.contributionScope),
     },
-    program.condition,
+    evaluateCondition(program.condition, context.facts),
     context.policy,
-    context.facts,
+    procIsGuaranteed(
+      source.effect.proc,
+      source.effect.proc.kind === 'guaranteed'
+        ? 1000
+        : (source.effect.proc.ratePermille[source.valueSetIndex]?.[source.valueIndex] ?? null),
+    ),
   );
   const included = Object.values(decisions).every(({ kind }) => kind === 'included');
   const condition = evaluateOcSourceCondition(program, context.facts);

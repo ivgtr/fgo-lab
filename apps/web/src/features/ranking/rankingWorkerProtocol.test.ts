@@ -328,7 +328,7 @@ it('retains canonical NP effect timing in preparation receipts and rejects unkno
       actorFormId: action.actorFormId,
       occurrenceId: npEffect.occurrenceId,
       effect: npEffect,
-      stochasticOutcome: null,
+      sourceActivation: { kind: 'notApplicable' },
     },
   ];
   expect(parseRankingWorkerResponse(response)).toEqual(response);

@@ -1,3 +1,7 @@
+import type {
+  ExecutionPossibilityCertificate,
+  StochasticSelection,
+} from '@fgo-lab/battle-execution';
 import { preparationOcAttemptsFor } from '@fgo-lab/battle-execution/preparation-audit';
 import {
   attachBattlePointPreparationObservation,
@@ -8,6 +12,8 @@ import {
 } from './battlePointPreparationObservation';
 import { resolveInitialMaximumHp, type InitialHpUnavailableIssue } from './initialHp';
 import {
+  executeStochasticPossibilities,
+  stochasticWitnessEntries,
   collectActivationRequirementOwners,
   executeOrderedScenario,
   executeOrderedScenarioWithAuditObservation,
@@ -154,6 +160,7 @@ export type CalculationApplicationResult =
     };
 
 interface CalculationExecutionCommon {
+  possibilityCertificate: ExecutionPossibilityCertificate;
   noblePhantasmVariant: NoblePhantasmVariant | null;
   terminalActorFormId: ActorFormId | null;
   scenario: CalculationScenario;
@@ -362,6 +369,7 @@ export type ScenarioPreparationOutcome =
     };
 
 export interface CalculationPreparationOptions {
+  stochasticSelection?: StochasticSelection;
   initialNpGauge?: number;
   /** Effective starting OC selected by the execution intent. */
   initialOvercharge?: 1 | 2 | 3 | 4 | 5;
@@ -530,6 +538,9 @@ function resolveScenarioPreparationOutcomeObserved(
     {
       master,
       policy,
+      ...(preparation.stochasticSelection
+        ? { stochasticSelection: preparation.stochasticSelection }
+        : {}),
       ...(observation
         ? {
             observePreparationTransition: (
@@ -1089,6 +1100,7 @@ function evaluateResolvedCalculation(
         })
       : [];
   const common: CalculationExecutionCommon = {
+    possibilityCertificate: { kind: 'declared' },
     noblePhantasmVariant: resolved.noblePhantasmVariant,
     terminalActorFormId: resolved.terminalActorFormId,
     scenario,
@@ -1122,6 +1134,7 @@ function evaluateResolvedCalculation(
 }
 
 interface PreparedCalculationScenarioCommon {
+  possibilityCertificate: ExecutionPossibilityCertificate;
   master: MasterDataSnapshot;
   scenario: CalculationScenario;
   contributionPolicy: ContributionApplicationPolicy;
@@ -1212,6 +1225,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
 ): PreparedCalculationScenario {
   if (scenario.mode === 'manual')
     return {
+      possibilityCertificate: { kind: 'declared' },
       status: 'executable',
       master,
       scenario,
@@ -1235,6 +1249,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
   );
   if (base.status === 'invalid') {
     return {
+      possibilityCertificate: { kind: 'declared' },
       status: 'invalid',
       master,
       scenario,
@@ -1247,6 +1262,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
   }
   if (base.status === 'rejected') {
     const prepared: PreparedCalculationScenario = {
+      possibilityCertificate: { kind: 'declared' },
       status: 'rejected',
       master,
       scenario,
@@ -1310,6 +1326,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
   )
     attachBattlePointPreparationObservation(executionObservation, battlePointPreparation);
   const prepared: PreparedCalculationScenario = {
+    possibilityCertificate: { kind: 'declared' },
     status: 'executable',
     master,
     scenario,
@@ -1436,6 +1453,7 @@ function invalidBattlePointPreparation(
     detail,
   };
   return {
+    possibilityCertificate: { kind: 'declared' },
     status: 'invalid',
     master,
     scenario,
@@ -1448,6 +1466,104 @@ function invalidBattlePointPreparation(
 }
 
 export function prepareCalculationScenarioWithPolicy(
+  scenario: CalculationScenario,
+  master: MasterDataSnapshot,
+  contributionPolicy: ContributionApplicationPolicy,
+  preparation: CalculationPreparationOptions = {},
+  captureExecutionObservation = false,
+): PreparedCalculationScenario {
+  if (scenario.mode === 'manual' || contributionPolicy.kind === 'calculator')
+    return prepareCalculationScenarioWithBattlePointWitness(
+      scenario,
+      master,
+      contributionPolicy,
+      preparation,
+      captureExecutionObservation,
+    );
+  const possibilities = executeStochasticPossibilities((stochasticSelection) =>
+    prepareCalculationScenarioWithBattlePointWitness(
+      scenario,
+      master,
+      contributionPolicy,
+      { ...preparation, stochasticSelection },
+      captureExecutionObservation,
+    ),
+  );
+  const candidates = possibilities.executions.map(({ value }) => value);
+  if (!candidates.length) throw new TypeError('no_legal_stochastic_witness');
+  const averages = new Map<PreparedCalculationScenario, number>();
+  const withCertificate = (selected: PreparedCalculationScenario): PreparedCalculationScenario => {
+    const selectedExecution = possibilities.executions.find(({ value }) => value === selected);
+    if (!selectedExecution) throw new TypeError('detached_stochastic_selection');
+    const certificate: ExecutionPossibilityCertificate = {
+      kind: 'enumerated',
+      policy: contributionPolicy.conditionalEffects,
+      selectedWitness: stochasticWitnessEntries(selectedExecution.selection),
+      attemptedExecutionCount: possibilities.attemptedExecutionCount,
+      illegalWitnessCount: possibilities.illegalWitnesses.length,
+      branching: possibilities.branching,
+      branches: possibilities.executions.map(({ selection, value }) => ({
+        witness: stochasticWitnessEntries(selection),
+        status: value.status,
+        average: averages.get(value) ?? null,
+        sourceReads: value.resolved.appliedPreparationActions.flatMap((action) =>
+          action.selectedEffects.map((effect) => effect.sourceActivation),
+        ),
+        resourceUses: value.resolved.appliedPreparationActions.map((action) => ({
+          actorFormId: action.actorFormId,
+          before: action.resourceBefore,
+          after: action.resourceAfter,
+          ocUse: action.ocUse,
+        })),
+      })),
+    };
+    const output = { ...selected, possibilityCertificate: certificate };
+    const capture = battlePointPreparationRejectionObservationFor(selected);
+    if (capture) attachBattlePointPreparationRejectionObservation(output, capture);
+    return carryBattlePointPreparationObservation(selected, output);
+  };
+  const unknown = candidates.find((candidate) => {
+    if (candidate.status === 'rejected')
+      return ![
+        'attackerDead',
+        'insufficientNpGauge',
+        'resourceRequirementExceedsCapacity',
+      ].includes(candidate.resolved.preparationRejection.code);
+    return (
+      candidate.status === 'invalid' ||
+      candidate.resolved.precision === 'unsupported' ||
+      candidate.resolved.precision === 'inputRequired'
+    );
+  });
+  if (unknown) return withCertificate(unknown);
+  const rejected = candidates.find((candidate) => candidate.status === 'rejected');
+  if (contributionPolicy.conditionalEffects === 'baseline' && rejected)
+    return withCertificate(rejected);
+  const executable = candidates.filter(
+    (candidate): candidate is Extract<PreparedCalculationScenario, { status: 'executable' }> =>
+      candidate.status === 'executable',
+  );
+  if (!executable.length) return withCertificate(candidates[0]!);
+  const evaluated = executable.map((candidate) => {
+    const result = calculateDamageResolution(candidate.resolved.input, {
+      schemaVersion: SCHEMA_VERSION,
+      appVersion: 'stochastic-witness',
+      masterDataVersion: master.version,
+      engineVersion: 'stochastic-witness',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+    });
+    if (result.status !== 'calculated') throw new TypeError('unresolved_stochastic_damage');
+    const average = result.rows[scenario.attacker.npLevel - 1]!.average;
+    averages.set(candidate, average);
+    return { candidate, average };
+  });
+  const direction = contributionPolicy.conditionalEffects === 'baseline' ? 1 : -1;
+  evaluated.sort((left, right) => direction * (left.average - right.average));
+  return withCertificate(evaluated[0]!.candidate);
+}
+
+function prepareCalculationScenarioWithBattlePointWitness(
   scenario: CalculationScenario,
   master: MasterDataSnapshot,
   contributionPolicy: ContributionApplicationPolicy,
@@ -1628,6 +1744,7 @@ export function evaluatePreparedCalculationScenario(
     attachBattlePointPreparationRejectionObservation(calculation, capture);
     attachBattlePointPreparationRejectionObservation(calculation.result, capture);
   }
+  calculation.possibilityCertificate = prepared.possibilityCertificate;
   return calculation;
 }
 

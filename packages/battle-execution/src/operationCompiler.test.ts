@@ -1,3 +1,6 @@
+import { analyzeActivationFactSet } from '@fgo-lab/schema';
+import { createConditionState } from './conditionState';
+import { evaluateCondition } from './condition';
 import type {
   EffectExecutionOperation,
   MasterEffect,
@@ -72,7 +75,7 @@ function source(execution: EffectExecutionOperation[], limitBreak = false): Sour
     sourceName: '礼装',
     sourceTraits: [],
     noblePhantasmVariant: null,
-    preparationStochasticOutcome: null,
+    sourceActivation: { kind: 'unread' },
     skillId: 'ce:1',
     skillName: '礼装',
     effect: effect(execution),
@@ -163,7 +166,44 @@ describe('canonical operation compilation', () => {
 
   it('passes the preparation stochastic result into ordinary execution', () => {
     const preparedSource = source([modifier('attackBuff', 100)]);
-    preparedSource.preparationStochasticOutcome = 'failure';
+    const factSet = analyzeActivationFactSet([]);
+    if (factSet.status !== 'valid') throw new Error('valid empty activation');
+    const factState = createConditionState(
+      {
+        cardType: 'buster',
+        attackerStateTraits: [],
+        targetStateTraits: [],
+        fieldTraits: [],
+        target: { traits: [] },
+        attackerHpPermille: 1000,
+        targetRarity: null,
+        battlePointPhase: null,
+      },
+      {
+        kind: 'nonAttack',
+        canonicalId: 'proc',
+        ref: { actorFormId: { actorId: 'fixture', limitCount: 0 }, noblePhantasmId: 'proc' },
+        name: 'proc',
+        priority: 1,
+        effects: [],
+      },
+      [],
+      {},
+      [],
+      [],
+      factSet.factSet,
+    );
+    preparedSource.sourceActivation = {
+      kind: 'read',
+      read: evaluateCondition({ kind: 'always' }, factState),
+      proc: {
+        kind: 'resolved',
+        outcome: 'failure',
+        certainty: 'possible',
+        ratePermille: 800,
+        selection: 'declared',
+      },
+    };
     preparedSource.effect = {
       ...preparedSource.effect,
       proc: { kind: 'singleRoll', ratePermille: [[800], [], [], [], []] },
@@ -179,7 +219,7 @@ describe('canonical operation compilation', () => {
       invalidInputKeys: [],
     });
 
-    expect(operation.preResolvedStochasticOutcome).toBe('failure');
+    expect(operation.sourceActivation).toEqual(preparedSource.sourceActivation);
     expect(outcomes.outcomes.get(operation.operationId)).toEqual({ status: 'failure' });
   });
 

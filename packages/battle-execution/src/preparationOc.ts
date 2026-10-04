@@ -1,3 +1,6 @@
+import { bindPreparationWriteProofs } from './preparationProofs';
+import { conditionWriteProof, sourceProcRead, type ConditionFactProof } from './conditionRead';
+import { selectBinaryStochasticPossibility, stochasticGroupKey } from './stochasticPossibilities';
 import {
   preparationHpScope,
   captureSelectedAllyMaximumFixedWrite,
@@ -63,7 +66,10 @@ import { compileOcSourceProgram } from './ocSourceProgram';
 import { bindOcSourceOperation, ocSourceOperationKey } from './ocSourceBinding';
 import { executeOcAction, type OcActionStep, type OcActionOutcome } from './ocState';
 import type { SourceEffect } from './sourceCollection';
-import { resolvePreparationStructuralOutcome } from './preparationState';
+import {
+  resolvePreparationStructuralOutcome,
+  requiredPreparationConditionRead,
+} from './preparationState';
 import { evaluateCondition, type ConditionEvaluationState } from './condition';
 import { resolvePreparationSourceFacts } from './preparationSourceFacts';
 import {
@@ -108,7 +114,7 @@ export function preparationEffectSource(args: {
     sourceEnabled: true,
     enabledByDefault: true,
     noblePhantasmVariant: args.origin === 'np' ? args.state.selectedNoblePhantasmVariant : null,
-    preparationStochasticOutcome: null,
+    sourceActivation: { kind: 'unread' },
   };
 }
 
@@ -267,7 +273,8 @@ export function executePreparationOc(args: {
         operation.kind === 'removeOcState',
     ),
   );
-  for (const source of sources) {
+  for (const initialSource of sources) {
+    let source = initialSource;
     const sourceFirstStep = steps.length;
     const origins = attempt
       ? [{ index: sourceFirstStep, source, operationIndex: null as number | null }]
@@ -311,15 +318,60 @@ export function executePreparationOc(args: {
         operation.kind === 'hpModifier' &&
         ['receive', 'give', 'noHealing'].includes(operation.action),
     );
+    const sourceProof = (): ConditionFactProof => {
+      const receipt = requiredPreparationConditionRead(source.effect, activation);
+      if (receipt.kind === 'notApplicable' && !source.sourceEnabled)
+        return {
+          kind: 'guaranteedWrite',
+          clock: {
+            phase: 'sourceUse',
+            actorFormId: current.currentFormId,
+            actor: 'attacker',
+            actionId: args.actionId,
+            operationId: null,
+            sourceInstanceId: source.sourceInstanceId,
+            occurrenceId: source.effect.occurrenceId,
+            valueSetIndex: source.valueSetIndex,
+            valueIndex: source.valueIndex,
+          },
+        };
+      if (receipt.kind !== 'read') throw new TypeError('missing_source_write_read');
+      return conditionWriteProof(
+        receipt.read,
+        receipt.read.truth === false ||
+          (receipt.proc.kind === 'resolved' && receipt.proc.certainty === 'guaranteed'),
+      );
+    };
     let sourceApplies = true;
     let sourceState = current;
+    let sourceResourceMutationCount = resourceMutations.length;
     let sourceStochasticFailureSteps: number[] | undefined;
     const sourceStep = steps.length;
-    steps.push(() => {
+    const transactionKey = JSON.stringify([
+      args.actionId,
+      source.origin,
+      source.sourceInstanceId,
+      source.effect.occurrenceId,
+      sourceStep,
+    ]);
+    const beginSource: (typeof steps)[number] = (ocState) => {
+      const npReceipt = args.npUse
+        ? ocState.receipts.find((candidate) => candidate.actionId === args.actionId)
+        : undefined;
+      if (args.npUse && !npReceipt) throw new TypeError('missing_source_np_use_receipt');
+      if (npReceipt) {
+        source = { ...source, valueSetIndex: npReceipt.effectiveOc - 1 };
+        program = { ...program, source };
+      }
       sourceState = current;
+      sourceResourceMutationCount = resourceMutations.length;
       if (!source.sourceEnabled) {
         sourceApplies = false;
-        activation.set(source.effect, { procOutcome: 'success', conditionOutcome: false });
+        activation.set(source.effect, {
+          procOutcome: 'success',
+          conditionOutcome: false,
+          sourceActivation: { kind: 'notApplicable' },
+        });
         return { kind: 'skip', outcome: 'notApplicable' };
       }
       const facts = currentFacts();
@@ -339,9 +391,9 @@ export function executePreparationOc(args: {
           candidate: source.effect.selection.group.candidate,
         };
         if (
-          evaluateCondition(choice, facts) === null &&
-          evaluateCondition(program.condition, preparationSourceConditionState(program, facts)) !==
-            false
+          evaluateCondition(choice, facts).truth === null &&
+          evaluateCondition(program.condition, preparationSourceConditionState(program, facts))
+            .truth !== false
         ) {
           occurrenceId = source.effect.occurrenceId;
           requiredInput = requiredOcConditionInput({ ...program, condition: choice }, facts);
@@ -355,13 +407,6 @@ export function executePreparationOc(args: {
           (operation) => operation.kind === 'buffInstanceMutation' && readsBuffMutation(operation),
         ) ||
         program.operations.length > 0;
-      const effectWrites = uncertainPreparationWrites(
-        source.effect,
-        source.origin,
-        source.sourceInstanceId,
-      );
-      if (!requiresExecution && effectWrites.length === 0)
-        return { kind: 'skip', outcome: 'notApplicable' };
       for (const input of providedSourceConditionInputs(
         program,
         facts,
@@ -384,6 +429,17 @@ export function executePreparationOc(args: {
           ),
         };
       const boundFacts = preparationSourceConditionState(program, facts);
+      boundFacts.conditionReadClock = {
+        phase: 'sourceUse',
+        actorFormId: current.currentFormId,
+        actor: boundFacts.resourceActor ?? 'attacker',
+        actionId: args.actionId,
+        operationId: null,
+        sourceInstanceId: source.sourceInstanceId,
+        occurrenceId: source.effect.occurrenceId,
+        valueSetIndex: source.valueSetIndex,
+        valueIndex: source.valueIndex,
+      };
       const actor = program.conditionActor === 'source' ? source.sourceInstanceId : 'attacker';
       const writes = current.uncertainContextWrites.filter(
         (write) => write.scope !== 'attackerState' || (write.actor ?? 'attacker') === actor,
@@ -403,14 +459,25 @@ export function executePreparationOc(args: {
           instance: null,
           step: sourceStep,
         });
-      const sourceConditionReads: PreparationHpAction['conditionReads'][number]['reads'] = [];
+      const sourceActivations: PreparationHpAction['conditionReads'][number]['reads'] = [];
       const resolved = resolvePreparationSourceFacts(
         {
           ...program,
           condition: closePreparationConditionReads(program.condition, writes, boundFacts),
         },
         boundFacts,
-        sourceHasHpCondition ? (read) => sourceConditionReads.push(read) : undefined,
+        args.context.stochasticSelection,
+        program.operations.some((operation) =>
+          [
+            'ocRemovalResistance',
+            'grantOcBoost',
+            'grantOcApplicationRate',
+            'removeOcState',
+          ].includes(operation.kind),
+        )
+          ? 'ocRate'
+          : 'source',
+        sourceHasHpCondition ? (read) => sourceActivations.push(read) : undefined,
       );
       if (sourceHasHpCondition)
         hpAction.conditionReads.push({
@@ -421,7 +488,7 @@ export function executePreparationOc(args: {
           instance: null,
           step: sourceStep,
           condition: resolved.condition,
-          reads: sourceConditionReads,
+          reads: sourceActivations,
           outcome: resolved.outcome,
         });
       program = { ...program, condition: resolved.condition };
@@ -445,9 +512,24 @@ export function executePreparationOc(args: {
           operation.kind === 'removeOcState',
       );
       const stochastic = canonicalRate ? { status: 'success' as const } : resolved.stochastic;
+      const procRead = canonicalRate
+        ? { kind: 'unread' as const }
+        : sourceProcRead(
+            source.effect.proc,
+            source.effect.proc.kind === 'guaranteed'
+              ? 1000
+              : (source.effect.proc.ratePermille[source.valueSetIndex]?.[source.valueIndex] ??
+                  null),
+            stochastic,
+            args.context.stochasticSelection.kind === 'possibility' ? 'witness' : 'declared',
+          );
       if (stochastic.status === 'inputRequired') {
         if (!requiresExecution) {
-          activation.set(source.effect, { procOutcome: null, conditionOutcome: null });
+          activation.set(source.effect, {
+            procOutcome: null,
+            conditionOutcome: null,
+            sourceActivation: { kind: 'read', read: resolved.conditionRead, proc: procRead },
+          });
           return { kind: 'skip', outcome: 'notApplicable' };
         }
         requiredInput =
@@ -460,8 +542,15 @@ export function executePreparationOc(args: {
       activation.set(source.effect, {
         procOutcome: stochastic.status,
         conditionOutcome: resolved.outcome,
+        sourceActivation: { kind: 'read', read: resolved.conditionRead, proc: procRead },
       });
       return { kind: 'skip', outcome: 'notApplicable' };
+    };
+    steps.push((ocState, outcomes) => {
+      const step = beginSource(ocState, outcomes);
+      return step.kind === 'skip'
+        ? { kind: 'beginSource', sourceKey: transactionKey, outcome: step.outcome }
+        : step;
     });
     const firstStep = steps.length;
     let ocIndex = 0;
@@ -482,7 +571,11 @@ export function executePreparationOc(args: {
       ) {
         steps.push(() => {
           if (source.sourceEnabled && activation.get(source.effect)?.procOutcome !== 'failure')
-            current = { ...current, uncertainPlayerNp: true };
+            current = bindPreparationWriteProofs(
+              current,
+              { ...current, uncertainPlayerNp: true },
+              sourceProof(),
+            );
           return { kind: 'skip', outcome: 'notApplicable' };
         });
       }
@@ -492,7 +585,11 @@ export function executePreparationOc(args: {
       ) {
         steps.push(() => {
           if (source.sourceEnabled && activation.get(source.effect)?.procOutcome !== 'failure')
-            current = { ...current, uncertainEnemyCharge: true };
+            current = bindPreparationWriteProofs(
+              current,
+              { ...current, uncertainEnemyCharge: true },
+              sourceProof(),
+            );
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -537,12 +634,10 @@ export function executePreparationOc(args: {
               reason: 'preparationPopulationInput',
             };
           }
-          current = applyPopulationFunctionToState(
-            operation,
+          current = bindPreparationWriteProofs(
             current,
-            values,
-            args.actionId,
-            source,
+            applyPopulationFunctionToState(operation, current, values, args.actionId, source),
+            sourceProof(),
           );
           return { kind: 'skip', outcome: 'notApplicable' };
         });
@@ -564,17 +659,25 @@ export function executePreparationOc(args: {
             outcome?.conditionOutcome === true
               ? operation
               : { ...operation, mutation: 'unsupported' as const };
-          current = {
-            ...current,
-            populationEvents: [
-              ...current.populationEvents,
-              {
-                operation: event,
-                source: { origin: source.origin, sourceInstanceId: source.sourceInstanceId },
-              },
-            ],
-          };
-          current = removePopulationFunctionState(current, event);
+          current = bindPreparationWriteProofs(
+            current,
+            {
+              ...current,
+              populationEvents: [
+                ...current.populationEvents,
+                {
+                  operation: event,
+                  source: { origin: source.origin, sourceInstanceId: source.sourceInstanceId },
+                },
+              ],
+            },
+            sourceProof(),
+          );
+          current = bindPreparationWriteProofs(
+            current,
+            removePopulationFunctionState(current, event),
+            sourceProof(),
+          );
           // fieldOther has an explicit population scope; the current NP target is one member.
           if (
             operation.scope === 'otherActors' &&
@@ -589,11 +692,15 @@ export function executePreparationOc(args: {
               counts[trait] = (counts[trait] ?? 0) + 1;
               traits.add(trait);
             }
-            current = {
-              ...current,
-              stackCounts: { ...current.stackCounts, targetState: counts },
-              stateTraits: { ...current.stateTraits, targetState: traits },
-            };
+            current = bindPreparationWriteProofs(
+              current,
+              {
+                ...current,
+                stackCounts: { ...current.stackCounts, targetState: counts },
+                stateTraits: { ...current.stateTraits, targetState: traits },
+              },
+              sourceProof(),
+            );
           }
           return { kind: 'skip', outcome: 'notApplicable' };
         });
@@ -612,16 +719,20 @@ export function executePreparationOc(args: {
                 `absent:${source.effect.occurrenceId}`,
               );
               if (absent)
-                current = projectBuffInstanceCounts(
-                  {
-                    ...current,
-                    buffInstances: absent.map((instance) =>
-                      current.buffInstances.includes(instance)
-                        ? instance
-                        : { ...instance, count: 0 },
-                    ),
-                  },
-                  buffInputs,
+                current = bindPreparationWriteProofs(
+                  current,
+                  projectBuffInstanceCounts(
+                    {
+                      ...current,
+                      buffInstances: absent.map((instance) =>
+                        current.buffInstances.includes(instance)
+                          ? instance
+                          : { ...instance, count: 0 },
+                      ),
+                    },
+                    buffInputs,
+                  ),
+                  sourceProof(),
                 );
             }
             return { kind: 'skip', outcome: 'notApplicable' };
@@ -668,30 +779,38 @@ export function executePreparationOc(args: {
               status: 'unsupported',
               reason: 'unboundBuffInstanceRecipient',
             };
-          current = projectBuffInstanceCounts(
-            {
-              ...current,
-              buffInstances: uncertainMarker
-                ? instances.map((instance) =>
-                    current.buffInstances.includes(instance)
-                      ? instance
-                      : {
-                          ...instance,
-                          uncertain: true,
-                          requiredInput: sourceFacts.get(source.effect)
-                            ? requiredOcConditionInput(
-                                compileOcSourceProgram(source),
-                                sourceFacts.get(source.effect)!,
-                              )
-                            : null,
-                        },
-                  )
-                : instances,
-            },
-            buffInputs,
+          current = bindPreparationWriteProofs(
+            current,
+            projectBuffInstanceCounts(
+              {
+                ...current,
+                buffInstances: uncertainMarker
+                  ? instances.map((instance) =>
+                      current.buffInstances.includes(instance)
+                        ? instance
+                        : {
+                            ...instance,
+                            uncertain: true,
+                            requiredInput: sourceFacts.get(source.effect)
+                              ? requiredOcConditionInput(
+                                  compileOcSourceProgram(source),
+                                  sourceFacts.get(source.effect)!,
+                                )
+                              : null,
+                          },
+                    )
+                  : instances,
+              },
+              buffInputs,
+            ),
+            sourceProof(),
           );
           const beforeReconciliation = current;
-          current = reconcilePreparationBattlePoints(args.servant, current, args.context);
+          current = bindPreparationWriteProofs(
+            current,
+            reconcilePreparationBattlePoints(args.servant, current, args.context),
+            sourceProof(),
+          );
           if (battlePointCapture)
             battlePointCapture.push({
               kind: 'reconcile',
@@ -770,7 +889,11 @@ export function executePreparationOc(args: {
           }
           if (applied.status !== 'applied')
             return { kind: 'reject', status: applied.status, reason: 'battlePointMutation' };
-          current = { ...current, battlePoints: applied.state };
+          current = bindPreparationWriteProofs(
+            current,
+            { ...current, battlePoints: applied.state },
+            sourceProof(),
+          );
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -875,7 +998,7 @@ export function executePreparationOc(args: {
                 : undefined;
               let outcome: boolean | null;
               try {
-                outcome = evaluateCondition(condition, facts);
+                outcome = evaluateCondition(condition, facts).truth;
               } finally {
                 if (modifierHasHpCondition) finishHpConditionCapture(facts, previous);
               }
@@ -900,7 +1023,7 @@ export function executePreparationOc(args: {
               const facts = currentFacts()!;
               if (actor === 'attacker')
                 return {
-                  outcome: evaluateCondition(program.condition, facts),
+                  outcome: evaluateCondition(program.condition, facts).truth,
                   input: requiredOcConditionInput(
                     { ...program, conditionActor: 'attacker' },
                     facts,
@@ -927,7 +1050,7 @@ export function executePreparationOc(args: {
               };
               const bound = preparationSourceConditionState(recipientProgram, facts);
               return {
-                outcome: evaluateCondition(program.condition, bound),
+                outcome: evaluateCondition(program.condition, bound).truth,
                 input: requiredOcConditionInput(recipientProgram, bound),
               };
             },
@@ -1144,7 +1267,11 @@ export function executePreparationOc(args: {
               result.state,
               receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
             );
-          current = { ...current, hp: result.state };
+          current = bindPreparationWriteProofs(
+            current,
+            { ...current, hp: result.state },
+            sourceProof(),
+          );
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -1268,11 +1395,15 @@ export function executePreparationOc(args: {
               before: current.npResource,
               after: transfer.state,
             });
-            current = {
-              ...current,
-              npResource: transfer.state,
-              npTransfers: [...(current.npTransfers ?? []), transfer.receipt],
-            };
+            current = bindPreparationWriteProofs(
+              current,
+              {
+                ...current,
+                npResource: transfer.state,
+                npTransfers: [...(current.npTransfers ?? []), transfer.receipt],
+              },
+              sourceProof(),
+            );
             return { kind: 'skip', outcome: 'notApplicable' };
           }
           const resource = applyPreparationNpOperation({
@@ -1317,7 +1448,11 @@ export function executePreparationOc(args: {
               before: current.npResource,
               after: resource.state,
             });
-            current = { ...current, npResource: resource.state };
+            current = bindPreparationWriteProofs(
+              current,
+              { ...current, npResource: resource.state },
+              sourceProof(),
+            );
           }
           return { kind: 'skip', outcome: 'notApplicable' };
         });
@@ -1349,7 +1484,10 @@ export function executePreparationOc(args: {
           index,
           {
             facts,
-            policy: args.context.policy ?? { kind: 'calculator' },
+            policy:
+              args.context.stochasticSelection.kind === 'possibility'
+                ? { kind: 'calculator' }
+                : (args.context.policy ?? { kind: 'calculator' }),
             npActionId: args.npUse ? args.actionId : null,
             procWitnesses: witnesses,
             ...(missingSourceConditions.has(source.effect)
@@ -1372,13 +1510,14 @@ export function executePreparationOc(args: {
     if (program.operations.length > 0)
       steps.push({ kind: 'recordSource', sourceKey: ocSourceOperationKey(program, 0) });
     // Earlier canonical trait writes are visible to later OC/rate conditions in this command.
-    const completeSource: (typeof steps)[number] = (_, outcomes) => {
+    const completePhysicalSource: (typeof steps)[number] = (_, outcomes) => {
       if (
         outcomes.some(
           (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
         )
       ) {
         current = sourceState;
+        resourceMutations.splice(sourceResourceMutationCount);
         if (hpAction)
           sourceStochasticFailureSteps = outcomes.flatMap((outcome) =>
             outcome.step >= firstStep && outcome.outcome === 'stochasticFailure'
@@ -1393,13 +1532,17 @@ export function executePreparationOc(args: {
       if (contextOperations.length === 0) return { kind: 'skip', outcome: 'notApplicable' };
       if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
       if (activation.get(source.effect)?.conditionOutcome !== true) {
-        current = {
-          ...current,
-          uncertainContextWrites: [
-            ...current.uncertainContextWrites,
-            ...uncertainPreparationWrites(source.effect, source.origin, source.sourceInstanceId),
-          ],
-        };
+        current = bindPreparationWriteProofs(
+          current,
+          {
+            ...current,
+            uncertainContextWrites: [
+              ...current.uncertainContextWrites,
+              ...uncertainPreparationWrites(source.effect, source.origin, source.sourceInstanceId),
+            ],
+          },
+          sourceProof(),
+        );
         return { kind: 'skip', outcome: 'notApplicable' };
       }
       const externalWrites = uncertainPreparationWrites(
@@ -1408,10 +1551,14 @@ export function executePreparationOc(args: {
         source.sourceInstanceId,
       ).filter((write) => write.actor !== undefined);
       if (externalWrites.length)
-        current = {
-          ...current,
-          uncertainContextWrites: [...current.uncertainContextWrites, ...externalWrites],
-        };
+        current = bindPreparationWriteProofs(
+          current,
+          {
+            ...current,
+            uncertainContextWrites: [...current.uncertainContextWrites, ...externalWrites],
+          },
+          sourceProof(),
+        );
       const structural = resolvePreparationStructuralOutcome(
         args.servant,
         current,
@@ -1425,22 +1572,34 @@ export function executePreparationOc(args: {
       );
       if (typeof structural === 'string')
         return { kind: 'reject', status: 'invalid', reason: structural };
-      current = {
-        ...current,
-        uncertainContextWrites: closeUncertainPreparationWrites(
-          current.uncertainContextWrites,
-          source.effect,
-          source.origin,
-        ),
-        currentFormId: structural.currentFormId,
-        selectedNoblePhantasmVariant: structural.selectedVariant,
-        stateTraits: structural.stateTraits,
-        stackCounts: structural.stackCounts,
-        initialTraitSuppressions: structural.initialTraitSuppressions,
-      };
-      current = projectBuffInstanceCounts(current, buffInputs);
+      current = bindPreparationWriteProofs(
+        current,
+        {
+          ...current,
+          uncertainContextWrites: closeUncertainPreparationWrites(
+            current.uncertainContextWrites,
+            source.effect,
+            source.origin,
+          ),
+          currentFormId: structural.currentFormId,
+          selectedNoblePhantasmVariant: structural.selectedVariant,
+          stateTraits: structural.stateTraits,
+          stackCounts: structural.stackCounts,
+          initialTraitSuppressions: structural.initialTraitSuppressions,
+        },
+        sourceProof(),
+      );
+      current = bindPreparationWriteProofs(
+        current,
+        projectBuffInstanceCounts(current, buffInputs),
+        sourceProof(),
+      );
       const beforeReconciliation = current;
-      current = reconcilePreparationBattlePoints(args.servant, current, args.context);
+      current = bindPreparationWriteProofs(
+        current,
+        reconcilePreparationBattlePoints(args.servant, current, args.context),
+        sourceProof(),
+      );
       if (battlePointCapture)
         battlePointCapture.push({
           kind: 'reconcile',
@@ -1452,6 +1611,19 @@ export function executePreparationOc(args: {
           domains: args.context.battlePointDomains,
         });
       return { kind: 'skip', outcome: 'notApplicable' };
+    };
+    const completeSource: (typeof steps)[number] = (state, outcomes) => {
+      const step = completePhysicalSource(state, outcomes);
+      return step.kind === 'skip'
+        ? {
+            kind: 'finishSource',
+            sourceKey: transactionKey,
+            commit: !outcomes.some(
+              (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
+            ),
+            outcome: step.outcome,
+          }
+        : step;
     };
     const sourceEndStep = steps.length;
     steps.push(
@@ -1503,6 +1675,65 @@ export function executePreparationOc(args: {
       get: () => hpPermille(current.hp?.actors[source.sourceInstanceId]),
     });
   }
+  const selectedProc = args.context.stochasticSelection;
+  const procOptions = {
+    resolveProcWitness: (
+      step: number,
+      effectiveRate: number,
+      declaredWitness: 0 | 1 | undefined,
+    ): 0 | 1 | undefined => {
+      const effect = effectSteps.get(step);
+      const source = sources.find((candidate) => candidate.effect === effect);
+      if (!effect || !source) throw new TypeError('missing_oc_proc_source');
+      const receipt = requiredPreparationConditionRead(effect, activation);
+      if (receipt.kind !== 'read') throw new TypeError('missing_oc_source_activation');
+      const key =
+        effect.selection?.kind === 'stochasticOutcome'
+          ? stochasticGroupKey(
+              source.origin,
+              source.sourceInstanceId,
+              source.skillId,
+              effect.selection.group,
+              args.actionId,
+            )
+          : JSON.stringify([
+              'ocOperation',
+              args.actionId,
+              source.origin,
+              source.sourceInstanceId,
+              source.skillId,
+              effect.occurrenceId,
+              step,
+            ]);
+      const witness =
+        selectedProc.kind === 'possibility'
+          ? selectBinaryStochasticPossibility(key, effectiveRate, selectedProc) === 'success'
+            ? 1
+            : 0
+          : effectiveRate === 0
+            ? 0
+            : effectiveRate === 1000
+              ? 1
+              : declaredWitness;
+      if (witness === undefined) return undefined;
+      const outcome = witness === 1 ? 'success' : 'failure';
+      activation.set(effect, {
+        conditionOutcome: receipt.read.truth,
+        procOutcome: outcome,
+        sourceActivation: {
+          ...receipt,
+          proc: {
+            kind: 'resolved',
+            outcome,
+            certainty: effectiveRate === 0 || effectiveRate === 1000 ? 'guaranteed' : 'possible',
+            ratePermille: effectiveRate,
+            selection: selectedProc.kind === 'possibility' ? 'witness' : 'declared',
+          },
+        },
+      });
+      return witness;
+    },
+  };
   const rateObservation = attempt ? capturePreparationOcRates(attempt) : undefined;
   let result = executeOcAction(
     args.state.ocState,
@@ -1511,6 +1742,7 @@ export function executePreparationOc(args: {
     hp,
     attempt
       ? {
+          ...procOptions,
           hasFutureNpUse: args.terminalNp !== true,
           observeStep: (index, step) => attempt.reached.push({ index, step }),
           observeRateSelection: (step, state) =>
@@ -1519,7 +1751,7 @@ export function executePreparationOc(args: {
             rateObservation!.queries.push({ step, state, rate, hp: current.hp }),
           observeRateHpRead: (step, read) => rateObservation!.reads.push({ step, ...read }),
         }
-      : { hasFutureNpUse: args.terminalNp !== true },
+      : { ...procOptions, hasFutureNpUse: args.terminalNp !== true },
   );
   if (result.status !== 'committed' && result.requiredInput) {
     requiredInput = result.requiredInput;
@@ -1556,9 +1788,22 @@ export function executePreparationOc(args: {
   for (const outcome of result.outcomes) {
     const effect = effectSteps.get(outcome.step);
     if (effect && outcome.outcome === 'stochasticFailure') {
+      const receipt = requiredPreparationConditionRead(effect, activation);
+      if (receipt.kind !== 'read' || outcome.effectiveRate === undefined)
+        throw new TypeError('missing_oc_failure_activation');
       activation.set(effect, {
         procOutcome: 'failure',
         conditionOutcome: activation.get(effect)?.conditionOutcome ?? null,
+        sourceActivation: {
+          ...receipt,
+          proc: {
+            kind: 'resolved',
+            outcome: 'failure',
+            certainty: outcome.effectiveRate === 0 ? 'guaranteed' : 'possible',
+            ratePermille: outcome.effectiveRate,
+            selection: selectedProc.kind === 'possibility' ? 'witness' : 'declared',
+          },
+        },
       });
     }
   }

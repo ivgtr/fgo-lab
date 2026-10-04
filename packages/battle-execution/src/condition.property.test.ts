@@ -1,3 +1,9 @@
+import { createTraitFactLayers } from './traitFactLayers';
+import {
+  emptyConditionFactProofs,
+  type ConditionFactProof,
+  type ConditionReadClock,
+} from './conditionRead';
 import { stackInputSchema } from '@fgo-lab/master-data';
 import { seedStackQuantities, mergeInputDefinitions } from './stackQuantities';
 import { cloneBattleState, applyTraitAddition } from './state';
@@ -15,11 +21,49 @@ import {
 import { validateConstraintSet, type FixedConstraintFact } from './constraints';
 import { activationFactKey, analyzeActivationFactSet } from '@fgo-lab/schema';
 
+class FixtureTraitFacts extends Map<string, boolean> {
+  constructor(
+    values: readonly string[],
+    private readonly proofMap: Map<string, ConditionFactProof>,
+    private readonly proof: ConditionFactProof,
+  ) {
+    super();
+    for (const value of values) this.set(value, true);
+  }
+  override set(key: string, value: boolean): this {
+    this.proofMap.set(key, this.proof);
+    return super.set(key, value);
+  }
+}
+
 function state(
   target: readonly string[] = [],
   targetState: readonly string[] = [],
 ): ExecutableBattleState {
+  const conditionReadClock: ConditionReadClock = {
+    phase: 'initial',
+    actorFormId: { actorId: 'fixture-form', limitCount: 0 },
+    actor: 'attacker',
+    actionId: null,
+    operationId: null,
+    sourceInstanceId: null,
+    occurrenceId: null,
+    valueSetIndex: null,
+    valueIndex: null,
+  };
+  const conditionFactProofs = emptyConditionFactProofs();
+  const external: ConditionFactProof = { kind: 'externalAssumption', clock: conditionReadClock };
+  conditionFactProofs.traits.target = new Map(target.map((trait) => [trait, external]));
+  conditionFactProofs.traits.targetState = new Map(targetState.map((trait) => [trait, external]));
+  conditionFactProofs.quantities = new Map([
+    ['attackerHpPermille', { kind: 'selectedInitialResource', clock: conditionReadClock }],
+    ['targetRarity', external],
+    ['battlePointPhase', external],
+  ]);
   return {
+    conditionReadClock,
+    conditionFactProofs,
+    traitFactLayers: createTraitFactLayers([], { target, targetState }, external, external),
     actorFormId: { actorId: 'fixture-form', limitCount: 0 },
     noblePhantasmVariant: {
       kind: 'nonAttack',
@@ -34,11 +78,31 @@ function state(
     },
     card: 'buster',
     traits: {
-      attacker: new Map(),
-      attackerState: new Map(),
-      target: new Map(target.map((trait) => [trait, true])),
-      targetState: new Map(targetState.map((trait) => [trait, true])),
-      field: new Map(),
+      attacker: new FixtureTraitFacts(
+        [],
+        conditionFactProofs.traits.attacker as Map<string, ConditionFactProof>,
+        external,
+      ),
+      attackerState: new FixtureTraitFacts(
+        [],
+        conditionFactProofs.traits.attackerState as Map<string, ConditionFactProof>,
+        external,
+      ),
+      target: new FixtureTraitFacts(
+        target,
+        conditionFactProofs.traits.target as Map<string, ConditionFactProof>,
+        external,
+      ),
+      targetState: new FixtureTraitFacts(
+        targetState,
+        conditionFactProofs.traits.targetState as Map<string, ConditionFactProof>,
+        external,
+      ),
+      field: new FixtureTraitFacts(
+        [],
+        conditionFactProofs.traits.field as Map<string, ConditionFactProof>,
+        external,
+      ),
     },
     actorPredicates: { attacker: new Map(), target: new Map() },
     stackQuantitySources: {},
@@ -49,7 +113,7 @@ function state(
       targetState: Object.fromEntries(targetState.map((trait) => [trait, 1])),
       field: {},
     },
-    attackerWorldTraits: new Map(),
+
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
     activationContext: {
@@ -95,7 +159,7 @@ describe('condition expression properties', () => {
     for (const condition of directlyEvaluable) {
       if (condition.kind !== 'trait' && condition.kind !== 'traitCount') throw new Error('leaf');
       expect(traitConditionEvaluationSource(condition)).toBe('worldFacts');
-      expect(evaluateConditionExpression(condition, state(['dragon']))).toBe(true);
+      expect(evaluateConditionExpression(condition, state(['dragon'])).truth).toBe(true);
       expect(targetConditionWitnessSpace(condition).traitFacts).not.toEqual([]);
     }
 
@@ -115,7 +179,7 @@ describe('condition expression properties', () => {
       provenance: { ...effectLocal.provenance, stateSources: 'activeAndPassive' as const },
     };
     expect(traitConditionEvaluationSource(exceptional)).toBe('effectLocalDecision');
-    expect(evaluateConditionExpression(exceptional, state(['dragon']))).toBe(null);
+    expect(evaluateConditionExpression(exceptional, state(['dragon'])).truth).toBe(null);
     expect(targetConditionWitnessSpace(exceptional).traitFacts).toEqual([]);
   });
 
@@ -143,16 +207,17 @@ describe('condition expression properties', () => {
       evaluateConditionExpression(
         { kind: 'choice', source, family: 'mode', candidate: '2' },
         activated,
-      ),
+      ).truth,
     ).toBe(true);
     expect(
       evaluateConditionExpression(
         { kind: 'choice', source, family: 'mode', candidate: '1' },
         activated,
-      ),
+      ).truth,
     ).toBe(false);
     expect(
-      evaluateConditionExpression({ kind: 'operationTrigger', source, position: 4 }, activated),
+      evaluateConditionExpression({ kind: 'operationTrigger', source, position: 4 }, activated)
+        .truth,
     ).toBe(true);
     expect(
       evaluateConditionExpression(
@@ -165,13 +230,13 @@ describe('condition expression properties', () => {
           value: 999,
         },
         activated,
-      ),
+      ).truth,
     ).toBe(true);
     expect(
       evaluateConditionExpression(
         { kind: 'choice', source, family: 'mode', candidate: '3' },
         activated,
-      ),
+      ).truth,
     ).toBe(false);
     expect(activated.traits.field.size).toBe(0);
   });
@@ -188,7 +253,7 @@ describe('condition expression properties', () => {
         unremovableStateTraits: 'include',
       },
     };
-    expect(evaluateConditionExpression(expression, state([], ['buffPoison']))).toBeNull();
+    expect(evaluateConditionExpression(expression, state([], ['buffPoison'])).truth).toBeNull();
   });
 
   it('keeps linked initial-trait suppression distinct from an absent state trait', () => {
@@ -200,9 +265,12 @@ describe('condition expression properties', () => {
       trait: 'alignmentChaotic',
       present: true,
     };
-    expect(evaluateConditionExpression(expression, current)).toBe(true);
+    expect(evaluateConditionExpression(expression, current).truth).toBe(true);
     current.initialTraitSuppressions.attacker = new Set(['alignmentChaotic']);
-    expect(evaluateConditionExpression(expression, current)).toBe(false);
+    current.conditionFactProofs.suppressions.attacker = new Map([
+      ['alignmentChaotic', { kind: 'guaranteedWrite', clock: current.conditionReadClock }],
+    ]);
+    expect(evaluateConditionExpression(expression, current).truth).toBe(false);
   });
 
   it('keeps evaluator and solver aligned across initial, state, and combined actor traits', () => {
@@ -224,7 +292,7 @@ describe('condition expression properties', () => {
                 trait: 'timedTrait',
                 present,
               };
-              const evaluation = evaluateConditionExpression(expression, current);
+              const evaluation = evaluateConditionExpression(expression, current).truth;
               const fixedFacts: FixedConstraintFact[] = [
                 ...(initial === undefined
                   ? []
@@ -282,11 +350,11 @@ describe('condition expression properties', () => {
     (removed.traits.target as Map<string, boolean>).set('undead', false);
     (removed.traits.targetState as Map<string, boolean>).set('undead', false);
 
-    expect(evaluateConditionExpression(combined, before)).toBeNull();
-    expect(evaluateConditionExpression(combined, granted)).toBe(true);
-    expect(evaluateConditionExpression(stateOnly, granted)).toBe(true);
-    expect(evaluateConditionExpression(combined, removed)).toBe(false);
-    expect(evaluateConditionExpression(stateOnly, removed)).toBe(false);
+    expect(evaluateConditionExpression(combined, before).truth).toBeNull();
+    expect(evaluateConditionExpression(combined, granted).truth).toBe(true);
+    expect(evaluateConditionExpression(stateOnly, granted).truth).toBe(true);
+    expect(evaluateConditionExpression(combined, removed).truth).toBe(false);
+    expect(evaluateConditionExpression(stateOnly, removed).truth).toBe(false);
 
     const validateSnapshot = (stateValue: boolean | undefined, expression: ConditionExpression) =>
       validateConstraintSet({
@@ -333,7 +401,7 @@ describe('condition expression properties', () => {
       ['divine', 'unrelated', 'dragon'],
     ];
     for (const traits of permutations)
-      expect(evaluateConditionExpression(condition, state(traits))).toBe(true);
+      expect(evaluateConditionExpression(condition, state(traits)).truth).toBe(true);
   });
 
   it('keeps permanent and state traits distinct while combined target checks see both', () => {
@@ -345,14 +413,14 @@ describe('condition expression properties', () => {
     };
     const stateOnly: ConditionExpression = { ...permanent, scope: 'targetState' };
 
-    expect(evaluateConditionExpression(permanent, state([], ['confusion']))).toBe(true);
-    expect(evaluateConditionExpression(stateOnly, state(['confusion']))).toBeNull();
-    expect(evaluateConditionExpression(stateOnly, state([], ['confusion']))).toBe(true);
+    expect(evaluateConditionExpression(permanent, state([], ['confusion'])).truth).toBe(true);
+    expect(evaluateConditionExpression(stateOnly, state(['confusion'])).truth).toBeNull();
+    expect(evaluateConditionExpression(stateOnly, state([], ['confusion'])).truth).toBe(true);
     expect(
       evaluateConditionExpression(
         { kind: 'trait', scope: 'target', trait: 'confusion', present: false },
         state([], ['confusion']),
-      ),
+      ).truth,
     ).toBe(false);
   });
 
@@ -364,12 +432,14 @@ describe('condition expression properties', () => {
       value: 5,
     };
     // E2E-A043-OR
-    expect(evaluateConditionExpression({ kind: 'not', expression: unknown }, state())).toBeNull();
+    expect(
+      evaluateConditionExpression({ kind: 'not', expression: unknown }, state()).truth,
+    ).toBeNull();
     expect(
       evaluateConditionExpression(
         { kind: 'all', expressions: [{ kind: 'always' }, unknown] },
         state(),
-      ),
+      ).truth,
     ).toBeNull();
     expect(
       evaluateConditionExpression(
@@ -381,7 +451,7 @@ describe('condition expression properties', () => {
           ],
         },
         state(),
-      ),
+      ).truth,
     ).toBeNull();
   });
 
@@ -396,6 +466,7 @@ describe('condition expression properties', () => {
       gameActivation: 'npBeforeDamage',
       sourceActive: true,
       proc: { kind: 'guaranteed' },
+
       procRatePermille: 1_000,
       valuePermille: 1_500,
       value: 1.5,
@@ -458,7 +529,7 @@ describe('condition expression properties', () => {
           value: 1,
         },
         input,
-      ),
+      ).truth,
     ).toBeNull();
   });
 });
@@ -514,7 +585,7 @@ describe('stack quantity state and constraint closure', () => {
               : comparison === 'atMost'
                 ? count <= boundary
                 : count === boundary;
-          expect(evaluateConditionExpression(expression, initial)).toBe(expected);
+          expect(evaluateConditionExpression(expression, initial).truth).toBe(expected);
           expect(
             validateConstraintSet({
               fixedFacts: fixedConstraintFactsFromState(initial),
@@ -523,7 +594,10 @@ describe('stack quantity state and constraint closure', () => {
           ).toBe(expected ? 'satisfied' : 'conflict');
         }
       }
-      const changed = applyTraitAddition(cloneBattleState(initial), 'attackerState', 'alpha');
+      const changed = applyTraitAddition(cloneBattleState(initial), 'attackerState', 'alpha', {
+        kind: 'guaranteedWrite',
+        clock: initial.conditionReadClock,
+      });
       expect(changed.traitCounts.attackerState['alpha']).toBe(count + 1);
       expect(initial.traitCounts.attackerState['alpha'] ?? 0).toBe(count);
     },

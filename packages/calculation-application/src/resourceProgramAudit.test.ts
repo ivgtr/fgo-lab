@@ -72,7 +72,10 @@ const loss = (recipient: 'sourceSelf' | 'partyOther' = 'sourceSelf') => ({
   subjectId: null,
 });
 function observe(effects: MasterEffect[]) {
-  const program = compileStaticRankingPreparationPrograms(servant)[0]!;
+  const program = compileStaticRankingPreparationPrograms(
+    servant,
+    rankingBasisFixture(servant).skillLevels,
+  )[0]!;
   const skill: ServantMaster['skills'][number] = {
     id: 'skill',
     name: 'skill',
@@ -279,3 +282,4 @@ describe('selected program resource observation', () => {
     ).toMatchObject({ firstPotentialReader: null });
   });
 });
+import { rankingBasisFixture } from './rankingBasisFixture';

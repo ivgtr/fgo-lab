@@ -9,8 +9,15 @@ import type {
   TargetPredicateAssertion,
   WorldFactAssertion,
 } from './contracts';
-import { createConditionState, traitFacts, traitCounts } from './conditionState';
+import { createConditionState } from './conditionState';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
+import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
+import {
+  cloneTraitFactLayers,
+  projectTraitScope,
+  assertExternalInitialTrait,
+  commitTraitFact,
+} from './traitFactLayers';
 
 export function appendModifier(
   state: ExecutableBattleState,
@@ -33,6 +40,8 @@ export function appendModifier(
 export function cloneBattleState(state: ExecutableBattleState): ExecutableBattleState {
   return {
     ...state,
+    conditionFactProofs: cloneConditionFactProofs(state.conditionFactProofs),
+    traitFactLayers: cloneTraitFactLayers(state.traitFactLayers),
     traits: {
       attacker: new Map(state.traits.attacker),
       attackerState: new Map(state.traits.attackerState),
@@ -52,7 +61,6 @@ export function cloneBattleState(state: ExecutableBattleState): ExecutableBattle
       targetState: { ...state.traitCounts.targetState },
       field: { ...state.traitCounts.field },
     },
-    attackerWorldTraits: new Map(state.attackerWorldTraits),
     initialTraitSuppressions: {
       attacker: new Set(state.initialTraitSuppressions.attacker),
       target: new Set(state.initialTraitSuppressions.target),
@@ -127,7 +135,6 @@ function createBattleStateBase<
       attackerPredicateAssertions,
       activationContext,
     ),
-    attackerWorldTraits: new Map(),
     actorFormId: noblePhantasmVariant.ref.actorFormId,
     modifiers: [],
     modifierRates: {},
@@ -146,18 +153,19 @@ export function applyWorldFacts(
   for (const assertion of assertions) {
     const fact = assertion.fact;
     if (fact.kind === 'quantity') {
-      if (fact.quantity !== 'attackerHpPermille' || !state.hp)
+      if (fact.quantity !== 'attackerHpPermille' || !state.hp) {
         candidate.quantities[fact.quantity] = fact.value;
+        (candidate.conditionFactProofs.quantities as Map<string, ConditionFactProof>).set(
+          fact.quantity,
+          { kind: 'externalAssumption', clock: candidate.conditionReadClock },
+        );
+      }
     } else {
-      if (fact.scope === 'attacker')
-        (candidate.attackerWorldTraits as Map<string, boolean>).set(fact.trait, fact.present);
-      (candidate.traits[fact.scope] as Map<string, boolean>).set(fact.trait, fact.present);
-      candidate.traitCounts[fact.scope] = fact.present
-        ? {
-            ...candidate.traitCounts[fact.scope],
-            [fact.trait]: Math.max(1, candidate.traitCounts[fact.scope][fact.trait] ?? 0),
-          }
-        : withoutTraitCount(candidate.traitCounts[fact.scope], fact.trait);
+      assertExternalInitialTrait(candidate.traitFactLayers, fact.scope, fact.trait, fact.present, {
+        kind: 'externalAssumption',
+        clock: candidate.conditionReadClock,
+      });
+      projectTraitScope(candidate, fact.scope);
     }
   }
   return candidate;
@@ -179,18 +187,26 @@ export function applyActorFormTransition(
 ): ExecutableBattleState {
   const candidate = cloneBattleState(state);
   candidate.actorFormId = operation.targetFormId;
+  candidate.conditionReadClock = {
+    ...candidate.conditionReadClock,
+    actorFormId: operation.targetFormId,
+  };
   const traits = [...operation.targetTraits, 'cardNP'];
-  candidate.traits.attacker = traitFacts(traits);
-  candidate.traitCounts.attacker = traitCounts(traits);
-  for (const [trait, present] of candidate.attackerWorldTraits) {
-    (candidate.traits.attacker as Map<string, boolean>).set(trait, present);
-    candidate.traitCounts.attacker = present
-      ? {
-          ...candidate.traitCounts.attacker,
-          [trait]: Math.max(1, candidate.traitCounts.attacker[trait] ?? 0),
-        }
-      : withoutTraitCount(candidate.traitCounts.attacker, trait);
-  }
+  const intrinsic: ConditionFactProof = {
+    kind: 'canonicalIntrinsic',
+    clock: {
+      ...candidate.conditionReadClock,
+      actorFormId: operation.targetFormId,
+      operationId: operation.operationId,
+      sourceInstanceId: operation.source.sourceInstanceId,
+      occurrenceId: operation.source.effectOccurrenceId,
+    },
+  };
+  candidate.traitFactLayers.intrinsic.attacker = new Map(
+    traits.map((trait) => [trait, { present: true, count: 1, proof: intrinsic }]),
+  );
+  projectTraitScope(candidate, 'attacker');
+  candidate.conditionFactProofs.completeTraits.attacker = intrinsic;
   for (const trait of candidate.initialTraitSuppressions.attacker) {
     (candidate.traits.attacker as Map<string, boolean>).set(trait, false);
     candidate.traitCounts.attacker = withoutTraitCount(candidate.traitCounts.attacker, trait);
@@ -202,10 +218,16 @@ export function applyTraitRemoval(
   state: ExecutableBattleState,
   scope: Extract<BattleOperation, { kind: 'removeTrait' }>['scope'],
   trait: string,
+  proof: ConditionFactProof,
 ): ExecutableBattleState {
   const candidate = cloneBattleState(state);
   (candidate.traits[scope] as Map<string, boolean>).set(trait, false);
   candidate.traitCounts[scope] = withoutTraitCount(candidate.traitCounts[scope], trait);
+  (candidate.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+    trait,
+    proof,
+  );
+  commitTraitFact(candidate.traitFactLayers, scope, trait, false, 0, proof);
   return candidate;
 }
 
@@ -213,6 +235,7 @@ export function applyInitialTraitSuppression(
   state: ExecutableBattleState,
   scope: Extract<BattleOperation, { kind: 'suppressInitialTrait' }>['scope'],
   trait: string,
+  proof: ConditionFactProof,
 ): ExecutableBattleState {
   const candidate = cloneBattleState(state);
   candidate.initialTraitSuppressions[scope] = new Set([
@@ -221,6 +244,15 @@ export function applyInitialTraitSuppression(
   ]);
   (candidate.traits[scope] as Map<string, boolean>).set(trait, false);
   candidate.traitCounts[scope] = withoutTraitCount(candidate.traitCounts[scope], trait);
+  (candidate.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+    trait,
+    proof,
+  );
+  (candidate.conditionFactProofs.suppressions[scope] as Map<string, ConditionFactProof>).set(
+    trait,
+    proof,
+  );
+  commitTraitFact(candidate.traitFactLayers, scope, trait, false, 0, proof);
   return candidate;
 }
 
@@ -228,6 +260,7 @@ export function applyTraitAddition(
   state: ExecutableBattleState,
   scope: Extract<BattleOperation, { kind: 'addTrait' }>['scope'],
   trait: string,
+  proof: ConditionFactProof,
 ): ExecutableBattleState {
   const candidate = cloneBattleState(state);
   const group = canonicalExclusiveGroup(scope, trait);
@@ -235,6 +268,11 @@ export function applyTraitAddition(
     for (const conflictingTrait of canonicalExclusiveTraits(scope, group)) {
       if (conflictingTrait === trait) continue;
       (candidate.traits[scope] as Map<string, boolean>).set(conflictingTrait, false);
+      (candidate.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+        conflictingTrait,
+        proof,
+      );
+      commitTraitFact(candidate.traitFactLayers, scope, conflictingTrait, false, 0, proof);
       candidate.traitCounts[scope] = withoutTraitCount(
         candidate.traitCounts[scope],
         conflictingTrait,
@@ -247,6 +285,18 @@ export function applyTraitAddition(
       ? Math.max(1, candidate.traitCounts[scope][trait] ?? 0)
       : (candidate.traitCounts[scope][trait] ?? 0) + 1,
   };
+  (candidate.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+    trait,
+    proof,
+  );
+  commitTraitFact(
+    candidate.traitFactLayers,
+    scope,
+    trait,
+    true,
+    candidate.traitCounts[scope][trait]!,
+    proof,
+  );
   return candidate;
 }
 

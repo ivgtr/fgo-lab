@@ -1,19 +1,11 @@
 import type { MasterEffect } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import {
-  activationFactKey,
-  analyzeActivationFactSet,
-  type ActivationFact,
-  type ActivationSourceRef,
-} from '@fgo-lab/schema';
-import {
   ocRelevantSourceIndexes,
   markerRelevantSourceIndexes,
   hpRelevantSourceIndexes,
   npProgramEffects,
   type OcResourceDependencyContext,
-  classifyContributionCondition,
-  compileEffectCondition,
 } from '@fgo-lab/battle-execution';
 import { attackProfileKey } from './attackProfile';
 import type { RankingPolicyConditions } from './rankingContracts';
@@ -83,7 +75,6 @@ function classifyPrograms(
           : optionalAdmission(
               { ...source, effects: npProgramEffects(source.effects) },
               conditions,
-              program,
               ocRelevant.has(index) ||
                 hpRelevant.has(index) ||
                 markerRelevant.has(index) ||
@@ -125,74 +116,6 @@ function actionIsStructural(
   });
 }
 
-function requirementIsUnconditionalForAttack(
-  effect: MasterEffect,
-  source: RankingPreparationSourceUse,
-  program: StaticRankingPreparationProgram,
-  attackFacts: Parameters<typeof classifyContributionCondition>[1],
-): boolean {
-  const origin = source.kind === 'skill' ? 'attacker' : 'np';
-  const sourceInstanceId = `ranking-admission:${source.kind}`;
-  const skillId =
-    source.kind === 'skill' ? source.skill.id : `np:${source.noblePhantasmVariant.noblePhantasmId}`;
-  const condition = compileEffectCondition(
-    effect,
-    origin,
-    program.attackProfile.id.servantLineageId,
-    sourceInstanceId,
-    skillId,
-  );
-  return classifyContributionCondition(condition, attackFacts) === 'intrinsicSatisfied';
-}
-
-function intrinsicFactsForSource(
-  source: RankingPreparationSourceUse,
-  program: StaticRankingPreparationProgram,
-): Parameters<typeof classifyContributionCondition>[1] | undefined {
-  const origin = source.kind === 'skill' ? 'attacker' : 'np';
-  const sourceInstanceId = `ranking-admission:${source.kind}`;
-  const skillId =
-    source.kind === 'skill' ? source.skill.id : `np:${source.noblePhantasmVariant.noblePhantasmId}`;
-  const activationSource: ActivationSourceRef = { origin, sourceInstanceId, skillId };
-  const facts = source.effects.flatMap<ActivationFact>((candidate) => [
-    ...(candidate.selection?.kind === 'playerChoice'
-      ? [
-          {
-            kind: 'choice' as const,
-            source: activationSource,
-            family: candidate.selection.group.key,
-            candidate: candidate.selection.group.candidate,
-          },
-        ]
-      : []),
-    ...(candidate.operationTrigger
-      ? [
-          {
-            kind: 'operationTrigger' as const,
-            source: activationSource,
-            position: candidate.operationTrigger.position,
-          },
-        ]
-      : []),
-  ]);
-  const activation = analyzeActivationFactSet(
-    [...new Map(facts.map((fact) => [activationFactKey(fact), fact])).values()].sort(
-      (left, right) => activationFactKey(left).localeCompare(activationFactKey(right)),
-    ),
-  );
-  if (activation.status !== 'valid') return undefined;
-  return {
-    card: program.attackProfile.cardType,
-    noblePhantasmVariant: program.attackProfile.noblePhantasmVariant,
-    attackerTraits: new Map(
-      program.attackProfile.id.terminalActorFormProfileId.semantics.intrinsicTraits.map(
-        (trait) => [trait, true] as const,
-      ),
-    ),
-    activationFacts: activation.factSet,
-  };
-}
-
 function effectHasDamageContribution(effect: MasterEffect): boolean {
   return effect.execution.some((operation) =>
     ['damageModifier', 'modifierRateChange', 'ignoreDefense', 'ignoreDamageCut'].includes(
@@ -220,7 +143,6 @@ function unsupportedEffect(effect: MasterEffect): CandidateLocalActionAdmission 
 function optionalAdmission(
   source: RankingPreparationSourceUse,
   conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
-  program: StaticRankingPreparationProgram,
   resourceRelevant: boolean,
 ): CandidateLocalActionAdmission {
   if (conditions.selfBuffs === 'excluded')
@@ -228,26 +150,15 @@ function optionalAdmission(
   const unsupported = source.effects.map(unsupportedEffect).find((item) => item !== null);
   if (unsupported !== undefined) return unsupported;
   if (resourceRelevant) return { kind: 'admitted', role: 'optional' };
-  if (conditions.conditionalEffects === 'baseline') {
-    const attackFacts = intrinsicFactsForSource(source, program);
-    if (!attackFacts) return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
-    const contributes = source.effects.some(
-      (effect) =>
-        effect.proc.kind === 'guaranteed' &&
-        requirementIsUnconditionalForAttack(effect, source, program, attackFacts) &&
-        effectHasDamageContribution(effect),
-    );
-    return contributes
-      ? { kind: 'admitted', role: 'optional' }
-      : { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
-  }
+  // Admission preserves the finite action universe. The common executor owns condition
+  // truth, certainty and resource legality at each read; terminal traits cannot prove a use.
   const contributesOrMutates = source.effects.some(
     (effect) =>
       effectHasDamageContribution(effect) ||
       effect.execution.some(
         (operation) =>
           operation.kind === 'contextMutation' ||
-          (operation.kind === 'buffInstanceMutation' && !operation.marker) ||
+          operation.kind === 'buffInstanceMutation' ||
           operation.kind === 'stateMutation' ||
           operation.kind === 'resourceMutation',
       ),

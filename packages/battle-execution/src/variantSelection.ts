@@ -1,3 +1,5 @@
+import { readOperationCondition } from './condition';
+import { conditionWriteProof, procIsGuaranteed } from './conditionRead';
 import {
   actorFormEquals,
   noblePhantasmVariantKey,
@@ -54,7 +56,7 @@ export function resolveActiveVariantTransactions(
     if (operation.kind !== 'selectNoblePhantasmVariant') return false;
     if (activations.get(operation.operationId)?.enabled !== true) return false;
     if (operation.decisionPlan.condition !== 'userMayAssume') return true;
-    const evaluated = evaluateCondition(operation.condition, state);
+    const evaluated = evaluateCondition(operation.condition, state).truth;
     if (evaluated === true) return true;
     const decision = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
     return (
@@ -166,12 +168,16 @@ export function applySelectedNoblePhantasmContext(
     return { state: initialState, issue: variantIssue(selection, 'formMismatch') };
   state = applyNoblePhantasmVariantSelection(state, variant);
   for (const operation of preapplied) {
+    const proof = conditionWriteProof(
+      readOperationCondition(operation, state),
+      procIsGuaranteed(operation.proc, operation.procRatePermille),
+    );
     if (operation.kind === 'addTrait')
-      state = applyTraitAddition(state, operation.scope, operation.trait);
+      state = applyTraitAddition(state, operation.scope, operation.trait, proof);
     if (operation.kind === 'removeTrait')
-      state = applyTraitRemoval(state, operation.scope, operation.trait);
+      state = applyTraitRemoval(state, operation.scope, operation.trait, proof);
     if (operation.kind === 'suppressInitialTrait')
-      state = applyInitialTraitSuppression(state, operation.scope, operation.trait);
+      state = applyInitialTraitSuppression(state, operation.scope, operation.trait, proof);
   }
   return { state, issue: null };
 }

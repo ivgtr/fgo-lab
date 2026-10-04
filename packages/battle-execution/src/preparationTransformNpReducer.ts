@@ -1,3 +1,4 @@
+import { requiredPreparationConditionRead } from './preparationState';
 import {
   actorFormEquals,
   findNoblePhantasmVariant,
@@ -112,7 +113,7 @@ export function reducePreparationTransformNoblePhantasmAction(
             actorFormId: state.currentFormId,
             occurrenceId: effect.occurrenceId,
             effect,
-            stochasticOutcome: resource.activation.get(effect)?.procOutcome ?? null,
+            sourceActivation: requiredPreparationConditionRead(effect, resource.activation),
           })),
           activationFacts: assemblePreparationActivationFacts(
             servant,

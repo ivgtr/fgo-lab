@@ -186,7 +186,6 @@ function worldTraitFacts(conditions: readonly (ConditionExpression | null)[]): r
 function materializeFixedRankingWorld(
   scenario: ResolvedScenario,
   semantics: StaticRankingSemantics,
-  intrinsicTraits: ReadonlySet<string>,
 ): ResolvedScenario {
   const owned = new Set(
     semantics.inputDefinitions.flatMap((definition) =>
@@ -196,12 +195,13 @@ function materializeFixedRankingWorld(
     ),
   );
   const assertions = worldTraitFacts(semantics.conditions).flatMap(({ scope, trait }) => {
+    // Current intrinsic traits belong to execution state and change with the actor form.
+    if (scope === 'attacker') return [];
     if (owned.has(`${scope}:${trait}`)) return [];
-    const present = scope === 'attacker' && intrinsicTraits.has(trait);
     return [
       {
         decisionKey: `ranking:${scope}:${trait}`,
-        fact: { kind: 'trait' as const, scope, trait, present },
+        fact: { kind: 'trait' as const, scope, trait, present: false },
       },
     ];
   });
@@ -286,7 +286,6 @@ function compileProgramDomain(input: {
   const base = materializeFixedRankingWorld(
     createRankingBaseScenario(servant, master, basis, conditions, program.initialFormId),
     semantics,
-    new Set(program.attackProfile.id.terminalActorFormProfileId.semantics.intrinsicTraits),
   );
   const initialHp = active ? resolveInitialMaximumHp(base, master) : null;
   const hpAttackVariant = findNoblePhantasmVariant(

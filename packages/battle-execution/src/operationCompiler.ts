@@ -494,7 +494,7 @@ function baseOperation(
             ),
           }
         : null,
-    preResolvedStochasticOutcome: source.preparationStochasticOutcome,
+    sourceActivation: source.sourceActivation,
     procRatePermille:
       source.effect.proc.kind === 'guaranteed'
         ? 1_000
@@ -540,7 +540,6 @@ function compilationCacheKey(
         : null
       : undefined,
     compilationPurpose: source.compilationPurpose,
-    preparationStochasticOutcome: source.preparationStochasticOutcome,
     sourceInstanceId: source.sourceInstanceId,
     sourceId: source.sourceId,
     sourceName: source.sourceName,
@@ -569,12 +568,16 @@ export function compileEffectCached(
   const key = compilationCacheKey(source, actorForms);
   let compiled = byKey.get(key);
   if (!compiled) {
-    compiled = compileEffect(source, 0, actorForms);
+    compiled = compileEffect({ ...source, sourceActivation: { kind: 'unread' } }, 0, actorForms);
     byKey.set(key, compiled);
   }
   return {
     operations: compiled.operations.map((operation) => {
-      const copy = { ...operation, order: operation.order + startOrder };
+      const copy = {
+        ...operation,
+        order: operation.order + startOrder,
+        sourceActivation: source.sourceActivation,
+      };
       const sourceOperation = operationSourceFor(operation);
       if (sourceOperation) retainOperationSource(copy, sourceOperation);
       return copy;

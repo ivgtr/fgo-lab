@@ -1,4 +1,7 @@
+import type { SourceActivationReceipt, ConditionRead } from './conditionRead';
+import type { TraitFactLayers } from './traitFactLayers';
 import type { HpState } from './hpResource';
+import type { ConditionFactProofs, ConditionReadClock } from './conditionRead';
 import type { BattlePointState } from './battlePointResource';
 import type { BattlePointDomain } from '@fgo-lab/master-data';
 import type { CountedBuffInstance } from './buffInstances';
@@ -41,14 +44,14 @@ export type ConditionExpression =
   | {
       kind: 'unsupported';
       reason: 'unresolvedRecipient' | 'unresolvedPreparationWrite' | 'unresolvedBattlePointDomain';
-      readDependency?: ConditionExpression;
+      readDependency?: ConditionExpression | undefined;
     }
   | {
       kind: 'trait';
       scope: TraitScope;
       trait: string;
       present: boolean;
-      provenance?: CanonicalTraitProvenance;
+      provenance?: CanonicalTraitProvenance | undefined;
     }
   | {
       kind: 'targetPredicate';
@@ -110,6 +113,7 @@ export type ExecutionPhase =
   | 'npDamage';
 
 interface OperationBase {
+  sourceActivation: SourceActivationReceipt;
   operationId: string;
   order: number;
   phase: ExecutionPhase;
@@ -123,7 +127,6 @@ interface OperationBase {
   gameActivation: 'constant' | 'skillUse' | 'npBeforeDamage' | 'derived';
   proc: EffectProc;
   stochasticOutcome?: CanonicalOutcomeGroup | null;
-  preResolvedStochasticOutcome?: 'success' | 'failure' | null;
   procRatePermille: number | null;
   activation:
     | { kind: 'sourceDefault' }
@@ -265,6 +268,9 @@ export interface AppliedModifier {
 }
 
 export interface BattleStateBase {
+  traitFactLayers: TraitFactLayers;
+  conditionFactProofs: ConditionFactProofs;
+  conditionReadClock: ConditionReadClock;
   battlePoints?: BattlePointState;
   battlePointDomains?: readonly BattlePointDomain[];
   resourceActor?: string;
@@ -280,8 +286,6 @@ export interface BattleStateBase {
   >;
   stackQuantitySources: Record<string, StackSource>;
   traitCounts: Record<TraitScope, Readonly<Record<string, number>>>;
-  /** External initial-layer assertions survive an actor form transition. */
-  attackerWorldTraits: ReadonlyMap<string, boolean>;
   initialTraitSuppressions: Record<ActorScope, ReadonlySet<string>>;
   quantities: {
     attackerHpPermille: number | null;
@@ -515,6 +519,7 @@ export interface EffectProjection {
 }
 
 export interface OperationResult {
+  conditionRead: ConditionRead;
   operation: BattleOperation;
   outcome: OperationOutcome;
   condition: 'satisfied' | 'unsatisfied' | 'unresolved';

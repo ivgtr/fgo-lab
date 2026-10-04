@@ -1,3 +1,4 @@
+import { emptyConditionFactProofs } from './conditionRead';
 import { describe, expect, it } from 'vitest';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { BattleOperation } from './contracts';
@@ -38,6 +39,7 @@ const operation: BattleOperation = {
   gameActivation: 'skillUse',
   proc: { kind: 'guaranteed' },
   stochasticOutcome: null,
+  sourceActivation: { kind: 'unread' as const },
   procRatePermille: 1_000,
   activation: { kind: 'sourceDefault' },
   evidence: { rawPath: 'test', functionId: 'test' },
@@ -295,6 +297,7 @@ describe('candidate activation preparation boundary', () => {
       attackerClass: 'saber',
       attackerAttribute: 'earth',
       inputDefinitions: [],
+      preparationConditionProofs: { kind: 'available', writeProofs: emptyConditionFactProofs() },
     } as unknown as PreparedOrderedScenario;
     const result = executeOrderedScenarioCandidate(
       prepared,
@@ -348,6 +351,7 @@ describe('candidate activation preparation boundary', () => {
       attackerClass: 'saber',
       attackerAttribute: 'earth',
       inputDefinitions: [],
+      preparationConditionProofs: { kind: 'available', writeProofs: emptyConditionFactProofs() },
     } as unknown as PreparedOrderedScenario;
 
     const result = executeOrderedScenarioCandidate(

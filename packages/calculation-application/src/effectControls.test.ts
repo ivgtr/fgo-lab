@@ -13,6 +13,7 @@ function projection(overrides: Partial<EffectProjection> = {}): EffectProjection
     gameActivation: 'skillUse',
     sourceActive: true,
     proc: { kind: 'guaranteed' },
+
     procRatePermille: 1_000,
     valuePermille: 200,
     value: 0.2,

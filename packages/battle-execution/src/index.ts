@@ -204,3 +204,20 @@ export * from './preparationHp';
 export * from './battlePointResource';
 
 export { UnresolvedPreparationPlanningRead } from './hpPlanning';
+
+export type {
+  ConditionRead,
+  ConditionReadClock,
+  ConditionReadEvidence,
+  ConditionFactProof,
+  SourceActivationReceipt,
+} from './conditionRead';
+export {
+  StochasticBranchRequired,
+  IllegalStochasticWitness,
+  executeStochasticPossibilities,
+  stochasticWitnessEntries,
+} from './stochasticPossibilities';
+export type { ExecutionPossibilities } from './stochasticPossibilities';
+export type { StochasticSelection, StochasticChoice } from './stochasticPossibilities';
+export type { ExecutionPossibilityCertificate } from './stochasticPossibilities';

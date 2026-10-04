@@ -1,26 +1,33 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  activeServantSkillSchema,
+  masterSnapshotSchema,
+  type MasterDataSnapshot,
+} from '@fgo-lab/master-data';
 import { createProfileCollection } from '@fgo-lab/profile-domain';
 import {
   calculateRankingPolicy,
   DEFAULT_RANKING_POLICY_CONDITIONS,
 } from '@fgo-lab/calculation-application';
-import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { handoffRankingCalculation } from './rankingHandoff';
+import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION, servantBuildSchema } from '@fgo-lab/schema';
+import {
+  handoffRankingCalculation,
+  handoffRankingAttackProfileCalculation,
+} from './rankingHandoff';
 import { createCalculationMutationGate, type UpdateActiveProfile } from './portableDraft';
 
 const master = masterSnapshotSchema.parse(fixture);
 const sessionId = '00000000-0000-4000-8000-000000000046';
 
-function calculatedRankingDetail() {
+function calculatedRankingDetail(snapshot: MasterDataSnapshot = master) {
   const ranking = calculateRankingPolicy(
-    master,
+    snapshot,
     { servantBuilds: {} },
     DEFAULT_RANKING_POLICY_CONDITIONS,
     {
       schemaVersion: SCHEMA_VERSION,
-      masterDataVersion: master.version,
+      masterDataVersion: snapshot.version,
       engineVersion: ENGINE_VERSION,
       appVersion: APP_VERSION,
       gameRegion: 'JP',
@@ -36,6 +43,72 @@ function calculatedRankingDetail() {
 
 describe('ranking handoff', () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it('rejects an incomplete owned AttackProfile handoff without touching any writer', async () => {
+    const skill = activeServantSkillSchema.parse({
+      id: 'handoff-skill',
+      slot: 1,
+      priority: 0,
+      name: 'handoff-skill',
+      detail: '',
+      imageKey: null,
+      resourceRequirement: null,
+      effects: [],
+    });
+    const actor = master.servants[0]!;
+    const snapshot = masterSnapshotSchema.parse({
+      ...master,
+      servants: [
+        {
+          ...actor,
+          skills: [skill],
+          actorFormGraph: {
+            ...actor.actorFormGraph,
+            forms: actor.actorFormGraph.forms.map((form) => ({ ...form, skillIds: [skill.id] })),
+          },
+        },
+      ],
+    });
+    const detail = calculatedRankingDetail(snapshot);
+    const build = servantBuildSchema.parse({
+      servantId: actor.id,
+      level: 90,
+      ascension: 4,
+      npLevel: 1,
+      fouAtk: 1234,
+      skills: {},
+      appends: {},
+      updatedAt: '2026-10-04T00:00:00.000Z',
+    });
+    const profile = { servantBuilds: { [actor.id]: build } };
+    const retained = structuredClone(profile);
+    const setCalculation = vi.fn();
+    const setCalculationSessionId = vi.fn();
+    const updateActiveProfile = vi.fn();
+    const replaceRoute = vi.fn();
+    const randomUUID = vi.spyOn(crypto, 'randomUUID');
+    const outcome = await handoffRankingAttackProfileCalculation({
+      servantId: actor.id,
+      attackProfile: detail.attackProfile,
+      master: snapshot,
+      profile,
+      setCalculation,
+      setCalculationSessionId,
+      updateActiveProfile,
+      replaceRoute,
+      calculationMutation: createCalculationMutationGate(),
+    });
+    expect(outcome).toEqual({ status: 'rejected', reason: 'servantBuildIncomplete' });
+    expect(profile).toEqual(retained);
+    for (const writer of [
+      setCalculation,
+      setCalculationSessionId,
+      updateActiveProfile,
+      replaceRoute,
+      randomUUID,
+    ])
+      expect(writer).not.toHaveBeenCalled();
+  });
 
   it('retains every handoff writer and the current page when level preparation is invalid', async () => {
     const detail = calculatedRankingDetail();

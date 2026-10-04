@@ -138,7 +138,10 @@ describe('stack domain completeness proofs', () => {
       ],
     });
     const actor = data.servants[0]!;
-    const program = compileStaticRankingPreparationPrograms(actor)[0]!;
+    const program = compileStaticRankingPreparationPrograms(
+      actor,
+      rankingBasisFixture(actor).skillLevels,
+    )[0]!;
     const semantics = compileStaticRankingSemantics(actor, program, 1);
     expect(semantics.stackWitnesses.size).toBe(0);
     // Remove the exclusive source to isolate each additional-reader guard.
@@ -276,7 +279,10 @@ describe('stack domain completeness proofs', () => {
         ],
       });
       const actor = changed.servants[0]!;
-      for (const program of compileStaticRankingPreparationPrograms(actor)) {
+      for (const program of compileStaticRankingPreparationPrograms(
+        actor,
+        rankingBasisFixture(actor).skillLevels,
+      )) {
         const semantics = compileStaticRankingSemantics(actor, program, 1);
         expect(semantics.stackWitnesses.size).toBe(0);
       }
@@ -438,3 +444,4 @@ describe('stack domain completeness proofs', () => {
     expect(detail.scenario.canonicalInputValues[source.key]?.value).toBe(1);
   });
 });
+import { rankingBasisFixture } from './rankingBasisFixture';

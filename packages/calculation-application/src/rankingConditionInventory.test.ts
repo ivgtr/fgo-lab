@@ -37,7 +37,10 @@ describe('production ranking condition provenance', () => {
     );
     const inventory = master.servants.flatMap((servant) => {
       const operations = new Map(
-        compileStaticRankingPreparationPrograms(servant).flatMap((program) =>
+        compileStaticRankingPreparationPrograms(
+          servant,
+          rankingBasisFixture(servant).skillLevels,
+        ).flatMap((program) =>
           compileStaticRankingSemantics(servant, program, 1).operations.map(
             (operation) => [operation.operationId, operation] as const,
           ),
@@ -144,3 +147,4 @@ describe('production ranking condition provenance', () => {
     `);
   }, 120_000);
 });
+import { rankingBasisFixture } from './rankingBasisFixture';

@@ -51,7 +51,7 @@ export function validateActorFormWorldFacts(
         sourceKey: `${operation.operationId}:form:${trait}`,
         fact: { kind: 'trait' as const, scope: 'attacker' as const, trait, present: true },
       })),
-      ...[...state.attackerWorldTraits].map(([trait, present]) => ({
+      ...[...state.traitFactLayers.externalInitial.attacker].map(([trait, { present }]) => ({
         sourceKey: `${operation.operationId}:world:${trait}`,
         fact: { kind: 'trait' as const, scope: 'attacker' as const, trait, present },
       })),

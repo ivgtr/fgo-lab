@@ -25,6 +25,11 @@ export * from './targetContext';
 export type {
   ActivationRequirementOwner,
   ConditionExpression,
+  ConditionRead,
+  ConditionReadClock,
+  ConditionReadEvidence,
+  ConditionFactProof,
+  SourceActivationReceipt,
   EffectProjection,
   ModifierKind,
   ResolvedAttackerSkillUse,

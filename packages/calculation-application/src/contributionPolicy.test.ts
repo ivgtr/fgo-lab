@@ -1,4 +1,4 @@
-import type { BattleOperation } from '@fgo-lab/battle-execution';
+import type { BattleOperation, ConditionRead } from '@fgo-lab/battle-execution';
 import { contributionIsIncluded } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
 import {
@@ -33,6 +33,7 @@ function operation(
     gameActivation: origin === 'attacker' ? 'skillUse' : 'constant',
     proc: { kind: 'guaranteed' },
     stochasticOutcome: null,
+    sourceActivation: { kind: 'unread' as const },
     procRatePermille: 1_000,
     activation: { kind: 'sourceDefault' },
     evidence: { rawPath: 'fixture', functionId: 'fixture' },
@@ -46,15 +47,43 @@ function operation(
   };
 }
 
+const clock: ConditionRead['clock'] = {
+  phase: 'operation',
+  actorFormId: { actorId: 'policy-fixture', limitCount: 0 },
+  actor: 'attacker',
+  actionId: null,
+  operationId: 'policy-fixture',
+  sourceInstanceId: 'policy-fixture',
+  occurrenceId: 'policy-fixture',
+  valueSetIndex: 0,
+  valueIndex: 0,
+};
+const guaranteedRead: ConditionRead = {
+  kind: 'known',
+  truth: true,
+  certainty: 'guaranteed',
+  clock,
+  evidence: [],
+  support: [{ kind: 'canonicalIntrinsic', clock }],
+};
+const externalRead: ConditionRead = {
+  kind: 'known',
+  truth: true,
+  certainty: 'possible',
+  clock,
+  evidence: [],
+  support: [{ kind: 'externalAssumption', clock }],
+};
+
 describe('canonical contribution application policy', () => {
   it('keeps self, condition, and area decisions independent', () => {
     const policy = compileRankingContributionPolicy(
       { selfBuffs: 'excluded', conditionalEffects: 'baseline' },
       'excluded',
     );
-    expect(
-      contributionIsIncluded(operation('attacker', 'personal'), { kind: 'always' }, policy),
-    ).toBe(false);
+    expect(contributionIsIncluded(operation('attacker', 'personal'), guaranteedRead, policy)).toBe(
+      false,
+    );
     const targetCondition = {
       kind: 'trait',
       scope: 'target',
@@ -62,14 +91,12 @@ describe('canonical contribution application policy', () => {
       present: true,
     } as const;
     expect(
-      contributionIsIncluded(operation('np', 'personal', targetCondition), targetCondition, policy),
+      contributionIsIncluded(operation('np', 'personal', targetCondition), externalRead, policy),
     ).toBe(false);
-    expect(
-      contributionIsIncluded(operation('passive', 'partyWide'), { kind: 'always' }, policy),
-    ).toBe(false);
-    expect(contributionIsIncluded(operation('np', 'personal'), { kind: 'always' }, policy)).toBe(
-      true,
+    expect(contributionIsIncluded(operation('passive', 'partyWide'), guaranteedRead, policy)).toBe(
+      false,
     );
+    expect(contributionIsIncluded(operation('np', 'personal'), guaranteedRead, policy)).toBe(true);
     expect(isAttackerDamageContribution(operation('passive', 'personal'))).toBe(true);
     expect(isAttackerDamageContribution(operation('passive', 'partyWide'))).toBe(true);
     expect(isAreaDamageContribution(operation('passive', 'partyWide'))).toBe(true);

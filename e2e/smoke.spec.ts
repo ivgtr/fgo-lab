@@ -1,5 +1,8 @@
 import { expect, test, type NewObservedPage, type Page } from './observedTest';
 import { completeSetup, openTestHome } from './setup';
+import { webcrypto } from 'node:crypto';
+import { portableCalculationFingerprint } from '../packages/workspace-domain/src/index';
+import { editCurrentStoredProfiles } from './currentProfileFixture';
 
 async function openCalculator(page: Page) {
   await openTestHome(page);
@@ -16,53 +19,23 @@ async function freshPage(newObservedPage: NewObservedPage) {
 }
 
 async function pinStoredDraftToHistorical(page: Page, unsupported: boolean) {
-  await page.evaluate(
-    (makeUnsupported) =>
-      new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open('fgo-lab', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-          const db = request.result;
-          const transaction = db.transaction('user', 'readwrite');
-          const store = transaction.objectStore('user');
-          const profilesRequest = store.get('profiles');
-          transaction.onerror = () => reject(transaction.error);
-          transaction.oncomplete = () => {
-            resolve();
-            db.close();
-          };
-          profilesRequest.onsuccess = () => {
-            const collection = profilesRequest.result as {
-              profiles: Array<{
-                draft: {
-                  request: {
-                    versionContext: { masterDataVersion: string; engineVersion: string };
-                    scenario: { craftEssence: unknown };
-                  };
-                  result: { versions: { masterDataVersion: string; engineVersion: string } };
-                };
-              }>;
-            };
-            const draft = collection.profiles[0]!.draft;
-            draft.request.versionContext = {
-              ...draft.request.versionContext,
-              masterDataVersion: 'historical-master',
-              engineVersion: 'historical-engine',
-            };
-            if (makeUnsupported)
-              draft.request.scenario.craftEssence = {
-                craftEssenceId: 'missing',
-                level: 1,
-                limitBreak: 0,
-              };
-            draft.result.versions.masterDataVersion = 'historical-master';
-            draft.result.versions.engineVersion = 'historical-engine';
-            store.put(collection, 'profiles');
-          };
-        };
-      }),
-    unsupported,
-  );
+  await editCurrentStoredProfiles(page, async (collection) => {
+    const draft = collection.profiles[0]!.draft;
+    if (!draft || draft.request.scenario.mode !== 'resolved')
+      throw new Error('resolved draft required');
+    draft.request.versionContext = {
+      ...draft.request.versionContext,
+      masterDataVersion: 'historical-master',
+      engineVersion: 'historical-engine',
+    };
+    if (unsupported)
+      draft.request.scenario.craftEssence = { craftEssenceId: 'missing', level: 1, limitBreak: 0 };
+    draft.result.versions.masterDataVersion = 'historical-master';
+    draft.result.versions.engineVersion = 'historical-engine';
+    draft.requestFingerprint = await portableCalculationFingerprint(draft.request, (bytes) =>
+      webcrypto.subtle.digest('SHA-256', new Uint8Array(bytes)),
+    );
+  });
 }
 
 async function storedDraftVersionContext(page: Page) {

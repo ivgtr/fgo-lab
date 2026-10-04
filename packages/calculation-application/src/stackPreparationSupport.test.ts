@@ -230,6 +230,7 @@ describe('live preparation stack reads', () => {
     actor.skills[0]!.effects.push(gain);
     for (const initialCount of [0, 1, 6]) {
       const context = {
+        stochasticSelection: { kind: 'declared' as const },
         resourceSemantics: data.npResourceSemantics,
         npLevel: 2 as const,
         overcharge: 1 as const,
@@ -271,6 +272,7 @@ describe('live preparation stack reads', () => {
       );
     }
     const retryContext = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: data.npResourceSemantics,
       npLevel: 2 as const,
       overcharge: 1 as const,
@@ -326,6 +328,7 @@ describe('live preparation stack reads', () => {
       gain,
     ];
     const context = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: data.npResourceSemantics,
       npLevel: 2 as const,
       overcharge: 1 as const,
@@ -543,6 +546,7 @@ describe('live preparation stack reads', () => {
     ];
     actor.skills[0]!.effects.push(gain, boost);
     const context = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: data.npResourceSemantics,
       npLevel: 2 as const,
       overcharge: 1 as const,
@@ -582,6 +586,7 @@ describe('live preparation stack reads', () => {
         const actor = data.servants[0]!;
         for (const count of [0, 1, 4]) {
           const context = {
+            stochasticSelection: { kind: 'declared' as const },
             resourceSemantics: data.npResourceSemantics,
             npLevel: 2 as const,
             initialGauge: 15_000,
@@ -645,6 +650,7 @@ describe('live preparation stack reads', () => {
     ];
     actor.skills[1]!.effects.push(invalid);
     const context = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: data.npResourceSemantics,
       npLevel: 2 as const,
       overcharge: 1 as const,
@@ -819,6 +825,7 @@ describe('live preparation stack reads', () => {
 
     for (const count of [0, 1]) {
       const context = {
+        stochasticSelection: { kind: 'declared' as const },
         resourceSemantics: data.npResourceSemantics,
         npLevel: 1 as const,
         overcharge: 1 as const,
@@ -933,6 +940,7 @@ describe('population count through shared preparation transaction', () => {
     ];
     masterSnapshotSchema.parse(data);
     const context = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: data.npResourceSemantics,
       npLevel: 5 as const,
       overcharge: 1 as const,

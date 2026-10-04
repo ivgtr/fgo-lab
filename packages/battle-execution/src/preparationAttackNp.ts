@@ -1,3 +1,4 @@
+import { requiredPreparationConditionRead } from './preparationState';
 import { terminalOcPreparationEffects } from './ocSourceProgram';
 import {
   findNoblePhantasmVariant,
@@ -79,7 +80,7 @@ export function prepareAttackNoblePhantasm(
             actorFormId: state.currentFormId,
             occurrenceId: effect.occurrenceId,
             effect,
-            stochasticOutcome: resource.activation.get(effect)?.procOutcome ?? null,
+            sourceActivation: requiredPreparationConditionRead(effect, resource.activation),
           })),
           activationFacts: [],
           transition: null,

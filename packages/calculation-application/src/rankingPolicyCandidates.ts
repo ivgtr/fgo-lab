@@ -208,6 +208,7 @@ export function calculateRankingCandidateSet(
         effectInputs: execution.effectInputs,
         warnings: execution.effectWarnings,
         appliedPreparationActions: execution.appliedPreparationActions,
+        possibilityCertificate: execution.possibilityCertificate,
         contributionPolicy: plan.contributionPolicies[selectedIndex]!,
         effectiveContributions: execution.effectiveContributions,
         rankingPolicy: conditions,

@@ -107,6 +107,17 @@ export const createOcState = (): OcState => ({
   activeFormKey: null,
 });
 export type OcActionStep =
+  | {
+      kind: 'beginSource';
+      sourceKey: string;
+      outcome: 'conditionFalse' | 'notApplicable' | 'policyExcluded';
+    }
+  | {
+      kind: 'finishSource';
+      sourceKey: string;
+      commit: boolean;
+      outcome: 'conditionFalse' | 'notApplicable' | 'policyExcluded';
+    }
   | { kind: 'uncertainRate'; rate: UncertainOcRate }
   | { kind: 'recordSource'; sourceKey: string }
   | { kind: 'activateForm'; formKey: string }
@@ -224,6 +235,11 @@ export function executeOcAction(
   hp: Readonly<Record<string, number | null>>,
   options: {
     hasFutureNpUse: boolean;
+    resolveProcWitness?: (
+      index: number,
+      effectiveRate: number,
+      declaredWitness: 0 | 1 | undefined,
+    ) => 0 | 1 | undefined;
     observeStep?: (index: number, step: OcActionStep) => void;
     observeRateQuery?: (index: number, state: OcState, rate: OcRateInstance) => void;
     observeRateSelection?: (index: number, state: OcState) => void;
@@ -240,6 +256,7 @@ export function executeOcAction(
     receipts: [...prior.receipts],
   };
   const used = new Set<number>();
+  const sourceTransactions = new Map<string, { state: OcState; used: ReadonlySet<number> }>();
   const outcomes: OcActionOutcome[] = [];
   const reject = (
     status: 'invalid' | 'unsupported' | 'inputRequired',
@@ -258,6 +275,27 @@ export function executeOcAction(
     const step = typeof instruction === 'function' ? instruction(state, outcomes) : instruction;
     options.observeStep?.(index, step);
     if (step.kind === 'reject') return reject(step.status, step.reason);
+    if (step.kind === 'beginSource') {
+      if (sourceTransactions.size || sourceTransactions.has(step.sourceKey))
+        return reject('invalid', 'duplicateOcSourceTransaction');
+      sourceTransactions.set(step.sourceKey, { state, used: new Set(used) });
+      outcomes.push({ step: index, outcome: step.outcome });
+      continue;
+    }
+    if (step.kind === 'finishSource') {
+      const transaction = sourceTransactions.get(step.sourceKey);
+      if (!transaction) return reject('invalid', 'missingOcSourceTransaction');
+      if (!step.commit) {
+        // A completed proc failure rolls back physical writes. The completed attempt
+        // remains available to the compiler; an action rejection still returns prior.
+        state = { ...transaction.state, executedSources: state.executedSources };
+        used.clear();
+        transaction.used.forEach((instanceId) => used.add(instanceId));
+      }
+      sourceTransactions.delete(step.sourceKey);
+      outcomes.push({ step: index, outcome: step.outcome });
+      continue;
+    }
     if (step.kind === 'uncertainRate') {
       if (state.uncertainRates.some((rate) => rate.sourceKey === step.rate.sourceKey)) {
         outcomes.push({ step: index, outcome: 'alreadyApplied' });
@@ -357,7 +395,12 @@ export function executeOcAction(
       if (!Number.isInteger(step.applicationRate) || step.applicationRate < 0)
         return reject('invalid', 'invalidOcRemovalRate');
       const effectiveRate = Math.min(1000, step.applicationRate);
-      const application = resolveApplicationRateOutcome(effectiveRate, step.procWitness);
+      const application = resolveApplicationRateOutcome(
+        effectiveRate,
+        options.resolveProcWitness
+          ? options.resolveProcWitness(index, effectiveRate, step.procWitness)
+          : step.procWitness,
+      );
       if (application === 'invalid') return reject('invalid', 'invalidOcRemovalProc');
       if (application === 'inputRequired') return reject('inputRequired', `ocRemovalProc:${index}`);
       if (application === 'failure') {
@@ -420,7 +463,12 @@ export function executeOcAction(
       }
     }
     effectiveRate = Math.min(1000, Math.max(0, effectiveRate));
-    const application = resolveApplicationRateOutcome(effectiveRate, step.procWitness);
+    const application = resolveApplicationRateOutcome(
+      effectiveRate,
+      options.resolveProcWitness
+        ? options.resolveProcWitness(index, effectiveRate, step.procWitness)
+        : step.procWitness,
+    );
     if (application === 'invalid') return reject('invalid', 'invalidOcGrantProc');
     if (application === 'inputRequired') return reject('inputRequired', `ocProc:${step.sourceKey}`);
     if (application === 'failure') {
@@ -466,6 +514,7 @@ export function executeOcAction(
     };
     outcomes.push({ step: index, outcome: 'applied', effectiveRate });
   }
+  if (sourceTransactions.size) return reject('invalid', 'unclosedOcSourceTransaction');
   return {
     status: 'committed',
     outcomes,

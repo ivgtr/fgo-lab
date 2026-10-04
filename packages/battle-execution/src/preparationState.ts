@@ -1,6 +1,12 @@
+import type { ConditionFactProof } from './conditionRead';
 import { sourceMaximumHpInputKey, sourceHpInputKey } from './operationCompiler';
 import { seedHp } from './hpResource';
-import { npProgramEffects } from './npProgramScope';
+import { npProgramEffects, effectExecutesInNpProgram } from './npProgramScope';
+import {
+  ConditionReadIdentityError,
+  emptyConditionFactProofs,
+  type SourceActivationReceipt,
+} from './conditionRead';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import {
   actorFormEquals,
@@ -153,6 +159,16 @@ export function resolvePreparationStructuralOutcome(
   };
 }
 
+export function requiredPreparationConditionRead(
+  effect: MasterEffect,
+  activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>,
+): SourceActivationReceipt {
+  if (!effectExecutesInNpProgram(effect)) return { kind: 'notApplicable' };
+  const value = activation.get(effect);
+  if (!value) throw new ConditionReadIdentityError('preparation:' + effect.occurrenceId);
+  return value.sourceActivation;
+}
+
 export function appendPreparationEffects(
   state: PreNoblePhantasmState,
   sourceKind: AppliedPreparationEffect['sourceKind'],
@@ -169,7 +185,7 @@ export function appendPreparationEffects(
       actorFormId,
       occurrenceId: effect.occurrenceId,
       effect,
-      stochasticOutcome: activation.get(effect)?.procOutcome ?? null,
+      sourceActivation: requiredPreparationConditionRead(effect, activation),
     })),
   ];
 }
@@ -233,6 +249,7 @@ export function createPreparationState(
 ): PreparationTransitionResult {
   const form = findActorForm(servant, initialFormId);
   const placeholder: PreNoblePhantasmState = {
+    conditionWriteProofs: emptyConditionFactProofs(),
     battlePoints: emptyBattlePointState(),
     hp: {
       actors: {
@@ -274,11 +291,39 @@ export function createPreparationState(
     appliedActions: [],
     terminated: false,
   };
+  const initialProof = {
+    kind: 'selectedInitialResource' as const,
+    clock: {
+      phase: 'initial' as const,
+      actorFormId: initialFormId,
+      actor: 'attacker',
+      actionId: null,
+      operationId: null,
+      sourceInstanceId: null,
+      occurrenceId: null,
+      valueSetIndex: null,
+      valueIndex: null,
+    },
+  };
+  (placeholder.conditionWriteProofs.quantities as Map<string, ConditionFactProof>).set(
+    'npGauge:attacker',
+    initialProof,
+  );
+  (placeholder.conditionWriteProofs.quantities as Map<string, ConditionFactProof>).set(
+    'attackerHpPermille',
+    initialProof,
+  );
   placeholder.battlePoints = reconcilePreparationBattlePoints(
     servant,
     placeholder,
     context,
   ).battlePoints;
+  for (const [actor, value] of Object.entries(placeholder.battlePoints.actors))
+    for (const subject of Object.keys(value.domains))
+      (placeholder.conditionWriteProofs.quantities as Map<string, ConditionFactProof>).set(
+        'battlePoint:' + actor + ':' + subject,
+        initialProof,
+      );
   if (context.initialGauge > placeholder.npResource.capacity)
     return rejectPreparation(placeholder, 'resourceRequirementExceedsCapacity');
   if (!Number.isInteger(context.initialGauge) || context.initialGauge < 0)
@@ -312,12 +357,27 @@ export function createPreparationState(
       const count = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
       const { scope, trait } = definition.quantitySource;
       placeholder.stackCounts[scope] = { ...placeholder.stackCounts[scope], [trait]: count };
+      (placeholder.conditionWriteProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+        trait,
+        initialProof,
+      );
       if (scope !== 'field' && count > 0)
         (placeholder.stateTraits[scope] as Set<string>).add(trait);
     }
     const buffInputs = inputs.filter(isBuffCountInput);
     placeholder.buffInstances = seedBuffInstances(buffInputs, context.canonicalInputValues ?? {});
     Object.assign(placeholder, projectBuffInstanceCounts(placeholder, buffInputs));
+    for (const instance of placeholder.buffInstances)
+      (placeholder.conditionWriteProofs.markers as Map<string, ConditionFactProof>).set(
+        instance.identity,
+        initialProof,
+      );
+    for (const scope of ['attackerState', 'targetState', 'field'] as const)
+      for (const trait of Object.keys(placeholder.stackCounts[scope]))
+        (placeholder.conditionWriteProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+          trait,
+          initialProof,
+        );
   } catch {
     return rejectPreparation(placeholder, 'invalidPreparationActivation');
   }

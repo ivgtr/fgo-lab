@@ -23,6 +23,7 @@ import type { Origin } from './effectRouting';
 import { executePreparationOc, preparationEffectSource } from './preparationOc';
 import { assemblePreparationActivationFacts } from './preparationEvidence';
 import type { OcState, NpOcUseReceipt, OcActionOutcome } from './ocState';
+import type { SourceActivationReceipt } from './conditionRead';
 
 interface PreparationInputSource {
   origin: Origin;
@@ -137,7 +138,7 @@ export type PreparationResourcePlanResult =
       buffInstances: PreNoblePhantasmState['buffInstances'];
       contextState: Pick<
         PreNoblePhantasmState,
-        'stackCounts' | 'stateTraits' | 'initialTraitSuppressions'
+        'stackCounts' | 'stateTraits' | 'initialTraitSuppressions' | 'conditionWriteProofs'
       >;
       ocInputDefinitions: readonly CanonicalInputDefinition[];
       uncertainContextWrites: PreNoblePhantasmState['uncertainContextWrites'];
@@ -156,6 +157,7 @@ export type PreparationResourcePlanResult =
 export interface PreparationEffectActivation {
   procOutcome: 'success' | 'failure' | null;
   conditionOutcome: boolean | null;
+  sourceActivation: SourceActivationReceipt;
 }
 
 export function planPreparationResourceTransaction(args: {
@@ -317,6 +319,7 @@ export function planPreparationResourceTransaction(args: {
     uncertainPlayerNp: oc.structuralState.uncertainPlayerNp ?? false,
     buffInstances: oc.structuralState.buffInstances,
     contextState: {
+      conditionWriteProofs: oc.structuralState.conditionWriteProofs,
       stackCounts: oc.structuralState.stackCounts,
       stateTraits: oc.structuralState.stateTraits,
       initialTraitSuppressions: oc.structuralState.initialTraitSuppressions,

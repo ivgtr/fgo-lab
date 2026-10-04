@@ -15,7 +15,7 @@ export function requiredOcConditionInput(
   facts: ConditionEvaluationState,
 ): CanonicalInputDefinition | null {
   const visit = (condition: ConditionExpression): CanonicalInputDefinition | null => {
-    if (evaluateCondition(condition, facts) !== null) return null;
+    if (evaluateCondition(condition, facts).truth !== null) return null;
     if (condition.kind === 'all' || condition.kind === 'any') {
       for (const child of condition.expressions) {
         const input = visit(child);

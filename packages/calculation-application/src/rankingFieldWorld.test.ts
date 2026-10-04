@@ -49,6 +49,7 @@ function fieldConditionalModifier(condition: ConditionExpression): BattleOperati
     gameActivation: 'npBeforeDamage',
     proc: { kind: 'guaranteed' },
     stochasticOutcome: null,
+    sourceActivation: { kind: 'unread' as const },
     procRatePermille: 1_000,
     activation: { kind: 'sourceDefault' },
     evidence: { rawPath: 'fixture', functionId: 'field-absence' },
@@ -199,7 +200,7 @@ describe('ranking field worlds', () => {
           decisionKey.startsWith('ranking:field:'),
         ),
       ).toHaveLength(candidate.facts.length);
-      expect(evaluateConditionExpression(condition, execution.state)).toBe(true);
+      expect(evaluateConditionExpression(condition, execution.state).truth).toBe(true);
       expect(
         candidate.facts.every(({ trait }) =>
           scenario.worldFactAssertions.some(

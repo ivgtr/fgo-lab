@@ -35,6 +35,7 @@ function operation(
     gameActivation: 'skillUse',
     proc: { kind: 'guaranteed' },
     stochasticOutcome: null,
+    sourceActivation: { kind: 'unread' as const },
     procRatePermille: 1_000,
     activation: { kind: 'sourceDefault' },
     evidence: { rawPath: 'test', functionId: 'test' },

@@ -1,3 +1,6 @@
+import type { SourceActivationReceipt } from './conditionRead';
+import type { ConditionRead } from './conditionRead';
+import type { SourceEffect } from './sourceCollection';
 import type {
   CanonicalNpResourceSemantics,
   MasterEffect,
@@ -23,6 +26,7 @@ const semantics: CanonicalNpResourceSemantics = {
   },
 };
 const context: PreparationExecutionContext = {
+  stochasticSelection: { kind: 'declared' as const },
   resourceSemantics: semantics,
   npLevel: 2,
   initialGauge: 10_000,
@@ -30,6 +34,51 @@ const context: PreparationExecutionContext = {
 };
 const baseForm = { actorId: 'actor', limitCount: 0 };
 const changedForm = { actorId: 'actor', limitCount: 1 };
+
+function fixtureResourceRead(
+  truth: boolean | null,
+  source: SourceEffect,
+  valueSetIndex: number,
+): Extract<SourceActivationReceipt, { kind: 'read' }> {
+  const clock: ConditionRead['clock'] = {
+    phase: 'sourceUse',
+    actorFormId: baseForm,
+    actor: 'attacker',
+    actionId: 'resource-fixture',
+    operationId: null,
+    sourceInstanceId: source.sourceInstanceId,
+    occurrenceId: source.effect.occurrenceId,
+    valueSetIndex,
+    valueIndex: source.valueIndex,
+  };
+  const proof = { kind: 'guaranteedWrite' as const, clock };
+  const evidence = [
+    {
+      expression: {
+        kind: 'trait' as const,
+        scope: 'attackerState' as const,
+        trait: 'fixtureResourceCondition',
+        present: true,
+      },
+      value: truth,
+      proof: truth === null ? null : proof,
+    },
+  ];
+  return {
+    kind: 'read',
+    proc: {
+      kind: 'resolved',
+      outcome: 'success',
+      certainty: 'guaranteed',
+      ratePermille: 1000,
+      selection: 'declared',
+    },
+    read:
+      truth === null
+        ? { kind: 'inputRequired', truth, certainty: null, clock, evidence, support: [] }
+        : { kind: 'known', truth, certainty: 'guaranteed', clock, evidence, support: [proof] },
+  };
+}
 const route = {
   target: 'sourceSelf' as const,
   contributionScope: 'personal' as const,
@@ -536,11 +585,17 @@ describe('transactional preparation execution', () => {
     expect(result.state.npResource.gauge).toBe(10_000);
     expect(result.state.appliedActions[0]?.selectedEffects[0]).toMatchObject({
       occurrenceId: 'guaranteed-condition-false',
-      stochasticOutcome: 'success',
+      sourceActivation: {
+        kind: 'read',
+        proc: { kind: 'resolved', outcome: 'success' },
+      },
     });
     expect(result.state.activeEffects[0]).toMatchObject({
       occurrenceId: 'guaranteed-condition-false',
-      stochasticOutcome: 'success',
+      sourceActivation: {
+        kind: 'read',
+        proc: { kind: 'resolved', outcome: 'success' },
+      },
     });
   });
 
@@ -795,7 +850,7 @@ describe('transactional preparation execution', () => {
     },
   );
 
-  it('pre-resolves only the preparation-changing stochastic effect in a mixed skill', () => {
+  it('binds condition, cell, clock, and proc receipts for every source in a mixed skill', () => {
     const preparation = effect(
       'stochastic-resource',
       {
@@ -841,15 +896,37 @@ describe('transactional preparation execution', () => {
 
     expect(result.status).toBe('applied');
     if (result.status !== 'applied') throw new Error(result.code);
-    expect(result.state.appliedActions[0]?.selectedEffects).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          occurrenceId: 'stochastic-resource',
-          stochasticOutcome: 'success',
-        }),
-        expect.objectContaining({ occurrenceId: 'ordinary-stochastic', stochasticOutcome: null }),
-      ]),
-    );
+    const selected = result.state.appliedActions[0]?.selectedEffects;
+    for (const [occurrenceId, outcome, ratePermille] of [
+      ['stochastic-resource', 'success', 800],
+      ['ordinary-stochastic', 'failure', 500],
+    ] as const) {
+      expect(selected?.find((item) => item.occurrenceId === occurrenceId)).toMatchObject({
+        occurrenceId,
+        sourceActivation: {
+          kind: 'read',
+          proc: {
+            kind: 'resolved',
+            outcome,
+            ratePermille,
+            certainty: 'possible',
+            selection: 'declared',
+          },
+          read: {
+            truth: true,
+            clock: {
+              phase: 'sourceUse',
+              actionId: 'preparation:0:useSkillSlot',
+              occurrenceId,
+              valueSetIndex: 0,
+              valueIndex: 0,
+            },
+          },
+        },
+      });
+    }
+    expect(result.state.npResource).toEqual({ npLevel: 2, capacity: 20000, gauge: 12000 });
+    expect(created.state.npResource).toEqual({ npLevel: 2, capacity: 20000, gauge: 10000 });
   });
 
   it('rejects an invalid stochastic activation before mutating preparation state', () => {
@@ -1225,6 +1302,24 @@ describe('OC on the preparation command path', () => {
         expect(result.status).toBe('applied');
         expect(result.state.npResource.gauge).toBe(witness === 1 ? 13000 : 10000);
         expect(result.state.ocState.boosts).toHaveLength(witness);
+        const initialProof = initial.state.conditionWriteProofs.quantities.get('npGauge:attacker');
+        expect(initialProof).toMatchObject({
+          kind: 'selectedInitialResource',
+          clock: { phase: 'initial' },
+        });
+        const committedProof = result.state.conditionWriteProofs.quantities.get('npGauge:attacker');
+        if (witness === 1) expect(committedProof?.kind).toBe('possibleOutcome');
+        else expect(committedProof).toEqual(initialProof);
+        expect(result.state.appliedActions[0]?.selectedEffects[0]?.sourceActivation).toMatchObject({
+          kind: 'read',
+          proc: {
+            kind: 'resolved',
+            outcome: witness === 1 ? 'success' : 'failure',
+            ratePermille: 500,
+            certainty: 'possible',
+            selection: 'declared',
+          },
+        });
         expect(initial.state.npResource.gauge).toBe(10000);
       }
     },
@@ -1836,7 +1931,11 @@ it('selects live buff count coefficients from normal/LB and OC cells without a m
       },
       operation: canonical.execution[0]!,
       valueSetIndex,
-      activation: { conditionOutcome: true, procOutcome: 'success' },
+      activation: {
+        conditionOutcome: true,
+        procOutcome: 'success',
+        sourceActivation: fixtureResourceRead(true, source, valueSetIndex),
+      },
       buffInstances: [
         { identity: 'live', actor: 'attacker', traits: ['counted'], lifetime: 'active', count },
       ],
@@ -1905,7 +2004,10 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
       source: { ...source, limitBreak },
       operation: canonical.execution[0]!,
       valueSetIndex,
-      activation,
+      activation: {
+        ...activation,
+        sourceActivation: fixtureResourceRead(activation.conditionOutcome, source, valueSetIndex),
+      },
     });
   expect(run(false, 1)).toMatchObject({ status: 'applied', state: { gauge: 12000 } });
   expect(run(true, 4)).toMatchObject({ status: 'applied', state: { gauge: 20000 } });
@@ -1930,7 +2032,11 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
       source,
       operation: canonical.execution[0]!,
       valueSetIndex: 0,
-      activation: { conditionOutcome: null, procOutcome: 'success' },
+      activation: {
+        conditionOutcome: null,
+        procOutcome: 'success',
+        sourceActivation: fixtureResourceRead(null, source, 0),
+      },
     }),
   ).toMatchObject({ status: 'applied', state: saturated });
   expect(
@@ -1944,7 +2050,11 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
         recipient: 'enemy',
       } as MasterEffect['execution'][number],
       valueSetIndex: 0,
-      activation: { conditionOutcome: true, procOutcome: 'success' },
+      activation: {
+        conditionOutcome: true,
+        procOutcome: 'success',
+        sourceActivation: fixtureResourceRead(true, source, 0),
+      },
     }),
   ).toMatchObject({ status: 'applied', state: initial.state.npResource });
 });
@@ -2050,7 +2160,11 @@ it.each(['fixed', 'currentGaugeRatio'] as const)(
         source,
         operation: unknown.execution[0]!,
         valueSetIndex: 0,
-        activation: { conditionOutcome: true, procOutcome: 'success' },
+        activation: {
+          conditionOutcome: true,
+          procOutcome: 'success',
+          sourceActivation: fixtureResourceRead(true, source, 0),
+        },
       }),
     ).toMatchObject({
       status: 'rejected',

@@ -1,3 +1,4 @@
+import { emptyConditionFactProofs } from './conditionRead';
 import { describe, expect, it } from 'vitest';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { AttackNoblePhantasmVariant } from '@fgo-lab/master-data';
@@ -35,6 +36,7 @@ const operation: BattleOperation = {
   gameActivation: 'skillUse',
   proc: { kind: 'guaranteed' },
   stochasticOutcome: null,
+  sourceActivation: { kind: 'unread' as const },
   procRatePermille: 1_000,
   activation: { kind: 'sourceDefault' },
   evidence: { rawPath: 'test', functionId: 'test' },
@@ -127,10 +129,28 @@ function prepared(operations: readonly BattleOperation[] = [operation]): Prepare
     attackerClass: 'saber',
     attackerAttribute: 'earth',
     inputDefinitions: [],
+    preparationConditionProofs: { kind: 'available', writeProofs: emptyConditionFactProofs() },
   } as unknown as PreparedOrderedScenario;
 }
 
 describe('public ordered execution audit parity', () => {
+  it('commits a trait write and its fact layer through the public candidate executor', () => {
+    const write: BattleOperation = {
+      ...operation,
+      operationId: 'create-trait',
+      kind: 'addTrait',
+      scope: 'attackerState',
+      trait: 'created',
+    };
+    const executed = executeOrderedScenario(prepared([write]), inputs);
+    expect(executed.state.traits.attackerState.get('created')).toBe(true);
+    expect(executed.state.traitFactLayers.writes.attackerState.get('created')).toMatchObject({
+      present: true,
+      count: 1,
+      proof: { kind: 'guaranteedWrite', clock: { operationId: 'create-trait' } },
+    });
+  });
+
   it('observes the actual selected candidate and operation sequence without changing result', () => {
     const plan = prepared();
     const audited = executeOrderedScenarioWithAuditObservation(plan, inputs);

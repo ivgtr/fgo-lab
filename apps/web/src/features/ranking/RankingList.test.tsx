@@ -75,6 +75,7 @@ describe('ranking row detail state', () => {
         onToggle={toggle}
         onRetryDetail={vi.fn()}
         onOpenCalculator={vi.fn()}
+        onOpenCalculatorForAttackProfile={vi.fn()}
       />,
     );
 
@@ -97,6 +98,7 @@ describe('ranking row detail state', () => {
         onToggle={vi.fn()}
         onRetryDetail={retry}
         onOpenCalculator={vi.fn()}
+        onOpenCalculatorForAttackProfile={vi.fn()}
       />,
     );
 
@@ -142,6 +144,7 @@ describe('ranking row detail state', () => {
         onToggle={vi.fn()}
         onRetryDetail={vi.fn()}
         onOpenCalculator={vi.fn()}
+        onOpenCalculatorForAttackProfile={openCalculator}
         onReload={reload}
       />,
     );

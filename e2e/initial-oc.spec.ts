@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
+import type { Request } from '@playwright/test';
 import { expect, test, type Page } from './observedTest';
 import { openTestHome } from './setup';
 import { masterSnapshotSchema } from '../packages/master-data/src/index';
 import { createStaticAttackProfiles } from '../packages/calculation-application/src/index';
 import { validateProfileCollection } from '../packages/workspace-domain/src/index';
+import { calculationShareSnapshotSchema } from '../packages/schema/src/index';
 
 const published = masterSnapshotSchema.parse(
   JSON.parse(readFileSync('apps/web/public/master/master.json', 'utf8')),
@@ -49,8 +51,18 @@ async function storedProfiles(page: Page) {
 
 test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desktop @journey', async ({
   page,
+  context,
 }) => {
   test.setTimeout(120_000);
+  const pendingImages = new Set<Request>();
+  page.on('request', (request) => {
+    if (request.resourceType() === 'image') pendingImages.add(request);
+  });
+  page.on('requestfinished', (request) => pendingImages.delete(request));
+  page.on('requestfailed', (request) => pendingImages.delete(request));
+  const waitForImages = async () => {
+    await expect.poll(() => pendingImages.size).toBe(0);
+  };
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング', exact: true }).click();
   const oc = page.getByRole('combobox', { name: '初期OC', exact: true });
@@ -96,6 +108,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await expect(calculationBasis).toContainText('初期OC1・スキルLv10');
   const invalid = new URL(page.url());
   invalid.searchParams.set('rOc', '5');
+  await waitForImages();
   await page.goto(invalid.toString());
   await page.getByRole('button', { name: '計算条件をリセット' }).click();
   await expect(page.getByRole('status')).toBeFocused();
@@ -183,6 +196,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
       )?.replaceAll(',', ''),
     );
   expect(await calculatorAverage()).toBe(rankingAverage);
+  await waitForImages();
   await page.reload();
   await expect(page.getByLabel('計算条件の版情報')).toContainText(
     'ランキングから引き継いだ計算条件',
@@ -204,6 +218,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await expect
     .poll(async () => (await storedProfiles(page)).servantBuilds[savedSubject.id]?.fouAtk)
     .toBe(2000);
+  await waitForImages();
   await page.goto('/calculator');
   await expect(page.getByLabel('計算条件の版情報')).toContainText(
     'ランキングから引き継いだ計算条件',
@@ -241,4 +256,41 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
       ({ requestFingerprint }) => requestFingerprint === pinned.requestFingerprint,
     ),
   ).toBe(true);
+
+  await waitForImages();
+  await page.goto('/calculator');
+  await page.getByRole('button', { name: /履歴（/ }).click();
+  await page
+    .getByRole('dialog', { name: '計算履歴' })
+    .getByRole('button')
+    .filter({ hasText: savedSubject.name })
+    .first()
+    .click();
+  await expect
+    .poll(async () => (await storedProfiles(page)).draft?.request)
+    .toEqual(pinned.request);
+  await expect.poll(async () => (await storedProfiles(page)).draft?.result).toEqual(pinned.result);
+  expect(await calculatorAverage()).toBe(rankingAverage);
+
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: 'URLをコピー' }).click();
+  await expect(page.getByText('共有URLをコピーしました')).toBeVisible();
+  const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
+  expect(sharedUrl).toContain('#share=');
+  await waitForImages();
+  await page.goto(sharedUrl);
+  await expect(page.getByLabel('共有対象の計算結果')).toContainText(savedSubject.name, {
+    timeout: 30_000,
+  });
+  expect(await calculatorAverage()).toBe(rankingAverage);
+  const shareDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: '共有専用JSONを保存' }).click();
+  const shareStream = await (await shareDownload).createReadStream();
+  const shareChunks: Buffer[] = [];
+  for await (const chunk of shareStream) shareChunks.push(Buffer.from(chunk));
+  const shared = calculationShareSnapshotSchema.parse(
+    JSON.parse(Buffer.concat(shareChunks).toString('utf8')),
+  );
+  expect(shared.request).toEqual(pinned.request);
+  expect(shared.result).toEqual(pinned.result);
 });

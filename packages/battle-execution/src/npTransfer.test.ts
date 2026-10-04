@@ -105,7 +105,7 @@ function setup(donor: NpTransferAmount['donor'] = 'playerNp', cost = 2800, gain 
     sourceEnabled: true,
     enabledByDefault: true,
     noblePhantasmVariant: null,
-    preparationStochasticOutcome: null,
+    sourceActivation: { kind: 'unread' },
   };
   const args = {
     amount,
@@ -229,6 +229,7 @@ describe('NP transfer snapshot and transactional resource ownership', () => {
   it('rolls back the entire skill after a late failure, allows quantity repair, and then consumes terminal NP', () => {
     const { actor, effect } = setup();
     const context = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: DEFAULT_NP_RESOURCE_SEMANTICS,
       npLevel: 2 as const,
       initialGauge: 19000,
@@ -374,6 +375,7 @@ describe('NP transfer snapshot and transactional resource ownership', () => {
       },
     ];
     const context = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: DEFAULT_NP_RESOURCE_SEMANTICS,
       npLevel: 2 as const,
       initialGauge: 19000,
@@ -414,6 +416,7 @@ describe('NP transfer snapshot and transactional resource ownership', () => {
       effect,
     ];
     const context = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: args.semantics,
       npLevel: 2 as const,
       initialGauge: 19000,
@@ -456,6 +459,7 @@ describe('NP transfer snapshot and transactional resource ownership', () => {
       effect,
     ];
     const context = {
+      stochasticSelection: { kind: 'declared' as const },
       resourceSemantics: args.semantics,
       npLevel: 2 as const,
       initialGauge: 19000,

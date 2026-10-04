@@ -14,6 +14,7 @@ import { createDefaultResolvedScenario, calculateScenario } from './scenario';
 import type { CalculationApplicationResult } from './scenario';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 import { attackProfileKey } from './attackProfile';
+import { compileRankingSelection, resolveRankingBasis } from './rankingBasis';
 
 export type ProductionAuditOutcome =
   | { status: 'calculated'; rows: CanonicalAuditValue }
@@ -111,6 +112,8 @@ function auditOutcome(result: CalculationApplicationResult): ProductionAuditOutc
 export function compileCalculationApplicationProductionAudit(
   master: MasterDataSnapshot,
 ): CalculationApplicationProductionAudit {
+  const commonSelection = compileRankingSelection(DEFAULT_RANKING_POLICY_CONDITIONS);
+  if (commonSelection.status === 'invalid') throw new TypeError(commonSelection.reason);
   const versions: VersionContext = {
     schemaVersion: SCHEMA_VERSION,
     engineVersion: ENGINE_VERSION,
@@ -149,7 +152,8 @@ export function compileCalculationApplicationProductionAudit(
     deduplicatedCandidateCount += planned.inventory.deduplicatedStateCount;
     if (planned.candidates.length === 0) continue;
     attackServants += 1;
-    for (const program of compileStaticRankingPreparationPrograms(servant)) {
+    const basis = resolveRankingBasis(servant, { servantBuilds: {} }, commonSelection.selection);
+    for (const program of compileStaticRankingPreparationPrograms(servant, basis.skillLevels)) {
       const observed = observeResourceProgram(servant, program);
       resourceMutationCount += observed.mutations.length;
       opaqueOperationCount += observed.opaqueOperations.length;

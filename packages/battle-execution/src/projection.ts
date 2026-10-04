@@ -35,7 +35,7 @@ export function resolveOperationProjectionEvaluation(
   decisions: ReadonlyMap<string, EffectDecision>,
 ) {
   if (operation.kind !== 'executeNpDamage') return { outcome, code, condition, choice };
-  const specialCondition = evaluateCondition(operation.specialAttackCondition, state);
+  const specialCondition = evaluateCondition(operation.specialAttackCondition, state).truth;
   const specialChoice = operation.specialAttackDecisionKey
     ? decisions.get(operation.specialAttackDecisionKey)
     : undefined;
@@ -394,7 +394,7 @@ export function projectWorldAssumptionAtDamageEvaluation(
     projection.explanation.condition === null
   )
     return projection;
-  const condition = evaluateCondition(projection.explanation.condition, finalState);
+  const condition = evaluateCondition(projection.explanation.condition, finalState).truth;
   if (condition === null) return projection;
   const applied = condition;
   return {

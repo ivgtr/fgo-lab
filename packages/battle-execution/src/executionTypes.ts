@@ -1,3 +1,4 @@
+import type { ConditionFactProofs } from './conditionRead';
 import type { ScalarNpDamageConsumption } from './npDamageOperation';
 import type { HpState } from './hpResource';
 import type { BattlePointState } from './battlePointResource';
@@ -149,6 +150,9 @@ export interface OrderedScenarioExecutionWithAuditObservation {
 }
 
 export interface PreparedOrderedScenario {
+  preparationConditionProofs:
+    | { kind: 'available'; writeProofs: ConditionFactProofs }
+    | { kind: 'unavailable'; issues: readonly ExecutionIssue[] };
   hp?: HpState | undefined;
   battlePoints?: BattlePointState | undefined;
   battlePointDomains: readonly BattlePointDomain[];

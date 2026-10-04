@@ -1,3 +1,4 @@
+import type { ConditionRead } from './conditionRead';
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import type {
   BattleOperation,
@@ -16,6 +17,7 @@ export function operationConditionResult(value: boolean | null): OperationResult
 }
 
 export function createOperationResult({
+  conditionRead,
   operation,
   outcome,
   code,
@@ -28,6 +30,7 @@ export function createOperationResult({
   attackerClass,
   issue,
 }: {
+  conditionRead: ConditionRead;
   operation: BattleOperation;
   outcome: OperationResult['outcome'];
   code: EffectProjection['explanation']['code'];
@@ -50,6 +53,7 @@ export function createOperationResult({
     decisions,
   );
   return {
+    conditionRead,
     operation,
     outcome,
     condition: operationConditionResult(condition),

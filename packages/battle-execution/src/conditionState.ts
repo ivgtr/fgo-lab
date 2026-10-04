@@ -3,6 +3,8 @@ import { stackInputKey, type NoblePhantasmVariant } from '@fgo-lab/master-data';
 import type { ActivationContext, TargetPredicateAssertion } from './contracts';
 import type { ConditionEvaluationState } from './condition';
 import { targetPredicateKey } from './targetPredicate';
+import type { ConditionFactProof, ConditionReadClock } from './conditionRead';
+import { createTraitFactLayers } from './traitFactLayers';
 
 export type ConditionStateInput = Pick<
   DamageResolutionInput,
@@ -33,7 +35,68 @@ export function createConditionState<
   card: TCard;
 } {
   const attacker = [...attackerTraits, 'cardNP'];
+  const clock: ConditionReadClock = {
+    phase: 'initial',
+    actorFormId: noblePhantasmVariant.ref.actorFormId,
+    actor: 'attacker',
+    actionId: null,
+    operationId: null,
+    sourceInstanceId: null,
+    occurrenceId: null,
+    valueSetIndex: null,
+    valueIndex: null,
+  };
+  const intrinsic: ConditionFactProof = { kind: 'canonicalIntrinsic', clock };
+  const external: ConditionFactProof = { kind: 'externalAssumption', clock };
+  const initial: ConditionFactProof = { kind: 'selectedInitialResource', clock };
+  const proofs = (traits: readonly string[], proof: ConditionFactProof) =>
+    new Map(traits.map((trait) => [trait, proof]));
   return {
+    traitFactLayers: createTraitFactLayers(
+      attacker,
+      {
+        attackerState: input.attackerStateTraits,
+        target: input.target.traits,
+        targetState: input.targetStateTraits,
+        field: input.fieldTraits,
+      },
+      intrinsic,
+      external,
+    ),
+    conditionReadClock: clock,
+    conditionFactProofs: {
+      traits: {
+        attacker: proofs(attacker, intrinsic),
+        attackerState: proofs(input.attackerStateTraits, external),
+        target: proofs(input.target.traits, external),
+        targetState: proofs(input.targetStateTraits, external),
+        field: proofs(input.fieldTraits, external),
+      },
+      completeTraits: {
+        attacker: intrinsic,
+        attackerState: null,
+        target: null,
+        targetState: null,
+        field: null,
+      },
+      suppressions: { attacker: new Map(), target: new Map() },
+      predicates: {
+        attacker: new Map(
+          attackerPredicateAssertions.map((fact) => [targetPredicateKey(fact.predicate), external]),
+        ),
+        target: new Map(
+          targetPredicateAssertions.map((fact) => [targetPredicateKey(fact.predicate), external]),
+        ),
+      },
+      quantities: new Map([
+        ['attackerHpPermille', initial],
+        ['targetRarity', external],
+        ['battlePointPhase', external],
+      ]),
+      inputs: new Map(Object.keys(resolvedInputValues).map((key) => [key, external])),
+      activations: new Map(),
+      markers: new Map(),
+    },
     noblePhantasmVariant,
     card: input.cardType,
     traits: {

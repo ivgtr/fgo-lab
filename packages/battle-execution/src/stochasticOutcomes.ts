@@ -1,3 +1,4 @@
+import type { SourceActivationReceipt } from './conditionRead';
 import type {
   CanonicalInputDefinition,
   CanonicalOutcomeGroup,
@@ -10,7 +11,7 @@ export type ResolvedStochasticOutcome =
   | { status: 'success' }
   | { status: 'failure' }
   | { status: 'inputRequired'; inputKey: string }
-  | { status: 'invalid'; issue: ExecutionIssue };
+  | { status: 'invalid'; issue: Extract<ExecutionIssue, { kind: 'invalidStochasticOutcome' }> };
 
 export interface ResolvedStochasticOutcomeSet {
   outcomes: ReadonlyMap<string, ResolvedStochasticOutcome>;
@@ -21,9 +22,9 @@ const guaranteedSuccess: ResolvedStochasticOutcome = { status: 'success' };
 
 export interface StochasticActivationContract {
   operationId: string;
+  sourceActivation: SourceActivationReceipt;
   proc: EffectProc;
   stochasticOutcome?: CanonicalOutcomeGroup | null;
-  preResolvedStochasticOutcome?: 'success' | 'failure' | null;
   inputDefinitions: readonly CanonicalInputDefinition[];
 }
 
@@ -41,8 +42,12 @@ export function resolveStochasticActivationOutcome(
   operation: StochasticActivationContract,
   resolvedInputs: ResolvedCanonicalInputSet,
 ): ResolvedStochasticOutcome {
-  if (operation.preResolvedStochasticOutcome)
-    return { status: operation.preResolvedStochasticOutcome };
+  if (operation.sourceActivation.kind === 'read') {
+    const proc = operation.sourceActivation.proc;
+    if (proc.kind === 'resolved') return { status: proc.outcome };
+    if (proc.kind === 'inputRequired') return { status: 'inputRequired', inputKey: proc.inputKey };
+    if (proc.kind === 'invalid') return { status: 'invalid', issue: proc.issue };
+  }
   if (operation.proc.kind === 'guaranteed')
     return operation.stochasticOutcome
       ? invalidOutcome(operation, 'contradictoryStochasticOutcome')
@@ -82,8 +87,12 @@ export function resolvedStochasticOutcomeForOperation(
   operation: BattleOperation,
   outcomes: ReadonlyMap<string, ResolvedStochasticOutcome>,
 ): ResolvedStochasticOutcome {
-  if (operation.preResolvedStochasticOutcome)
-    return { status: operation.preResolvedStochasticOutcome };
+  if (operation.sourceActivation.kind === 'read') {
+    const proc = operation.sourceActivation.proc;
+    if (proc.kind === 'resolved') return { status: proc.outcome };
+    if (proc.kind === 'inputRequired') return { status: 'inputRequired', inputKey: proc.inputKey };
+    if (proc.kind === 'invalid') return { status: 'invalid', issue: proc.issue };
+  }
   if (operation.proc.kind === 'guaranteed' && !operation.stochasticOutcome)
     return guaranteedSuccess;
   const resolved = outcomes.get(operation.operationId);

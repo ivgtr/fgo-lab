@@ -42,7 +42,7 @@ export function terminalResourceHasReader(
       sourceEnabled: true,
       enabledByDefault: true,
       noblePhantasmVariant: variant.ref,
-      preparationStochasticOutcome: null,
+      sourceActivation: { kind: 'unread' },
       compilationPurpose: 'dependency',
     };
     return [0, 1, 2, 3, 4].some((valueSetIndex) =>

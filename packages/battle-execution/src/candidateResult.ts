@@ -1,3 +1,4 @@
+import { readOperationCondition } from './condition';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { ExecutableBattleState, ExecutionIssue, OperationResult } from './contracts';
 import { targetResolutionIssues } from './executionIssues';
@@ -71,7 +72,13 @@ export function assembleCandidateResult({
       projection.visibility === 'visible' &&
       operations.some((operation) => {
         if (operation.operationId !== projection.operationId) return false;
-        if (!contributionIsIncluded(operation, operation.condition, contributionPolicy, state))
+        if (
+          !contributionIsIncluded(
+            operation,
+            readOperationCondition(operation, state),
+            contributionPolicy,
+          )
+        )
           return false;
         const activation = candidate.activations.get(operation.operationId);
         return (

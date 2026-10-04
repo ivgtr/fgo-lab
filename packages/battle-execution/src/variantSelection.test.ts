@@ -101,6 +101,7 @@ const operationBase = {
   gameActivation: 'skillUse' as const,
   proc: { kind: 'guaranteed' as const },
   stochasticOutcome: null,
+  sourceActivation: { kind: 'unread' as const },
   procRatePermille: 1_000,
   activation: { kind: 'sourceDefault' as const },
   evidence: { rawPath: 'fixture', functionId: 'fixture' },
@@ -315,9 +316,13 @@ describe('noble phantasm variant selection', () => {
     );
     expect(selected.issue).toBeNull();
     const ordered = applyInitialTraitSuppression(
-      applyTraitRemoval(initial, 'attackerState', 'magicBullet'),
+      applyTraitRemoval(initial, 'attackerState', 'magicBullet', {
+        kind: 'guaranteedWrite',
+        clock: initial.conditionReadClock,
+      }),
       'attacker',
       'magicBullet',
+      { kind: 'guaranteedWrite', clock: initial.conditionReadClock },
     );
     expect(selected.state.traits.attackerState.get('magicBullet')).toBe(false);
     expect(selected.state.traitCounts.attackerState.magicBullet).toBeUndefined();

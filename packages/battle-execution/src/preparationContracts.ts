@@ -1,3 +1,5 @@
+import type { StochasticSelection } from './stochasticPossibilities';
+import type { SourceActivationReceipt, ConditionFactProofs } from './conditionRead';
 import type { HpState } from './hpResource';
 import type { NpTransferReceipt } from './npTransfer';
 import type {
@@ -21,6 +23,7 @@ import type { PopulationEvent } from './populationCounts';
 import type { BattlePointState } from './battlePointResource';
 
 export interface PreparationExecutionContext {
+  stochasticSelection: StochasticSelection;
   planningOnly?: boolean;
   planningConditionChoices?: ReadonlyMap<string, boolean>;
   resourceSemantics: CanonicalNpResourceSemantics;
@@ -50,13 +53,12 @@ export interface SkillSlotRef {
 }
 
 export interface AppliedPreparationEffect {
+  sourceActivation: SourceActivationReceipt;
   sourceKind: 'skill' | 'noblePhantasm';
   sourceId: string;
   actorFormId: ActorFormId;
   occurrenceId: string;
   effect: MasterEffect;
-  /** Present only when preparation itself had to resolve this effect's proc. */
-  stochasticOutcome: 'success' | 'failure' | null;
 }
 
 export interface AppliedPreparationAction {
@@ -86,6 +88,7 @@ export interface AppliedPreparationAction {
 }
 
 export interface PreNoblePhantasmState {
+  conditionWriteProofs: ConditionFactProofs;
   battlePoints: BattlePointState;
   hp?: HpState | undefined;
   populationEvents: readonly PopulationEvent[];

@@ -3,6 +3,7 @@ import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { AttackProfile, RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import type { ServantBuild } from '@fgo-lab/schema';
 import {
+  AttackProfileRequestFailure,
   createCalculatorPortableRequestForAttackProfile,
   createRankingPortableRequest,
   currentCalculationVersionContext,
@@ -93,7 +94,7 @@ export async function handoffRankingAttackProfileCalculation({
   if (!calculationMutation.isCurrent(activeMutationToken))
     return { status: 'aborted' as const, reason: 'stale' as const };
   const servant = master.servants.find(({ id }) => id === servantId);
-  if (!servant) return null;
+  if (!servant) return { status: 'rejected' as const, reason: 'servantUnavailable' as const };
   let request;
   try {
     request = createCalculatorPortableRequestForAttackProfile(
@@ -102,8 +103,9 @@ export async function handoffRankingAttackProfileCalculation({
       servant,
       attackProfile,
     );
-  } catch {
-    return null;
+  } catch (error) {
+    if (!(error instanceof AttackProfileRequestFailure)) throw error;
+    return { status: 'rejected' as const, reason: error.reason };
   }
   const outcome = executePortableCalculation(request, master);
   const result =

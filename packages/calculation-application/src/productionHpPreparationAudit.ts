@@ -425,7 +425,7 @@ function actionDiagnostic(action: AppliedPreparationAction) {
       sourceId: effect.sourceId,
       actorFormId: effect.actorFormId,
       occurrenceId: effect.occurrenceId,
-      stochasticOutcome: effect.stochasticOutcome,
+      sourceActivation: effect.sourceActivation,
     })),
     hpBefore: action.hpBefore,
     hpAfter: action.hpAfter,

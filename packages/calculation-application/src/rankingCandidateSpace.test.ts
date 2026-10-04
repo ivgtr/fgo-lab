@@ -275,7 +275,10 @@ describe('static ranking candidate space', () => {
 
   it('preserves distinct ordered skill programs with the same used-slot set', () => {
     const servant = master.servants.find(({ id }) => id === '403700')!;
-    const orders = compileStaticRankingPreparationPrograms(servant).map((program) =>
+    const orders = compileStaticRankingPreparationPrograms(
+      servant,
+      rankingBasisFixture(servant).skillLevels,
+    ).map((program) =>
       program.commands.flatMap((command) =>
         command.kind === 'useSkillSlot' ? [command.slot] : [],
       ),
@@ -558,7 +561,10 @@ describe('static ranking candidate space', () => {
             if (family)
               adverseOccurrences.add(`${family}|${servant.id}:${skill.id}:${effect.occurrenceId}`);
           }
-      const programs = compileStaticRankingPreparationPrograms(servant);
+      const programs = compileStaticRankingPreparationPrograms(
+        servant,
+        rankingBasisFixture(servant).skillLevels,
+      );
       for (const policy of policies) {
         const policyKey = `${policy.selfBuffs}:${policy.conditionalEffects}`;
         const dispositions = compileCandidateLocalActionAdmissionDispositions(programs, policy, {

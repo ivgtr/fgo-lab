@@ -20,7 +20,7 @@ export function applyNoblePhantasmDamage(
   observe?: (consumption: ScalarNpDamageConsumption) => void,
   observeHp?: (evaluation: HpNpEvaluation) => void,
 ): DamageResolutionInput {
-  const specialCondition = evaluateCondition(operation.specialAttackCondition, state);
+  const specialCondition = evaluateCondition(operation.specialAttackCondition, state).truth;
   const specialDecision = operation.specialAttackDecisionKey
     ? decisions.get(operation.specialAttackDecisionKey)
     : undefined;
@@ -33,9 +33,8 @@ export function applyNoblePhantasmDamage(
   const targetStateTraitCounts = state.traitCounts.targetState;
   const specialIncluded = contributionIsIncluded(
     operation,
-    operation.specialAttackDependency,
+    evaluateCondition(operation.specialAttackDependency, state),
     contributionPolicy,
-    state,
   );
   const specialContributionEnabled =
     specialIncluded &&

@@ -83,7 +83,7 @@ export function evaluateOcSourceCondition(
   program: OcSourceProgram,
   state: ConditionEvaluationState,
 ) {
-  return evaluateCondition(program.condition, state);
+  return evaluateCondition(program.condition, state).truth;
 }
 
 /** Terminal damage context stays with the damage executor unless a later OC operation reads it. */

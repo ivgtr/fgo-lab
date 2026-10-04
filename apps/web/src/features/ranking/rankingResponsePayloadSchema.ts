@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sourceActivationPayloadSchema } from './conditionReadPayloadSchema';
 import { isConsistentNpOcUseReceipt } from '@fgo-lab/calculation-application';
 import {
   hpStateSchema,
@@ -190,7 +191,7 @@ const preparationActionSchema = z.object({
       actorFormId: actorFormIdSchema,
       occurrenceId: z.string(),
       effect: z.union([masterEffectSchema, noblePhantasmEffectSchema]),
-      stochasticOutcome: z.enum(['success', 'failure']).nullable(),
+      sourceActivation: sourceActivationPayloadSchema,
     }),
   ),
   activationFacts: z.array(activationFactSchema),
@@ -258,6 +259,59 @@ const resolvedScenario = calculationScenarioSchema.options[0];
 const effects = z.array(rankingEffectResponseSchema);
 const warnings = z.array(z.string());
 
+const stochasticChoiceSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('binary'), outcome: z.enum(['success', 'failure']) }).strict(),
+  z.object({ kind: z.literal('successCount'), value: z.number().int().nonnegative() }).strict(),
+]);
+const stochasticWitnessSchema = z.array(
+  z.object({ key: z.string().min(1), choice: stochasticChoiceSchema }).strict(),
+);
+const possibilityCertificateSchema: z.ZodType<RankingPolicyDetail['possibilityCertificate']> =
+  z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('declared') }).strict(),
+    z
+      .object({
+        kind: z.literal('enumerated'),
+        policy: z.enum(['baseline', 'satisfied']),
+        selectedWitness: stochasticWitnessSchema,
+        attemptedExecutionCount: z.number().int().positive(),
+        illegalWitnessCount: z.number().int().nonnegative(),
+        branching: z.array(
+          z
+            .object({
+              witness: stochasticWitnessSchema,
+              key: z.string().min(1),
+              choices: z.array(stochasticChoiceSchema).min(1),
+            })
+            .strict(),
+        ),
+        branches: z
+          .array(
+            z
+              .object({
+                witness: stochasticWitnessSchema,
+                status: z.enum(['executable', 'rejected', 'invalid']),
+                average: z.number().nonnegative().nullable(),
+                sourceReads: z.array(sourceActivationPayloadSchema),
+                resourceUses: z.array(
+                  z
+                    .object({
+                      actorFormId: actorFormIdSchema,
+                      before: resourceSchema,
+                      after: resourceSchema,
+                      ocUse: preparationActionSchema.shape.ocUse,
+                    })
+                    .strict(),
+                ),
+              })
+              .strict(),
+          )
+          .min(1)
+          .max(4096),
+      })
+      .strict(),
+  ]);
+
 // The annotation makes missing or weakly validated DTO fields a compile error.
 export const rankingDetailResponseSchema: z.ZodType<RankingPolicyDetail> = z
   .object({
@@ -269,6 +323,7 @@ export const rankingDetailResponseSchema: z.ZodType<RankingPolicyDetail> = z
     effectInputs: z.array(effectInputSchema),
     warnings,
     appliedPreparationActions: z.array(preparationActionSchema),
+    possibilityCertificate: possibilityCertificateSchema,
     contributionPolicy: contributionPolicySchema,
     effectiveContributions: effectiveContributionsSchema,
     rankingPolicy: rankingSelectionSchema,

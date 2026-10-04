@@ -1,6 +1,5 @@
 import type {
   BattleOperation,
-  ConditionExpression,
   EffectProjection,
   OperationOutcome,
   OperationResult,
@@ -11,10 +10,9 @@ import type {
   EffectiveContribution,
   EffectiveContributionSet,
 } from './executionTypes';
-import { classifyContributionCondition, traitConditionScopeSemantics } from './conditionSemantics';
-import { markerTraitRead } from './buffInstances';
 import { contributionId } from './contributionIdentity';
-import type { ConditionEvaluationState } from './condition';
+import { evaluateCondition } from './condition';
+import { procIsGuaranteed, type ConditionRead } from './conditionRead';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 
 const included = (): ContributionPolicyDecision => ({ kind: 'included' });
@@ -22,39 +20,11 @@ const excluded = (
   reason: Extract<ContributionPolicyDecision, { kind: 'excluded' }>['reason'],
 ): ContributionPolicyDecision => ({ kind: 'excluded', reason });
 
-/** HP is a canonical execution quantity: policy selects its initial intent and operations.
- * Once executed, its condition is evaluated normally, including HP changed by a cost. */
-function hpExecutionDependency(
-  condition: ConditionExpression,
-  state?: ConditionEvaluationState,
-): ConditionExpression {
-  if (condition.kind === 'trait') {
-    const actor = traitConditionScopeSemantics(condition.scope).actor;
-    if (actor === 'field') return condition;
-    if (markerTraitRead(state?.buffInstances ?? [], actor, condition.trait)?.known)
-      return { kind: 'always' };
-  }
-  if (
-    condition.kind === 'quantity' &&
-    condition.quantity === 'attackerHpPermille' &&
-    state?.quantities.attackerHpPermille !== null &&
-    state?.quantities.attackerHpPermille !== undefined
-  )
-    return { kind: 'always' };
-  if (condition.kind === 'all' || condition.kind === 'any')
-    return {
-      ...condition,
-      expressions: condition.expressions.map((child) => hpExecutionDependency(child, state)),
-    };
-  if (condition.kind === 'not')
-    return { ...condition, expression: hpExecutionDependency(condition.expression, state) };
-  return condition;
-}
 export function contributionPolicyDecisions(
   operation: Pick<BattleOperation, 'source' | 'gameActivation' | 'contributionScope'>,
-  condition: ConditionExpression,
+  read: ConditionRead,
   policy: ContributionApplicationPolicy,
-  state?: ConditionEvaluationState,
+  activationGuaranteed: boolean,
 ) {
   if (policy.kind === 'calculator')
     return {
@@ -71,19 +41,7 @@ export function contributionPolicyDecisions(
         : included(),
     conditionDecision:
       policy.conditionalEffects === 'baseline' &&
-      ['conditional', 'unsupported'].includes(
-        classifyContributionCondition(
-          hpExecutionDependency(condition, state),
-          state
-            ? {
-                card: state.card,
-                noblePhantasmVariant: state.noblePhantasmVariant.ref,
-                attackerTraits: state.traits.attacker,
-                activationFacts: state.activationContext,
-              }
-            : undefined,
-        ),
-      )
+      (read.certainty !== 'guaranteed' || !activationGuaranteed)
         ? excluded('conditionalEffectPolicy')
         : included(),
     areaViewDecision:
@@ -95,9 +53,8 @@ export function contributionPolicyDecisions(
 
 export function contributionIsIncluded(
   operation: BattleOperation,
-  condition: ConditionExpression,
-  policy: ContributionApplicationPolicy = { kind: 'calculator' },
-  state?: OperationResult['state'],
+  read: ConditionRead,
+  policy: ContributionApplicationPolicy,
 ): boolean {
   if (
     operation.kind !== 'addModifier' &&
@@ -107,9 +64,14 @@ export function contributionIsIncluded(
     operation.kind !== 'executeNpDamage'
   )
     return true;
-  return Object.values(contributionPolicyDecisions(operation, condition, policy, state)).every(
-    (decision) => decision.kind === 'included',
-  );
+  return Object.values(
+    contributionPolicyDecisions(
+      operation,
+      read,
+      policy,
+      procIsGuaranteed(operation.proc, operation.procRatePermille),
+    ),
+  ).every((decision) => decision.kind === 'included');
 }
 
 function presentationGroupId(operation: BattleOperation): string {
@@ -124,12 +86,16 @@ function contribution(
   component: EffectiveContribution['component'],
   modifier: EffectiveContribution['modifier'],
   resolvedValue: number | null,
-  condition: ConditionExpression,
+  read: ConditionRead,
   outcome: OperationOutcome,
   policy: ContributionApplicationPolicy,
-  state: OperationResult['state'],
 ): EffectiveContribution {
-  const policyDecisions = contributionPolicyDecisions(operation, condition, policy, state);
+  const policyDecisions = contributionPolicyDecisions(
+    operation,
+    read,
+    policy,
+    procIsGuaranteed(operation.proc, operation.procRatePermille),
+  );
   const policyIncluded = Object.values(policyDecisions).every(
     (decision) => decision.kind === 'included',
   );
@@ -151,12 +117,12 @@ function contribution(
 }
 
 export function effectiveContributionsForOperation(
-  result: Pick<OperationResult, 'operation' | 'outcome' | 'projection' | 'state'>,
+  result: Pick<OperationResult, 'operation' | 'outcome' | 'projection' | 'state' | 'conditionRead'>,
   damageInput: DamageResolutionInput,
   finalProjections: readonly EffectProjection[],
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): EffectiveContribution[] {
-  const { operation, outcome, projection, state } = result;
+  const { operation, outcome, projection, state, conditionRead } = result;
   if (operation.kind === 'addModifier')
     return [
       contribution(
@@ -164,10 +130,9 @@ export function effectiveContributionsForOperation(
         'modifier',
         operation.modifier,
         projection.valuePermille,
-        operation.condition,
+        conditionRead,
         outcome,
         policy,
-        state,
       ),
     ];
   if (operation.kind === 'changeModifierRate')
@@ -177,25 +142,13 @@ export function effectiveContributionsForOperation(
         'modifierRate',
         operation.modifier,
         operation.ratePermille,
-        operation.condition,
+        conditionRead,
         outcome,
         policy,
-        state,
       ),
     ];
   if (operation.kind === 'ignoreDefense' || operation.kind === 'ignoreDamageCut')
-    return [
-      contribution(
-        operation,
-        'ignore',
-        operation.kind,
-        1,
-        operation.condition,
-        outcome,
-        policy,
-        state,
-      ),
-    ];
+    return [contribution(operation, 'ignore', operation.kind, 1, conditionRead, outcome, policy)];
   if (operation.kind !== 'executeNpDamage') return [];
   // A trait-count NP can expose several world-assumption projections for one
   // damage operation. Its operation projection reports the base NP execution;
@@ -216,7 +169,7 @@ export function effectiveContributionsForOperation(
           : 'notApplied'
       : projection.outcome;
   return [
-    contribution(operation, 'npBase', null, null, operation.condition, outcome, policy, state),
+    contribution(operation, 'npBase', null, null, conditionRead, outcome, policy),
     ...(operation.specialAttackDependency.kind === 'always'
       ? []
       : [
@@ -225,17 +178,22 @@ export function effectiveContributionsForOperation(
             'npSpecial',
             'npSpecial',
             projection.valuePermille,
-            operation.specialAttackDependency,
+            evaluateCondition(operation.specialAttackDependency, {
+              ...state,
+              conditionReadClock: { ...conditionRead.clock, phase: 'damageEvaluation' },
+            }),
             specialOutcome,
             policy,
-            state,
           ),
         ]),
   ];
 }
 
 export function createEffectiveContributionSet(
-  operations: readonly Pick<OperationResult, 'operation' | 'outcome' | 'projection' | 'state'>[],
+  operations: readonly Pick<
+    OperationResult,
+    'operation' | 'outcome' | 'projection' | 'state' | 'conditionRead'
+  >[],
   damageInput: DamageResolutionInput,
   finalProjections: readonly EffectProjection[],
   policy: ContributionApplicationPolicy = { kind: 'calculator' },

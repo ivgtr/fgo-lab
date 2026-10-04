@@ -113,6 +113,7 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
     )!;
     for (const count of [0, 1, 10]) {
       const context = {
+        stochasticSelection: { kind: 'declared' as const },
         resourceSemantics: master.npResourceSemantics,
         npLevel: 2 as const,
         overcharge: 1 as const,

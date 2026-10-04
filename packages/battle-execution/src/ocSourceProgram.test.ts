@@ -17,6 +17,12 @@ import {
   type OcExecutionOperation,
 } from '@fgo-lab/master-data';
 import { preparationSourceConditionState } from './preparationFacts';
+import { SOURCE_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
+import {
+  projectTraitFacts,
+  assertExternalInitialTrait,
+  projectTraitScope,
+} from './traitFactLayers';
 import { compileEffectCached, compileEffectCondition } from './operationCompiler';
 import { evaluateCondition } from './condition';
 import { createConditionState } from './conditionState';
@@ -104,7 +110,7 @@ function source(
     sourceEnabled: true,
     enabledByDefault: true,
     noblePhantasmVariant: null,
-    preparationStochasticOutcome: null,
+    sourceActivation: { kind: 'unread' },
   };
 }
 const variant: NoblePhantasmVariant = {
@@ -315,7 +321,7 @@ describe('OC source program and common condition owner', () => {
       evaluateCondition(
         compileEffectCondition(s.effect, s.origin, s.sourceId, s.sourceInstanceId, s.skillId),
         facts(),
-      ),
+      ).truth,
     );
   });
   it.each([false, true])(
@@ -361,12 +367,19 @@ describe('OC source program and common condition owner', () => {
       trait: 'traitId:3121',
       present: true,
     } as const;
-    expect(evaluateCondition(condition, state)).toBeNull();
-    (state.traits.attackerState as Map<string, boolean>).set('traitId:3122', true);
-    expect(evaluateCondition(condition, state)).toBe(false);
-    expect(evaluateCondition({ ...condition, trait: 'unrelated' }, state)).toBeNull();
-    (state.traits.attackerState as Map<string, boolean>).delete('traitId:3122');
-    expect(evaluateCondition(condition, state)).toBeNull();
+    expect(evaluateCondition(condition, state).truth).toBeNull();
+    assertExternalInitialTrait(state.traitFactLayers, 'attackerState', 'traitId:3122', true, {
+      kind: 'externalAssumption',
+      clock: state.conditionReadClock,
+    });
+    projectTraitScope(state, 'attackerState');
+    expect(evaluateCondition(condition, state).truth).toBe(false);
+    expect(evaluateCondition({ ...condition, trait: 'unrelated' }, state).truth).toBeNull();
+    (state.traitFactLayers.externalInitial.attackerState as Map<string, unknown>).delete(
+      'traitId:3122',
+    );
+    projectTraitScope(state, 'attackerState');
+    expect(evaluateCondition(condition, state).truth).toBeNull();
   });
   it('keeps unknown input distinct from a false condition', () => {
     const program = compileOcSourceProgram(
@@ -539,6 +552,52 @@ describe('OC compilation ownership', () => {
 });
 
 describe('OC support condition actor', () => {
+  it('binds external source facts into isolated actor layers without changing the attacker', () => {
+    const support = source({ ...field, scope: 'recipient', trait: 'support-created' });
+    support.origin = 'support';
+    support.sourceInstanceId = 'support:first';
+    support.sourceTraits = ['genderFemale'];
+    const key =
+      SOURCE_WORLD_TRAIT_INPUT_PREFIX +
+      JSON.stringify([
+        support.sourceInstanceId,
+        { kind: 'trait', scope: 'attacker', trait: 'support-created', present: true },
+      ]);
+    const original = facts();
+    original.resolvedInputValues = { [key]: 1 };
+    const bound = preparationSourceConditionState(compileOcSourceProgram(support), original);
+    expect(
+      projectTraitFacts(bound.traitFactLayers, 'attacker').get('support-created'),
+    ).toMatchObject({ present: true, count: 1, proof: { kind: 'externalAssumption' } });
+    expect(projectTraitFacts(bound.traitFactLayers, 'attacker').has('dragon')).toBe(false);
+    expect(original.traitFactLayers.externalInitial.attacker.has('support-created')).toBe(false);
+    expect(original.traits.attacker.has('dragon')).toBe(true);
+    expect(bound.traitFactLayers.externalInitial.field).not.toBe(
+      original.traitFactLayers.externalInitial.field,
+    );
+  });
+
+  it('rejects malformed source world identities and values instead of skipping them', () => {
+    const support = source(field);
+    support.origin = 'support';
+    support.sourceInstanceId = 'support:first';
+    const program = compileOcSourceProgram(support);
+    const malformed = facts();
+    malformed.resolvedInputValues = { [SOURCE_WORLD_TRAIT_INPUT_PREFIX + '{}']: 1 };
+    expect(() => preparationSourceConditionState(program, malformed)).toThrow(
+      'invalid_source_world_trait_identity',
+    );
+    const key =
+      SOURCE_WORLD_TRAIT_INPUT_PREFIX +
+      JSON.stringify([
+        support.sourceInstanceId,
+        { kind: 'trait', scope: 'attacker', trait: 'external', present: true },
+      ]);
+    malformed.resolvedInputValues = { [key]: 2 };
+    expect(() => preparationSourceConditionState(program, malformed)).toThrow(
+      'invalid_source_world_trait_value',
+    );
+  });
   it('reads support intrinsic traits and HP without borrowing the attacker facts', () => {
     const support = source({
       kind: 'all',

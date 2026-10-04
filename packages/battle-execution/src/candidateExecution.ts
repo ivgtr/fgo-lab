@@ -1,3 +1,4 @@
+import { conditionWriteProof, procIsGuaranteed, type ConditionFactProof } from './conditionRead';
 import {
   applyObservedNpDamage,
   evaluateObservedCondition,
@@ -5,7 +6,12 @@ import {
   captureHpValueRead,
   resolveObservedModifierValue,
 } from './hpExecutionObservation';
-import type { ExecutionIssue, OperationResult } from './contracts';
+import type {
+  ExecutionIssue,
+  OperationResult,
+  BattleOperation,
+  ExecutableBattleState,
+} from './contracts';
 import { markerOperationDisposition, applyOrderedMarkerMutation } from './markerExecution';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
 import {
@@ -57,6 +63,33 @@ import {
   type PendingMutationAuditEvent,
   type CandidateExecutionWithAudit,
 } from './candidateStateAudit';
+
+function applyOrderedTraitWrite(
+  operation: Extract<
+    BattleOperation,
+    { kind: 'addTrait' | 'removeTrait' | 'suppressInitialTrait' }
+  >,
+  state: ExecutableBattleState,
+  proof: ConditionFactProof,
+): void {
+  let changed: ExecutableBattleState;
+  switch (operation.kind) {
+    case 'addTrait':
+      changed = applyTraitAddition(state, operation.scope, operation.trait, proof);
+      break;
+    case 'removeTrait':
+      changed = applyTraitRemoval(state, operation.scope, operation.trait, proof);
+      break;
+    case 'suppressInitialTrait':
+      changed = applyInitialTraitSuppression(state, operation.scope, operation.trait, proof);
+      break;
+  }
+  state.traitFactLayers = changed.traitFactLayers;
+  state.traits = changed.traits;
+  state.traitCounts = changed.traitCounts;
+  state.conditionFactProofs = changed.conditionFactProofs;
+  state.initialTraitSuppressions = changed.initialTraitSuppressions;
+}
 
 export function executeOrderedScenarioCandidates(
   prepared: PreparedOrderedScenario,
@@ -156,19 +189,24 @@ function executeOrderedScenarioCandidateInternal(
       const operationSequence = results.length;
       const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
       const activation = candidate.activations.get(operation.operationId)!;
-      const contributionIncluded = includedByPolicy(operation, contributionPolicy, state);
-      const enabled = operationEnabled(
-        activation,
-        operation,
-        contributionPolicy,
-        contributionIncluded,
-      );
-      const condition = evaluateObservedCondition(
+      const conditionRead = evaluateObservedCondition(
         operation,
         state,
         audit,
         operationSequence,
         groupIndex,
+      );
+      const condition = conditionRead.truth;
+      const writeProof = conditionWriteProof(
+        conditionRead,
+        procIsGuaranteed(operation.proc, operation.procRatePermille),
+      );
+      const contributionIncluded = includedByPolicy(operation, contributionPolicy, conditionRead);
+      const enabled = operationEnabled(
+        activation,
+        operation,
+        contributionPolicy,
+        contributionIncluded,
       );
       const observedValue = hpCapture
         ? resolveObservedModifierValue(operation, state, hpCapture)
@@ -221,23 +259,12 @@ function executeOrderedScenarioCandidateInternal(
               attemptedAfter: mutationAuditAddress(operation, candidateState)?.value ?? null,
             });
           if (issue) [outcome, code] = ['unsupported', 'unresolved'];
-        } else if (operation.kind === 'addTrait') {
-          const changed = applyTraitAddition(candidateState, operation.scope, operation.trait);
-          candidateState.traits = changed.traits;
-          candidateState.traitCounts = changed.traitCounts;
-        } else if (operation.kind === 'removeTrait') {
-          const changed = applyTraitRemoval(candidateState, operation.scope, operation.trait);
-          candidateState.traits = changed.traits;
-          candidateState.traitCounts = changed.traitCounts;
-        } else if (operation.kind === 'suppressInitialTrait') {
-          const changed = applyInitialTraitSuppression(
-            candidateState,
-            operation.scope,
-            operation.trait,
-          );
-          candidateState.initialTraitSuppressions = changed.initialTraitSuppressions;
-          candidateState.traits = changed.traits;
-          candidateState.traitCounts = changed.traitCounts;
+        } else if (
+          operation.kind === 'addTrait' ||
+          operation.kind === 'removeTrait' ||
+          operation.kind === 'suppressInitialTrait'
+        ) {
+          applyOrderedTraitWrite(operation, candidateState, writeProof);
         } else if (operation.kind === 'addQuantity') {
           const mutationBefore = audit ? mutationAuditAddress(operation, state) : null;
           issue = applyOrderedQuantityMutation(operation, candidateState);
@@ -319,6 +346,7 @@ function executeOrderedScenarioCandidateInternal(
       }
       if (issue) groupIssues.push(issue);
       const result = createOperationResult({
+        conditionRead,
         operation,
         outcome,
         code,

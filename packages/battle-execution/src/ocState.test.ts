@@ -133,6 +133,51 @@ const remove: OcActionStep = {
   applicationRate: 1000,
 };
 describe('OC action transactions', () => {
+  it('rolls back source OC writes, receipts, identity and finite rate uses together', () => {
+    const prior = committed([grant(rate(false), 'rate')]);
+    const result = executeOcAction(
+      prior,
+      'source-rollback',
+      [
+        { kind: 'beginSource', sourceKey: 'mixed', outcome: 'notApplicable' },
+        grant(boost(2, 1, 800), 'first'),
+        np,
+        { ...grant(boost(1, 1, 500), 'failure'), procWitness: 0 },
+        { kind: 'recordSource', sourceKey: 'mixed' },
+        { kind: 'finishSource', sourceKey: 'mixed', commit: false, outcome: 'notApplicable' },
+      ],
+      { attacker: 500 },
+    );
+    expect(result.status).toBe('committed');
+    expect(result.outcomes).toContainEqual({
+      step: 3,
+      outcome: 'stochasticFailure',
+      effectiveRate: 700,
+    });
+    expect(result.state.boosts).toEqual([]);
+    expect(result.state.receipts).toEqual([]);
+    expect(result.state.rates).toEqual(prior.rates);
+    expect(result.state.nextInstanceId).toBe(prior.nextInstanceId);
+    expect(result.state.constantSources).toEqual(prior.constantSources);
+    expect(result.state.executedSources.has('mixed')).toBe(true);
+    expect(prior.rates[0]?.uses).toEqual({ kind: 'finite', remaining: 1 });
+  });
+
+  it('rejects an unclosed source transaction without committing any state', () => {
+    const prior = createOcState();
+    const result = executeOcAction(
+      prior,
+      'unclosed',
+      [{ kind: 'beginSource', sourceKey: 'mixed', outcome: 'notApplicable' }, grant(boost())],
+      {},
+    );
+    expect(result).toMatchObject({
+      status: 'invalid',
+      reason: 'unclosedOcSourceTransaction',
+      outcomes: [],
+    });
+    expect(result.state).toBe(prior);
+  });
   it('rejects replay of a committed action without granting or consuming twice', () => {
     const first = executeOcAction(createOcState(), 'command', [grant(boost()), np], {});
     expect(first.status).toBe('committed');

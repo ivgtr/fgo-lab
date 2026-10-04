@@ -47,6 +47,7 @@ const operationBase: Omit<
   enabledByDefault: true,
   gameActivation: 'skillUse',
   proc: { kind: 'guaranteed' },
+  sourceActivation: { kind: 'unread' as const },
   procRatePermille: 1000,
   activation: { kind: 'sourceDefault' },
   evidence: { rawPath: 'fixture', functionId: 'fixture' },

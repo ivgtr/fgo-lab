@@ -56,7 +56,10 @@ describe('ActorFormProfile canonical equivalence', () => {
   it('builds policy-independent attack profiles and static preparation programs', () => {
     const servant = master.servants[0]!;
     const profiles = createStaticAttackProfiles(servant);
-    const programs = compileStaticRankingPreparationPrograms(servant);
+    const programs = compileStaticRankingPreparationPrograms(
+      servant,
+      rankingBasisFixture(servant).skillLevels,
+    );
     expect(profiles).toHaveLength(1);
     expect(programs.map(({ attackProfile }) => attackProfileKey(attackProfile))).toEqual([
       attackProfileKey(profiles[0]!),
@@ -336,3 +339,4 @@ describe('ActorFormProfile canonical equivalence', () => {
     ).toThrow('attack_profile_variant_mismatch');
   });
 });
+import { rankingBasisFixture } from './rankingBasisFixture';

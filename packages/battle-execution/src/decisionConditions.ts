@@ -37,7 +37,7 @@ export function resolveSatisfiedDecisionKeys(
       const conditions = conditionsByDecisionKey.get(decisionKey);
       if (!conditions) return [];
       return conditions.every((condition) => {
-        const evaluated = evaluateCondition(condition, state);
+        const evaluated = evaluateCondition(condition, state).truth;
         return (
           evaluated === true ||
           (evaluated === null &&
@@ -66,7 +66,7 @@ export function assumedDecisionConstraints(
     )
       return [];
     return expressions.flatMap((expression) => {
-      const evaluated = evaluateCondition(expression, state);
+      const evaluated = evaluateCondition(expression, state).truth;
       return (evaluated === null ||
         (enforceKnownFalseDecisionKeys.has(decision.decisionKey) && !evaluated)) &&
         activationRequirementsSatisfied(expression, state)

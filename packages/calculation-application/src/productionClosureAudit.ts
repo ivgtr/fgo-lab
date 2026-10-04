@@ -149,9 +149,9 @@ function compactPreparationActions(
     actorFormId: action.actorFormId,
     sourceKind: action.sourceKind,
     sourceId: action.sourceId,
-    selectedEffects: action.selectedEffects.map(({ occurrenceId, stochasticOutcome }) => ({
+    selectedEffects: action.selectedEffects.map(({ occurrenceId, sourceActivation }) => ({
       occurrenceId,
-      stochasticOutcome,
+      sourceActivation,
     })),
     activationFacts: action.activationFacts,
     transition: action.transition,

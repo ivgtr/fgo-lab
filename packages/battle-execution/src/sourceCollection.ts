@@ -1,3 +1,5 @@
+import type { SourceActivationReceipt } from './conditionRead';
+import type { StochasticSelection } from './stochasticPossibilities';
 import {
   beginPreparationAttemptCapture,
   finishPreparationAttemptCapture,
@@ -46,6 +48,7 @@ import {
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 export interface SourceEffect {
+  sourceActivation: SourceActivationReceipt;
   markerReaders?: ReadonlySet<string>;
   markerProgram?: readonly string[];
   hpExecutionCommitted?: boolean;
@@ -68,7 +71,6 @@ export interface SourceEffect {
   constantFormKey?: string;
   ocExecutionCommitted?: boolean;
   compilationPurpose?: 'execution' | 'dependency';
-  preparationStochasticOutcome: 'success' | 'failure' | null;
 }
 
 export interface ResolvedAttackerSkillUse {
@@ -101,6 +103,7 @@ export function resolveAttackerFormExecution(
   initialGauge: number = scenario.initialOvercharge *
     resourceSemantics.noblePhantasmUse.baseOvercharge.gaugePerStage,
   options: {
+    stochasticSelection?: StochasticSelection;
     master?: MasterDataSnapshot;
     initialMaximumHp?: number;
     initialOvercharge?: 1 | 2 | 3 | 4 | 5;
@@ -141,6 +144,7 @@ export function resolveAttackerFormExecution(
     options.initialMaximumHp ??
     (resolvedHp?.status === 'resolved' ? resolvedHp.maximum : undefined);
   const context: PreparationExecutionContext = {
+    stochasticSelection: options.stochasticSelection ?? { kind: 'declared' },
     ...(maximum === undefined ? {} : { initialMaximumHp: maximum }),
     ...(options.master
       ? {
@@ -397,7 +401,7 @@ export function collectOperationSources(
           sourceEnabled: true,
           enabledByDefault: true,
           noblePhantasmVariant: null,
-          preparationStochasticOutcome: applied.stochasticOutcome,
+          sourceActivation: applied.sourceActivation,
         });
       }
     if (action.sourceKind !== 'noblePhantasm') continue;
@@ -443,7 +447,7 @@ export function collectOperationSources(
         sourceEnabled: true,
         enabledByDefault: true,
         noblePhantasmVariant: variant.ref,
-        preparationStochasticOutcome: applied.stochasticOutcome,
+        sourceActivation: applied.sourceActivation,
       });
   }
   sources.push(...auxiliary.sources.filter((source) => source.origin !== 'passive'));
@@ -451,6 +455,13 @@ export function collectOperationSources(
   for (const np of npGroup?.variants ?? []) {
     const variantKey = noblePhantasmVariantKey(np.ref);
     for (const effect of np.effects.filter((candidate) => candidate.timing === 'beforeDamage')) {
+      const applied = formExecution.actions
+        .at(-1)
+        ?.selectedEffects.find(
+          (candidate) =>
+            candidate.occurrenceId === effect.occurrenceId &&
+            candidate.sourceId === np.ref.noblePhantasmId,
+        );
       sources.push({
         phase: 'beforeNpDamage',
         origin: 'np',
@@ -467,14 +478,7 @@ export function collectOperationSources(
         sourceEnabled: true,
         enabledByDefault: effect.inclusionPolicy.default === 'include',
         noblePhantasmVariant: np.ref,
-        preparationStochasticOutcome:
-          formExecution.actions
-            .at(-1)
-            ?.selectedEffects.find(
-              (applied) =>
-                applied.occurrenceId === effect.occurrenceId &&
-                applied.sourceId === np.ref.noblePhantasmId,
-            )?.stochasticOutcome ?? null,
+        sourceActivation: applied ? applied.sourceActivation : { kind: 'unread' },
       });
     }
   }
@@ -506,10 +510,6 @@ export function collectOperationSources(
             ),
           }
         : {}),
-      preparationStochasticOutcome:
-        formExecution.state.ocState.sourceOutcomes.get(
-          ocSourceOperationKey(compileOcSourceProgram(source), 0),
-        ) ?? source.preparationStochasticOutcome,
       hpExecutionCommitted:
         formExecution.state.hp?.executedEffects?.includes(hpEffectKey(source)) ?? false,
       battlePointExecutionCommitted: formExecution.state.battlePoints.executedEffects.includes(

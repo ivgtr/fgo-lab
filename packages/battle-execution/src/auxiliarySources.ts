@@ -95,7 +95,7 @@ export function collectAuxiliarySources(
         enabledByDefault:
           defaultInclusion === 'master' && effect.inclusionPolicy.default === 'include',
         noblePhantasmVariant: null,
-        preparationStochasticOutcome: null,
+        sourceActivation: { kind: 'unread' },
       });
   };
   for (const passive of getPassivesForActorForm(attacker, actorFormId))
@@ -143,7 +143,7 @@ export function collectAuxiliarySources(
           sourceEnabled: true,
           enabledByDefault: effect.inclusionPolicy.default === 'include',
           noblePhantasmVariant: null,
-          preparationStochasticOutcome: null,
+          sourceActivation: { kind: 'unread' },
         });
       }
   }
@@ -214,7 +214,7 @@ export function collectAuxiliarySources(
             sourceEnabled: selected.enabled,
             enabledByDefault: effect.inclusionPolicy.default === 'include',
             noblePhantasmVariant: null,
-            preparationStochasticOutcome: null,
+            sourceActivation: { kind: 'unread' },
           });
       }
   }

@@ -1,3 +1,4 @@
+import { executeStochasticPossibilities } from '@fgo-lab/battle-execution';
 import {
   UnresolvedPreparationPlanningRead,
   availablePreparationSkillCommands,
@@ -34,7 +35,11 @@ function preparationPlanningAlternatives<T>(
     if (++branches > 4096) throw new TypeError('hp_structural_branch_limit');
     const choices = pending.pop()!;
     try {
-      results.push(run({ ...context, planningConditionChoices: choices }));
+      results.push(
+        ...executeStochasticPossibilities((stochasticSelection) =>
+          run({ ...context, stochasticSelection, planningConditionChoices: choices }),
+        ).executions.map(({ value }) => value),
+      );
     } catch (error) {
       if (!(error instanceof UnresolvedPreparationPlanningRead)) throw error;
       pending.push(
@@ -84,7 +89,7 @@ function canonicalEffectKey(effect: PreNoblePhantasmState['activeEffects'][numbe
     selection: effect.effect.selection,
     requirement: effect.effect.requirement,
     proc: effect.effect.proc,
-    stochasticOutcome: effect.stochasticOutcome,
+    sourceActivation: effect.sourceActivation,
   });
 }
 
@@ -173,6 +178,7 @@ export function planPreNoblePhantasmCandidates(
   canonicalInputValues: Readonly<Record<string, number>> = {},
 ): PlannedPreNoblePhantasmCandidates {
   const cacheKey = JSON.stringify({
+    stochasticSelection: { kind: 'declared' },
     resourceSemantics,
     npLevel,
     overcharge,
@@ -189,6 +195,7 @@ export function planPreNoblePhantasmCandidates(
   const cached = servantCache.get(cacheKey);
   if (cached) return cached;
   const context: PreparationExecutionContext = {
+    stochasticSelection: { kind: 'declared' },
     planningOnly: true,
     resourceSemantics,
     npLevel,

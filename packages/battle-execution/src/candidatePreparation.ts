@@ -1,4 +1,5 @@
 import { hpPermille } from './hpResource';
+import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
 import { seedBuffInstances, isBuffCountInput } from './buffInstances';
 import { seedStackQuantities } from './stackQuantities';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
@@ -113,6 +114,22 @@ function prepareExecutableCandidate(
     prepared.inputDefinitions.filter(isBuffCountInput),
     resolvedInputs.values,
   );
+  const initialProof: ConditionFactProof = {
+    kind: 'selectedInitialResource',
+    clock: initialState.conditionReadClock,
+  };
+  for (const instance of initialState.buffInstances)
+    (initialState.conditionFactProofs.markers as Map<string, ConditionFactProof>).set(
+      instance.identity,
+      initialProof,
+    );
+  if (prepared.preparationConditionProofs.kind === 'available') {
+    const proofs = cloneConditionFactProofs(prepared.preparationConditionProofs.writeProofs);
+    initialState.conditionFactProofs.quantities = new Map([
+      ...initialState.conditionFactProofs.quantities,
+      ...proofs.quantities,
+    ]);
+  }
   if (prepared.hp)
     initialState.quantities.attackerHpPermille = hpPermille(prepared.hp.actors.attacker);
   seedStackQuantities(initialState, prepared.inputDefinitions);
@@ -143,6 +160,13 @@ export function prepareCandidateExecution(
   targetCandidate: TargetCandidate | null,
 ): PreparedCandidateExecution {
   const base = prepareCandidateBase(prepared, resolvedInputs, targetCandidate);
+  if (prepared.preparationConditionProofs.kind === 'unavailable')
+    return {
+      ...base,
+      status: 'invalidActivationContext',
+      issues: prepared.preparationConditionProofs.issues,
+      resolvedCompileProjections: [],
+    };
   const activation = buildActivationContext(
     prepared.scenario.activationFacts,
     prepared.operations,

@@ -142,7 +142,7 @@ it(
                   sourceEnabled: true,
                   enabledByDefault: true,
                   noblePhantasmVariant: null,
-                  preparationStochasticOutcome: null,
+                  sourceActivation: { kind: 'unread' },
                 };
                 const inputValues =
                   operation.kind === 'resourceMutation' && operation.amount.kind === 'hpTransfer'

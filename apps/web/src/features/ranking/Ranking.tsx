@@ -46,13 +46,13 @@ export function Ranking({
   profile: RankingProfileInput;
   versions: VersionContext;
   onOpenCalculator: (detail: RankingPolicyDetail) => void;
-  onOpenCalculatorForAttackProfile?: (target: {
+  onOpenCalculatorForAttackProfile: (target: {
     servantId: string;
     attackProfile: AttackProfile;
   }) => void;
   onComparisonChange?: () => void;
   onReload?: () => void;
-  onEditSavedBuild?: () => void;
+  onEditSavedBuild: () => void;
 }) {
   const [urlState, setUrlState] = useRankingUrlState();
   const [openEntryId, setOpenEntryId] = useState<string | null>(null);
@@ -98,7 +98,6 @@ export function Ranking({
     focusStatusAfterResetRef.current = false;
   }, [urlState.conditions]);
   const reloadRanking = onReload ?? (() => window.location.reload());
-  const openAttackProfile = onOpenCalculatorForAttackProfile ?? (() => undefined);
   return (
     <section className="ranking-page">
       <div className="section-heading ranking-heading">
@@ -169,7 +168,7 @@ export function Ranking({
           onToggle={toggleDetail}
           onRetryDetail={ranking.requestDetail}
           onOpenCalculator={onOpenCalculator}
-          onOpenCalculatorForAttackProfile={openAttackProfile}
+          onOpenCalculatorForAttackProfile={onOpenCalculatorForAttackProfile}
           onReload={reloadRanking}
         />
       )}
@@ -211,7 +210,7 @@ export function Ranking({
                       type="button"
                       aria-describedby={descriptionIds}
                       onClick={() =>
-                        onOpenCalculatorForAttackProfile?.({
+                        onOpenCalculatorForAttackProfile({
                           servantId: exclusion.servantId,
                           attackProfile: exclusion.attackProfile!,
                         })

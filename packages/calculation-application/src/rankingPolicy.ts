@@ -1,6 +1,5 @@
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import {
-  getDefaultInitialActorForm,
   type ActorFormId,
   type MasterDataSnapshot,
   type ServantMaster,
@@ -17,7 +16,7 @@ export function createRankingBaseScenario(
   master: MasterDataSnapshot,
   basis: ResolvedRankingBasis,
   conditions: Pick<RankingPolicyConditions, 'classAffinity'>,
-  initialActorFormId: ActorFormId = getDefaultInitialActorForm(servant)!.id,
+  initialActorFormId: ActorFormId,
 ): ResolvedScenario {
   let targetContext = createDefaultTargetContext(servant.classId);
   targetContext = applyTargetContextCommand(targetContext, {

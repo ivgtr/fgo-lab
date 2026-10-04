@@ -37,7 +37,7 @@ export function RankingList({
   onToggle: (row: RankingPresentedRow) => void;
   onRetryDetail: (row: RankingPresentedRow) => void;
   onOpenCalculator: (detail: RankingPolicyDetail) => void;
-  onOpenCalculatorForAttackProfile?: (target: {
+  onOpenCalculatorForAttackProfile: (target: {
     servantId: string;
     attackProfile: AttackProfile;
   }) => void;
@@ -125,7 +125,7 @@ export function RankingList({
                         type="button"
                         aria-describedby={detailErrorId}
                         onClick={() =>
-                          onOpenCalculatorForAttackProfile?.({
+                          onOpenCalculatorForAttackProfile({
                             servantId: row.servantId,
                             attackProfile: row.attackProfile,
                           })

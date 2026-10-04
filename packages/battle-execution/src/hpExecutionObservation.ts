@@ -1,3 +1,4 @@
+import type { ConditionRead } from './conditionRead';
 import { appendConditionReadAudit, observeScalarNp } from './candidateStateAudit';
 import type { MutableCandidateStateAudit } from './candidateStateAudit';
 import { evaluateConditionAgainstKnownFacts, modifierValue } from './candidateOperationContext';
@@ -435,7 +436,7 @@ export function evaluateObservedCondition(
   audit: MutableCandidateStateAudit | undefined,
   sequence: number,
   group: number,
-): boolean | null {
+): ConditionRead {
   const hp = hpCandidateObservationFor(audit);
   const first = hp?.reads.length;
   const previous = hp
@@ -459,7 +460,7 @@ export function evaluateObservedCondition(
     );
     if (hp && first !== undefined)
       for (let index = first; index < hp.reads.length; index++)
-        hp.reads[index]!.conditionOutcome = operationConditionResult(outcome);
+        hp.reads[index]!.conditionOutcome = operationConditionResult(outcome.truth);
     return outcome;
   } finally {
     if (hp) finishHpConditionCapture(state, previous);

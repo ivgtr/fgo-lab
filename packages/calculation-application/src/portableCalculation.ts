@@ -5,6 +5,7 @@ import {
   ENGINE_VERSION,
   SCHEMA_VERSION,
   portableCalculationRequestSchema,
+  servantBuildSchema,
   type CalculationResult,
   type CalculationScenario,
   type CalculationVersionContext,
@@ -32,6 +33,7 @@ import {
   materializePreNoblePhantasmPlan,
   planPreNoblePhantasmCandidates,
 } from './preNoblePhantasmPlanner';
+import { hasCanonicalRankingSkillSlots } from './rankingBasis';
 
 type PortableCalculationExecution = Exclude<CalculationExecution, { status: 'invalid' }>;
 
@@ -141,6 +143,19 @@ export function createDefaultCalculatorPortableRequest(
   );
 }
 
+export class AttackProfileRequestFailure extends TypeError {
+  constructor(
+    readonly reason:
+      | 'attackProfileServantMismatch'
+      | 'attackProfileNotReachable'
+      | 'servantBuildInvalid'
+      | 'servantBuildIdentityMismatch'
+      | 'servantBuildIncomplete',
+  ) {
+    super(reason);
+  }
+}
+
 export function createCalculatorPortableRequestForAttackProfile(
   master: MasterDataSnapshot,
   build: ServantBuild | undefined,
@@ -148,22 +163,27 @@ export function createCalculatorPortableRequestForAttackProfile(
   attackProfile: AttackProfile,
 ): PortableCalculationRequest {
   if (attackProfile.id.servantLineageId !== servant.id)
-    throw new TypeError('attack_profile_servant_mismatch');
+    throw new AttackProfileRequestFailure('attackProfileServantMismatch');
+  if (build !== undefined) {
+    const parsed = servantBuildSchema.safeParse(build);
+    if (!parsed.success) throw new AttackProfileRequestFailure('servantBuildInvalid');
+    build = parsed.data;
+    if (build.servantId !== servant.id)
+      throw new AttackProfileRequestFailure('servantBuildIdentityMismatch');
+    if (build.npLevel > 0 && !hasCanonicalRankingSkillSlots(servant, build.skills))
+      throw new AttackProfileRequestFailure('servantBuildIncomplete');
+  }
   const npLevel = Math.max(1, build?.npLevel ?? 1) as 1 | 2 | 3 | 4 | 5;
   const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, npLevel, 1);
   const profiles = createStaticActorFormProfiles(servant);
   const targetKey = attackProfileKey(attackProfile);
   const candidate = planned.candidates.find((item) => {
-    try {
-      return (
-        attackProfileKey(attackProfileForTerminalState(servant, profiles, item.terminalState)) ===
-        targetKey
-      );
-    } catch {
-      return false;
-    }
+    return (
+      attackProfileKey(attackProfileForTerminalState(servant, profiles, item.terminalState)) ===
+      targetKey
+    );
   });
-  if (!candidate) throw new TypeError('attack_profile_not_reachable');
+  if (!candidate) throw new AttackProfileRequestFailure('attackProfileNotReachable');
   const base = createDefaultResolvedScenario(master, build, servant);
   const scenario = excludeDefaultAttackerSkillContributions(
     materializePreNoblePhantasmPlan(base, {
@@ -172,7 +192,7 @@ export function createCalculatorPortableRequestForAttackProfile(
         command.kind === 'useSkillSlot'
           ? {
               ...command,
-              skillLevel: build?.npLevel ? (build.skills[String(command.slot)] ?? 1) : 10,
+              skillLevel: build?.npLevel ? build.skills[String(command.slot)]! : 10,
             }
           : command,
       ),

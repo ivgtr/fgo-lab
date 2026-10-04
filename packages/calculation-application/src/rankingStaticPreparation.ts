@@ -209,7 +209,7 @@ function structuralBranches(
 
 export function compileStaticRankingPreparationPrograms(
   servant: ServantMaster,
-  skillLevels: ResolvedRankingBasis['skillLevels'] = { '1': 10, '2': 10, '3': 10 },
+  skillLevels: ResolvedRankingBasis['skillLevels'],
 ): readonly StaticRankingPreparationProgram[] {
   const profiles = createStaticAttackProfiles(servant);
   const formProfiles = createStaticActorFormProfiles(servant);

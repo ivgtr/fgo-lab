@@ -109,7 +109,7 @@ function observations(d: HpCoverageSource): HpCoverageObservation[] {
       sourceEnabled: true,
       enabledByDefault: true,
       noblePhantasmVariant: null,
-      preparationStochasticOutcome: null,
+      sourceActivation: { kind: 'unread' },
     };
     return {
       declaration: d,

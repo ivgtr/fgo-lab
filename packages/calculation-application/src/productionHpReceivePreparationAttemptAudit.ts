@@ -387,7 +387,11 @@ function inspectConsumption(s: ReceiveAttemptSource, actionIndex: number, c: Che
       const step = origin(source, operationIndex);
       return (
         source?.sourceEnabled === true &&
-        source.preparationStochasticOutcome !== 'failure' &&
+        !(
+          source.sourceActivation.kind === 'read' &&
+          source.sourceActivation.proc.kind === 'resolved' &&
+          source.sourceActivation.proc.outcome === 'failure'
+        ) &&
         step !== undefined &&
         attempt?.reached.some((r) => r.index === step.index) === true &&
         (rejectIndex === undefined || step.index < rejectIndex)

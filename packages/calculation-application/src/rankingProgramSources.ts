@@ -41,7 +41,7 @@ function sourceEffects(input: {
   valueIndex: number;
   valueSetIndex: number;
   noblePhantasmVariant: SourceEffect['noblePhantasmVariant'];
-  preparationStochasticOutcome: SourceEffect['preparationStochasticOutcome'];
+  sourceActivation: SourceEffect['sourceActivation'];
 }): SourceEffect[] {
   const form = findActorForm(input.servant, input.actorFormId);
   if (!form) throw new TypeError('ranking_program_form_missing');
@@ -63,7 +63,7 @@ function sourceEffects(input: {
     enabledByDefault:
       input.origin === 'passive' ? effect.inclusionPolicy.default === 'include' : true,
     noblePhantasmVariant: input.noblePhantasmVariant,
-    preparationStochasticOutcome: input.preparationStochasticOutcome,
+    sourceActivation: input.sourceActivation,
   }));
 }
 
@@ -100,7 +100,7 @@ export function rankingProgramSourceGroups(
           valueIndex: 0,
           valueSetIndex: 0,
           noblePhantasmVariant: null,
-          preparationStochasticOutcome: null,
+          sourceActivation: { kind: 'unread' },
         }).map((source) => ({ ...source, constantFormKey: key })),
       ),
     });
@@ -127,7 +127,7 @@ export function rankingProgramSourceGroups(
           valueIndex: use.skillLevel - 1,
           valueSetIndex: 0,
           noblePhantasmVariant: null,
-          preparationStochasticOutcome: null,
+          sourceActivation: { kind: 'unread' },
         }),
       });
     } else {
@@ -152,7 +152,7 @@ export function rankingProgramSourceGroups(
           valueIndex: npLevel - 1,
           valueSetIndex: 0,
           noblePhantasmVariant: variant.ref,
-          preparationStochasticOutcome: null,
+          sourceActivation: { kind: 'unread' },
         }),
       });
     }
@@ -182,7 +182,7 @@ export function rankingProgramSourceGroups(
       valueIndex: npLevel - 1,
       valueSetIndex: 0,
       noblePhantasmVariant: variant.ref,
-      preparationStochasticOutcome: null,
+      sourceActivation: { kind: 'unread' },
     }),
   });
   return groups;

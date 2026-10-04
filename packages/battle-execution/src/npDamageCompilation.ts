@@ -209,6 +209,7 @@ export function compileNoblePhantasmDamageOperation(
   return {
     projections,
     operation: {
+      sourceActivation: { kind: 'unread' },
       operationId,
       order: operationOrder,
       phase: 'npDamage',

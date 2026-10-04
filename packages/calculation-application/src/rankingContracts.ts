@@ -85,6 +85,7 @@ export interface RankingRowSummary {
 }
 
 export interface RankingPolicyDetail {
+  possibilityCertificate: CalculationExecution['possibilityCertificate'];
   entryId: string;
   servantId: string;
   noblePhantasmVariant: NoblePhantasmVariantRef;

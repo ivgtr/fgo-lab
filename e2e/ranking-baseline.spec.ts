@@ -1,5 +1,9 @@
 import { expect, test, type Page } from './observedTest';
 import { resolve } from 'node:path';
+import { webcrypto } from 'node:crypto';
+import { calculationDraftSchema } from '../packages/schema/src/index';
+import { portableCalculationFingerprint } from '../packages/workspace-domain/src/index';
+import { editCurrentStoredProfiles } from './currentProfileFixture';
 import { installRankingFixtureWorker, openTestHome } from './setup';
 
 async function storedDraftJson(page: Page): Promise<string | null> {
@@ -28,33 +32,13 @@ async function storedDraftJson(page: Page): Promise<string | null> {
 }
 
 async function replaceStoredDraft(page: Page, draftJson: string): Promise<void> {
-  await page.evaluate(
-    ({ replacement }) =>
-      new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open('fgo-lab', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-          const transaction = request.result.transaction('user', 'readwrite');
-          const store = transaction.objectStore('user');
-          const stored = store.get('profiles');
-          stored.onerror = () => reject(stored.error);
-          stored.onsuccess = () => {
-            const collection = stored.result as {
-              activeProfileId: string;
-              profiles: Array<{ profileId: string; draft: unknown }>;
-            };
-            const profile = collection.profiles.find(
-              ({ profileId }) => profileId === collection.activeProfileId,
-            )!;
-            profile.draft = JSON.parse(replacement);
-            store.put(collection, 'profiles');
-          };
-          transaction.onerror = () => reject(transaction.error);
-          transaction.oncomplete = () => resolve();
-        };
-      }),
-    { replacement: draftJson },
-  );
+  await editCurrentStoredProfiles(page, (collection) => {
+    const profile = collection.profiles.find(
+      ({ profileId }) => profileId === collection.activeProfileId,
+    );
+    if (!profile) throw new Error('active profile required');
+    profile.draft = calculationDraftSchema.parse(JSON.parse(draftJson));
+  });
 }
 
 async function openFixtureRanking(
@@ -210,7 +194,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await expect.poll(() => storedDraftJson(page)).not.toBeNull();
   const originalDraft = await storedDraftJson(page);
   if (!originalDraft) throw new Error('ranking handoff draft missing');
-  const missingSubjectDraft = JSON.stringify({
+  const missingSubject = calculationDraftSchema.parse({
     ...JSON.parse(originalDraft),
     request: {
       ...JSON.parse(originalDraft).request,
@@ -230,6 +214,11 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
       },
     },
   });
+  missingSubject.requestFingerprint = await portableCalculationFingerprint(
+    missingSubject.request,
+    (bytes) => webcrypto.subtle.digest('SHA-256', new Uint8Array(bytes)),
+  );
+  const missingSubjectDraft = JSON.stringify(missingSubject);
   await replaceStoredDraft(page, missingSubjectDraft);
   await page.goto('/calculator');
   const rejectedNotice = page.locator('[data-calculation-error-summary]');
