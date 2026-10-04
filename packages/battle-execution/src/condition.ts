@@ -1,6 +1,6 @@
 import type { BattleOperation } from './contracts';
 import { observeHpQuantity } from './hpExecutionObservation';
-import { liveInputQuantity } from './stackQuantities';
+import { liveInputQuantityRead } from './stackQuantities';
 import { markerTraitRead } from './buffInstances';
 import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
 import {
@@ -396,7 +396,8 @@ export function evaluateCondition(
       );
     }
     case 'inputQuantity': {
-      const actual = liveInputQuantity(state, condition.inputKey);
+      const quantityRead = liveInputQuantityRead(state, condition.inputKey);
+      const actual = quantityRead.value;
       onConditionRead?.({ kind: 'inputQuantity', inputKey: condition.inputKey, value: actual });
       if (actual === undefined) return leaf(null, null, []);
       const truth =
@@ -409,12 +410,7 @@ export function evaluateCondition(
               : condition.comparison === 'atLeast'
                 ? actual >= condition.value
                 : actual > condition.value;
-      return leaf(actual, truth, [
-        requiredProof(
-          state.conditionFactProofs.inputs.get(condition.inputKey),
-          `input:${condition.inputKey}`,
-        ),
-      ]);
+      return leaf(actual, truth, quantityRead.support);
     }
     case 'all':
     case 'any': {

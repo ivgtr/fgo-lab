@@ -1,4 +1,5 @@
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
+import type { ConditionFactProof } from './conditionRead';
 import type {
   BattleOperation,
   ExecutableBattleState,
@@ -39,6 +40,7 @@ export function applyOrderedMarkerMutation(
   state: ExecutableBattleState,
   condition: boolean | null,
   inputs: readonly CanonicalInputDefinition[],
+  proof: ConditionFactProof,
 ): ExecutionIssue | null {
   if (!operation.buffMutation) return null;
   const prior = state.buffInstances ?? [];
@@ -60,6 +62,12 @@ export function applyOrderedMarkerMutation(
           prior.includes(instance) ? instance : { ...instance, uncertain: true },
         )
       : instances;
+  for (const instance of state.buffInstances)
+    if (!prior.includes(instance))
+      (state.conditionFactProofs.markers as Map<string, ConditionFactProof>).set(
+        instance.identity,
+        proof,
+      );
   const projected = projectBuffInstanceCounts(
     {
       buffInstances: state.buffInstances,

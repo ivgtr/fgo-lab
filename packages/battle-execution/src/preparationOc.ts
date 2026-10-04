@@ -1573,10 +1573,13 @@ export function executePreparationOc(args: {
           );
         return { kind: 'skip', outcome: 'notApplicable' };
       }
-      const contextOperations = source.effect.execution.filter(
-        (operation) => operation.kind === 'contextMutation',
+      const structuralOperations = source.effect.execution.filter(
+        (operation) =>
+          operation.kind === 'contextMutation' ||
+          operation.kind === 'transformActorForm' ||
+          operation.kind === 'selectNoblePhantasmVariant',
       );
-      if (contextOperations.length === 0) return { kind: 'skip', outcome: 'notApplicable' };
+      if (structuralOperations.length === 0) return { kind: 'skip', outcome: 'notApplicable' };
       if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
       if (activation.get(source.effect)?.conditionOutcome !== true) {
         current = bindPreparationWriteProofs(
@@ -1612,7 +1615,7 @@ export function executePreparationOc(args: {
         [
           {
             ...source.effect,
-            execution: contextOperations,
+            execution: structuralOperations,
           },
         ],
         source.origin,

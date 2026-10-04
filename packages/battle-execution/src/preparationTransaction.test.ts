@@ -762,7 +762,7 @@ describe('transactional preparation execution', () => {
       },
     });
 
-    expect(result).toMatchObject({ status: 'ready', resource: { state: { gauge: 12_000 } } });
+    expect(result).toMatchObject({ status: 'ready', state: { npResource: { gauge: 12_000 } } });
   });
 
   it.each([
@@ -846,7 +846,7 @@ describe('transactional preparation execution', () => {
       else
         expect(result).toMatchObject({
           status: 'ready',
-          resource: { state: { gauge: expectedGauge } },
+          state: { npResource: { gauge: expectedGauge } },
         });
     },
   );
@@ -1606,7 +1606,7 @@ describe('OC on the preparation command path', () => {
       });
       expect(result).toMatchObject({
         status: 'ready',
-        resource: { state: { gauge: proportional ? 4000 : 2000 } },
+        state: { npResource: { gauge: proportional ? 4000 : 2000 } },
         ocUse: { baseOc: 2, effectiveOc: 2 },
       });
       expect(initial.state.npResource.gauge).toBe(20000);

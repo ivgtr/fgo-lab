@@ -4,7 +4,12 @@ import type { NoblePhantasmVariant } from '@fgo-lab/master-data';
 import type { ConditionExpression, ExecutableBattleState } from './contracts';
 import { createConditionState } from './conditionState';
 import { evaluateCondition } from './condition';
-import { ConditionReadIdentityError, type ConditionFactProof } from './conditionRead';
+import {
+  ConditionReadIdentityError,
+  proofIsGuaranteed,
+  type ConditionFactProof,
+} from './conditionRead';
+import { readTraitQuantity } from './traitFactLayers';
 import { applyTraitAddition, applyTraitRemoval, applyWorldFacts } from './state';
 
 const form = { actorId: 'read-fixture', limitCount: 0 };
@@ -53,6 +58,15 @@ const trait: ConditionExpression = {
   trait: 'created',
   present: true,
 };
+const countCondition: ConditionExpression = {
+  kind: 'inputQuantity',
+  inputKey: 'count',
+  comparison: 'atLeast',
+  value: 1,
+};
+function bindCount(state: ExecutableBattleState): void {
+  state.stackQuantitySources.count = { scope: 'attackerState', trait: 'created' };
+}
 function selfWrite(state: ExecutableBattleState): ConditionFactProof {
   return {
     kind: 'guaranteedWrite',
@@ -70,6 +84,72 @@ function selfWrite(state: ExecutableBattleState): ConditionFactProof {
 }
 
 describe('condition value, proof and read clock', () => {
+  it('does not turn an unknown prior count into one after a guaranteed grant', () => {
+    const state = initial();
+    bindCount(state);
+    const granted = applyTraitAddition(state, 'attackerState', 'created', selfWrite(state));
+    expect(evaluateCondition(trait, granted)).toMatchObject({
+      truth: true,
+      certainty: 'guaranteed',
+    });
+    expect(readTraitQuantity(granted.traitFactLayers, 'attackerState', 'created', null)).toEqual({
+      value: null,
+      support: [],
+    });
+    expect(evaluateCondition(countCondition, granted)).toMatchObject({
+      kind: 'inputRequired',
+      truth: null,
+    });
+  });
+
+  it('keeps a possible count dependency when a later grant guarantees presence', () => {
+    const state = initial();
+    bindCount(state);
+    const cleared = applyTraitRemoval(state, 'attackerState', 'created', selfWrite(state));
+    const possible: ConditionFactProof = { ...selfWrite(cleared), kind: 'possibleOutcome' };
+    const first = applyTraitAddition(cleared, 'attackerState', 'created', possible);
+    const guaranteed = selfWrite(first);
+    const second = applyTraitAddition(first, 'attackerState', 'created', guaranteed);
+    expect(evaluateCondition(trait, second)).toMatchObject({
+      truth: true,
+      certainty: 'guaranteed',
+    });
+    const quantity = readTraitQuantity(second.traitFactLayers, 'attackerState', 'created', null);
+    expect(quantity.value).toBe(2);
+    expect(quantity.support).toContainEqual(possible);
+    expect(quantity.support).toContainEqual(guaranteed);
+    expect(quantity.support.every(proofIsGuaranteed)).toBe(false);
+    expect(evaluateCondition(countCondition, second)).toMatchObject({
+      truth: true,
+      certainty: 'possible',
+    });
+    expect(readTraitQuantity(first.traitFactLayers, 'attackerState', 'created', null).value).toBe(
+      1,
+    );
+  });
+
+  it('a deletion establishes exact zero independently of an unknown prior count', () => {
+    const state = initial();
+    bindCount(state);
+    const granted = applyTraitAddition(state, 'attackerState', 'created', selfWrite(state));
+    const proof = selfWrite(granted);
+    const removed = applyTraitRemoval(granted, 'attackerState', 'created', proof);
+    expect(readTraitQuantity(removed.traitFactLayers, 'attackerState', 'created', null)).toEqual({
+      value: 0,
+      support: [proof],
+    });
+    expect(evaluateCondition(trait, removed)).toMatchObject({
+      truth: false,
+      certainty: 'guaranteed',
+    });
+    expect(
+      readTraitQuantity(granted.traitFactLayers, 'attackerState', 'created', null).value,
+    ).toBeNull();
+    expect(
+      evaluateCondition({ ...countCondition, comparison: 'equal', value: 0 }, removed),
+    ).toMatchObject({ truth: true, certainty: 'guaranteed' });
+  });
+
   it('keeps a read immutable through a later grant and removal', () => {
     const state = initial();
     const removed = applyTraitRemoval(state, 'attackerState', 'created', selfWrite(state));

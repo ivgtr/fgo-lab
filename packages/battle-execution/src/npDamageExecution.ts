@@ -59,6 +59,8 @@ export function applyNoblePhantasmDamage(
         targetStateTraitCounts,
       ),
       targetStateTraitCounts,
+      targetTraits: state.traits.target,
+      targetStateTraits: state.traits.targetState,
       targetPredicateValues: new Map(
         [...state.actorPredicates.target].map(([key, value]) => [key, value.present]),
       ),

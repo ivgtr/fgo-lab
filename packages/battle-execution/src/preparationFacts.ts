@@ -88,7 +88,7 @@ export function preparationConditionState(
       (facts.traits[scope] as Map<string, boolean>).set(trait, count > 0);
       const proof = state.conditionWriteProofs.traits[scope].get(trait);
       if (!proof) return null;
-      commitTraitFact(facts.traitFactLayers, scope, trait, count > 0, count, proof);
+      commitTraitFact(facts.traitFactLayers, scope, trait, count > 0, count, proof, [proof]);
       (facts.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
         trait,
         proof,
@@ -166,7 +166,10 @@ export function preparationSourceConditionState(
     clock: facts.conditionReadClock,
   };
   bound.traitFactLayers.intrinsic.attacker = new Map(
-    traits.map((trait) => [trait, { present: true, count: 1, proof: intrinsic }]),
+    traits.map((trait) => [
+      trait,
+      { present: true, count: 1, proof: intrinsic, countSupport: [intrinsic] },
+    ]),
   );
   for (const scope of ['attacker', 'attackerState'] as const) {
     bound.traitFactLayers.externalInitial[scope] = new Map();

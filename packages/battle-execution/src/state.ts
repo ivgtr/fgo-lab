@@ -12,11 +12,13 @@ import type {
 import { createConditionState } from './conditionState';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
+import { liveInputQuantity } from './stackQuantities';
 import {
   cloneTraitFactLayers,
   projectTraitScope,
   assertExternalInitialTrait,
   commitTraitFact,
+  incrementTraitFact,
 } from './traitFactLayers';
 
 export function appendModifier(
@@ -203,7 +205,10 @@ export function applyActorFormTransition(
     },
   };
   candidate.traitFactLayers.intrinsic.attacker = new Map(
-    traits.map((trait) => [trait, { present: true, count: 1, proof: intrinsic }]),
+    traits.map((trait) => [
+      trait,
+      { present: true, count: 1, proof: intrinsic, countSupport: [intrinsic] },
+    ]),
   );
   projectTraitScope(candidate, 'attacker');
   candidate.conditionFactProofs.completeTraits.attacker = intrinsic;
@@ -227,7 +232,7 @@ export function applyTraitRemoval(
     trait,
     proof,
   );
-  commitTraitFact(candidate.traitFactLayers, scope, trait, false, 0, proof);
+  commitTraitFact(candidate.traitFactLayers, scope, trait, false, 0, proof, [proof]);
   return candidate;
 }
 
@@ -252,7 +257,7 @@ export function applyInitialTraitSuppression(
     trait,
     proof,
   );
-  commitTraitFact(candidate.traitFactLayers, scope, trait, false, 0, proof);
+  commitTraitFact(candidate.traitFactLayers, scope, trait, false, 0, proof, [proof]);
   return candidate;
 }
 
@@ -272,31 +277,21 @@ export function applyTraitAddition(
         conflictingTrait,
         proof,
       );
-      commitTraitFact(candidate.traitFactLayers, scope, conflictingTrait, false, 0, proof);
+      commitTraitFact(candidate.traitFactLayers, scope, conflictingTrait, false, 0, proof, [proof]);
       candidate.traitCounts[scope] = withoutTraitCount(
         candidate.traitCounts[scope],
         conflictingTrait,
       );
     }
-  (candidate.traits[scope] as Map<string, boolean>).set(trait, true);
-  candidate.traitCounts[scope] = {
-    ...candidate.traitCounts[scope],
-    [trait]: group
-      ? Math.max(1, candidate.traitCounts[scope][trait] ?? 0)
-      : (candidate.traitCounts[scope][trait] ?? 0) + 1,
-  };
-  (candidate.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
-    trait,
-    proof,
-  );
-  commitTraitFact(
+  incrementTraitFact(
     candidate.traitFactLayers,
     scope,
     trait,
-    true,
-    candidate.traitCounts[scope][trait]!,
     proof,
+    candidate.conditionFactProofs.completeTraits[scope],
+    group !== null,
   );
+  projectTraitScope(candidate, scope);
   return candidate;
 }
 
@@ -318,15 +313,17 @@ export function withoutTraitCount(
 }
 
 function expandedTraits(
+  presence: ReadonlyMap<string, boolean>,
   counts: Readonly<Record<string, number>>,
   stackTraits: ReadonlySet<string> = new Set(),
 ): string[] {
-  return Object.entries(counts).flatMap(([trait, count]) =>
-    Array.from(
-      { length: stackTraits.has(trait) ? Number(count > 0) : Math.max(0, count) },
-      () => trait,
-    ),
-  );
+  return [...presence].flatMap(([trait, present]) => {
+    if (!present) return [];
+    const count = counts[trait];
+    // DTO membership does not assert an exact quantity for a presence-only fact.
+    if (stackTraits.has(trait) || count === undefined) return [trait];
+    return Array.from({ length: count }, () => trait);
+  });
 }
 
 export function foldDamageInput(
@@ -338,8 +335,10 @@ export function foldDamageInput(
     targetState: {},
     field: {},
   };
-  for (const { scope, trait } of Object.values(state.stackQuantitySources))
-    stackStateCounts[scope][trait] = state.traitCounts[scope][trait] ?? 0;
+  for (const [key, { scope, trait }] of Object.entries(state.stackQuantitySources)) {
+    const count = liveInputQuantity(state, key);
+    if (count !== undefined) stackStateCounts[scope][trait] = count;
+  }
   const hasStacks = Object.keys(state.stackQuantitySources).length > 0;
   const sums: Partial<Record<ModifierKind, number>> = {};
   for (const modifier of state.modifiers) {
@@ -355,16 +354,18 @@ export function foldDamageInput(
     fieldTraits: [...state.traits.field].flatMap(([trait, present]) => (present ? [trait] : [])),
     ...(hasStacks ? { stackStateCounts } : {}),
     attackerStateTraits: expandedTraits(
+      state.traits.attackerState,
       state.traitCounts.attackerState,
       new Set(Object.keys(stackStateCounts.attackerState)),
     ),
     targetStateTraits: expandedTraits(
+      state.traits.targetState,
       state.traitCounts.targetState,
       new Set(Object.keys(stackStateCounts.targetState)),
     ),
     target: {
       ...input.target,
-      traits: expandedTraits(state.traitCounts.target),
+      traits: expandedTraits(state.traits.target, state.traitCounts.target),
     },
     attackBuff: input.attackBuff + value('attackBuff'),
     defenseBuff: input.defenseBuff + value('defenseBuff'),

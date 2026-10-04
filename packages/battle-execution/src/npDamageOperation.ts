@@ -11,6 +11,8 @@ export interface NpDamageOperationContext {
   targetTraitCounts: Readonly<Record<string, number>>;
   targetCombinedTraitCounts: Readonly<Record<string, number>>;
   targetStateTraitCounts: Readonly<Record<string, number>>;
+  targetTraits: ReadonlyMap<string, boolean>;
+  targetStateTraits: ReadonlyMap<string, boolean>;
   targetPredicateValues: ReadonlyMap<string, boolean>;
   attackerHpRatio: number | null;
   targetRarity: number | null;
@@ -73,12 +75,12 @@ function hasTrait(
   trait:
     | { kind: 'trait'; name: string }
     | { kind: 'targetPredicate'; predicate: Parameters<typeof targetPredicateKey>[0] },
-  counts: Readonly<Record<string, number>>,
+  presence: ReadonlyMap<string, boolean>,
   targetPredicateValues: ReadonlyMap<string, boolean>,
 ): boolean {
   return trait.kind === 'targetPredicate'
     ? targetPredicateValues.get(targetPredicateKey(trait.predicate)) === true
-    : (counts[trait.name] ?? 0) > 0;
+    : presence.get(trait.name) === true;
 }
 
 export function evaluateNpDamageOperation(
@@ -234,22 +236,22 @@ function evaluateNpDamageOperationInternal(
       parameters.map((parameter) =>
         context.effectLocalConditionSatisfied ||
         (parameter.andCheckTraits ?? []).every((trait) =>
-          hasTrait(trait, context.targetTraitCounts, context.targetPredicateValues),
+          hasTrait(trait, context.targetTraits, context.targetPredicateValues),
         )
           ? (parameter.correctionPermille ?? 1_000) / 1_000
           : 1,
       ) as [number, number, number, number, number],
     );
 
-  const conditionCounts =
-    damage.kind === 'stateTrait' ? context.targetStateTraitCounts : context.targetTraitCounts;
+  const conditionPresence =
+    damage.kind === 'stateTrait' ? context.targetStateTraits : context.targetTraits;
   if (damage.kind === 'trait' || damage.kind === 'stateTrait')
     return resolved(
       baseMultipliers,
       parameters.map((parameter) =>
         context.effectLocalConditionSatisfied ||
         (parameter.targetTrait &&
-          hasTrait(parameter.targetTrait, conditionCounts, context.targetPredicateValues))
+          hasTrait(parameter.targetTrait, conditionPresence, context.targetPredicateValues))
           ? (parameter.correctionPermille ?? 1_000) / 1_000
           : 1,
       ) as [number, number, number, number, number],

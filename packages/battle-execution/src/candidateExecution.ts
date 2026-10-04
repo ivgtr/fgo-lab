@@ -244,6 +244,7 @@ function executeOrderedScenarioCandidateInternal(
             candidateState,
             condition,
             prepared.inputDefinitions,
+            writeProof,
           );
           if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (operation.kind === 'resourceMutation') {

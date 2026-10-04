@@ -4,7 +4,7 @@ import type { ActivationContext, TargetPredicateAssertion } from './contracts';
 import type { ConditionEvaluationState } from './condition';
 import { targetPredicateKey } from './targetPredicate';
 import type { ConditionFactProof, ConditionReadClock } from './conditionRead';
-import { createTraitFactLayers } from './traitFactLayers';
+import { createTraitFactLayers, commitTraitFact, projectTraitFacts } from './traitFactLayers';
 
 export type ConditionStateInput = Pick<
   DamageResolutionInput,
@@ -49,28 +49,38 @@ export function createConditionState<
   const intrinsic: ConditionFactProof = { kind: 'canonicalIntrinsic', clock };
   const external: ConditionFactProof = { kind: 'externalAssumption', clock };
   const initial: ConditionFactProof = { kind: 'selectedInitialResource', clock };
-  const proofs = (traits: readonly string[], proof: ConditionFactProof) =>
-    new Map(traits.map((trait) => [trait, proof]));
+  const traitFactLayers = createTraitFactLayers(
+    attacker,
+    {
+      attackerState: input.attackerStateTraits,
+      target: input.target.traits,
+      targetState: input.targetStateTraits,
+      field: input.fieldTraits,
+    },
+    intrinsic,
+    external,
+  );
+  for (const scope of ['attackerState', 'targetState', 'field'] as const)
+    for (const [trait, count] of Object.entries(input.stackStateCounts?.[scope] ?? {}))
+      commitTraitFact(traitFactLayers, scope, trait, count > 0, count, initial, [initial]);
+  const scopes = ['attacker', 'attackerState', 'target', 'targetState', 'field'] as const;
+  const projected = Object.fromEntries(
+    scopes.map((scope) => [scope, projectTraitFacts(traitFactLayers, scope)]),
+  ) as Record<(typeof scopes)[number], ReturnType<typeof projectTraitFacts>>;
   return {
-    traitFactLayers: createTraitFactLayers(
-      attacker,
-      {
-        attackerState: input.attackerStateTraits,
-        target: input.target.traits,
-        targetState: input.targetStateTraits,
-        field: input.fieldTraits,
-      },
-      intrinsic,
-      external,
-    ),
+    traitFactLayers,
     conditionReadClock: clock,
     conditionFactProofs: {
       traits: {
-        attacker: proofs(attacker, intrinsic),
-        attackerState: proofs(input.attackerStateTraits, external),
-        target: proofs(input.target.traits, external),
-        targetState: proofs(input.targetStateTraits, external),
-        field: proofs(input.fieldTraits, external),
+        attacker: new Map([...projected.attacker].map(([trait, fact]) => [trait, fact.proof])),
+        attackerState: new Map(
+          [...projected.attackerState].map(([trait, fact]) => [trait, fact.proof]),
+        ),
+        target: new Map([...projected.target].map(([trait, fact]) => [trait, fact.proof])),
+        targetState: new Map(
+          [...projected.targetState].map(([trait, fact]) => [trait, fact.proof]),
+        ),
+        field: new Map([...projected.field].map(([trait, fact]) => [trait, fact.proof])),
       },
       completeTraits: {
         attacker: intrinsic,
@@ -100,11 +110,15 @@ export function createConditionState<
     noblePhantasmVariant,
     card: input.cardType,
     traits: {
-      attacker: traitFacts(attacker),
-      attackerState: traitFacts(input.attackerStateTraits),
-      target: traitFacts(input.target.traits),
-      targetState: traitFacts(input.targetStateTraits),
-      field: traitFacts(input.fieldTraits),
+      attacker: new Map([...projected.attacker].map(([trait, fact]) => [trait, fact.present])),
+      attackerState: new Map(
+        [...projected.attackerState].map(([trait, fact]) => [trait, fact.present]),
+      ),
+      target: new Map([...projected.target].map(([trait, fact]) => [trait, fact.present])),
+      targetState: new Map(
+        [...projected.targetState].map(([trait, fact]) => [trait, fact.present]),
+      ),
+      field: new Map([...projected.field].map(([trait, fact]) => [trait, fact.present])),
     },
     actorPredicates: {
       attacker: new Map(

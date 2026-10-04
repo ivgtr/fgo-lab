@@ -17,7 +17,6 @@ import {
   appendPreparationEffects,
   findPreparationTransition,
   formCanReachAttackWithoutPreparationNp,
-  resolvePreparationIdentityOutcome,
 } from './preparationState';
 import { planPreparationResourceTransaction } from './preparationTransaction';
 
@@ -66,18 +65,14 @@ export function reducePreparationTransformNoblePhantasmAction(
   );
   if (typeof transition === 'string') return rejectPreparation(state, transition);
   if (!transition) return rejectPreparation(state, 'transformNoblePhantasmUnavailable');
-  const structural = resolvePreparationIdentityOutcome(servant, state, resource.preparationEffects);
-  if (typeof structural === 'string') return rejectPreparation(state, structural);
-  if (!actorFormEquals(transition.to, structural.currentFormId))
+  if (!actorFormEquals(transition.to, resource.state.currentFormId))
     return rejectPreparation(state, 'transitionAtomicity');
-  if (!formCanReachAttackWithoutPreparationNp(servant, structural.currentFormId))
+  if (!formCanReachAttackWithoutPreparationNp(servant, resource.state.currentFormId))
     return rejectPreparation(state, 'transformNoblePhantasmDoesNotReachAttack');
   return {
     status: 'applied',
     state: {
-      ...state,
-      currentFormId: structural.currentFormId,
-      selectedNoblePhantasmVariant: structural.selectedVariant,
+      ...resource.state,
       transformNoblePhantasmUsed: true,
       activeEffects: appendPreparationEffects(
         state,
@@ -87,19 +82,6 @@ export function reducePreparationTransformNoblePhantasmAction(
         variant.effects,
         resource.activation,
       ),
-      ...resource.contextState,
-      battlePoints: resource.battlePoints,
-      npResource: resource.resource.state,
-      populationEvents: resource.populationEvents,
-      hp: resource.hp,
-      npTransfers: resource.npTransfers,
-      uncertainEnemyCharge: resource.uncertainEnemyCharge,
-      uncertainPlayerNp: resource.uncertainPlayerNp,
-      buffInstances: resource.buffInstances,
-      ocState: resource.ocState,
-      ocInputDefinitions: resource.ocInputDefinitions,
-      uncertainContextWrites: resource.uncertainContextWrites,
-      baseOvercharge: resource.resource.baseOvercharge,
       appliedActions: [
         ...state.appliedActions,
         {
@@ -124,13 +106,13 @@ export function reducePreparationTransformNoblePhantasmAction(
           ),
           transition,
           hpBefore: state.hp,
-          hpAfter: resource.hp,
+          hpAfter: resource.state.hp,
           resourceBefore: state.npResource,
-          resourceAfter: resource.resource.state,
+          resourceAfter: resource.state.npResource,
           resourceTransaction: resource.resourceTransaction,
           ocUse: resource.ocUse,
           ocOutcomes: resource.ocOutcomes,
-          baseOvercharge: resource.resource.baseOvercharge,
+          baseOvercharge: resource.baseOvercharge,
         },
       ],
     },

@@ -17,12 +17,12 @@ import type {
   PreparationExecutionContext,
   PreparationFailureCode,
 } from './preparationContracts';
-import { applyNpResourceTransaction, type NpResourceTransactionResult } from './npResource';
+import { applyNpResourceTransaction } from './npResource';
 import { resolveTargetPolicy } from './effectRouting';
 import type { Origin } from './effectRouting';
 import { executePreparationOc, preparationEffectSource } from './preparationOc';
 import { assemblePreparationActivationFacts } from './preparationEvidence';
-import type { OcState, NpOcUseReceipt, OcActionOutcome } from './ocState';
+import type { NpOcUseReceipt, OcActionOutcome } from './ocState';
 import type { SourceActivationReceipt } from './conditionRead';
 
 interface PreparationInputSource {
@@ -125,27 +125,10 @@ export function resourceFailureCode(
 export type PreparationResourcePlanResult =
   | {
       status: 'ready';
-      resource: NpResourceTransactionResult & { status: 'applied' };
+      state: PreNoblePhantasmState;
       preparationEffects: readonly MasterEffect[];
       activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>;
-      ocState: OcState;
-      hp: PreNoblePhantasmState['hp'];
-      battlePoints: PreNoblePhantasmState['battlePoints'];
-      populationEvents: PreNoblePhantasmState['populationEvents'];
-      npTransfers: NonNullable<PreNoblePhantasmState['npTransfers']>;
-      uncertainEnemyCharge: boolean;
-      uncertainPlayerNp: boolean;
-      buffInstances: PreNoblePhantasmState['buffInstances'];
-      contextState: Pick<
-        PreNoblePhantasmState,
-        | 'stackCounts'
-        | 'stateTraits'
-        | 'initialTraitSuppressions'
-        | 'conditionWriteProofs'
-        | 'npQuantityWrites'
-      >;
-      ocInputDefinitions: readonly CanonicalInputDefinition[];
-      uncertainContextWrites: PreNoblePhantasmState['uncertainContextWrites'];
+      baseOvercharge: PreNoblePhantasmState['baseOvercharge'];
       ocUse: NpOcUseReceipt | null;
       ocOutcomes: readonly OcActionOutcome[];
       resourceTransaction: AppliedPreparationAction['resourceTransaction'];
@@ -307,30 +290,19 @@ export function planPreparationResourceTransaction(args: {
   });
   return {
     status: 'ready',
-    resource: { ...resourceStart, state: oc.structuralState.npResource },
+    state: {
+      ...oc.structuralState,
+      ocState: oc.result.state,
+      ocInputDefinitions: oc.inputDefinitions,
+      baseOvercharge: resourceStart.baseOvercharge,
+    },
     resourceTransaction: {
       afterConsumption: resourceStart.state,
       mutations: oc.resourceMutations,
     },
     preparationEffects,
     activation,
-    ocState: oc.result.state,
-    hp: oc.structuralState.hp,
-    battlePoints: oc.structuralState.battlePoints,
-    populationEvents: oc.structuralState.populationEvents,
-    npTransfers: oc.structuralState.npTransfers ?? [],
-    uncertainEnemyCharge: oc.structuralState.uncertainEnemyCharge ?? false,
-    uncertainPlayerNp: oc.structuralState.uncertainPlayerNp ?? false,
-    buffInstances: oc.structuralState.buffInstances,
-    contextState: {
-      conditionWriteProofs: oc.structuralState.conditionWriteProofs,
-      npQuantityWrites: oc.structuralState.npQuantityWrites,
-      stackCounts: oc.structuralState.stackCounts,
-      stateTraits: oc.structuralState.stateTraits,
-      initialTraitSuppressions: oc.structuralState.initialTraitSuppressions,
-    },
-    ocInputDefinitions: oc.inputDefinitions,
-    uncertainContextWrites: oc.structuralState.uncertainContextWrites,
+    baseOvercharge: resourceStart.baseOvercharge,
     ocUse,
     ocOutcomes: oc.result.outcomes,
   };

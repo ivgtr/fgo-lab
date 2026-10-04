@@ -3817,9 +3817,9 @@ describe('scenario calculation facade', () => {
     expect(selected.input.target.traits).toEqual([]);
   });
 
-  it('derives world-fact exclusivity canonically without scenario metadata', () => {
+  it('rejects obsolete world-fact metadata and derives exclusivity from legal facts', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
-    const externallyParsed = calculationScenarioSchema.parse({
+    const obsoleteMetadataInput = {
       ...scenario,
       worldFactAssertions: [
         {
@@ -3841,6 +3841,20 @@ describe('scenario calculation facade', () => {
             present: true,
             exclusiveGroup: null,
           },
+        },
+      ],
+    };
+    expect(() => calculationScenarioSchema.parse(obsoleteMetadataInput)).toThrow();
+    const externallyParsed = calculationScenarioSchema.parse({
+      ...scenario,
+      worldFactAssertions: [
+        {
+          decisionKey: 'world:sky',
+          fact: { kind: 'trait', scope: 'target', trait: 'attributeSky', present: true },
+        },
+        {
+          decisionKey: 'world:earth',
+          fact: { kind: 'trait', scope: 'target', trait: 'attributeEarth', present: true },
         },
       ],
     });
@@ -4059,7 +4073,7 @@ describe('scenario calculation facade', () => {
     ).toEqual([1, 1, 1, 1, 1]);
   });
 
-  it('keeps a self-generated target-state NP special separate from NP base by ranking policy', () => {
+  it('includes a guaranteed self-generated NP special while keeping NP base separate', () => {
     const baseServant = fixture.servants[0]!;
     const burn = { kind: 'trait' as const, name: 'buffBurn' };
     const mutation = {
@@ -4130,18 +4144,26 @@ describe('scenario calculation facade', () => {
     expect(baselineSpecial.outcome).toBe('applied');
     expect(baselineSpecial.contributionId).toMatch(/:npSpecial$/);
     expect(baseline.detail.input.targetStateTraits).toContain(burn.name);
-    expect(baseline.detail.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    // The pre-§20 exclusions are retained in the TSK-14 flow and checkpoint 3b307e9.
+    expect(baseline.detail.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
     expect(contribution(baseline.detail, 'npBase')).toMatchObject({ effective: true });
     expect(contribution(baseline.detail, 'npSpecial')).toMatchObject({
-      effective: false,
-      conditionDecision: { kind: 'excluded', reason: 'conditionalEffectPolicy' },
+      effective: true,
+      conditionDecision: { kind: 'included' },
     });
     expect(rankingEffectContributes(baselineSpecial, baseline.detail.effectiveContributions)).toBe(
-      false,
+      true,
     );
     expect(
       createRankingRow(specialMaster.servants[0]!, baseline.detail, profile).specialDamageApplied,
-    ).toBe(false);
+    ).toBe(true);
+    expect(
+      baseline.detail.appliedPreparationActions.at(-1)?.selectedEffects[0]?.sourceActivation,
+    ).toMatchObject({
+      kind: 'read',
+      read: { truth: true, certainty: 'guaranteed', clock: { phase: 'sourceUse' } },
+      proc: { kind: 'resolved', outcome: 'success', certainty: 'guaranteed' },
+    });
 
     expect(satisfied.detail.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
     expect(contribution(satisfied.detail, 'npSpecial')).toMatchObject({
@@ -4154,9 +4176,7 @@ describe('scenario calculation facade', () => {
     expect(
       createRankingRow(specialMaster.servants[0]!, satisfied.detail, profile).specialDamageApplied,
     ).toBe(true);
-    expect(satisfied.detail.result.rows[0].average).toBeGreaterThan(
-      baseline.detail.result.rows[0].average,
-    );
+    expect(satisfied.detail.result.rows[0].average).toBe(baseline.detail.result.rows[0].average);
   });
 
   it('commits a target-state mutation only when its proc succeeds', () => {

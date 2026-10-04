@@ -26,6 +26,8 @@ const context: NpDamageOperationContext = {
   targetTraitCounts: {},
   targetCombinedTraitCounts: {},
   targetStateTraitCounts: {},
+  targetTraits: new Map(),
+  targetStateTraits: new Map(),
   targetPredicateValues: new Map(),
   attackerHpRatio: null,
   targetRarity: null,
@@ -90,6 +92,8 @@ describe('NP damage operation', () => {
         ...context,
         targetTraitCounts: { dragon: 1 },
         targetStateTraitCounts: { dragon: 1 },
+        targetTraits: new Map([['dragon', true]]),
+        targetStateTraits: new Map([['dragon', true]]),
         targetRarity: 2,
       });
       expect(result).toMatchObject({
@@ -113,8 +117,16 @@ describe('NP damage operation', () => {
       rawFunctionType: 'damageNpStateIndividualFix',
       parametersByOvercharge: matrix({ targetTrait, correctionPermille: 1_500 }),
     } as NpDamageSpec;
-    const permanentOnly = { ...context, targetTraitCounts: { dragon: 1 } };
-    const stateOnly = { ...context, targetStateTraitCounts: { dragon: 1 } };
+    const permanentOnly = {
+      ...context,
+      targetTraitCounts: { dragon: 1 },
+      targetTraits: new Map([['dragon', true]]),
+    };
+    const stateOnly = {
+      ...context,
+      targetStateTraitCounts: { dragon: 1 },
+      targetStateTraits: new Map([['dragon', true]]),
+    };
     expect(evaluateNpDamageOperation(trait, permanentOnly)).toMatchObject({
       npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
     });

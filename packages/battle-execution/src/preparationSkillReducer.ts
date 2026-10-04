@@ -9,11 +9,7 @@ import {
   type PreparationTransitionResult,
 } from './preparationContracts';
 import { assemblePreparationActivationFacts } from './preparationEvidence';
-import {
-  appendPreparationEffects,
-  findPreparationTransition,
-  resolvePreparationIdentityOutcome,
-} from './preparationState';
+import { appendPreparationEffects, findPreparationTransition } from './preparationState';
 import { planPreparationResourceTransaction } from './preparationTransaction';
 
 export function reducePreparationSkillAction(
@@ -62,16 +58,12 @@ export function reducePreparationSkillAction(
     resource.preparationEffects,
   );
   if (typeof transition === 'string') return rejectPreparation(state, transition);
-  const structural = resolvePreparationIdentityOutcome(servant, state, resource.preparationEffects);
-  if (typeof structural === 'string') return rejectPreparation(state, structural);
-  if (transition && !actorFormEquals(transition.to, structural.currentFormId))
+  if (transition && !actorFormEquals(transition.to, resource.state.currentFormId))
     return rejectPreparation(state, 'transitionAtomicity');
   return {
     status: 'applied',
     state: {
-      ...state,
-      currentFormId: structural.currentFormId,
-      selectedNoblePhantasmVariant: structural.selectedVariant,
+      ...resource.state,
       usedSkillSlots: new Set([...state.usedSkillSlots, command.slot]),
       activeEffects: appendPreparationEffects(
         state,
@@ -81,19 +73,6 @@ export function reducePreparationSkillAction(
         effects,
         resource.activation,
       ),
-      ...resource.contextState,
-      battlePoints: resource.battlePoints,
-      npResource: resource.resource.state,
-      populationEvents: resource.populationEvents,
-      hp: resource.hp,
-      npTransfers: resource.npTransfers,
-      uncertainEnemyCharge: resource.uncertainEnemyCharge,
-      uncertainPlayerNp: resource.uncertainPlayerNp,
-      buffInstances: resource.buffInstances,
-      ocState: resource.ocState,
-      ocInputDefinitions: resource.ocInputDefinitions,
-      uncertainContextWrites: resource.uncertainContextWrites,
-      baseOvercharge: resource.resource.baseOvercharge,
       appliedActions: [
         ...state.appliedActions,
         {
@@ -118,13 +97,13 @@ export function reducePreparationSkillAction(
           ),
           transition,
           hpBefore: state.hp,
-          hpAfter: resource.hp,
+          hpAfter: resource.state.hp,
           resourceBefore: state.npResource,
-          resourceAfter: resource.resource.state,
+          resourceAfter: resource.state.npResource,
           resourceTransaction: resource.resourceTransaction,
           ocUse: resource.ocUse,
           ocOutcomes: resource.ocOutcomes,
-          baseOvercharge: resource.resource.baseOvercharge,
+          baseOvercharge: resource.baseOvercharge,
         },
       ],
     },
