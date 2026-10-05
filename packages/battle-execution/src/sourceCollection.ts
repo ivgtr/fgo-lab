@@ -1,4 +1,5 @@
 import type { SourceActivationReceipt } from './conditionRead';
+import { pendingNoblePhantasmSourceBinding } from './executionBinding';
 import type { StochasticSelection } from './stochasticPossibilities';
 import {
   beginPreparationAttemptCapture,
@@ -49,6 +50,7 @@ type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 export interface SourceEffect {
   sourceActivation: SourceActivationReceipt;
+  runtimeBinding?: import('./executionBinding').SourceExecutionBinding;
   markerReaders?: ReadonlySet<string>;
   markerProgram?: readonly string[];
   hpExecutionCommitted?: boolean;
@@ -452,6 +454,7 @@ export function collectOperationSources(
   }
   sources.push(...auxiliary.sources.filter((source) => source.origin !== 'passive'));
   const npGroup = getBaseNoblePhantasmGroup(attacker);
+  const terminalAction = formExecution.actions.at(-1);
   for (const np of npGroup?.variants ?? []) {
     const variantKey = noblePhantasmVariantKey(np.ref);
     for (const effect of np.effects.filter((candidate) => candidate.timing === 'beforeDamage')) {
@@ -479,6 +482,18 @@ export function collectOperationSources(
         enabledByDefault: effect.inclusionPolicy.default === 'include',
         noblePhantasmVariant: np.ref,
         sourceActivation: applied ? applied.sourceActivation : { kind: 'unread' },
+        ...(!applied &&
+        terminalAction?.sourceKind === 'attackNoblePhantasm' &&
+        terminalAction.sourceId === variantKey
+          ? {
+              runtimeBinding: pendingNoblePhantasmSourceBinding(
+                terminalAction,
+                `np:${variantKey}`,
+                effect.occurrenceId,
+                input.npLevel - 1,
+              ),
+            }
+          : {}),
       });
     }
   }
@@ -497,6 +512,19 @@ export function collectOperationSources(
   return {
     sources: sources.map((source) => ({
       ...source,
+      ...(() => {
+        if (source.sourceActivation.kind !== 'read') return {};
+        const actionId = source.sourceActivation.read.clock.actionId;
+        const bindings = formExecution.state.sourceBindings.filter(
+          (binding) =>
+            binding.actionId === actionId &&
+            binding.sourceInstanceId === source.sourceInstanceId &&
+            binding.skillId === source.skillId &&
+            binding.occurrenceId === source.effect.occurrenceId,
+        );
+        if (bindings.length > 1) throw new TypeError('duplicate_source_execution_binding');
+        return bindings[0] ? { runtimeBinding: bindings[0] } : {};
+      })(),
       ...(markerReaders
         ? {
             markerReaders,

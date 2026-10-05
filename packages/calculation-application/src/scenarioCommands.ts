@@ -157,6 +157,8 @@ export function setInitialActorForm(
     resourceSemantics,
     skillLevels,
     scenario.attacker.npLevel as 1 | 2 | 3 | 4 | 5,
+    scenario.initialOvercharge,
+    scenario.initialOvercharge * resourceSemantics.noblePhantasmUse.baseOvercharge.gaugePerStage,
   );
   const removedDecisionKeys = new Set(
     projections

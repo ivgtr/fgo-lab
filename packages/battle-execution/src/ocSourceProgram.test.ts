@@ -1,4 +1,5 @@
 import fixture from '../../test-fixtures/master/fixture.json';
+import { createInputFacts } from './inputFacts';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   populationInputEquivalenceKey,
@@ -564,7 +565,10 @@ describe('OC support condition actor', () => {
         { kind: 'trait', scope: 'attacker', trait: 'support-created', present: true },
       ]);
     const original = facts();
-    original.resolvedInputValues = { [key]: 1 };
+    original.inputFacts = createInputFacts(
+      { [key]: 1 },
+      { kind: 'externalAssumption', clock: original.conditionReadClock },
+    );
     const bound = preparationSourceConditionState(compileOcSourceProgram(support), original);
     expect(
       projectTraitFacts(bound.traitFactLayers, 'attacker').get('support-created'),
@@ -583,7 +587,10 @@ describe('OC support condition actor', () => {
     support.sourceInstanceId = 'support:first';
     const program = compileOcSourceProgram(support);
     const malformed = facts();
-    malformed.resolvedInputValues = { [SOURCE_WORLD_TRAIT_INPUT_PREFIX + '{}']: 1 };
+    malformed.inputFacts = createInputFacts(
+      { [SOURCE_WORLD_TRAIT_INPUT_PREFIX + '{}']: 1 },
+      { kind: 'externalAssumption', clock: malformed.conditionReadClock },
+    );
     expect(() => preparationSourceConditionState(program, malformed)).toThrow(
       'invalid_source_world_trait_identity',
     );
@@ -593,7 +600,10 @@ describe('OC support condition actor', () => {
         support.sourceInstanceId,
         { kind: 'trait', scope: 'attacker', trait: 'external', present: true },
       ]);
-    malformed.resolvedInputValues = { [key]: 2 };
+    malformed.inputFacts = createInputFacts(
+      { [key]: 2 },
+      { kind: 'externalAssumption', clock: malformed.conditionReadClock },
+    );
     expect(() => preparationSourceConditionState(program, malformed)).toThrow(
       'invalid_source_world_trait_value',
     );

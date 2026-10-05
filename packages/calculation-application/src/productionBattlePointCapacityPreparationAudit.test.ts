@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { expect, it } from 'vitest';
 import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import { materializeBattlePointCapacityValue } from './productionBattlePointCapacityProof';
@@ -1658,7 +1659,7 @@ for (const spec of specs)
         }
 
         const value =
-          positive.program.downstream.prepared.orderedScenario!.battlePoints!.actors.attacker!
+          preparationExecutionStateFor(positive.program.downstream.prepared.orderedScenario!)!.battlePoints!.actors.attacker!
             .domains['810000'];
         expect(value?.kind === 'present' ? [value.point, value.capacity] : [0, null]).toEqual([
           spec.point,

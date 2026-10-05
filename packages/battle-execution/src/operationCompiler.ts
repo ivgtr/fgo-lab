@@ -36,6 +36,7 @@ import {
   type Origin,
 } from './effectRouting';
 import type { SourceEffect } from './sourceCollection';
+import { bindExecutionOperation } from './executionBinding';
 import { selectionGroupsForCondition } from './projection';
 import { runtimeInputKey } from './runtimeInputIdentity';
 
@@ -580,6 +581,12 @@ export function compileEffectCached(
       };
       const sourceOperation = operationSourceFor(operation);
       if (sourceOperation) retainOperationSource(copy, sourceOperation);
+      if (source.runtimeBinding)
+        bindExecutionOperation(
+          copy,
+          source.runtimeBinding,
+          sourceOperation ? source.effect.execution.indexOf(sourceOperation) : -1,
+        );
       return copy;
     }),
     projections: compiled.projections,
@@ -852,7 +859,7 @@ export function compileEffect(
   for (const semantic of unsupportedResources) {
     const suffix = uniqueSuffix(`unsupported-resource:${semantic.resource}`);
     const operationBase = baseOperation(source, 'personal', order++, suffix);
-    operations.push({
+    const operation: BattleOperation = {
       ...operationBase,
       kind: 'resourceMutation',
       ...resourceMutationIdentity(semantic),
@@ -865,7 +872,9 @@ export function compileEffect(
             ]?.[source.valueIndex] ?? null)
           : null,
       subjectId: semantic.subjectId,
-    });
+    };
+    operations.push(operation);
+    retainOperationSource(operation, semantic);
   }
   for (const semantic of retained) {
     const suffix = uniqueSuffix(`evidence:${semantic.kind}`);

@@ -114,6 +114,10 @@ export type ExecutionPhase =
 
 interface OperationBase {
   sourceActivation: SourceActivationReceipt;
+  runtimeBinding?: {
+    source: import('./executionBinding').SourceExecutionBinding;
+    physicalInput?: import('./executionBinding').PhysicalInputCommit;
+  };
   operationId: string;
   order: number;
   phase: ExecutionPhase;
@@ -292,7 +296,7 @@ export interface BattleStateBase {
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
-  resolvedInputValues: Readonly<Record<string, number>>;
+  inputFacts: import('./inputFacts').InputFacts;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;
   ignoreDefense: boolean;
@@ -520,6 +524,7 @@ export interface EffectProjection {
 
 export interface OperationResult {
   conditionRead: ConditionRead;
+  damageDependencyRead: ConditionRead | null;
   operation: BattleOperation;
   outcome: OperationOutcome;
   condition: 'satisfied' | 'unsatisfied' | 'unresolved';

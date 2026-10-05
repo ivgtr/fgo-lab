@@ -84,7 +84,7 @@ function stateFor(
     },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
-    resolvedInputValues: {},
+    inputFacts: new Map(),
     modifiers: [],
     modifierRates: {},
     ignoreDefense: false,

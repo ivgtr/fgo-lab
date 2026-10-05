@@ -8,6 +8,8 @@ import type { ConditionEvaluationState } from './condition';
 import type { SourceEffect } from './sourceCollection';
 import { resourceSourceActor } from './resourceQueries';
 import { canonicalRequirementLeaves } from '@fgo-lab/master-data';
+import { readTraitQuantity } from './traitFactLayers';
+import { evaluateCondition } from './condition';
 
 /** Above this count, every selected positive NP reader saturates even from an empty gauge. */
 export function populationCountSaturation(
@@ -219,18 +221,23 @@ function localTraitCount(
   selector: PopulationCountSelector,
   facts: ConditionEvaluationState,
   actor: 'attacker' | 'target',
-): number {
+): number | null {
   if (selector.basis === 'inBattle') return 1;
   const stateScope = actor === 'attacker' ? 'attackerState' : 'targetState';
-  const count = selector.traits.reduce((sum, trait) => {
+  if (selector.counting === 'actors') {
+    const read = evaluateCondition({ kind: 'any', expressions: selector.traits.map((trait) => ({ kind: 'trait', scope: actor, trait, present: true })) }, facts);
+    return read.truth === null ? null : Number(read.truth);
+  }
+  let count = 0;
+  for (const trait of selector.traits) {
     const intrinsic = facts.initialTraitSuppressions[actor].has(trait)
-      ? 0
-      : (facts.traitCounts[actor][trait] ?? Number(facts.traits[actor].get(trait) === true));
-    const applied =
-      facts.traitCounts[stateScope][trait] ?? Number(facts.traits[stateScope].get(trait) === true);
-    return sum + intrinsic + applied;
-  }, 0);
-  return selector.counting === 'actors' ? Number(count > 0) : count;
+      ? { value: 0 }
+      : readTraitQuantity(facts.traitFactLayers, actor, trait, facts.conditionFactProofs.completeTraits[actor]);
+    const applied = readTraitQuantity(facts.traitFactLayers, stateScope, trait, facts.conditionFactProofs.completeTraits[stateScope]);
+    if (intrinsic.value === null || applied.value === null) return null;
+    count += intrinsic.value + applied.value;
+  }
+  return count;
 }
 
 type PopulationEventObservation =
@@ -301,7 +308,8 @@ export function readPopulationCount(args: {
     return null;
   const querySides = populationScopeSides(selector.scope);
   const externalSize = querySides.reduce((sum, side) => sum + populationSideSize(side, values), 0);
-  let external = selector.basis === 'inBattle' ? externalSize : (values[args.inputKey] ?? 0);
+  let external = selector.basis === 'inBattle' ? externalSize : externalSize === 0 ? 0 : values[args.inputKey];
+  if (external === undefined) return null;
   let buffCount = selector.basis === 'buffInstances' ? external : 0;
   for (const event of args.events) {
     const operation = event.operation;
@@ -332,13 +340,7 @@ export function readPopulationCount(args: {
     } else return null;
   }
   if (selector.basis === 'buffInstances') return buffCount;
-  return (
-    external +
-    (['enemies', 'otherActors'].includes(selector.scope)
-      ? 0
-      : localTraitCount(selector, facts, 'attacker')) +
-    (['allies', 'recipient'].includes(selector.scope)
-      ? 0
-      : localTraitCount(selector, facts, 'target'))
-  );
+  const attacker = ['enemies', 'otherActors'].includes(selector.scope) ? 0 : localTraitCount(selector, facts, 'attacker');
+  const target = ['allies', 'recipient'].includes(selector.scope) ? 0 : localTraitCount(selector, facts, 'target');
+  return attacker === null || target === null ? null : external + attacker + target;
 }

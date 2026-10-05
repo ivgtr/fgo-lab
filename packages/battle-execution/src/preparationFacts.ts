@@ -1,4 +1,5 @@
 import { SOURCE_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
+import { inputFactValues } from './inputFacts';
 import { hpPermille } from './hpResource';
 import { traitFacts, traitCounts } from './conditionState';
 import type { OcSourceProgram } from './ocSourceProgram';
@@ -54,11 +55,12 @@ export function preparationConditionState(
     },
     variant,
     findActorForm(servant, state.currentFormId)?.traits ?? [],
-    context.canonicalInputValues ?? {},
+    inputFactValues(state.inputFacts),
     context.targetPredicates ?? [],
     context.attackerPredicates ?? [],
     activation.factSet,
   );
+  facts.inputFacts = state.inputFacts;
   for (const { fact } of context.worldFacts ?? []) {
     const proof: ConditionFactProof = {
       kind: 'externalAssumption',
@@ -117,13 +119,6 @@ export function preparationConditionState(
     ...state.conditionWriteProofs.quantities,
   ]);
   facts.conditionFactProofs.markers = new Map(state.conditionWriteProofs.markers);
-  for (const input of context.stackInputs ?? []) {
-    const proof = facts.conditionFactProofs.traits[input.quantitySource.scope].get(
-      input.quantitySource.trait,
-    );
-    if (proof)
-      (facts.conditionFactProofs.inputs as Map<string, ConditionFactProof>).set(input.key, proof);
-  }
   return facts;
 }
 
@@ -181,7 +176,7 @@ export function preparationSourceConditionState(
   bound.conditionFactProofs.traits.attackerState = new Map();
   bound.conditionFactProofs.predicates.attacker = new Map();
   bound.conditionFactProofs.suppressions.attacker = new Map();
-  for (const [key, value] of Object.entries(facts.resolvedInputValues)) {
+  for (const [key, value] of Object.entries(inputFactValues(facts.inputFacts))) {
     if (!key.startsWith(SOURCE_WORLD_TRAIT_INPUT_PREFIX)) continue;
     if (value !== 0 && value !== 1) throw new TypeError('invalid_source_world_trait_value');
     const parsed: unknown = JSON.parse(key.slice(SOURCE_WORLD_TRAIT_INPUT_PREFIX.length));

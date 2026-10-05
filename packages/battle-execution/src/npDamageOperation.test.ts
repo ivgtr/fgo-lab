@@ -3,6 +3,9 @@ import type { NpDamageSpec } from '@fgo-lab/master-data';
 import { evaluateNpDamageOperation, type NpDamageOperationContext } from './npDamageOperation';
 import { noblePhantasmDamageDependency } from './npDamageCompilation';
 import { classifyContributionCondition } from './conditionSemantics';
+import type { ConditionFactProof } from './conditionRead';
+const quantityProof: ConditionFactProof = { kind: 'selectedInitialResource', clock: { phase: 'initial', actorFormId: { actorId: 'fixture', limitCount: 0 }, actor: 'attacker', actionId: null, operationId: null, sourceInstanceId: null, occurrenceId: null, valueSetIndex: null, valueIndex: null } };
+const exactQuantity = (value: number) => ({ value, support: [quantityProof] });
 
 const parameters = (extra: Record<string, unknown> = {}) =>
   Array.from({ length: 5 }, (_, index) => ({
@@ -21,11 +24,7 @@ const base = {
 const context: NpDamageOperationContext = {
   overcharge: 1,
   selectedNpLevel: 1,
-  attackerTraitCounts: {},
-  attackerStateTraitCounts: {},
-  targetTraitCounts: {},
-  targetCombinedTraitCounts: {},
-  targetStateTraitCounts: {},
+  traitQuantity: () => exactQuantity(0),
   targetTraits: new Map(),
   targetStateTraits: new Map(),
   targetPredicateValues: new Map(),
@@ -90,8 +89,6 @@ describe('NP damage operation', () => {
       } as NpDamageSpec;
       const result = evaluateNpDamageOperation(damage, {
         ...context,
-        targetTraitCounts: { dragon: 1 },
-        targetStateTraitCounts: { dragon: 1 },
         targetTraits: new Map([['dragon', true]]),
         targetStateTraits: new Map([['dragon', true]]),
         targetRarity: 2,
@@ -119,12 +116,10 @@ describe('NP damage operation', () => {
     } as NpDamageSpec;
     const permanentOnly = {
       ...context,
-      targetTraitCounts: { dragon: 1 },
       targetTraits: new Map([['dragon', true]]),
     };
     const stateOnly = {
       ...context,
-      targetStateTraitCounts: { dragon: 1 },
       targetStateTraits: new Map([['dragon', true]]),
     };
     expect(evaluateNpDamageOperation(trait, permanentOnly)).toMatchObject({
@@ -196,8 +191,9 @@ describe('NP damage operation', () => {
         maximumTargetCount: 3,
       }),
     } as NpDamageSpec;
+    expect(evaluateNpDamageOperation(sum, { ...context, traitQuantity: () => ({ value: null, support: [] }) })).toEqual({ status: 'unsupported', missingEvidence: 'unknown_trait_quantity' });
     expect(
-      evaluateNpDamageOperation(sum, { ...context, attackerTraitCounts: { roman: 5 } }),
+      evaluateNpDamageOperation(sum, { ...context, traitQuantity: (actor, layer, trait) => exactQuantity(actor === 'attacker' && layer === 'combined' && trait === 'roman' ? 5 : 0) }),
     ).toMatchObject({ npSpecialMultipliers: [1.6, 1.6, 1.6, 1.6, 1.6] });
 
     const targetSum = {
@@ -215,8 +211,7 @@ describe('NP damage operation', () => {
     expect(
       evaluateNpDamageOperation(targetSum, {
         ...context,
-        targetTraitCounts: { roman: 1 },
-        targetCombinedTraitCounts: { roman: 2 },
+        traitQuantity: (actor, layer, trait) => exactQuantity(actor === 'target' && layer === 'combined' && trait === 'roman' ? 2 : 0),
       }),
     ).toMatchObject({ npSpecialMultipliers: [1.4, 1.4, 1.4, 1.4, 1.4] });
 

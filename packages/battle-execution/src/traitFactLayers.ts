@@ -9,6 +9,10 @@ export interface TraitFact {
 }
 type Facts = ReadonlyMap<string, TraitFact>;
 type ScopedFacts = Record<TraitScope, Facts>;
+export interface TraitQuantityRead {
+  value: number | null;
+  support: readonly ConditionFactProof[];
+}
 
 /** Form declarations, external initial assertions, and committed writes have different lifetimes. */
 export interface TraitFactLayers {
@@ -38,22 +42,22 @@ export function createTraitFactLayers(
   intrinsicProof: ConditionFactProof,
   externalProof: ConditionFactProof,
 ): TraitFactLayers {
-  const fromTraits = (traits: readonly string[], proof: ConditionFactProof): Facts => {
+  const fromTraits = (traits: readonly string[], proof: ConditionFactProof, exact: boolean): Facts => {
     const facts = new Map<string, TraitFact>();
     for (const trait of traits)
       facts.set(trait, {
         present: true,
-        count: (facts.get(trait)?.count ?? 0) + 1,
+        count: exact ? (facts.get(trait)?.count ?? 0) + 1 : null,
         proof,
-        countSupport: [proof],
+        countSupport: exact ? [proof] : [],
       });
     return facts;
   };
   const externalInitial = scopedFacts();
   for (const scope of traitScopes)
-    externalInitial[scope] = fromTraits(externalTraits[scope] ?? [], externalProof);
+    externalInitial[scope] = fromTraits(externalTraits[scope] ?? [], externalProof, false);
   return {
-    intrinsic: { attacker: fromTraits(intrinsicTraits, intrinsicProof), target: new Map() },
+    intrinsic: { attacker: fromTraits(intrinsicTraits, intrinsicProof, true), target: new Map() },
     externalInitial,
     writes: scopedFacts(),
   };
@@ -113,9 +117,9 @@ export function assertExternalInitialTrait(
     throw new TypeError('contradictory_intrinsic_trait_assertion');
   (layers.externalInitial[scope] as Map<string, TraitFact>).set(trait, {
     present,
-    count: Number(present),
+    count: present ? null : 0,
     proof,
-    countSupport: [proof],
+    countSupport: present ? [] : [proof],
   });
 }
 export function projectTraitScope(
@@ -165,7 +169,7 @@ export function readTraitQuantity(
   scope: TraitScope,
   trait: string,
   complete: ConditionFactProof | null,
-): { value: number | null; support: readonly ConditionFactProof[] } {
+): TraitQuantityRead {
   const fact = readTraitFact(layers, scope, trait);
   if (fact) return { value: fact.count, support: fact.countSupport };
   return complete ? { value: 0, support: [complete] } : { value: null, support: [] };

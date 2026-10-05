@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { calculatorPreparationSkillLevels } from './rankingBasis';
 import type {
   ExecutionPossibilityCertificate,
@@ -1314,7 +1315,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
   if (
     executionObservation &&
     battlePointPreparation &&
-    (orderedScenario.battlePoints?.receipts.length ||
+    (preparationExecutionStateFor(orderedScenario)?.battlePoints?.receipts.length ||
       preparationCapture?.transitions.some((t) =>
         t.attempts?.some((a) =>
           a.sources.some((s) =>

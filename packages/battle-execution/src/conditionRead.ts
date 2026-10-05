@@ -33,7 +33,6 @@ export interface ConditionFactProofs {
   suppressions: Record<'attacker' | 'target', ReadonlyMap<string, ConditionFactProof>>;
   predicates: Record<'attacker' | 'target', ReadonlyMap<string, ConditionFactProof>>;
   quantities: ReadonlyMap<string, ConditionFactProof>;
-  inputs: ReadonlyMap<string, ConditionFactProof>;
   activations: ReadonlyMap<string, ConditionFactProof>;
   markers: ReadonlyMap<string, ConditionFactProof>;
 }
@@ -139,7 +138,6 @@ export function emptyConditionFactProofs(): ConditionFactProofs {
     suppressions: { attacker: new Map(), target: new Map() },
     predicates: { attacker: new Map(), target: new Map() },
     quantities: new Map(),
-    inputs: new Map(),
     activations: new Map(),
     markers: new Map(),
   };
@@ -164,7 +162,6 @@ export function cloneConditionFactProofs(proofs: ConditionFactProofs): Condition
       target: new Map(proofs.predicates.target),
     },
     quantities: new Map(proofs.quantities),
-    inputs: new Map(proofs.inputs),
     activations: new Map(proofs.activations),
     markers: new Map(proofs.markers),
   };

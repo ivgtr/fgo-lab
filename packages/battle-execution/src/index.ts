@@ -106,6 +106,7 @@ export {
   type EffectiveContribution,
   type EffectiveContributionSet,
 } from './engine';
+export { preparationExecutionStateFor } from './executionTypes';
 export {
   MAX_TARGET_CANDIDATES,
   materializeTargetCandidate,

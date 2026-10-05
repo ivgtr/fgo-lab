@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -90,7 +91,7 @@ describe('ordered HP control witness', () => {
       const off = evaluate(offScenario);
       const live = hpPermille(
         on.prepared.status === 'executable'
-          ? on.prepared.orderedScenario?.hp?.actors.attacker
+          ? preparationExecutionStateFor(on.prepared.orderedScenario)?.hp?.actors.attacker
           : undefined,
       );
       const event = (result: typeof on) =>

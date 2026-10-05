@@ -1,4 +1,5 @@
 import { hpPermille } from './hpResource';
+import { cloneInputFacts, seedUnreadInputFacts } from './inputFacts';
 import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
 import { seedBuffInstances, isBuffCountInput } from './buffInstances';
 import { seedStackQuantities } from './stackQuantities';
@@ -106,8 +107,16 @@ function prepareExecutableCandidate(
     })),
     activationContext,
   );
-  initialState.hp = prepared.hp;
-  if (prepared.battlePoints) initialState.battlePoints = prepared.battlePoints;
+  if (prepared.preparationExecution.kind !== 'available')
+    throw new TypeError('preparation_execution_state_required');
+  const preparationState = prepared.preparationExecution.state;
+  initialState.hp = preparationState.hp;
+  initialState.inputFacts = seedUnreadInputFacts(
+      cloneInputFacts(preparationState.inputFacts),
+      resolvedInputs.values,
+      { kind: 'externalAssumption', clock: initialState.conditionReadClock },
+    );
+  initialState.battlePoints = preparationState.battlePoints;
   initialState.battlePointDomains = prepared.battlePointDomains;
   initialState.resourceActor = 'attacker';
   initialState.buffInstances = seedBuffInstances(
@@ -123,15 +132,15 @@ function prepareExecutableCandidate(
       instance.identity,
       initialProof,
     );
-  if (prepared.preparationConditionProofs.kind === 'available') {
-    const proofs = cloneConditionFactProofs(prepared.preparationConditionProofs.writeProofs);
+  {
+    const proofs = cloneConditionFactProofs(preparationState.conditionWriteProofs);
     initialState.conditionFactProofs.quantities = new Map([
       ...initialState.conditionFactProofs.quantities,
       ...proofs.quantities,
     ]);
   }
-  if (prepared.hp)
-    initialState.quantities.attackerHpPermille = hpPermille(prepared.hp.actors.attacker);
+  if (preparationState.hp)
+    initialState.quantities.attackerHpPermille = hpPermille(preparationState.hp.actors.attacker);
   seedStackQuantities(initialState, prepared.inputDefinitions);
   const selections = resolveCandidateSelections(
     prepared,
@@ -160,11 +169,11 @@ export function prepareCandidateExecution(
   targetCandidate: TargetCandidate | null,
 ): PreparedCandidateExecution {
   const base = prepareCandidateBase(prepared, resolvedInputs, targetCandidate);
-  if (prepared.preparationConditionProofs.kind === 'unavailable')
+  if (prepared.preparationExecution.kind === 'unavailable')
     return {
       ...base,
       status: 'invalidActivationContext',
-      issues: prepared.preparationConditionProofs.issues,
+      issues: prepared.preparationExecution.issues,
       resolvedCompileProjections: [],
     };
   const activation = buildActivationContext(

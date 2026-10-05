@@ -1,4 +1,5 @@
 import type { ScalarNpDamageConsumption } from './npDamageOperation';
+import { readInputFact } from './inputFacts';
 import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
@@ -92,7 +93,7 @@ export function mutationAuditAddress(
   if (operation.kind === 'resourceMutation' && operation.resource === 'criticalStars')
     return {
       stateAddress: 'battle:criticalStars',
-      value: state.resolvedInputValues['battle:criticalStars'] ?? null,
+      value: readInputFact(state.inputFacts, 'battle:criticalStars').value ?? null,
     };
   if (operation.kind === 'addQuantity')
     return {

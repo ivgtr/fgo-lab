@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import {
   getSkillsForActorForm,
   getNoblePhantasmVariants,
@@ -566,7 +567,7 @@ export function hpDiagnosticSource(source: HpPreparationSource): Record<string, 
     })),
     ordered: source.ordered
       ? {
-          hp: source.ordered.hp,
+          hp: preparationExecutionStateFor(source.ordered)?.hp,
           operations: source.ordered.operations,
           appliedActions: source.ordered.appliedPreparationActions.map(actionDiagnostic),
         }
@@ -944,11 +945,11 @@ export function auditHpPreparation(input: {
       continue;
     }
     const final = source.transitions?.at(-1)?.result.state.hp;
-    c('hpRetainedMismatch', 'retained.preparedReference', true, source.ordered.hp === final);
+    c('hpRetainedMismatch', 'retained.preparedReference', true, preparationExecutionStateFor(source.ordered)?.hp === final);
     const candidate = source.candidate;
     c('hpTraceMissing', 'seed.candidate', true, !!candidate);
     if (!candidate) continue;
-    c('hpRetainedMismatch', 'seed.hpReference', true, candidate.seed.hp === source.ordered.hp);
+    c('hpRetainedMismatch', 'seed.hpReference', true, candidate.seed.hp === preparationExecutionStateFor(source.ordered)?.hp);
     c(
       'hpReaderMismatch',
       'reader.population',

@@ -1,4 +1,5 @@
 import { conditionWriteProof, procIsGuaranteed, type ConditionFactProof } from './conditionRead';
+import { physicalInputCommitFor } from './executionBinding';
 import {
   applyObservedNpDamage,
   evaluateObservedCondition,
@@ -175,6 +176,10 @@ function executeOrderedScenarioCandidateInternal(
   } = candidate;
   let { state } = candidate;
   const results: OperationResult[] = [];
+  const sourceReads = new Map<
+    import('./executionBinding').SourceExecutionBinding,
+    import('./hpExecutionObservation').CandidateSourceRead
+  >();
   let input = candidateInput;
   recordPreGroupContextResolution(audit, candidate);
   const hpCapture = audit && beginHpCandidateCapture(audit, candidate.state);
@@ -195,7 +200,9 @@ function executeOrderedScenarioCandidateInternal(
         audit,
         operationSequence,
         groupIndex,
+        sourceReads,
       );
+      let damageDependencyRead: import('./conditionRead').ConditionRead | null = null;
       const condition = conditionRead.truth;
       const writeProof = conditionWriteProof(
         conditionRead,
@@ -236,7 +243,20 @@ function executeOrderedScenarioCandidateInternal(
       });
       if (outcome === 'applied') {
         const candidateState = cloneBattleState(state);
-        if (preappliedOperationIds.has(operation.operationId)) {
+        const physicalInput = physicalInputCommitFor(operation);
+        if (physicalInput) {
+          if (operation.kind !== 'resourceMutation' || operation.resource !== 'criticalStars')
+            throw new TypeError('physical_input_commit_operation_mismatch');
+          if (audit && pendingMutationEvents)
+            pendingMutationEvents.push({
+              operationSequence,
+              operationId: operation.operationId,
+              operationKind: operation.kind,
+              stateAddress: physicalInput.inputKey,
+              before: physicalInput.before,
+              attemptedAfter: physicalInput.after,
+            });
+        } else if (preappliedOperationIds.has(operation.operationId)) {
           // Preparation already committed this canonical form/variant mutation.
         } else if (operation.kind === 'preserveSemanticEffect' && operation.buffMutation) {
           issue = applyOrderedMarkerMutation(
@@ -249,7 +269,7 @@ function executeOrderedScenarioCandidateInternal(
           if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (operation.kind === 'resourceMutation') {
           const mutationBefore = audit ? mutationAuditAddress(operation, state) : null;
-          issue = applyOrderedCriticalStarsMutation(operation, candidateState);
+          issue = applyOrderedCriticalStarsMutation(operation, candidateState, writeProof);
           if (audit && mutationBefore && pendingMutationEvents)
             pendingMutationEvents.push({
               operationSequence,
@@ -322,6 +342,9 @@ function executeOrderedScenarioCandidateInternal(
               hpCapture,
               operationSequence,
               groupIndex,
+              (read) => {
+                damageDependencyRead = read;
+              },
             );
         }
         const mutationValidation = needsMutationValidation(operation)
@@ -348,6 +371,7 @@ function executeOrderedScenarioCandidateInternal(
       if (issue) groupIssues.push(issue);
       const result = createOperationResult({
         conditionRead,
+        damageDependencyRead,
         operation,
         outcome,
         code,

@@ -39,6 +39,7 @@ describe('production canonical target context', () => {
           master.npResourceSemantics,
           commonPreparationSkillLevels(servant),
           1,
+          1,
         ).length > 0,
     );
     const inventory = { advantage2: 0, advantage15: 0, neutral: 0, disadvantage: 0 };
@@ -110,6 +111,7 @@ describe('production canonical target context', () => {
           candidate,
           master.npResourceSemantics,
           commonPreparationSkillLevels(candidate),
+          1,
           1,
         ).length > 0,
     )) {
@@ -244,6 +246,7 @@ describe('production canonical target context', () => {
           servant,
           master.npResourceSemantics,
           commonPreparationSkillLevels(servant),
+          1,
           1,
         ).length > 0,
     ))

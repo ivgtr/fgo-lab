@@ -310,6 +310,8 @@ export function defaultPreNoblePhantasmCandidate(
     resourceSemantics,
     skillLevels,
     npLevel,
+    1,
+    resourceSemantics.noblePhantasmUse.requirement,
   );
 }
 
@@ -319,13 +321,16 @@ export function defaultPreNoblePhantasmCandidateForInitialForm(
   resourceSemantics: CanonicalNpResourceSemantics,
   skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: PreparationExecutionContext['npLevel'],
+  overcharge: PreparationExecutionContext['overcharge'],
+  initialGauge: number,
 ): PreNoblePhantasmPlanCandidate {
   const candidates = planPreNoblePhantasmCandidates(
     servant,
     resourceSemantics,
     skillLevels,
     npLevel,
-    1,
+    overcharge,
+    initialGauge,
   ).candidates.filter(({ terminalState }) =>
     actorFormEquals(terminalState.initialFormId, initialFormId),
   );
@@ -374,13 +379,16 @@ export function defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
   resourceSemantics: CanonicalNpResourceSemantics,
   skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: PreparationExecutionContext['npLevel'],
+  overcharge: PreparationExecutionContext['overcharge'],
+  initialGauge: number,
 ): PreNoblePhantasmPlanCandidate {
   const candidates = planPreNoblePhantasmCandidates(
     servant,
     resourceSemantics,
     skillLevels,
     npLevel,
-    1,
+    overcharge,
+    initialGauge,
   ).candidates.filter(({ terminalState }) =>
     actorFormEquals(terminalState.initialFormId, initialFormId),
   );
@@ -421,6 +429,8 @@ export function defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
       resourceSemantics,
       skillLevels,
       npLevel,
+      overcharge,
+      initialGauge,
     );
   return explicitBaseVariantCandidates.sort(
     (left, right) =>
@@ -443,6 +453,8 @@ export function defaultCalculatorPreNoblePhantasmCandidate(
     resourceSemantics,
     skillLevels,
     npLevel,
+    1,
+    resourceSemantics.noblePhantasmUse.requirement,
   );
 }
 

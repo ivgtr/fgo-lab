@@ -89,6 +89,8 @@ export interface AppliedPreparationAction {
 }
 
 export interface PreNoblePhantasmState {
+  inputFacts: import('./inputFacts').InputFacts;
+  sourceBindings: readonly import('./executionBinding').SourceExecutionBinding[];
   conditionWriteProofs: ConditionFactProofs;
   npQuantityWrites: readonly PreparationNpQuantityWrite[];
   battlePoints: BattlePointState;

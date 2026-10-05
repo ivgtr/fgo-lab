@@ -135,11 +135,14 @@ function context(testCase: GoldenCase): NpDamageOperationContext {
   return {
     overcharge: 1,
     selectedNpLevel: 1,
-    attackerTraitCounts: counts(attackerTraits),
-    attackerStateTraitCounts: counts(attackerTraits),
-    targetTraitCounts: counts(targetTraits),
-    targetCombinedTraitCounts: counts([...targetTraits, ...targetStateTraits]),
-    targetStateTraitCounts: counts(targetStateTraits),
+    // This arithmetic golden declares finite multisets, not a scenario DTO presence array.
+    traitQuantity: (actor, layer, trait) => ({
+      value: counts(actor === 'attacker' ? attackerTraits : layer === 'state' ? targetStateTraits : [...targetTraits, ...targetStateTraits])[trait] ?? 0,
+      support: [{
+        kind: 'selectedInitialResource',
+        clock: { phase: 'initial', actorFormId: { actorId: 'golden-fixture', limitCount: 0 }, actor, actionId: null, operationId: null, sourceInstanceId: null, occurrenceId: null, valueSetIndex: null, valueIndex: null },
+      }],
+    }),
     targetTraits: new Map(targetTraits.map((trait) => [trait, true])),
     targetStateTraits: new Map(targetStateTraits.map((trait) => [trait, true])),
     targetPredicateValues: new Map(),

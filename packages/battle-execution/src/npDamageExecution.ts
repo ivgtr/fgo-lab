@@ -9,7 +9,8 @@ import {
   applyNpDamageOperationWithAudit,
   type ScalarNpDamageConsumption,
 } from './npDamageOperation';
-import { combinedTraitCounts } from './state';
+import { readTraitQuantity, type TraitQuantityRead } from './traitFactLayers';
+import { proofIsGuaranteed, type ConditionRead } from './conditionRead';
 
 export function applyNoblePhantasmDamage(
   input: DamageResolutionInput,
@@ -19,8 +20,99 @@ export function applyNoblePhantasmDamage(
   contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
   observe?: (consumption: ScalarNpDamageConsumption) => void,
   observeHp?: (evaluation: HpNpEvaluation) => void,
+  observeDependency?: (read: ConditionRead) => void,
 ): DamageResolutionInput {
-  const specialCondition = evaluateCondition(operation.specialAttackCondition, state).truth;
+  const binding = operation.runtimeBinding?.source;
+  const readState = {
+    ...state,
+    conditionReadClock: {
+      ...state.conditionReadClock,
+      phase: 'damageEvaluation' as const,
+      operationId: operation.operationId,
+      sourceInstanceId: operation.source.sourceInstanceId,
+      occurrenceId: operation.source.effectOccurrenceId,
+      ...(binding
+        ? {
+            actorFormId: binding.actorFormId,
+            actionId: binding.actionId,
+            valueSetIndex: binding.valueSetIndex,
+            valueIndex: binding.valueIndex,
+          }
+        : {}),
+    },
+  };
+  const traitQuantity = (
+    actor: 'attacker' | 'target',
+    layer: 'combined' | 'state',
+    trait: string,
+  ): TraitQuantityRead => {
+    const scope = actor === 'attacker' ? 'attackerState' : 'targetState';
+    if (operation.damage.kind === 'traitCount' && operation.damage.quantity.kind === 'stacks') {
+      const definition = operation.damage.quantity.inputs.find(
+        (input) => input.quantitySource.trait === trait && input.quantitySource.scope === scope,
+      );
+      if (!definition) return { value: null, support: [] };
+      return readTraitQuantity(
+        state.traitFactLayers,
+        definition.quantitySource.scope,
+        trait,
+        state.conditionFactProofs.completeTraits[definition.quantitySource.scope],
+      );
+    }
+    if (
+      operation.damage.kind === 'traitCount' &&
+      operation.damage.quantity.kind === 'finiteTraits'
+    ) {
+      const read = evaluateCondition(
+        { kind: 'trait', scope: layer === 'state' ? scope : actor, trait, present: true },
+        state,
+      );
+      return { value: read.truth === null ? null : Number(read.truth), support: read.support };
+    }
+    const applied = readTraitQuantity(
+      state.traitFactLayers,
+      scope,
+      trait,
+      state.conditionFactProofs.completeTraits[scope],
+    );
+    if (layer === 'state') return applied;
+    const intrinsic = readTraitQuantity(
+      state.traitFactLayers,
+      actor,
+      trait,
+      state.conditionFactProofs.completeTraits[actor],
+    );
+    return {
+      value:
+        intrinsic.value === null || applied.value === null ? null : intrinsic.value + applied.value,
+      support: [...intrinsic.support, ...applied.support],
+    };
+  };
+  let dependencyRead = evaluateCondition(operation.specialAttackDependency, readState);
+  let unknownQuantity = false;
+  if (operation.damage.kind === 'traitCount' && operation.damage.quantity.kind === 'stacks') {
+    const parameters = operation.damage.parametersByOvercharge[operation.overcharge - 1];
+    if (!parameters) throw new TypeError('missing_np_quantity_cell');
+    const actor = parameters[0].targetId === 1 ? 'target' : 'attacker';
+    const reads = parameters.flatMap((parameter) =>
+      (parameter.targetTraits ?? []).flatMap((trait) =>
+        trait.kind === 'trait' ? [traitQuantity(actor, 'state', trait.name)] : [],
+      ),
+    );
+    unknownQuantity = reads.some((read) => read.value === null);
+    const support = [...dependencyRead.support, ...reads.flatMap((read) => read.support)];
+    dependencyRead = unknownQuantity
+      ? { ...dependencyRead, kind: 'inputRequired', truth: null, certainty: null, support }
+      : dependencyRead.kind === 'known'
+        ? {
+            ...dependencyRead,
+            support,
+            certainty: support.every(proofIsGuaranteed) ? 'guaranteed' : 'possible',
+          }
+        : { ...dependencyRead, support };
+  }
+  observeDependency?.(dependencyRead);
+  const specialCondition = evaluateCondition(operation.specialAttackCondition, readState).truth;
   const specialDecision = operation.specialAttackDecisionKey
     ? decisions.get(operation.specialAttackDecisionKey)
     : undefined;
@@ -29,15 +121,9 @@ export function applyNoblePhantasmDamage(
       ? specialCondition === true
       : specialDecision.operationEnabled &&
         (specialCondition === true || specialDecision.conditionSatisfaction === 'assumeSatisfied');
-  const attackerStateTraitCounts = state.traitCounts.attackerState;
-  const targetStateTraitCounts = state.traitCounts.targetState;
-  const specialIncluded = contributionIsIncluded(
-    operation,
-    evaluateCondition(operation.specialAttackDependency, state),
-    contributionPolicy,
-  );
+  const specialIncluded = contributionIsIncluded(operation, dependencyRead, contributionPolicy);
   const specialContributionEnabled =
-    specialIncluded &&
+    (specialIncluded || unknownQuantity) &&
     specialDecision?.operationEnabled !== false &&
     (operation.damage.kind !== 'targetRarity' ||
       specialDecision !== undefined ||
@@ -48,17 +134,7 @@ export function applyNoblePhantasmDamage(
     {
       overcharge: operation.overcharge,
       selectedNpLevel: operation.selectedNpLevel,
-      attackerTraitCounts: combinedTraitCounts(
-        state.traitCounts.attacker,
-        attackerStateTraitCounts,
-      ),
-      attackerStateTraitCounts,
-      targetTraitCounts: state.traitCounts.target,
-      targetCombinedTraitCounts: combinedTraitCounts(
-        state.traitCounts.target,
-        targetStateTraitCounts,
-      ),
-      targetStateTraitCounts,
+      traitQuantity,
       targetTraits: state.traits.target,
       targetStateTraits: state.traits.targetState,
       targetPredicateValues: new Map(

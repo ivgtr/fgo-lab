@@ -14,8 +14,16 @@ export function getAttackReachableActorFormStates(
   resourceSemantics: CanonicalNpResourceSemantics,
   skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: 1 | 2 | 3 | 4 | 5,
+  initialOvercharge: 1 | 2 | 3,
 ) {
-  return planPreNoblePhantasmCandidates(servant, resourceSemantics, skillLevels, npLevel, 1)
+  return planPreNoblePhantasmCandidates(
+    servant,
+    resourceSemantics,
+    skillLevels,
+    npLevel,
+    initialOvercharge,
+    initialOvercharge * resourceSemantics.noblePhantasmUse.baseOvercharge.gaugePerStage,
+  )
     .candidates.filter(({ terminalState }) =>
       actorFormEquals(terminalState.initialFormId, initialFormId),
     )
@@ -27,10 +35,18 @@ export function getAttackReachableInitialActorForms(
   resourceSemantics: CanonicalNpResourceSemantics,
   skillLevels: ResolvedRankingBasis['skillLevels'],
   npLevel: 1 | 2 | 3 | 4 | 5,
+  initialOvercharge: 1 | 2 | 3,
 ) {
   return getInitialActorForms(servant).filter(
     ({ id }) =>
-      getAttackReachableActorFormStates(servant, id, resourceSemantics, skillLevels, npLevel)
+      getAttackReachableActorFormStates(
+        servant,
+        id,
+        resourceSemantics,
+        skillLevels,
+        npLevel,
+        initialOvercharge,
+      )
         .length > 0,
   );
 }

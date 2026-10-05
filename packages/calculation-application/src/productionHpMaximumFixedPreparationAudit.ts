@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import {
   getSkillsForActorForm,
   type MasterEffect,
@@ -196,7 +197,7 @@ export function maximumFixedDiagnostic(source: Partial<MaximumFixedSource>) {
     ),
     ordered: source.ordered
       ? {
-          hp: source.ordered.hp,
+          hp: preparationExecutionStateFor(source.ordered)?.hp,
           operations: source.ordered.operations,
           appliedActions: source.ordered.appliedPreparationActions.map(actionView),
         }
@@ -868,7 +869,7 @@ function inspectSelected(s: MaximumFixedSource, c: Checker, boundary: (reason: s
     'maximumFixedRetainedMismatch',
     'seed.reference',
     [true, true],
-    [s.ordered?.hp === s.transitions?.at(-1)?.result.state.hp, candidate.seed.hp === s.ordered?.hp],
+    [preparationExecutionStateFor(s.ordered)?.hp === s.transitions?.at(-1)?.result.state.hp, candidate.seed.hp === preparationExecutionStateFor(s.ordered)?.hp],
   );
   c(
     'maximumFixedReaderMismatch',

@@ -213,6 +213,7 @@ export function Calculator({
         master.npResourceSemantics,
         preparationSkillLevelsForScenario(attacker, scenario),
         input.npLevel as 1 | 2 | 3 | 4 | 5,
+        scenario.mode === 'resolved' ? scenario.initialOvercharge : 1,
       )
     : [];
   const resolvedAttackerSkillUses = appliedPreparationActions.flatMap((action) =>

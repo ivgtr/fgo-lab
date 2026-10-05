@@ -31,6 +31,8 @@ import { compileNoblePhantasmDamageOperation } from './npDamageCompilation';
 import { effectChangesPreparation } from './preparationTransaction';
 import { operationSourceFor, retainCompiledSources } from './executionSourceObservation';
 import { closeResourceMutationSemantics } from './resourceSemantics';
+import { bindExecutionOperation, pendingNoblePhantasmSourceBinding } from './executionBinding';
+import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
 export function compileExecutionPlan(
   baseInput: DamageResolutionInput,
   scenario: ResolvedScenario,
@@ -78,6 +80,21 @@ export function compileExecutionPlan(
         variantDamage,
         compiledOperations.length,
       );
+      const action = collected.formExecution?.actions.at(-1);
+      if (
+        action?.sourceKind === 'attackNoblePhantasm' &&
+        action.sourceId === noblePhantasmVariantKey(variant.ref)
+      )
+        bindExecutionOperation(
+          np.operation,
+          pendingNoblePhantasmSourceBinding(
+            action,
+            np.operation.source.sourceInstanceId,
+            np.operation.source.effectOccurrenceId,
+            baseInput.npLevel - 1,
+          ),
+          -1,
+        );
       compileProjections.push(...np.projections);
       compiledOperations.push(np.operation);
     }
@@ -259,11 +276,9 @@ export function compileExecutionPlan(
       ...(collected.formExecution?.state.ocInputDefinitions.map(({ key }) => key) ?? []),
       ...(collected.formExecution?.requiredInputs.map(({ key }) => key) ?? []),
     ]),
-    hp: collected.formExecution?.state.hp,
-    preparationConditionProofs: collected.formExecution
-      ? { kind: 'available', writeProofs: collected.formExecution.state.conditionWriteProofs }
+    preparationExecution: collected.formExecution
+      ? { kind: 'available', state: collected.formExecution.state }
       : { kind: 'unavailable', issues: collected.issues },
-    battlePoints: collected.formExecution?.state.battlePoints,
     battlePointDomains: master.battlePointDomains,
     appliedPreparationActions: collected.formExecution?.actions ?? [],
   };

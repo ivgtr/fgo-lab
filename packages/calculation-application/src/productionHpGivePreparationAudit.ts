@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import {
   getNoblePhantasmVariants,
   type MasterDataSnapshot,
@@ -168,7 +169,7 @@ export function giveDiagnostic(source: GiveSource): Record<string, unknown> {
     rejection: source.transport?.rejection,
     preparedStatus: source.selection.prepared.status,
     calculationStatus: source.calculation.status,
-    orderedHp: source.ordered?.hp,
+    orderedHp: preparationExecutionStateFor(source.ordered)?.hp,
     candidate: source.candidate,
     uses: source.uses,
     input: source.input,
@@ -688,12 +689,12 @@ export function auditGive(input: {
       'giveRetainedMismatch',
       'selected.finalHp',
       true,
-      source.ordered.hp === source.transitions?.at(-1)?.result.state.hp,
+      preparationExecutionStateFor(source.ordered)?.hp === source.transitions?.at(-1)?.result.state.hp,
     );
     c('giveTraceMissing', 'selected.candidate', true, !!source.candidate);
     const candidate = source.candidate;
     if (!candidate) continue;
-    c('giveRetainedMismatch', 'selected.seed', true, candidate.seed.hp === source.ordered.hp);
+    c('giveRetainedMismatch', 'selected.seed', true, candidate.seed.hp === preparationExecutionStateFor(source.ordered)?.hp);
     c(
       'giveReaderMismatch',
       'reader.population',

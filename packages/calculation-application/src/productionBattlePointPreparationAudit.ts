@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import {
   battlePointPreparationObservationFor,
   type BattlePointPreparationObservation,
@@ -489,12 +490,12 @@ export function auditBattlePointPreparationObservations(input: {
       expected.nps.map(({ operation }) => operation.operationId),
     );
     const ordered = prepared.orderedScenario;
-    c('domainTraceMissing', 'preparation.state', true, !!ordered?.battlePoints);
+    c('domainTraceMissing', 'preparation.state', true, !!preparationExecutionStateFor(ordered)?.battlePoints);
     c(
       'domainIdentityMismatch',
       'preparation.actor',
       expected.scenario.attacker.servantId,
-      ordered?.battlePoints?.actors.attacker?.actorId,
+      preparationExecutionStateFor(ordered)?.battlePoints?.actors.attacker?.actorId,
     );
     c('domainIdentityMismatch', 'preparation.stateReference', true, ordered === refs.state);
     c('domainPopulationMismatch', 'canonical.writers', true, expected.writers.length > 0);
@@ -522,7 +523,7 @@ export function auditBattlePointPreparationObservations(input: {
     const target = observation?.targetExecution;
     c('domainTraceMissing', 'preparation.capture', true, !!preparation);
     c('domainIdentityMismatch', 'candidate.selection', 'selected', target?.selection);
-    if (!preparation || target?.selection !== 'selected' || !ordered?.battlePoints) continue;
+    if (!ordered || !preparation || target?.selection !== 'selected' || !preparationExecutionStateFor(ordered)?.battlePoints) continue;
     const state = target.candidateState;
     c('domainTraceMissing', 'candidate.state', true, !!state);
     if (!state) continue;
@@ -748,9 +749,10 @@ export function auditBattlePointPreparationUse(
   const preparation = source.preparation;
   const target = source.observation?.targetExecution;
   if (
+    !ordered ||
     !preparation ||
     target?.selection !== 'selected' ||
-    !ordered?.battlePoints ||
+    !preparationExecutionStateFor(ordered)?.battlePoints ||
     !target.candidateState
   )
     return 0;
@@ -762,7 +764,7 @@ export function auditBattlePointPreparationUse(
     'domainCommitMismatch',
     'preparation.terminal',
     preparation.transitions.at(-1)?.result.state.battlePoints,
-    ordered.battlePoints,
+    preparationExecutionStateFor(ordered)?.battlePoints,
   );
   const conversion = preparation.conversion;
   c('domainTraceMissing', 'conversion.present', true, !!conversion);
@@ -771,7 +773,7 @@ export function auditBattlePointPreparationUse(
     'domainIdentityMismatch',
     'conversion.references',
     true,
-    conversion.state === ordered.battlePoints &&
+    conversion.state === preparationExecutionStateFor(ordered)?.battlePoints &&
       conversion.input === ordered.baseInput &&
       conversion.input === prepared.scenarioInput,
   );
@@ -791,7 +793,7 @@ export function auditBattlePointPreparationUse(
   c(
     'domainValueMismatch',
     'conversion.value',
-    ordered.battlePoints.actors.attacker?.domains[conversion.domain.id],
+    preparationExecutionStateFor(ordered)?.battlePoints.actors.attacker?.domains[conversion.domain.id],
     conversion.value,
   );
   c(

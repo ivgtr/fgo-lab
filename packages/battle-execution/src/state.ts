@@ -13,6 +13,7 @@ import { createConditionState } from './conditionState';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
 import { liveInputQuantity } from './stackQuantities';
+import { cloneInputFacts } from './inputFacts';
 import {
   cloneTraitFactLayers,
   projectTraitScope,
@@ -69,7 +70,7 @@ export function cloneBattleState(state: ExecutableBattleState): ExecutableBattle
     },
     quantities: { ...state.quantities },
     activationContext: state.activationContext,
-    resolvedInputValues: { ...state.resolvedInputValues },
+    inputFacts: cloneInputFacts(state.inputFacts),
     modifiers: [...state.modifiers],
     modifierRates: { ...state.modifierRates },
     evidence: [...state.evidence],

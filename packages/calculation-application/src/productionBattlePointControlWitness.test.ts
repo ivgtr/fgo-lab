@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
@@ -116,7 +117,7 @@ it('reads the prepared battle point phase and changes resolved damage through de
     phase: 10,
     evaluated: true,
   });
-  const value = readBattlePoint(on.prepared.orderedScenario?.battlePoints, 'attacker', domain.id);
+  const value = readBattlePoint(preparationExecutionStateFor(on.prepared.orderedScenario)?.battlePoints, 'attacker', domain.id);
   const diagnostic = {
     initialPoint,
     preparedPoint: value?.kind === 'present' ? value.point : null,

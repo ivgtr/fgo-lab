@@ -5,6 +5,7 @@ import type { ConditionEvaluationState } from './condition';
 import { targetPredicateKey } from './targetPredicate';
 import type { ConditionFactProof, ConditionReadClock } from './conditionRead';
 import { createTraitFactLayers, commitTraitFact, projectTraitFacts } from './traitFactLayers';
+import { createInputFacts } from './inputFacts';
 
 export type ConditionStateInput = Pick<
   DamageResolutionInput,
@@ -103,7 +104,6 @@ export function createConditionState<
         ['targetRarity', external],
         ['battlePointPhase', external],
       ]),
-      inputs: new Map(Object.keys(resolvedInputValues).map((key) => [key, external])),
       activations: new Map(),
       markers: new Map(),
     },
@@ -162,7 +162,7 @@ export function createConditionState<
       battlePointPhase: input.battlePointPhase,
     },
     activationContext,
-    resolvedInputValues: { ...resolvedInputValues },
+    inputFacts: createInputFacts(resolvedInputValues, external),
   };
 }
 

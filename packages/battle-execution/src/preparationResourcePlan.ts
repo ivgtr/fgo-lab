@@ -1,4 +1,5 @@
 import { isBuffCountInput } from './buffInstances';
+import { inputFactValues } from './inputFacts';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import type { CanonicalNpResourceSemantics, MasterEffect } from '@fgo-lab/master-data';
 import {
@@ -76,7 +77,7 @@ function selectedNpMutation(
       ...population,
       selector: operation.amount.selector,
       inputKey: operation.amount.inputKey,
-      values: population.facts.resolvedInputValues,
+      values: inputFactValues(population.facts.inputFacts),
     });
     return count === null
       ? { kind: 'unsupported', family: 'unresolvedPopulationCount' }

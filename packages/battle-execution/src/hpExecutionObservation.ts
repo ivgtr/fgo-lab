@@ -1,4 +1,5 @@
 import type { ConditionRead } from './conditionRead';
+import type { ConditionReadAudit } from './condition';
 import { appendConditionReadAudit, observeScalarNp } from './candidateStateAudit';
 import type { MutableCandidateStateAudit } from './candidateStateAudit';
 import { evaluateConditionAgainstKnownFacts, modifierValue } from './candidateOperationContext';
@@ -418,6 +419,7 @@ export function applyObservedNpDamage(
   hp: HpCandidateObservation | undefined,
   sequence: number,
   group: number,
+  observeDependency: (read: ConditionRead) => void,
 ): DamageResolutionInput {
   return applyNoblePhantasmDamage(
     input,
@@ -427,8 +429,14 @@ export function applyObservedNpDamage(
     policy,
     audit && observeScalarNp(audit, operation, sequence, group),
     hp ? observeHpNp(hp, state, operation.operationId, sequence, group) : undefined,
+    observeDependency,
   );
 }
+
+export type CandidateSourceRead = {
+  read: ConditionRead;
+  observations: readonly ConditionReadAudit[];
+};
 
 export function evaluateObservedCondition(
   operation: BattleOperation,
@@ -436,7 +444,17 @@ export function evaluateObservedCondition(
   audit: MutableCandidateStateAudit | undefined,
   sequence: number,
   group: number,
+  sourceReads: Map<import('./executionBinding').SourceExecutionBinding, CandidateSourceRead>,
 ): ConditionRead {
+  const binding = operation.runtimeBinding?.source;
+  const cached = binding && sourceReads.get(binding);
+  if (cached) {
+    if (audit)
+      for (const read of cached.observations)
+        appendConditionReadAudit(audit, read, sequence, group, operation.operationId);
+    return cached.read;
+  }
+  const observations: ConditionReadAudit[] = [];
   const hp = hpCandidateObservationFor(audit);
   const first = hp?.reads.length;
   const previous = hp
@@ -451,13 +469,11 @@ export function evaluateObservedCondition(
       )
     : undefined;
   try {
-    const outcome = evaluateConditionAgainstKnownFacts(
-      operation,
-      state,
-      audit
-        ? (read) => appendConditionReadAudit(audit, read, sequence, group, operation.operationId)
-        : undefined,
-    );
+    const outcome = evaluateConditionAgainstKnownFacts(operation, state, (read) => {
+      observations.push(read);
+      if (audit) appendConditionReadAudit(audit, read, sequence, group, operation.operationId);
+    });
+    if (binding) sourceReads.set(binding, { read: outcome, observations });
     if (hp && first !== undefined)
       for (let index = first; index < hp.reads.length; index++)
         hp.reads[index]!.conditionOutcome = operationConditionResult(outcome.truth);

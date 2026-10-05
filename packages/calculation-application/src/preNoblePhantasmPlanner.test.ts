@@ -10,9 +10,11 @@ import {
   type CanonicalNpResourceSemantics,
 } from '@fgo-lab/master-data';
 import {
+  defaultCalculatorPreNoblePhantasmCandidateForInitialForm,
   preNoblePhantasmSemanticStateKey,
   planPreNoblePhantasmCandidates,
 } from './preNoblePhantasmPlanner';
+import { getAttackReachableActorFormStates } from './actorFormGraph';
 
 describe('pre-NP planner cache identity', () => {
   it('does not reuse a plan across canonical resource semantics', () => {
@@ -183,6 +185,42 @@ it('binds saved skill cells before exploring NP legality and separates cached pl
   expect(
     low.candidates.every(({ commands }) => commands.every(({ kind }) => kind !== 'useSkillSlot')),
   ).toBe(true);
+  const initialFormId = servant.actorFormGraph.forms[0]!.id;
+  const oc1 = defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
+    servant,
+    initialFormId,
+    current.npResourceSemantics,
+    { '1': 1 },
+    2,
+    1,
+    10_000,
+  );
+  const oc2 = defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
+    servant,
+    initialFormId,
+    current.npResourceSemantics,
+    { '1': 1 },
+    2,
+    2,
+    20_000,
+  );
+  expect(oc1.commands).toEqual([{ kind: 'executeAttackNoblePhantasm' }]);
+  expect(oc2.commands).toEqual([
+    { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+    { kind: 'executeAttackNoblePhantasm' },
+  ]);
+  expect(oc2.terminalState.appliedActions.at(-1)?.resourceBefore.gauge).toBe(15_000);
+  for (const overcharge of [1, 2] as const) {
+    const states = getAttackReachableActorFormStates(
+      servant,
+      initialFormId,
+      current.npResourceSemantics,
+      { '1': 1 },
+      2,
+      overcharge,
+    );
+    expect(states.some((state) => state.usedSkillSlots.has(1))).toBe(overcharge === 2);
+  }
   for (const factory of [createDefaultResolvedScenario, createDefaultCalculatorScenario]) {
     expect(factory(current, saved, servant).preNoblePhantasmPlan).toEqual([
       { kind: 'executeAttackNoblePhantasm' },

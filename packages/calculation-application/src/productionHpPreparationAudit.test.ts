@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { expect, it } from 'vitest';
 import { isDeepStrictEqual } from 'node:util';
 import fixture from '../../test-fixtures/master/fixture.json';
@@ -996,10 +997,11 @@ for (const spec of specs)
           }
         }
 
+        const retainedHp = preparationExecutionStateFor(positive.prepared.orderedScenario)?.hp?.actors.attacker;
         if (
           positive.prepared.status === 'executable' &&
-          positive.prepared.orderedScenario?.hp?.actors.attacker?.kind === 'absolute'
+          retainedHp?.kind === 'absolute'
         )
-          expect(positive.prepared.orderedScenario.hp.actors.attacker.current).toBe(spec.final);
+          expect(retainedHp.current).toBe(spec.final);
       },
     );

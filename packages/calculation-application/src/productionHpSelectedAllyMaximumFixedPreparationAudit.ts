@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import {
   actorFormKey,
   getSkillsForActorForm,
@@ -226,7 +227,7 @@ function selectedAllyMaximumFixedValueView(source: Partial<SelectedAllyMaximumFi
     ),
     ordered: source.ordered
       ? {
-          hp: source.ordered.hp,
+          hp: preparationExecutionStateFor(source.ordered)?.hp,
           operations: source.ordered.operations,
           appliedActions: source.ordered.appliedPreparationActions.map(actionView),
         }
@@ -1167,7 +1168,7 @@ function inspectSelected(
     'selectedAllyMaximumFixedRetainedMismatch',
     'seed.reference',
     [true, true],
-    [s.ordered?.hp === s.transitions?.at(-1)?.result.state.hp, candidate.seed.hp === s.ordered?.hp],
+    [preparationExecutionStateFor(s.ordered)?.hp === s.transitions?.at(-1)?.result.state.hp, candidate.seed.hp === preparationExecutionStateFor(s.ordered)?.hp],
   );
   c(
     'selectedAllyMaximumFixedReaderMismatch',

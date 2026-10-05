@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
@@ -376,7 +377,7 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
         expect(rechecked[i]!.status).toBe('passed');
         expect(parity[i]!.normal.calculation.result).toEqual(item.source.calculation.result);
         expect(parity[i]!.ranking.calculation.result).toEqual(item.source.calculation.result);
-        expect(parity[i]!.normal.prepared.orderedScenario?.hp).toEqual(item.source.ordered?.hp);
+        expect(preparationExecutionStateFor(parity[i]!.normal.prepared.orderedScenario)?.hp).toEqual(preparationExecutionStateFor(item.source.ordered)?.hp);
         expect(
           item.source.canonical.consumers.every(
             (c) => !item.source.canonical.writers.some((w) => w.effect === c.effect),

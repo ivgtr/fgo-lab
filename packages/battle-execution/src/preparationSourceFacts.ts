@@ -1,8 +1,8 @@
-import type { ConditionFactProof } from './conditionRead';
+import { inputFactValues, writeInputFact } from './inputFacts';
 import { runtimeInputKey } from './runtimeInputIdentity';
 import { canonicalRequirementLeaves, type CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type { ConditionExpression } from './contracts';
-import { evaluateCondition, type ConditionEvaluationState } from './condition';
+import { evaluateCondition, type ConditionEvaluationState, type ConditionReadAudit } from './condition';
 import { runtimeInputDefinitionsForSource } from './operationCompiler';
 import { resolveStochasticActivationOutcome } from './stochasticOutcomes';
 import {
@@ -57,12 +57,14 @@ export function resolvePreparationSourceFacts(
   selection: StochasticSelection,
   procOwner: 'source' | 'ocRate',
   onHpRead?: (read: HpQuantityRead) => void,
+  onConditionRead?: (read: ConditionReadAudit) => void,
 ) {
   const definitions = runtimeInputDefinitionsForSource(program.source);
-  let values = { ...facts.resolvedInputValues };
+  let inputFacts = facts.inputFacts;
   const missingDefinitions: CanonicalInputDefinition[] = [];
   for (const definition of definitions) {
-    const value = values[definition.key] ?? definition.defaultValue;
+    const prior = inputFacts.get(definition.key);
+    const value = prior === undefined ? definition.defaultValue : prior.value;
     if (
       value === null ||
       !Number.isInteger(value) ||
@@ -70,32 +72,28 @@ export function resolvePreparationSourceFacts(
       value > definition.maximum ||
       (value - definition.minimum) % definition.step !== 0
     ) {
-      values = Object.fromEntries(Object.entries(values).filter(([key]) => key !== definition.key));
+      inputFacts = writeInputFact(inputFacts, definition.key, null, []);
       missingDefinitions.push(
         definition.kind === 'effectStackCount'
           ? definition
           : { ...definition, defaultValue: null, defaultReason: null },
       );
-    } else values[definition.key] = value;
+    } else if (prior === undefined)
+      inputFacts = writeInputFact(inputFacts, definition.key, value, [
+        { kind: 'selectedInitialResource', clock: facts.conditionReadClock },
+      ]);
   }
   const resolved = {
     ...facts,
     conditionFactProofs: cloneConditionFactProofs(facts.conditionFactProofs),
-    resolvedInputValues: values,
+    inputFacts,
   };
-  for (const definition of definitions) {
-    if (values[definition.key] === undefined) continue;
-    if (facts.resolvedInputValues[definition.key] === undefined)
-      (resolved.conditionFactProofs.inputs as Map<string, ConditionFactProof>).set(definition.key, {
-        kind: 'selectedInitialResource',
-        clock: resolved.conditionReadClock,
-      });
-  }
+  const values = inputFactValues(inputFacts);
   const condition = commandCondition(program.condition, program);
   const previous = onHpRead ? beginHpConditionCapture(resolved, onHpRead) : undefined;
   let conditionRead: ConditionRead;
   try {
-    conditionRead = evaluateCondition(condition, resolved);
+    conditionRead = evaluateCondition(condition, resolved, onConditionRead);
   } finally {
     if (onHpRead) finishHpConditionCapture(resolved, previous);
   }

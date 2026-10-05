@@ -1,4 +1,5 @@
 import type { ConditionFactProof } from './conditionRead';
+import { createInputFacts, writeInputFact } from './inputFacts';
 import { sourceMaximumHpInputKey, sourceHpInputKey } from './operationCompiler';
 import { seedHp } from './hpResource';
 import { npProgramEffects, effectExecutesInNpProgram } from './npProgramScope';
@@ -249,6 +250,8 @@ export function createPreparationState(
 ): PreparationTransitionResult {
   const form = findActorForm(servant, initialFormId);
   const placeholder: PreNoblePhantasmState = {
+    inputFacts: new Map(),
+    sourceBindings: [],
     conditionWriteProofs: emptyConditionFactProofs(),
     npQuantityWrites: [],
     battlePoints: emptyBattlePointState(),
@@ -306,6 +309,30 @@ export function createPreparationState(
       valueIndex: null,
     },
   };
+  placeholder.inputFacts = createInputFacts(context.canonicalInputValues ?? {}, {
+    kind: 'externalAssumption',
+    clock: initialProof.clock,
+  });
+  const sharedInputs = mergeInputDefinitions(
+    [
+      ...servant.skills.flatMap((skill) => skill.effects),
+      ...servant.passives.flatMap((skill) => skill.effects),
+      ...servant.noblePhantasmVariantGroups.flatMap((group) =>
+        group.variants.flatMap((variant) => variant.effects),
+      ),
+      ...(context.initialSources ?? []).map((source) => source.effect),
+      ...(context.terminalSources ?? []).map((source) => source.effect),
+    ].flatMap((effect) => effect.inputDefinitions.filter((input) => input.kind === 'criticalStars')),
+  );
+  for (const input of sharedInputs) {
+    if (placeholder.inputFacts.has(input.key) || input.defaultValue === null) continue;
+    placeholder.inputFacts = writeInputFact(
+      placeholder.inputFacts,
+      input.key,
+      input.defaultValue,
+      [initialProof],
+    );
+  }
   (placeholder.conditionWriteProofs.quantities as Map<string, ConditionFactProof>).set(
     'npGauge:attacker',
     initialProof,

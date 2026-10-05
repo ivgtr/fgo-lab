@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { commonPreparationSkillLevels } from './rankingBasis';
 import {
   selectedAllyMaximumFixedMaySelect,
@@ -1063,7 +1064,7 @@ describe('production master inventory ratchet', () => {
                 master,
                 versions,
               );
-              const liveHp = candidate.prepared.orderedScenario?.hp?.actors.attacker;
+              const liveHp = preparationExecutionStateFor(candidate.prepared.orderedScenario)?.hp?.actors.attacker;
               const livePermille = hpPermille(liveHp);
               const candidateEffect = candidate.calculation.effects.find(
                 (projection) =>
@@ -1093,7 +1094,7 @@ describe('production master inventory ratchet', () => {
                 candidate.calculation.effectInputs,
               );
               const off = evaluateWithOrderedOperationEvents(offScenario, master, versions);
-              const offLiveHp = off.prepared.orderedScenario?.hp?.actors.attacker;
+              const offLiveHp = preparationExecutionStateFor(off.prepared.orderedScenario)?.hp?.actors.attacker;
               const onSide = userControlSideObservation(
                 candidateEffect,
                 candidate.calculation,
@@ -1191,7 +1192,7 @@ describe('production master inventory ratchet', () => {
                 selectedPreparation,
               );
               const preparedValue = readBattlePoint(
-                on.prepared.orderedScenario?.battlePoints,
+                preparationExecutionStateFor(on.prepared.orderedScenario)?.battlePoints,
                 'attacker',
                 battlePointCandidates.domain.id,
               );

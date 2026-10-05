@@ -2,15 +2,12 @@ import type { HpNpEvaluation } from './hpExecutionObservation';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { targetPredicateKey } from './targetPredicate';
+import type { TraitQuantityRead } from './traitFactLayers';
 
 export interface NpDamageOperationContext {
   overcharge: number;
   selectedNpLevel: number;
-  attackerTraitCounts: Readonly<Record<string, number>>;
-  attackerStateTraitCounts: Readonly<Record<string, number>>;
-  targetTraitCounts: Readonly<Record<string, number>>;
-  targetCombinedTraitCounts: Readonly<Record<string, number>>;
-  targetStateTraitCounts: Readonly<Record<string, number>>;
+  traitQuantity: (actor: 'attacker' | 'target', layer: 'combined' | 'state', trait: string) => TraitQuantityRead;
   targetTraits: ReadonlyMap<string, boolean>;
   targetStateTraits: ReadonlyMap<string, boolean>;
   targetPredicateValues: ReadonlyMap<string, boolean>;
@@ -44,8 +41,7 @@ type ScalarObserver = (consumption: ScalarNpDamageConsumption) => void;
 const one = (): [number, number, number, number, number] => [1, 1, 1, 1, 1];
 
 function countTraits(
-  combinedCounts: Readonly<Record<string, number>>,
-  stateCounts: Readonly<Record<string, number>>,
+  readQuantity: (layer: 'combined' | 'state', trait: string) => TraitQuantityRead,
   stateTraitNames: ReadonlySet<string>,
   targetPredicateValues: ReadonlyMap<string, boolean>,
   required: readonly (
@@ -55,20 +51,20 @@ function countTraits(
         predicate: Parameters<typeof targetPredicateKey>[0];
       }
   )[],
-): number {
-  return required.reduce(
-    (sum, trait) =>
-      sum +
-      (trait.kind === 'targetPredicate'
-        ? targetPredicateValues.get(targetPredicateKey(trait.predicate)) === true
-          ? 1
-          : 0
-        : Math.max(
-            0,
-            (stateTraitNames.has(trait.name) ? stateCounts : combinedCounts)[trait.name] ?? 0,
-          )),
-    0,
-  );
+): number | null {
+  let total = 0;
+  for (const trait of required) {
+    if (trait.kind === 'targetPredicate') {
+      const present = targetPredicateValues.get(targetPredicateKey(trait.predicate));
+      if (present === undefined) return null;
+      total += Number(present);
+    } else {
+      const read = readQuantity(stateTraitNames.has(trait.name) ? 'state' : 'combined', trait.name);
+      if (read.value === null) return null;
+      total += read.value;
+    }
+  }
+  return total;
 }
 
 function hasTrait(
@@ -257,23 +253,21 @@ function evaluateNpDamageOperationInternal(
       ) as [number, number, number, number, number],
     );
 
-  const sourceCounts =
-    parameters[0].targetId === 1 ? context.targetCombinedTraitCounts : context.attackerTraitCounts;
-  const sourceStateCounts =
-    parameters[0].targetId === 1
-      ? context.targetStateTraitCounts
-      : context.attackerStateTraitCounts;
+  const actor = parameters[0].targetId === 1 ? 'target' : 'attacker';
   const stateTraitNames = new Set(damage.stateTraitNames);
+  const quantities = parameters.map((parameter) => countTraits(
+    (layer, trait) => context.traitQuantity(actor, layer, trait),
+    stateTraitNames,
+    context.targetPredicateValues,
+    parameter.targetTraits ?? [],
+  ));
+  if (quantities.some((count) => count === null))
+    return { status: 'unsupported', missingEvidence: 'unknown_trait_quantity' };
   return resolved(
     baseMultipliers,
-    parameters.map((parameter) => {
-      const count = countTraits(
-        sourceCounts,
-        sourceStateCounts,
-        stateTraitNames,
-        context.targetPredicateValues,
-        parameter.targetTraits ?? [],
-      );
+    parameters.map((parameter, index) => {
+      const count = quantities[index]!;
+      if (count === null) throw new TypeError('validated_trait_quantity_required');
       if (count === 0) return 1;
       const capped =
         parameter.maximumTargetCount && parameter.maximumTargetCount > 0

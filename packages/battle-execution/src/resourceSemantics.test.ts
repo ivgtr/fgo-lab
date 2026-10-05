@@ -1,5 +1,7 @@
 import type { BattleOperation } from './contracts';
-import { closeResourceMutationSemantics } from './resourceSemantics';
+import { closeResourceMutationSemantics, mutateCriticalStars } from './resourceSemantics';
+import { cloneInputFacts, writeInputFact } from './inputFacts';
+import { proofIsGuaranteed, type ConditionFactProof } from './conditionRead';
 import { describe, expect, it } from 'vitest';
 
 const resourceOperation = {
@@ -17,6 +19,46 @@ const resourceOperation = {
 } as unknown as BattleOperation;
 
 describe('resource semantic closure', () => {
+  const clock: ConditionFactProof['clock'] = {
+    phase: 'initial',
+    actorFormId: { actorId: 'fixture', limitCount: 0 },
+    actor: 'attacker',
+    actionId: null,
+    operationId: null,
+    sourceInstanceId: null,
+    occurrenceId: null,
+    valueSetIndex: null,
+    valueIndex: null,
+  };
+  const guaranteed: ConditionFactProof = { kind: 'guaranteedWrite', clock };
+  it('keeps possible prior quantity dependencies after a guaranteed star gain', () => {
+    const prior: ConditionFactProof = { kind: 'possibleOutcome', clock };
+    const initial = writeInputFact(new Map(), 'battle:criticalStars', 20, [prior]);
+    const result = mutateCriticalStars(initial, 10, 'gain', guaranteed);
+    expect(result.status).toBe('applied');
+    if (result.status !== 'applied') throw new Error('star_write_required');
+    const fact = result.facts.get('battle:criticalStars')!;
+    expect(fact.value).toBe(30);
+    expect(fact.support.every(proofIsGuaranteed)).toBe(false);
+    expect(initial.get('battle:criticalStars')!.value).toBe(20);
+    expect(cloneInputFacts(result.facts)).toEqual(result.facts);
+    expect(cloneInputFacts(result.facts).get('battle:criticalStars')).not.toBe(fact);
+  });
+  it('records a clipped same-value star write and rejects unknown quantities without changing them', () => {
+    const initial = writeInputFact(new Map(), 'battle:criticalStars', 99, [guaranteed]);
+    const clipped = mutateCriticalStars(initial, 10, 'gain', guaranteed);
+    expect(clipped).toMatchObject({ status: 'applied', before: 99, after: 99 });
+    expect(clipped.facts.get('battle:criticalStars')!.support).toHaveLength(2);
+    const unknown = writeInputFact(new Map(), 'battle:criticalStars', null, []);
+    const rejected = mutateCriticalStars(unknown, 10, 'gain', guaranteed);
+    expect(rejected).toMatchObject({ status: 'inputRequired', reason: 'unknownCriticalStars' });
+    expect(rejected.facts).toBe(unknown);
+    expect(unknown.get('battle:criticalStars')!.value).toBeNull();
+    expect(mutateCriticalStars(initial, null, 'gain', guaranteed)).toMatchObject({
+      status: 'unsupported',
+      facts: initial,
+    });
+  });
   it('proves an unread resource transition irrelevant', () => {
     expect(closeResourceMutationSemantics([resourceOperation])).toEqual([
       expect.objectContaining({

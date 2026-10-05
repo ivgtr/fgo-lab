@@ -1,4 +1,6 @@
 import { QUANTITY_FACT_DOMAINS } from '@fgo-lab/schema';
+import { readInputFact, writeInputFact, type InputFacts } from './inputFacts';
+import type { ConditionFactProof } from './conditionRead';
 import {
   conditionQuantityReads,
   expressionQuantityReads,
@@ -71,19 +73,36 @@ export function operationHasNoRuntimeDamageImpact(operation: BattleOperation): b
 export function applyOrderedCriticalStarsMutation(
   operation: Extract<BattleOperation, { kind: 'resourceMutation' }>,
   state: ExecutableBattleState,
+  proof: ConditionFactProof,
 ): ExecutionIssue | null {
   if (operation.resolution !== 'orderedCriticalStars' || operation.amount === null)
     return unresolvedResourceIssue(operation);
-  const current = state.resolvedInputValues['battle:criticalStars'];
-  if (current === undefined) return unresolvedResourceIssue(operation);
-  state.resolvedInputValues = {
-    ...state.resolvedInputValues,
-    'battle:criticalStars': Math.min(
-      99,
-      Math.max(0, current + operation.amount * (operation.direction === 'gain' ? 1 : -1)),
-    ),
-  };
+  const result = mutateCriticalStars(state.inputFacts, operation.amount, operation.direction, proof);
+  if (result.status !== 'applied') return unresolvedResourceIssue(operation);
+  state.inputFacts = result.facts;
   return null;
+}
+
+/** Preparation and ordinary execution use the same physical writer and exact-value dependencies. */
+export function mutateCriticalStars(
+  facts: InputFacts,
+  amount: number | null,
+  direction: 'gain' | 'loss',
+  proof: ConditionFactProof,
+) {
+  const read = readInputFact(facts, 'battle:criticalStars');
+  if (read.value === undefined)
+    return { status: 'inputRequired' as const, facts, reason: 'unknownCriticalStars' };
+  if (amount === null || !Number.isInteger(amount) || amount < 0)
+    return { status: 'unsupported' as const, facts, reason: 'unresolvedCriticalStarsAmount' };
+  const before = read.value;
+  const after = Math.min(99, Math.max(0, before + amount * (direction === 'gain' ? 1 : -1)));
+  return {
+    status: 'applied' as const,
+    facts: writeInputFact(facts, 'battle:criticalStars', after, [...read.support, proof]),
+    before,
+    after,
+  };
 }
 
 export function unresolvedResourceIssue(

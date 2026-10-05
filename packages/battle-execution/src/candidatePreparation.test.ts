@@ -1,4 +1,6 @@
-import { emptyConditionFactProofs } from './conditionRead';
+import fixture from '../../test-fixtures/master/fixture.json';
+import { masterSnapshotSchema, type ServantMaster } from '@fgo-lab/master-data';
+import { createPreparationState } from './preparationState';
 import { describe, expect, it } from 'vitest';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { BattleOperation } from './contracts';
@@ -6,6 +8,35 @@ import { resolveOperationActivation } from './activation';
 import { resolveStochasticOutcomes } from './stochasticOutcomes';
 import { executeOrderedScenarioCandidate } from './candidateExecution';
 import type { PreparedOrderedScenario } from './executionTypes';
+
+const fixtureMaster = masterSnapshotSchema.parse(fixture);
+function preparationExecution(): PreparedOrderedScenario['preparationExecution'] {
+  const original = fixtureMaster.servants[0]!;
+  const servant: ServantMaster = {
+    ...original,
+    id: input.attackerId,
+    traits: [],
+    skills: [],
+    passives: [],
+    noblePhantasmVariantGroups: [{ ...original.noblePhantasmVariantGroups[0]!, variants: [noblePhantasmVariant] }],
+    actorFormGraph: {
+      actorId: input.attackerId,
+      defaultInitialFormId: noblePhantasmVariant.ref.actorFormId,
+      initialFormIds: [noblePhantasmVariant.ref.actorFormId],
+      forms: [{ ...original.actorFormGraph.forms[0]!, id: noblePhantasmVariant.ref.actorFormId, traits: [], skillIds: [], passiveIds: [], baseNoblePhantasmVariant: noblePhantasmVariant.ref }],
+      transitions: [],
+    },
+  };
+  const initialized = createPreparationState(servant, noblePhantasmVariant.ref.actorFormId, {
+    stochasticSelection: { kind: 'declared' },
+    resourceSemantics: fixtureMaster.npResourceSemantics,
+    npLevel: 1,
+    initialGauge: 10_000,
+    overcharge: 1,
+  });
+  if (initialized.status !== 'applied') throw new Error('preparation_fixture_required');
+  return { kind: 'available', state: initialized.state };
+}
 
 const source = {
   origin: 'attacker' as const,
@@ -68,7 +99,7 @@ const input = {
 const noblePhantasmVariant = {
   kind: 'nonAttack' as const,
   canonicalId: 'np:1',
-  ref: { actorFormId: 'servant:1', noblePhantasmId: 'np:1' },
+  ref: { actorFormId: { actorId: 'servant:1', limitCount: 0 }, noblePhantasmId: 'np:1' },
   name: 'NP',
   priority: 1,
   effects: [],
@@ -297,7 +328,7 @@ describe('candidate activation preparation boundary', () => {
       attackerClass: 'saber',
       attackerAttribute: 'earth',
       inputDefinitions: [],
-      preparationConditionProofs: { kind: 'available', writeProofs: emptyConditionFactProofs() },
+      preparationExecution: preparationExecution(),
     } as unknown as PreparedOrderedScenario;
     const result = executeOrderedScenarioCandidate(
       prepared,
@@ -351,7 +382,7 @@ describe('candidate activation preparation boundary', () => {
       attackerClass: 'saber',
       attackerAttribute: 'earth',
       inputDefinitions: [],
-      preparationConditionProofs: { kind: 'available', writeProofs: emptyConditionFactProofs() },
+      preparationExecution: preparationExecution(),
     } as unknown as PreparedOrderedScenario;
 
     const result = executeOrderedScenarioCandidate(

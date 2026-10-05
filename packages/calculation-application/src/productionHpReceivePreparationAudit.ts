@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import {
   getSkillsForActorForm,
   type MasterEffect,
@@ -926,9 +927,9 @@ export function auditReceive(input: {
         'receiveRetainedMismatch',
         'selected.finalHp',
         s.transitions?.at(-1)?.result.state.hp,
-        s.ordered.hp,
+        preparationExecutionStateFor(s.ordered)?.hp,
       );
-      c('receiveRetainedMismatch', 'selected.seed', s.ordered.hp, s.candidate?.seed.hp);
+      c('receiveRetainedMismatch', 'selected.seed', preparationExecutionStateFor(s.ordered)?.hp, s.candidate?.seed.hp);
       c(
         'receiveIdentityMismatch',
         'selected.candidate',

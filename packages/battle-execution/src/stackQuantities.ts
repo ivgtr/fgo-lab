@@ -1,4 +1,5 @@
 import { ConditionReadIdentityError, type ConditionFactProof } from './conditionRead';
+import { readInputFact, writeInputFact } from './inputFacts';
 import { commitTraitFact, readTraitQuantity } from './traitFactLayers';
 import { isBuffCountInput, markerTraitRead } from './buffInstances';
 import type {
@@ -42,7 +43,7 @@ export function seedStackQuantities(
 ): void {
   for (const definition of definitions) {
     if (definition.kind !== 'effectStackCount') continue;
-    const count = state.resolvedInputValues[definition.key];
+    const count = readInputFact(state.inputFacts, definition.key).value;
     if (count === undefined) continue;
     if (!Number.isInteger(count) || count < 0 || count > definition.maximum)
       throw new TypeError(`invalid_stack_count:${definition.key}`);
@@ -61,9 +62,11 @@ export function seedStackQuantities(
     };
     commitTraitFact(state.traitFactLayers, scope, trait, count > 0, count, proof, [proof]);
     (state.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(trait, proof);
-    (state.conditionFactProofs.inputs as Map<string, ConditionFactProof>).set(
+    state.inputFacts = writeInputFact(
+      state.inputFacts,
       definition.key,
-      proof,
+      count,
+      [proof],
     );
   }
 }
@@ -74,7 +77,7 @@ export function liveInputQuantity(
     | 'stackQuantitySources'
     | 'traitFactLayers'
     | 'conditionFactProofs'
-    | 'resolvedInputValues'
+    | 'inputFacts'
     | 'buffInstances'
   >,
   key: string,
@@ -88,19 +91,13 @@ export function liveInputQuantityRead(
     | 'stackQuantitySources'
     | 'traitFactLayers'
     | 'conditionFactProofs'
-    | 'resolvedInputValues'
+    | 'inputFacts'
     | 'buffInstances'
   >,
   key: string,
 ): { value: number | undefined; support: readonly ConditionFactProof[] } {
   const source = state.stackQuantitySources[key];
-  if (!source) {
-    const value = state.resolvedInputValues[key];
-    if (value === undefined) return { value, support: [] };
-    const proof = state.conditionFactProofs.inputs.get(key);
-    if (!proof) throw new ConditionReadIdentityError(`input:${key}`);
-    return { value, support: [proof] };
-  }
+  if (!source) return readInputFact(state.inputFacts, key);
   if (source.scope !== 'field') {
     const actor = source.scope === 'attackerState' ? 'attacker' : 'target';
     const marker = markerTraitRead(state.buffInstances ?? [], actor, source.trait);

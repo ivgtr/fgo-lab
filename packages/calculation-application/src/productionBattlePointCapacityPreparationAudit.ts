@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import {
   preparationBattlePointStepsFor,
   type PreparationBattlePointStep,
@@ -1006,7 +1007,7 @@ export function auditBattlePointCapacityPreparation(input: {
       'capacityStateMismatch',
       'preparation.final',
       capture.transitions.at(-1)?.result.state.battlePoints,
-      ordered.battlePoints,
+      preparationExecutionStateFor(ordered)?.battlePoints,
     );
     for (const writer of p.expected.writers) {
       const operations = ordered.operations.filter(

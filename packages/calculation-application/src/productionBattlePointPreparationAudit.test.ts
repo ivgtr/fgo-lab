@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -378,7 +379,7 @@ describe('committed preparation domain battle point shared audit', () => {
           rankingParity,
         });
         const value =
-          program.prepared.orderedScenario!.battlePoints!.actors.attacker!.domains['810000'];
+          preparationExecutionStateFor(program.prepared.orderedScenario!)!.battlePoints!.actors.attacker!.domains['810000'];
         const target = source.observation!.targetExecution!;
         const consumed =
           target.selection === 'selected'
@@ -633,7 +634,7 @@ describe('committed preparation domain battle point shared audit', () => {
           },
         );
         add('missing', 'canonical-state', 'domainTraceMissing', 'preparation.state', (s) => {
-          delete s.program.prepared.orderedScenario!.battlePoints;
+          Reflect.deleteProperty(preparationExecutionStateFor(s.program.prepared.orderedScenario!)!, 'battlePoints');
         });
         add('identity-order', 'source-action', 'domainSourceMismatch', 'action.0.source', (s) => {
           capture(s).transitions[0]!.result.state.appliedActions[0]!.sourceId = 'wrong';
@@ -903,12 +904,12 @@ describe('committed preparation domain battle point shared audit', () => {
           'domainIdentityMismatch',
           'preparation.actor',
           (s) => {
-            s.program.prepared.orderedScenario!.battlePoints = {
-              ...s.program.prepared.orderedScenario!.battlePoints!,
+            preparationExecutionStateFor(s.program.prepared.orderedScenario!)!.battlePoints = {
+              ...preparationExecutionStateFor(s.program.prepared.orderedScenario!)!.battlePoints!,
               actors: {
-                ...s.program.prepared.orderedScenario!.battlePoints!.actors,
+                ...preparationExecutionStateFor(s.program.prepared.orderedScenario!)!.battlePoints!.actors,
                 attacker: {
-                  ...s.program.prepared.orderedScenario!.battlePoints!.actors.attacker!,
+                  ...preparationExecutionStateFor(s.program.prepared.orderedScenario!)!.battlePoints!.actors.attacker!,
                   actorId: 'wrong',
                 },
               },

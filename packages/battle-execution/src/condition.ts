@@ -1,4 +1,5 @@
 import type { BattleOperation } from './contracts';
+import { executionBindingFor } from './executionBinding';
 import { observeHpQuantity } from './hpExecutionObservation';
 import { liveInputQuantityRead } from './stackQuantities';
 import { markerTraitRead } from './buffInstances';
@@ -80,7 +81,7 @@ export type ConditionEvaluationState = Pick<
   | 'actorPredicates'
   | 'traitCounts'
   | 'stackQuantitySources'
-  | 'resolvedInputValues'
+  | 'inputFacts'
   | 'quantities'
   | 'noblePhantasmVariant'
   | 'activationContext'
@@ -454,10 +455,24 @@ export function readOperationCondition(
   state: ConditionEvaluationState,
   onConditionRead?: (read: ConditionReadAudit) => void,
 ): ConditionRead {
-  if (operation.sourceActivation.kind === 'read') return operation.sourceActivation.read;
+  if (operation.sourceActivation.kind === 'read') {
+    const binding = executionBindingFor(operation as BattleOperation);
+    if (onConditionRead && binding)
+      for (const read of binding.conditionReads) onConditionRead(read);
+    return operation.sourceActivation.read;
+  }
+  const binding = executionBindingFor(operation as BattleOperation);
   const clock = {
     ...state.conditionReadClock,
-    phase: 'operation' as const,
+    phase: binding ? ('sourceUse' as const) : ('operation' as const),
+    ...(binding
+      ? {
+          actorFormId: binding.actorFormId,
+          actionId: binding.actionId,
+          valueSetIndex: binding.valueSetIndex,
+          valueIndex: binding.valueIndex,
+        }
+      : {}),
     operationId: operation.operationId,
     sourceInstanceId: operation.source.sourceInstanceId,
     occurrenceId: operation.source.effectOccurrenceId,

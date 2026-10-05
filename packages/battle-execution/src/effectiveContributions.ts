@@ -11,7 +11,6 @@ import type {
   EffectiveContributionSet,
 } from './executionTypes';
 import { contributionId } from './contributionIdentity';
-import { evaluateCondition } from './condition';
 import { procIsGuaranteed, type ConditionRead } from './conditionRead';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 
@@ -117,12 +116,15 @@ function contribution(
 }
 
 export function effectiveContributionsForOperation(
-  result: Pick<OperationResult, 'operation' | 'outcome' | 'projection' | 'state' | 'conditionRead'>,
+  result: Pick<
+    OperationResult,
+    'operation' | 'outcome' | 'projection' | 'conditionRead' | 'damageDependencyRead'
+  >,
   damageInput: DamageResolutionInput,
   finalProjections: readonly EffectProjection[],
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): EffectiveContribution[] {
-  const { operation, outcome, projection, state, conditionRead } = result;
+  const { operation, outcome, projection, conditionRead, damageDependencyRead } = result;
   if (operation.kind === 'addModifier')
     return [
       contribution(
@@ -150,6 +152,8 @@ export function effectiveContributionsForOperation(
   if (operation.kind === 'ignoreDefense' || operation.kind === 'ignoreDamageCut')
     return [contribution(operation, 'ignore', operation.kind, 1, conditionRead, outcome, policy)];
   if (operation.kind !== 'executeNpDamage') return [];
+  if (outcome === 'applied' && damageDependencyRead === null)
+    throw new TypeError('missing_applied_np_dependency_read');
   // A trait-count NP can expose several world-assumption projections for one
   // damage operation. Its operation projection reports the base NP execution;
   // the resolved special input reports whether that shared contribution reached damage.
@@ -178,10 +182,7 @@ export function effectiveContributionsForOperation(
             'npSpecial',
             'npSpecial',
             projection.valuePermille,
-            evaluateCondition(operation.specialAttackDependency, {
-              ...state,
-              conditionReadClock: { ...conditionRead.clock, phase: 'damageEvaluation' },
-            }),
+            outcome === 'applied' ? damageDependencyRead! : conditionRead,
             specialOutcome,
             policy,
           ),
@@ -192,7 +193,7 @@ export function effectiveContributionsForOperation(
 export function createEffectiveContributionSet(
   operations: readonly Pick<
     OperationResult,
-    'operation' | 'outcome' | 'projection' | 'state' | 'conditionRead'
+    'operation' | 'outcome' | 'projection' | 'state' | 'conditionRead' | 'damageDependencyRead'
   >[],
   damageInput: DamageResolutionInput,
   finalProjections: readonly EffectProjection[],

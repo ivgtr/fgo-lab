@@ -1,3 +1,6 @@
+import { inputFactValues } from './inputFacts';
+import { mutateCriticalStars } from './resourceSemantics';
+import type { PhysicalInputCommit } from './executionBinding';
 import {
   bindPreparationWriteProofs,
   commitPreparationNpQuantityWrite,
@@ -74,7 +77,7 @@ import {
   resolvePreparationStructuralOutcome,
   requiredPreparationConditionRead,
 } from './preparationState';
-import { evaluateCondition, type ConditionEvaluationState } from './condition';
+import { evaluateCondition, type ConditionEvaluationState, type ConditionReadAudit } from './condition';
 import { resolvePreparationSourceFacts } from './preparationSourceFacts';
 import {
   applyPreparationNpOperation,
@@ -348,6 +351,8 @@ export function executePreparationOc(args: {
     };
     let sourceApplies = true;
     let sourceState = current;
+    const conditionReads: ConditionReadAudit[] = [];
+    const physicalInputs: PhysicalInputCommit[] = [];
     let sourceResourceMutationCount = resourceMutations.length;
     let sourceNpWriteStart = current.npQuantityWrites.length;
     let sourceStochasticFailureSteps: number[] | undefined;
@@ -484,6 +489,7 @@ export function executePreparationOc(args: {
           ? 'ocRate'
           : 'source',
         sourceHasHpCondition ? (read) => sourceActivations.push(read) : undefined,
+        (read) => conditionReads.push(read),
       );
       if (sourceHasHpCondition)
         hpAction.conditionReads.push({
@@ -498,6 +504,7 @@ export function executePreparationOc(args: {
           outcome: resolved.outcome,
         });
       program = { ...program, condition: resolved.condition };
+      current = { ...current, inputFacts: resolved.facts.inputFacts };
       if (resolved.missingCondition)
         missingSourceConditions.set(source.effect, resolved.missingCondition);
       sourceFacts.set(source.effect, resolved.facts);
@@ -563,6 +570,35 @@ export function executePreparationOc(args: {
     for (const [operationIndex, operation] of source.effect.execution.entries()) {
       const operationFirstStep = steps.length;
       origins?.push({ index: operationFirstStep, source, operationIndex });
+      if (operation.kind === 'resourceMutation' && operation.resource === 'criticalStars') {
+        steps.push(() => {
+          if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
+          const activationRead = requiredPreparationConditionRead(source.effect, activation);
+          if (activationRead.kind !== 'read' || activationRead.read.truth !== true)
+            return { kind: 'reject', status: 'unsupported', reason: 'unknownCriticalStarsCondition' };
+          const amount =
+            operation.amount.kind === 'fixed'
+              ? (source.limitBreak ? operation.amount.limitBreakValues : operation.amount.values)?.[
+                  source.valueSetIndex
+                ]?.[source.valueIndex] ?? null
+              : null;
+          const mutation = mutateCriticalStars(current.inputFacts, amount, operation.direction, sourceProof());
+          if (mutation.status !== 'applied') {
+            if (mutation.status === 'inputRequired')
+              requiredInput = source.effect.inputDefinitions.find((input) => input.kind === 'criticalStars') ?? null;
+            return { kind: 'reject', status: mutation.status, reason: mutation.reason };
+          }
+          physicalInputs.push({
+            operationIndex,
+            inputKey: 'battle:criticalStars',
+            before: mutation.before,
+            after: mutation.after,
+          });
+          current = { ...current, inputFacts: mutation.facts };
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
       // Other players are donor actors. A projected attacker-only write cannot
       // establish their post-write quantity, even when it is a no-op for the attacker.
       if (
@@ -1343,7 +1379,7 @@ export function executePreparationOc(args: {
               };
             const issue = populationInputIssue(
               source.effect.inputDefinitions,
-              facts.resolvedInputValues,
+              inputFactValues(facts.inputFacts),
             );
             if (issue) {
               requiredInput = issue;
@@ -1664,6 +1700,29 @@ export function executePreparationOc(args: {
     };
     const completeSource: (typeof steps)[number] = (state, outcomes) => {
       const step = completePhysicalSource(state, outcomes);
+      if (step.kind !== 'reject') {
+        const committed = !outcomes.some(
+          (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
+        );
+        current = {
+          ...current,
+          sourceBindings: [
+            ...current.sourceBindings,
+            {
+              actionId: args.actionId,
+              actorFormId: sourceState.currentFormId,
+              sourceInstanceId: source.sourceInstanceId,
+              skillId: source.skillId,
+              occurrenceId: source.effect.occurrenceId,
+              valueSetIndex: source.valueSetIndex,
+              valueIndex: source.valueIndex,
+              activation: requiredPreparationConditionRead(source.effect, activation),
+              conditionReads: [...conditionReads],
+              physicalInputs: committed ? [...physicalInputs] : [],
+            },
+          ],
+        };
+      }
       if (step.kind === 'skip' && current.npQuantityWrites.length > sourceNpWriteStart) {
         const receipt = requiredPreparationConditionRead(source.effect, activation);
         if (receipt.kind !== 'read') throw new TypeError('missing_committed_np_write_activation');

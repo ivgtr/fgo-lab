@@ -1,7 +1,4 @@
-import type { ConditionFactProofs } from './conditionRead';
 import type { ScalarNpDamageConsumption } from './npDamageOperation';
-import type { HpState } from './hpResource';
-import type { BattlePointState } from './battlePointResource';
 import type {
   CanonicalInputDefinition,
   BattlePointDomain,
@@ -150,11 +147,9 @@ export interface OrderedScenarioExecutionWithAuditObservation {
 }
 
 export interface PreparedOrderedScenario {
-  preparationConditionProofs:
-    | { kind: 'available'; writeProofs: ConditionFactProofs }
+  preparationExecution:
+    | { kind: 'available'; state: import('./preparationContracts').PreNoblePhantasmState }
     | { kind: 'unavailable'; issues: readonly ExecutionIssue[] };
-  hp?: HpState | undefined;
-  battlePoints?: BattlePointState | undefined;
   battlePointDomains: readonly BattlePointDomain[];
   baseInput: DamageResolutionInput;
   scenario: ResolvedScenario;
@@ -183,6 +178,13 @@ export interface ResolvedCanonicalInputSet {
   values: Readonly<Record<string, number>>;
   missingDefinitions: readonly CanonicalInputDefinition[];
   invalidInputKeys: readonly string[];
+}
+
+/** Expose the retained physical snapshot without reconstructing or copying its identity. */
+export function preparationExecutionStateFor(prepared: PreparedOrderedScenario | null | undefined) {
+  return prepared?.preparationExecution.kind === 'available'
+    ? prepared.preparationExecution.state
+    : undefined;
 }
 
 export type ContributionApplicationPolicy =

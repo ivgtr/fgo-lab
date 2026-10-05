@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import type { MasterEffect } from '@fgo-lab/master-data';
 import type { SourceEffect } from '@fgo-lab/battle-execution';
 import {
@@ -383,7 +384,7 @@ export function reconcileHpTransferEvidence(
         : undefined;
     const final =
       battlePointPreparationRejectionObservationFor(prepared)?.transitions.at(-1)?.result.state.hp;
-    const retainedHp = prepared.orderedScenario?.hp;
+    const retainedHp = preparationExecutionStateFor(prepared.orderedScenario)?.hp;
     if (
       expected.some((item) => item.requestIndex === requestIndex) &&
       (target?.selection === 'selected' || calculation.result.status === 'calculated')

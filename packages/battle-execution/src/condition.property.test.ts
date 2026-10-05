@@ -1,4 +1,5 @@
 import { createTraitFactLayers } from './traitFactLayers';
+import { createInputFacts } from './inputFacts';
 import {
   emptyConditionFactProofs,
   type ConditionFactProof,
@@ -123,7 +124,7 @@ function state(
       operationTriggers: new Set(),
       sourceQuantityRanges: new Map(),
     },
-    resolvedInputValues: {},
+    inputFacts: new Map(),
     modifiers: [],
     modifierRates: {},
     ignoreDefense: false,
@@ -554,7 +555,10 @@ describe('stack quantity state and constraint closure', () => {
     (count) => {
       const inputs = [definition('alpha'), definition('beta')];
       const initial = state();
-      initial.resolvedInputValues = { [inputs[0]!.key]: count, [inputs[1]!.key]: 1 };
+      initial.inputFacts = createInputFacts(
+        { [inputs[0]!.key]: count, [inputs[1]!.key]: 1 },
+        { kind: 'externalAssumption', clock: initial.conditionReadClock },
+      );
       seedStackQuantities(initial, inputs);
       for (const comparison of ['atLeast', 'atMost', 'equal'] as const) {
         for (let boundary = 0; boundary <= 4; boundary++) {

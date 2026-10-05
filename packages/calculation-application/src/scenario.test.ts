@@ -4157,12 +4157,58 @@ describe('scenario calculation facade', () => {
     expect(
       createRankingRow(specialMaster.servants[0]!, baseline.detail, profile).specialDamageApplied,
     ).toBe(true);
-    expect(
-      baseline.detail.appliedPreparationActions.at(-1)?.selectedEffects[0]?.sourceActivation,
-    ).toMatchObject({
-      kind: 'read',
-      read: { truth: true, certainty: 'guaranteed', clock: { phase: 'sourceUse' } },
-      proc: { kind: 'resolved', outcome: 'success', certainty: 'guaranteed' },
+    const preparedCalculation = prepareCalculationScenarioWithPolicy(
+      baseline.detail.scenario,
+      specialMaster,
+      baseline.detail.contributionPolicy,
+    );
+    if (
+      preparedCalculation.status !== 'executable' ||
+      !preparedCalculation.orderedScenario ||
+      !preparedCalculation.canonicalInputs
+    )
+      throw new Error('executable scenario required');
+    const prepared = preparedCalculation.orderedScenario;
+    const execution = executeOrderedScenario(
+      prepared,
+      preparedCalculation.canonicalInputs,
+      baseline.detail.contributionPolicy,
+    );
+    const burnWrite = execution.operations.find(
+      ({ operation }) => operation.source.effectOccurrenceId === mutation.occurrenceId,
+    )!;
+    const npResult = execution.operations.find(
+      ({ operation, outcome }) => operation.kind === 'executeNpDamage' && outcome === 'applied',
+    )!;
+    expect(burnWrite.outcome).toBe('applied');
+    expect(burnWrite.conditionRead).toMatchObject({
+      truth: true,
+      certainty: 'guaranteed',
+      clock: { phase: 'sourceUse' },
+    });
+    expect(burnWrite.operation).toMatchObject({
+      proc: { kind: 'guaranteed' },
+      procRatePermille: 1_000,
+    });
+    const action = baseline.detail.appliedPreparationActions.at(-1)!;
+    expect(burnWrite.conditionRead.clock).toMatchObject({
+      actionId: action.ocUse!.actionId,
+      actorFormId: action.actorFormId,
+      valueSetIndex: action.ocUse!.effectiveOc - 1,
+      valueIndex: prepared.baseInput.npLevel - 1,
+    });
+    expect(npResult.damageDependencyRead).toMatchObject({
+      truth: true,
+      certainty: 'guaranteed',
+      clock: {
+        phase: 'damageEvaluation',
+        actionId: action.ocUse!.actionId,
+        operationId: npResult.operation.operationId,
+      },
+    });
+    expect(npResult.damageDependencyRead!.support).toContainEqual({
+      kind: 'guaranteedWrite',
+      clock: burnWrite.conditionRead.clock,
     });
 
     expect(satisfied.detail.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
@@ -5149,31 +5195,67 @@ describe('scenario calculation facade', () => {
     );
 
     expect(execution.result.status).toBe('calculated');
-    expect(execution.appliedPreparationActions[0]?.selectedEffects).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
+    const selectedEffects = execution.appliedPreparationActions[0]!.selectedEffects;
+    const sourceRead = (occurrenceId: string) =>
+      selectedEffects.find((effect) => effect.occurrenceId === occurrenceId)!.sourceActivation;
+    expect(sourceRead('mixed-preparation:0')).toMatchObject({
+      kind: 'read',
+      read: {
+        truth: true,
+        certainty: 'guaranteed',
+        clock: {
+          phase: 'sourceUse',
+          actorFormId: baseScenario.attacker.initialActorFormId,
+          sourceInstanceId: 'attacker:fixture-saber',
           occurrenceId: 'mixed-preparation:0',
-          stochasticOutcome: 'success',
-        }),
-        expect.objectContaining({ occurrenceId: 'mixed-ordinary:0', stochasticOutcome: null }),
-      ]),
-    );
+          valueSetIndex: 0,
+          valueIndex: 0,
+        },
+      },
+      proc: { kind: 'resolved', outcome: 'success', certainty: 'possible', ratePermille: 800 },
+    });
+    expect(sourceRead('mixed-ordinary:0')).toMatchObject({
+      kind: 'read',
+      read: { truth: true, certainty: 'guaranteed', clock: { phase: 'sourceUse' } },
+      proc: { kind: 'resolved', outcome: 'failure', certainty: 'possible', ratePermille: 500 },
+    });
     expect(execution.effects.find(({ label }) => label === 'mixed-ordinary')).toMatchObject({
       outcome: 'notApplied',
     });
-    expect(execution.appliedPreparationActions[0]?.selectedEffects).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          occurrenceId: 'mixed-condition-false:0',
-          stochasticOutcome: 'success',
-        }),
-      ]),
-    );
+    expect(sourceRead('mixed-condition-false:0')).toMatchObject({
+      kind: 'read',
+      read: { truth: false, certainty: 'guaranteed', clock: { phase: 'sourceUse' } },
+      proc: { kind: 'resolved', outcome: 'success', certainty: 'possible', ratePermille: 700 },
+    });
+    const reads = selectedEffects.map(({ sourceActivation }) => {
+      if (sourceActivation.kind !== 'read') throw new Error('mixed_source_read_required');
+      return sourceActivation.read;
+    });
+    expect(reads.every(({ clock }) => clock.actionId !== null)).toBe(true);
+    expect(new Set(reads.map(({ clock }) => clock.actionId)).size).toBe(1);
+    expect(execution.appliedPreparationActions[0]!.resourceAfter.gauge).toBe(12_000);
+    expect(execution.appliedPreparationActions[1]!.resourceBefore.gauge).toBe(12_000);
+    expect(execution.appliedPreparationActions[1]!.resourceAfter.gauge).toBe(0);
+    expect(execution.input.overcharge).toBe(1);
     expect(execution.effects.find(({ label }) => label === 'mixed-condition-false')).toMatchObject({
       outcome: 'notApplied',
       explanation: { code: 'conditionNotMet' },
     });
     expect(execution.input.attackBuff).toBe(0);
+    const portable = executePortableCalculation(
+      createCalculatorPortableRequest(execution.scenario, {
+        schemaVersion: SCHEMA_VERSION,
+        engineVersion: ENGINE_VERSION,
+        masterDataVersion: mixedMaster.version,
+      }),
+      mixedMaster,
+    );
+    expect(portable.status).toBe('executed');
+    if (portable.status !== 'executed') throw new Error('mixed_portable_execution_required');
+    expect(portable.execution.result).toEqual(execution.result);
+    if (portable.execution.status !== 'executable')
+      throw new Error('mixed_portable_candidate_required');
+    expect(portable.execution.input).toEqual(execution.input);
   });
 
   it.each([

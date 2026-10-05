@@ -1,3 +1,4 @@
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { isDeepStrictEqual } from 'node:util';
 import type { BattleOperation, ConditionExpression, SourceEffect } from '@fgo-lab/battle-execution';
 import {
@@ -450,7 +451,7 @@ export function hpPublishedDependencyBindings(
         fail('candidatePreflightMismatch', candidatePath);
       if (!candidate && !aborted && target?.selection !== 'unresolved')
         fail('missingCapture', candidatePath);
-      if (candidate && candidate.seed.hp !== ordered?.hp)
+      if (candidate && candidate.seed.hp !== preparationExecutionStateFor(ordered)?.hp)
         fail('requestOwnerMismatch', `${candidatePath}.seed`);
       if (target?.selection === 'selected' && preflight?.status === 'ready' && candidate) {
         const actualReads = candidate.reads;

@@ -1,4 +1,6 @@
 import { hpPermille } from './hpResource';
+import { liveInputQuantity } from './stackQuantities';
+import { readTraitQuantity } from './traitFactLayers';
 import { evaluateHpValueExpression } from './hpValueExpression';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type {
@@ -96,13 +98,16 @@ export function resolveModifierValue(
   if (expression.kind === 'inputLinear' || expression.kind === 'stackLinear') {
     const units =
       expression.kind === 'stackLinear'
-        ? expression.sources.reduce(
-            (sum, source) =>
-              sum +
-              (state.traitCounts[source.quantitySource.scope][source.quantitySource.trait] ?? 0),
-            0,
-          )
-        : state.resolvedInputValues[expression.inputKey];
+        ? (() => {
+            let total = 0;
+            for (const { quantitySource } of expression.sources) {
+              const read = readTraitQuantity(state.traitFactLayers, quantitySource.scope, quantitySource.trait, state.conditionFactProofs.completeTraits[quantitySource.scope]);
+              if (read.value === null) return undefined;
+              total += read.value;
+            }
+            return total;
+          })()
+        : liveInputQuantity(state, expression.inputKey);
     if (units === undefined) return null;
     const value =
       expression.basePermille +
