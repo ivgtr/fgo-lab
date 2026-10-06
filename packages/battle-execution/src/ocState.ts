@@ -1,3 +1,6 @@
+import { contributionPolicyDecisions } from './effectiveContributions';
+import type { SourceActivationReceipt, SourceProcRead } from './conditionRead';
+import type { ContributionApplicationPolicy } from './executionTypes';
 import { evaluateHpValueExpression } from './hpValueExpression';
 import { resolveApplicationRateOutcome } from './applicationRate';
 import { deriveBaseOvercharge, DEFAULT_NP_RESOURCE_SEMANTICS } from './npResource';
@@ -18,6 +21,50 @@ export interface OcSourceEvidence {
   skillName: string;
   label: string;
 }
+export interface OcPolicyBinding {
+  readonly activation: Extract<SourceActivationReceipt, { kind: 'read' }>;
+  readonly policy: ContributionApplicationPolicy;
+  readonly executionIntent: 'declared' | 'physicalBranch';
+  readonly gameActivation: import('@fgo-lab/master-data').MasterEffect['gameActivation'];
+  readonly contributionScope: import('./contracts').BattleOperation['contributionScope'];
+}
+export interface OcApplicationRead {
+  readonly binding: OcPolicyBinding;
+  readonly cell: Grant['cells'][number][number];
+  readonly valueSetIndex: number;
+  readonly valueIndex: number;
+  readonly limitBreak: boolean;
+  readonly rateQueries: readonly {
+    rate: OcRateInstance;
+    hpRead: OcRateHpRead | null;
+    value: number | null;
+  }[];
+  readonly effectiveRate: number;
+  readonly proc: SourceProcRead;
+  readonly adoption: ReturnType<typeof contributionPolicyDecisions>;
+}
+export function ocApplicationParticipates(read: Pick<OcApplicationRead, 'binding' | 'adoption'>) {
+  return (
+    read.adoption.selfDecision.kind === 'included' &&
+    read.adoption.areaViewDecision.kind === 'included' &&
+    (read.binding.executionIntent === 'physicalBranch' ||
+      read.adoption.conditionDecision.kind === 'included')
+  );
+}
+export function ocBindingParticipates(binding: OcPolicyBinding, source: OperationSource) {
+  const adoption = contributionPolicyDecisions(
+    {
+      source,
+      gameActivation: binding.gameActivation,
+      contributionScope: binding.contributionScope,
+    },
+    binding.activation.read,
+    binding.policy,
+    binding.activation.proc.kind === 'resolved' &&
+      binding.activation.proc.certainty === 'guaranteed',
+  );
+  return ocApplicationParticipates({ binding, adoption });
+}
 interface InstanceBase {
   instanceId: number;
   sourceKey: string;
@@ -27,7 +74,7 @@ interface InstanceBase {
   stateTraits: readonly OcStateTrait[];
   turns: OcLifetimeLimit;
   uses: OcLifetimeLimit;
-  included: boolean;
+  readonly decision: OcApplicationRead;
   formKey?: string;
 }
 export interface OcBoostInstance extends InstanceBase {
@@ -132,7 +179,7 @@ export type OcActionStep =
       valueSetIndex: number;
       valueIndex: number;
       limitBreak: boolean;
-      included: boolean;
+      binding: OcPolicyBinding;
       condition: boolean | null;
       procWitness?: 0 | 1;
       formKey?: string;
@@ -169,6 +216,18 @@ export type OcActionResult =
       occurrenceId?: string;
       outcomes: readonly OcActionOutcome[];
     };
+
+export interface OcActionStepResult {
+  readonly applicationRead: OcApplicationRead | null;
+  readonly step: OcActionStep;
+  readonly before: OcState;
+  readonly after: OcState;
+  readonly outcome: OcActionOutcome | null;
+  readonly rejection: {
+    status: 'invalid' | 'unsupported' | 'inputRequired';
+    reason: string;
+  } | null;
+}
 const live = (instance: Pick<InstanceBase, 'formKey' | 'turns' | 'uses'>, state: OcState) =>
   (instance.formKey === undefined || instance.formKey === state.activeFormKey) &&
   (instance.turns.kind === 'unlimited' || instance.turns.remaining > 0) &&
@@ -183,7 +242,9 @@ export function ocRemovalIntersects(
   return [...state.boosts, ...state.rates, ...state.uncertainRates].some(
     (instance) =>
       instance.owner === recipient &&
-      (!includedOnly || !('included' in instance) || instance.included) &&
+      (!includedOnly ||
+        !('decision' in instance) ||
+        ocApplicationParticipates(instance.decision)) &&
       instance.lifetime === 'active' &&
       live(instance, state) &&
       instance.stateTraits.some((trait) => selector.includes(trait)),
@@ -241,6 +302,7 @@ export function executeOcAction(
       declaredWitness: 0 | 1 | undefined,
     ) => 0 | 1 | undefined;
     observeStep?: (index: number, step: OcActionStep) => void;
+    completeStep?: (index: number, result: OcActionStepResult) => void;
     observeRateQuery?: (index: number, state: OcState, rate: OcRateInstance) => void;
     observeRateSelection?: (index: number, state: OcState) => void;
     observeRateHpRead?: (index: number, read: OcRateHpRead) => void;
@@ -258,261 +320,322 @@ export function executeOcAction(
   const used = new Set<number>();
   const sourceTransactions = new Map<string, { state: OcState; used: ReadonlySet<number> }>();
   const outcomes: OcActionOutcome[] = [];
+  let stepRejection: OcActionStepResult['rejection'] = null;
   const reject = (
     status: 'invalid' | 'unsupported' | 'inputRequired',
     reason: string,
     requiredInput?: CanonicalInputDefinition,
     occurrenceId?: string,
-  ): OcActionResult => ({
-    status,
-    reason,
-    state: prior,
-    outcomes: [],
-    ...(requiredInput ? { requiredInput } : {}),
-    ...(occurrenceId ? { occurrenceId } : {}),
-  });
+  ): OcActionResult => {
+    stepRejection = { status, reason };
+    return {
+      status,
+      reason,
+      state: prior,
+      outcomes: [],
+      ...(requiredInput ? { requiredInput } : {}),
+      ...(occurrenceId ? { occurrenceId } : {}),
+    };
+  };
   for (const [index, instruction] of steps.entries()) {
+    const before = state;
+    let applicationRead: OcApplicationRead | null = null;
     const step = typeof instruction === 'function' ? instruction(state, outcomes) : instruction;
     options.observeStep?.(index, step);
-    if (step.kind === 'reject') return reject(step.status, step.reason);
-    if (step.kind === 'beginSource') {
-      if (sourceTransactions.size || sourceTransactions.has(step.sourceKey))
-        return reject('invalid', 'duplicateOcSourceTransaction');
-      sourceTransactions.set(step.sourceKey, { state, used: new Set(used) });
-      outcomes.push({ step: index, outcome: step.outcome });
-      continue;
-    }
-    if (step.kind === 'finishSource') {
-      const transaction = sourceTransactions.get(step.sourceKey);
-      if (!transaction) return reject('invalid', 'missingOcSourceTransaction');
-      if (!step.commit) {
-        // A completed proc failure rolls back physical writes. The completed attempt
-        // remains available to the compiler; an action rejection still returns prior.
-        state = { ...transaction.state, executedSources: state.executedSources };
-        used.clear();
-        transaction.used.forEach((instanceId) => used.add(instanceId));
+    try {
+      if (step.kind === 'reject') return reject(step.status, step.reason);
+      if (step.kind === 'beginSource') {
+        if (sourceTransactions.size || sourceTransactions.has(step.sourceKey))
+          return reject('invalid', 'duplicateOcSourceTransaction');
+        sourceTransactions.set(step.sourceKey, { state, used: new Set(used) });
+        outcomes.push({ step: index, outcome: step.outcome });
+        continue;
       }
-      sourceTransactions.delete(step.sourceKey);
-      outcomes.push({ step: index, outcome: step.outcome });
-      continue;
-    }
-    if (step.kind === 'uncertainRate') {
-      if (state.uncertainRates.some((rate) => rate.sourceKey === step.rate.sourceKey)) {
+      if (step.kind === 'finishSource') {
+        const transaction = sourceTransactions.get(step.sourceKey);
+        if (!transaction) return reject('invalid', 'missingOcSourceTransaction');
+        if (!step.commit) {
+          // A completed proc failure rolls back physical writes. The completed attempt
+          // remains available to the compiler; an action rejection still returns prior.
+          state = { ...transaction.state, executedSources: state.executedSources };
+          used.clear();
+          transaction.used.forEach((instanceId) => used.add(instanceId));
+        }
+        sourceTransactions.delete(step.sourceKey);
+        outcomes.push({ step: index, outcome: step.outcome });
+        continue;
+      }
+      if (step.kind === 'uncertainRate') {
+        if (state.uncertainRates.some((rate) => rate.sourceKey === step.rate.sourceKey)) {
+          outcomes.push({ step: index, outcome: 'alreadyApplied' });
+          continue;
+        }
+        state = { ...state, uncertainRates: [...state.uncertainRates, step.rate] };
+        outcomes.push({ step: index, outcome: 'pendingDependency' });
+        continue;
+      }
+      if (step.kind === 'recordSource') {
+        state = { ...state, executedSources: new Set([...state.executedSources, step.sourceKey]) };
+        continue;
+      }
+      if (step.kind === 'activateForm') {
+        state = { ...state, activeFormKey: step.formKey };
+        continue;
+      }
+      if (step.kind === 'skip') {
+        outcomes.push({ step: index, outcome: step.outcome });
+        continue;
+      }
+      if (step.kind === 'removalResistance') {
+        state = {
+          ...state,
+          removalResistance: [
+            ...state.removalResistance,
+            { actor: step.actor, ...(step.formKey === undefined ? {} : { formKey: step.formKey }) },
+          ],
+        };
+        continue;
+      }
+      if (step.kind === 'npUse') {
+        if (state.receipts.some((receipt) => receipt.actionId === actionId))
+          return reject('invalid', 'duplicateNpUseInAction');
+        if (
+          !Number.isInteger(step.baseOc) ||
+          step.baseOc < 1 ||
+          step.baseOc > 3 ||
+          !Number.isInteger(step.gaugeBefore) ||
+          step.gaugeBefore < DEFAULT_NP_RESOURCE_SEMANTICS.noblePhantasmUse.requirement ||
+          step.baseOc !== deriveBaseOvercharge(DEFAULT_NP_RESOURCE_SEMANTICS, step.gaugeBefore)
+        )
+          return reject('invalid', 'invalidNpOcUse');
+        const participating = state.boosts.filter(
+          (instance) => instance.owner === step.actor && live(instance, state),
+        );
+        const boostTotal = participating.reduce(
+          (sum, instance) =>
+            sum + (ocApplicationParticipates(instance.decision) ? instance.stages : 0),
+          0,
+        );
+        participating.forEach(({ instanceId }) => used.add(instanceId));
+        state = {
+          ...state,
+          receipts: [
+            ...state.receipts,
+            {
+              actionId,
+              gaugeBefore: step.gaugeBefore,
+              baseOc: step.baseOc,
+              boostTotal,
+              boostUses: participating.map((instance) => ({
+                ...instance.sourceEvidence,
+                instanceId: instance.instanceId,
+                stages: instance.stages,
+                included: ocApplicationParticipates(instance.decision),
+                usesBefore: instance.uses,
+              })),
+              effectiveOc: Math.min(5, step.baseOc + boostTotal),
+              participatingInstances: participating.map(({ instanceId }) => instanceId),
+              excludedInstances: participating
+                .filter(({ decision }) => !ocApplicationParticipates(decision))
+                .map(({ instanceId }) => instanceId),
+            },
+          ],
+        };
+        continue;
+      }
+      if (step.kind === 'remove') {
+        const intersects = ocRemovalIntersects(state, step.recipient, step.selector, true);
+        if (
+          intersects &&
+          state.removalResistance.some(
+            (barrier) =>
+              barrier.actor === step.recipient &&
+              (barrier.formKey === undefined || barrier.formKey === state.activeFormKey),
+          )
+        ) {
+          if (
+            options.hasFutureNpUse ||
+            !state.receipts.some((receipt) => receipt.actionId === actionId)
+          )
+            return reject('unsupported', 'liveOcRemovalResistance');
+          // The terminal NP receipt is already frozen and no subsequent OC reader exists.
+          outcomes.push({ step: index, outcome: 'notApplicable' });
+          continue;
+        }
+        if (!Number.isInteger(step.applicationRate) || step.applicationRate < 0)
+          return reject('invalid', 'invalidOcRemovalRate');
+        const effectiveRate = Math.min(1000, step.applicationRate);
+        const application = resolveApplicationRateOutcome(
+          effectiveRate,
+          options.resolveProcWitness
+            ? options.resolveProcWitness(index, effectiveRate, step.procWitness)
+            : step.procWitness,
+        );
+        if (application === 'invalid') return reject('invalid', 'invalidOcRemovalProc');
+        if (application === 'inputRequired')
+          return reject('inputRequired', `ocRemovalProc:${index}`);
+        if (application === 'failure') {
+          outcomes.push({ step: index, outcome: 'stochasticFailure', effectiveRate });
+          continue;
+        }
+        const keep = (instance: Pick<InstanceBase, 'owner' | 'lifetime' | 'stateTraits'>) =>
+          instance.owner !== step.recipient ||
+          instance.lifetime === 'constant' ||
+          !instance.stateTraits.some((trait) => step.selector.includes(trait));
+        state = {
+          ...state,
+          boosts: state.boosts.filter(keep),
+          rates: state.rates.filter(keep),
+          uncertainRates: state.uncertainRates.filter(keep),
+        };
+        outcomes.push({ step: index, outcome: 'applied', effectiveRate });
+        continue;
+      }
+      if (step.condition === null) return reject('inputRequired', `ocCondition:${step.sourceKey}`);
+      if (!step.condition) {
+        outcomes.push({ step: index, outcome: 'conditionFalse' });
+        continue;
+      }
+      if (step.grant.lifetime === 'constant' && state.constantSources.has(step.sourceKey)) {
         outcomes.push({ step: index, outcome: 'alreadyApplied' });
         continue;
       }
-      state = { ...state, uncertainRates: [...state.uncertainRates, step.rate] };
-      outcomes.push({ step: index, outcome: 'pendingDependency' });
-      continue;
-    }
-    if (step.kind === 'recordSource') {
-      state = { ...state, executedSources: new Set([...state.executedSources, step.sourceKey]) };
-      continue;
-    }
-    if (step.kind === 'activateForm') {
-      state = { ...state, activeFormKey: step.formKey };
-      continue;
-    }
-    if (step.kind === 'skip') {
-      outcomes.push({ step: index, outcome: step.outcome });
-      continue;
-    }
-    if (step.kind === 'removalResistance') {
-      state = {
-        ...state,
-        removalResistance: [
-          ...state.removalResistance,
-          { actor: step.actor, ...(step.formKey === undefined ? {} : { formKey: step.formKey }) },
-        ],
-      };
-      continue;
-    }
-    if (step.kind === 'npUse') {
-      if (state.receipts.some((receipt) => receipt.actionId === actionId))
-        return reject('invalid', 'duplicateNpUseInAction');
-      if (
-        !Number.isInteger(step.baseOc) ||
-        step.baseOc < 1 ||
-        step.baseOc > 3 ||
-        !Number.isInteger(step.gaugeBefore) ||
-        step.gaugeBefore < DEFAULT_NP_RESOURCE_SEMANTICS.noblePhantasmUse.requirement ||
-        step.baseOc !== deriveBaseOvercharge(DEFAULT_NP_RESOURCE_SEMANTICS, step.gaugeBefore)
-      )
-        return reject('invalid', 'invalidNpOcUse');
-      const participating = state.boosts.filter(
-        (instance) => instance.owner === step.actor && live(instance, state),
-      );
-      const boostTotal = participating.reduce(
-        (sum, instance) => sum + (instance.included ? instance.stages : 0),
-        0,
-      );
-      participating.forEach(({ instanceId }) => used.add(instanceId));
-      state = {
-        ...state,
-        receipts: [
-          ...state.receipts,
-          {
-            actionId,
-            gaugeBefore: step.gaugeBefore,
-            baseOc: step.baseOc,
-            boostTotal,
-            boostUses: participating.map((instance) => ({
-              ...instance.sourceEvidence,
-              instanceId: instance.instanceId,
-              stages: instance.stages,
-              included: instance.included,
-              usesBefore: instance.uses,
-            })),
-            effectiveOc: Math.min(5, step.baseOc + boostTotal),
-            participatingInstances: participating.map(({ instanceId }) => instanceId),
-            excludedInstances: participating
-              .filter(({ included }) => !included)
-              .map(({ instanceId }) => instanceId),
-          },
-        ],
-      };
-      continue;
-    }
-    if (step.kind === 'remove') {
-      const intersects = ocRemovalIntersects(state, step.recipient, step.selector, true);
-      if (
-        intersects &&
-        state.removalResistance.some(
-          (barrier) =>
-            barrier.actor === step.recipient &&
-            (barrier.formKey === undefined || barrier.formKey === state.activeFormKey),
-        )
-      ) {
-        if (
-          options.hasFutureNpUse ||
-          !state.receipts.some((receipt) => receipt.actionId === actionId)
-        )
-          return reject('unsupported', 'liveOcRemovalResistance');
-        // The terminal NP receipt is already frozen and no subsequent OC reader exists.
-        outcomes.push({ step: index, outcome: 'notApplicable' });
-        continue;
+      const cells = step.limitBreak ? step.grant.limitBreakCells : step.grant.cells;
+      const cell = cells?.[step.valueSetIndex]?.[step.valueIndex];
+      if (!cell) return reject('invalid', 'missingOcCell');
+      let effectiveRate = cell.applicationRatePermille;
+      const rateQueries: {
+        rate: OcRateInstance;
+        hpRead: OcRateHpRead | null;
+        value: number | null;
+      }[] = [];
+      if (step.grant.lifetime !== 'constant') {
+        const pending = state.uncertainRates.find(
+          (rate) =>
+            live(rate, state) &&
+            rate.owner === (rate.role === 'casterGrant' ? step.caster : step.recipient) &&
+            step.grant.stateTraits.includes('positive'),
+        );
+        if (pending)
+          return reject(
+            pending.requiredInput ? 'inputRequired' : 'unsupported',
+            `ocRateCondition:${pending.sourceKey}`,
+            pending.requiredInput ?? undefined,
+            pending.occurrenceId,
+          );
+        options.observeRateSelection?.(index, state);
+        for (const rate of state.rates) {
+          if (!ocRateAppliesToGrant(rate, state, step)) continue;
+          options.observeRateQuery?.(index, state, rate);
+          used.add(rate.instanceId);
+          const query = { rate, hpRead: null as OcRateHpRead | null, value: null as number | null };
+          rateQueries.push(query);
+          if (!ocApplicationParticipates(rate.decision)) continue;
+          const value = rateValue(rate, hp, (read) => {
+            query.hpRead = read;
+            options.observeRateHpRead?.(index, read);
+          });
+          if (value.status !== 'value') return reject(value.status, value.reason);
+          query.value = value.value;
+          effectiveRate += value.value * rate.sign * (rate.role === 'casterGrant' ? 1 : -1);
+        }
       }
-      if (!Number.isInteger(step.applicationRate) || step.applicationRate < 0)
-        return reject('invalid', 'invalidOcRemovalRate');
-      const effectiveRate = Math.min(1000, step.applicationRate);
-      const application = resolveApplicationRateOutcome(
+      effectiveRate = Math.min(1000, Math.max(0, effectiveRate));
+      const witness = options.resolveProcWitness
+        ? options.resolveProcWitness(index, effectiveRate, step.procWitness)
+        : step.procWitness;
+      const application = resolveApplicationRateOutcome(effectiveRate, witness);
+      const proc: SourceProcRead =
+        application === 'inputRequired'
+          ? { kind: 'inputRequired', inputKey: 'oc:proc:' + step.sourceKey }
+          : application === 'invalid'
+            ? { kind: 'unread' }
+            : {
+                kind: 'resolved',
+                outcome: application,
+                certainty:
+                  effectiveRate === 0 || effectiveRate === 1000 ? 'guaranteed' : 'possible',
+                ratePermille: effectiveRate,
+                selection:
+                  step.binding.executionIntent === 'physicalBranch' ? 'witness' : 'declared',
+              };
+      applicationRead = {
+        binding: step.binding,
+        cell,
+        valueSetIndex: step.valueSetIndex,
+        valueIndex: step.valueIndex,
+        limitBreak: step.limitBreak,
+        rateQueries,
         effectiveRate,
-        options.resolveProcWitness
-          ? options.resolveProcWitness(index, effectiveRate, step.procWitness)
-          : step.procWitness,
-      );
-      if (application === 'invalid') return reject('invalid', 'invalidOcRemovalProc');
-      if (application === 'inputRequired') return reject('inputRequired', `ocRemovalProc:${index}`);
+        proc,
+        adoption: contributionPolicyDecisions(
+          {
+            source: step.sourceEvidence.source,
+            gameActivation: step.binding.gameActivation,
+            contributionScope: step.binding.contributionScope,
+          },
+          step.binding.activation.read,
+          step.binding.policy,
+          step.binding.activation.proc.kind === 'resolved' &&
+            step.binding.activation.proc.certainty === 'guaranteed' &&
+            effectiveRate === 1000,
+        ),
+      };
+      if (application === 'invalid') return reject('invalid', 'invalidOcGrantProc');
+      if (application === 'inputRequired')
+        return reject('inputRequired', `ocProc:${step.sourceKey}`);
       if (application === 'failure') {
         outcomes.push({ step: index, outcome: 'stochasticFailure', effectiveRate });
         continue;
       }
-      const keep = (instance: Pick<InstanceBase, 'owner' | 'lifetime' | 'stateTraits'>) =>
-        instance.owner !== step.recipient ||
-        instance.lifetime === 'constant' ||
-        !instance.stateTraits.some((trait) => step.selector.includes(trait));
+      const base: InstanceBase = {
+        instanceId: state.nextInstanceId,
+        sourceKey: step.sourceKey,
+        sourceEvidence: step.sourceEvidence,
+        owner: step.recipient,
+        lifetime: step.grant.lifetime,
+        stateTraits: step.grant.stateTraits,
+        turns: cell.turns,
+        uses: cell.uses,
+        decision: applicationRead,
+        ...(step.formKey === undefined ? {} : { formKey: step.formKey }),
+      };
+      if (step.grant.kind === 'grantOcBoost' && 'stages' in cell)
+        state = { ...state, boosts: [...state.boosts, { ...base, stages: cell.stages }] };
+      else if (step.grant.kind === 'grantOcApplicationRate' && 'amount' in cell)
+        state = {
+          ...state,
+          rates: [
+            ...state.rates,
+            {
+              ...base,
+              amount: cell.amount,
+              valueOwner: step.caster,
+              role: step.grant.role,
+              sign: step.grant.sign,
+            },
+          ],
+        };
+      else return reject('invalid', 'ocCellKindMismatch');
       state = {
         ...state,
-        boosts: state.boosts.filter(keep),
-        rates: state.rates.filter(keep),
-        uncertainRates: state.uncertainRates.filter(keep),
+        nextInstanceId: state.nextInstanceId + 1,
+        constantSources:
+          step.grant.lifetime === 'constant'
+            ? new Set([...state.constantSources, step.sourceKey])
+            : state.constantSources,
       };
       outcomes.push({ step: index, outcome: 'applied', effectiveRate });
-      continue;
+    } finally {
+      options.completeStep?.(index, {
+        step,
+        applicationRead,
+        before,
+        after: state,
+        outcome: outcomes.at(-1)?.step === index ? outcomes.at(-1)! : null,
+        rejection: stepRejection,
+      });
     }
-    if (step.condition === null) return reject('inputRequired', `ocCondition:${step.sourceKey}`);
-    if (!step.condition) {
-      outcomes.push({ step: index, outcome: 'conditionFalse' });
-      continue;
-    }
-    if (step.grant.lifetime === 'constant' && state.constantSources.has(step.sourceKey)) {
-      outcomes.push({ step: index, outcome: 'alreadyApplied' });
-      continue;
-    }
-    const cells = step.limitBreak ? step.grant.limitBreakCells : step.grant.cells;
-    const cell = cells?.[step.valueSetIndex]?.[step.valueIndex];
-    if (!cell) return reject('invalid', 'missingOcCell');
-    let effectiveRate = cell.applicationRatePermille;
-    if (step.grant.lifetime !== 'constant') {
-      const pending = state.uncertainRates.find(
-        (rate) =>
-          live(rate, state) &&
-          rate.owner === (rate.role === 'casterGrant' ? step.caster : step.recipient) &&
-          step.grant.stateTraits.includes('positive'),
-      );
-      if (pending)
-        return reject(
-          pending.requiredInput ? 'inputRequired' : 'unsupported',
-          `ocRateCondition:${pending.sourceKey}`,
-          pending.requiredInput ?? undefined,
-          pending.occurrenceId,
-        );
-      options.observeRateSelection?.(index, state);
-      for (const rate of state.rates) {
-        if (!ocRateAppliesToGrant(rate, state, step)) continue;
-        options.observeRateQuery?.(index, state, rate);
-        used.add(rate.instanceId);
-        if (!rate.included) continue;
-        const value = rateValue(
-          rate,
-          hp,
-          options.observeRateHpRead ? (read) => options.observeRateHpRead!(index, read) : undefined,
-        );
-        if (value.status !== 'value') return reject(value.status, value.reason);
-        effectiveRate += value.value * rate.sign * (rate.role === 'casterGrant' ? 1 : -1);
-      }
-    }
-    effectiveRate = Math.min(1000, Math.max(0, effectiveRate));
-    const application = resolveApplicationRateOutcome(
-      effectiveRate,
-      options.resolveProcWitness
-        ? options.resolveProcWitness(index, effectiveRate, step.procWitness)
-        : step.procWitness,
-    );
-    if (application === 'invalid') return reject('invalid', 'invalidOcGrantProc');
-    if (application === 'inputRequired') return reject('inputRequired', `ocProc:${step.sourceKey}`);
-    if (application === 'failure') {
-      outcomes.push({ step: index, outcome: 'stochasticFailure', effectiveRate });
-      continue;
-    }
-    const base: InstanceBase = {
-      instanceId: state.nextInstanceId,
-      sourceKey: step.sourceKey,
-      sourceEvidence: step.sourceEvidence,
-      owner: step.recipient,
-      lifetime: step.grant.lifetime,
-      stateTraits: step.grant.stateTraits,
-      turns: cell.turns,
-      uses: cell.uses,
-      included: step.included,
-      ...(step.formKey === undefined ? {} : { formKey: step.formKey }),
-    };
-    if (step.grant.kind === 'grantOcBoost' && 'stages' in cell)
-      state = { ...state, boosts: [...state.boosts, { ...base, stages: cell.stages }] };
-    else if (step.grant.kind === 'grantOcApplicationRate' && 'amount' in cell)
-      state = {
-        ...state,
-        rates: [
-          ...state.rates,
-          {
-            ...base,
-            amount: cell.amount,
-            valueOwner: step.caster,
-            role: step.grant.role,
-            sign: step.grant.sign,
-          },
-        ],
-      };
-    else return reject('invalid', 'ocCellKindMismatch');
-    state = {
-      ...state,
-      nextInstanceId: state.nextInstanceId + 1,
-      constantSources:
-        step.grant.lifetime === 'constant'
-          ? new Set([...state.constantSources, step.sourceKey])
-          : state.constantSources,
-    };
-    outcomes.push({ step: index, outcome: 'applied', effectiveRate });
   }
   if (sourceTransactions.size) return reject('invalid', 'unclosedOcSourceTransaction');
   return {

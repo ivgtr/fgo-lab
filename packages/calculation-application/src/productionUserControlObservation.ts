@@ -1,5 +1,9 @@
 import type { EffectProjection } from '@fgo-lab/battle-execution';
-import type { CalculationExecution, CalculationExecutionObservation } from './scenario';
+import type {
+  CalculationExecution,
+  CalculationExecutionObservation,
+  RejectedCalculationDiagnostic,
+} from './scenario';
 import type {
   RankingCandidateCalculation,
   RankingExecutionObservation,
@@ -84,6 +88,26 @@ export function userControlSideObservation(
   if (calculation.executionObservation !== executionObservation)
     throw new TypeError('production_control_execution_observation_identity_mismatch');
   return controlSideObservation(projection, calculation, executionObservation);
+}
+
+export function diagnosticUserControlSideObservation(
+  projection: EffectProjection,
+  calculation: Extract<CalculationExecution, { status: 'rejected' }>,
+  diagnostic: RejectedCalculationDiagnostic,
+): ProductionUserControlSideObservation {
+  if (calculation.diagnosticExecution !== diagnostic)
+    throw new TypeError('production_control_diagnostic_identity_mismatch');
+  return controlSideObservation(
+    projection,
+    {
+      input: diagnostic.execution.input,
+      result: calculation.result,
+      effects: [...diagnostic.execution.projections, ...diagnostic.execution.retainedProjections],
+      effectiveContributions: diagnostic.execution.effectiveContributions,
+      noblePhantasmVariant: diagnostic.execution.state.noblePhantasmVariant,
+    },
+    diagnostic.executionObservation,
+  );
 }
 
 function controlSideObservation(

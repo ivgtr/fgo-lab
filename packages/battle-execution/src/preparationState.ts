@@ -1,5 +1,6 @@
 import type { ConditionFactProof } from './conditionRead';
 import { createInputFacts, writeInputFact } from './inputFacts';
+import { CRITICAL_STARS_INITIAL_INPUT } from './resourceSemantics';
 import { sourceMaximumHpInputKey, sourceHpInputKey } from './operationCompiler';
 import { seedHp } from './hpResource';
 import { npProgramEffects, effectExecutesInNpProgram } from './npProgramScope';
@@ -313,25 +314,35 @@ export function createPreparationState(
     kind: 'externalAssumption',
     clock: initialProof.clock,
   });
+  const initialEffects = [
+    ...servant.skills.flatMap((skill) => skill.effects),
+    ...servant.passives.flatMap((skill) => skill.effects),
+    ...servant.noblePhantasmVariantGroups.flatMap((group) =>
+      group.variants.flatMap((variant) => variant.effects),
+    ),
+    ...(context.initialSources ?? []).map((source) => source.effect),
+    ...(context.terminalSources ?? []).map((source) => source.effect),
+  ];
   const sharedInputs = mergeInputDefinitions(
-    [
-      ...servant.skills.flatMap((skill) => skill.effects),
-      ...servant.passives.flatMap((skill) => skill.effects),
-      ...servant.noblePhantasmVariantGroups.flatMap((group) =>
-        group.variants.flatMap((variant) => variant.effects),
-      ),
-      ...(context.initialSources ?? []).map((source) => source.effect),
-      ...(context.terminalSources ?? []).map((source) => source.effect),
-    ].flatMap((effect) => effect.inputDefinitions.filter((input) => input.kind === 'criticalStars')),
+    initialEffects.flatMap((effect) =>
+      effect.inputDefinitions.filter((input) => input.kind === 'criticalStars'),
+    ),
   );
+  if (
+    !sharedInputs.some((input) => input.key === CRITICAL_STARS_INITIAL_INPUT.key) &&
+    initialEffects.some((effect) =>
+      effect.execution.some(
+        (operation) =>
+          operation.kind === 'resourceMutation' && operation.resource === 'criticalStars',
+      ),
+    )
+  )
+    sharedInputs.push(CRITICAL_STARS_INITIAL_INPUT);
   for (const input of sharedInputs) {
     if (placeholder.inputFacts.has(input.key) || input.defaultValue === null) continue;
-    placeholder.inputFacts = writeInputFact(
-      placeholder.inputFacts,
-      input.key,
-      input.defaultValue,
-      [initialProof],
-    );
+    placeholder.inputFacts = writeInputFact(placeholder.inputFacts, input.key, input.defaultValue, [
+      initialProof,
+    ]);
   }
   (placeholder.conditionWriteProofs.quantities as Map<string, ConditionFactProof>).set(
     'npGauge:attacker',

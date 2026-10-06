@@ -1,20 +1,21 @@
 import type { CanonicalInputDefinition, OcExecutionOperation } from '@fgo-lab/master-data';
 import {
   containsUnsupportedCondition,
-  evaluateCondition,
   type ConditionEvaluationState,
 } from './condition';
-import { procIsGuaranteed } from './conditionRead';
+import type { SourceActivationReceipt } from './conditionRead';
 import { contributionPolicyDecisions } from './effectiveContributions';
 import { resolveContributionScope, resolveTargetPolicy } from './effectRouting';
 import type { ContributionApplicationPolicy } from './executionTypes';
-import { evaluateOcSourceCondition, type OcSourceProgram } from './ocSourceProgram';
-import { ocRemovalIntersects, type OcActionStep, type OcState } from './ocState';
+import type { OcSourceProgram } from './ocSourceProgram';
+import { ocApplicationParticipates, ocRemovalIntersects, type OcActionStep, type OcState } from './ocState';
 import { sourceIdentity } from './operationCompiler';
 import { requiredOcConditionInput } from './ocConditionInputs';
 
 export interface OcSourceBindingContext {
   facts: ConditionEvaluationState;
+  activation: Extract<SourceActivationReceipt, { kind: 'read' }>;
+  executionIntent: 'declared' | 'physicalBranch';
   policy: ContributionApplicationPolicy;
   /** Required for NP sources; each source selects cells using its own action's receipt. */
   npActionId: string | null;
@@ -87,21 +88,16 @@ export function bindOcSourceOperation(
       gameActivation: source.effect.gameActivation,
       contributionScope: resolveContributionScope(source.origin, operation.route.contributionScope),
     },
-    evaluateCondition(program.condition, context.facts),
+    context.activation.read,
     context.policy,
-    procIsGuaranteed(
-      source.effect.proc,
-      source.effect.proc.kind === 'guaranteed'
-        ? 1000
-        : (source.effect.proc.ratePermille[source.valueSetIndex]?.[source.valueIndex] ?? null),
-    ),
+    context.activation.proc.kind === 'resolved' && context.activation.proc.certainty === 'guaranteed',
   );
   const included = Object.values(decisions).every(({ kind }) => kind === 'included');
-  const condition = evaluateOcSourceCondition(program, context.facts);
+  const condition = context.activation.read.truth;
   if (condition === false) return { kind: 'skip', outcome: 'conditionFalse' };
   const finiteRateMayParticipate = state.rates.some(
     (rate) =>
-      rate.included &&
+      ocApplicationParticipates(rate.decision) &&
       rate.uses.kind === 'finite' &&
       rate.uses.remaining > 0 &&
       (rate.turns.kind === 'unlimited' || rate.turns.remaining > 0) &&
@@ -222,7 +218,12 @@ export function bindOcSourceOperation(
     valueSetIndex,
     valueIndex: source.valueIndex,
     limitBreak: source.limitBreak,
-    included,
+    binding: {
+      activation: context.activation, policy: context.policy,
+      executionIntent: context.executionIntent,
+      gameActivation: source.effect.gameActivation,
+      contributionScope: resolveContributionScope(source.origin, operation.route.contributionScope),
+    },
     condition,
     ...(source.constantFormKey === undefined ? {} : { formKey: source.constantFormKey }),
     ...proc,

@@ -8,10 +8,13 @@ import {
 } from '@fgo-lab/schema';
 import { evaluateCalculationEvidence } from './evidence';
 
-export function calculateDamageResolution(
+export type DamageResolutionValue =
+  | Omit<Extract<CalculationResult, { status: 'calculated' }>, 'versions'>
+  | Omit<Extract<CalculationResult, { status: 'unsupported' }>, 'versions'>;
+
+export function calculateDamageResolutionValue(
   rawInput: DamageResolutionInput,
-  versions: VersionContext,
-): Extract<CalculationResult, { status: 'calculated' | 'unsupported' }> {
+): DamageResolutionValue {
   const input = damageResolutionInputSchema.parse(rawInput);
   const functionKind = input.damageFunction.kind;
   const prepared = prepareDamageEvaluation(input);
@@ -27,7 +30,6 @@ export function calculateDamageResolution(
       { step: 'validate', detail: `damage_resolution_schema_v${String(SCHEMA_VERSION)}` },
       { step: 'attack-np-function', detail: functionKind },
     ],
-    versions,
     evidence: evidence.evidence,
   };
   if (prepared.status === 'unsupported' || evidence.status === 'unsupported')
@@ -64,4 +66,11 @@ export function calculateDamageResolution(
     ],
     trace: [...common.trace, { step: 'random', detail: 'evaluated_200_final_floors' }],
   };
+}
+
+export function calculateDamageResolution(
+  rawInput: DamageResolutionInput,
+  versions: VersionContext,
+): Extract<CalculationResult, { status: 'calculated' | 'unsupported' }> {
+  return { ...calculateDamageResolutionValue(rawInput), versions };
 }

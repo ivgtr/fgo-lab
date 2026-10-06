@@ -11,7 +11,10 @@ import {
   battlePointPreparationRejectionObservationFor,
   type BattlePointPreparationRejectionObservation,
 } from './battlePointPreparationObservation';
-import { scalarQuantitySnapshot as snapshot } from './productionScalarQuantityAudit';
+import {
+  scalarQuantitySnapshot as snapshot,
+  createScalarQuantitySnapshotter,
+} from './productionScalarQuantityAudit';
 import { battlePointPreparationCanonicalInventory } from './productionBattlePointPreparationAudit';
 import type { CalculationExecution, PreparedCalculationScenario } from './scenario';
 
@@ -237,6 +240,7 @@ export function auditBattlePointPreparationAttemptObservations(input: {
   expected: readonly BattlePointPreparationAttemptProgram[];
   observations: readonly SourceProof[];
 }) {
+  const snapshot = createScalarQuantitySnapshotter();
   const failures: BattlePointPreparationAttemptFailure[] = [];
   const boundaries: {
     canonicalIdentity: string;

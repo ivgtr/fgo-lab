@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { compileEffect, compileEffectCached } from './operationCompiler';
 import { resolveStochasticOutcomes } from './stochasticOutcomes';
 import type { SourceEffect } from './sourceCollection';
+import { bindExecutionOperation, type SourceExecutionBinding } from './executionBinding';
 
 const values = (
   value: number | null,
@@ -332,14 +333,26 @@ describe('canonical operation compilation', () => {
       source([modifier('attackBuff', 100), modifier('npDamageBuff', null)]),
       0,
     );
-    expect(compiled.operations).toEqual([]);
-    expect(compiled.projections).toHaveLength(1);
+    expect(compiled.operations).toHaveLength(1);
+    expect(compiled.operations[0]).toMatchObject({
+      kind: 'preserveSemanticEffect',
+      semanticKind: 'unsupported',
+      unsupportedReason: 'missingOperationValue',
+    });
+    expect(compiled.operations.some((operation) => operation.kind === 'addModifier')).toBe(false);
+    expect(compiled.projections).toEqual([]);
   });
 
   it('does not fall back to normal values when an MLB value series is missing', () => {
     const compiled = compileEffect(source([modifier('attackBuff', 100)], true), 0);
-    expect(compiled.operations).toEqual([]);
-    expect(compiled.projections).toHaveLength(1);
+    expect(compiled.operations).toHaveLength(1);
+    expect(compiled.operations[0]).toMatchObject({
+      kind: 'preserveSemanticEffect',
+      semanticKind: 'unsupported',
+      unsupportedReason: 'missingOperationValue',
+    });
+    expect(compiled.operations.some((operation) => operation.kind === 'addModifier')).toBe(false);
+    expect(compiled.projections).toEqual([]);
   });
 
   it('does not partially compile when any operation semantics is unresolved', () => {
@@ -520,4 +533,45 @@ it('does not reuse HP execution proof across committed and uncommitted source ca
   expect(committed.operations).not.toEqual(uncommitted.operations);
   expect(compileEffectCached(hpSource, 0)).toEqual(uncommitted);
   expect(compileEffectCached({ ...hpSource, hpExecutionCommitted: true }, 0)).toEqual(committed);
+});
+
+it('binds each execution without mutating an unbound operation or an earlier cached instance', () => {
+  const input = source([
+    {
+      kind: 'resourceMutation',
+      resource: 'criticalStars',
+      direction: 'gain',
+      unit: 'fixed',
+      recipient: 'sourceSelf',
+      subjectId: null,
+      amount: { kind: 'fixed', values: values(10) },
+    },
+  ]);
+  const template = compileEffectCached(input, 0).operations[0]!;
+  const binding = (actionId: string): SourceExecutionBinding => ({
+    actionId,
+    actorFormId: { actorId: 'fixture', limitCount: 0 },
+    sourceInstanceId: input.sourceInstanceId,
+    skillId: input.skillId,
+    occurrenceId: input.effect.occurrenceId,
+    valueSetIndex: 0,
+    valueIndex: 0,
+    activation: { kind: 'unread' },
+    conditionReads: [],
+    physicalInputs: [],
+  });
+  const firstBinding = binding('first');
+  const secondBinding = binding('second');
+  const bound = bindExecutionOperation(template, firstBinding, 0);
+  expect(template.runtimeBinding).toBeUndefined();
+  expect(bound).not.toBe(template);
+  expect(Object.isFrozen(bound.runtimeBinding)).toBe(true);
+  const first = compileEffectCached({ ...input, runtimeBinding: firstBinding }, 0);
+  const second = compileEffectCached({ ...input, runtimeBinding: secondBinding }, 17);
+  expect(first.operations[0]!.runtimeBinding?.source).toBe(firstBinding);
+  expect(second.operations[0]!.runtimeBinding?.source).toBe(secondBinding);
+  expect(first.operations[0]!.order).toBe(0);
+  expect(second.operations[0]!.order).toBe(17);
+  expect(compileEffectCached(input, 0).operations[0]!.runtimeBinding).toBeUndefined();
+  expect(first.operations[0]!.runtimeBinding?.source).toBe(firstBinding);
 });

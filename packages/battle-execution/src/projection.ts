@@ -1,6 +1,7 @@
+import { executionBindingFor } from './executionBinding';
+import { proofIsGuaranteed, type ConditionRead } from './conditionRead';
 import { hpPermille } from './hpResource';
-import { liveInputQuantity } from './stackQuantities';
-import { readTraitQuantity } from './traitFactLayers';
+import { liveInputQuantityRead, liveTraitQuantityRead } from './stackQuantities';
 import { evaluateHpValueExpression } from './hpValueExpression';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type {
@@ -88,35 +89,79 @@ export function selectionGroupsForCondition(
   return [];
 }
 
+export interface ResolvedModifierValue {
+  value: number | null;
+  dependency: ConditionRead | null;
+}
+
 export function resolveModifierValue(
   operation: Extract<BattleOperation, { kind: 'addModifier' }>,
   state: ExecutableBattleState,
   observeHpRead?: (read: { permille: number | null; value: number | null }) => void,
-): number | null {
+): ResolvedModifierValue {
   const expression = operation.valueExpression;
-  if (!expression) return operation.valuePermille;
+  if (!expression) return { value: operation.valuePermille, dependency: null };
   if (expression.kind === 'inputLinear' || expression.kind === 'stackLinear') {
-    const units =
+    const quantities =
       expression.kind === 'stackLinear'
-        ? (() => {
-            let total = 0;
-            for (const { quantitySource } of expression.sources) {
-              const read = readTraitQuantity(state.traitFactLayers, quantitySource.scope, quantitySource.trait, state.conditionFactProofs.completeTraits[quantitySource.scope]);
-              if (read.value === null) return undefined;
-              total += read.value;
-            }
-            return total;
-          })()
-        : liveInputQuantity(state, expression.inputKey);
-    if (units === undefined) return null;
+        ? expression.sources.map((source) => ({
+            key: source.key,
+            read: liveTraitQuantityRead(state, source.quantitySource),
+          }))
+        : [{ key: expression.inputKey, read: liveInputQuantityRead(state, expression.inputKey) }];
+    const binding = executionBindingFor(operation);
+    const clock = {
+      ...state.conditionReadClock,
+      phase: 'operation' as const,
+      actorFormId: state.actorFormId,
+      operationId: operation.operationId,
+      sourceInstanceId: operation.source.sourceInstanceId,
+      occurrenceId: operation.source.effectOccurrenceId,
+      ...(binding
+        ? {
+            actionId: binding.actionId,
+            valueSetIndex: binding.valueSetIndex,
+            valueIndex: binding.valueIndex,
+          }
+        : {}),
+    };
+    const support = quantities.flatMap(({ read }) => read.support);
+    const evidence = quantities.map(({ key, read }) => ({
+      expression: {
+        kind: 'inputQuantity' as const,
+        inputKey: key,
+        comparison: 'atLeast' as const,
+        value: 0,
+      },
+      value: read.value ?? null,
+      proof: read.support.length === 1 ? read.support[0]! : null,
+      ...(read.fact ? { quantityFact: read.fact } : {}),
+    }));
+    const missing = quantities.some(({ read }) => read.value === undefined);
+    const dependency: ConditionRead = missing
+      ? { kind: 'unsupported', truth: null, certainty: null, clock, evidence, support }
+      : {
+          kind: 'known',
+          truth: true,
+          certainty: support.every(proofIsGuaranteed) ? 'guaranteed' : 'possible',
+          clock,
+          evidence,
+          support,
+        };
+    if (missing) return { value: null, dependency };
+    const units = quantities.reduce((sum, { read }) => sum + read.value!, 0);
     const value =
       expression.basePermille +
       Math.min(expression.maximumUnits, Math.max(0, units)) * expression.perUnitPermille;
-    return expression.maximumValuePermille === null
-      ? value
-      : expression.perUnitPermille >= 0
-        ? Math.min(value, expression.maximumValuePermille)
-        : Math.max(value, expression.maximumValuePermille);
+    return {
+      dependency,
+      value:
+        expression.maximumValuePermille === null
+          ? value
+          : expression.perUnitPermille >= 0
+            ? Math.min(value, expression.maximumValuePermille)
+            : Math.max(value, expression.maximumValuePermille),
+    };
   }
   const hp =
     expression.quantitySource.kind === 'attackerHpPermille'
@@ -124,7 +169,7 @@ export function resolveModifierValue(
       : hpPermille(state.hp?.actors[expression.quantitySource.actorId]);
   const value = hp === null ? null : evaluateHpValueExpression(expression, hp);
   observeHpRead?.({ permille: hp, value });
-  return value;
+  return { value, dependency: null };
 }
 
 export function createOperationProjection(
@@ -153,7 +198,7 @@ export function createOperationProjection(
     'attackerHpPermille',
   );
   const hidden =
-    operation.kind === 'preserveSemanticEffect' ||
+    (operation.kind === 'preserveSemanticEffect' && operation.semanticKind !== 'unsupported') ||
     (operation.kind === 'resourceMutation' &&
       operation.resolution !== 'resourceStateUnavailable') ||
     operation.kind === 'addTrait' ||

@@ -19,6 +19,7 @@ export function operationConditionResult(value: boolean | null): OperationResult
 export function createOperationResult({
   conditionRead,
   damageDependencyRead,
+  valueDependencyRead,
   operation,
   outcome,
   code,
@@ -33,6 +34,7 @@ export function createOperationResult({
 }: {
   conditionRead: ConditionRead;
   damageDependencyRead: ConditionRead | null;
+  valueDependencyRead: ConditionRead | null;
   operation: BattleOperation;
   outcome: OperationResult['outcome'];
   code: EffectProjection['explanation']['code'];
@@ -57,6 +59,7 @@ export function createOperationResult({
   return {
     conditionRead,
     damageDependencyRead,
+    valueDependencyRead,
     operation,
     outcome,
     condition: operationConditionResult(condition),

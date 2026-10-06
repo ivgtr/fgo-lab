@@ -93,7 +93,7 @@ export function applyBuffInstanceMutation(
       )
         return [instance];
       // Keep the known absence after removal; initial facts must not resurrect it.
-      return instance.marker ? [{ ...instance, count: 0 }] : [];
+      return [{ ...instance, count: 0 }];
     });
   if (
     operation.grantLimit &&
@@ -223,7 +223,7 @@ export function markerTraitRead(
       instance.actor === actor &&
       (instance.traits.includes(trait) || instance.marker?.actorTrait === trait),
   );
-  if (!matching.some((instance) => instance.marker)) return null;
+  if (matching.length === 0) return null;
   return {
     known: !matching.some((instance) => instance.uncertain && instance.count > 0),
     count: matching

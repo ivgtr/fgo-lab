@@ -15,7 +15,112 @@ import { calculateRankingPolicy, calculateRankingPolicyDetail } from './rankingP
 import { compileRankingExecutionPlan, executeRankingScenarios } from './rankingPolicyScenario';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileCandidateLocalActionAdmissionDispositions } from './rankingActionAdmission';
-import { calculateScenarioWithPolicy } from './scenario';
+import {
+  calculateScenarioWithPolicy,
+  createDefaultResolvedScenario,
+  prepareCalculationScenarioWithPolicy,
+  evaluatePreparedCalculationScenario,
+} from './scenario';
+import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
+import type { DamageResolutionValue } from './damageResolution';
+import {
+  createRankingPortableRequest,
+  currentCalculationVersionContext,
+  executePortableCalculation,
+} from './portableCalculation';
+import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
+
+type OracleSkill = { slot: 1 | 2 | 3; choice: '1' | '2' | null };
+
+// Independent finite domain: never taken from the planner, its quotient or certificate.
+function battlePointOraclePrograms(): OracleSkill[][] {
+  const programs: OracleSkill[][] = [];
+  const visit = (prefix: OracleSkill[]) => {
+    programs.push(prefix);
+    for (const slot of [1, 2, 3] as const) {
+      if (prefix.some((skill) => skill.slot === slot)) continue;
+      for (const choice of slot === 1 ? (['1', '2'] as const) : [null])
+        visit([...prefix, { slot, choice }]);
+    }
+  };
+  visit([]);
+  return programs;
+}
+
+// Small canonical fixture: capacity 4, initially absent (-1) or present (0..4).
+// Conditions read BEFORE their source writes; later gain cannot change an earlier read.
+function battlePointOracle(program: readonly OracleSkill[], initialPoint: number) {
+  let point = initialPoint;
+  let gauge = 10_000;
+  let attack = 0;
+  let card = 0;
+  let np = 0;
+  const reads: { slot: number; phase: number; rate: number; extraNp: boolean }[] = [];
+  for (const skill of program) {
+    const rate = point < 0 ? 0 : Math.floor((point * 1_000) / 4);
+    const phase = point < 0 ? 0 : point < 2 ? 1 : point === 2 ? 2 : point === 3 ? 3 : 4;
+    reads.push({ slot: skill.slot, phase, rate, extraNp: skill.slot === 3 && phase <= 1 });
+    if (skill.slot === 1 && rate <= 999) {
+      attack += 200;
+      if (skill.choice === '1') point = Math.min(4, Math.max(0, point) + 2);
+      else {
+        np += 200;
+        gauge = Math.min(10_000, gauge + 2_000);
+        point = Math.min(4, Math.max(0, point) + 12);
+      }
+    }
+    if (skill.slot === 2) {
+      card += 300;
+      if (rate >= 1) point = Math.max(0, point - 2);
+    }
+    if (skill.slot === 3) {
+      np += 200 + (phase <= 1 ? 200 : 0);
+      gauge = Math.min(10_000, gauge + 5_000);
+    }
+  }
+  return { attack, card, np, point, gauge, reads };
+}
+
+// Independent arithmetic for this fixture, following the declared f32 governing formula.
+// No production execution/fold/damage helper is called to generate these expectations.
+function battlePointOracleRows(modifiers: ReturnType<typeof battlePointOracle>, ideal: boolean) {
+  const f = Math.fround;
+  const multiply = (left: number, right: number) => f(f(left) * f(right));
+  return [4_500, 6_000, 6_750, 7_125, 7_500].map((npMultiplier) => {
+    const values = Array.from({ length: 200 }, (_, index) => {
+      let value = multiply(11_955 + 1_000, f(npMultiplier / 1_000));
+      value = multiply(value, f((1_000 + modifiers.card) / 1_000));
+      value = multiply(value, f(1_100 / 1_000));
+      value = multiply(value, 1); // neutral class and attribute affinity
+      value = multiply(value, 1);
+      value = multiply(value, f((900 + index) / 1_000));
+      value = multiply(value, 0.23);
+      value = multiply(value, f((1_000 + modifiers.attack) / 1_000));
+      value = multiply(value, f((1_000 + modifiers.np + (ideal ? 500 : 0)) / 1_000));
+      value = multiply(value, 1);
+      value = multiply(value, ideal ? 1.5 : 1);
+      return Math.floor(value);
+    });
+    return {
+      npLevel: npMultiplier === 4_500 ? 1 : [6_000, 6_750, 7_125, 7_500].indexOf(npMultiplier) + 2,
+      minimum: values[0],
+      average: values.reduce((sum, value) => sum + value, 0) / 200,
+      maximum: values.at(-1),
+    };
+  });
+}
+
+function oracleCommands(program: readonly OracleSkill[]): PreNoblePhantasmCommand[] {
+  return [
+    ...program.map(({ slot, choice }) => ({
+      kind: 'useSkillSlot' as const,
+      slot,
+      skillLevel: 10,
+      choice: choice === null ? null : { groupKey: 'player-choice:0', candidateKey: choice },
+    })),
+    { kind: 'executeAttackNoblePhantasm' },
+  ];
+}
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -54,36 +159,76 @@ describe('static ranking candidate space', () => {
     );
     expect(result.status, JSON.stringify(result)).toBe('calculated');
     if (result.status !== 'calculated') return;
-    expect(result.detail.scenario.preNoblePhantasmPlan[0]).toMatchObject({
-      choice: { groupKey: 'player-choice:0', candidateKey: '1' },
-    });
-    expect(result.detail.input.npDamageBuff).toBe(0.4);
-    expect(result.detail.result.rows[0].average).toBe(65_541.965);
-    expect(result.detail.candidateEvidence.quantityCandidateKey).toBe('quantity:baseline');
-    const scenario = {
-      ...result.detail.scenario,
-      preNoblePhantasmPlan: result.detail.scenario.preNoblePhantasmPlan.map((command, index) =>
-        index === 0 && command.kind === 'useSkillSlot'
-          ? { ...command, choice: { groupKey: 'player-choice:0', candidateKey: '2' } }
-          : command,
-      ),
-    };
+    // The old first-choice/0.4/65_541.965/alternate upper bound is historical.
+    // Current acceptance is an independent complete order/resource/clock oracle.
+    const programs = battlePointOraclePrograms();
+    expect(programs).toHaveLength(27);
     const domain = servant.battlePointDomains![0]!;
-    const alternate = calculateScenarioWithPolicy(
-      scenario,
-      master,
-      versions(),
-      result.detail.contributionPolicy,
-    );
-    expect(alternate.status).toBe('executable');
-    expect(alternate.result.status).toBe('calculated');
-    if (alternate.status === 'executable' && alternate.result.status === 'calculated') {
-      expect(alternate.appliedPreparationActions[0]?.command).toMatchObject({
-        choice: { groupKey: 'player-choice:0', candidateKey: '2' },
-      });
-      expect(alternate.input.npDamageBuff).toBe(0.4);
-      expect(alternate.result.rows[0].average).toBeLessThan(72_441.165);
+    expect(domain).toMatchObject({
+      phaseScale: 'permille',
+      capacity: { default: 4, maximum: 12 },
+      phases: [
+        { phase: 0, threshold: -1 },
+        { phase: 1, threshold: 0 },
+        { phase: 2, threshold: 500 },
+        { phase: 3, threshold: 750 },
+        { phase: 4, threshold: 1000 },
+      ],
+    });
+    expect(servant.atkByLevel[90]).toBe(11_955);
+    for (const [slot, occurrence, modifier, cell] of [
+      [1, '152:1', 'attackBuff', 200],
+      [1, '254:0', 'npDamageBuff', 200],
+      [2, '110:0', 'cardBuff', 300],
+      [3, '248:0', 'npDamageBuff', 200],
+      [3, '248:1', 'npDamageBuff', 200],
+    ] as const) {
+      const operation = servant.skills
+        .find((skill) => skill.slot === slot)!
+        .effects.find((effect) => effect.occurrenceId === occurrence)!
+        .execution.find((operation) => operation.kind === 'damageModifier')!;
+      expect(operation).toMatchObject({ modifier });
+      expect(operation.values[0][9]).toBe(cell);
     }
+    const raw = [-1, 0, 1, 2, 3, 4].flatMap((point) =>
+      programs.map((program) => {
+        const state = battlePointOracle(program, point);
+        return { point, program, state, rows: battlePointOracleRows(state, true) };
+      }),
+    );
+    const maximum = Math.max(...raw.map(({ rows }) => rows[0]!.average));
+    expect(result.detail.result.rows[0].average).toBe(maximum);
+    const chosen = result.detail.scenario.preNoblePhantasmPlan.flatMap((command) =>
+      command.kind === 'useSkillSlot'
+        ? [{ slot: command.slot, choice: command.choice?.candidateKey ?? null } as OracleSkill]
+        : [],
+    );
+    const selectedOracle = battlePointOracle(chosen, -1);
+    expect(result.detail.input).toMatchObject({
+      attackBuff: selectedOracle.attack / 1_000,
+      cardBuff: selectedOracle.card / 1_000,
+      npDamageBuff: selectedOracle.np / 1_000,
+      npMultipliers: [450, 600, 675, 712.5, 750],
+      npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
+      powerMod: 0.5,
+      overcharge: 1,
+    });
+    expect(result.detail.result.rows).toEqual(battlePointOracleRows(selectedOracle, true));
+    expect(result.detail.candidateEvidence.quantityCandidateKey).toBe('quantity:baseline');
+    const calculator = calculateScenarioWithPolicy(result.detail.scenario, master, versions(), {
+      kind: 'calculator',
+    });
+    expect(calculator.status).toBe('executable');
+    if (calculator.status !== 'executable') throw new Error(JSON.stringify(calculator));
+    expect(calculator.result.rows).toEqual(result.detail.result.rows);
+    const portable = executePortableCalculation(
+      createRankingPortableRequest(result.detail, currentCalculationVersionContext(master)),
+      master,
+    );
+    expect(portable.status).toBe('executed');
+    if (portable.status === 'executed')
+      expect(portable.execution.result.rows).toEqual(result.detail.result.rows);
+    const scenario = result.detail.scenario;
     for (const point of [-1, 0, 1, 2, 3, 4])
       expect(
         calculateScenarioWithPolicy(
@@ -98,6 +243,135 @@ describe('static ranking candidate space', () => {
         result: { issue: { kind: 'invalidBattlePointIntent', detail: 'invalidInitialPoint' } },
       });
   });
+
+  it.each([-1, 0, 2, 3, 4])(
+    'matches the independent BP order oracle for initial phase witness %s',
+    (initialPoint) => {
+      const servant = master.servants.find(({ id }) => id === '705300')!;
+      const domain = servant.battlePointDomains![0]!;
+      const programs = battlePointOraclePrograms();
+      const raw = [-1, 0, 1, 2, 3, 4].flatMap((point) =>
+        programs.map((program) => {
+          const state = battlePointOracle(program, point);
+          return { point, program, state, rows: battlePointOracleRows(state, true) };
+        }),
+      );
+      const initial = createDefaultResolvedScenario(master, undefined, servant);
+      const damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>();
+      // Present points 0 and 1 share phase 1. The public application expands its witnesses.
+      // Explicit points intentionally remain rejected before the passive grants eligibility.
+      for (const starting of raw.filter(({ point }) => point === initialPoint)) {
+        const scenario = {
+          ...initial,
+          attacker: { ...initial.attacker, level: 90, fouAtk: 1_000 },
+          battleState: {
+            battlePointPhase:
+              starting.point < 0
+                ? 0
+                : starting.point < 2
+                  ? 1
+                  : starting.point === 2
+                    ? 2
+                    : starting.point === 3
+                      ? 3
+                      : 4,
+          },
+          targetContext: {
+            class: { kind: 'concrete' as const, classId: 'shielder' as const },
+            attribute: { kind: 'concrete' as const, attribute: 'earth' as const },
+            families: [],
+          },
+          worldFactAssertions: [
+            ...['alignmentEvil', 'undead'].map((trait) => ({
+              decisionKey: `oracle:${trait}`,
+              fact: { kind: 'trait' as const, scope: 'target' as const, trait, present: true },
+            })),
+            ...['alignmentEvil', 'undead'].map((trait) => ({
+              decisionKey: `oracle:state:${trait}`,
+              fact: {
+                kind: 'trait' as const,
+                scope: 'targetState' as const,
+                trait,
+                present: false,
+              },
+            })),
+          ],
+          preNoblePhantasmPlan: oracleCommands(starting.program),
+        };
+        const prepared = prepareCalculationScenarioWithPolicy(
+          scenario,
+          master,
+          {
+            kind: 'ranking',
+            selfBuffs: 'included',
+            conditionalEffects: 'satisfied',
+            areaView: 'included',
+          },
+          {},
+          true,
+          damageCache,
+        );
+        const execution = evaluatePreparedCalculationScenario(prepared, versions());
+        expect(
+          execution.status,
+          JSON.stringify({ point: starting.point, program: starting.program }),
+        ).toBe('executable');
+        if (execution.status !== 'executable') throw new Error(JSON.stringify(execution));
+        const initialDomain =
+          prepared.preparationExecution!.initializationExecution!.state.battlePoints.actors
+            .attacker!.domains[domain.id]!;
+        expect(initialDomain).toBeDefined();
+        const witnessPoint = initialDomain.kind === 'absent' ? -1 : initialDomain.point;
+        const oracle = raw.find(
+          (candidate) => candidate.point === witnessPoint && candidate.program === starting.program,
+        );
+        expect(oracle, JSON.stringify({ witnessPoint, starting })).toBeDefined();
+        if (!oracle) throw new Error('oracle_witness_not_in_independent_domain');
+        expect(execution.input).toMatchObject({
+          attackBuff: oracle.state.attack / 1_000,
+          cardBuff: oracle.state.card / 1_000,
+          npDamageBuff: oracle.state.np / 1_000,
+        });
+        expect(execution.result.rows).toEqual(oracle.rows);
+        const actions = prepared.preparationExecution!.actionExecutions!;
+        expect(actions.map(({ command }) => command)).toEqual(scenario.preNoblePhantasmPlan);
+        expect(actions.at(-1)!.state.terminated).toBe(true);
+        expect(actions.at(-1)!.state.usedSkillSlots.size).toBe(oracle.program.length);
+        expect(execution.appliedPreparationActions.at(-1)!.ocUse).toMatchObject({
+          gaugeBefore: oracle.state.gauge,
+          baseOc: 1,
+          effectiveOc: 1,
+        });
+        for (const [index, skill] of oracle.program.entries()) {
+          if (skill.slot !== 3) continue;
+          const action = actions[index]!;
+          const source = action.sources.find(
+            ({ source }) => source.effect.occurrenceId === '248:1',
+          )!;
+          expect(source.binding).toMatchObject({ valueSetIndex: 0, valueIndex: 9 });
+          expect(source.binding.activation).toMatchObject({
+            kind: 'read',
+            read: {
+              kind: 'known',
+              truth: oracle.state.reads[index]!.extraNp,
+              certainty: 'guaranteed',
+              clock: { phase: 'sourceUse', actionId: source.actionId, occurrenceId: '248:1' },
+              evidence: [{ value: oracle.state.reads[index]!.phase }],
+            },
+          });
+          expect(source.binding.activation.kind).toBe('read');
+          if (source.binding.activation.kind === 'read') {
+            expect(source.binding.activation.read.support.length).toBeGreaterThan(0);
+            expect(source.binding.activation.proc).toMatchObject({
+              outcome: 'success',
+              certainty: 'guaranteed',
+            });
+          }
+          expect(action.committedSources).toContain(source);
+        }
+      }
+    },
+  );
 
   it.each([
     ['1101000', 4],

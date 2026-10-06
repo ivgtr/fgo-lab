@@ -104,6 +104,7 @@ function firstValueDifference(
   expected: CanonicalAuditValue | undefined,
   actual: CanonicalAuditValue | undefined,
   path: string,
+  equalPairs: WeakMap<object, WeakSet<object>>,
 ): Omit<CanonicalAuditDifference, 'identity'> | null {
   if (Object.is(expected, actual)) return null;
   if (
@@ -116,6 +117,15 @@ function firstValueDifference(
     Array.isArray(expected) !== Array.isArray(actual)
   )
     return { path, expected, actual };
+  if (equalPairs.get(expected)?.has(actual)) return null;
+  const rememberEqual = () => {
+    let actuals = equalPairs.get(expected);
+    if (!actuals) {
+      actuals = new WeakSet<object>();
+      equalPairs.set(expected, actuals);
+    }
+    actuals.add(actual);
+  };
   if (Array.isArray(expected) && Array.isArray(actual)) {
     const expectedArray = expected as readonly CanonicalAuditValue[];
     const actualArray = actual as readonly CanonicalAuditValue[];
@@ -125,9 +135,11 @@ function firstValueDifference(
         expectedArray[index],
         actualArray[index],
         `${path}[${index}]`,
+        equalPairs,
       );
       if (difference) return difference;
     }
+    rememberEqual();
     return null;
   }
   const expectedObject = expected as Readonly<Record<string, CanonicalAuditValue>>;
@@ -138,9 +150,11 @@ function firstValueDifference(
       Object.hasOwn(expectedObject, key) ? expectedObject[key] : undefined,
       Object.hasOwn(actualObject, key) ? actualObject[key] : undefined,
       path.length === 0 ? key : `${path}.${key}`,
+      equalPairs,
     );
     if (difference) return difference;
   }
+  rememberEqual();
   return null;
 }
 
@@ -155,11 +169,13 @@ export function firstCanonicalAuditDifference(
   const identities = [
     ...new Set([...expectedByIdentity.keys(), ...actualByIdentity.keys()]),
   ].sort();
+  const equalPairs = new WeakMap<object, WeakSet<object>>();
   for (const identity of identities) {
     const difference = firstValueDifference(
       expectedByIdentity.get(identity),
       actualByIdentity.get(identity),
       '',
+      equalPairs,
     );
     if (difference) return { identity, ...difference };
   }

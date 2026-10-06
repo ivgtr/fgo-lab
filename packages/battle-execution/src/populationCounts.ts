@@ -225,15 +225,26 @@ function localTraitCount(
   if (selector.basis === 'inBattle') return 1;
   const stateScope = actor === 'attacker' ? 'attackerState' : 'targetState';
   if (selector.counting === 'actors') {
-    const read = evaluateCondition({ kind: 'any', expressions: selector.traits.map((trait) => ({ kind: 'trait', scope: actor, trait, present: true })) }, facts);
+    const read = evaluateCondition(
+      {
+        kind: 'any',
+        expressions: selector.traits.map((trait) => ({
+          kind: 'trait',
+          scope: actor,
+          trait,
+          present: true,
+        })),
+      },
+      facts,
+    );
     return read.truth === null ? null : Number(read.truth);
   }
   let count = 0;
   for (const trait of selector.traits) {
     const intrinsic = facts.initialTraitSuppressions[actor].has(trait)
       ? { value: 0 }
-      : readTraitQuantity(facts.traitFactLayers, actor, trait, facts.conditionFactProofs.completeTraits[actor]);
-    const applied = readTraitQuantity(facts.traitFactLayers, stateScope, trait, facts.conditionFactProofs.completeTraits[stateScope]);
+      : readTraitQuantity(facts.traitFactLayers, actor, trait);
+    const applied = readTraitQuantity(facts.traitFactLayers, stateScope, trait);
     if (intrinsic.value === null || applied.value === null) return null;
     count += intrinsic.value + applied.value;
   }
@@ -308,7 +319,8 @@ export function readPopulationCount(args: {
     return null;
   const querySides = populationScopeSides(selector.scope);
   const externalSize = querySides.reduce((sum, side) => sum + populationSideSize(side, values), 0);
-  let external = selector.basis === 'inBattle' ? externalSize : externalSize === 0 ? 0 : values[args.inputKey];
+  let external =
+    selector.basis === 'inBattle' ? externalSize : externalSize === 0 ? 0 : values[args.inputKey];
   if (external === undefined) return null;
   let buffCount = selector.basis === 'buffInstances' ? external : 0;
   for (const event of args.events) {
@@ -340,7 +352,11 @@ export function readPopulationCount(args: {
     } else return null;
   }
   if (selector.basis === 'buffInstances') return buffCount;
-  const attacker = ['enemies', 'otherActors'].includes(selector.scope) ? 0 : localTraitCount(selector, facts, 'attacker');
-  const target = ['allies', 'recipient'].includes(selector.scope) ? 0 : localTraitCount(selector, facts, 'target');
+  const attacker = ['enemies', 'otherActors'].includes(selector.scope)
+    ? 0
+    : localTraitCount(selector, facts, 'attacker');
+  const target = ['allies', 'recipient'].includes(selector.scope)
+    ? 0
+    : localTraitCount(selector, facts, 'target');
   return attacker === null || target === null ? null : external + attacker + target;
 }

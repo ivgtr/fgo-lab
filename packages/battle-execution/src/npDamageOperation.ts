@@ -3,17 +3,40 @@ import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { targetPredicateKey } from './targetPredicate';
 import type { TraitQuantityRead } from './traitFactLayers';
+import type { ConditionRead } from './conditionRead';
+
+export interface NpBattlePointRead {
+  dependency: ConditionRead;
+  included: boolean;
+}
+
+export function npBattlePointValue(read: NpBattlePointRead, subjectId: string): number | null {
+  const evidence = read.dependency.evidence;
+  if (
+    evidence.length !== 1 ||
+    evidence[0]!.expression.kind !== 'quantity' ||
+    evidence[0]!.expression.quantity !== 'battlePointPhase' ||
+    evidence[0]!.expression.subjectId !== subjectId
+  )
+    throw new TypeError('invalid_np_battle_point_read');
+  const value = evidence[0]!.value;
+  return typeof value === 'number' ? value : null;
+}
 
 export interface NpDamageOperationContext {
   overcharge: number;
   selectedNpLevel: number;
-  traitQuantity: (actor: 'attacker' | 'target', layer: 'combined' | 'state', trait: string) => TraitQuantityRead;
+  traitQuantity: (
+    actor: 'attacker' | 'target',
+    layer: 'combined' | 'state',
+    trait: string,
+  ) => TraitQuantityRead;
   targetTraits: ReadonlyMap<string, boolean>;
   targetStateTraits: ReadonlyMap<string, boolean>;
   targetPredicateValues: ReadonlyMap<string, boolean>;
   attackerHpRatio: number | null;
   targetRarity: number | null;
-  battlePointPhase: number | null;
+  battlePointPhase: (npLevel: number, subjectId: string) => NpBattlePointRead;
   effectLocalConditionSatisfied?: boolean;
   includeSpecialContribution?: boolean;
 }
@@ -29,6 +52,14 @@ export type NpDamageOperationResult =
 
 export interface ScalarNpDamageConsumption {
   stateAddress: 'quantity:battlePointPhase';
+  cells: readonly {
+    npLevel: number;
+    subjectId: string;
+    read: NpBattlePointRead;
+    value: number | null;
+    consumedValue: number | null;
+    disposition: 'consumed' | 'missing' | 'excluded';
+  }[];
   value: number | null;
   consumedValue: number | null;
   disposition: 'consumed' | 'missing' | 'excluded';
@@ -124,18 +155,10 @@ function evaluateNpDamageOperationInternal(
 
   if (damage.kind === 'traitCount' && damage.quantity.kind === 'unsupported')
     return { status: 'unsupported', missingEvidence: damage.quantity.reason };
-  if (context.includeSpecialContribution === false) {
+  if (context.includeSpecialContribution === false && damage.kind !== 'battlePointPhase') {
     const result = resolved(baseMultipliers, one());
     if (damage.kind === 'hpRatioLow')
       observeHp?.({ ratio: context.attackerHpRatio, disposition: 'excluded', evaluation: result });
-    if (observe && damage.kind === 'battlePointPhase')
-      observe({
-        stateAddress: 'quantity:battlePointPhase',
-        value: context.battlePointPhase,
-        consumedValue: null,
-        disposition: 'excluded',
-        evaluation: result,
-      });
     return result;
   }
 
@@ -158,38 +181,50 @@ function evaluateNpDamageOperationInternal(
     return evaluation;
   }
   if (damage.kind === 'battlePointPhase') {
-    if (context.battlePointPhase === null) {
-      const result = {
-        status: 'unsupported' as const,
-        missingEvidence: 'missing_battle_point_phase',
+    const cells = parameters.map((parameter, index) => {
+      if (parameter.targetId === undefined) throw new TypeError('missing_np_battle_point_domain');
+      const subjectId = String(parameter.targetId);
+      const read = context.battlePointPhase(index + 1, subjectId);
+      const value = npBattlePointValue(read, subjectId);
+      const disposition =
+        value === null
+          ? ('missing' as const)
+          : read.included
+            ? ('consumed' as const)
+            : ('excluded' as const);
+      return {
+        npLevel: index + 1,
+        subjectId,
+        read,
+        value,
+        disposition,
+        consumedValue:
+          disposition === 'consumed'
+            ? Math.min(Math.max(value!, 0), damage.maximumBattlePointPhase)
+            : null,
       };
-      observe?.({
-        stateAddress: 'quantity:battlePointPhase',
-        value: null,
-        consumedValue: null,
-        disposition: 'missing',
-        evaluation: result,
-      });
-      return result;
-    }
-    const battlePointPhase = Math.min(
-      Math.max(context.battlePointPhase, 0),
-      damage.maximumBattlePointPhase,
-    );
-    const result = resolved(
-      baseMultipliers,
-      parameters.map(
-        (parameter) =>
-          ((parameter.secondaryValuePermille ?? 1_000) +
-            (parameter.correctionPermille ?? 0) * battlePointPhase) /
-          1_000,
-      ) as [number, number, number, number, number],
-    );
+    });
+    const selected = cells[context.selectedNpLevel - 1];
+    if (!selected) throw new TypeError('invalid_np_battle_point_cell');
+    const result: NpDamageOperationResult = cells.some((cell) => cell.disposition === 'missing')
+      ? { status: 'unsupported', missingEvidence: 'missing_battle_point_phase' }
+      : resolved(
+          baseMultipliers,
+          parameters.map((parameter, index) => {
+            const cell = cells[index]!;
+            return cell.disposition === 'excluded'
+              ? 1
+              : ((parameter.secondaryValuePermille ?? 1_000) +
+                  (parameter.correctionPermille ?? 0) * cell.consumedValue!) /
+                  1_000;
+          }) as [number, number, number, number, number],
+        );
     observe?.({
       stateAddress: 'quantity:battlePointPhase',
-      value: context.battlePointPhase,
-      consumedValue: battlePointPhase,
-      disposition: 'consumed',
+      cells,
+      value: selected.value,
+      consumedValue: selected.consumedValue,
+      disposition: selected.disposition,
       evaluation: result,
     });
     return result;
@@ -255,12 +290,14 @@ function evaluateNpDamageOperationInternal(
 
   const actor = parameters[0].targetId === 1 ? 'target' : 'attacker';
   const stateTraitNames = new Set(damage.stateTraitNames);
-  const quantities = parameters.map((parameter) => countTraits(
-    (layer, trait) => context.traitQuantity(actor, layer, trait),
-    stateTraitNames,
-    context.targetPredicateValues,
-    parameter.targetTraits ?? [],
-  ));
+  const quantities = parameters.map((parameter) =>
+    countTraits(
+      (layer, trait) => context.traitQuantity(actor, layer, trait),
+      stateTraitNames,
+      context.targetPredicateValues,
+      parameter.targetTraits ?? [],
+    ),
+  );
   if (quantities.some((count) => count === null))
     return { status: 'unsupported', missingEvidence: 'unknown_trait_quantity' };
   return resolved(

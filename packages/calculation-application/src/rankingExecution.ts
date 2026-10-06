@@ -7,7 +7,7 @@ import {
 } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
 import type { AttackProfile } from './attackProfile';
-import { calculateDamageResolution } from './damageResolution';
+import type { DamageResolutionValue } from './damageResolution';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
 import {
   evaluatePreparedCalculationScenario,
@@ -62,29 +62,18 @@ export function executeRankingScenarios(
   master: MasterDataSnapshot,
   versions: VersionContext,
   contributionPolicies?: readonly ContributionApplicationPolicy[],
-  damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>(),
+  damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
 ): CalculationExecution[] {
   const prepared = scenarios.map((scenario) =>
-    'resolved' in scenario ? scenario : prepareCalculationScenario(scenario, master),
+    'resolved' in scenario ? scenario : prepareCalculationScenario(scenario, master, {}, damageCache),
   );
   if (contributionPolicies && contributionPolicies.length !== prepared.length)
     throw new TypeError('ranking_contribution_policy_alignment_mismatch');
   const projected = prepared.map((candidate, index) => {
     const policy = contributionPolicies?.[index];
-    return policy ? reapplyPreparedCalculationPolicy(candidate, policy) : candidate;
+    return policy ? reapplyPreparedCalculationPolicy(candidate, policy, damageCache) : candidate;
   });
-  return projected.map((candidate) => {
-    if (candidate.status !== 'executable')
-      return evaluatePreparedCalculationScenario(candidate, versions);
-    const variant = candidate.resolved.noblePhantasmVariant;
-    if (!variant || candidate.resolved.profileContinuity?.kind !== 'matched')
-      return evaluatePreparedCalculationScenario(candidate, versions);
-    const calculation = damageCache.getOrCreate(
-      { noblePhantasmVariant: variant.ref, input: candidate.resolved.input },
-      () => calculateDamageResolution(candidate.resolved.input, versions),
-    );
-    return evaluatePreparedCalculationScenario(candidate, versions, calculation);
-  });
+  return projected.map((candidate) => evaluatePreparedCalculationScenario(candidate, versions));
 }
 
 export function selectRankingExecutionIndexes(

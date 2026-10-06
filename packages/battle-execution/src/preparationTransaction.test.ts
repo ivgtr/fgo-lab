@@ -1,6 +1,9 @@
 import type { SourceActivationReceipt } from './conditionRead';
 import type { ConditionRead } from './conditionRead';
 import type { SourceEffect } from './sourceCollection';
+import type { PreparationActionExecution } from './preparationExecution';
+import type { PreNoblePhantasmState } from './preparationContracts';
+import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type {
   CanonicalNpResourceSemantics,
   MasterEffect,
@@ -15,6 +18,10 @@ import {
 } from './preNoblePhantasm';
 import { formCanReachAttackWithoutPreparationNp } from './preparationState';
 import { planPreparationResourceTransaction } from './preparationTransaction';
+import { diagnoseRejectedPreparation } from './preparationDiagnostic';
+import { readInputFact, writeInputFact, exactInputFactValue } from './inputFacts';
+import { CRITICAL_STARS_INITIAL_INPUT } from './resourceSemantics';
+import { preparationOcAttemptsFor, preparationSourcesFor } from './preparationAttemptObservation';
 
 const semantics: CanonicalNpResourceSemantics = {
   unit: 'basisPoints',
@@ -269,7 +276,591 @@ function servantWithSkill(effects: readonly MasterEffect[]): ServantMaster {
   };
 }
 
+function rejectedOutcome(
+  result: PreparationActionExecution,
+  expectedBefore: PreNoblePhantasmState,
+  expectedCommand: PreNoblePhantasmCommand,
+) {
+  const { before, command, sources, committedSources, observations, ...outcome } = result;
+  expect(before).toBe(expectedBefore);
+  expect(result.state).toBe(expectedBefore);
+  expect(command).toEqual(expectedCommand);
+  expect(committedSources).toEqual([]);
+  expect(Object.keys(observations).sort()).toEqual(['battlePointSteps', 'hpActions', 'ocAttempts']);
+  for (const attempt of observations.ocAttempts)
+    for (const source of attempt.sourceExecutions) expect(sources).toContain(source);
+  for (const source of sources) {
+    expect(source.operations.map(({ operation }) => operation)).toEqual(
+      source.source.effect.execution,
+    );
+    for (const operation of source.operations)
+      expect(operation.operation).toBe(source.source.effect.execution[operation.operationIndex]);
+  }
+  expect(structuredClone(result)).toEqual(result);
+  return outcome;
+}
+
 describe('transactional preparation execution', () => {
+  it('returns one complete native result and retains its receipt through spread and clone', () => {
+    const servant = servantWithSkill([]);
+    const initialized = createPreNoblePhantasmState(servant, baseForm, context);
+    expect(initialized.command).toBeNull();
+    expect(Object.hasOwn(initialized, 'execution')).toBe(false);
+    const command = {
+      kind: 'useSkillSlot' as const,
+      slot: 1 as const,
+      skillLevel: 5,
+      choice: null,
+    };
+    const applied = reducePreNoblePhantasmAction(servant, initialized.state, command, context);
+    expect(applied.status).toBe('applied');
+    expect(applied.before).toBe(initialized.state);
+    expect(applied.command).toBe(command);
+    expect(Object.hasOwn(applied, 'after')).toBe(false);
+    expect({ ...applied }.observations).toBe(applied.observations);
+    expect(structuredClone(applied)).toEqual(applied);
+    const rejected = reducePreNoblePhantasmAction(servant, applied.state, command, context);
+    expect(rejected).toMatchObject({
+      status: 'rejected',
+      code: 'skillSlotReused',
+      committedSources: [],
+    });
+    expect(rejected.state).toBe(applied.state);
+    expect(rejected.before).toBe(applied.state);
+    expect({ ...rejected }.observations).toBe(rejected.observations);
+    expect(structuredClone(rejected)).toEqual(rejected);
+  });
+  it('records the actual attempted structural state when the native source finishes', () => {
+    const transition = effect('transition-effect', null, [
+      { kind: 'transformActorForm', route, targetFormId: changedForm },
+      { kind: 'selectNoblePhantasmVariant', route, variant: changedAttack.ref },
+    ]);
+    const servant = servantWithSkill([transition]);
+    const initialized = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initialized.status !== 'applied') throw new Error(initialized.code);
+    const result = reducePreNoblePhantasmAction(
+      servant,
+      initialized.state,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      context,
+    );
+    expect(result.status).toBe('applied');
+    const source = result.sources.find(({ source }) => source.effect === transition);
+    expect(source?.status).toBe('completed');
+    if (source?.status !== 'completed') throw new Error('completed source required');
+    expect(source.transaction.kind).toBe('committed');
+    expect(source.binding.actorFormId).toEqual(baseForm);
+    expect(source.transaction.before.currentFormId).toEqual(baseForm);
+    expect(source.transaction.attempted.currentFormId).toEqual(changedForm);
+    expect(source.transaction.attempted.selectedNoblePhantasmVariant).toEqual(changedAttack.ref);
+    expect(source.transaction.after.currentFormId).toEqual(changedForm);
+    expect(source.transaction.after.selectedNoblePhantasmVariant).toEqual(changedAttack.ref);
+    expect(result.committedSources).toContain(source);
+    expect(result.state.usedSkillSlots).toEqual(new Set([1]));
+    expect(initialized.state.currentFormId).toEqual(baseForm);
+    expect(structuredClone(result)).toEqual(result);
+  });
+  it('retains staged NP and OC attempts while a failed native source restores its physical state', () => {
+    type Boost = Extract<MasterEffect['execution'][number], { kind: 'grantOcBoost' }>;
+    const boost = (rate: number): Boost => ({
+      kind: 'grantOcBoost',
+      route,
+      lifetime: 'active',
+      stacking: 'additive',
+      stateTraits: ['positive'],
+      cells: Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () => ({
+          stages: 1,
+          applicationRatePermille: rate,
+          turns: { kind: 'unlimited' },
+          uses: { kind: 'finite', remaining: 1 },
+        })),
+      ) as Boost['cells'],
+    });
+    const staged = effect(
+      'staged-source',
+      {
+        kind: 'fixed',
+        recipient: 'sourceActor',
+        direction: 'gain',
+        amounts: [[1000], [], [], [], []],
+        overflow: 'clampToCapacity',
+        underflow: 'clampToZero',
+      },
+      [boost(1000), boost(0)],
+    );
+    const servant = servantWithSkill([staged]);
+    const initialized = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initialized.status !== 'applied') throw new Error(initialized.code);
+    const result = reducePreNoblePhantasmAction(
+      servant,
+      initialized.state,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      context,
+    );
+    expect(result.status).toBe('applied');
+    const source = result.sources.find(({ source }) => source.effect === staged);
+    if (source?.status !== 'completed') throw new Error('completed source required');
+    expect(source.transaction.kind).toBe('stochasticFailure');
+    expect(source.transaction.before.npResource.gauge).toBe(10000);
+    expect(source.transaction.attempted.npResource.gauge).toBe(11000);
+    expect(source.transaction.attempted.ocState.boosts).toHaveLength(1);
+    expect(source.transaction.after.npResource.gauge).toBe(10000);
+    expect(source.transaction.after.ocState.boosts).toEqual([]);
+    expect(source.binding.activation).toMatchObject({
+      kind: 'read',
+      proc: { kind: 'resolved', outcome: 'failure', certainty: 'guaranteed', ratePermille: 0 },
+    });
+    expect(result.committedSources).not.toContain(source);
+    expect(result.state.npResource.gauge).toBe(10000);
+    expect(result.state.npQuantityWrites).toEqual(initialized.state.npQuantityWrites);
+    expect(result.state.ocState.boosts).toEqual([]);
+    expect(result.state.usedSkillSlots).toEqual(new Set([1]));
+    expect(initialized.state.usedSkillSlots).toEqual(new Set());
+    expect(initialized.state.ocState.boosts).toEqual([]);
+  });
+  it('commits an unknown conditional star value and rolls the action back if a later writer needs it', () => {
+    const starOperation: Extract<MasterEffect['execution'][number], { kind: 'resourceMutation' }> =
+      {
+        kind: 'resourceMutation' as const,
+        resource: 'criticalStars' as const,
+        direction: 'gain' as const,
+        unit: 'fixed' as const,
+        recipient: 'sourceSelf' as const,
+        subjectId: null,
+        amount: {
+          kind: 'fixed' as const,
+          values: [Array(10).fill(10) as number[], [], [], [], []],
+        },
+      };
+    const writer = effect('conditional-stars', null, [starOperation], {
+      kind: 'trait',
+      scope: 'field',
+      trait: 'fieldCity',
+      present: true,
+      provenance: {
+        stateSources: 'activeOnly',
+        ignoredStateTraits: 'exclude',
+        unremovableStateTraits: 'include',
+      },
+    });
+    const servant = servantWithSkill([writer]);
+    const created = createPreNoblePhantasmState(servant, baseForm, context);
+    expect(created.status).toBe('applied');
+    const command = {
+      kind: 'useSkillSlot' as const,
+      slot: 1 as const,
+      skillLevel: 10,
+      choice: null,
+    };
+    const used = reducePreNoblePhantasmAction(servant, created.state, command, context);
+    expect(used.status).toBe('applied');
+    expect(readInputFact(used.state.inputFacts, 'battle:criticalStars').value).toBeUndefined();
+    expect(used.state.inputFacts.get('battle:criticalStars')).toMatchObject({
+      kind: 'conditional',
+      whenTrue: { kind: 'known', value: 10 },
+      whenFalse: { kind: 'known', value: 0 },
+      recoveryInputs: [{ kind: 'worldTraitPresence', defaultValue: null }],
+    });
+    const action = used;
+    expect(action.committedSources).toHaveLength(1);
+    expect(action.sources[0]!.binding).toBe(used.state.sourceBindings.at(-1));
+    expect(action.sources[0]!.binding.activation).toMatchObject({
+      kind: 'read',
+      read: { kind: 'inputRequired', truth: null },
+    });
+    const commit = action.sources[0]!.binding.physicalInputs[0]!;
+    expect(commit.operationIndex).toBe(0);
+    expect(commit.inputKey).toBe('battle:criticalStars');
+    expect(exactInputFactValue(commit.before)).toBe(0);
+    expect(exactInputFactValue(commit.after)).toBeUndefined();
+    expect(commit.after).toEqual(used.state.inputFacts.get('battle:criticalStars'));
+    expect(readInputFact(created.state.inputFacts, 'battle:criticalStars').value).toBe(0);
+
+    const later = effect(
+      'transition-effect',
+      null,
+      [
+        { kind: 'transformActorForm', route, targetFormId: changedForm },
+        {
+          kind: 'selectNoblePhantasmVariant',
+          route,
+          variant: servant.actorFormGraph.forms[1]!.baseNoblePhantasmVariant!,
+        },
+      ],
+      { kind: 'inputQuantity', inputKey: 'battle:criticalStars', comparison: 'atLeast', value: 5 },
+      {
+        inputDefinitions: [CRITICAL_STARS_INITIAL_INPUT],
+      },
+    );
+    const compound = servantWithSkill([writer, later]);
+    const original = createPreNoblePhantasmState(compound, baseForm, context);
+    const rejected = reducePreNoblePhantasmAction(compound, original.state, command, context);
+    expect(rejected).toMatchObject({
+      status: 'rejected',
+      code: 'preparationInputRequired',
+      requiredInput: { kind: 'worldTraitPresence', defaultValue: null },
+      requiredInputEffectOccurrenceId: later.occurrenceId,
+    });
+    expect(rejected.state).toBe(original.state);
+    expect(readInputFact(rejected.state.inputFacts, 'battle:criticalStars').value).toBe(0);
+    const failed = rejected;
+    expect(failed.committedSources).toEqual([]);
+    const rolledBack = failed.sources[0]!;
+    expect(rolledBack.status).toBe('rolledBack');
+    if (rolledBack.status !== 'rolledBack') throw new Error('source rollback required');
+    expect(rolledBack.restored).toBe(original.state);
+    expect(rolledBack.transaction.kind).toBe('committed');
+    expect(
+      exactInputFactValue(rolledBack.transaction.after.inputFacts.get('battle:criticalStars')!),
+    ).toBeUndefined();
+    expect(rolledBack.transaction.after.inputFacts.get('battle:criticalStars')).toEqual(
+      commit.after,
+    );
+  });
+  it.each([1, 5, 9])(
+    'binds the omitted initial stars and the actual writer cell at skill Lv%s',
+    (skillLevel) => {
+      const writer = effect('writer-only-stars', null, [
+        {
+          kind: 'resourceMutation',
+          resource: 'criticalStars',
+          direction: 'gain',
+          unit: 'fixed',
+          recipient: 'sourceSelf',
+          subjectId: null,
+          amount: {
+            kind: 'fixed',
+            values: [Array.from({ length: 10 }, (_, index) => 10 + index), [], [], [], []],
+          },
+        },
+      ]);
+      expect(writer.inputDefinitions).toEqual([]);
+      const servant = servantWithSkill([writer]);
+      const created = createPreNoblePhantasmState(servant, baseForm, context);
+      expect(created.status).toBe('applied');
+      const initial = readInputFact(created.state.inputFacts, 'battle:criticalStars');
+      expect(initial.value).toBe(0);
+      expect(initial.support).toHaveLength(1);
+      expect(initial.support[0]).toMatchObject({
+        kind: 'selectedInitialResource',
+        clock: { phase: 'initial' },
+      });
+      const used = reducePreNoblePhantasmAction(
+        servant,
+        created.state,
+        { kind: 'useSkillSlot', slot: 1, skillLevel, choice: null },
+        context,
+      );
+      expect(used.status).toBe('applied');
+      const action = used;
+      const source = action.sources[0]!;
+      expect(action.committedSources).toEqual([source]);
+      expect(source.binding).toMatchObject({ valueSetIndex: 0, valueIndex: skillLevel - 1 });
+      expect(
+        source.binding.physicalInputs.map(({ operationIndex, inputKey, before, after }) => ({
+          operationIndex,
+          inputKey,
+          before: exactInputFactValue(before),
+          after: exactInputFactValue(after),
+        })),
+      ).toEqual([
+        { operationIndex: 0, inputKey: 'battle:criticalStars', before: 0, after: 9 + skillLevel },
+      ]);
+      const current = readInputFact(used.state.inputFacts, 'battle:criticalStars');
+      expect(current.value).toBe(9 + skillLevel);
+      expect(current.support).toHaveLength(2);
+      expect(current.support[0]).toEqual(initial.support[0]);
+      expect(current.support[1]).toMatchObject({
+        kind: 'guaranteedWrite',
+        clock: { phase: 'sourceUse', valueIndex: skillLevel - 1 },
+      });
+      expect(readInputFact(created.state.inputFacts, 'battle:criticalStars').value).toBe(0);
+
+      const unknown = {
+        ...created.state,
+        inputFacts: writeInputFact(created.state.inputFacts, 'battle:criticalStars', null, []),
+      };
+      const rejected = reducePreNoblePhantasmAction(
+        servant,
+        unknown,
+        { kind: 'useSkillSlot', slot: 1, skillLevel, choice: null },
+        context,
+      );
+      expect(rejected).toMatchObject({
+        status: 'rejected',
+        code: 'preparationInputRequired',
+        requiredInput: { key: 'battle:criticalStars' },
+        requiredInputEffectOccurrenceId: writer.occurrenceId,
+      });
+      expect(rejected.state).toBe(unknown);
+      expect(rejected.state.inputFacts.get('battle:criticalStars')).toEqual({
+        kind: 'unknown',
+        value: null,
+        support: [],
+      });
+      expect(rejected.committedSources).toEqual([]);
+    },
+  );
+
+  it.each(['initialization', 'formChange'] as const)(
+    'rolls back local commits when automatic activation rejects during %s',
+    (phase) => {
+      const structural = effect('transition-effect', null, [
+        { kind: 'transformActorForm', route, targetFormId: changedForm },
+        { kind: 'selectNoblePhantasmVariant', route, variant: changedAttack.ref },
+      ]);
+      const gain = effect('automatic-gain', {
+        kind: 'fixed',
+        recipient: 'sourceActor',
+        direction: 'gain',
+        amounts: [[1000], [], [], [], []],
+        overflow: 'clampToCapacity',
+        underflow: 'clampToZero',
+      });
+      const failed = effect('automatic-failure', null, [
+        {
+          kind: 'resourceMutation',
+          resource: 'npGauge',
+          direction: 'gain',
+          unit: 'fixed',
+          recipient: 'sourceSelf',
+          subjectId: null,
+          amount: { kind: 'fixed', values: [[null], [], [], [], []] },
+        },
+      ]);
+      const servant = servantWithSkill([structural]);
+      servant.passives = [{ ...servant.skills[0]!, id: 'automatic', effects: [gain, failed] }];
+      servant.actorFormGraph.forms[phase === 'initialization' ? 0 : 1]!.passiveIds = ['automatic'];
+      const created = createPreNoblePhantasmState(servant, baseForm, context);
+      const result =
+        phase === 'initialization'
+          ? created
+          : reducePreNoblePhantasmAction(
+              servant,
+              created.state,
+              { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+              context,
+            );
+      expect(created.status).toBe(phase === 'initialization' ? 'rejected' : 'applied');
+      expect(result.status).toBe('rejected');
+      const execution = phase === 'initialization' ? result : result;
+      expect(result.state).toBe(execution.before);
+      expect(execution.state).toBe(execution.before);
+      expect(execution.state).toEqual(structuredClone(execution.before));
+      expect(execution.committedSources).toEqual([]);
+      expect(result.state.currentFormId).toEqual(baseForm);
+      expect(result.state.selectedNoblePhantasmVariant).toEqual(baseAttack.ref);
+      expect(result.state.usedSkillSlots.size).toBe(0);
+      expect(result.state.appliedActions).toEqual([]);
+      expect(result.state.npResource.gauge).toBe(10000);
+      const automatic = execution.sources.filter(({ source }) => source.origin === 'passive');
+      expect(automatic).toHaveLength(2);
+      expect(automatic[0]).toMatchObject({
+        status: 'rolledBack',
+        transaction: {
+          kind: 'committed',
+          before: { npResource: { gauge: 10000 } },
+          after: { npResource: { gauge: 11000 } },
+        },
+        restored: execution.before,
+      });
+      expect(automatic[1]).toMatchObject({
+        status: 'rejected',
+        transaction: { kind: 'rejected', before: { npResource: { gauge: 11000 } } },
+        restored: execution.before,
+      });
+      expect(automatic[1]!.operations[0]!.steps.at(-1)?.native.rejection).not.toBeNull();
+      if (phase === 'formChange') {
+        const first = execution.sources[0]!;
+        if (first.status !== 'rolledBack') throw new Error('source rollback required');
+        expect(first.transaction.after.currentFormId).toEqual(changedForm);
+        expect(automatic[0]!.binding.actorFormId).toEqual(changedForm);
+        expect(result.state).toBe(created.state);
+      }
+    },
+  );
+
+  it.each([
+    { prior: false, multiple: false, intervening: false, restored: 20, final: 20 },
+    { prior: true, multiple: false, intervening: false, restored: 30, final: 30 },
+    { prior: true, multiple: true, intervening: true, restored: 30, final: 35 },
+  ])('keeps failed actual writes separate from diagnostic continuation: %j', (spec) => {
+    const star = (amount: number | null, direction: 'gain' | 'loss' = 'gain') => ({
+      kind: 'resourceMutation' as const,
+      resource: 'criticalStars' as const,
+      direction,
+      unit: 'fixed' as const,
+      recipient: 'sourceSelf' as const,
+      subjectId: null,
+      amount: {
+        kind: 'fixed' as const,
+        values: [[amount], [], [], [], []] as [
+          (number | null)[],
+          (number | null)[],
+          (number | null)[],
+          (number | null)[],
+          (number | null)[],
+        ],
+      },
+    });
+    const reader = (id: string, threshold: number) =>
+      effect(id, null, undefined, {
+        kind: 'inputQuantity',
+        inputKey: 'battle:criticalStars',
+        comparison: 'atLeast',
+        value: threshold,
+      });
+    const base = servantWithSkill([]);
+    const skills = [
+      {
+        ...base.skills[0]!,
+        id: 'prior',
+        slot: 1 as const,
+        effects: [effect('prior', null, [star(10)])],
+      },
+      {
+        ...base.skills[0]!,
+        id: 'failed',
+        slot: 2 as const,
+        effects: [
+          effect('failed', null, [
+            star(40),
+            ...(spec.multiple ? [star(15, 'loss')] : []),
+            star(null),
+            star(1),
+          ]),
+        ],
+      },
+      {
+        ...base.skills[0]!,
+        id: 'later',
+        slot: 3 as const,
+        effects: [
+          reader('immediate', spec.restored),
+          ...(spec.intervening ? [effect('intervening', null, [star(5)])] : []),
+          reader('final', spec.final),
+        ],
+      },
+    ];
+    const servant = {
+      ...base,
+      skills,
+      actorFormGraph: {
+        ...base.actorFormGraph,
+        forms: base.actorFormGraph.forms.map((form) => ({
+          ...form,
+          skillIds: skills.map(({ id }) => id),
+        })),
+      },
+    };
+    const settings = { ...context, canonicalInputValues: { 'battle:criticalStars': 20 } };
+    const initial = createPreNoblePhantasmState(servant, baseForm, settings);
+    if (initial.status !== 'applied') throw new Error('initial state required');
+    let before = initial.state;
+    if (spec.prior) {
+      const prior = reducePreNoblePhantasmAction(
+        servant,
+        before,
+        {
+          kind: 'useSkillSlot',
+          slot: 1,
+          skillLevel: 1,
+          choice: null,
+        },
+        settings,
+      );
+      if (prior.status !== 'applied') throw new Error('prior commit required');
+      before = prior.state;
+      expect(prior.committedSources).toHaveLength(1);
+    }
+    const original = structuredClone(before);
+    const rejected = reducePreNoblePhantasmAction(
+      servant,
+      before,
+      {
+        kind: 'useSkillSlot',
+        slot: 2,
+        skillLevel: 1,
+        choice: null,
+      },
+      settings,
+    );
+    if (rejected.status !== 'rejected') throw new Error('normal rejection required');
+    expect(rejected.state).toBe(before);
+    expect(rejected.state).toEqual(original);
+    const rejectedExecution = rejected;
+    const attempts = preparationOcAttemptsFor(rejected);
+    expect(attempts).toHaveLength(1);
+    const observedSources = preparationSourcesFor(attempts[0]!);
+    expect(observedSources).toHaveLength(rejectedExecution.sources.length);
+    for (const [index, source] of rejectedExecution.sources.entries())
+      expect(observedSources[index]).toBe(source);
+    expect(rejectedExecution.committedSources).toEqual([]);
+    const failed = rejectedExecution.sources[0]!;
+    expect(failed.status).toBe('rejected');
+    expect(failed.operations.at(-1)?.status).toBe('unreached');
+    if (failed.status !== 'rejected') throw new Error('source rejection required');
+    expect(failed.transaction.kind).toBe('rejected');
+    expect(failed.restored).toBe(before);
+    expect('after' in failed.transaction).toBe(false);
+    expect(failed.binding).toMatchObject({
+      actorFormId: baseForm,
+      valueSetIndex: 0,
+      valueIndex: 0,
+    });
+    const writes = failed.operations.filter(({ status }) => status === 'reached');
+    expect(
+      writes.map(({ steps }) => ({
+        before: readInputFact(steps[0]!.before.inputFacts, 'battle:criticalStars').value,
+        after: readInputFact(steps.at(-1)!.after.inputFacts, 'battle:criticalStars').value,
+      })),
+    ).toEqual([
+      { before: spec.restored, after: spec.restored + 40 },
+      ...(spec.multiple ? [{ before: spec.restored + 40, after: spec.restored + 25 }] : []),
+      {
+        before: spec.multiple ? spec.restored + 25 : spec.restored + 40,
+        after: spec.multiple ? spec.restored + 25 : spec.restored + 40,
+      },
+    ]);
+    expect(writes.at(-1)!.steps.at(-1)!.step).toMatchObject({
+      kind: 'reject',
+      status: 'unsupported',
+    });
+    const diagnostic = diagnoseRejectedPreparation(
+      servant,
+      rejected,
+      [
+        { kind: 'useSkillSlot', slot: 3, skillLevel: 1, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
+      settings,
+    );
+    expect(diagnostic.kind).toBe('rejectedPreparationDiagnostic');
+    expect(diagnostic.restored).not.toBe(before);
+    expect(diagnostic.restored.inputFacts).not.toBe(before.inputFacts);
+    expect(diagnostic.restored.usedSkillSlots).not.toBe(before.usedSkillSlots);
+    expect(diagnostic.state.terminated).toBe(true);
+    expect(diagnostic.state.usedSkillSlots.has(2)).toBe(false);
+    expect(diagnostic.state.usedSkillSlots.has(3)).toBe(true);
+    expect(readInputFact(diagnostic.state.inputFacts, 'battle:criticalStars').value).toBe(
+      spec.final,
+    );
+    const reads = diagnostic.transitions
+      .flatMap(({ sources }) => sources)
+      .filter(({ source }) => ['immediate', 'final'].includes(source.effect.occurrenceId))
+      .map(({ binding }) => ({
+        clock: binding.activation.kind === 'read' ? binding.activation.read.clock.phase : null,
+        value: binding.conditionReads.find((read) => read.kind === 'inputQuantity')?.value,
+      }));
+    expect(reads).toEqual([
+      { clock: 'sourceUse', value: spec.restored },
+      { clock: 'sourceUse', value: spec.final },
+    ]);
+    expect(before).toEqual(original);
+    expect(rejectedExecution.committedSources).toEqual([]);
+  });
+
   it.each(['commandCard', 'commandCardAttack'] as const)(
     'does not apply %s resource or structural writes, including automatic sources',
     async (triggerScope) => {
@@ -416,7 +1007,14 @@ describe('transactional preparation execution', () => {
       context,
     );
 
-    expect(result).toEqual({
+    expect(
+      rejectedOutcome(result, created.state, {
+        kind: 'useSkillSlot',
+        slot: 1,
+        skillLevel: 1,
+        choice: null,
+      }),
+    ).toEqual({
       status: 'rejected',
       code: 'ambiguousPreparationCondition',
       requiredInput: null,
@@ -474,10 +1072,18 @@ describe('transactional preparation execution', () => {
       state: created.state,
     });
     expect(missing.status === 'rejected' ? missing.requiredInput?.key : null).toBe('battle:value');
-    const repaired = reducePreNoblePhantasmAction(servant, created.state, command, {
-      ...context,
-      canonicalInputValues: { 'battle:value': 1 },
-    });
+    const correctedContext = { ...context, canonicalInputValues: { 'battle:value': 1 } };
+    const corrected = createPreNoblePhantasmState(servant, baseForm, correctedContext);
+    if (corrected.status !== 'applied') throw new Error(corrected.code);
+    const repaired = reducePreNoblePhantasmAction(
+      servant,
+      corrected.state,
+      command,
+      correctedContext,
+    );
+    expect(missing.state).toBe(created.state);
+    expect(created.state.currentFormId).toEqual(baseForm);
+    expect(created.state.inputFacts.has('battle:value')).toBe(false);
     expect(repaired).toMatchObject({
       status: 'applied',
       state: { currentFormId: changedForm, selectedNoblePhantasmVariant: changedAttack.ref },
@@ -523,13 +1129,14 @@ describe('transactional preparation execution', () => {
         },
       );
       const servant = servantWithSkill([conditional]);
-      const created = createPreNoblePhantasmState(servant, baseForm, context);
+      const inputContext = { ...context, canonicalInputValues: { 'battle:value': value } };
+      const created = createPreNoblePhantasmState(servant, baseForm, inputContext);
       if (created.status !== 'applied') throw new Error(created.code);
       const result = reducePreNoblePhantasmAction(
         servant,
         created.state,
         { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
-        { ...context, canonicalInputValues: { 'battle:value': value } },
+        inputContext,
       );
 
       expect(result.status).toBe(status);
@@ -653,7 +1260,14 @@ describe('transactional preparation execution', () => {
       hpContext,
     );
 
-    expect(result).toEqual({
+    expect(
+      rejectedOutcome(result, created.state, {
+        kind: 'useSkillSlot',
+        slot: 1,
+        skillLevel: 1,
+        choice: null,
+      }),
+    ).toEqual({
       status: 'rejected',
       code: 'unsupportedResourceMutation',
       requiredInput: null,
@@ -699,7 +1313,7 @@ describe('transactional preparation execution', () => {
       context,
     );
 
-    expect(attack).toEqual({
+    expect(rejectedOutcome(attack, skill.state, { kind: 'executeAttackNoblePhantasm' })).toEqual({
       status: 'rejected',
       code: 'insufficientNpGauge',
       requiredInput: null,
@@ -773,8 +1387,6 @@ describe('transactional preparation execution', () => {
     'uses the shared stochastic activation result for %s',
     (_name, successes, expectedGauge, expectedCode) => {
       const servant = servantWithSkill([]);
-      const created = createPreNoblePhantasmState(servant, baseForm, context);
-      if (created.status !== 'applied') throw new Error(created.code);
       const stochastic = effect(
         'stochastic-resource',
         {
@@ -822,11 +1434,14 @@ describe('transactional preparation execution', () => {
           ],
         },
       );
+      const inputContext = {
+        ...context,
+        canonicalInputValues: successes === undefined ? {} : { 'proc:preparation': successes },
+      };
+      const created = createPreNoblePhantasmState(servant, baseForm, inputContext);
+      if (created.status !== 'applied') throw new Error(created.code);
       const result = planPreparationResourceTransaction({
-        context: {
-          ...context,
-          canonicalInputValues: successes === undefined ? {} : { 'proc:preparation': successes },
-        },
+        context: inputContext,
         servant,
         state: created.state,
         command: { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },

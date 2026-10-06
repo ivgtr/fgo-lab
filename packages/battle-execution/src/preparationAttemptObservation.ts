@@ -1,8 +1,9 @@
-import { beginPreparationHpCapture, finishPreparationHpCapture } from './hpExecutionObservation';
+import { beginPreparationHpCapture, takePreparationHpCapture } from './hpExecutionObservation';
 export { preparationHpActionsFor, hpCandidateObservationFor } from './hpExecutionObservation';
 export { compiledSourcesFor, compiledOperationSourceFor } from './executionSourceObservation';
 export type { PreparationHpAction, HpCandidateObservation } from './hpExecutionObservation';
 import type { SourceEffect } from './sourceCollection';
+import type { PreparationSourceExecution, PreparationSourceDraft } from './preparationExecution';
 import type { BattlePointState } from './battlePointResource';
 import type {
   OcActionResult,
@@ -16,13 +17,15 @@ export { hpPermille } from './hpResource';
 export { ocRateAppliesToGrant } from './ocState';
 import type {
   PreparationExecutionContext,
-  PreparationTransitionResult,
+  PreparationCompletedTransitionResult,
   PreNoblePhantasmState,
 } from './preparationContracts';
 
-/** Internal capture transport; no observation fields are added to product states/results. */
+/** Native observations owned by the completed execution result. */
 export interface PreparationOcAttempt {
   actionId: string;
+  sourceExecutions: readonly PreparationSourceExecution[];
+  rates: PreparationOcRateObservation;
   sources: readonly SourceEffect[];
   start: PreNoblePhantasmState;
   stepOrigins: { index: number; source: SourceEffect; operationIndex: number | null }[];
@@ -41,22 +44,50 @@ export interface PreparationOcAttempt {
   returned?: PreNoblePhantasmState;
 }
 const scopes = new WeakMap<PreparationExecutionContext, PreparationOcAttempt[]>();
+
+/** The source writer supplies its actual results; observers never infer commit membership. */
+const sourceDrafts = new WeakMap<PreparationOcAttempt, readonly PreparationSourceDraft[]>();
+
+export function capturePreparationSources(
+  attempt: PreparationOcAttempt,
+  executions: readonly PreparationSourceDraft[],
+): void {
+  sourceDrafts.set(attempt, executions);
+}
+
+/** The action owner publishes the same sealed source objects in receipts and diagnostics. */
+export function publishPreparationSources(
+  attempt: PreparationOcAttempt,
+  sealed: ReadonlyMap<PreparationSourceDraft, PreparationSourceExecution>,
+): void {
+  const drafts = sourceDrafts.get(attempt);
+  if (!drafts) throw new TypeError('missing_preparation_source_drafts');
+  attempt.sourceExecutions = drafts.map((draft) => {
+    const execution = sealed.get(draft);
+    if (!execution) throw new TypeError('foreign_preparation_source_draft');
+    return execution;
+  });
+  sourceDrafts.delete(attempt);
+}
+
+export function preparationSourcesFor(attempt: PreparationOcAttempt) {
+  return attempt.sourceExecutions;
+}
+
 /** Native query selection and physical HP reads are distinct; neither changes product state. */
 export interface PreparationOcRateObservation {
   selections: { step: number; state: OcState; hp: HpState | undefined }[];
   queries: { step: number; state: OcState; rate: OcRateInstance; hp: HpState | undefined }[];
   reads: (OcRateHpRead & { step: number })[];
 }
-const ocRateObservations = new WeakMap<PreparationOcAttempt, PreparationOcRateObservation>();
 export function capturePreparationOcRates(attempt: PreparationOcAttempt) {
   const observation: PreparationOcRateObservation = { selections: [], queries: [], reads: [] };
-  ocRateObservations.set(attempt, observation);
+  attempt.rates = observation;
   return observation;
 }
 export function preparationOcRatesFor(attempt: PreparationOcAttempt) {
-  return ocRateObservations.get(attempt);
+  return attempt.rates;
 }
-const transitions = new WeakMap<PreparationTransitionResult, readonly PreparationOcAttempt[]>();
 export function beginPreparationAttemptCapture(context: PreparationExecutionContext): void {
   beginPreparationHpCapture(context);
   scopes.set(context, []);
@@ -65,20 +96,16 @@ export function beginPreparationAttemptCapture(context: PreparationExecutionCont
 export function preparationAttemptScope(context: PreparationExecutionContext) {
   return scopes.get(context);
 }
-export function finishPreparationAttemptCapture(
-  context: PreparationExecutionContext,
-  result: PreparationTransitionResult,
-): void {
-  finishPreparationHpCapture(context, result);
-  const attempts = scopes.get(context);
-  if (attempts) transitions.set(result, attempts);
+export function takePreparationAttemptCapture(context: PreparationExecutionContext) {
+  const ocAttempts = scopes.get(context) ?? [];
+  const battlePointSteps = battlePointScopes.get(context) ?? [];
+  const hpActions = takePreparationHpCapture(context);
   scopes.delete(context);
-  const steps = battlePointScopes.get(context);
-  if (steps) battlePointTransitions.set(result, steps);
   battlePointScopes.delete(context);
+  return { ocAttempts, battlePointSteps, hpActions };
 }
-export function preparationOcAttemptsFor(result: PreparationTransitionResult) {
-  return transitions.get(result);
+export function preparationOcAttemptsFor(result: PreparationCompletedTransitionResult) {
+  return result.observations.ocAttempts;
 }
 
 /** Separate capture keeps the existing attempt diagnostic and serialized shapes unchanged. */
@@ -96,13 +123,9 @@ export type PreparationBattlePointStep =
       domains: PreparationExecutionContext['battlePointDomains'];
     };
 const battlePointScopes = new WeakMap<PreparationExecutionContext, PreparationBattlePointStep[]>();
-const battlePointTransitions = new WeakMap<
-  PreparationTransitionResult,
-  readonly PreparationBattlePointStep[]
->();
 export function preparationBattlePointScope(context: PreparationExecutionContext) {
   return battlePointScopes.get(context);
 }
-export function preparationBattlePointStepsFor(result: PreparationTransitionResult) {
-  return battlePointTransitions.get(result);
+export function preparationBattlePointStepsFor(result: PreparationCompletedTransitionResult) {
+  return result.observations.battlePointSteps;
 }

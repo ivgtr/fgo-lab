@@ -1,3 +1,4 @@
+import { readTraitPresence, clearExternalTraitScopes } from './traitFactLayers';
 import { sourceMaximumHpInput } from './operationCompiler';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type { ConditionEvaluationState } from './condition';
@@ -24,6 +25,14 @@ export function requiredOcConditionInput(
       return null;
     }
     if (condition.kind === 'not') return visit(condition.expression);
+    if (condition.kind === 'inputQuantity') {
+      const fact = facts.inputFacts.get(condition.inputKey);
+      if (fact?.kind === 'conditional') {
+        const input = fact.recoveryInputs[0];
+        if (input) return input;
+      }
+      return null;
+    }
     if (
       condition.kind === 'quantity' &&
       condition.quantity === 'attackerHpPermille' &&
@@ -93,8 +102,8 @@ export function requiredOcConditionInput(
         : null;
     const scope =
       stateScope &&
-      facts.traits[condition.scope].get(condition.trait) === false &&
-      facts.traits[stateScope].get(condition.trait) === undefined
+      readTraitPresence(facts.traitFactLayers, condition.scope, condition.trait).value === false &&
+      readTraitPresence(facts.traitFactLayers, stateScope, condition.trait).value === undefined
         ? stateScope
         : condition.scope;
     const fact = {
@@ -132,11 +141,7 @@ export function providedSourceConditionInputs(
   const definitions: CanonicalInputDefinition[] = [];
   const absent = {
     ...facts,
-    traits: {
-      ...facts.traits,
-      attacker: new Map<string, boolean>(),
-      attackerState: new Map<string, boolean>(),
-    },
+    traitFactLayers: clearExternalTraitScopes(facts.traitFactLayers, ['attacker', 'attackerState']),
     quantities: { ...facts.quantities, attackerHpPermille: null },
   };
   const ownerProgram = { ...program, conditionActor: 'source' as const };

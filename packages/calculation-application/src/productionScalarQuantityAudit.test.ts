@@ -8,6 +8,7 @@ import {
   requireExecutableCalculation,
 } from './scenario';
 import {
+  scalarQuantitySnapshot,
   scalarQuantityProgram,
   scalarQuantitySource,
   auditScalarQuantityObservations,
@@ -558,4 +559,38 @@ describe('committed scalar quantity NP shared audit', () => {
       }
     },
   );
+});
+
+describe('native scalar quantity snapshot ownership', () => {
+  it('preserves repeated before/after, absent fields, collections, and own special keys', () => {
+    const shared = { quantity: 20, absent: undefined };
+    const input = {
+      before: shared,
+      after: shared,
+      facts: new Map([['stars', shared]]),
+      traits: new Set(['a']),
+      special: Object.fromEntries([['__proto__', shared]]),
+    };
+    const copied = scalarQuantitySnapshot(input);
+    expect(copied).toEqual({
+      before: { quantity: 20, absent: { kind: 'absent' } },
+      after: { quantity: 20, absent: { kind: 'absent' } },
+      facts: [['stars', { quantity: 20, absent: { kind: 'absent' } }]],
+      traits: ['a'],
+      special: Object.fromEntries([['__proto__', { quantity: 20, absent: { kind: 'absent' } }]]),
+    });
+    shared.quantity = 30;
+    expect(copied).toMatchObject({ before: { quantity: 20 }, after: { quantity: 20 } });
+    expect(scalarQuantitySnapshot(input)).toMatchObject({
+      before: { quantity: 30 },
+      after: { quantity: 30 },
+    });
+  });
+  it('rejects a cycle without treating it as a shared completed value', () => {
+    const cycle: Record<string, unknown> = {};
+    cycle['self'] = cycle;
+    expect(() => scalarQuantitySnapshot({ first: { value: 1 }, cycle })).toThrow(
+      'cyclic_scalar_quantity_audit_value',
+    );
+  });
 });

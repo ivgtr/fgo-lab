@@ -3,12 +3,13 @@ import type { SourceActivationReceipt } from './conditionRead';
 import type { ConditionReadAudit } from './condition';
 import type { BattleOperation } from './contracts';
 import type { AppliedPreparationAction } from './preparationContracts';
+import type { InputFact } from './inputFacts';
 
 export interface PhysicalInputCommit {
   readonly operationIndex: number;
   readonly inputKey: string;
-  readonly before: number;
-  readonly after: number;
+  readonly before: InputFact;
+  readonly after: InputFact;
 }
 
 /** Runtime observations come from the source transaction, never the compilation template. */
@@ -47,15 +48,21 @@ export function pendingNoblePhantasmSourceBinding(
   };
 }
 
-export function bindExecutionOperation(
-  operation: BattleOperation,
+export function bindExecutionOperation<TOperation extends BattleOperation>(
+  operation: TOperation,
   binding: SourceExecutionBinding,
   canonicalOperationIndex: number,
-): void {
+): TOperation {
   const commit = binding.physicalInputs.find(
     (candidate) => candidate.operationIndex === canonicalOperationIndex,
   );
-  operation.runtimeBinding = { source: binding, ...(commit ? { physicalInput: commit } : {}) };
+  return {
+    ...operation,
+    runtimeBinding: Object.freeze({
+      source: binding,
+      ...(commit ? { physicalInput: commit } : {}),
+    }),
+  };
 }
 
 export function executionBindingFor(operation: BattleOperation) {

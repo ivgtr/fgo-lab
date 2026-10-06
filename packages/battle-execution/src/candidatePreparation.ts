@@ -107,15 +107,15 @@ function prepareExecutableCandidate(
     })),
     activationContext,
   );
-  if (prepared.preparationExecution.kind !== 'available')
+  if (prepared.preparationExecution.kind === 'unavailable')
     throw new TypeError('preparation_execution_state_required');
   const preparationState = prepared.preparationExecution.state;
   initialState.hp = preparationState.hp;
   initialState.inputFacts = seedUnreadInputFacts(
-      cloneInputFacts(preparationState.inputFacts),
-      resolvedInputs.values,
-      { kind: 'externalAssumption', clock: initialState.conditionReadClock },
-    );
+    cloneInputFacts(preparationState.inputFacts),
+    resolvedInputs.values,
+    { kind: 'externalAssumption', clock: initialState.conditionReadClock },
+  );
   initialState.battlePoints = preparationState.battlePoints;
   initialState.battlePointDomains = prepared.battlePointDomains;
   initialState.resourceActor = 'attacker';

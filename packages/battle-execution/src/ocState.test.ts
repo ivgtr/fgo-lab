@@ -95,7 +95,17 @@ function grant(
     valueSetIndex: 0,
     valueIndex: 0,
     limitBreak: false,
-    included: true,
+    binding: {
+      activation: { kind: 'read', read: {
+          kind: 'known', truth: true, certainty: 'guaranteed', evidence: [], support: [],
+          clock: { phase: 'sourceUse', actorFormId: { actorId: actor, limitCount: 0 },
+            actor, actionId: sourceKey, operationId: null, sourceInstanceId: actor,
+            occurrenceId: sourceKey, valueSetIndex: 0, valueIndex: 0 },
+        },
+        proc: { kind: 'resolved', outcome: 'success', certainty: 'guaranteed', ratePermille: 1000, selection: 'declared' } },
+      policy: { kind: 'calculator' }, executionIntent: 'declared',
+      gameActivation: 'skillUse', contributionScope: 'personal',
+    },
     condition: true,
   };
 }
@@ -302,7 +312,10 @@ describe('OC action transactions', () => {
     expect(result.state.rates[0]!.uses).toEqual({ kind: 'finite', remaining: 0 });
   });
   it('consumes policy-excluded physical rate instances without reading excluded HP values', () => {
-    const prior = committed([{ ...grant(rate()), included: false }]);
+    const excluded = grant(rate());
+    excluded.binding = { ...excluded.binding,
+      policy: { kind: 'ranking', selfBuffs: 'excluded', conditionalEffects: 'baseline', areaView: 'included' } };
+    const prior = committed([excluded]);
     const result = executeOcAction(prior, 'query', [grant(boost(), 'oc')], {});
     expect(result).toMatchObject({
       status: 'committed',

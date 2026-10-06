@@ -1,4 +1,9 @@
 import { preparationBattlePointScope } from './preparationAttemptObservation';
+import {
+  beginPreparationExecution,
+  finishPreparationExecution,
+  abandonPreparationExecution,
+} from './preparationExecution';
 import { activatePreparationForm, executePreparationPhase } from './preparationPhases';
 import {
   getPassivesForActorForm,
@@ -23,7 +28,7 @@ export type {
   AppliedPreparationEffect,
   PreNoblePhantasmState,
   PreparationFailureCode,
-  PreparationTransitionResult,
+  PreparationCompletedTransitionResult as PreparationTransitionResult,
   PreparationExecutionContext,
   SkillSlotRef,
 } from './preparationContracts';
@@ -33,11 +38,28 @@ export function createPreNoblePhantasmState(
   servant: ServantMaster,
   initialFormId: ActorFormId,
   context: PreparationExecutionContext,
-): PreparationTransitionResult {
+): import('./preparationExecution').PreparationInitializationExecution {
   const created = createPreparationState(servant, initialFormId, context);
-  if (created.status === 'rejected') return created;
-  const form = activatePreparationForm(servant, created.state, context);
-  if (form.status === 'rejected') return { ...form, state: created.state };
+  beginPreparationExecution(context);
+  try {
+    const initialized =
+      created.status === 'rejected'
+        ? created
+        : initializePreparation(servant, created.state, context);
+    return finishPreparationExecution(context, null, created.state, initialized);
+  } catch (error) {
+    abandonPreparationExecution(context);
+    throw error;
+  }
+}
+
+function initializePreparation(
+  servant: ServantMaster,
+  state: PreNoblePhantasmState,
+  context: PreparationExecutionContext,
+): PreparationTransitionResult {
+  const form = activatePreparationForm(servant, state, context);
+  if (form.status === 'rejected') return { ...form, state };
   const initial = executePreparationPhase(
     servant,
     form.state,
@@ -46,11 +68,27 @@ export function createPreNoblePhantasmState(
     context.initialSources ?? [],
   );
   return initial.status === 'rejected'
-    ? { ...initial, state: created.state }
+    ? { ...initial, state }
     : { ...initial, state: reconcilePreparationBattlePoints(servant, initial.state, context) };
 }
 
 export function reducePreNoblePhantasmAction(
+  servant: ServantMaster,
+  state: PreNoblePhantasmState,
+  command: PreNoblePhantasmCommand,
+  context: PreparationExecutionContext,
+): import('./preparationExecution').PreparationActionExecution {
+  beginPreparationExecution(context);
+  try {
+    const result = reducePreparationAction(servant, state, command, context);
+    return finishPreparationExecution(context, command, state, result);
+  } catch (error) {
+    abandonPreparationExecution(context);
+    throw error;
+  }
+}
+
+function reducePreparationAction(
   servant: ServantMaster,
   state: PreNoblePhantasmState,
   command: PreNoblePhantasmCommand,
@@ -92,7 +130,7 @@ export function reducePreNoblePhantasmAction(
     }
   };
   const result = reduce();
-  if (result.status === 'rejected' || result.state.terminated) return result;
+  if (result.status === 'rejected') return result;
   const form = activatePreparationForm(servant, result.state, context);
   if (form.status === 'rejected') return { ...form, state };
   const reconciled = reconcilePreparationBattlePoints(servant, form.state, context);
@@ -107,7 +145,20 @@ export function reducePreNoblePhantasmAction(
       after: reconciled,
       domains: context.battlePointDomains,
     });
-  return { ...form, state: reconciled };
+  const actions = reconciled.appliedActions;
+  const last = actions.at(-1);
+  return {
+    ...form,
+    state: last
+      ? {
+          ...reconciled,
+          appliedActions: [
+            ...actions.slice(0, -1),
+            { ...last, resourceAfter: reconciled.npResource, hpAfter: reconciled.hp },
+          ],
+        }
+      : reconciled,
+  };
 }
 
 export function availableTransformNoblePhantasmCommand(

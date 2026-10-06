@@ -63,6 +63,30 @@ describe('canonical production audit records', () => {
     }
   });
 
+  it('retains the first difference and observes changes across calls with shared graphs', () => {
+    const left = { value: 20 };
+    const right = { value: 20 };
+    const expected = [{ identity: 'shared', value: { first: [left, left], second: left } }];
+    const actual = [{ identity: 'shared', value: { first: [right, right], second: right } }];
+    expect(firstCanonicalAuditDifference(expected, actual)).toBeNull();
+    right.value = 30;
+    expect(firstCanonicalAuditDifference(expected, actual)).toEqual({
+      identity: 'shared',
+      path: 'first[0].value',
+      expected: 20,
+      actual: 30,
+    });
+    right.value = 20;
+    expect(firstCanonicalAuditDifference(expected, actual)).toBeNull();
+    const other = [{ identity: 'shared', value: { first: [right, { value: 40 }], second: right } }];
+    expect(firstCanonicalAuditDifference(expected, other)).toEqual({
+      identity: 'shared',
+      path: 'first[1].value',
+      expected: 20,
+      actual: 40,
+    });
+  });
+
   it('fails closed before digesting or diffing duplicate identities', () => {
     const duplicates: CanonicalAuditRecord[] = [
       { identity: 'actor:1', value: 1 },

@@ -11,6 +11,22 @@ import type { HpPublishedDependencyRequest } from './productionHpPublishedDepend
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
 import { scalarQuantitySnapshot } from './productionScalarQuantityAudit';
 
+function participates(rate: { decision: import('@fgo-lab/battle-execution').OcRateInstance['decision'] }) {
+  return rate.decision.binding.executionIntent === 'physicalBranch' ||
+    Object.values(rate.decision.adoption).every(({ kind }) => kind === 'included');
+}
+function boundParticipation(step: Extract<import('@fgo-lab/battle-execution').OcActionStep, { kind: 'grant' }>) {
+  const { binding } = step;
+  if (binding.executionIntent === 'physicalBranch' || binding.policy.kind === 'calculator') return true;
+  const { policy, activation } = binding;
+  return !(policy.selfBuffs === 'excluded' && step.sourceEvidence.source.origin === 'attacker' &&
+    binding.gameActivation === 'skillUse') &&
+    !(policy.areaView === 'excluded' && binding.contributionScope === 'partyWide') &&
+    !(policy.conditionalEffects === 'baseline' &&
+      (activation.read.certainty !== 'guaranteed' ||
+       activation.proc.kind !== 'resolved' || activation.proc.certainty !== 'guaranteed'));
+}
+
 /** Join native query obligations to physical reads; never evaluate rate/damage semantics here. */
 export function reconcileOcRateReads(
   declarations: readonly HpProofDeclaration[],
@@ -90,7 +106,7 @@ export function reconcileOcRateReads(
         const actionIdentity = JSON.stringify([requestIndex, actionIndex, attempt.actionId]);
         const isHp = (rate: (typeof capture.queries)[number]['rate']) =>
           rate.amount.kind === 'inverseHpLinear' || rate.amount.kind === 'hpRangeLinear';
-        const expectedReads = capture.queries.filter(({ rate }) => rate.included && isHp(rate));
+        const expectedReads = capture.queries.filter(({ rate }) => participates(rate) && isHp(rate));
         // Rejection discards native outcomes. Earlier reached grants still crossed the
         // selection boundary; missing captures must not turn them into absent consumers.
         const lastReached = attempt.reached.at(-1)?.index;
@@ -145,7 +161,7 @@ export function reconcileOcRateReads(
           // unresolved HP read or a native unsupported expression, never an absent observation.
           const stopped =
             attempt.native?.status !== 'committed' &&
-            blocked?.rate.included &&
+            blocked && participates(blocked.rate) &&
             (isHp(blocked.rate)
               ? hpPermille(blocked.hp?.actors[blocked.rate.valueOwner]) === null
               : blocked.rate.amount.kind !== 'fixed');
@@ -236,7 +252,7 @@ export function reconcileOcRateReads(
               {
                 owner: writer.step.recipient,
                 valueOwner: writer.step.caster,
-                included: writer.step.included,
+                included: boundParticipation(writer.step),
                 role: writer.step.grant.role,
                 sign: writer.step.grant.sign,
                 lifetime: writer.step.grant.lifetime,
@@ -246,7 +262,7 @@ export function reconcileOcRateReads(
               {
                 owner: rate.owner,
                 valueOwner: rate.valueOwner,
-                included: rate.included,
+                included: participates(rate),
                 role: rate.role,
                 sign: rate.sign,
                 lifetime: rate.lifetime,
@@ -274,8 +290,8 @@ export function reconcileOcRateReads(
               reached.grant.stateTraits.includes('positive') &&
               rate.owner === (rate.role === 'casterGrant' ? reached.caster : reached.recipient),
           );
-          const read = rate.included ? capture.reads[readIndex++] : undefined;
-          if (rate.included) {
+          const read = participates(rate) ? capture.reads[readIndex++] : undefined;
+          if (participates(rate)) {
             check(
               'ocRateReadMismatch',
               identity,
@@ -355,7 +371,7 @@ export function reconcileOcRateReads(
               declaration: matching[0]!.identity,
               instanceId: rate.instanceId,
               actor: rate.valueOwner,
-              disposition: rate.included ? 'physicalRead' : 'excludedWithoutRead',
+              disposition: participates(rate) ? 'physicalRead' : 'excludedWithoutRead',
               hp: read?.hp,
               nativeStatus: native.status,
               nativeReason: native.status === 'committed' ? null : native.reason,

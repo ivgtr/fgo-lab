@@ -574,20 +574,21 @@ export function compileEffectCached(
   }
   return {
     operations: compiled.operations.map((operation) => {
-      const copy = {
+      const runtime = {
         ...operation,
         order: operation.order + startOrder,
         sourceActivation: source.sourceActivation,
       };
       const sourceOperation = operationSourceFor(operation);
-      if (sourceOperation) retainOperationSource(copy, sourceOperation);
-      if (source.runtimeBinding)
-        bindExecutionOperation(
-          copy,
-          source.runtimeBinding,
-          sourceOperation ? source.effect.execution.indexOf(sourceOperation) : -1,
-        );
-      return copy;
+      const bound = source.runtimeBinding
+        ? bindExecutionOperation(
+            runtime,
+            source.runtimeBinding,
+            sourceOperation ? source.effect.execution.indexOf(sourceOperation) : -1,
+          )
+        : runtime;
+      if (sourceOperation) retainOperationSource(bound, sourceOperation);
+      return bound;
     }),
     projections: compiled.projections,
   };
@@ -828,18 +829,14 @@ export function compileEffect(
       selectedValue(source, semantic) === undefined,
   );
   if (missingValue?.kind === 'damageModifier' || missingValue?.kind === 'modifierRateChange') {
-    projections.push(
-      makeProjection(
-        source,
-        key,
-        'unsupported',
-        'unresolved',
-        missingValue.modifier,
-        null,
-        selectedValueExpression(source, missingValue),
-        condition,
-      ),
-    );
+    const operation: BattleOperation = {
+      ...baseOperation(source, missingValue.route.contributionScope, order++, 'missing-value'),
+      kind: 'preserveSemanticEffect',
+      semanticKind: 'unsupported',
+      unsupportedReason: 'missingOperationValue',
+    };
+    operations.push(operation);
+    retainOperationSource(operation, missingValue);
     return { operations, projections };
   }
   if (applicable.length === 0 && retained.length === 0 && unsupportedResources.length === 0) {

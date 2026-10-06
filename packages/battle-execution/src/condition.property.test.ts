@@ -1,4 +1,8 @@
-import { createTraitFactLayers } from './traitFactLayers';
+import {
+  projectBattleTraitPresence,
+  readTraitQuantity as nativeTraitQuantity,
+} from './traitFactLayers';
+import { createTraitFactLayers, assertExternalInitialTrait } from './traitFactLayers';
 import { createInputFacts } from './inputFacts';
 import {
   emptyConditionFactProofs,
@@ -22,19 +26,16 @@ import {
 import { validateConstraintSet, type FixedConstraintFact } from './constraints';
 import { activationFactKey, analyzeActivationFactSet } from '@fgo-lab/schema';
 
-class FixtureTraitFacts extends Map<string, boolean> {
-  constructor(
-    values: readonly string[],
-    private readonly proofMap: Map<string, ConditionFactProof>,
-    private readonly proof: ConditionFactProof,
-  ) {
-    super();
-    for (const value of values) this.set(value, true);
-  }
-  override set(key: string, value: boolean): this {
-    this.proofMap.set(key, this.proof);
-    return super.set(key, value);
-  }
+function setTrait(
+  state: ExecutableBattleState,
+  scope: TraitScope,
+  trait: string,
+  present: boolean,
+): void {
+  state.traitFactLayers = assertExternalInitialTrait(state.traitFactLayers, scope, trait, present, {
+    kind: 'externalAssumption',
+    clock: state.conditionReadClock,
+  });
 }
 
 function state(
@@ -54,8 +55,6 @@ function state(
   };
   const conditionFactProofs = emptyConditionFactProofs();
   const external: ConditionFactProof = { kind: 'externalAssumption', clock: conditionReadClock };
-  conditionFactProofs.traits.target = new Map(target.map((trait) => [trait, external]));
-  conditionFactProofs.traits.targetState = new Map(targetState.map((trait) => [trait, external]));
   conditionFactProofs.quantities = new Map([
     ['attackerHpPermille', { kind: 'selectedInitialResource', clock: conditionReadClock }],
     ['targetRarity', external],
@@ -64,7 +63,16 @@ function state(
   return {
     conditionReadClock,
     conditionFactProofs,
-    traitFactLayers: createTraitFactLayers([], { target, targetState }, external, external),
+    traitFactLayers: {
+      ...createTraitFactLayers([], { target, targetState }, external, external),
+      closedScopes: {
+        attacker: null,
+        attackerState: null,
+        target: null,
+        targetState: null,
+        field: null,
+      },
+    },
     actorFormId: { actorId: 'fixture-form', limitCount: 0 },
     noblePhantasmVariant: {
       kind: 'nonAttack',
@@ -78,43 +86,8 @@ function state(
       effects: [],
     },
     card: 'buster',
-    traits: {
-      attacker: new FixtureTraitFacts(
-        [],
-        conditionFactProofs.traits.attacker as Map<string, ConditionFactProof>,
-        external,
-      ),
-      attackerState: new FixtureTraitFacts(
-        [],
-        conditionFactProofs.traits.attackerState as Map<string, ConditionFactProof>,
-        external,
-      ),
-      target: new FixtureTraitFacts(
-        target,
-        conditionFactProofs.traits.target as Map<string, ConditionFactProof>,
-        external,
-      ),
-      targetState: new FixtureTraitFacts(
-        targetState,
-        conditionFactProofs.traits.targetState as Map<string, ConditionFactProof>,
-        external,
-      ),
-      field: new FixtureTraitFacts(
-        [],
-        conditionFactProofs.traits.field as Map<string, ConditionFactProof>,
-        external,
-      ),
-    },
     actorPredicates: { attacker: new Map(), target: new Map() },
     stackQuantitySources: {},
-    traitCounts: {
-      attacker: {},
-      attackerState: {},
-      target: Object.fromEntries(target.map((trait) => [trait, 1])),
-      targetState: Object.fromEntries(targetState.map((trait) => [trait, 1])),
-      field: {},
-    },
-
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
     activationContext: {
@@ -239,7 +212,7 @@ describe('condition expression properties', () => {
         activated,
       ).truth,
     ).toBe(false);
-    expect(activated.traits.field.size).toBe(0);
+    expect(projectBattleTraitPresence(activated, 'field').size).toBe(0);
   });
 
   it('does not infer provenance-sensitive traits from an unqualified scenario fact', () => {
@@ -259,7 +232,7 @@ describe('condition expression properties', () => {
 
   it('keeps linked initial-trait suppression distinct from an absent state trait', () => {
     const current = state();
-    (current.traits.attacker as Map<string, boolean>).set('alignmentChaotic', true);
+    setTrait(current, 'attacker', 'alignmentChaotic', true);
     const expression: ConditionExpression = {
       kind: 'trait',
       scope: 'attacker',
@@ -283,10 +256,8 @@ describe('condition expression properties', () => {
           for (const conditionScope of [actor, stateScope])
             for (const present of [false, true]) {
               const current = state();
-              const initialTraits = current.traits[actor] as Map<string, boolean>;
-              const stateTraits = current.traits[stateScope] as Map<string, boolean>;
-              if (initial !== undefined) initialTraits.set('timedTrait', initial);
-              if (stateValue !== undefined) stateTraits.set('timedTrait', stateValue);
+              if (initial !== undefined) setTrait(current, actor, 'timedTrait', initial);
+              if (stateValue !== undefined) setTrait(current, stateScope, 'timedTrait', stateValue);
               const expression: ConditionExpression = {
                 kind: 'trait',
                 scope: conditionScope,
@@ -343,13 +314,13 @@ describe('condition expression properties', () => {
     };
     const stateOnly: ConditionExpression = { ...combined, scope: 'targetState' };
     const before = state();
-    (before.traits.target as Map<string, boolean>).set('undead', false);
+    setTrait(before, 'target', 'undead', false);
     const granted = state();
-    (granted.traits.target as Map<string, boolean>).set('undead', false);
-    (granted.traits.targetState as Map<string, boolean>).set('undead', true);
+    setTrait(granted, 'target', 'undead', false);
+    setTrait(granted, 'targetState', 'undead', true);
     const removed = state();
-    (removed.traits.target as Map<string, boolean>).set('undead', false);
-    (removed.traits.targetState as Map<string, boolean>).set('undead', false);
+    setTrait(removed, 'target', 'undead', false);
+    setTrait(removed, 'targetState', 'undead', false);
 
     expect(evaluateConditionExpression(combined, before).truth).toBeNull();
     expect(evaluateConditionExpression(combined, granted).truth).toBe(true);
@@ -602,8 +573,12 @@ describe('stack quantity state and constraint closure', () => {
         kind: 'guaranteedWrite',
         clock: initial.conditionReadClock,
       });
-      expect(changed.traitCounts.attackerState['alpha']).toBe(count + 1);
-      expect(initial.traitCounts.attackerState['alpha'] ?? 0).toBe(count);
+      expect(nativeTraitQuantity(changed.traitFactLayers, 'attackerState', 'alpha').value).toBe(
+        count + 1,
+      );
+      expect(
+        nativeTraitQuantity(initial.traitFactLayers, 'attackerState', 'alpha').value ?? 0,
+      ).toBe(count);
     },
   );
   it('shares a source across different reader caps and rejects conflicting baselines', () => {
@@ -616,5 +591,13 @@ describe('stack quantity state and constraint closure', () => {
     expect(() =>
       mergeInputDefinitions([definition('alpha'), { ...definition('alpha'), defaultValue: 1 }]),
     ).toThrow('definition_conflict');
+  });
+  it('compares complete declarations independently of property insertion order', () => {
+    const original = definition('alpha');
+    const reordered = Object.fromEntries(Object.entries(original).reverse()) as typeof original;
+    expect(mergeInputDefinitions([original, reordered])).toEqual([original]);
+    expect(() => mergeInputDefinitions([original, { ...reordered, defaultValue: 1 }])).toThrow(
+      'definition_conflict',
+    );
   });
 });

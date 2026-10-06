@@ -1,3 +1,4 @@
+import { projectBattleTraitPresence } from './traitFactLayers';
 import { liveInputQuantity } from './stackQuantities';
 import type {
   ActorScope,
@@ -841,7 +842,7 @@ export function fixedConstraintFactsFromState(
 ): FixedConstraintFact[] {
   const traits = (['attacker', 'attackerState', 'target', 'targetState', 'field'] as const).flatMap(
     (scope) =>
-      [...state.traits[scope]].map(([trait, present]) => ({
+      [...projectBattleTraitPresence(state, scope)].map(([trait, present]) => ({
         sourceKey: `${sourcePrefix}:trait:${scope}:${trait}`,
         fact: { kind: 'trait' as const, scope, trait, present },
       })),
@@ -870,14 +871,21 @@ export function fixedConstraintFactsFromState(
     ...traits,
     ...actorPredicates,
     ...quantities,
-    ...Object.keys(state.stackQuantitySources).map((key) => ({
-      sourceKey: `${sourcePrefix}:input:${key}`,
-      fact: {
-        kind: 'inputQuantity' as const,
-        inputKey: key,
-        value: liveInputQuantity(state, key)!,
-      },
-    })),
+    ...Object.keys(state.stackQuantitySources).flatMap((key) => {
+      const value = liveInputQuantity(state, key);
+      return value === undefined
+        ? []
+        : [
+            {
+              sourceKey: `${sourcePrefix}:input:${key}`,
+              fact: {
+                kind: 'inputQuantity' as const,
+                inputKey: key,
+                value,
+              },
+            },
+          ];
+    }),
     ...state.activationContext.facts.map((fact, index) => ({
       sourceKey: `${sourcePrefix}:activation:${String(index)}`,
       fact,

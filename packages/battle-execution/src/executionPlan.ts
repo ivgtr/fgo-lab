@@ -21,7 +21,11 @@ import {
   compileEffectCondition,
   runtimeInputDefinitionsForSource,
 } from './operationCompiler';
-import { collectOperationSources, type ResolvedAttackerFormExecution } from './sourceCollection';
+import {
+  collectOperationSources,
+  collectDiagnosticOperationSources,
+  type ResolvedAttackerFormExecution,
+} from './sourceCollection';
 import {
   activationRequirementOwnerSelected,
   collectActivationRequirementOwners,
@@ -39,8 +43,31 @@ export function compileExecutionPlan(
   master: MasterDataSnapshot,
   resolvedFormExecution?: ResolvedAttackerFormExecution,
 ): PreparedOrderedScenario {
+  return compileExecutionPlanForPurpose(baseInput, scenario, master, resolvedFormExecution, false);
+}
+
+export function compileDiagnosticExecutionPlan(
+  baseInput: DamageResolutionInput,
+  scenario: ResolvedScenario,
+  master: MasterDataSnapshot,
+  rejected: ResolvedAttackerFormExecution,
+): PreparedOrderedScenario {
+  if (!rejected.rejection || rejected.diagnostic?.kind !== 'rejectedPreparationDiagnostic')
+    throw new TypeError('rejected_preparation_diagnostic_required');
+  return compileExecutionPlanForPurpose(baseInput, scenario, master, rejected, true);
+}
+
+function compileExecutionPlanForPurpose(
+  baseInput: DamageResolutionInput,
+  scenario: ResolvedScenario,
+  master: MasterDataSnapshot,
+  resolvedFormExecution: ResolvedAttackerFormExecution | undefined,
+  diagnostic: boolean,
+): PreparedOrderedScenario {
   const attacker = master.servants.find((servant) => servant.id === baseInput.attackerId);
-  const collected = collectOperationSources(baseInput, scenario, master, resolvedFormExecution);
+  const collected = diagnostic
+    ? collectDiagnosticOperationSources(baseInput, scenario, master, resolvedFormExecution!)
+    : collectOperationSources(baseInput, scenario, master, resolvedFormExecution);
   const compiledOperations: BattleOperation[] = [];
   const compileProjections: EffectProjection[] = [];
   const retainedProjections: EffectProjection[] = [];
@@ -81,22 +108,22 @@ export function compileExecutionPlan(
         compiledOperations.length,
       );
       const action = collected.formExecution?.actions.at(-1);
-      if (
+      const operation =
         action?.sourceKind === 'attackNoblePhantasm' &&
         action.sourceId === noblePhantasmVariantKey(variant.ref)
-      )
-        bindExecutionOperation(
-          np.operation,
-          pendingNoblePhantasmSourceBinding(
-            action,
-            np.operation.source.sourceInstanceId,
-            np.operation.source.effectOccurrenceId,
-            baseInput.npLevel - 1,
-          ),
-          -1,
-        );
+          ? bindExecutionOperation(
+              np.operation,
+              pendingNoblePhantasmSourceBinding(
+                action,
+                np.operation.source.sourceInstanceId,
+                np.operation.source.effectOccurrenceId,
+                baseInput.npLevel - 1,
+              ),
+              -1,
+            )
+          : np.operation;
       compileProjections.push(...np.projections);
-      compiledOperations.push(np.operation);
+      compiledOperations.push(operation);
     }
   if (!baseVariant)
     throw new TypeError(`missing_base_noble_phantasm_variant:${baseInput.attackerId}`);
@@ -250,8 +277,19 @@ export function compileExecutionPlan(
     ...preparationInputDefinitions,
     ...(collected.formExecution?.state.ocInputDefinitions ?? []),
     ...(collected.formExecution?.state.hp?.inputDefinitions ?? []),
-    ...(collected.formExecution?.requiredInputs ?? []),
+    ...(collected.formExecution?.requiredInputs.map(({ definition }) => definition) ?? []),
   ]);
+  let preparationExecution: PreparedOrderedScenario['preparationExecution'];
+  if (diagnostic)
+    preparationExecution = {
+      kind: 'diagnostic',
+      state: collected.formExecution!.state,
+      continuation: resolvedFormExecution!.diagnostic!,
+    };
+  else
+    preparationExecution = collected.formExecution
+      ? { kind: 'available', state: collected.formExecution.state }
+      : { kind: 'unavailable', issues: collected.issues };
   const plan: PreparedOrderedScenario = {
     baseInput,
     scenario: executionScenario,
@@ -274,11 +312,9 @@ export function compileExecutionPlan(
       ...preparationInputDefinitions.map(({ key }) => key),
       ...(collected.formExecution?.state.hp?.inputDefinitions?.map(({ key }) => key) ?? []),
       ...(collected.formExecution?.state.ocInputDefinitions.map(({ key }) => key) ?? []),
-      ...(collected.formExecution?.requiredInputs.map(({ key }) => key) ?? []),
+      ...(collected.formExecution?.requiredInputs.map(({ definition }) => definition.key) ?? []),
     ]),
-    preparationExecution: collected.formExecution
-      ? { kind: 'available', state: collected.formExecution.state }
-      : { kind: 'unavailable', issues: collected.issues },
+    preparationExecution,
     battlePointDomains: master.battlePointDomains,
     appliedPreparationActions: collected.formExecution?.actions ?? [],
   };

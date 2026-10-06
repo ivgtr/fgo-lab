@@ -1,6 +1,11 @@
 import { inputFactValues } from './inputFacts';
-import { mutateCriticalStars } from './resourceSemantics';
+import { CRITICAL_STARS_INITIAL_INPUT, mutateConditionalCriticalStars } from './resourceSemantics';
 import type { PhysicalInputCommit } from './executionBinding';
+import {
+  registerPreparationSourceExecution,
+  commitPreparationSourceExecution,
+  type PreparationSourceDraft,
+} from './preparationExecution';
 import {
   bindPreparationWriteProofs,
   commitPreparationNpQuantityWrite,
@@ -21,6 +26,7 @@ import {
   preparationAttemptScope,
   preparationBattlePointScope,
   capturePreparationOcRates,
+  capturePreparationSources,
   type PreparationOcAttempt,
 } from './preparationAttemptObservation';
 import { projectPlanningHpCondition, UnresolvedPreparationPlanningRead } from './hpPlanning';
@@ -77,7 +83,11 @@ import {
   resolvePreparationStructuralOutcome,
   requiredPreparationConditionRead,
 } from './preparationState';
-import { evaluateCondition, type ConditionEvaluationState, type ConditionReadAudit } from './condition';
+import {
+  evaluateCondition,
+  type ConditionEvaluationState,
+  type ConditionReadAudit,
+} from './condition';
 import { resolvePreparationSourceFacts } from './preparationSourceFacts';
 import {
   applyPreparationNpOperation,
@@ -171,6 +181,8 @@ export function executePreparationOc(args: {
   const attempt: PreparationOcAttempt | undefined = scope
     ? {
         actionId: args.actionId,
+        sourceExecutions: [],
+        rates: { selections: [], queries: [], reads: [] },
         sources: args.sources,
         start: args.state,
         stepOrigins: [],
@@ -179,6 +191,8 @@ export function executePreparationOc(args: {
       }
     : undefined;
   if (attempt) scope!.push(attempt);
+  const sourceExecutions: PreparationSourceDraft[] = [];
+  if (attempt) capturePreparationSources(attempt, sourceExecutions);
   const hpScope = preparationHpScope(args.context);
   const hpAction: PreparationHpAction | undefined = hpScope
     ? {
@@ -263,6 +277,14 @@ export function executePreparationOc(args: {
         outcomes: readonly OcActionOutcome[],
       ) => OcActionStep)
   )[] = [];
+  const sourceStepOwners = new Map<number, PreparationSourceDraft>();
+  const operationStepOwners = new Map<
+    number,
+    {
+      operation: PreparationSourceDraft['operations'][number];
+      before: PreNoblePhantasmState | null;
+    }
+  >();
   if (args.activateFormKey !== undefined)
     steps.push({ kind: 'activateForm', formKey: args.activateFormKey });
   if (args.npUse) steps.push({ kind: 'npUse', actor: 'attacker', ...args.npUse });
@@ -283,9 +305,7 @@ export function executePreparationOc(args: {
   for (const initialSource of sources) {
     let source = initialSource;
     const sourceFirstStep = steps.length;
-    const origins = attempt
-      ? [{ index: sourceFirstStep, source, operationIndex: null as number | null }]
-      : undefined;
+    const origins = [{ index: sourceFirstStep, source, operationIndex: null as number | null }];
     let program = compileOcSourceProgram(source);
     if (source.effect.selection?.kind === 'playerChoice') {
       const family = source.effect.selection.group.key;
@@ -353,6 +373,36 @@ export function executePreparationOc(args: {
     let sourceState = current;
     const conditionReads: ConditionReadAudit[] = [];
     const physicalInputs: PhysicalInputCommit[] = [];
+    const sourceExecution: PreparationSourceDraft = {
+      actionId: args.actionId,
+      source: initialSource,
+      status: 'unreached',
+      before: null,
+      attemptedAfter: null,
+      committedAfter: null,
+      completion: null,
+      rejection: null,
+      binding: {
+        actionId: args.actionId,
+        actorFormId: current.currentFormId,
+        sourceInstanceId: source.sourceInstanceId,
+        skillId: source.skillId,
+        occurrenceId: source.effect.occurrenceId,
+        valueSetIndex: source.valueSetIndex,
+        valueIndex: source.valueIndex,
+        activation: { kind: 'unread' },
+        conditionReads,
+        physicalInputs: [],
+      },
+      operations: source.effect.execution.map((operation, operationIndex) => ({
+        operation,
+        operationIndex,
+        status: 'unreached',
+        steps: [],
+      })),
+    };
+    registerPreparationSourceExecution(args.context, sourceExecution);
+    sourceExecutions.push(sourceExecution);
     let sourceResourceMutationCount = resourceMutations.length;
     let sourceNpWriteStart = current.npQuantityWrites.length;
     let sourceStochasticFailureSteps: number[] | undefined;
@@ -374,6 +424,14 @@ export function executePreparationOc(args: {
         program = { ...program, source };
       }
       sourceState = current;
+      sourceExecution.status = 'pending';
+      sourceExecution.before = current;
+      sourceExecution.binding = {
+        ...sourceExecution.binding,
+        actorFormId: current.currentFormId,
+        valueSetIndex: source.valueSetIndex,
+        valueIndex: source.valueIndex,
+      };
       sourceResourceMutationCount = resourceMutations.length;
       sourceNpWriteStart = current.npQuantityWrites.length;
       if (!source.sourceEnabled) {
@@ -561,6 +619,12 @@ export function executePreparationOc(args: {
     };
     steps.push((ocState, outcomes) => {
       const step = beginSource(ocState, outcomes);
+      sourceExecution.binding = {
+        ...sourceExecution.binding,
+        activation: activation.get(source.effect)?.sourceActivation ?? { kind: 'unread' },
+      };
+      sourceExecution.attemptedAfter = current;
+      if (step.kind === 'reject') sourceExecution.status = 'rejected';
       return step.kind === 'skip'
         ? { kind: 'beginSource', sourceKey: transactionKey, outcome: step.outcome }
         : step;
@@ -569,23 +633,39 @@ export function executePreparationOc(args: {
     let ocIndex = 0;
     for (const [operationIndex, operation] of source.effect.execution.entries()) {
       const operationFirstStep = steps.length;
-      origins?.push({ index: operationFirstStep, source, operationIndex });
+      origins.push({ index: operationFirstStep, source, operationIndex });
       if (operation.kind === 'resourceMutation' && operation.resource === 'criticalStars') {
         steps.push(() => {
           if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
           const activationRead = requiredPreparationConditionRead(source.effect, activation);
-          if (activationRead.kind !== 'read' || activationRead.read.truth !== true)
-            return { kind: 'reject', status: 'unsupported', reason: 'unknownCriticalStarsCondition' };
+          if (activationRead.kind !== 'read')
+            return {
+              kind: 'reject',
+              status: 'unsupported',
+              reason: 'unknownCriticalStarsCondition',
+            };
           const amount =
             operation.amount.kind === 'fixed'
-              ? (source.limitBreak ? operation.amount.limitBreakValues : operation.amount.values)?.[
-                  source.valueSetIndex
-                ]?.[source.valueIndex] ?? null
+              ? ((source.limitBreak
+                  ? operation.amount.limitBreakValues
+                  : operation.amount.values)?.[source.valueSetIndex]?.[source.valueIndex] ?? null)
               : null;
-          const mutation = mutateCriticalStars(current.inputFacts, amount, operation.direction, sourceProof());
+          const mutation = mutateConditionalCriticalStars(
+            current.inputFacts,
+            amount,
+            operation.direction,
+            sourceProof(),
+            activationRead,
+            (() => {
+              const input = requiredOcConditionInput(program, sourceFacts.get(source.effect)!);
+              return input ? [input] : [];
+            })(),
+          );
           if (mutation.status !== 'applied') {
             if (mutation.status === 'inputRequired')
-              requiredInput = source.effect.inputDefinitions.find((input) => input.kind === 'criticalStars') ?? null;
+              requiredInput =
+                source.effect.inputDefinitions.find((input) => input.kind === 'criticalStars') ??
+                CRITICAL_STARS_INITIAL_INPUT;
             return { kind: 'reject', status: mutation.status, reason: mutation.reason };
           }
           physicalInputs.push({
@@ -1567,10 +1647,16 @@ export function executePreparationOc(args: {
           index,
           {
             facts,
-            policy:
+            policy: args.context.policy ?? { kind: 'calculator' },
+            activation: (() => {
+              const receipt = requiredPreparationConditionRead(source.effect, activation);
+              if (receipt.kind !== 'read') throw new TypeError('missing_oc_source_activation');
+              return receipt;
+            })(),
+            executionIntent:
               args.context.stochasticSelection.kind === 'possibility'
-                ? { kind: 'calculator' }
-                : (args.context.policy ?? { kind: 'calculator' }),
+                ? 'physicalBranch'
+                : 'declared',
             npActionId: args.npUse ? args.actionId : null,
             procWitnesses: witnesses,
             ...(missingSourceConditions.has(source.effect)
@@ -1589,16 +1675,15 @@ export function executePreparationOc(args: {
         return bound;
       });
     }
-    origins?.push({ index: steps.length, source, operationIndex: null });
+    origins.push({ index: steps.length, source, operationIndex: null });
     if (program.operations.length > 0)
       steps.push({ kind: 'recordSource', sourceKey: ocSourceOperationKey(program, 0) });
     // Earlier canonical trait writes are visible to later OC/rate conditions in this command.
-    const completePhysicalSource: (typeof steps)[number] = (_, outcomes) => {
-      if (
-        outcomes.some(
-          (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
-        )
-      ) {
+    const completePhysicalSource = (
+      outcomes: readonly OcActionOutcome[],
+      commit: boolean,
+    ): OcActionStep => {
+      if (!commit) {
         current = sourceState;
         resourceMutations.splice(sourceResourceMutationCount);
         if (hpAction)
@@ -1698,30 +1783,25 @@ export function executePreparationOc(args: {
         });
       return { kind: 'skip', outcome: 'notApplicable' };
     };
-    const completeSource: (typeof steps)[number] = (state, outcomes) => {
-      const step = completePhysicalSource(state, outcomes);
+    const completeSource: (typeof steps)[number] = (_state, outcomes) => {
+      sourceExecution.attemptedAfter = current;
+      const commit = !outcomes.some(
+        (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
+      );
+      const step = completePhysicalSource(outcomes, commit);
       if (step.kind !== 'reject') {
-        const committed = !outcomes.some(
-          (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
-        );
+        sourceExecution.status = 'completed';
+        sourceExecution.binding = {
+          ...sourceExecution.binding,
+          activation: requiredPreparationConditionRead(source.effect, activation),
+          physicalInputs: commit ? [...physicalInputs] : [],
+        };
         current = {
           ...current,
-          sourceBindings: [
-            ...current.sourceBindings,
-            {
-              actionId: args.actionId,
-              actorFormId: sourceState.currentFormId,
-              sourceInstanceId: source.sourceInstanceId,
-              skillId: source.skillId,
-              occurrenceId: source.effect.occurrenceId,
-              valueSetIndex: source.valueSetIndex,
-              valueIndex: source.valueIndex,
-              activation: requiredPreparationConditionRead(source.effect, activation),
-              conditionReads: [...conditionReads],
-              physicalInputs: committed ? [...physicalInputs] : [],
-            },
-          ],
+          sourceBindings: [...current.sourceBindings, sourceExecution.binding],
         };
+      } else {
+        sourceExecution.status = 'rejected';
       }
       if (step.kind === 'skip' && current.npQuantityWrites.length > sourceNpWriteStart) {
         const receipt = requiredPreparationConditionRead(source.effect, activation);
@@ -1737,9 +1817,7 @@ export function executePreparationOc(args: {
         ? {
             kind: 'finishSource',
             sourceKey: transactionKey,
-            commit: !outcomes.some(
-              (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
-            ),
+            commit,
             outcome: step.outcome,
           }
         : step;
@@ -1772,7 +1850,25 @@ export function executePreparationOc(args: {
           }
         : completeSource,
     );
-    if (attempt && origins)
+    for (let index = firstStep; index < sourceEndStep; index++) {
+      const origin = [...origins].reverse().find((item) => item.index <= index)!;
+      if (origin.operationIndex === null) continue;
+      const operationExecution = sourceExecution.operations[origin.operationIndex]!;
+      const nativeStep = steps[index]!;
+      const owner = { operation: operationExecution, before: null as PreNoblePhantasmState | null };
+      operationStepOwners.set(index, owner);
+      steps[index] = (state, outcomes) => {
+        owner.before = current;
+        const step = typeof nativeStep === 'function' ? nativeStep(state, outcomes) : nativeStep;
+        operationExecution.status = 'reached';
+        sourceExecution.attemptedAfter = current;
+        if (step.kind === 'reject') sourceExecution.status = 'rejected';
+        return step;
+      };
+    }
+    for (let index = sourceFirstStep; index < steps.length; index++)
+      sourceStepOwners.set(index, sourceExecution);
+    if (attempt)
       for (let index = sourceFirstStep; index < steps.length; index++) {
         const origin = [...origins].reverse().find((item) => item.index <= index)!;
         attempt.stepOrigins.push({ ...origin, index });
@@ -1854,6 +1950,54 @@ export function executePreparationOc(args: {
     },
   };
   const rateObservation = attempt ? capturePreparationOcRates(attempt) : undefined;
+  const completeStep: NonNullable<Parameters<typeof executeOcAction>[4]>['completeStep'] = (
+    index,
+    native,
+  ) => {
+    const sourceExecution = sourceStepOwners.get(index);
+    const sourceActivation =
+      sourceExecution && activation.get(sourceExecution.source.effect)?.sourceActivation;
+    if (
+      sourceExecution &&
+      sourceActivation &&
+      sourceActivation !== sourceExecution.binding.activation
+    )
+      sourceExecution.binding = {
+        ...sourceExecution.binding,
+        activation: sourceActivation,
+      };
+    const owner = operationStepOwners.get(index);
+    if (owner) {
+      if (!owner.before) throw new TypeError('missing_preparation_operation_start');
+      const before = { ...owner.before, ocState: native.before };
+      const after = { ...current, ocState: native.after };
+      owner.operation.steps.push({ step: native.step, before, after, native });
+      if (sourceExecution) sourceExecution.attemptedAfter = after;
+    }
+    if (sourceExecution && native.rejection) {
+      sourceExecution.status = 'rejected';
+      sourceExecution.rejection = native.rejection;
+    }
+    if (sourceExecution && sourceExecution.before && native.step.kind === 'beginSource')
+      sourceExecution.before = { ...sourceExecution.before, ocState: native.before };
+    if (sourceExecution && native.step.kind === 'finishSource' && !native.rejection) {
+      if (!sourceExecution.attemptedAfter)
+        throw new TypeError('missing_source_attempted_finish_state');
+      sourceExecution.attemptedAfter = {
+        ...(native.step.commit ? current : sourceExecution.attemptedAfter),
+        ocState: native.before,
+      };
+      sourceExecution.committedAfter = { ...current, ocState: native.after };
+      sourceExecution.completion = native.step.commit ? 'committed' : 'stochasticFailure';
+    }
+    if (
+      sourceExecution &&
+      native.step.kind === 'finishSource' &&
+      native.step.commit &&
+      !native.rejection
+    )
+      commitPreparationSourceExecution(args.context, sourceExecution);
+  };
   let result = executeOcAction(
     args.state.ocState,
     args.actionId,
@@ -1862,6 +2006,7 @@ export function executePreparationOc(args: {
     attempt
       ? {
           ...procOptions,
+          completeStep,
           hasFutureNpUse: args.terminalNp !== true,
           observeStep: (index, step) => attempt.reached.push({ index, step }),
           observeRateSelection: (step, state) =>
@@ -1870,7 +2015,7 @@ export function executePreparationOc(args: {
             rateObservation!.queries.push({ step, state, rate, hp: current.hp }),
           observeRateHpRead: (step, read) => rateObservation!.reads.push({ step, ...read }),
         }
-      : { ...procOptions, hasFutureNpUse: args.terminalNp !== true },
+      : { ...procOptions, completeStep, hasFutureNpUse: args.terminalNp !== true },
   );
   if (result.status !== 'committed' && result.requiredInput) {
     requiredInput = result.requiredInput;

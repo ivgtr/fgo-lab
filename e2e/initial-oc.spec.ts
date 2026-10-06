@@ -118,6 +118,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole('button', { name: '所持・育成', exact: true }).click();
   await page.getByLabel('名前で検索').fill(savedSubject.name);
+  await waitForImages();
   await page
     .getByRole('list', { name: 'サーヴァント一覧' })
     .getByRole('listitem')
@@ -125,6 +126,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
       has: page.getByText(savedSubject.name, { exact: true }),
     })
     .click();
+  await waitForImages();
   await page.getByLabel('宝具Lv').selectOption('2');
   await page.getByLabel('レベル', { exact: true }).fill('90');
   await page.getByLabel('ATKフォウ', { exact: true }).fill('1234');
@@ -207,6 +209,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
 
   await page.getByRole('button', { name: '所持・育成', exact: true }).click();
   await page.getByLabel('名前で検索').fill(savedSubject.name);
+  await waitForImages();
   await page
     .getByRole('list', { name: 'サーヴァント一覧' })
     .getByRole('listitem')
@@ -214,6 +217,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
       has: page.getByText(savedSubject.name, { exact: true }),
     })
     .click();
+  await waitForImages();
   await page.getByLabel('ATKフォウ', { exact: true }).fill('2000');
   await expect
     .poll(async () => (await storedProfiles(page)).servantBuilds[savedSubject.id]?.fouAtk)

@@ -1,11 +1,19 @@
-import { conditionWriteProof, procIsGuaranteed, type ConditionFactProof } from './conditionRead';
-import { physicalInputCommitFor } from './executionBinding';
+import {
+  conditionWriteProof,
+  contributionOperandRead,
+  procIsGuaranteed,
+  type ConditionFactProof,
+  type ConditionRead,
+} from './conditionRead';
+import { physicalInputCommitFor, type SourceExecutionBinding } from './executionBinding';
+import { exactInputFactValue } from './inputFacts';
 import {
   applyObservedNpDamage,
   evaluateObservedCondition,
   beginHpCandidateCapture,
   captureHpValueRead,
   resolveObservedModifierValue,
+  type CandidateSourceRead,
 } from './hpExecutionObservation';
 import type {
   ExecutionIssue,
@@ -14,7 +22,11 @@ import type {
   ExecutableBattleState,
 } from './contracts';
 import { markerOperationDisposition, applyOrderedMarkerMutation } from './markerExecution';
-import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
+import {
+  fixedConstraintFactsFromState,
+  validateConstraintSet,
+  type SatisfiableConditionConstraint,
+} from './constraints';
 import {
   applyInitialTraitSuppression,
   applyTraitAddition,
@@ -65,6 +77,48 @@ import {
   type CandidateExecutionWithAudit,
 } from './candidateStateAudit';
 
+function requireNormalPreparation(prepared: PreparedOrderedScenario): void {
+  if (prepared.preparationExecution.kind === 'diagnostic')
+    throw new TypeError('diagnostic_preparation_is_not_normal_execution');
+}
+
+function recordPreparationPhysicalInput(
+  operation: BattleOperation,
+  operationSequence: number,
+  pending: PendingMutationAuditEvent[] | null,
+): boolean {
+  const physicalInput = physicalInputCommitFor(operation);
+  if (!physicalInput) return false;
+  if (operation.kind !== 'resourceMutation' || operation.resource !== 'criticalStars')
+    throw new TypeError('physical_input_commit_operation_mismatch');
+  pending?.push({
+    operationSequence,
+    operationId: operation.operationId,
+    operationKind: operation.kind,
+    stateAddress: physicalInput.inputKey,
+    before: exactInputFactValue(physicalInput.before) ?? null,
+    attemptedAfter: exactInputFactValue(physicalInput.after) ?? null,
+  });
+  return true;
+}
+
+function validateCandidateMutation(
+  operation: BattleOperation,
+  state: ExecutableBattleState,
+  conditions: readonly SatisfiableConditionConstraint[],
+  mutations: readonly SatisfiableConditionConstraint[],
+  invalidDecisionKeys: ReadonlySet<string>,
+) {
+  return needsMutationValidation(operation)
+    ? validateConstraintSet({
+        fixedFacts: fixedConstraintFactsFromState(state, operation.operationId),
+        expressions: conditions
+          .filter((constraint) => !invalidDecisionKeys.has(constraint.sourceKey))
+          .concat(mutations),
+      })
+    : { status: 'satisfied' as const, alternativeCount: 1 };
+}
+
 function applyOrderedTraitWrite(
   operation: Extract<
     BattleOperation,
@@ -86,8 +140,6 @@ function applyOrderedTraitWrite(
       break;
   }
   state.traitFactLayers = changed.traitFactLayers;
-  state.traits = changed.traits;
-  state.traitCounts = changed.traitCounts;
   state.conditionFactProofs = changed.conditionFactProofs;
   state.initialTraitSuppressions = changed.initialTraitSuppressions;
 }
@@ -97,6 +149,7 @@ export function executeOrderedScenarioCandidates(
   resolvedInputs: ResolvedCanonicalInputSet,
   contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): readonly OrderedScenarioExecution[] {
+  requireNormalPreparation(prepared);
   return prepared.targetResolution.kind === 'candidates'
     ? prepared.targetResolution.candidates.map((candidate) =>
         executeOrderedScenarioCandidate(prepared, resolvedInputs, candidate, contributionPolicy),
@@ -109,6 +162,7 @@ export function executeOrderedScenarioCandidatesWithAudit(
   resolvedInputs: ResolvedCanonicalInputSet,
   contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): readonly CandidateExecutionWithAudit[] {
+  requireNormalPreparation(prepared);
   return prepared.targetResolution.kind === 'candidates'
     ? prepared.targetResolution.candidates.map((candidate) =>
         executeOrderedScenarioCandidateWithAudit(
@@ -127,6 +181,7 @@ export function executeOrderedScenarioCandidateWithAudit(
   targetCandidate: TargetCandidate | null,
   contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): CandidateExecutionWithAudit {
+  requireNormalPreparation(prepared);
   const mutableAudit = createMutableCandidateStateAudit();
   const execution = executeOrderedScenarioCandidateInternal(
     prepared,
@@ -144,12 +199,35 @@ export function executeOrderedScenarioCandidate(
   targetCandidate: TargetCandidate | null,
   contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): OrderedScenarioExecution {
+  requireNormalPreparation(prepared);
   return executeOrderedScenarioCandidateInternal(
     prepared,
     resolvedInputs,
     targetCandidate,
     contributionPolicy,
   );
+}
+
+export function executeDiagnosticScenarioCandidatesWithAudit(
+  prepared: PreparedOrderedScenario,
+  resolvedInputs: ResolvedCanonicalInputSet,
+  contributionPolicy: ContributionApplicationPolicy,
+): readonly CandidateExecutionWithAudit[] {
+  if (prepared.preparationExecution.kind !== 'diagnostic')
+    throw new TypeError('diagnostic_preparation_required');
+  const targets =
+    prepared.targetResolution.kind === 'candidates' ? prepared.targetResolution.candidates : [null];
+  return targets.map((target) => {
+    const candidateState = createMutableCandidateStateAudit();
+    const execution = executeOrderedScenarioCandidateInternal(
+      prepared,
+      resolvedInputs,
+      target,
+      contributionPolicy,
+      candidateState,
+    );
+    return { execution, candidateState };
+  });
 }
 
 function executeOrderedScenarioCandidateInternal(
@@ -168,18 +246,13 @@ function executeOrderedScenarioCandidateInternal(
     candidateInput,
     decisions,
     activeDecisionSourceInstances,
-    activeConditionConstraints,
-    activeMutationConstraints,
     preappliedOperationIds,
     supersededVariantTransactionKeys,
     invalidDecisionKeys,
   } = candidate;
   let { state } = candidate;
   const results: OperationResult[] = [];
-  const sourceReads = new Map<
-    import('./executionBinding').SourceExecutionBinding,
-    import('./hpExecutionObservation').CandidateSourceRead
-  >();
+  const sourceReads = new Map<SourceExecutionBinding, CandidateSourceRead>();
   let input = candidateInput;
   recordPreGroupContextResolution(audit, candidate);
   const hpCapture = audit && beginHpCandidateCapture(audit, candidate.state);
@@ -202,25 +275,26 @@ function executeOrderedScenarioCandidateInternal(
         groupIndex,
         sourceReads,
       );
-      let damageDependencyRead: import('./conditionRead').ConditionRead | null = null;
+      let damageDependencyRead: ConditionRead | null = null;
       const condition = conditionRead.truth;
       const writeProof = conditionWriteProof(
         conditionRead,
         procIsGuaranteed(operation.proc, operation.procRatePermille),
       );
-      const contributionIncluded = includedByPolicy(operation, contributionPolicy, conditionRead);
+      const observedValue = hpCapture
+        ? resolveObservedModifierValue(operation, state, hpCapture)
+        : undefined;
+      const resolved = observedValue ?? modifierValue(operation, state);
+      const resolvedModifierValue = resolved.value;
+      const valueDependencyRead = resolved.dependency;
+      const applicationRead = contributionOperandRead(conditionRead, valueDependencyRead);
+      const contributionIncluded = includedByPolicy(operation, contributionPolicy, applicationRead);
       const enabled = operationEnabled(
         activation,
         operation,
         contributionPolicy,
         contributionIncluded,
       );
-      const observedValue = hpCapture
-        ? resolveObservedModifierValue(operation, state, hpCapture)
-        : undefined;
-      const resolvedModifierValue = observedValue
-        ? observedValue.value
-        : modifierValue(operation, state);
       const decisionConditionSatisfied = userConditionMet(operation, condition, choice, state);
       const localConditionSatisfied =
         decisionConditionSatisfied || activation.assumesLocalCondition;
@@ -243,29 +317,12 @@ function executeOrderedScenarioCandidateInternal(
       });
       if (outcome === 'applied') {
         const candidateState = cloneBattleState(state);
-        const physicalInput = physicalInputCommitFor(operation);
-        if (physicalInput) {
-          if (operation.kind !== 'resourceMutation' || operation.resource !== 'criticalStars')
-            throw new TypeError('physical_input_commit_operation_mismatch');
-          if (audit && pendingMutationEvents)
-            pendingMutationEvents.push({
-              operationSequence,
-              operationId: operation.operationId,
-              operationKind: operation.kind,
-              stateAddress: physicalInput.inputKey,
-              before: physicalInput.before,
-              attemptedAfter: physicalInput.after,
-            });
+        if (recordPreparationPhysicalInput(operation, operationSequence, pendingMutationEvents)) {
+          // The preparation source already committed this physical input.
         } else if (preappliedOperationIds.has(operation.operationId)) {
           // Preparation already committed this canonical form/variant mutation.
         } else if (operation.kind === 'preserveSemanticEffect' && operation.buffMutation) {
-          issue = applyOrderedMarkerMutation(
-            operation,
-            candidateState,
-            condition,
-            prepared.inputDefinitions,
-            writeProof,
-          );
+          issue = applyOrderedMarkerMutation(operation, candidateState, condition, writeProof);
           if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (operation.kind === 'resourceMutation') {
           const mutationBefore = audit ? mutationAuditAddress(operation, state) : null;
@@ -347,14 +404,13 @@ function executeOrderedScenarioCandidateInternal(
               },
             );
         }
-        const mutationValidation = needsMutationValidation(operation)
-          ? validateConstraintSet({
-              fixedFacts: fixedConstraintFactsFromState(candidateState, operation.operationId),
-              expressions: activeConditionConstraints
-                .filter((constraint) => !invalidDecisionKeys.has(constraint.sourceKey))
-                .concat(activeMutationConstraints),
-            })
-          : { status: 'satisfied' as const, alternativeCount: 1 };
+        const mutationValidation = validateCandidateMutation(
+          operation,
+          candidateState,
+          candidate.activeConditionConstraints,
+          candidate.activeMutationConstraints,
+          invalidDecisionKeys,
+        );
         if (issue) {
           // The enclosing effect group rolls back every state and input mutation.
         } else if (mutationValidation.status !== 'satisfied') {
@@ -372,6 +428,7 @@ function executeOrderedScenarioCandidateInternal(
       const result = createOperationResult({
         conditionRead,
         damageDependencyRead,
+        valueDependencyRead,
         operation,
         outcome,
         code,

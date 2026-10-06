@@ -1,10 +1,12 @@
 import type { SourceActivationReceipt } from './conditionRead';
-import { pendingNoblePhantasmSourceBinding } from './executionBinding';
+import { diagnoseRejectedPreparation } from './preparationDiagnostic';
+import type {
+  PreparationActionExecution,
+  RejectedPreparationDiagnostic,
+} from './preparationExecution';
+import type { PreparationInitializationExecution } from './preparationExecution';
+import { pendingNoblePhantasmSourceBinding, type SourceExecutionBinding } from './executionBinding';
 import type { StochasticSelection } from './stochasticPossibilities';
-import {
-  beginPreparationAttemptCapture,
-  finishPreparationAttemptCapture,
-} from './preparationAttemptObservation';
 import { hpEffectKey } from './preparationHp';
 import { markerEffectReads, terminalMarkerReads, markerHasOpaqueReads } from './markerDependency';
 import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
@@ -50,7 +52,7 @@ type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 export interface SourceEffect {
   sourceActivation: SourceActivationReceipt;
-  runtimeBinding?: import('./executionBinding').SourceExecutionBinding;
+  runtimeBinding?: SourceExecutionBinding;
   markerReaders?: ReadonlySet<string>;
   markerProgram?: readonly string[];
   hpExecutionCommitted?: boolean;
@@ -93,9 +95,18 @@ export interface ResolvedAttackerFormExecution {
     actorFormId: ActorFormId;
   }[];
   issues: readonly ExecutionIssue[];
-  requiredInputs: readonly (CanonicalInputDefinition & { effectOccurrenceIds: string[] })[];
+  requiredInputs: readonly PreparationRequiredInput[];
   recoveryInputDefinitions?: readonly CanonicalInputDefinition[];
   rejection: { code: PreparationFailureCode; operationId: string } | null;
+  actionExecutions?: readonly PreparationActionExecution[];
+  diagnostic?: RejectedPreparationDiagnostic;
+  initializationExecution?: PreparationInitializationExecution;
+}
+
+/** Runtime demand metadata never changes the canonical declaration. */
+export interface PreparationRequiredInput {
+  definition: CanonicalInputDefinition;
+  effectOccurrenceIds: string[];
 }
 
 export function resolveAttackerFormExecution(
@@ -111,6 +122,7 @@ export function resolveAttackerFormExecution(
     initialOvercharge?: 1 | 2 | 3 | 4 | 5;
     policy?: PreparationExecutionContext['policy'];
     initialBattlePointPoints?: Readonly<Record<string, number>>;
+    diagnoseRejectedActions?: boolean;
     observePreparationTransition?: (
       before: PreNoblePhantasmState,
       command: PreNoblePhantasmCommand,
@@ -245,7 +257,7 @@ export function resolveAttackerFormExecution(
         created.requiredInput && created.requiredInputEffectOccurrenceId
           ? [
               {
-                ...created.requiredInput,
+                definition: created.requiredInput,
                 effectOccurrenceIds: [created.requiredInputEffectOccurrenceId],
               },
             ]
@@ -255,23 +267,26 @@ export function resolveAttackerFormExecution(
         : {}),
       rejection: { code: created.code, operationId: 'preparation:create' },
       issues: [{ kind: 'unsupportedOperation', operationId: 'preparation', detail: created.code }],
+      initializationExecution: created,
     };
   let state = created.state;
+  const initializationExecution = created;
   const skillUses: ResolvedAttackerSkillUse[] = [];
   const preparationNoblePhantasms: Array<{
     noblePhantasmVariant: NoblePhantasmVariantRef;
     actorFormId: ActorFormId;
   }> = [];
   const issues: ExecutionIssue[] = [];
-  const requiredInputs: Array<CanonicalInputDefinition & { effectOccurrenceIds: string[] }> = [];
+  const requiredInputs: PreparationRequiredInput[] = [];
   let rejection: ResolvedAttackerFormExecution['rejection'] = null;
   let recoveryInputDefinitions: readonly CanonicalInputDefinition[] = [];
-  for (const command of scenario.preNoblePhantasmPlan) {
+  const actionExecutions: PreparationActionExecution[] = [];
+  let diagnostic: RejectedPreparationDiagnostic | undefined;
+  for (const [commandIndex, command] of scenario.preNoblePhantasmPlan.entries()) {
     const actorFormId = state.currentFormId;
     const variantBeforeAction = state.selectedNoblePhantasmVariant;
-    if (options.observePreparationTransition) beginPreparationAttemptCapture(context);
     const result = reducePreNoblePhantasmAction(attacker, state, command, context);
-    if (options.observePreparationTransition) finishPreparationAttemptCapture(context, result);
+    actionExecutions.push(result);
     options.observePreparationTransition?.(state, command, result);
     if (result.status === 'rejected') {
       recoveryInputDefinitions = result.recoveryInputDefinitions ?? [];
@@ -281,13 +296,20 @@ export function resolveAttackerFormExecution(
         result.requiredInputEffectOccurrenceId
       )
         requiredInputs.push({
-          ...result.requiredInput,
+          definition: result.requiredInput,
           effectOccurrenceIds: [result.requiredInputEffectOccurrenceId],
         });
       rejection = {
         code: result.code,
         operationId: `preparation:${attacker.id}:${command.kind}`,
       };
+      if (options.diagnoseRejectedActions)
+        diagnostic = diagnoseRejectedPreparation(
+          attacker,
+          result,
+          scenario.preNoblePhantasmPlan.slice(commandIndex + 1),
+          context,
+        );
       break;
     }
     state = result.state;
@@ -321,6 +343,9 @@ export function resolveAttackerFormExecution(
     requiredInputs,
     ...(recoveryInputDefinitions.length ? { recoveryInputDefinitions } : {}),
     rejection,
+    actionExecutions,
+    initializationExecution,
+    ...(diagnostic ? { diagnostic } : {}),
   };
 }
 
@@ -334,6 +359,38 @@ export function collectOperationSources(
   issues: ExecutionIssue[];
   formExecution: ResolvedAttackerFormExecution | null;
 } {
+  return collectOperationSourcesForPurpose(input, scenario, master, resolvedFormExecution, false);
+}
+
+export function collectDiagnosticOperationSources(
+  input: DamageResolutionInput,
+  scenario: ResolvedScenario,
+  master: MasterDataSnapshot,
+  rejected: ResolvedAttackerFormExecution,
+) {
+  if (!rejected.rejection || rejected.diagnostic?.kind !== 'rejectedPreparationDiagnostic')
+    throw new TypeError('rejected_preparation_diagnostic_required');
+  const state = rejected.diagnostic.state;
+  return collectOperationSourcesForPurpose(
+    input,
+    scenario,
+    master,
+    {
+      ...rejected,
+      state,
+      actions: state.appliedActions,
+    },
+    true,
+  );
+}
+
+function collectOperationSourcesForPurpose(
+  input: DamageResolutionInput,
+  scenario: ResolvedScenario,
+  master: MasterDataSnapshot,
+  resolvedFormExecution: ResolvedAttackerFormExecution | undefined,
+  diagnostic: boolean,
+): ReturnType<typeof collectOperationSources> {
   const sources: SourceEffect[] = [];
   const issues: ExecutionIssue[] = [];
   const attacker = master.servants.find((servant) => servant.id === input.attackerId);
@@ -355,7 +412,7 @@ export function collectOperationSources(
       master,
     });
   issues.push(...formExecution.issues);
-  if (formExecution.rejection)
+  if (formExecution.rejection && !diagnostic)
     return {
       sources: [],
       issues: [
@@ -513,17 +570,24 @@ export function collectOperationSources(
     sources: sources.map((source) => ({
       ...source,
       ...(() => {
-        if (source.sourceActivation.kind !== 'read') return {};
-        const actionId = source.sourceActivation.read.clock.actionId;
+        if (source.runtimeBinding) return {};
+        const actionId =
+          source.sourceActivation.kind === 'read'
+            ? source.sourceActivation.read.clock.actionId
+            : null;
         const bindings = formExecution.state.sourceBindings.filter(
           (binding) =>
-            binding.actionId === actionId &&
+            (actionId === null || binding.actionId === actionId) &&
+            (source.constantFormKey === undefined ||
+              actorFormKey(binding.actorFormId) === source.constantFormKey) &&
             binding.sourceInstanceId === source.sourceInstanceId &&
             binding.skillId === source.skillId &&
             binding.occurrenceId === source.effect.occurrenceId,
         );
         if (bindings.length > 1) throw new TypeError('duplicate_source_execution_binding');
-        return bindings[0] ? { runtimeBinding: bindings[0] } : {};
+        return bindings[0]
+          ? { runtimeBinding: bindings[0], sourceActivation: bindings[0].activation }
+          : {};
       })(),
       ...(markerReaders
         ? {

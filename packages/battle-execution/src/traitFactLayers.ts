@@ -1,24 +1,42 @@
+import { markerTraitRead } from './buffInstances';
 import type { ActorScope, BattleStateBase, TraitScope } from './contracts';
 import type { ConditionFactProof } from './conditionRead';
+import { ConditionReadIdentityError } from './conditionRead';
 
-export interface TraitFact {
-  present: boolean;
-  count: number | null;
-  proof: ConditionFactProof;
-  countSupport: readonly ConditionFactProof[];
-}
+export type TraitFact =
+  | {
+      readonly kind: 'absent';
+      readonly proof: ConditionFactProof;
+      readonly quantitySupport: readonly ConditionFactProof[];
+    }
+  | {
+      readonly kind: 'present';
+      readonly proof: ConditionFactProof;
+      readonly quantity:
+        | { readonly kind: 'unknown' }
+        | {
+            readonly kind: 'known';
+            readonly value: number;
+            readonly support: readonly ConditionFactProof[];
+          };
+    };
 type Facts = ReadonlyMap<string, TraitFact>;
-type ScopedFacts = Record<TraitScope, Facts>;
+type ScopedFacts = Readonly<Record<TraitScope, Facts>>;
 export interface TraitQuantityRead {
   value: number | null;
   support: readonly ConditionFactProof[];
 }
+export interface TraitPresenceRead {
+  value: boolean | undefined;
+  support: readonly ConditionFactProof[];
+}
 
-/** Form declarations, external initial assertions, and committed writes have different lifetimes. */
+/** Each immutable root owns values, dependencies, and its form's closed knowledge. */
 export interface TraitFactLayers {
-  intrinsic: Record<ActorScope, Facts>;
-  externalInitial: ScopedFacts;
-  writes: ScopedFacts;
+  readonly intrinsic: Readonly<Record<ActorScope, Facts>>;
+  readonly externalInitial: ScopedFacts;
+  readonly writes: ScopedFacts;
+  readonly closedScopes: Readonly<Record<TraitScope, ConditionFactProof | null>>;
 }
 export const traitScopes: readonly TraitScope[] = [
   'attacker',
@@ -36,51 +54,78 @@ function scopedFacts(): ScopedFacts {
     field: new Map(),
   };
 }
+function intrinsicFacts(traits: readonly string[], proof: ConditionFactProof): Facts {
+  const facts = new Map<string, TraitFact>();
+  for (const trait of traits) {
+    const previous = facts.get(trait);
+    facts.set(trait, {
+      kind: 'present',
+      proof,
+      quantity: {
+        kind: 'known',
+        value:
+          previous?.kind === 'present' && previous.quantity.kind === 'known'
+            ? previous.quantity.value + 1
+            : 1,
+        support: [proof],
+      },
+    });
+  }
+  return facts;
+}
 export function createTraitFactLayers(
   intrinsicTraits: readonly string[],
   externalTraits: Partial<Record<TraitScope, readonly string[]>>,
   intrinsicProof: ConditionFactProof,
   externalProof: ConditionFactProof,
 ): TraitFactLayers {
-  const fromTraits = (traits: readonly string[], proof: ConditionFactProof, exact: boolean): Facts => {
-    const facts = new Map<string, TraitFact>();
-    for (const trait of traits)
-      facts.set(trait, {
-        present: true,
-        count: exact ? (facts.get(trait)?.count ?? 0) + 1 : null,
-        proof,
-        countSupport: exact ? [proof] : [],
-      });
-    return facts;
-  };
-  const externalInitial = scopedFacts();
+  const externalInitial = { ...scopedFacts() };
   for (const scope of traitScopes)
-    externalInitial[scope] = fromTraits(externalTraits[scope] ?? [], externalProof, false);
+    externalInitial[scope] = new Map(
+      (externalTraits[scope] ?? []).map((trait) => [
+        trait,
+        { kind: 'present' as const, proof: externalProof, quantity: { kind: 'unknown' as const } },
+      ]),
+    );
   return {
-    intrinsic: { attacker: fromTraits(intrinsicTraits, intrinsicProof, true), target: new Map() },
+    intrinsic: { attacker: intrinsicFacts(intrinsicTraits, intrinsicProof), target: new Map() },
     externalInitial,
     writes: scopedFacts(),
+    closedScopes: {
+      attacker: intrinsicProof,
+      attackerState: null,
+      target: null,
+      targetState: null,
+      field: null,
+    },
   };
 }
 export function cloneTraitFactLayers(layers: TraitFactLayers): TraitFactLayers {
-  const clone = (facts: Facts): Facts =>
-    new Map(
-      [...facts].map(([key, fact]) => [key, { ...fact, countSupport: [...fact.countSupport] }]),
-    );
-  const externalInitial = scopedFacts();
-  const writes = scopedFacts();
-  for (const scope of traitScopes) {
-    externalInitial[scope] = clone(layers.externalInitial[scope]);
-    writes[scope] = clone(layers.writes[scope]);
-  }
+  return layers;
+}
+export function replaceIntrinsicTraitFacts(
+  layers: TraitFactLayers,
+  actor: ActorScope,
+  traits: readonly string[],
+  proof: ConditionFactProof,
+): TraitFactLayers {
   return {
-    intrinsic: {
-      attacker: clone(layers.intrinsic.attacker),
-      target: clone(layers.intrinsic.target),
-    },
-    externalInitial,
-    writes,
+    ...layers,
+    intrinsic: { ...layers.intrinsic, [actor]: intrinsicFacts(traits, proof) },
+    closedScopes: { ...layers.closedScopes, [actor]: proof },
   };
+}
+export function clearExternalTraitScopes(
+  layers: TraitFactLayers,
+  scopes: readonly TraitScope[],
+): TraitFactLayers {
+  const externalInitial = { ...layers.externalInitial },
+    writes = { ...layers.writes };
+  for (const scope of scopes) {
+    externalInitial[scope] = new Map();
+    writes[scope] = new Map();
+  }
+  return { ...layers, externalInitial, writes };
 }
 export function projectTraitFacts(layers: TraitFactLayers, scope: TraitScope): Facts {
   const result = new Map(layers.externalInitial[scope]);
@@ -94,13 +139,31 @@ export function readTraitFact(
   scope: TraitScope,
   trait: string,
 ): TraitFact | undefined {
-  const written = layers.writes[scope].get(trait);
-  if (written) return written;
-  if (scope === 'attacker' || scope === 'target') {
-    const intrinsic = layers.intrinsic[scope].get(trait);
-    if (intrinsic) return intrinsic;
+  return (
+    layers.writes[scope].get(trait) ??
+    (scope === 'attacker' || scope === 'target' ? layers.intrinsic[scope].get(trait) : undefined) ??
+    layers.externalInitial[scope].get(trait)
+  );
+}
+function requiredTraitProof(
+  proof: ConditionFactProof | undefined,
+  key: string,
+): ConditionFactProof {
+  if (!proof) throw new ConditionReadIdentityError(key);
+  return proof;
+}
+export function readTraitPresence(
+  layers: TraitFactLayers,
+  scope: TraitScope,
+  trait: string,
+): TraitPresenceRead {
+  const fact = readTraitFact(layers, scope, trait);
+  if (fact) {
+    requiredTraitProof(fact.proof, `trait:${scope}:${trait}`);
+    return { value: fact.kind === 'present', support: [fact.proof] };
   }
-  return layers.externalInitial[scope].get(trait);
+  const closed = layers.closedScopes[scope];
+  return closed ? { value: false, support: [closed] } : { value: undefined, support: [] };
 }
 export function assertExternalInitialTrait(
   layers: TraitFactLayers,
@@ -108,37 +171,56 @@ export function assertExternalInitialTrait(
   trait: string,
   present: boolean,
   proof: ConditionFactProof,
-): void {
+): TraitFactLayers {
   if (
     (scope === 'attacker' || scope === 'target') &&
     !present &&
-    layers.intrinsic[scope].get(trait)?.present
+    layers.intrinsic[scope].get(trait)?.kind === 'present'
   )
     throw new TypeError('contradictory_intrinsic_trait_assertion');
-  (layers.externalInitial[scope] as Map<string, TraitFact>).set(trait, {
-    present,
-    count: present ? null : 0,
-    proof,
-    countSupport: present ? [] : [proof],
-  });
+  const fact: TraitFact = present
+    ? { kind: 'present', proof, quantity: { kind: 'unknown' } }
+    : { kind: 'absent', proof, quantitySupport: [proof] };
+  return {
+    ...layers,
+    externalInitial: {
+      ...layers.externalInitial,
+      [scope]: new Map([...layers.externalInitial[scope], [trait, fact]]),
+    },
+  };
 }
-export function projectTraitScope(
-  state: Pick<
-    BattleStateBase,
-    'traitFactLayers' | 'traits' | 'traitCounts' | 'conditionFactProofs'
-  >,
+/** Read-only membership projection; it never establishes an exact quantity. */
+export function projectTraitPresence(
+  layers: TraitFactLayers,
   scope: TraitScope,
-): void {
-  const facts = projectTraitFacts(state.traitFactLayers, scope);
-  state.traits[scope] = new Map([...facts].map(([trait, fact]) => [trait, fact.present]));
-  state.traitCounts[scope] = Object.fromEntries(
-    [...facts].flatMap(([trait, fact]) =>
-      fact.present && fact.count !== null ? [[trait, fact.count]] : [],
-    ),
+): ReadonlyMap<string, boolean> {
+  return new Map(
+    [...projectTraitFacts(layers, scope)].map(([trait, fact]) => [trait, fact.kind === 'present']),
   );
-  state.conditionFactProofs.traits[scope] = new Map(
-    [...facts].map(([trait, fact]) => [trait, fact.proof]),
+}
+export function projectBattleTraitPresence(
+  state: Pick<BattleStateBase, 'traitFactLayers' | 'buffInstances'>,
+  scope: TraitScope,
+): ReadonlyMap<string, boolean> {
+  const result = new Map(projectTraitPresence(state.traitFactLayers, scope));
+  if (scope !== 'attackerState' && scope !== 'targetState') return result;
+  const actor = scope === 'attackerState' ? 'attacker' : 'target';
+  const instances = (state.buffInstances ?? []).filter((instance) => instance.actor === actor);
+  const traits = new Set(
+    instances.flatMap((instance) => [
+      ...instance.traits,
+      ...(instance.marker ? [instance.marker.actorTrait] : []),
+    ]),
   );
+  for (const trait of traits) {
+    const marker = markerTraitRead(instances, actor, trait);
+    if (marker) {
+      if (marker.count > 0) result.set(trait, true);
+      else if (marker.known) result.set(trait, false);
+      else result.delete(trait);
+    }
+  }
+  return result;
 }
 export function commitTraitFact(
   layers: TraitFactLayers,
@@ -148,43 +230,54 @@ export function commitTraitFact(
   count: number | null,
   proof: ConditionFactProof,
   countSupport: readonly ConditionFactProof[],
-): void {
+): TraitFactLayers {
   if (
     count === null
       ? !present || countSupport.length !== 0
       : !Number.isInteger(count) || count < 0 || present !== count > 0 || countSupport.length === 0
   )
     throw new TypeError('invalid_committed_trait_fact');
-  (layers.writes[scope] as Map<string, TraitFact>).set(trait, {
-    present,
-    count,
-    proof,
-    countSupport: [...countSupport],
-  });
+  const fact: TraitFact = !present
+    ? { kind: 'absent', proof, quantitySupport: [...countSupport] }
+    : {
+        kind: 'present',
+        proof,
+        quantity:
+          count === null
+            ? { kind: 'unknown' }
+            : { kind: 'known', value: count, support: [...countSupport] },
+      };
+  return {
+    ...layers,
+    writes: { ...layers.writes, [scope]: new Map([...layers.writes[scope], [trait, fact]]) },
+  };
 }
-
-/** Presence can be guaranteed while a count still depends on an earlier possible write. */
+/** No caller can inject closed knowledge into a quantity read. */
 export function readTraitQuantity(
   layers: TraitFactLayers,
   scope: TraitScope,
   trait: string,
-  complete: ConditionFactProof | null,
 ): TraitQuantityRead {
   const fact = readTraitFact(layers, scope, trait);
-  if (fact) return { value: fact.count, support: fact.countSupport };
-  return complete ? { value: 0, support: [complete] } : { value: null, support: [] };
+  if (fact) {
+    requiredTraitProof(fact.proof, `trait:${scope}:${trait}`);
+    if (fact.kind === 'absent') return { value: 0, support: fact.quantitySupport };
+    return fact.quantity.kind === 'known'
+      ? { value: fact.quantity.value, support: fact.quantity.support }
+      : { value: null, support: [] };
+  }
+  const closed = layers.closedScopes[scope];
+  return closed ? { value: 0, support: [closed] } : { value: null, support: [] };
 }
-
 export function incrementTraitFact(
   layers: TraitFactLayers,
   scope: TraitScope,
   trait: string,
   proof: ConditionFactProof,
-  complete: ConditionFactProof | null,
   exclusive: boolean,
-): void {
-  const prior = readTraitQuantity(layers, scope, trait, complete);
-  commitTraitFact(
+): TraitFactLayers {
+  const prior = readTraitQuantity(layers, scope, trait);
+  return commitTraitFact(
     layers,
     scope,
     trait,

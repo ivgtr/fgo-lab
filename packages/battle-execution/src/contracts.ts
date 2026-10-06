@@ -27,6 +27,8 @@ import type {
   TargetPredicate,
 } from '@fgo-lab/schema';
 import type { EffectiveContributionSet } from './executionTypes';
+import type { SourceExecutionBinding, PhysicalInputCommit } from './executionBinding';
+import type { InputFacts } from './inputFacts';
 
 export type ActorScope = 'attacker' | 'target';
 export type EffectContributionScope =
@@ -114,9 +116,9 @@ export type ExecutionPhase =
 
 interface OperationBase {
   sourceActivation: SourceActivationReceipt;
-  runtimeBinding?: {
-    source: import('./executionBinding').SourceExecutionBinding;
-    physicalInput?: import('./executionBinding').PhysicalInputCommit;
+  readonly runtimeBinding?: {
+    readonly source: SourceExecutionBinding;
+    readonly physicalInput?: PhysicalInputCommit;
   };
   operationId: string;
   order: number;
@@ -196,16 +198,20 @@ export type BattleOperation =
         recipientCoverage: 'allRepresentedActors';
         readTiming: 'entireBoundedProgram';
       };
-      semanticKind:
-        | 'hpModifier'
-        | 'removeHpModifiers'
-        | 'resourceMutation'
-        | 'stateMutation'
-        | 'boundedPhaseIrrelevant'
-        | 'buffInstanceMutation'
-        | 'populationMutation'
-        | 'populationFunction';
-    })
+    } & (
+        | {
+            semanticKind:
+              | 'hpModifier'
+              | 'removeHpModifiers'
+              | 'resourceMutation'
+              | 'stateMutation'
+              | 'boundedPhaseIrrelevant'
+              | 'buffInstanceMutation'
+              | 'populationMutation'
+              | 'populationFunction';
+          }
+        | { semanticKind: 'unsupported'; unsupportedReason: 'missingOperationValue' }
+      ))
   | (OperationBase & {
       kind: 'addTrait';
       scope: TraitScope;
@@ -283,20 +289,18 @@ export interface BattleStateBase {
   actorFormId: ActorFormId;
   noblePhantasmVariant: NoblePhantasmVariant;
   card: CardType;
-  traits: Record<TraitScope, ReadonlyMap<string, boolean>>;
   actorPredicates: Record<
     ActorScope,
     ReadonlyMap<string, { predicate: TargetPredicate; present: boolean }>
   >;
   stackQuantitySources: Record<string, StackSource>;
-  traitCounts: Record<TraitScope, Readonly<Record<string, number>>>;
   initialTraitSuppressions: Record<ActorScope, ReadonlySet<string>>;
   quantities: {
     attackerHpPermille: number | null;
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
-  inputFacts: import('./inputFacts').InputFacts;
+  inputFacts: InputFacts;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;
   ignoreDefense: boolean;
@@ -525,6 +529,7 @@ export interface EffectProjection {
 export interface OperationResult {
   conditionRead: ConditionRead;
   damageDependencyRead: ConditionRead | null;
+  valueDependencyRead: ConditionRead | null;
   operation: BattleOperation;
   outcome: OperationOutcome;
   condition: 'satisfied' | 'unsatisfied' | 'unresolved';

@@ -3,11 +3,13 @@ import {
   assembleComparedAuditObservation,
 } from './executionAuditObservation';
 import { compareCandidateResults } from './candidateComparison';
+import type { CandidateExecutionWithAudit } from './candidateStateAudit';
 import {
   executeOrderedScenarioCandidate,
   executeOrderedScenarioCandidates,
   executeOrderedScenarioCandidateWithAudit,
   executeOrderedScenarioCandidatesWithAudit,
+  executeDiagnosticScenarioCandidatesWithAudit,
 } from './candidateExecution';
 import type {
   OrderedScenarioExecution,
@@ -35,6 +37,7 @@ export type {
   EffectiveContributionSet,
 } from './executionTypes';
 export { compileExecutionPlan as prepareOrderedScenario } from './executionPlan';
+export { compileDiagnosticExecutionPlan as prepareDiagnosticOrderedScenario } from './executionPlan';
 export { executeOrderedScenarioCandidates } from './candidateExecution';
 
 export function executeOrderedScenario(
@@ -61,6 +64,28 @@ export function executeOrderedScenarioWithAuditObservation(
     resolvedInputs,
     contributionPolicy,
   );
+  return assembleAuditedScenario(prepared, resolvedInputs, contributionPolicy, auditedExecutions);
+}
+
+export function executeDiagnosticOrderedScenarioWithAuditObservation(
+  prepared: PreparedOrderedScenario,
+  resolvedInputs: ResolvedCanonicalInputSet,
+  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
+): OrderedScenarioExecutionWithAuditObservation {
+  const executions = executeDiagnosticScenarioCandidatesWithAudit(
+    prepared,
+    resolvedInputs,
+    contributionPolicy,
+  );
+  return assembleAuditedScenario(prepared, resolvedInputs, contributionPolicy, executions);
+}
+
+function assembleAuditedScenario(
+  prepared: PreparedOrderedScenario,
+  resolvedInputs: ResolvedCanonicalInputSet,
+  contributionPolicy: ContributionApplicationPolicy,
+  auditedExecutions: readonly CandidateExecutionWithAudit[],
+): OrderedScenarioExecutionWithAuditObservation {
   if (auditedExecutions.length === 0) {
     if (prepared.targetResolution.kind === 'candidates')
       throw new TypeError('target_candidate_execution_missing');

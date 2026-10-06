@@ -1,8 +1,17 @@
-import { inputFactValues, writeInputFact } from './inputFacts';
+import {
+  inputFactValues,
+  writeInputFact,
+  exactInputFactValue,
+  rejectInputFact,
+} from './inputFacts';
 import { runtimeInputKey } from './runtimeInputIdentity';
 import { canonicalRequirementLeaves, type CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type { ConditionExpression } from './contracts';
-import { evaluateCondition, type ConditionEvaluationState, type ConditionReadAudit } from './condition';
+import {
+  evaluateCondition,
+  type ConditionEvaluationState,
+  type ConditionReadAudit,
+} from './condition';
 import { runtimeInputDefinitionsForSource } from './operationCompiler';
 import { resolveStochasticActivationOutcome } from './stochasticOutcomes';
 import {
@@ -64,20 +73,18 @@ export function resolvePreparationSourceFacts(
   const missingDefinitions: CanonicalInputDefinition[] = [];
   for (const definition of definitions) {
     const prior = inputFacts.get(definition.key);
-    const value = prior === undefined ? definition.defaultValue : prior.value;
+    const value = prior === undefined ? definition.defaultValue : exactInputFactValue(prior);
     if (
       value === null ||
+      value === undefined ||
       !Number.isInteger(value) ||
       value < definition.minimum ||
       value > definition.maximum ||
       (value - definition.minimum) % definition.step !== 0
     ) {
-      inputFacts = writeInputFact(inputFacts, definition.key, null, []);
-      missingDefinitions.push(
-        definition.kind === 'effectStackCount'
-          ? definition
-          : { ...definition, defaultValue: null, defaultReason: null },
-      );
+      if (prior === undefined) inputFacts = writeInputFact(inputFacts, definition.key, null, []);
+      else if (prior.kind === 'known') inputFacts = rejectInputFact(inputFacts, definition, prior);
+      missingDefinitions.push(definition);
     } else if (prior === undefined)
       inputFacts = writeInputFact(inputFacts, definition.key, value, [
         { kind: 'selectedInitialResource', clock: facts.conditionReadClock },
@@ -113,10 +120,15 @@ export function resolvePreparationSourceFacts(
         : [],
     ),
   );
-  const missingCondition =
+  const missingDefinition =
     outcome === false
       ? undefined
       : missingDefinitions.find((definition) => inputKeys.has(definition.key));
+  const missingFact = missingDefinition && inputFacts.get(missingDefinition.key);
+  const missingCondition =
+    missingFact?.kind === 'conditional'
+      ? (missingFact.recoveryInputs[0] ?? missingDefinition)
+      : missingDefinition;
   let stochastic = resolveStochasticActivationOutcome(
     {
       operationId: `preparation:${program.source.effect.occurrenceId}`,

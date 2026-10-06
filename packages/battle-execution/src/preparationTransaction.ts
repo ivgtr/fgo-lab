@@ -1,5 +1,4 @@
 import { isHpOperation } from './preparationHp';
-import { seedUnreadInputFacts } from './inputFacts';
 import { hpAlive } from './hpResource';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import type { PreparationSourceResourceResult } from './preparationResourcePlan';
@@ -229,24 +228,6 @@ export function planPreparationResourceTransaction(args: {
     state: {
       ...args.state,
       npResource: resourceStart.state,
-      inputFacts: seedUnreadInputFacts(
-        args.state.inputFacts,
-        args.context.canonicalInputValues ?? {},
-        {
-          kind: 'externalAssumption',
-          clock: {
-            phase: 'initial',
-            actorFormId: args.state.initialFormId,
-            actor: 'attacker',
-            actionId: null,
-            operationId: null,
-            sourceInstanceId: null,
-            occurrenceId: null,
-            valueSetIndex: null,
-            valueIndex: null,
-          },
-        },
-      ),
     },
     context: args.context,
     actionId,

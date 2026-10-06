@@ -1,20 +1,19 @@
 import { SOURCE_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
 import { inputFactValues } from './inputFacts';
 import { hpPermille } from './hpResource';
-import { traitFacts, traitCounts } from './conditionState';
 import type { OcSourceProgram } from './ocSourceProgram';
 import { activationFactKey, analyzeActivationFactSet, type ActivationFact } from '@fgo-lab/schema';
 import { findActorForm, findNoblePhantasmVariant, type ServantMaster } from '@fgo-lab/master-data';
 import { createConditionState } from './conditionState';
-import { markerTraitCounts } from './buffInstances';
 import type { ConditionEvaluationState } from './condition';
 import type { PreNoblePhantasmState, PreparationExecutionContext } from './preparationContracts';
 import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
 import {
   assertExternalInitialTrait,
-  projectTraitScope,
   commitTraitFact,
   cloneTraitFactLayers,
+  replaceIntrinsicTraitFacts,
+  clearExternalTraitScopes,
 } from './traitFactLayers';
 
 /** Preparation uses the same condition facts as damage execution, without a synthetic damage input. */
@@ -75,27 +74,28 @@ export function preparationConditionState(
         );
       }
     } else {
-      assertExternalInitialTrait(
+      facts.traitFactLayers = assertExternalInitialTrait(
         facts.traitFactLayers,
         fact.scope,
         fact.trait,
         fact.present,
         proof,
       );
-      projectTraitScope(facts, fact.scope);
     }
   }
   for (const scope of ['attackerState', 'targetState', 'field'] as const) {
     for (const [trait, count] of Object.entries(state.stackCounts[scope])) {
-      (facts.traits[scope] as Map<string, boolean>).set(trait, count > 0);
       const proof = state.conditionWriteProofs.traits[scope].get(trait);
       if (!proof) return null;
-      commitTraitFact(facts.traitFactLayers, scope, trait, count > 0, count, proof, [proof]);
-      (facts.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+      facts.traitFactLayers = commitTraitFact(
+        facts.traitFactLayers,
+        scope,
         trait,
+        count > 0,
+        count,
         proof,
+        [proof],
       );
-      facts.traitCounts[scope] = { ...facts.traitCounts[scope], [trait]: count };
     }
   }
   facts.stackQuantitySources = {
@@ -135,8 +135,6 @@ export function preparationSourceConditionState(
     conditionFactProofs: cloneConditionFactProofs(facts.conditionFactProofs),
     card: null,
     resourceActor: program.source.sourceInstanceId,
-    traits: { ...facts.traits, attacker: traitFacts(traits), attackerState: new Map() },
-    traitCounts: { ...facts.traitCounts, attacker: traitCounts(traits), attackerState: {} },
     actorPredicates: { ...facts.actorPredicates, attacker: new Map() },
     initialTraitSuppressions: { ...facts.initialTraitSuppressions, attacker: new Set() },
     buffInstances: (facts.buffInstances ?? [])
@@ -160,20 +158,16 @@ export function preparationSourceConditionState(
     kind: 'canonicalIntrinsic',
     clock: facts.conditionReadClock,
   };
-  bound.traitFactLayers.intrinsic.attacker = new Map(
-    traits.map((trait) => [
-      trait,
-      { present: true, count: 1, proof: intrinsic, countSupport: [intrinsic] },
-    ]),
+  bound.traitFactLayers = replaceIntrinsicTraitFacts(
+    bound.traitFactLayers,
+    'attacker',
+    traits,
+    intrinsic,
   );
-  for (const scope of ['attacker', 'attackerState'] as const) {
-    bound.traitFactLayers.externalInitial[scope] = new Map();
-    bound.traitFactLayers.writes[scope] = new Map();
-    projectTraitScope(bound, scope);
-  }
-  bound.conditionFactProofs.traits.attacker = new Map(traits.map((trait) => [trait, intrinsic]));
-  bound.conditionFactProofs.completeTraits.attacker = intrinsic;
-  bound.conditionFactProofs.traits.attackerState = new Map();
+  bound.traitFactLayers = clearExternalTraitScopes(bound.traitFactLayers, [
+    'attacker',
+    'attackerState',
+  ]);
   bound.conditionFactProofs.predicates.attacker = new Map();
   bound.conditionFactProofs.suppressions.attacker = new Map();
   for (const [key, value] of Object.entries(inputFactValues(facts.inputFacts))) {
@@ -204,24 +198,24 @@ export function preparationSourceConditionState(
       kind: 'externalAssumption',
       clock: bound.conditionReadClock,
     };
-    assertExternalInitialTrait(bound.traitFactLayers, fact.scope, fact.trait, value === 1, proof);
-    projectTraitScope(bound, fact.scope);
+    bound.traitFactLayers = assertExternalInitialTrait(
+      bound.traitFactLayers,
+      fact.scope,
+      fact.trait,
+      value === 1,
+      proof,
+    );
+
     // A combined actor assertion includes the absence/presence of represented initial state.
     if (fact.scope === 'attacker') {
-      assertExternalInitialTrait(
+      bound.traitFactLayers = assertExternalInitialTrait(
         bound.traitFactLayers,
         'attackerState',
         fact.trait,
         value === 1,
         proof,
       );
-      projectTraitScope(bound, 'attackerState');
     }
-  }
-  const live = markerTraitCounts(facts.buffInstances ?? [], program.source.sourceInstanceId);
-  for (const [trait, count] of Object.entries(live)) {
-    (bound.traits.attackerState as Map<string, boolean>).set(trait, count > 0);
-    bound.traitCounts.attackerState = { ...bound.traitCounts.attackerState, [trait]: count };
   }
   return bound;
 }

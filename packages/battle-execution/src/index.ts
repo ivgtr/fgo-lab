@@ -222,3 +222,20 @@ export {
 export type { ExecutionPossibilities } from './stochasticPossibilities';
 export type { StochasticSelection, StochasticChoice } from './stochasticPossibilities';
 export type { ExecutionPossibilityCertificate } from './stochasticPossibilities';
+export type {
+  PreparationActionExecution,
+  PreparationInitializationExecution,
+  PreparationSourceExecution,
+  PreparationOperationExecution,
+  RejectedPreparationDiagnostic,
+} from './preparationExecution';
+export { diagnoseRejectedPreparation } from './preparationDiagnostic';
+export {
+  prepareDiagnosticOrderedScenario,
+  executeDiagnosticOrderedScenarioWithAuditObservation,
+} from './engine';
+
+export { stochasticWitnessKey } from './stochasticPossibilities';
+export type { OcRateInstance, OcActionStep, OcApplicationRead } from './ocState';
+
+export { projectBattleTraitPresence } from './traitFactLayers';

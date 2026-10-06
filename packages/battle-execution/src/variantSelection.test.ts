@@ -1,3 +1,10 @@
+import { readOperationCondition } from './condition';
+import { conditionWriteProof } from './conditionRead';
+import {
+  projectBattleTraitPresence,
+  readTraitQuantity as nativeTraitQuantity,
+  commitTraitFact,
+} from './traitFactLayers';
 import { describe, expect, it } from 'vitest';
 import { analyzeActivationFactSet, type DamageResolutionInput } from '@fgo-lab/schema';
 import type {
@@ -8,6 +15,7 @@ import type {
 } from '@fgo-lab/master-data';
 import type { BattleOperation } from './contracts';
 import {
+  applyTraitAddition,
   applyInitialTraitSuppression,
   applyTraitRemoval,
   applyWorldFacts,
@@ -165,10 +173,13 @@ describe('noble phantasm variant selection', () => {
       activations,
     );
     expect(selected.issue).toBeNull();
-    expect(selected.state.traits.attacker.get('magicBullet')).toBe(true);
-    expect(selected.state.traitCounts.attacker.magicBullet).toBe(1);
-    expect(selected.state.traits.attacker.has('initial-only')).toBe(false);
-    expect(selected.state.traits.attacker.get('terminal-only')).toBe(true);
+    expect(projectBattleTraitPresence(selected.state, 'attacker').get('magicBullet')).toBe(true);
+    expect(nativeTraitQuantity(selected.state.traitFactLayers, 'attacker', 'magicBullet')).toEqual({
+      value: null,
+      support: [],
+    });
+    expect(projectBattleTraitPresence(selected.state, 'attacker').has('initial-only')).toBe(false);
+    expect(projectBattleTraitPresence(selected.state, 'attacker').get('terminal-only')).toBe(true);
     const excluded = applySelectedNoblePhantasmContext(
       initial,
       changed,
@@ -194,7 +205,24 @@ describe('noble phantasm variant selection', () => {
       ...damage,
       kind: 'traitCount' as const,
       rawFunctionType: 'damageNpIndividualSum' as const,
-      quantity: { kind: 'stacks' as const, inputs: [] },
+      quantity: {
+        kind: 'stacks' as const,
+        inputs: [
+          {
+            kind: 'effectStackCount',
+            key: 'magic-count',
+            owner: 'attacker',
+            label: 'count',
+            description: 'count',
+            minimum: 0,
+            maximum: 10,
+            step: 1,
+            defaultValue: 0,
+            defaultReason: 'baseline',
+            quantitySource: { scope: 'attackerState', trait: 'magicBullet' },
+          },
+        ],
+      },
       parametersByOvercharge: Array.from({ length: 5 }, () =>
         Array.from({ length: 5 }, () => ({
           ratePermille: 1_000,
@@ -220,13 +248,49 @@ describe('noble phantasm variant selection', () => {
       specialAttackDependency: { kind: 'always' as const },
       specialAttackDecisionKey: null,
     } satisfies BattleOperation;
-    const specialInput = (candidate: typeof selected) =>
-      applyNoblePhantasmDamage(damageInput, npOperation, candidate.state, new Map())
-        .npSpecialMultipliers;
+    const resolve = (candidate: typeof selected) =>
+      applyNoblePhantasmDamage(damageInput, npOperation, candidate.state, new Map());
     expect(excluded.issue).toBeNull();
-    expect(specialInput(selected)).toEqual([1.4, 1.4, 1.4, 1.4, 1.4]);
-    expect(specialInput(excluded)).toEqual([1.3, 1.3, 1.3, 1.3, 1.3]);
-    expect(specialInput(restored)).toEqual(specialInput(selected));
+    for (const candidate of [selected, excluded, restored])
+      expect(resolve(candidate)).toMatchObject({
+        damageFunction: { status: 'unsupported', missingEvidence: 'unknown_trait_quantity' },
+      });
+    const proof = { kind: 'selectedInitialResource' as const, clock: initial.conditionReadClock };
+    const counted = {
+      ...selected,
+      state: {
+        ...selected.state,
+        traitFactLayers: commitTraitFact(
+          selected.state.traitFactLayers,
+          'attackerState',
+          'magicBullet',
+          true,
+          3,
+          proof,
+          [proof],
+        ),
+      },
+    };
+    expect(resolve(counted).npSpecialMultipliers).toEqual([1.3, 1.3, 1.3, 1.3, 1.3]);
+    const granted = {
+      ...counted,
+      state: applyTraitAddition(
+        counted.state,
+        'attackerState',
+        'magicBullet',
+        conditionWriteProof(
+          readOperationCondition({ ...operationBase, operationId: 'trait-grant' }, counted.state),
+          true,
+        ),
+      ),
+    };
+    expect(resolve(granted).npSpecialMultipliers).toEqual([1.4, 1.4, 1.4, 1.4, 1.4]);
+    expect(
+      nativeTraitQuantity(counted.state.traitFactLayers, 'attackerState', 'magicBullet').value,
+    ).toBe(3);
+    expect(
+      nativeTraitQuantity(selected.state.traitFactLayers, 'attackerState', 'magicBullet').value,
+    ).toBeNull();
   });
 
   it('rejects an external negative against a terminal intrinsic trait without committing selection', () => {
@@ -315,20 +379,29 @@ describe('noble phantasm variant selection', () => {
       activations,
     );
     expect(selected.issue).toBeNull();
+    const afterRemoval = applyTraitRemoval(
+      initial,
+      'attackerState',
+      'magicBullet',
+      conditionWriteProof(readOperationCondition(remove, initial), true),
+    );
     const ordered = applyInitialTraitSuppression(
-      applyTraitRemoval(initial, 'attackerState', 'magicBullet', {
-        kind: 'guaranteedWrite',
-        clock: initial.conditionReadClock,
-      }),
+      afterRemoval,
       'attacker',
       'magicBullet',
-      { kind: 'guaranteedWrite', clock: initial.conditionReadClock },
+      conditionWriteProof(readOperationCondition(suppress, afterRemoval), true),
     );
-    expect(selected.state.traits.attackerState.get('magicBullet')).toBe(false);
-    expect(selected.state.traitCounts.attackerState.magicBullet).toBeUndefined();
-    expect(selected.state.traits.attacker.get('magicBullet')).toBe(false);
-    expect(selected.state.traitCounts.attacker.magicBullet).toBeUndefined();
-    expect(selected.state.traitCounts).toEqual(ordered.traitCounts);
+    expect(projectBattleTraitPresence(selected.state, 'attackerState').get('magicBullet')).toBe(
+      false,
+    );
+    expect(
+      nativeTraitQuantity(selected.state.traitFactLayers, 'attackerState', 'magicBullet').value,
+    ).toBe(0);
+    expect(projectBattleTraitPresence(selected.state, 'attacker').get('magicBullet')).toBe(false);
+    expect(
+      nativeTraitQuantity(selected.state.traitFactLayers, 'attacker', 'magicBullet').value,
+    ).toBe(0);
+    expect(selected.state.traitFactLayers).toEqual(ordered.traitFactLayers);
     expect(
       fixedConstraintFactsFromState(selected.state).filter(
         (item) => item.fact.kind === 'trait' && item.fact.trait === 'magicBullet',
@@ -443,7 +516,9 @@ describe('noble phantasm variant selection', () => {
     // E2E-A036-TRANSACTION
     expect(result.issue).toBeNull();
     expect(result.state).toMatchObject({ actorFormId: changedForm, card: 'arts' });
-    expect(result.state.traits.attackerState.get('variant:changed')).toBe(true);
+    expect(projectBattleTraitPresence(result.state, 'attackerState').get('variant:changed')).toBe(
+      true,
+    );
   });
 
   it('does not preapply transaction mutations whose stochastic outcome did not succeed', () => {
@@ -517,8 +592,10 @@ describe('noble phantasm variant selection', () => {
     );
     expect(result.issue).toBeNull();
     expect(result.state).toMatchObject({ actorFormId: changedForm, card: 'arts' });
-    expect(result.state.traits.attackerState.has('failed-addition')).toBe(false);
-    expect(result.state.traits.attacker.get('kept-trait')).toBe(true);
+    expect(projectBattleTraitPresence(result.state, 'attackerState').has('failed-addition')).toBe(
+      false,
+    );
+    expect(projectBattleTraitPresence(result.state, 'attacker').get('kept-trait')).toBe(true);
     expect(result.state.initialTraitSuppressions.attacker.has('kept-trait')).toBe(false);
   });
 

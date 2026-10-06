@@ -2,7 +2,7 @@ import { compileRankingSelection, RankingBasisFailure } from './rankingBasis';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
 import { attackProfileKey, createStaticAttackProfiles, type AttackProfile } from './attackProfile';
-import type { calculateDamageResolution } from './damageResolution';
+import type { DamageResolutionValue } from './damageResolution';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
 import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
 import type {
@@ -91,7 +91,7 @@ export function calculateRankingPolicy(
   const rows: RankingRowSummary[] = [];
   const profileResults: Record<string, RankingProfileResult> = {};
   const exclusions: RankingPolicyCalculation['exclusions'] = [];
-  const damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>();
+  const damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>();
   let generatedCount = 0;
   let semanticUpperBound = 0;
   const deduplicatedKeys = new Set<string>();

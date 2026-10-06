@@ -165,6 +165,19 @@ export type PreparationTransitionResult =
       state: PreNoblePhantasmState;
     };
 
+/** The completed result itself is the native action receipt. */
+export type PreparationCompletedTransitionResult = Readonly<PreparationTransitionResult> & {
+  readonly before: PreNoblePhantasmState;
+  readonly command: PreNoblePhantasmCommand | null;
+  readonly sources: readonly import('./preparationExecution').PreparationSourceExecution[];
+  readonly committedSources: readonly import('./preparationExecution').PreparationSourceExecution[];
+  readonly observations: {
+    readonly ocAttempts: readonly import('./preparationAttemptObservation').PreparationOcAttempt[];
+    readonly battlePointSteps: readonly import('./preparationAttemptObservation').PreparationBattlePointStep[];
+    readonly hpActions: readonly import('./hpExecutionObservation').PreparationHpAction[];
+  };
+};
+
 export const rejectPreparation = (
   state: PreNoblePhantasmState,
   code: PreparationFailureCode,

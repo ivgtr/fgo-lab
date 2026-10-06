@@ -79,7 +79,7 @@ export function battlePointPreparationRejectionObservationFor(owner: object) {
 }
 
 /** Preserve the original selected preparation capture when its product wrapper is copied. */
-export function carryBattlePointPreparationObservation<T extends object>(from: T, to: T): T {
+export function carryBattlePointPreparationObservation<T extends object>(from: object, to: T): T {
   const capture = rejectionObservations.get(from);
   if (capture) rejectionObservations.set(to, capture);
   return to;

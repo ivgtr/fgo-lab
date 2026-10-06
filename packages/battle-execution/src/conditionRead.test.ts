@@ -1,3 +1,4 @@
+import { projectBattleTraitPresence } from './traitFactLayers';
 import { describe, expect, it } from 'vitest';
 import { analyzeActivationFactSet } from '@fgo-lab/schema';
 import type { NoblePhantasmVariant } from '@fgo-lab/master-data';
@@ -11,6 +12,8 @@ import {
 } from './conditionRead';
 import { readTraitQuantity } from './traitFactLayers';
 import { applyTraitAddition, applyTraitRemoval, applyWorldFacts } from './state';
+import { writeInputFact } from './inputFacts';
+import { mutateConditionalCriticalStars } from './resourceSemantics';
 
 const form = { actorId: 'read-fixture', limitCount: 0 };
 const variant: NoblePhantasmVariant = {
@@ -84,6 +87,99 @@ function selfWrite(state: ExecutableBattleState): ConditionFactProof {
 }
 
 describe('condition value, proof and read clock', () => {
+  it('reads a guaranteed predicate over both physical star outcomes and retains the causal read', () => {
+    const state = initial();
+    const beforeProof: ConditionFactProof = {
+      kind: 'selectedInitialResource',
+      clock: state.conditionReadClock,
+    };
+    state.inputFacts = writeInputFact(state.inputFacts, 'battle:criticalStars', 20, [beforeProof]);
+    const sourceClock = {
+      ...state.conditionReadClock,
+      phase: 'sourceUse' as const,
+      actionId: 'conditional-stars',
+    };
+    const sourceRead = evaluateCondition(
+      { kind: 'trait', scope: 'field', trait: 'fieldCity', present: true },
+      { ...state, conditionReadClock: sourceClock },
+    );
+    expect(sourceRead.kind).toBe('inputRequired');
+    const mutation = mutateConditionalCriticalStars(
+      state.inputFacts,
+      10,
+      'gain',
+      { kind: 'possibleOutcome', clock: sourceClock },
+      {
+        kind: 'read',
+        read: sourceRead,
+        proc: {
+          kind: 'resolved',
+          outcome: 'success',
+          certainty: 'guaranteed',
+          ratePermille: 1000,
+          selection: 'declared',
+        },
+      },
+      [],
+    );
+    expect(mutation.status).toBe('applied');
+    const after = { ...state, inputFacts: mutation.facts };
+    const read = evaluateCondition(
+      { kind: 'inputQuantity', inputKey: 'battle:criticalStars', comparison: 'atLeast', value: 20 },
+      after,
+    );
+    expect(read).toMatchObject({ kind: 'known', truth: true, certainty: 'guaranteed' });
+    expect(read.evidence[0]!.quantityFact).toMatchObject({
+      kind: 'conditional',
+      condition: sourceRead,
+      whenTrue: { value: 30 },
+      whenFalse: { value: 20 },
+    });
+    expect(read.support).toEqual([beforeProof, { kind: 'canonicalIntrinsic', clock: sourceClock }]);
+    expect(
+      evaluateCondition(
+        {
+          kind: 'inputQuantity',
+          inputKey: 'battle:criticalStars',
+          comparison: 'atLeast',
+          value: 25,
+        },
+        after,
+      ),
+    ).toMatchObject({ kind: 'inputRequired', truth: null });
+    state.inputFacts = writeInputFact(state.inputFacts, 'battle:criticalStars', 20, [
+      { kind: 'possibleOutcome', clock: sourceClock },
+    ]);
+    const possiblePrior = mutateConditionalCriticalStars(
+      state.inputFacts,
+      10,
+      'gain',
+      { kind: 'possibleOutcome', clock: sourceClock },
+      {
+        kind: 'read',
+        read: sourceRead,
+        proc: {
+          kind: 'resolved',
+          outcome: 'success',
+          certainty: 'guaranteed',
+          ratePermille: 1000,
+          selection: 'declared',
+        },
+      },
+      [],
+    );
+    expect(
+      evaluateCondition(
+        {
+          kind: 'inputQuantity',
+          inputKey: 'battle:criticalStars',
+          comparison: 'atLeast',
+          value: 20,
+        },
+        { ...state, inputFacts: possiblePrior.facts },
+      ),
+    ).toMatchObject({ kind: 'known', truth: true, certainty: 'possible' });
+  });
   it('does not turn an unknown prior count into one after a guaranteed grant', () => {
     const state = initial();
     bindCount(state);
@@ -92,7 +188,7 @@ describe('condition value, proof and read clock', () => {
       truth: true,
       certainty: 'guaranteed',
     });
-    expect(readTraitQuantity(granted.traitFactLayers, 'attackerState', 'created', null)).toEqual({
+    expect(readTraitQuantity(granted.traitFactLayers, 'attackerState', 'created')).toEqual({
       value: null,
       support: [],
     });
@@ -114,7 +210,7 @@ describe('condition value, proof and read clock', () => {
       truth: true,
       certainty: 'guaranteed',
     });
-    const quantity = readTraitQuantity(second.traitFactLayers, 'attackerState', 'created', null);
+    const quantity = readTraitQuantity(second.traitFactLayers, 'attackerState', 'created');
     expect(quantity.value).toBe(2);
     expect(quantity.support).toContainEqual(possible);
     expect(quantity.support).toContainEqual(guaranteed);
@@ -123,9 +219,7 @@ describe('condition value, proof and read clock', () => {
       truth: true,
       certainty: 'possible',
     });
-    expect(readTraitQuantity(first.traitFactLayers, 'attackerState', 'created', null).value).toBe(
-      1,
-    );
+    expect(readTraitQuantity(first.traitFactLayers, 'attackerState', 'created').value).toBe(1);
   });
 
   it('a deletion establishes exact zero independently of an unknown prior count', () => {
@@ -134,7 +228,7 @@ describe('condition value, proof and read clock', () => {
     const granted = applyTraitAddition(state, 'attackerState', 'created', selfWrite(state));
     const proof = selfWrite(granted);
     const removed = applyTraitRemoval(granted, 'attackerState', 'created', proof);
-    expect(readTraitQuantity(removed.traitFactLayers, 'attackerState', 'created', null)).toEqual({
+    expect(readTraitQuantity(removed.traitFactLayers, 'attackerState', 'created')).toEqual({
       value: 0,
       support: [proof],
     });
@@ -142,9 +236,7 @@ describe('condition value, proof and read clock', () => {
       truth: false,
       certainty: 'guaranteed',
     });
-    expect(
-      readTraitQuantity(granted.traitFactLayers, 'attackerState', 'created', null).value,
-    ).toBeNull();
+    expect(readTraitQuantity(granted.traitFactLayers, 'attackerState', 'created').value).toBeNull();
     expect(
       evaluateCondition({ ...countCondition, comparison: 'equal', value: 0 }, removed),
     ).toMatchObject({ truth: true, certainty: 'guaranteed' });
@@ -166,8 +258,8 @@ describe('condition value, proof and read clock', () => {
       certainty: 'guaranteed',
     });
     expect(before).toMatchObject({ truth: false, certainty: 'guaranteed' });
-    expect(state.traits.attackerState.has('created')).toBe(false);
-    expect(state.conditionFactProofs.traits.attackerState.has('created')).toBe(false);
+    expect(projectBattleTraitPresence(state, 'attackerState').has('created')).toBe(false);
+    expect(state.traitFactLayers.writes.attackerState.has('created')).toBe(false);
   });
 
   it('does not exchange external false with a guaranteed self removal', () => {
@@ -247,7 +339,10 @@ describe('condition value, proof and read clock', () => {
 
   it('rejects missing proof even when another child could decide the expression', () => {
     const state = initial();
-    (state.traits.target as Map<string, boolean>).set('unqualified', true);
+    (state.traitFactLayers.externalInitial.target as Map<string, unknown>).set('unqualified', {
+      kind: 'present',
+      quantity: { kind: 'unknown' },
+    });
     const malformed: ConditionExpression = {
       kind: 'trait',
       scope: 'target',

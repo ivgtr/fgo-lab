@@ -1,3 +1,4 @@
+import { projectBattleTraitPresence } from './traitFactLayers';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { createInputFacts } from './inputFacts';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -22,15 +23,48 @@ import { SOURCE_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
 import {
   projectTraitFacts,
   assertExternalInitialTrait,
-  projectTraitScope,
+  readTraitQuantity,
 } from './traitFactLayers';
 import { compileEffectCached, compileEffectCondition } from './operationCompiler';
 import { evaluateCondition } from './condition';
 import { createConditionState } from './conditionState';
 import { compileOcSourceProgram, evaluateOcSourceCondition } from './ocSourceProgram';
-import { bindOcSourceOperation } from './ocSourceBinding';
-import { createOcState, executeOcAction } from './ocState';
+import {
+  bindOcSourceOperation as bindNativeOcSourceOperation,
+  type OcSourceBindingContext,
+} from './ocSourceBinding';
+import { createOcState, executeOcAction, ocBindingParticipates, type OcState } from './ocState';
 import type { SourceEffect } from './sourceCollection';
+
+function bindOcSourceOperation(
+  program: ReturnType<typeof compileOcSourceProgram>,
+  index: number,
+  context: Omit<OcSourceBindingContext, 'activation' | 'executionIntent'>,
+  state: OcState,
+) {
+  // The fixture's source-use reader owns this read; binding must reuse it.
+  const read = evaluateCondition(program.condition, context.facts);
+  return bindNativeOcSourceOperation(
+    program,
+    index,
+    {
+      ...context,
+      executionIntent: 'declared',
+      activation: {
+        kind: 'read',
+        read,
+        proc: {
+          kind: 'resolved',
+          outcome: 'success',
+          certainty: 'guaranteed',
+          ratePermille: 1000,
+          selection: 'declared',
+        },
+      },
+    },
+    state,
+  );
+}
 
 const atlasEvidence = {
   functionType: 'fixture',
@@ -369,17 +403,23 @@ describe('OC source program and common condition owner', () => {
       present: true,
     } as const;
     expect(evaluateCondition(condition, state).truth).toBeNull();
-    assertExternalInitialTrait(state.traitFactLayers, 'attackerState', 'traitId:3122', true, {
-      kind: 'externalAssumption',
-      clock: state.conditionReadClock,
-    });
-    projectTraitScope(state, 'attackerState');
+    state.traitFactLayers = assertExternalInitialTrait(
+      state.traitFactLayers,
+      'attackerState',
+      'traitId:3122',
+      true,
+      {
+        kind: 'externalAssumption',
+        clock: state.conditionReadClock,
+      },
+    );
+
     expect(evaluateCondition(condition, state).truth).toBe(false);
     expect(evaluateCondition({ ...condition, trait: 'unrelated' }, state).truth).toBeNull();
     (state.traitFactLayers.externalInitial.attackerState as Map<string, unknown>).delete(
       'traitId:3122',
     );
-    projectTraitScope(state, 'attackerState');
+
     expect(evaluateCondition(condition, state).truth).toBeNull();
   });
   it('keeps unknown input distinct from a false condition', () => {
@@ -403,7 +443,14 @@ describe('OC source program and common condition owner', () => {
       kind: 'reject',
       status: 'inputRequired',
     });
-    (state.traits.field as Map<string, boolean>).set('sunlight', false);
+    state.traitFactLayers = assertExternalInitialTrait(
+      state.traitFactLayers,
+      'field',
+      'sunlight',
+      false,
+      { kind: 'externalAssumption', clock: state.conditionReadClock },
+    );
+
     expect(bindOcSourceOperation(program, 0, context, createOcState())).toEqual({
       kind: 'skip',
       outcome: 'conditionFalse',
@@ -527,8 +574,12 @@ describe('OC source program and common condition owner', () => {
         );
         expect(step).toMatchObject({
           kind: 'grant',
-          included: selfBuffs === 'included' && conditionalEffects === 'satisfied',
         });
+        expect(step.kind).toBe('grant');
+        if (step.kind !== 'grant') throw new TypeError('fixture_oc_grant_required');
+        expect(ocBindingParticipates(step.binding, step.sourceEvidence.source)).toBe(
+          selfBuffs === 'included' && conditionalEffects === 'satisfied',
+        );
       }
     },
   );
@@ -572,11 +623,29 @@ describe('OC support condition actor', () => {
     const bound = preparationSourceConditionState(compileOcSourceProgram(support), original);
     expect(
       projectTraitFacts(bound.traitFactLayers, 'attacker').get('support-created'),
-    ).toMatchObject({ present: true, count: 1, proof: { kind: 'externalAssumption' } });
+    ).toMatchObject({
+      kind: 'present',
+      quantity: { kind: 'unknown' },
+      proof: { kind: 'externalAssumption' },
+    });
+    expect(
+      evaluateCondition(
+        { kind: 'trait', scope: 'attacker', trait: 'support-created', present: true },
+        bound,
+      ),
+    ).toMatchObject({
+      kind: 'known',
+      truth: true,
+      certainty: 'possible',
+    });
+    expect(readTraitQuantity(bound.traitFactLayers, 'attacker', 'support-created')).toEqual({
+      value: null,
+      support: [],
+    });
     expect(projectTraitFacts(bound.traitFactLayers, 'attacker').has('dragon')).toBe(false);
     expect(original.traitFactLayers.externalInitial.attacker.has('support-created')).toBe(false);
-    expect(original.traits.attacker.has('dragon')).toBe(true);
-    expect(bound.traitFactLayers.externalInitial.field).not.toBe(
+    expect(projectBattleTraitPresence(original, 'attacker').has('dragon')).toBe(true);
+    expect(bound.traitFactLayers.externalInitial.field).toBe(
       original.traitFactLayers.externalInitial.field,
     );
   });
@@ -639,7 +708,7 @@ describe('OC support condition actor', () => {
     };
     const bound = preparationSourceConditionState(program, original);
     expect(evaluateOcSourceCondition(program, bound)).toBe(true);
-    expect(original.traits.attacker.has('genderFemale')).toBe(false);
+    expect(projectBattleTraitPresence(original, 'attacker').has('genderFemale')).toBe(false);
     expect(original.quantities.attackerHpPermille).toBe(100);
   });
 });
@@ -1127,6 +1196,28 @@ describe('population candidate OC equivalence', () => {
     };
     writer.effect.execution = [grant];
     const event: PopulationEvent = { operation: grant, source: writer };
+    const knownAbsence = facts();
+    for (const scope of ['attackerState', 'target', 'targetState'] as const) {
+      knownAbsence.traitFactLayers = assertExternalInitialTrait(
+        knownAbsence.traitFactLayers,
+        scope,
+        'counted',
+        false,
+        {
+          kind: 'externalAssumption',
+          clock: knownAbsence.conditionReadClock,
+        },
+      );
+    }
+    expect(
+      readPopulationCount({
+        selector: operation.amount.selector,
+        inputKey: 'count',
+        values: { 'population:allies:additional': 0, 'population:enemies:additional': 0, count: 0 },
+        facts: facts(),
+        events: [],
+      }),
+    ).toBeNull();
     const representatives = new Map<string, number[]>();
     const all: number[][] = [];
     for (let allies = 0; allies < 3; allies++)
@@ -1149,7 +1240,7 @@ describe('population candidate OC equivalence', () => {
                     })(),
               inputKey: 'count',
               values,
-              facts: facts(),
+              facts: knownAbsence,
               events,
             })!,
           );

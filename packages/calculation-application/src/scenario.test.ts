@@ -49,12 +49,15 @@ import {
   criticalStarsForwardSource,
 } from './productionCriticalStarsAudit';
 import {
-  criticalStarsRecoveryProgram,
-  criticalStarsRecoverySource,
   auditCriticalStarsRecoveryObservations,
-  type CriticalStarsRecoverySource,
+  type SourceActionRecoveryObservation,
+  sourceActionRecoveryEvidence,
+  sourceActionRecoveryTransport,
   type CriticalStarsRecoveryGate,
   type CriticalStarsRecoveryFailureReason,
+  sourceActionRecoveryProgram,
+  sourceActionRecoveryObservation,
+  auditSourceActionRecovery,
 } from './productionCriticalStarsRecoveryAudit';
 import { materializeRankingQuantity } from './rankingQuantityWorld';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
@@ -2681,12 +2684,331 @@ describe('scenario calculation facade', () => {
     },
   );
 
+  it.each([
+    {
+      prior: false,
+      multiple: false,
+      intervening: false,
+      nested: false,
+      satisfied: true,
+      power: 0.7,
+      restored: 20,
+      final: 20,
+    },
+    {
+      prior: true,
+      multiple: false,
+      intervening: false,
+      nested: false,
+      satisfied: true,
+      power: 0.7,
+      restored: 30,
+      final: 30,
+    },
+    {
+      prior: true,
+      multiple: true,
+      intervening: false,
+      nested: false,
+      satisfied: true,
+      power: 0.7,
+      restored: 30,
+      final: 30,
+    },
+    {
+      prior: true,
+      multiple: true,
+      intervening: true,
+      nested: true,
+      satisfied: true,
+      power: 0.8,
+      restored: 30,
+      final: 35,
+    },
+    {
+      prior: false,
+      multiple: false,
+      intervening: false,
+      nested: false,
+      satisfied: false,
+      power: 0,
+      restored: 20,
+      final: 20,
+    },
+  ])('observes rejected preparation through a separate diagnostic engine: %j', (spec) => {
+    const star = (amount: number | null, direction: 'gain' | 'loss' = 'gain') => ({
+      kind: 'resourceMutation',
+      resource: 'criticalStars',
+      direction,
+      unit: 'fixed',
+      recipient: 'sourceSelf',
+      subjectId: null,
+      amount: { kind: 'fixed', values: [Array(10).fill(amount), [], [], [], []] },
+    });
+    const definition = {
+      key: 'battle:criticalStars',
+      kind: 'criticalStars',
+      owner: 'field',
+      label: 'stars',
+      description: 'current stars',
+      minimum: 0,
+      maximum: 99,
+      step: 1,
+      defaultValue: 20,
+      defaultReason: 'fixture',
+    };
+    const requirement = (threshold: number) => ({
+      kind: 'inputQuantity' as const,
+      inputKey: definition.key,
+      comparison: 'atLeast' as const,
+      value: threshold,
+    });
+    const reader = (name: string, value: number, threshold: number, nested = false) => ({
+      ...modifierEffect(name, 'upDamage', value),
+      inputDefinitions: [definition],
+      requirement: {
+        recipient: 'sourceSelf',
+        expression: nested
+          ? {
+              kind: 'all',
+              requirements: [
+                requirement(threshold),
+                { kind: 'not', requirement: { ...requirement(threshold), comparison: 'lessThan' } },
+              ],
+            }
+          : requirement(threshold),
+      },
+    });
+    const failedModifier = modifierEffect('diagnostic-failed', 'upAtk', 500);
+    const failed = {
+      ...failedModifier,
+      inputDefinitions: [definition],
+      requirement: { recipient: 'sourceSelf', expression: requirement(10) },
+      execution: [
+        ...failedModifier.execution,
+        star(40),
+        ...(spec.multiple ? [star(15, 'loss')] : []),
+        star(null),
+      ],
+    };
+    const skill = (slot: number, effects: unknown[]) => ({
+      id: `diagnostic-${slot}`,
+      name: 'diagnostic',
+      slot,
+      priority: slot,
+      detail: '',
+      imageKey: null,
+      resourceRequirement: null,
+      effects,
+    });
+    const resourceMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...fixture.servants[0]!,
+          skills: [
+            skill(1, [
+              { ...modifierEffect('diagnostic-prior', 'upAtk', 0), execution: [star(10)] },
+            ]),
+            skill(2, [failed]),
+            skill(3, [
+              ...(spec.intervening
+                ? [
+                    reader('diagnostic-immediate', 100, spec.restored),
+                    {
+                      ...modifierEffect('diagnostic-intervening', 'upAtk', 0),
+                      execution: [star(5)],
+                    },
+                  ]
+                : []),
+              reader('diagnostic-final', 700, spec.satisfied ? spec.final : 80, spec.nested),
+            ]),
+          ],
+        },
+      ],
+    });
+    const scenario: ResolvedScenario = {
+      ...createDefaultResolvedScenario(resourceMaster, undefined),
+      preNoblePhantasmPlan: [
+        ...(spec.prior
+          ? [{ kind: 'useSkillSlot' as const, slot: 1 as const, skillLevel: 10, choice: null }]
+          : []),
+        { kind: 'useSkillSlot', slot: 2, skillLevel: 10, choice: null },
+        { kind: 'useSkillSlot', slot: 3, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
+    };
+    const prepared = prepareCalculationScenarioWithPolicy(
+      scenario,
+      resourceMaster,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    expect(prepared.status).toBe('rejected');
+    if (prepared.status !== 'rejected' || !prepared.diagnosticExecution)
+      throw new Error('actual rejected diagnostic required');
+    const diagnostic = prepared.diagnosticExecution;
+    expect(diagnostic.execution.input.attackBuff).toBe(0);
+    expect(diagnostic.execution.input.powerMod).toBe(spec.power);
+    expect(diagnostic.preparation.restored.inputFacts.get(definition.key)).toMatchObject({
+      kind: 'known',
+      value: spec.restored,
+    });
+    expect(diagnostic.preparation.state.inputFacts.get(definition.key)).toMatchObject({
+      kind: 'known',
+      value: spec.final,
+    });
+    expect(diagnostic.normalActions.at(-1)?.committedSources).toEqual([]);
+    expect(
+      diagnostic.execution.effectiveContributions.contributions.some(
+        ({ source }) => source.effectOccurrenceId === 'diagnostic-failed',
+      ),
+    ).toBe(false);
+    expect(() =>
+      executeOrderedScenario(diagnostic.orderedScenario, diagnostic.canonicalInputs),
+    ).toThrow('diagnostic_preparation_is_not_normal_execution');
+    const execution = evaluatePreparedCalculationScenario(prepared, versions);
+    expect(execution.status).toBe('rejected');
+    expect(execution.result.status).toBe('unsupported');
+    expect('rows' in execution.result && execution.result.rows).toEqual([]);
+    expect(() => requireExecutableCalculation(execution)).toThrow('calculation_execution_rejected');
+    if (execution.status !== 'rejected') throw new Error('normal rejection required');
+    expect(execution.diagnosticExecution).toBe(diagnostic);
+    const ordinary = calculateScenarioOutcome(scenario, resourceMaster, versions);
+    expect(ordinary.result).toEqual(execution.result);
+    if (ordinary.status !== 'rejected' || !ordinary.diagnosticExecution)
+      throw new Error('ordinary diagnostic required');
+    expect(ordinary.diagnosticExecution.execution.input).toEqual(diagnostic.execution.input);
+    expect(ordinary.diagnosticExecution.execution.effectiveContributions).toEqual(
+      diagnostic.execution.effectiveContributions,
+    );
+    const canonicalFailedOperation = resourceMaster.servants[0]!.skills.find(
+      ({ slot }) => slot === 2,
+    )!.effects[0]!.execution.at(-1)!;
+    const program = sourceActionRecoveryProgram(prepared, execution, canonicalFailedOperation);
+    const source = sourceActionRecoveryObservation(program);
+    const actualGate = auditSourceActionRecovery(program, source);
+    expect(actualGate.status, JSON.stringify(actualGate.failures)).toBe('passed');
+    expect(auditSourceActionRecovery(program, undefined).status).toBe('failed');
+    const absentDiagnostic = { ...source };
+    Reflect.deleteProperty(absentDiagnostic, 'diagnostic');
+    expect(auditSourceActionRecovery(program, absentDiagnostic).status).toBe('failed');
+    const absentActions = { ...source };
+    Reflect.deleteProperty(absentActions, 'normalActions');
+    expect(auditSourceActionRecovery(program, absentActions).status).toBe('failed');
+    expect(
+      auditSourceActionRecovery(program, { ...source, calculation: { ...execution } }).status,
+    ).toBe('failed');
+    expect(
+      auditSourceActionRecovery(program, { ...source, diagnostic: structuredClone(diagnostic) })
+        .status,
+    ).toBe('failed');
+    expect(
+      auditSourceActionRecovery(program, { ...source, normalActions: [...source.normalActions] })
+        .status,
+    ).toBe('failed');
+    const failedAction = diagnostic.normalActions.at(-1)!;
+    const failedSource = failedAction.sources[0]!;
+    const firstWrite = failedSource.operations.find(
+      ({ operation }) => operation.kind === 'resourceMutation',
+    )!;
+    const nativeWrite = firstWrite.steps[0]!;
+    type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+    const corrupt = (change: () => () => void) => {
+      const restore = change();
+      try {
+        expect(auditSourceActionRecovery(program, source).status).toBe('failed');
+      } finally {
+        restore();
+      }
+    };
+    corrupt(() => {
+      const before = failedSource.operations[0]!;
+      (failedSource.operations as Mutable<typeof failedSource.operations>)[0] = { ...before };
+      return () => {
+        (failedSource.operations as Mutable<typeof failedSource.operations>)[0] = before;
+      };
+    });
+    corrupt(() => {
+      const before = firstWrite.steps[0]!;
+      (firstWrite.steps as Mutable<typeof firstWrite.steps>)[0] = { ...before };
+      return () => {
+        (firstWrite.steps as Mutable<typeof firstWrite.steps>)[0] = before;
+      };
+    });
+    corrupt(() => {
+      const before = failedSource.binding;
+      (failedSource as Mutable<typeof failedSource>).binding = {
+        ...before,
+        conditionReads: [...before.conditionReads],
+      };
+      return () => {
+        (failedSource as Mutable<typeof failedSource>).binding = before;
+      };
+    });
+    corrupt(() => {
+      const before = failedAction.committedSources;
+      (failedAction as Mutable<typeof failedAction>).committedSources = [failedSource];
+      return () => {
+        (failedAction as Mutable<typeof failedAction>).committedSources = before;
+      };
+    });
+    corrupt(() => {
+      const before = failedSource.binding;
+      (failedSource as Mutable<typeof failedSource>).binding = { ...before, valueIndex: 0 };
+      return () => {
+        (failedSource as Mutable<typeof failedSource>).binding = before;
+      };
+    });
+    corrupt(() => {
+      const before = nativeWrite.after;
+      nativeWrite.after = {
+        ...before,
+        inputFacts: new Map([
+          [
+            definition.key,
+            {
+              kind: 'known',
+              value: 1,
+              support: before.inputFacts.get(definition.key)!.support,
+            },
+          ],
+        ]),
+      };
+      return () => {
+        nativeWrite.after = before;
+      };
+    });
+    const finalSource = diagnostic.preparation.transitions[0]!.sources.at(-1)!;
+    corrupt(() => {
+      const before = finalSource.binding;
+      (finalSource as Mutable<typeof finalSource>).binding = {
+        ...before,
+        conditionReads: before.conditionReads.map((read) =>
+          read.kind === 'inputQuantity' ? { ...read, value: 99 } : read,
+        ),
+      };
+      return () => {
+        (finalSource as Mutable<typeof finalSource>).binding = before;
+      };
+    });
+    corrupt(() => {
+      const before = diagnostic.execution.input;
+      (diagnostic.execution as Mutable<typeof diagnostic.execution>).input = {
+        ...before,
+        attackBuff: 0.5,
+      };
+      return () => {
+        (diagnostic.execution as Mutable<typeof diagnostic.execution>).input = before;
+      };
+    });
+  });
+
   it(
     'audits changed criticalStars rollback and ordered recovery use without changing unsupported outcome',
     productionAuditTestOptions(['tsk-08-execution-group-rollback.json']),
     async ({ task }) => {
-      type Mutable<T> = T extends object ? { -readonly [K in keyof T]: Mutable<T[K]> } : T;
-      type Selected = Mutable<Extract<OrderedExecutionAuditObservation, { selection: 'selected' }>>;
       const positives: unknown[] = [];
       const negatives: {
         name: string;
@@ -2698,21 +3020,22 @@ describe('scenario calculation facade', () => {
       const gates: CriticalStarsRecoveryGate[] = [];
       const witnesses: {
         name: string;
-        mutations: readonly OrderedExecutionGroupAuditEvent[];
         restored: number;
         finalRead: number;
         actualFinalRead: number | null | undefined;
-        failedContributionEffective: boolean | undefined;
+        failedContributionEffective: boolean;
         attackBuff: number;
         powerMod: number;
         expectedPowerMod: number;
-        condition: 'satisfied' | 'unsatisfied' | 'unresolved' | undefined;
-        expectedCondition: 'satisfied' | 'unsatisfied';
-        expectedMutations: readonly {
-          before: number;
-          attemptedAfter: number;
-          afterTransaction: number;
+        condition: string | undefined;
+        expectedCondition: string;
+        attempts: {
+          before: number | null;
+          attemptedAfter: number | null;
+          afterTransaction: number | null;
         }[];
+        expectedMutations: { before: number; attemptedAfter: number; afterTransaction: number }[];
+        reachedCount: number;
         readerEffective: boolean | undefined;
         immediateRead: number | null | undefined;
         expectedImmediateRead: number | undefined;
@@ -2896,63 +3219,79 @@ describe('scenario calculation facade', () => {
           {},
           true,
         );
-        if (prepared.status !== 'executable' || !prepared.orderedScenario)
-          throw new Error('canonical prepared fixture required');
-        const execution = requireExecutableCalculation(
-          evaluatePreparedCalculationScenario(prepared, {
-            ...versions,
-            masterDataVersion: resourceMaster.version,
-          }),
-        );
-        const failedOperation = prepared.orderedScenario.operations.find(
-          (operation) => operation.kind === 'resourceMutation' && operation.amount === null,
-        );
-        if (!failedOperation) throw new Error('canonical failed operation required');
-        const program = criticalStarsRecoveryProgram(prepared, execution, failedOperation);
-        const source = criticalStarsRecoverySource(program);
+        if (prepared.status !== 'rejected' || !prepared.diagnosticExecution)
+          throw new Error('actual rejected preparation and diagnostic required');
+        const execution = evaluatePreparedCalculationScenario(prepared, {
+          ...versions,
+          masterDataVersion: resourceMaster.version,
+        });
+        if (execution.status !== 'rejected' || !execution.diagnosticExecution)
+          throw new Error('actual rejected calculation required');
+        const failedOperation = resourceMaster.servants[0]!.skills.find(
+          ({ slot }) => slot === 2,
+        )!.effects[0]!.execution.at(-1)!;
+        const program = sourceActionRecoveryProgram(prepared, execution, failedOperation);
+        const source = sourceActionRecoveryObservation(program);
         const input = { expected: [program], observations: [source] };
         const gate = auditCriticalStarsRecoveryObservations(input);
         gates.push(gate);
-        const target = execution.executionObservation?.targetExecution;
-        if (!target || target.selection !== 'selected' || !target.candidateState)
-          throw new Error('selected actual state required');
-        const groupIndex = program.rollbackGroupIndex;
-        const rollbackGroup = target.candidateState.executionGroups[groupIndex]!;
-        const recoveryIdentities = program.reads.filter(
-          ({ inputKey, operationGroupIndex }) =>
-            inputKey === 'battle:criticalStars' && operationGroupIndex > groupIndex,
+        const diagnostic = execution.diagnosticExecution;
+        const selected = diagnostic.executionObservation.targetExecution;
+        if (!selected || selected.selection !== 'selected' || !selected.candidateState)
+          throw new Error('selected actual diagnostic state required');
+        const target = selected;
+        const state = target.candidateState!;
+        const rejected = source.normalActions.at(-1)!;
+        const failedSource = program.failedSource;
+        const operations = diagnostic.orderedScenario.operations;
+        const finalSequence = operations.findIndex(
+          ({ operationId }) => operationId === program.readerIds.at(-1),
         );
-        const finalIdentity = recoveryIdentities.at(-1)!;
-        const finalSequence = finalIdentity.operationSequence;
-        const failedModifier = program.operations.find(
-          (operation, sequence) =>
-            program.groupIndexes[sequence] === groupIndex && operation.kind === 'addModifier',
+        const finalIdentity = operations[finalSequence]!;
+        const finalReads = () =>
+          state.inputQuantityReads.filter(
+            ({ operationId }) => operationId === finalIdentity.operationId,
+          );
+        const attemptedWrites = failedSource.operations.filter(
+          ({ operation }) =>
+            operation.kind === 'resourceMutation' && operation.resource === 'criticalStars',
         );
-        const failedContribution = execution.effectiveContributions.contributions.find(
-          ({ operationId }) => operationId === failedModifier?.operationId,
-        );
-        const ordinary = requireExecutableCalculation(
-          calculateScenarioOutcome(scenario, resourceMaster, {
-            ...versions,
-            masterDataVersion: resourceMaster.version,
-          }),
-        );
+        const firstWrite = attemptedWrites[0]!;
+        const lastWrite = attemptedWrites.at(-1)!;
+        const starValue = (physical: typeof rejected.before) => {
+          const fact = physical.inputFacts.get('battle:criticalStars');
+          return fact?.kind === 'known' ? fact.value : null;
+        };
+        const ordinary = calculateScenarioOutcome(scenario, resourceMaster, {
+          ...versions,
+          masterDataVersion: resourceMaster.version,
+        });
+        if (ordinary.status !== 'rejected' || !ordinary.diagnosticExecution)
+          throw new Error('ordinary rejection and diagnostic required');
         witnesses.push({
           name: spec.name,
-          mutations: target.candidateState.executionGroups,
           restored,
           finalRead,
-          actualFinalRead: target.candidateState.inputQuantityReads.find(
-            (read) =>
-              read.operationId === finalIdentity.operationId &&
-              read.operationSequence === finalSequence,
-          )?.value,
-          failedContributionEffective: failedContribution?.effective,
-          attackBuff: execution.input.attackBuff,
-          powerMod: execution.input.powerMod,
+          actualFinalRead: finalReads()[0]?.value,
+          failedContributionEffective:
+            diagnostic.execution.effectiveContributions.contributions.some(
+              ({ source: identity }) =>
+                identity.origin === failedSource.source.origin &&
+                identity.skillId === failedSource.source.skillId &&
+                identity.effectOccurrenceId === failedSource.source.effect.occurrenceId,
+            ),
+          attackBuff: diagnostic.execution.input.attackBuff,
+          powerMod: diagnostic.execution.input.powerMod,
           expectedPowerMod: spec.satisfied ? (spec.intervening ? 0.8 : 0.7) : 0,
           condition: target.operationEvents[finalSequence]?.condition,
           expectedCondition: spec.satisfied ? 'satisfied' : 'unsatisfied',
+          attempts: attemptedWrites.flatMap(({ steps }) =>
+            steps.map(({ before, after }) => ({
+              before: starValue(before),
+              attemptedAfter: starValue(after),
+              afterTransaction: starValue(rejected.state),
+            })),
+          ),
           expectedMutations: [
             { before: restored, attemptedAfter: restored + 40, afterTransaction: restored },
             ...(spec.multiple
@@ -2970,54 +3309,46 @@ describe('scenario calculation facade', () => {
               afterTransaction: restored,
             },
           ],
-          readerEffective: execution.effectiveContributions.contributions.find(
+          reachedCount: attemptedWrites.filter(
+            ({ status, steps }) => status === 'reached' && steps.length > 0,
+          ).length,
+          readerEffective: diagnostic.execution.effectiveContributions.contributions.find(
             ({ operationId }) => operationId === finalIdentity.operationId,
           )?.effective,
           immediateRead: spec.intervening
-            ? target.candidateState.inputQuantityReads.find(
-                (read) => read.operationId === recoveryIdentities[0]!.operationId,
+            ? state.inputQuantityReads.find(
+                ({ operationId }) => operationId === program.readerIds[0],
               )?.value
             : undefined,
           expectedImmediateRead: spec.intervening ? restored : undefined,
           ordinaryParity:
             JSON.stringify({
-              input: ordinary.input,
-              effects: ordinary.effects,
-              contributions: ordinary.effectiveContributions,
+              input: ordinary.diagnosticExecution.execution.input,
+              effects: ordinary.diagnosticExecution.execution.projections,
+              contributions: ordinary.diagnosticExecution.execution.effectiveContributions,
               result: ordinary.result,
             }) ===
             JSON.stringify({
-              input: execution.input,
-              effects: execution.effects,
-              contributions: execution.effectiveContributions,
+              input: diagnostic.execution.input,
+              effects: diagnostic.execution.projections,
+              contributions: diagnostic.execution.effectiveContributions,
               result: execution.result,
             }),
         });
+        expect(rejected.committedSources).toEqual([]);
+        expect(prepared.orderedScenario).toBeNull();
+        expect(execution.result.status).toBe('unsupported');
+        expect('rows' in execution.result && execution.result.rows).toEqual([]);
         positives.push({
           name: spec.name,
-          canonicalProgram: {
-            operations: program.operations,
-            groups: program.groups,
-            reads: program.reads,
-            initialValue: program.initialValue,
-            rollbackGroupIndex: groupIndex,
-          },
-          owner: program.owner,
-          transport: {
-            observation: source.observation,
-            input: source.input,
-            effects: source.effects,
-            effectiveContributions: source.effectiveContributions,
-            result: source.result,
-            readerUses: source.readerUses,
-          },
+          evidence: sourceActionRecoveryEvidence(program, source),
           gate,
         });
         const corruptSource = (
           name: string,
           reason: CriticalStarsRecoveryFailureReason,
           path: string,
-          change: (source: CriticalStarsRecoverySource) => CriticalStarsRecoverySource,
+          change: (source: SourceActionRecoveryObservation) => SourceActionRecoveryObservation,
         ) => {
           const altered = change(source);
           negatives.push({
@@ -3025,372 +3356,448 @@ describe('scenario calculation facade', () => {
             reason,
             path,
             gate: auditCriticalStarsRecoveryObservations({ ...input, observations: [altered] }),
-            transport: {
-              observation: altered.observation,
-              input: altered.input,
-              effects: altered.effects,
-              effectiveContributions: altered.effectiveContributions,
-              result: altered.result,
-              readerUses: altered.readerUses,
-            },
+            transport: sourceActionRecoveryTransport(altered),
           });
+        };
+        const replace = (object: object, key: PropertyKey, value: unknown) => {
+          const present = Object.hasOwn(object, key);
+          const before: unknown = Reflect.get(object, key);
+          if (value === undefined) Reflect.deleteProperty(object, key);
+          else Reflect.set(object, key, value);
+          return () => {
+            if (present) Reflect.set(object, key, before);
+            else Reflect.deleteProperty(object, key);
+          };
         };
         const corruptLive = (
           name: string,
+          reason: CriticalStarsRecoveryFailureReason,
           path: string,
-          change: (candidate: Selected) => () => void,
+          change: () => () => void,
         ) => {
-          const restore = change(target as Selected);
+          const restore = change();
           try {
             negatives.push({
               name: `${spec.name}:${name}`,
-              reason: 'recoverySourceMismatch',
+              reason,
               path,
               gate: auditCriticalStarsRecoveryObservations(input),
-              transport: structuredClone({
-                observation: source.observation,
-                input: source.input,
-                effects: source.effects,
-                effectiveContributions: source.effectiveContributions,
-                result: source.result,
-                readerUses: source.readerUses,
-              }),
+              transport: sourceActionRecoveryTransport(source),
             });
           } finally {
             restore();
           }
         };
-        const corruptTrace = (
+        const live = (
           name: string,
           reason: CriticalStarsRecoveryFailureReason,
           path: string,
-          change: (target: Selected) => void,
-        ) => {
-          corruptSource(name, reason, path, (source) => {
-            const altered = structuredClone(target) as Selected;
-            change(altered);
-            return { ...source, observation: { ...source.observation!, targetExecution: altered } };
-          });
-        };
-        const groups = (candidate: Selected) => candidate.candidateState!.executionGroups;
-        const mutations = (candidate: Selected) => groups(candidate)[groupIndex]!.mutations;
-        const lastMutation = rollbackGroup.mutations.at(-1)!;
-        const firstMutation = rollbackGroup.mutations[0]!;
-        const readPath = `read:${finalSequence}:0:value`;
-        const mutationPath = `mutation:${firstMutation.operationSequence}:afterTransaction`;
-        corruptLive('changed-canonical-condition', 'canonical.ownerProgram', () => {
-          const before = failedOperation.condition;
-          const operation = failedOperation as { condition: typeof failedOperation.condition };
-          operation.condition = { kind: 'always' };
-          return () => {
-            operation.condition = before;
-          };
-        });
-        const precision = prepared.resolved.precision;
-        try {
-          prepared.resolved.precision = 'exact';
-          negatives.push({
-            name: `${spec.name}:fake-resolved-precision`,
-            reason: 'recoveryOutcomeMismatch',
-            path: 'resolved.precision',
-            gate: auditCriticalStarsRecoveryObservations(input),
-          });
-        } finally {
-          prepared.resolved.precision = precision;
-        }
-        corruptLive('copied-live-candidate', 'candidate.reference', (c) => {
-          const before = c.targetCandidate;
-          c.targetCandidate = structuredClone(before);
-          return () => {
-            c.targetCandidate = before;
-          };
-        });
-        corruptLive('copied-live-projection', 'use.references', () => {
-          const before = execution.effects[0]!;
-          execution.effects[0] = { ...before };
-          return () => {
-            execution.effects[0] = before;
-          };
-        });
-        corruptLive('copied-live-contribution', 'use.references', () => {
-          const before = execution.effectiveContributions.contributions;
-          execution.effectiveContributions.contributions = [...before];
-          return () => {
-            execution.effectiveContributions.contributions = before;
-          };
-        });
-        corruptLive('copied-live-state', 'trace.references', (c) => {
-          const before = c.candidateState;
-          c.candidateState = structuredClone(before!);
-          return () => {
-            c.candidateState = before!;
-          };
-        });
-        corruptLive('copied-live-events', 'trace.references', (c) => {
-          const before = c.operationEvents;
-          c.operationEvents = [...before];
-          return () => {
-            c.operationEvents = before;
-          };
-        });
-        corruptLive('copied-live-group', 'trace.references', (c) => {
-          const before = groups(c)[groupIndex]!;
-          groups(c)[groupIndex] = structuredClone(before);
-          return () => {
-            groups(c)[groupIndex] = before;
-          };
-        });
-        corruptLive('copied-live-mutation', 'trace.references', (c) => {
-          const before = mutations(c)[0]!;
-          mutations(c)[0] = { ...before };
-          return () => {
-            mutations(c)[0] = before;
-          };
-        });
-        corruptLive('copied-live-read', 'trace.references', (c) => {
-          const before = c.candidateState!.inputQuantityReads[0]!;
-          c.candidateState!.inputQuantityReads[0] = { ...before };
-          return () => {
-            c.candidateState!.inputQuantityReads[0] = before;
-          };
-        });
-        corruptLive('copied-live-event', 'trace.references', (c) => {
-          const before = c.operationEvents[0]!;
-          c.operationEvents[0] = { ...before };
-          return () => {
-            c.operationEvents[0] = before;
-          };
-        });
-        corruptTrace('missing-state', 'recoveryTraceMissing', 'candidateState.present', (c) => {
-          delete c.candidateState;
-        });
-        corruptTrace('missing-events', 'recoveryTraceMissing', 'trace.shape', (c) => {
-          Reflect.deleteProperty(c, 'operationEvents');
-        });
-        corruptTrace('missing-groups', 'recoveryTraceMissing', 'trace.shape', (c) => {
-          Reflect.deleteProperty(c.candidateState!, 'executionGroups');
-        });
-        corruptTrace('missing-reads', 'recoveryTraceMissing', 'trace.shape', (c) => {
-          Reflect.deleteProperty(c.candidateState!, 'inputQuantityReads');
-        });
-        corruptTrace('wrong-candidate', 'recoveryIdentityMismatch', 'candidate.index', (c) => {
-          c.candidateIndex += 1;
-        });
-        corruptTrace('wrong-target', 'recoveryIdentityMismatch', 'candidate.target', (c) => {
-          c.targetCandidate.attribute = c.targetCandidate.attribute === 'sky' ? 'earth' : 'sky';
-        });
-        corruptTrace('missing-group', 'recoveryOrderMismatch', 'groups.identity', (c) => {
-          groups(c).splice(groupIndex, 1);
-        });
-        corruptTrace('duplicate-group', 'recoveryOrderMismatch', 'groups.identity', (c) => {
-          groups(c).push(structuredClone(groups(c)[groupIndex]!));
-        });
-        corruptTrace('reverse-groups', 'recoveryOrderMismatch', 'groups.identity', (c) => {
-          groups(c).reverse();
-        });
-        corruptTrace('wrong-transaction', 'recoveryOrderMismatch', 'groups.identity', (c) => {
-          groups(c)[groupIndex]!.transactionIdentity.sourceInstanceId = 'wrong-source';
-        });
-        corruptTrace('wrong-group-index', 'recoveryOrderMismatch', 'groups.identity', (c) => {
-          groups(c)[groupIndex]!.groupIndex += 1;
-        });
-        corruptTrace(
-          'missing-mutation',
-          'recoveryIdentityMismatch',
-          `group:${groupIndex}:mutations.identity`,
-          (c) => {
-            mutations(c).shift();
-          },
-        );
-        corruptTrace(
-          'duplicate-mutation',
-          'recoveryIdentityMismatch',
-          `group:${groupIndex}:mutations.identity`,
-          (c) => {
-            mutations(c).push(structuredClone(mutations(c)[0]!));
-          },
-        );
-        corruptTrace(
-          'reverse-mutations',
-          'recoveryIdentityMismatch',
-          `group:${groupIndex}:mutations.identity`,
-          (c) => {
-            mutations(c).reverse();
-          },
-        );
-        corruptTrace(
-          'wrong-mutation-operation',
-          'recoveryIdentityMismatch',
-          `group:${groupIndex}:mutations.identity`,
-          (c) => {
-            mutations(c)[0]!.operationId = 'wrong-operation';
-          },
-        );
-        corruptTrace(
-          'wrong-mutation-sequence',
-          'recoveryIdentityMismatch',
-          `group:${groupIndex}:mutations.identity`,
-          (c) => {
-            mutations(c)[0]!.operationSequence += 1;
-          },
-        );
-        corruptTrace(
-          'wrong-address',
-          'recoveryIdentityMismatch',
-          `group:${groupIndex}:mutations.identity`,
-          (c) => {
-            mutations(c)[0]!.stateAddress = 'wrong-address';
-          },
-        );
-        corruptTrace(
-          'missing-proof',
-          'recoveryRollbackMismatch',
-          `group:${groupIndex}:proof`,
-          (c) => {
-            groups(c)[groupIndex]!.rollbackProof = null;
-          },
-        );
-        for (const proof of ['battleStateRestored', 'damageInputRestored'] as const)
-          corruptTrace(
-            `false-${proof}`,
-            'recoveryRollbackMismatch',
-            `group:${groupIndex}:proof`,
-            (c) => {
-              groups(c)[groupIndex]!.rollbackProof![proof] = false;
-            },
+          object: object,
+          key: PropertyKey,
+          value: unknown,
+        ) => corruptLive(name, reason, path, () => replace(object, key, value));
+        const copied = (name: string, object: object, key: PropertyKey) =>
+          live(
+            name,
+            'recoverySourceMismatch',
+            'owner.references',
+            object,
+            key,
+            structuredClone(Reflect.get(object, key)),
           );
-        corruptTrace(
+        const receipt = (name: string, object: object, key: PropertyKey, value: unknown) =>
+          live(name, 'recoveryReceiptMismatch', 'receipt.owner', object, key, value);
+        const valueState = (physical: typeof rejected.before, value: number) => {
+          const fact = physical.inputFacts.get('battle:criticalStars');
+          if (fact?.kind !== 'known') throw new Error('known fixture quantity required');
+          return {
+            ...physical,
+            inputFacts: new Map(physical.inputFacts).set('battle:criticalStars', {
+              ...fact,
+              value,
+            }),
+          };
+        };
+        const readPath = `reader:${finalSequence}:values`;
+        const operationPath = `action:${source.normalActions.length - 1}:source:${rejected.sources.indexOf(failedSource)}:operations`;
+        corruptLive(
+          'changed-canonical-condition',
+          'recoverySourceMismatch',
+          'canonical.ownerProgram',
+          () => replace(failedSource.source.effect.requirement, 'expression', { kind: 'always' }),
+        );
+        live(
+          'fake-resolved-precision',
+          'recoveryOutcomeMismatch',
+          'resolved.precision',
+          prepared.resolved,
+          'precision',
+          'exact',
+        );
+        copied('copied-live-candidate', target, 'targetCandidate');
+        copied('copied-live-projection', diagnostic.execution.projections, 0);
+        copied(
+          'copied-live-contribution',
+          diagnostic.execution.effectiveContributions,
+          'contributions',
+        );
+        copied('copied-live-state', target, 'candidateState');
+        copied('copied-live-events', target, 'operationEvents');
+        copied('copied-live-group', state.executionGroups, 0);
+        // A preparation mutation is a native writer step, never a reconstructed ordinary-group entry.
+        copied('copied-live-mutation', firstWrite.steps, 0);
+        copied('copied-live-read', state.inputQuantityReads, 0);
+        copied('copied-live-event', target.operationEvents, 0);
+        live(
+          'missing-state',
+          'recoveryTraceMissing',
+          'candidateState.present',
+          target,
+          'candidateState',
+          undefined,
+        );
+        live(
+          'missing-events',
+          'recoveryTraceMissing',
+          'source.shape',
+          target,
+          'operationEvents',
+          undefined,
+        );
+        live(
+          'missing-groups',
+          'recoveryTraceMissing',
+          'source.shape',
+          state,
+          'executionGroups',
+          undefined,
+        );
+        live(
+          'missing-reads',
+          'recoveryTraceMissing',
+          'source.shape',
+          state,
+          'inputQuantityReads',
+          undefined,
+        );
+        live(
+          'wrong-candidate',
+          'recoveryIdentityMismatch',
+          'candidate.index',
+          target,
+          'candidateIndex',
+          target.candidateIndex + 1,
+        );
+        live(
+          'wrong-target',
+          'recoveryIdentityMismatch',
+          'candidate.target',
+          target.targetCandidate,
+          'attribute',
+          target.targetCandidate.attribute === 'sky' ? 'earth' : 'sky',
+        );
+        live(
+          'missing-group',
+          'recoveryOrderMismatch',
+          'diagnostic.groups.identity',
+          state,
+          'executionGroups',
+          state.executionGroups.slice(1),
+        );
+        live(
+          'duplicate-group',
+          'recoveryOrderMismatch',
+          'diagnostic.groups.identity',
+          state,
+          'executionGroups',
+          [...state.executionGroups, state.executionGroups[0]!],
+        );
+        live(
+          'reverse-groups',
+          'recoveryOrderMismatch',
+          'diagnostic.groups.identity',
+          state,
+          'executionGroups',
+          [...state.executionGroups].reverse(),
+        );
+        live(
+          'wrong-transaction',
+          'recoveryOrderMismatch',
+          'diagnostic.groups.identity',
+          state.executionGroups[0]!.transactionIdentity,
+          'sourceInstanceId',
+          'wrong-source',
+        );
+        live(
+          'wrong-group-index',
+          'recoveryOrderMismatch',
+          'diagnostic.groups.identity',
+          state.executionGroups[0]!,
+          'groupIndex',
+          99,
+        );
+        live(
+          'missing-mutation',
+          'recoveryOrderMismatch',
+          operationPath,
+          failedSource,
+          'operations',
+          failedSource.operations.filter((operation) => operation !== firstWrite),
+        );
+        live(
+          'duplicate-mutation',
+          'recoveryOrderMismatch',
+          operationPath,
+          failedSource,
+          'operations',
+          [...failedSource.operations, firstWrite],
+        );
+        live(
+          'reverse-mutations',
+          'recoveryOrderMismatch',
+          operationPath,
+          failedSource,
+          'operations',
+          [...failedSource.operations].reverse(),
+        );
+        live(
+          'wrong-mutation-operation',
+          'recoveryOrderMismatch',
+          operationPath,
+          firstWrite,
+          'operation',
+          lastWrite.operation,
+        );
+        live(
+          'wrong-mutation-sequence',
+          'recoveryOrderMismatch',
+          operationPath,
+          firstWrite,
+          'operationIndex',
+          99,
+        );
+        receipt(
+          'wrong-address',
+          firstWrite.steps[0]!.after,
+          'inputFacts',
+          new Map([
+            ['wrong-address', firstWrite.steps[0]!.after.inputFacts.get('battle:criticalStars')!],
+          ]),
+        );
+        live(
+          'missing-proof',
+          'recoveryTraceMissing',
+          'source.shape',
+          rejected,
+          'before',
+          undefined,
+        );
+        live(
+          'false-battleStateRestored',
+          'recoveryRollbackMismatch',
+          'normal.restoredState',
+          rejected,
+          'state',
+          valueState(rejected.state, 1),
+        );
+        live(
+          'false-damageInputRestored',
+          'recoveryUseMismatch',
+          'use.ownerReceipt',
+          source.input,
+          'attackBuff',
+          0.5,
+        );
+        live(
           'fake-commit',
           'recoveryRollbackMismatch',
-          `group:${groupIndex}:outcome`,
-          (c) => {
-            groups(c)[groupIndex]!.outcome = 'committed';
-          },
+          'normal.committedSources',
+          rejected,
+          'committedSources',
+          [failedSource],
         );
-        corruptTrace(
-          'missing-issues',
+        receipt('missing-issues', lastWrite.steps[0]!.native, 'rejection', null);
+        receipt('fake-attempt-ids', firstWrite, 'status', 'unreached');
+        live(
+          'attempted-as-restored',
           'recoveryRollbackMismatch',
-          `group:${groupIndex}:issues`,
-          (c) => {
-            groups(c)[groupIndex]!.issues = [];
-          },
+          'normal.restoredState',
+          rejected,
+          'state',
+          firstWrite.steps[0]!.after,
         );
-        corruptTrace('fake-attempt-ids', 'recoveryReceiptMismatch', 'groups.ownerReceipt', (c) => {
-          groups(c)[groupIndex]!.appliedOperationIds = [];
-        });
-        corruptTrace('attempted-as-restored', 'recoveryRollbackMismatch', mutationPath, (c) => {
-          mutations(c)[0]!.afterTransaction = mutations(c)[0]!.attemptedAfter;
-        });
-        corruptTrace('last-before-as-restored', 'recoveryRollbackMismatch', mutationPath, (c) => {
-          mutations(c)[0]!.afterTransaction = mutations(c).at(-1)!.before;
-        });
+        live(
+          'last-before-as-restored',
+          'recoveryRollbackMismatch',
+          'normal.restoredState',
+          rejected,
+          'state',
+          lastWrite.steps[0]!.before,
+        );
         if (spec.prior)
-          corruptTrace('initial-as-restored', 'recoveryRollbackMismatch', mutationPath, (c) => {
-            mutations(c)[0]!.afterTransaction = 20;
-          });
-        corruptTrace(
+          live(
+            'initial-as-restored',
+            'recoveryRollbackMismatch',
+            'normal.restoredState',
+            rejected,
+            'state',
+            valueState(rejected.state, 20),
+          );
+        receipt(
           'wrong-before',
-          'recoveryReceiptMismatch',
-          `mutation:${firstMutation.operationSequence}:before`,
-          (c) => {
-            mutations(c)[0]!.before = 1;
-          },
+          firstWrite.steps[0]!,
+          'before',
+          valueState(firstWrite.steps[0]!.before, 1),
         );
-        corruptTrace('wrong-attempt', 'recoveryReceiptMismatch', 'groups.ownerReceipt', (c) => {
-          mutations(c)[0]!.attemptedAfter = 1;
-        });
-        const finalReads = (c: Selected) =>
-          c.candidateState!.inputQuantityReads.filter(
-            (read) => read.operationSequence === finalSequence,
-          );
-        corruptTrace('missing-reader', 'recoveryOrderMismatch', 'reads.identity', (c) => {
-          c.candidateState!.inputQuantityReads = c.candidateState!.inputQuantityReads.filter(
-            (read) => read.operationSequence !== finalSequence,
-          );
-        });
-        corruptTrace('duplicate-reader', 'recoveryOrderMismatch', 'reads.identity', (c) => {
-          c.candidateState!.inputQuantityReads.push(structuredClone(finalReads(c)[0]!));
-        });
-        corruptTrace('reverse-reads', 'recoveryOrderMismatch', 'reads.identity', (c) => {
-          c.candidateState!.inputQuantityReads.reverse();
-        });
-        corruptTrace('wrong-reader-operation', 'recoveryOrderMismatch', 'reads.identity', (c) => {
-          finalReads(c)[0]!.operationId = 'wrong-reader';
-        });
-        corruptTrace('wrong-reader-group', 'recoveryOrderMismatch', 'reads.identity', (c) => {
-          finalReads(c)[0]!.operationGroupIndex = groupIndex;
-        });
-        corruptTrace('wrong-reader-sequence', 'recoveryOrderMismatch', 'reads.identity', (c) => {
-          finalReads(c)[0]!.operationSequence = 0;
-        });
-        corruptTrace('wrong-read-address', 'recoveryOrderMismatch', 'reads.identity', (c) => {
-          finalReads(c)[0]!.inputKey = 'wrong-address';
-        });
-        corruptTrace('attempted-read', 'recoveryReadMismatch', readPath, (c) => {
-          finalReads(c)[0]!.value = lastMutation.attemptedAfter;
-        });
-        corruptTrace('unknown-read', 'recoveryReadMismatch', readPath, (c) => {
-          finalReads(c)[0]!.value = null;
-        });
+        receipt(
+          'wrong-attempt',
+          firstWrite.steps[0]!,
+          'after',
+          valueState(firstWrite.steps[0]!.after, 1),
+        );
+        live(
+          'missing-reader',
+          'recoveryOrderMismatch',
+          'reads.identity',
+          state,
+          'inputQuantityReads',
+          state.inputQuantityReads.filter(
+            ({ operationId }) => operationId !== finalIdentity.operationId,
+          ),
+        );
+        live(
+          'duplicate-reader',
+          'recoveryOrderMismatch',
+          'reads.identity',
+          state,
+          'inputQuantityReads',
+          [...state.inputQuantityReads, finalReads()[0]!],
+        );
+        live(
+          'reverse-reads',
+          'recoveryOrderMismatch',
+          'nativeReads.identity',
+          source,
+          'nativeReads',
+          [...source.nativeReads].reverse(),
+        );
+        for (const [name, key, value] of [
+          ['wrong-reader-operation', 'operationId', 'wrong-reader'],
+          ['wrong-reader-group', 'operationGroupIndex', 99],
+          ['wrong-reader-sequence', 'operationSequence', 99],
+          ['wrong-read-address', 'inputKey', 'wrong-address'],
+        ] as const)
+          live(name, 'recoveryOrderMismatch', 'reads.identity', finalReads()[0]!, key, value);
+        live(
+          'attempted-read',
+          'recoveryReadMismatch',
+          readPath,
+          finalReads()[0]!,
+          'value',
+          starValue(lastWrite.steps[0]!.after),
+        );
+        live('unknown-read', 'recoveryReadMismatch', readPath, finalReads()[0]!, 'value', null);
         if (spec.intervening)
-          corruptTrace('stale-restored-read', 'recoveryReadMismatch', readPath, (c) => {
-            finalReads(c)[0]!.value = restored;
-          });
-        corruptTrace(
+          live(
+            'stale-restored-read',
+            'recoveryReadMismatch',
+            readPath,
+            finalReads()[0]!,
+            'value',
+            restored,
+          );
+        corruptLive(
           'coherent-wrong-receipt-and-read',
           'recoveryReceiptMismatch',
-          'groups.ownerReceipt',
-          (c) => {
-            mutations(c).forEach((mutation) => {
-              mutation.afterTransaction = 1;
-            });
-            finalReads(c)[0]!.value = 1;
+          'receipt.owner',
+          () => {
+            const undoRestore = replace(rejected, 'state', valueState(rejected.state, 1));
+            const undoRead = replace(finalReads()[0]!, 'value', 1);
+            return () => {
+              undoRead();
+              undoRestore();
+            };
           },
         );
-        corruptTrace('missing-event', 'recoveryOrderMismatch', 'events.identity', (c) => {
-          c.operationEvents.splice(finalSequence, 1);
-        });
-        corruptTrace('duplicate-event', 'recoveryOrderMismatch', 'events.identity', (c) => {
-          c.operationEvents.push(structuredClone(c.operationEvents[finalSequence]!));
-        });
-        corruptTrace('reverse-events', 'recoveryOrderMismatch', 'events.identity', (c) => {
-          c.operationEvents.reverse();
-        });
-        corruptTrace('wrong-event-sequence', 'recoveryOrderMismatch', 'events.identity', (c) => {
-          c.operationEvents[finalSequence]!.sequence = 0;
-        });
-        corruptTrace(
-          'revive-failed-event',
-          'recoveryRollbackMismatch',
-          `operation:${firstMutation.operationSequence}:outcome`,
-          (c) => {
-            c.operationEvents[firstMutation.operationSequence]!.operationOutcome = 'applied';
-          },
+        live(
+          'missing-event',
+          'recoveryOrderMismatch',
+          'events.identity',
+          target,
+          'operationEvents',
+          target.operationEvents.filter(
+            ({ operationId }) => operationId !== finalIdentity.operationId,
+          ),
         );
-        corruptTrace(
+        live(
+          'duplicate-event',
+          'recoveryOrderMismatch',
+          'events.identity',
+          target,
+          'operationEvents',
+          [...target.operationEvents, target.operationEvents[finalSequence]!],
+        );
+        live(
+          'reverse-events',
+          'recoveryOrderMismatch',
+          'events.identity',
+          target,
+          'operationEvents',
+          [...target.operationEvents].reverse(),
+        );
+        live(
+          'wrong-event-sequence',
+          'recoveryOrderMismatch',
+          'events.identity',
+          target.operationEvents[finalSequence]!,
+          'sequence',
+          99,
+        );
+        corruptLive('revive-failed-event', 'recoveryOutcomeMismatch', 'failed.sourceStatus', () => {
+          if (failedSource.status !== 'rejected') throw new Error('source rejection required');
+          const transaction = failedSource.transaction;
+          const undoStatus = replace(failedSource, 'status', 'completed');
+          const undoTransaction = replace(failedSource, 'transaction', {
+            kind: 'committed',
+            before: transaction.before,
+            attempted: transaction.attempted,
+            after: transaction.attempted,
+          });
+          const restored = failedSource.restored;
+          Reflect.deleteProperty(failedSource, 'restored');
+          return () => {
+            Reflect.set(failedSource, 'restored', restored);
+            undoTransaction();
+            undoStatus();
+          };
+        });
+        live(
+          'invalid-source-outcome-pair',
+          'recoveryTraceMissing',
+          'source.shape',
+          failedSource,
+          'status',
+          'completed',
+        );
+        receipt(
           'reader-condition-fake',
-          'recoveryReceiptMismatch',
-          'events.ownerReceipt',
-          (c) => {
-            c.operationEvents[finalSequence]!.condition = spec.satisfied
-              ? 'unsatisfied'
-              : 'satisfied';
-          },
+          target.operationEvents[finalSequence]!,
+          'condition',
+          spec.satisfied ? 'unsatisfied' : 'satisfied',
         );
-        corruptTrace(
+        live(
           'reader-projection-fake',
           'recoveryUseMismatch',
           `operation:${finalSequence}:eventUse`,
-          (c) => {
-            c.operationEvents[finalSequence]!.projectionValuePermille = 123;
-          },
+          target.operationEvents[finalSequence]!,
+          'projectionValuePermille',
+          123,
         );
-        corruptSource(
-          'missing-source-observation',
-          'recoveryTraceMissing',
-          'target.selection',
-          (s) => ({ ...s, observation: undefined }),
-        );
+        corruptSource('missing-source-observation', 'recoveryTraceMissing', 'source.shape', (s) => {
+          const altered = { ...s };
+          Reflect.deleteProperty(altered, 'observation');
+          return altered;
+        });
         corruptSource(
           'same-value-copied-observation',
           'recoverySourceMismatch',
@@ -3423,7 +3830,7 @@ describe('scenario calculation facade', () => {
             ...s,
             calculation: {
               ...s.calculation,
-              status: 'rejected',
+              status: 'executable',
             } as unknown as typeof s.calculation,
           }),
         );
@@ -3435,7 +3842,7 @@ describe('scenario calculation facade', () => {
         corruptSource(
           'wrong-reader-effective-contribution',
           'recoveryUseMismatch',
-          'contributions.ownerReceipt',
+          'use.ownerReceipt',
           (s) => ({
             ...s,
             effectiveContributions: {
@@ -3477,7 +3884,7 @@ describe('scenario calculation facade', () => {
         corruptSource(
           'input-retains-failed-buff',
           'recoveryUseMismatch',
-          'input.ownerReceipt',
+          'use.ownerReceipt',
           (s) => ({ ...s, input: { ...s.input, attackBuff: 0.5 } }),
         );
         corruptSource(
@@ -3503,34 +3910,6 @@ describe('scenario calculation facade', () => {
             ],
           }),
         );
-        if (failedModifier) {
-          const failedSequence = program.operations.indexOf(failedModifier);
-          corruptSource(
-            'revive-failed-projection',
-            'recoveryRollbackMismatch',
-            `operation:${failedSequence}:projection`,
-            (s) => ({
-              ...s,
-              effects: s.effects.map((p) =>
-                p.operationId === failedModifier.operationId ? { ...p, outcome: 'applied' } : p,
-              ),
-            }),
-          );
-          corruptSource(
-            'revive-failed-contribution',
-            'recoveryRollbackMismatch',
-            `operation:${failedSequence}:effective`,
-            (s) => ({
-              ...s,
-              effectiveContributions: {
-                ...s.effectiveContributions,
-                contributions: s.effectiveContributions.contributions.map((c) =>
-                  c.operationId === failedModifier.operationId ? { ...c, effective: true } : c,
-                ),
-              },
-            }),
-          );
-        }
         corruptSource('missing-reader-use', 'recoveryUseMismatch', 'readerUses.identity', (s) => ({
           ...s,
           readerUses: [],
@@ -3604,6 +3983,43 @@ describe('scenario calculation facade', () => {
           ...s,
           result: { ...s.result, rows: [{ maximum: 100 }] } as unknown as typeof s.result,
         }));
+        const failedIdentity = {
+          ...source.effects[0]!.source,
+          origin: failedSource.source.origin,
+          skillId: failedSource.source.skillId,
+          effectOccurrenceId: failedSource.source.effect.occurrenceId,
+        };
+        corruptSource(
+          'revive-failed-projection',
+          'recoveryRollbackMismatch',
+          'failed.projections',
+          (s) => ({
+            ...s,
+            effects: [
+              ...s.effects,
+              { ...s.effects[0]!, source: failedIdentity, outcome: 'applied' },
+            ],
+          }),
+        );
+        corruptSource(
+          'revive-failed-contribution',
+          'recoveryRollbackMismatch',
+          'failed.contributions',
+          (s) => ({
+            ...s,
+            effectiveContributions: {
+              ...s.effectiveContributions,
+              contributions: [
+                ...s.effectiveContributions.contributions,
+                {
+                  ...s.effectiveContributions.contributions[0]!,
+                  source: failedIdentity,
+                  effective: true,
+                },
+              ],
+            },
+          }),
+        );
         for (const [name, alteredInput] of [
           ['missing-observation', { ...input, observations: [] }],
           ['missing-source', { ...input, observations: [undefined] }],
@@ -3628,18 +4044,11 @@ describe('scenario calculation facade', () => {
       });
       for (const gate of gates) expect(gate.status, JSON.stringify(gate.failures)).toBe('passed');
       for (const witness of witnesses) {
-        const rollback = witness.mutations.find(({ outcome }) => outcome === 'rolledBack')!;
+        expect(witness.attempts).toEqual(witness.expectedMutations);
         expect(
-          rollback.mutations.map(({ before, attemptedAfter, afterTransaction }) => ({
-            before,
-            attemptedAfter,
-            afterTransaction,
-          })),
-        ).toEqual(witness.expectedMutations);
-        expect(
-          rollback.mutations.every(({ afterTransaction }) => afterTransaction === witness.restored),
+          witness.attempts.every(({ afterTransaction }) => afterTransaction === witness.restored),
         ).toBe(true);
-        expect(rollback.appliedOperationIds.length).toBeGreaterThan(0);
+        expect(witness.reachedCount).toBeGreaterThan(0);
         expect(witness.actualFinalRead).toBe(witness.finalRead);
         expect(witness.failedContributionEffective).toBe(false);
         expect(witness.attackBuff).toBe(0);

@@ -11,7 +11,7 @@ import type {
   EffectiveContributionSet,
 } from './executionTypes';
 import { contributionId } from './contributionIdentity';
-import { procIsGuaranteed, type ConditionRead } from './conditionRead';
+import { procIsGuaranteed, contributionOperandRead, type ConditionRead } from './conditionRead';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 
 const included = (): ContributionPolicyDecision => ({ kind: 'included' });
@@ -118,13 +118,25 @@ function contribution(
 export function effectiveContributionsForOperation(
   result: Pick<
     OperationResult,
-    'operation' | 'outcome' | 'projection' | 'conditionRead' | 'damageDependencyRead'
+    | 'operation'
+    | 'outcome'
+    | 'projection'
+    | 'conditionRead'
+    | 'damageDependencyRead'
+    | 'valueDependencyRead'
   >,
   damageInput: DamageResolutionInput,
   finalProjections: readonly EffectProjection[],
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): EffectiveContribution[] {
-  const { operation, outcome, projection, conditionRead, damageDependencyRead } = result;
+  const {
+    operation,
+    outcome,
+    projection,
+    conditionRead,
+    damageDependencyRead,
+    valueDependencyRead,
+  } = result;
   if (operation.kind === 'addModifier')
     return [
       contribution(
@@ -132,7 +144,7 @@ export function effectiveContributionsForOperation(
         'modifier',
         operation.modifier,
         projection.valuePermille,
-        conditionRead,
+        contributionOperandRead(conditionRead, valueDependencyRead),
         outcome,
         policy,
       ),
@@ -193,7 +205,13 @@ export function effectiveContributionsForOperation(
 export function createEffectiveContributionSet(
   operations: readonly Pick<
     OperationResult,
-    'operation' | 'outcome' | 'projection' | 'state' | 'conditionRead' | 'damageDependencyRead'
+    | 'operation'
+    | 'outcome'
+    | 'projection'
+    | 'state'
+    | 'conditionRead'
+    | 'damageDependencyRead'
+    | 'valueDependencyRead'
   >[],
   damageInput: DamageResolutionInput,
   finalProjections: readonly EffectProjection[],

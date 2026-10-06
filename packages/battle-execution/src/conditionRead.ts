@@ -5,31 +5,30 @@ import type { ConditionExpression, TraitScope } from './contracts';
 
 /** A read belongs to one execution clock; a later form or resource cannot replace it. */
 export interface ConditionReadClock {
-  phase: 'initial' | 'sourceUse' | 'operation' | 'damageEvaluation';
-  actorFormId: ActorFormId;
-  actor: string;
-  actionId: string | null;
-  operationId: string | null;
-  sourceInstanceId: string | null;
-  occurrenceId: string | null;
-  valueSetIndex: number | null;
-  valueIndex: number | null;
+  readonly phase: 'initial' | 'sourceUse' | 'operation' | 'damageEvaluation';
+  readonly actorFormId: Readonly<ActorFormId>;
+  readonly actor: string;
+  readonly actionId: string | null;
+  readonly operationId: string | null;
+  readonly sourceInstanceId: string | null;
+  readonly occurrenceId: string | null;
+  readonly valueSetIndex: number | null;
+  readonly valueIndex: number | null;
 }
 
 export type ConditionFactProof = {
-  kind:
+  readonly kind:
     | 'canonicalIntrinsic'
     | 'selectedInitialResource'
     | 'legalChoice'
     | 'guaranteedWrite'
     | 'externalAssumption'
     | 'possibleOutcome';
-  clock: ConditionReadClock;
+  readonly clock: ConditionReadClock;
 };
 
 export interface ConditionFactProofs {
   traits: Record<TraitScope, ReadonlyMap<string, ConditionFactProof>>;
-  completeTraits: Record<TraitScope, ConditionFactProof | null>;
   suppressions: Record<'attacker' | 'target', ReadonlyMap<string, ConditionFactProof>>;
   predicates: Record<'attacker' | 'target', ReadonlyMap<string, ConditionFactProof>>;
   quantities: ReadonlyMap<string, ConditionFactProof>;
@@ -41,6 +40,7 @@ export interface ConditionReadEvidence {
   expression: ConditionExpression;
   value: boolean | number | null;
   proof: ConditionFactProof | null;
+  quantityFact?: import('./inputFacts').InputFact;
 }
 
 export type ConditionRead = {
@@ -128,13 +128,6 @@ export function emptyConditionFactProofs(): ConditionFactProofs {
       targetState: new Map(),
       field: new Map(),
     },
-    completeTraits: {
-      attacker: null,
-      attackerState: null,
-      target: null,
-      targetState: null,
-      field: null,
-    },
     suppressions: { attacker: new Map(), target: new Map() },
     predicates: { attacker: new Map(), target: new Map() },
     quantities: new Map(),
@@ -152,7 +145,6 @@ export function cloneConditionFactProofs(proofs: ConditionFactProofs): Condition
       targetState: new Map(proofs.traits.targetState),
       field: new Map(proofs.traits.field),
     },
-    completeTraits: { ...proofs.completeTraits },
     suppressions: {
       attacker: new Map(proofs.suppressions.attacker),
       target: new Map(proofs.suppressions.target),
@@ -165,4 +157,23 @@ export function cloneConditionFactProofs(proofs: ConditionFactProofs): Condition
     activations: new Map(proofs.activations),
     markers: new Map(proofs.markers),
   };
+}
+
+/** Quantity operands affect adoption certainty without replacing the source activation read. */
+export function contributionOperandRead(
+  activation: ConditionRead,
+  operand: ConditionRead | null,
+): ConditionRead {
+  if (!operand || activation.truth !== true) return activation;
+  const support = [...activation.support, ...operand.support];
+  const evidence = [...activation.evidence, ...operand.evidence];
+  return operand.kind === 'known'
+    ? {
+        ...operand,
+        truth: true,
+        support,
+        evidence,
+        certainty: support.every(proofIsGuaranteed) ? 'guaranteed' : 'possible',
+      }
+    : { ...operand, support, evidence };
 }

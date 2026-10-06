@@ -1,9 +1,14 @@
+import { projectBattleTraitPresence } from './traitFactLayers';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { createPreparationState } from './preparationState';
 import { describe, expect, it } from 'vitest';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
-import type { AttackNoblePhantasmVariant, ServantMaster } from '@fgo-lab/master-data';
+import type {
+  AttackNoblePhantasmVariant,
+  ServantMaster,
+  StackInputDefinition,
+} from '@fgo-lab/master-data';
 import { readTraitQuantity } from './traitFactLayers';
 import { evaluateCondition } from './condition';
 import { resolveModifierValue } from './projection';
@@ -187,16 +192,16 @@ describe('public ordered execution audit parity', () => {
       trait: 'created',
     };
     const executed = executeOrderedScenario(prepared([write]), inputs);
-    expect(executed.state.traits.attackerState.get('created')).toBe(true);
+    expect(projectBattleTraitPresence(executed.state, 'attackerState').get('created')).toBe(true);
     expect(executed.state.traitFactLayers.writes.attackerState.get('created')).toMatchObject({
-      present: true,
-      count: null,
-      countSupport: [],
+      kind: 'present',
+      quantity: { kind: 'unknown' },
       proof: { kind: 'guaranteedWrite', clock: { operationId: 'create-trait' } },
     });
-    expect(
-      readTraitQuantity(executed.state.traitFactLayers, 'attackerState', 'created', null),
-    ).toEqual({ value: null, support: [] });
+    expect(readTraitQuantity(executed.state.traitFactLayers, 'attackerState', 'created')).toEqual({
+      value: null,
+      support: [],
+    });
     const state = executed.state;
     if (state.activationContext === null) throw new Error('executed_state_required');
     state.stackQuantitySources['created-count'] = { scope: 'attackerState', trait: 'created' };
@@ -247,7 +252,10 @@ describe('public ordered execution audit parity', () => {
         },
         state,
       ),
-    ).toBeNull();
+    ).toMatchObject({
+      value: null,
+      dependency: { kind: 'unsupported', truth: null, clock: { phase: 'operation' } },
+    });
   });
 
   it('increments an explicitly known zero and retains its exact quantity dependencies', () => {
@@ -266,11 +274,13 @@ describe('public ordered execution audit parity', () => {
     const executed = executeOrderedScenario(plan, inputs);
     const fact = executed.state.traitFactLayers.writes.attackerState.get('created')!;
     expect(fact).toMatchObject({
-      present: true,
-      count: 1,
+      kind: 'present',
+      quantity: { kind: 'known', value: 1 },
       proof: { kind: 'guaranteedWrite', clock: { operationId: 'create-trait' } },
     });
-    expect(fact.countSupport).toMatchObject([
+    expect(
+      fact.kind === 'present' && fact.quantity.kind === 'known' ? fact.quantity.support : null,
+    ).toMatchObject([
       { kind: 'selectedInitialResource', clock: { phase: 'initial' } },
       { kind: 'guaranteedWrite', clock: { operationId: 'create-trait' } },
     ]);
@@ -390,16 +400,10 @@ describe('public ordered execution audit parity', () => {
       certainty: 'possible',
       clock: { phase: 'damageEvaluation' },
     });
-    expect(reads[0]!.support).toEqual(
+    expect(reads[0]!.support.map(({ kind, clock }) => [kind, clock.operationId])).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          kind: 'possibleOutcome',
-          clock: expect.objectContaining({ operationId: 'possible-grant' }),
-        }),
-        expect.objectContaining({
-          kind: 'guaranteedWrite',
-          clock: expect.objectContaining({ operationId: 'guaranteed-grant' }),
-        }),
+        ['possibleOutcome', 'possible-grant'],
+        ['guaranteedWrite', 'guaranteed-grant'],
       ]),
     );
     expect(baseline.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
@@ -429,6 +433,127 @@ describe('public ordered execution audit parity', () => {
     });
     expect(unknownReads[0]).toMatchObject({ kind: 'inputRequired', truth: null, certainty: null });
   });
+
+  it.each(['stackLinear', 'inputLinear'] as const)(
+    'adopts %s from its actual quantity support instead of guaranteed presence',
+    (kind) => {
+      const definition: StackInputDefinition = {
+        kind: 'effectStackCount' as const,
+        key: 'created-count',
+        owner: 'attacker' as const,
+        label: 'count',
+        description: 'count',
+        minimum: 0,
+        maximum: 10,
+        step: 1,
+        defaultValue: 0,
+        defaultReason: 'baseline' as const,
+        quantitySource: { scope: 'attackerState' as const, trait: 'created' },
+      };
+      const first: BattleOperation = {
+        ...operation,
+        operationId: 'possible-grant',
+        kind: 'addTrait',
+        scope: 'attackerState',
+        trait: 'created',
+        condition: { kind: 'trait', scope: 'field', trait: 'possible', present: true },
+      };
+      const second: BattleOperation = {
+        ...first,
+        operationId: 'guaranteed-grant',
+        order: 2,
+        condition: { kind: 'always' },
+      };
+      const valueExpression = {
+        kind,
+        basePermille: 0,
+        perUnitPermille: 100,
+        maximumUnits: 10,
+        maximumValuePermille: null,
+        ...(kind === 'stackLinear' ? { sources: [definition] } : { inputKey: definition.key }),
+      };
+      const modifier: BattleOperation = {
+        ...operation,
+        operationId: 'quantity-modifier',
+        order: 3,
+        inputDefinitions: [definition],
+        valueExpression:
+          kind === 'stackLinear'
+            ? { ...valueExpression, kind, sources: [definition] }
+            : { ...valueExpression, kind, inputKey: definition.key },
+      };
+      const plan = prepared([first, second, modifier]);
+      plan.baseInput = {
+        ...input,
+        fieldTraits: ['possible'],
+        stackStateCounts: { attackerState: { created: 0 }, targetState: {}, field: {} },
+      };
+      plan.inputDefinitions = [definition];
+      const declared = { ...inputs, values: { [definition.key]: 0 } };
+      const calculator = executeOrderedScenario(plan, declared);
+      const ranking = (conditionalEffects: 'baseline' | 'satisfied') =>
+        executeOrderedScenario(plan, declared, {
+          kind: 'ranking',
+          selfBuffs: 'included',
+          conditionalEffects,
+          areaView: 'included',
+        });
+      const baseline = ranking('baseline'),
+        satisfied = ranking('satisfied');
+      expect(calculator.precision).toBe('exact');
+      expect(calculator.input.attackBuff).toBe(0.2);
+      expect(baseline.input.attackBuff).toBe(0);
+      expect(satisfied.input.attackBuff).toBe(0.2);
+      for (const executed of [calculator, baseline, satisfied]) {
+        const result = executed.operations.find(
+          ({ operation }) => operation.operationId === modifier.operationId,
+        )!;
+        expect(result.conditionRead).toMatchObject({
+          kind: 'known',
+          truth: true,
+          certainty: 'guaranteed',
+        });
+        expect(result.valueDependencyRead).toMatchObject({
+          kind: 'known',
+          truth: true,
+          certainty: 'possible',
+          clock: { phase: 'operation', operationId: 'quantity-modifier' },
+          evidence: [{ value: 2 }],
+        });
+        expect(
+          result.valueDependencyRead!.support.map(({ kind, clock }) => [kind, clock.operationId]),
+        ).toEqual(
+          expect.arrayContaining([
+            ['possibleOutcome', 'possible-grant'],
+            ['guaranteedWrite', 'guaranteed-grant'],
+          ]),
+        );
+      }
+      expect(
+        baseline.effectiveContributions.contributions.find(
+          (item) => item.operationId === modifier.operationId,
+        )?.effective,
+      ).toBe(false);
+      expect(
+        satisfied.effectiveContributions.contributions.find(
+          (item) => item.operationId === modifier.operationId,
+        )?.effective,
+      ).toBe(true);
+      const guaranteedPlan = { ...plan, operations: [second, modifier] };
+      const guaranteed = executeOrderedScenario(guaranteedPlan, declared, {
+        kind: 'ranking',
+        selfBuffs: 'included',
+        conditionalEffects: 'baseline',
+        areaView: 'included',
+      });
+      expect(guaranteed.input.attackBuff).toBe(0.1);
+      expect(
+        guaranteed.operations.find(
+          ({ operation }) => operation.operationId === modifier.operationId,
+        )?.valueDependencyRead,
+      ).toMatchObject({ certainty: 'guaranteed', evidence: [{ value: 1 }] });
+    },
+  );
 
   it('observes the actual selected candidate and operation sequence without changing result', () => {
     const plan = prepared();

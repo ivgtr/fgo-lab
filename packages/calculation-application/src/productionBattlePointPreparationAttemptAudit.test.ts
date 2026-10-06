@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
+import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import { attachBattlePointPreparationRejectionObservation } from './battlePointPreparationObservation';
 import { expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
@@ -122,7 +123,7 @@ const specs: Spec[] = [
     early: true,
   },
 ];
-function fixtureMaster(spec: Spec) {
+function fixtureMaster(spec: Spec, missingNpCell = false) {
   const base = masterSnapshotSchema.parse(fixture);
   const servant = base.servants[0]!;
   const template = {
@@ -270,7 +271,17 @@ function fixtureMaster(spec: Spec) {
                     value: 5,
                   },
                 },
-                execution: [modifier],
+                execution: [
+                  {
+                    ...modifier,
+                    values: missingNpCell
+                      ? modifier.values
+                      : Array.from({ length: 5 }, () => [...modifier.values[0]!]),
+                    valueExpressions: missingNpCell
+                      ? modifier.valueExpressions
+                      : Array.from({ length: 5 }, () => [...modifier.valueExpressions[0]!]),
+                  },
+                ],
               },
             ],
             damage: variant.damage.map((damage) => ({
@@ -392,10 +403,17 @@ function run(
   spec: Spec,
   capture = true,
   policy: 'calculator' | 'ranking' = 'calculator',
+  declaredInputs: Readonly<Record<string, number>> = {},
 ) {
   const scenario = {
     ...createDefaultResolvedScenario(master, undefined),
     battleState: { battlePointPhase: spec.phase ?? null },
+    canonicalInputValues: Object.fromEntries(
+      Object.entries(declaredInputs).map(([key, value]) => [
+        key,
+        { kind: 'integer' as const, value },
+      ]),
+    ),
     ...(spec.phase === undefined
       ? { initialBattlePointPoints: { '810000': spec.initial, '810001': 10 } }
       : {}),
@@ -462,6 +480,142 @@ type Mutable<T> = T extends
         : T;
 type Source = Mutable<BattlePointPreparationAttemptSource>;
 
+it('compares a complete native rejection and rejects changed rollback, commit, quantity, and proof clocks', () => {
+  const spec = specs[1]!;
+  const source = run(fixtureMaster(spec), spec).source;
+  const receipt = source.capture!.transitions.at(-1)!.result;
+  expect(receipt.status).toBe('rejected');
+  expect(receipt.state).toBe(receipt.before);
+  expect(receipt.committedSources).toEqual([]);
+  const restored = decodeDiagnostic(encodeDiagnostic(receipt)) as typeof receipt;
+  expect(equalProductionAuditDiagnosticValues(receipt, restored)).toBe(true);
+  // The independent Node oracle stays bounded to this single native result.
+  expect(isDeepStrictEqual(receipt, restored)).toBe(true);
+  type MutableReceipt = { -readonly [K in keyof typeof receipt]: (typeof receipt)[K] };
+  const changed = (mutate: (value: MutableReceipt) => void) => {
+    const value = structuredClone({ ...restored });
+    mutate(value);
+    expect(equalProductionAuditDiagnosticValues(receipt, value)).toBe(false);
+    expect(isDeepStrictEqual(receipt, value)).toBe(false);
+  };
+  changed((value) => {
+    value.state = { ...value.state, terminated: !value.state.terminated };
+  });
+  changed((value) => {
+    expect(value.sources.length).toBeGreaterThan(0);
+    value.committedSources = [value.sources[0]!];
+  });
+  changed((value) => {
+    value.state.npResource.gauge++;
+  });
+  changed((value) => {
+    const sourceExecution = value.sources.find(({ binding }) => binding.activation.kind === 'read');
+    expect(sourceExecution).toBeDefined();
+    const activation = sourceExecution!.binding.activation;
+    expect(activation.kind).toBe('read');
+    if (activation.kind !== 'read') throw new TypeError('fixture_source_read_required');
+    expect(activation.read.clock.phase).toBe('sourceUse');
+    if (!sourceExecution) throw new TypeError('fixture_source_execution_required');
+    const mutableSource = sourceExecution as { binding: typeof sourceExecution.binding };
+    mutableSource.binding = {
+      ...sourceExecution.binding,
+      activation: {
+        ...activation,
+        read: {
+          ...activation.read,
+          clock: { ...activation.read.clock, phase: 'damageEvaluation' },
+        },
+      },
+    };
+  });
+  const missing = { ...restored } as Record<string, unknown>;
+  delete missing['observations'];
+  expect(equalProductionAuditDiagnosticValues(receipt, missing)).toBe(false);
+  expect(isDeepStrictEqual(receipt, missing)).toBe(false);
+});
+
+it('rejects the original missing NP modifier cell and distinguishes an explicit zero cell', () => {
+  const spec = specs.find(({ name }) => name === 'loss-input-required')!;
+  const originalMaster = fixtureMaster(spec, true);
+  const pending = run(originalMaster, spec);
+  const pendingResult = pending.source.calculation.result;
+  if (
+    pendingResult.status !== 'inputRequired' ||
+    pending.source.prepared.scenario.mode !== 'resolved'
+  )
+    throw new TypeError('fixture_proc_input_required');
+  const definition = pendingResult.requiredInputs.find(({ key }) => key.startsWith('oc:proc:'))!;
+  const scenario = {
+    ...pending.source.prepared.scenario,
+    canonicalInputValues: {
+      ...pending.source.prepared.scenario.canonicalInputValues,
+      [definition.key]: { kind: 'integer' as const, value: 1 },
+    },
+  };
+  const missing = prepareCalculationScenarioWithPolicy(scenario, originalMaster, {
+    kind: 'calculator',
+  });
+  expect(missing.outcome.status).toBe('unsupported');
+  expect(
+    missing.orderedExecution?.operations.find(
+      ({ operation }) =>
+        operation.kind === 'preserveSemanticEffect' && operation.semanticKind === 'unsupported',
+    ),
+  ).toMatchObject({
+    outcome: 'unsupported',
+    conditionRead: { kind: 'known', truth: true, clock: { phase: 'sourceUse' } },
+    operation: { unsupportedReason: 'missingOperationValue' },
+  });
+  const zeroMaster = structuredClone(originalMaster);
+  const modifier =
+    zeroMaster.servants[0]!.noblePhantasmVariantGroups[0]!.variants[0]!.effects[0]!.execution[0]!;
+  if (modifier.kind !== 'damageModifier') throw new TypeError('fixture_modifier_required');
+  modifier.values[1] = [0, 0, 0, 0, 0];
+  modifier.valueExpressions[1] = [null, null, null, null, null];
+  const zero = prepareCalculationScenarioWithPolicy(scenario, zeroMaster, { kind: 'calculator' });
+  expect(zero.outcome.status).toBe('calculated');
+  expect(zero.orderedExecution?.input.attackBuff).toBe(0);
+  const ranking = prepareCalculationScenarioWithPolicy(
+    pending.source.prepared.scenario,
+    originalMaster,
+    {
+      kind: 'ranking',
+      selfBuffs: 'included',
+      conditionalEffects: 'baseline',
+      areaView: 'included',
+    },
+  );
+  expect(ranking.outcome.status).toBe('unsupported');
+  expect(ranking.possibilityCertificate.kind).toBe('enumerated');
+  if (ranking.possibilityCertificate.kind !== 'enumerated')
+    throw new TypeError('fixture_certificate_required');
+  expect(
+    ranking.possibilityCertificate.branches.map(({ average }) => average === null).sort(),
+  ).toEqual([false, true]);
+});
+
+it('requires retained Map and Set order even where the Node value comparison permits reordering', () => {
+  for (const [expected, reordered] of [
+    [new Set(['first', 'second']), new Set(['second', 'first'])],
+    [
+      new Map([
+        ['first', 1],
+        ['second', 2],
+      ]),
+      new Map([
+        ['second', 2],
+        ['first', 1],
+      ]),
+    ],
+  ]) {
+    expect(isDeepStrictEqual(expected, reordered)).toBe(true);
+    expect(equalProductionAuditDiagnosticValues(expected, reordered)).toBe(false);
+    expect(
+      equalProductionAuditDiagnosticValues(expected, decodeDiagnostic(encodeDiagnostic(expected))),
+    ).toBe(true);
+  }
+});
+
 for (const spec of specs)
   it(
     `isolates original failed BP attempt ${spec.name}`,
@@ -486,8 +640,8 @@ for (const spec of specs)
         path: string,
         mutate: (s: Source) => void,
       ) => {
-        const s = structuredClone(positive.source) as Source;
-        s.program = positive.program;
+        const { program, ...transport } = positive.source;
+        const s = { ...structuredClone(transport), program } as Source;
         mutate(s);
         negatives.push({
           name,
@@ -940,7 +1094,15 @@ for (const spec of specs)
           s.capture!.transitions.push({
             ...failed(s),
             command: { kind: 'executeAttackNoblePhantasm' },
-            result: { status: 'applied', state: failed(s).before },
+            result: {
+              status: 'applied',
+              state: failed(s).before,
+              before: failed(s).before,
+              command: { kind: 'executeAttackNoblePhantasm' },
+              sources: [],
+              committedSources: [],
+              observations: { ocAttempts: [], battlePointSteps: [], hpActions: [] },
+            },
           });
         },
       );
@@ -1153,10 +1315,23 @@ for (const spec of specs)
         [positive.program],
         [positive.source],
       );
+      const required = positive.source.calculation.result;
+      const definition =
+        required.status === 'inputRequired'
+          ? required.requiredInputs.find(({ key }) => key.startsWith('oc:proc:'))
+          : undefined;
+      const declared =
+        (spec.name === 'loss-input-required' || spec.name === 'prior-commit-action-start') &&
+        definition
+          ? [0, 1].map((value) =>
+              run(positive.master, spec, true, 'calculator', { [definition.key]: value }),
+            )
+          : [];
       const payload = {
         spec,
         positive,
         ranking,
+        declaredFixture: { definition: definition ?? null, branches: declared },
         normal: normal.source.calculation,
         negatives,
         missingPopulation,
@@ -1166,7 +1341,7 @@ for (const spec of specs)
         retained,
       };
       const encoded = encodeDiagnostic(payload);
-      const roundTrip = isDeepStrictEqual(decodeDiagnostic(encoded), payload);
+      const roundTrip = equalProductionAuditDiagnosticValues(payload, decodeDiagnostic(encoded));
       await writeProductionAuditArtifact(
         task.meta,
         `tsk-08-preparation-bp-attempt-${spec.name}.json`,
@@ -1200,7 +1375,137 @@ for (const spec of specs)
         ),
       ).toBe(true);
       expect(positive.source.calculation).toEqual(normal.source.calculation);
-      expect(positive.source.calculation.result).toEqual(ranking.source.calculation.result);
+      if (spec.name === 'loss-input-required' || spec.name === 'prior-commit-action-start') {
+        expect(required.status).toBe('inputRequired');
+        expect(definition).toMatchObject({ minimum: 0, maximum: 1, step: 1 });
+        expect(declared).toHaveLength(2);
+        const certificate = ranking.source.calculation.possibilityCertificate;
+        expect(certificate.kind).toBe('enumerated');
+        if (certificate.kind !== 'enumerated') throw new TypeError('fixture_enumeration_required');
+        expect(certificate.branches).toHaveLength(2);
+        expect(certificate.illegalWitnesses).toEqual([]);
+        for (const [index, concrete] of declared.entries()) {
+          const result = concrete.source.calculation.result;
+          expect(result.status).toBe('calculated');
+          if (result.status !== 'calculated')
+            throw new TypeError('fixture_declared_calculated_required');
+          const outcome = index === 0 ? 'failure' : 'success';
+          const branch = certificate.branches.find(({ witness }) =>
+            witness.some(({ choice }) => choice.kind === 'binary' && choice.outcome === outcome),
+          );
+          expect(branch).toBeDefined();
+          expect(branch!.status).toBe('executable');
+          expect(branch!.average).toBe(result.rows[0].average);
+          const native = concrete.source.prepared.preparationExecution;
+          expect(native).not.toBeNull();
+          if (!native) throw new TypeError('fixture_native_preparation_required');
+          const nativeReads = [
+            ...(native.initializationExecution?.sources ?? []),
+            ...(native.actionExecutions ?? []).flatMap(({ sources }) => sources),
+          ]
+            .filter(({ status }) => status !== 'unreached')
+            .map(({ binding }) =>
+              binding.activation.kind === 'read' && binding.activation.proc.kind === 'resolved'
+                ? {
+                    ...binding.activation,
+                    proc: { ...binding.activation.proc, selection: 'witness' as const },
+                  }
+                : binding.activation,
+            );
+          expect(branch!.sourceReads).toEqual(nativeReads);
+          expect(branch!.resourceUses).toEqual(
+            concrete.source.calculation.appliedPreparationActions.map((action) => ({
+              actorFormId: action.actorFormId,
+              before: action.resourceBefore,
+              after: action.resourceAfter,
+              ocUse: action.ocUse,
+            })),
+          );
+        }
+        const selectedOutcome = certificate.selectedWitness.find(
+          ({ choice }) => choice.kind === 'binary',
+        )!.choice;
+        if (selectedOutcome.kind !== 'binary')
+          throw new TypeError('fixture_binary_selection_required');
+        const selected = declared[selectedOutcome.outcome === 'failure' ? 0 : 1]!;
+        const selectedResult = selected.source.calculation.result;
+        if (!('trace' in selectedResult)) throw new TypeError('fixture_selected_trace_required');
+        const declaration = `${definition!.key}:${selectedOutcome.outcome === 'failure' ? 0 : 1}:explicit`;
+        const declarationTrace = selectedResult.trace.filter(
+          ({ step, detail }) => step === 'canonical-input' && detail === declaration,
+        );
+        expect(declarationTrace).toEqual([{ step: 'canonical-input', detail: declaration }]);
+        // A declared input and an enumerated witness have distinct provenance.
+        // Every other result field and every other trace entry must still agree.
+        expect(ranking.source.calculation.result).toEqual({
+          ...selectedResult,
+          trace: selectedResult.trace.filter((entry) => !declarationTrace.includes(entry)),
+        });
+        const ordinary = declared.map(({ source }) => {
+          const execution = source.prepared.orderedExecution;
+          expect(execution).not.toBeNull();
+          if (!execution) throw new TypeError('fixture_native_execution_required');
+          const input = execution.input;
+          const np = execution.operations.find(
+            ({ operation }) => operation.kind === 'executeNpDamage',
+          );
+          expect(np?.damageDependencyRead).toMatchObject({
+            kind: 'known',
+            certainty: 'guaranteed',
+            clock: { phase: 'damageEvaluation', operationId: np!.operation.operationId },
+            evidence: [
+              {
+                expression: { kind: 'quantity', quantity: 'battlePointPhase', subjectId: '810000' },
+                value: input.battlePointPhase,
+              },
+            ],
+          });
+          expect(
+            np!.damageDependencyRead!.support.some(
+              ({ kind, clock }) => kind === 'guaranteedWrite' && clock.phase === 'sourceUse',
+            ),
+          ).toBe(true);
+          const expectedCell =
+            source.prepared.master.servants[0]!.noblePhantasmVariantGroups[0]!.variants[0]!.effects.find(
+              ({ occurrenceId }) => occurrenceId === 'domain-terminal-reader:0',
+            )!.execution.find((operation) => operation.kind === 'damageModifier');
+          if (!expectedCell) throw new TypeError('fixture_modifier_cell_required');
+          const value = expectedCell.values[input.overcharge - 1]![input.npLevel - 1]!;
+          const reader = execution.operations.find(
+            ({ operation }) => operation.source.effectOccurrenceId === 'domain-terminal-reader:0',
+          );
+          const contributions = source.calculation.effectiveContributions.contributions.filter(
+            ({ source }) => source.effectOccurrenceId === 'domain-terminal-reader:0',
+          );
+          if (!reader || reader.operation.kind !== 'addModifier')
+            throw new TypeError('fixture_reader_required');
+          expect(value).toBe(100);
+          expect(reader.operation.valuePermille).toBe(value);
+          expect(reader.conditionRead).toMatchObject({
+            kind: 'known',
+            certainty: 'guaranteed',
+            clock: { phase: 'sourceUse' },
+            truth: input.battlePointPhase! >= 5,
+          });
+          expect(
+            reader.conditionRead.support.some(
+              ({ kind, clock }) => kind === 'guaranteedWrite' && clock.phase === 'sourceUse',
+            ),
+          ).toBe(true);
+          expect(contributions).toHaveLength(1);
+          expect(contributions[0]).toMatchObject({
+            conditionDecision: { kind: 'included' },
+            effective: reader.conditionRead.truth === true,
+          });
+          // Both branches independently read the same declared canonical modifier value.
+          return source.calculation.effectiveContributions.contributions.filter(
+            ({ effective }) => effective,
+          );
+        });
+        expect(ordinary[0]).toEqual(ordinary[1]);
+      } else {
+        expect(positive.source.calculation.result).toEqual(ranking.source.calculation.result);
+      }
       expect(points).toEqual(spec.attempted);
       expect(retained?.kind === 'present' ? retained.point : null).toBe(spec.retained);
       expect(positive.gate.boundaries[0]?.kind).toBe(

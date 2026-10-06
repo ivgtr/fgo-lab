@@ -4,6 +4,7 @@ import type {
   BattleOperation,
   BattleStateBase,
   ExecutableBattleState,
+  TraitScope,
   ModifierKind,
   RejectedBattleState,
   TargetPredicateAssertion,
@@ -16,10 +17,11 @@ import { liveInputQuantity } from './stackQuantities';
 import { cloneInputFacts } from './inputFacts';
 import {
   cloneTraitFactLayers,
-  projectTraitScope,
+  projectBattleTraitPresence,
   assertExternalInitialTrait,
   commitTraitFact,
   incrementTraitFact,
+  replaceIntrinsicTraitFacts,
 } from './traitFactLayers';
 
 export function appendModifier(
@@ -45,25 +47,11 @@ export function cloneBattleState(state: ExecutableBattleState): ExecutableBattle
     ...state,
     conditionFactProofs: cloneConditionFactProofs(state.conditionFactProofs),
     traitFactLayers: cloneTraitFactLayers(state.traitFactLayers),
-    traits: {
-      attacker: new Map(state.traits.attacker),
-      attackerState: new Map(state.traits.attackerState),
-      target: new Map(state.traits.target),
-      targetState: new Map(state.traits.targetState),
-      field: new Map(state.traits.field),
-    },
     actorPredicates: {
       attacker: new Map(state.actorPredicates.attacker),
       target: new Map(state.actorPredicates.target),
     },
     stackQuantitySources: { ...state.stackQuantitySources },
-    traitCounts: {
-      attacker: { ...state.traitCounts.attacker },
-      attackerState: { ...state.traitCounts.attackerState },
-      target: { ...state.traitCounts.target },
-      targetState: { ...state.traitCounts.targetState },
-      field: { ...state.traitCounts.field },
-    },
     initialTraitSuppressions: {
       attacker: new Set(state.initialTraitSuppressions.attacker),
       target: new Set(state.initialTraitSuppressions.target),
@@ -164,11 +152,16 @@ export function applyWorldFacts(
         );
       }
     } else {
-      assertExternalInitialTrait(candidate.traitFactLayers, fact.scope, fact.trait, fact.present, {
-        kind: 'externalAssumption',
-        clock: candidate.conditionReadClock,
-      });
-      projectTraitScope(candidate, fact.scope);
+      candidate.traitFactLayers = assertExternalInitialTrait(
+        candidate.traitFactLayers,
+        fact.scope,
+        fact.trait,
+        fact.present,
+        {
+          kind: 'externalAssumption',
+          clock: candidate.conditionReadClock,
+        },
+      );
     }
   }
   return candidate;
@@ -205,18 +198,13 @@ export function applyActorFormTransition(
       occurrenceId: operation.source.effectOccurrenceId,
     },
   };
-  candidate.traitFactLayers.intrinsic.attacker = new Map(
-    traits.map((trait) => [
-      trait,
-      { present: true, count: 1, proof: intrinsic, countSupport: [intrinsic] },
-    ]),
+  candidate.traitFactLayers = replaceIntrinsicTraitFacts(
+    candidate.traitFactLayers,
+    'attacker',
+    traits,
+    intrinsic,
   );
-  projectTraitScope(candidate, 'attacker');
-  candidate.conditionFactProofs.completeTraits.attacker = intrinsic;
-  for (const trait of candidate.initialTraitSuppressions.attacker) {
-    (candidate.traits.attacker as Map<string, boolean>).set(trait, false);
-    candidate.traitCounts.attacker = withoutTraitCount(candidate.traitCounts.attacker, trait);
-  }
+
   return candidate;
 }
 
@@ -227,13 +215,17 @@ export function applyTraitRemoval(
   proof: ConditionFactProof,
 ): ExecutableBattleState {
   const candidate = cloneBattleState(state);
-  (candidate.traits[scope] as Map<string, boolean>).set(trait, false);
-  candidate.traitCounts[scope] = withoutTraitCount(candidate.traitCounts[scope], trait);
-  (candidate.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+
+  candidate.traitFactLayers = commitTraitFact(
+    candidate.traitFactLayers,
+    scope,
     trait,
+    false,
+    0,
     proof,
+    [proof],
   );
-  commitTraitFact(candidate.traitFactLayers, scope, trait, false, 0, proof, [proof]);
+
   return candidate;
 }
 
@@ -248,17 +240,21 @@ export function applyInitialTraitSuppression(
     ...candidate.initialTraitSuppressions[scope],
     trait,
   ]);
-  (candidate.traits[scope] as Map<string, boolean>).set(trait, false);
-  candidate.traitCounts[scope] = withoutTraitCount(candidate.traitCounts[scope], trait);
-  (candidate.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
-    trait,
-    proof,
-  );
+
   (candidate.conditionFactProofs.suppressions[scope] as Map<string, ConditionFactProof>).set(
     trait,
     proof,
   );
-  commitTraitFact(candidate.traitFactLayers, scope, trait, false, 0, proof, [proof]);
+  candidate.traitFactLayers = commitTraitFact(
+    candidate.traitFactLayers,
+    scope,
+    trait,
+    false,
+    0,
+    proof,
+    [proof],
+  );
+
   return candidate;
 }
 
@@ -273,26 +269,25 @@ export function applyTraitAddition(
   if (group)
     for (const conflictingTrait of canonicalExclusiveTraits(scope, group)) {
       if (conflictingTrait === trait) continue;
-      (candidate.traits[scope] as Map<string, boolean>).set(conflictingTrait, false);
-      (candidate.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(
+
+      candidate.traitFactLayers = commitTraitFact(
+        candidate.traitFactLayers,
+        scope,
         conflictingTrait,
+        false,
+        0,
         proof,
-      );
-      commitTraitFact(candidate.traitFactLayers, scope, conflictingTrait, false, 0, proof, [proof]);
-      candidate.traitCounts[scope] = withoutTraitCount(
-        candidate.traitCounts[scope],
-        conflictingTrait,
+        [proof],
       );
     }
-  incrementTraitFact(
+  candidate.traitFactLayers = incrementTraitFact(
     candidate.traitFactLayers,
     scope,
     trait,
     proof,
-    candidate.conditionFactProofs.completeTraits[scope],
     group !== null,
   );
-  projectTraitScope(candidate, scope);
+
   return candidate;
 }
 
@@ -313,18 +308,10 @@ export function withoutTraitCount(
   return Object.fromEntries(Object.entries(counts).filter(([trait]) => trait !== removedTrait));
 }
 
-function expandedTraits(
-  presence: ReadonlyMap<string, boolean>,
-  counts: Readonly<Record<string, number>>,
-  stackTraits: ReadonlySet<string> = new Set(),
-): string[] {
-  return [...presence].flatMap(([trait, present]) => {
-    if (!present) return [];
-    const count = counts[trait];
-    // DTO membership does not assert an exact quantity for a presence-only fact.
-    if (stackTraits.has(trait) || count === undefined) return [trait];
-    return Array.from({ length: count }, () => trait);
-  });
+function expandedTraits(state: ExecutableBattleState, scope: TraitScope): string[] {
+  return [...projectBattleTraitPresence(state, scope)].flatMap(([trait, present]) =>
+    present ? [trait] : [],
+  );
 }
 
 export function foldDamageInput(
@@ -352,22 +339,11 @@ export function foldDamageInput(
   return {
     ...input,
     cardType: state.card,
-    fieldTraits: [...state.traits.field].flatMap(([trait, present]) => (present ? [trait] : [])),
+    fieldTraits: expandedTraits(state, 'field'),
     ...(hasStacks ? { stackStateCounts } : {}),
-    attackerStateTraits: expandedTraits(
-      state.traits.attackerState,
-      state.traitCounts.attackerState,
-      new Set(Object.keys(stackStateCounts.attackerState)),
-    ),
-    targetStateTraits: expandedTraits(
-      state.traits.targetState,
-      state.traitCounts.targetState,
-      new Set(Object.keys(stackStateCounts.targetState)),
-    ),
-    target: {
-      ...input.target,
-      traits: expandedTraits(state.traits.target, state.traitCounts.target),
-    },
+    attackerStateTraits: expandedTraits(state, 'attackerState'),
+    targetStateTraits: expandedTraits(state, 'targetState'),
+    target: { ...input.target, traits: expandedTraits(state, 'target') },
     attackBuff: input.attackBuff + value('attackBuff'),
     defenseBuff: input.defenseBuff + value('defenseBuff'),
     cardBuff: input.cardBuff + value('cardBuff'),

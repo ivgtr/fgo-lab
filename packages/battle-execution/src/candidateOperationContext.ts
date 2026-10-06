@@ -20,7 +20,7 @@ import {
   type ConditionReadAudit,
 } from './condition';
 import { contributionIsIncluded } from './effectiveContributions';
-import { resolveModifierValue } from './projection';
+import { resolveModifierValue, type ResolvedModifierValue } from './projection';
 import type { ConditionRead } from './conditionRead';
 
 export function operationEnabled(
@@ -48,10 +48,10 @@ export function modifierValue(
   operation: BattleOperation,
   state: ExecutableBattleState,
   observeHpRead?: (read: { permille: number | null; value: number | null }) => void,
-): number | null {
+): ResolvedModifierValue {
   return operation.kind === 'addModifier'
     ? resolveModifierValue(operation, state, observeHpRead)
-    : null;
+    : { value: null, dependency: null };
 }
 
 export function userConditionMet(
@@ -85,8 +85,7 @@ export function applyOrderedActorFormTransition(
   if (issue) return issue;
   const changed = applyActorFormTransition(state, operation);
   state.actorFormId = changed.actorFormId;
-  state.traits = changed.traits;
-  state.traitCounts = changed.traitCounts;
+  state.traitFactLayers = changed.traitFactLayers;
   state.conditionFactProofs = changed.conditionFactProofs;
   state.conditionReadClock = { ...state.conditionReadClock, actorFormId: changed.actorFormId };
   return null;
@@ -257,6 +256,17 @@ export function resolveOperationDisposition({
   } else if (!condition && !localConditionSatisfied) {
     outcome = 'notApplied';
     code = 'conditionNotMet';
+  } else if (
+    operation.kind === 'preserveSemanticEffect' &&
+    operation.semanticKind === 'unsupported'
+  ) {
+    outcome = 'unsupported';
+    code = 'unresolved';
+    issue = {
+      kind: 'unsupportedOperation',
+      operationId: operation.operationId,
+      detail: operation.unsupportedReason,
+    };
   } else if (
     operationHasNoRuntimeDamageImpact(operation) &&
     !(operation.kind === 'preserveSemanticEffect' && operation.buffMutation)

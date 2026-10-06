@@ -4,7 +4,7 @@ import type { PopulationCountSelector } from '@fgo-lab/master-data';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { createConditionState } from './conditionState';
-import { assertExternalInitialTrait, commitTraitFact, projectTraitScope } from './traitFactLayers';
+import { assertExternalInitialTrait, commitTraitFact } from './traitFactLayers';
 import {
   populationInputIssue,
   readPopulationCount,
@@ -47,8 +47,15 @@ function facts() {
         })(),
   );
   const proof = { kind: 'selectedInitialResource' as const, clock: state.conditionReadClock };
-  for (const trait of selector.traits) assertExternalInitialTrait(state.traitFactLayers, 'target', trait, false, proof);
-  projectTraitScope(state, 'target');
+  for (const trait of selector.traits)
+    state.traitFactLayers = assertExternalInitialTrait(
+      state.traitFactLayers,
+      'target',
+      trait,
+      false,
+      proof,
+    );
+
   return state;
 }
 const source = { origin: 'attacker' as const, sourceInstanceId: 'self' };
@@ -106,8 +113,16 @@ describe('live actor population count', () => {
   it('suppresses only initial individuality and retains a later state grant', () => {
     const current = facts();
     current.initialTraitSuppressions.attacker = new Set(['a', 'b']);
-    commitTraitFact(current.traitFactLayers, 'attackerState', 'a', true, 2, { kind: 'selectedInitialResource', clock: current.conditionReadClock }, [{ kind: 'selectedInitialResource', clock: current.conditionReadClock }]);
-    projectTraitScope(current, 'attackerState');
+    current.traitFactLayers = commitTraitFact(
+      current.traitFactLayers,
+      'attackerState',
+      'a',
+      true,
+      2,
+      { kind: 'selectedInitialResource', clock: current.conditionReadClock },
+      [{ kind: 'selectedInitialResource', clock: current.conditionReadClock }],
+    );
+
     expect(
       readPopulationCount({
         selector: { ...selector, scope: 'recipient', counting: 'individualities' },

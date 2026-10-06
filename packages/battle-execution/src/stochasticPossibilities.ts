@@ -13,6 +13,14 @@ export interface StochasticWitnessEntry {
   key: string;
   choice: StochasticChoice;
 }
+export interface IllegalExecutionWitness {
+  readonly witness: readonly StochasticWitnessEntry[];
+  readonly key: string;
+}
+export function stochasticWitnessKey(entries: readonly StochasticWitnessEntry[]): string {
+  return JSON.stringify([...entries].sort((left, right) =>
+    left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
+}
 export type ExecutionPossibilityCertificate =
   | { kind: 'declared' }
   | {
@@ -21,6 +29,7 @@ export type ExecutionPossibilityCertificate =
       selectedWitness: readonly StochasticWitnessEntry[];
       attemptedExecutionCount: number;
       illegalWitnessCount: number;
+      illegalWitnesses: readonly IllegalExecutionWitness[];
       branching: readonly {
         witness: readonly StochasticWitnessEntry[];
         key: string;
@@ -45,7 +54,7 @@ export function stochasticWitnessEntries(
 ): StochasticWitnessEntry[] {
   return [...selection.choices]
     .map(([key, choice]) => ({ key, choice }))
-    .sort((left, right) => left.key.localeCompare(right.key));
+    .sort((left, right) => left.key < right.key ? -1 : left.key > right.key ? 1 : 0);
 }
 
 /** A suspended concrete execution has not committed or published a result. */
@@ -80,7 +89,7 @@ export interface ExecutionPossibilities<T> {
     selection: Extract<StochasticSelection, { kind: 'possibility' }>;
     value: T;
   }[];
-  illegalWitnesses: readonly string[];
+  illegalWitnesses: readonly IllegalExecutionWitness[];
   attemptedExecutionCount: number;
   branching: readonly {
     witness: readonly StochasticWitnessEntry[];
@@ -100,7 +109,7 @@ export function executeStochasticPossibilities<T>(
     selection: Extract<StochasticSelection, { kind: 'possibility' }>;
     value: T;
   }[] = [];
-  const illegalWitnesses: string[] = [];
+  const illegalWitnesses: IllegalExecutionWitness[] = [];
   const branching: {
     witness: readonly StochasticWitnessEntry[];
     key: string;
@@ -114,7 +123,7 @@ export function executeStochasticPossibilities<T>(
       executions.push({ selection, value: run(selection) });
     } catch (error) {
       if (error instanceof IllegalStochasticWitness) {
-        illegalWitnesses.push(error.key);
+        illegalWitnesses.push({ witness: stochasticWitnessEntries(selection), key: error.key });
         continue;
       }
       if (!(error instanceof StochasticBranchRequired)) throw error;

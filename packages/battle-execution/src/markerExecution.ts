@@ -1,4 +1,3 @@
-import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type { ConditionFactProof } from './conditionRead';
 import type {
   BattleOperation,
@@ -7,11 +6,7 @@ import type {
   OperationResult,
   EffectProjection,
 } from './contracts';
-import {
-  applyBuffInstanceMutation,
-  projectBuffInstanceCounts,
-  isBuffCountInput,
-} from './buffInstances';
+import { applyBuffInstanceMutation } from './buffInstances';
 
 export function markerOperationDisposition(
   operation: BattleOperation,
@@ -39,7 +34,6 @@ export function applyOrderedMarkerMutation(
   operation: Extract<BattleOperation, { kind: 'preserveSemanticEffect' }>,
   state: ExecutableBattleState,
   condition: boolean | null,
-  inputs: readonly CanonicalInputDefinition[],
   proof: ConditionFactProof,
 ): ExecutionIssue | null {
   if (!operation.buffMutation) return null;
@@ -68,22 +62,5 @@ export function applyOrderedMarkerMutation(
         instance.identity,
         proof,
       );
-  const projected = projectBuffInstanceCounts(
-    {
-      buffInstances: state.buffInstances,
-      stackCounts: {
-        attackerState: state.traitCounts.attackerState,
-        targetState: state.traitCounts.targetState,
-        field: state.traitCounts.field,
-      },
-      stateTraits: { attackerState: new Set<string>(), targetState: new Set<string>() },
-    },
-    inputs.filter(isBuffCountInput),
-  );
-  for (const scope of ['attackerState', 'targetState'] as const) {
-    state.traitCounts[scope] = projected.stackCounts[scope];
-    for (const [trait, count] of Object.entries(projected.stackCounts[scope]))
-      (state.traits[scope] as Map<string, boolean>).set(trait, count > 0);
-  }
   return null;
 }

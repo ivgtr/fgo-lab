@@ -1,3 +1,4 @@
+import type { SourceExecutionBinding } from './executionBinding';
 import type { ConditionRead } from './conditionRead';
 import type { ConditionReadAudit } from './condition';
 import { appendConditionReadAudit, observeScalarNp } from './candidateStateAudit';
@@ -15,7 +16,7 @@ import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type {
   PreNoblePhantasmState,
   PreparationExecutionContext,
-  PreparationTransitionResult,
+  PreparationCompletedTransitionResult,
 } from './preparationContracts';
 import type { OcActionResult } from './ocState';
 import type { ExecutableBattleState, OperationResult } from './contracts';
@@ -244,24 +245,21 @@ export function captureNoHealingWrite(
 }
 
 const scopes = new WeakMap<PreparationExecutionContext, PreparationHpAction[]>();
-const transitions = new WeakMap<PreparationTransitionResult, readonly PreparationHpAction[]>();
 export function beginPreparationHpCapture(context: PreparationExecutionContext) {
   scopes.set(context, []);
 }
 export function preparationHpScope(context: PreparationExecutionContext) {
   return scopes.get(context);
 }
-export function finishPreparationHpCapture(
-  context: PreparationExecutionContext,
-  result: PreparationTransitionResult,
-) {
-  const actions = scopes.get(context);
-  if (actions) transitions.set(result, actions);
+export function takePreparationHpCapture(context: PreparationExecutionContext) {
+  const actions = scopes.get(context) ?? [];
   scopes.delete(context);
+  return actions;
 }
-export function preparationHpActionsFor(result: PreparationTransitionResult) {
-  return transitions.get(result);
+export function preparationHpActionsFor(result: PreparationCompletedTransitionResult) {
+  return result.observations.hpActions;
 }
+
 export interface HpNpEvaluation {
   ratio: number | null;
   disposition: 'consumed' | 'excluded' | 'missing' | 'invalid';
@@ -324,12 +322,12 @@ export function resolveObservedModifierValue(
   observation: HpCandidateObservation | undefined,
 ) {
   let read: { permille: number | null; value: number | null } | undefined;
-  const value = modifierValue(
+  const resolved = modifierValue(
     operation,
     state,
     observation ? (event) => (read = event) : undefined,
   );
-  return { value, read, state, modifierCountBefore: state.modifiers.length };
+  return { ...resolved, read, state, modifierCountBefore: state.modifiers.length };
 }
 
 export function captureHpValueRead(
@@ -444,7 +442,7 @@ export function evaluateObservedCondition(
   audit: MutableCandidateStateAudit | undefined,
   sequence: number,
   group: number,
-  sourceReads: Map<import('./executionBinding').SourceExecutionBinding, CandidateSourceRead>,
+  sourceReads: Map<SourceExecutionBinding, CandidateSourceRead>,
 ): ConditionRead {
   const binding = operation.runtimeBinding?.source;
   const cached = binding && sourceReads.get(binding);

@@ -1,7 +1,21 @@
 import type { BattleOperation } from './contracts';
-import { closeResourceMutationSemantics, mutateCriticalStars } from './resourceSemantics';
-import { cloneInputFacts, writeInputFact } from './inputFacts';
-import { proofIsGuaranteed, type ConditionFactProof } from './conditionRead';
+import {
+  closeResourceMutationSemantics,
+  mutateCriticalStars,
+  mutateConditionalCriticalStars,
+} from './resourceSemantics';
+import {
+  cloneInputFacts,
+  writeInputFact,
+  exactInputFactValue,
+  inputFactPredicate,
+  readInputFact,
+} from './inputFacts';
+import {
+  proofIsGuaranteed,
+  type ConditionFactProof,
+  type SourceActivationReceipt,
+} from './conditionRead';
 import { describe, expect, it } from 'vitest';
 
 const resourceOperation = {
@@ -31,6 +45,94 @@ describe('resource semantic closure', () => {
     valueIndex: null,
   };
   const guaranteed: ConditionFactProof = { kind: 'guaranteedWrite', clock };
+  const activation = (
+    truth: boolean | null,
+  ): Extract<SourceActivationReceipt, { kind: 'read' }> => ({
+    kind: 'read',
+    read:
+      truth === null
+        ? { kind: 'inputRequired', truth, certainty: null, clock, evidence: [], support: [] }
+        : {
+            kind: 'known',
+            truth,
+            certainty: 'guaranteed',
+            clock,
+            evidence: [],
+            support: [guaranteed],
+          },
+    proc: {
+      kind: 'resolved',
+      outcome: 'success',
+      certainty: 'guaranteed',
+      ratePermille: 1000,
+      selection: 'declared',
+    },
+  });
+  it('preserves both possible conditional star results without inventing an exact quantity', () => {
+    const initial = writeInputFact(new Map(), 'battle:criticalStars', 20, [guaranteed]);
+    const possible: ConditionFactProof = { kind: 'possibleOutcome', clock };
+    const changed = mutateConditionalCriticalStars(
+      initial,
+      10,
+      'gain',
+      possible,
+      activation(null),
+      [],
+    );
+    expect(changed).toMatchObject({
+      status: 'applied',
+      before: { kind: 'known', value: 20 },
+      after: { kind: 'conditional' },
+    });
+    const fact = changed.facts.get('battle:criticalStars')!;
+    expect(fact).toMatchObject({
+      kind: 'conditional',
+      whenTrue: { kind: 'known', value: 30 },
+      whenFalse: { kind: 'known', value: 20 },
+      condition: { kind: 'inputRequired', truth: null },
+    });
+    expect(exactInputFactValue(fact)).toBeUndefined();
+    expect(inputFactPredicate(fact, (value) => value >= 20)).toBe(true);
+    expect(inputFactPredicate(fact, (value) => value >= 25)).toBeNull();
+    const later = mutateCriticalStars(changed.facts, 10, 'gain', guaranteed);
+    expect(later).toMatchObject({
+      status: 'applied',
+      after: { kind: 'conditional', whenTrue: { value: 40 }, whenFalse: { value: 30 } },
+    });
+    const falseBranch = mutateConditionalCriticalStars(
+      initial,
+      10,
+      'gain',
+      possible,
+      activation(false),
+      [],
+    );
+    expect(falseBranch).toMatchObject({
+      status: 'applied',
+      before: { value: 20 },
+      after: { value: 20 },
+    });
+    expect(falseBranch.facts).toBe(initial);
+    expect(exactInputFactValue(initial.get('battle:criticalStars')!)).toBe(20);
+    const clipped = writeInputFact(initial, 'battle:criticalStars', 99, [guaranteed]);
+    const invariant = mutateConditionalCriticalStars(
+      clipped,
+      10,
+      'gain',
+      possible,
+      activation(null),
+      [],
+    );
+    expect(invariant.status).toBe('applied');
+    expect(exactInputFactValue(invariant.facts.get('battle:criticalStars')!)).toBe(99);
+    expect(invariant.facts.get('battle:criticalStars')).toMatchObject({
+      whenTrue: { value: 99 },
+      whenFalse: { value: 99 },
+    });
+    expect(invariant.facts.get('battle:criticalStars')!.support.every(proofIsGuaranteed)).toBe(
+      true,
+    );
+  });
   it('keeps possible prior quantity dependencies after a guaranteed star gain', () => {
     const prior: ConditionFactProof = { kind: 'possibleOutcome', clock };
     const initial = writeInputFact(new Map(), 'battle:criticalStars', 20, [prior]);
@@ -38,22 +140,67 @@ describe('resource semantic closure', () => {
     expect(result.status).toBe('applied');
     if (result.status !== 'applied') throw new Error('star_write_required');
     const fact = result.facts.get('battle:criticalStars')!;
-    expect(fact.value).toBe(30);
+    expect(exactInputFactValue(fact)).toBe(30);
     expect(fact.support.every(proofIsGuaranteed)).toBe(false);
-    expect(initial.get('battle:criticalStars')!.value).toBe(20);
+    expect(exactInputFactValue(initial.get('battle:criticalStars')!)).toBe(20);
     expect(cloneInputFacts(result.facts)).toEqual(result.facts);
     expect(cloneInputFacts(result.facts).get('battle:criticalStars')).not.toBe(fact);
+  });
+  it('owns immutable value and clock data while cloned containers share immutable dependencies', () => {
+    const incomingProof = structuredClone(guaranteed);
+    const initial = writeInputFact(new Map(), 'battle:criticalStars', 20, [incomingProof]);
+    Object.assign(incomingProof.clock, { phase: 'operation', valueIndex: 9 });
+    const original = initial.get('battle:criticalStars')!;
+    expect(original.support[0]!.clock).toMatchObject({ phase: 'initial', valueIndex: null });
+    const incomingActivation = structuredClone(activation(null));
+    const result = mutateConditionalCriticalStars(
+      initial,
+      10,
+      'gain',
+      guaranteed,
+      incomingActivation,
+      [],
+    );
+    if (result.status !== 'applied') throw new Error('star_write_required');
+    const fact = result.facts.get('battle:criticalStars')!;
+    expect(result.after).toBe(fact);
+    if (fact.kind !== 'conditional') throw new Error('conditional_fact_required');
+    Object.assign(incomingActivation.read.clock, { phase: 'damageEvaluation', valueIndex: 4 });
+    Object.assign(incomingActivation.proc, { outcome: 'failure' });
+    expect(fact.condition.clock).toMatchObject({ phase: 'initial', valueIndex: null });
+    expect(fact.proc).toMatchObject({ outcome: 'success' });
+    const cloned = cloneInputFacts(result.facts);
+    expect(cloned).not.toBe(result.facts);
+    const clonedFact = cloned.get('battle:criticalStars')!;
+    expect(clonedFact).not.toBe(fact);
+    if (clonedFact.kind !== 'conditional') throw new Error('conditional_fact_required');
+    expect(clonedFact.whenFalse).toBe(original);
+    expect(clonedFact.condition).toBe(fact.condition);
+    expect(Reflect.set(clonedFact.whenFalse, 'value', 99)).toBe(false);
+    expect(Reflect.set(clonedFact.condition.clock, 'valueIndex', 8)).toBe(false);
+    expect(exactInputFactValue(initial.get('battle:criticalStars')!)).toBe(20);
+    expect(inputFactPredicate(fact, (value) => value >= 25)).toBeNull();
+    const later = mutateCriticalStars(cloned, 10, 'gain', guaranteed);
+    expect(later).toMatchObject({
+      status: 'applied',
+      after: { whenTrue: { value: 40 }, whenFalse: { value: 30 } },
+    });
+    expect(fact).toMatchObject({ whenTrue: { value: 30 }, whenFalse: { value: 20 } });
   });
   it('records a clipped same-value star write and rejects unknown quantities without changing them', () => {
     const initial = writeInputFact(new Map(), 'battle:criticalStars', 99, [guaranteed]);
     const clipped = mutateCriticalStars(initial, 10, 'gain', guaranteed);
-    expect(clipped).toMatchObject({ status: 'applied', before: 99, after: 99 });
+    expect(clipped).toMatchObject({
+      status: 'applied',
+      before: { value: 99 },
+      after: { value: 99 },
+    });
     expect(clipped.facts.get('battle:criticalStars')!.support).toHaveLength(2);
     const unknown = writeInputFact(new Map(), 'battle:criticalStars', null, []);
     const rejected = mutateCriticalStars(unknown, 10, 'gain', guaranteed);
     expect(rejected).toMatchObject({ status: 'inputRequired', reason: 'unknownCriticalStars' });
     expect(rejected.facts).toBe(unknown);
-    expect(unknown.get('battle:criticalStars')!.value).toBeNull();
+    expect(readInputFact(unknown, 'battle:criticalStars').kind).toBe('unknown');
     expect(mutateCriticalStars(initial, null, 'gain', guaranteed)).toMatchObject({
       status: 'unsupported',
       facts: initial,

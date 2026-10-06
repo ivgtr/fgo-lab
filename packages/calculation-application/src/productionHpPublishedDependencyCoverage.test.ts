@@ -1637,11 +1637,14 @@ it(
     const missingQueries = live.reconcile();
     capture.queries.push(...queries);
     capture.reads.push(...reads);
-    const included = queries[0]!.rate.included;
-    queries[0]!.rate.included = false;
+    const decision = queries[0]!.rate.decision;
+    Object.assign(queries[0]!.rate, { decision: { ...decision,
+      binding: { ...decision.binding, executionIntent: 'declared' },
+      adoption: { ...decision.adoption, selfDecision: { kind: 'excluded', reason: 'selfBuffPolicy' } },
+    } });
     capture.reads.splice(0);
     const forgedExclusion = live.reconcile();
-    queries[0]!.rate.included = included;
+    Object.assign(queries[0]!.rate, { decision });
     capture.reads.push(...reads);
     const afterRate = attempt.native!.state.rates.find(
       (entry) => entry.instanceId === queries[0]!.rate.instanceId,

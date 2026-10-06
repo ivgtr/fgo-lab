@@ -1,10 +1,50 @@
 import { describe, expect, it } from 'vitest';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
-import { evaluateNpDamageOperation, type NpDamageOperationContext } from './npDamageOperation';
+import {
+  evaluateNpDamageOperation,
+  type NpDamageOperationContext,
+  type NpBattlePointRead,
+} from './npDamageOperation';
 import { noblePhantasmDamageDependency } from './npDamageCompilation';
 import { classifyContributionCondition } from './conditionSemantics';
 import type { ConditionFactProof } from './conditionRead';
-const quantityProof: ConditionFactProof = { kind: 'selectedInitialResource', clock: { phase: 'initial', actorFormId: { actorId: 'fixture', limitCount: 0 }, actor: 'attacker', actionId: null, operationId: null, sourceInstanceId: null, occurrenceId: null, valueSetIndex: null, valueIndex: null } };
+const quantityProof: ConditionFactProof = {
+  kind: 'selectedInitialResource',
+  clock: {
+    phase: 'initial',
+    actorFormId: { actorId: 'fixture', limitCount: 0 },
+    actor: 'attacker',
+    actionId: null,
+    operationId: null,
+    sourceInstanceId: null,
+    occurrenceId: null,
+    valueSetIndex: null,
+    valueIndex: null,
+  },
+};
+const bpRead = (value: number | null, subjectId: string, included = true): NpBattlePointRead => ({
+  included,
+  dependency: {
+    clock: { ...quantityProof.clock, phase: 'damageEvaluation' },
+    evidence: [
+      {
+        expression: {
+          kind: 'quantity',
+          quantity: 'battlePointPhase',
+          subjectId,
+          comparison: 'atLeast',
+          value: 0,
+        },
+        value,
+        proof: value === null ? null : quantityProof,
+      },
+    ],
+    support: value === null ? [] : [quantityProof],
+    ...(value === null
+      ? ({ kind: 'inputRequired', truth: null, certainty: null } as const)
+      : ({ kind: 'known', truth: value >= 0, certainty: 'guaranteed' } as const)),
+  },
+});
 const exactQuantity = (value: number) => ({ value, support: [quantityProof] });
 
 const parameters = (extra: Record<string, unknown> = {}) =>
@@ -30,7 +70,7 @@ const context: NpDamageOperationContext = {
   targetPredicateValues: new Map(),
   attackerHpRatio: null,
   targetRarity: null,
-  battlePointPhase: null,
+  battlePointPhase: (_, domain) => bpRead(null, domain),
 };
 
 describe('NP damage operation', () => {
@@ -191,9 +231,18 @@ describe('NP damage operation', () => {
         maximumTargetCount: 3,
       }),
     } as NpDamageSpec;
-    expect(evaluateNpDamageOperation(sum, { ...context, traitQuantity: () => ({ value: null, support: [] }) })).toEqual({ status: 'unsupported', missingEvidence: 'unknown_trait_quantity' });
     expect(
-      evaluateNpDamageOperation(sum, { ...context, traitQuantity: (actor, layer, trait) => exactQuantity(actor === 'attacker' && layer === 'combined' && trait === 'roman' ? 5 : 0) }),
+      evaluateNpDamageOperation(sum, {
+        ...context,
+        traitQuantity: () => ({ value: null, support: [] }),
+      }),
+    ).toEqual({ status: 'unsupported', missingEvidence: 'unknown_trait_quantity' });
+    expect(
+      evaluateNpDamageOperation(sum, {
+        ...context,
+        traitQuantity: (actor, layer, trait) =>
+          exactQuantity(actor === 'attacker' && layer === 'combined' && trait === 'roman' ? 5 : 0),
+      }),
     ).toMatchObject({ npSpecialMultipliers: [1.6, 1.6, 1.6, 1.6, 1.6] });
 
     const targetSum = {
@@ -211,7 +260,8 @@ describe('NP damage operation', () => {
     expect(
       evaluateNpDamageOperation(targetSum, {
         ...context,
-        traitQuantity: (actor, layer, trait) => exactQuantity(actor === 'target' && layer === 'combined' && trait === 'roman' ? 2 : 0),
+        traitQuantity: (actor, layer, trait) =>
+          exactQuantity(actor === 'target' && layer === 'combined' && trait === 'roman' ? 2 : 0),
       }),
     ).toMatchObject({ npSpecialMultipliers: [1.4, 1.4, 1.4, 1.4, 1.4] });
 
@@ -226,9 +276,38 @@ describe('NP damage operation', () => {
         correctionPermille: 100,
       }),
     } as NpDamageSpec;
-    expect(evaluateNpDamageOperation(battle, { ...context, battlePointPhase: 40 })).toMatchObject({
+    expect(
+      evaluateNpDamageOperation(battle, {
+        ...context,
+        battlePointPhase: (_, domain) => bpRead(40, domain),
+      }),
+    ).toMatchObject({
       npSpecialMultipliers: [2, 2, 2, 2, 2],
     });
+    const perCell = {
+      ...battle,
+      parametersByOvercharge: battle.parametersByOvercharge.map((row) =>
+        row.map((cell, index) => ({ ...cell, targetId: index + 1 })),
+      ),
+    } as NpDamageSpec;
+    expect(
+      evaluateNpDamageOperation(perCell, {
+        ...context,
+        battlePointPhase: (level, domain) => bpRead(Number(domain), domain, level !== 2),
+      }),
+    ).toMatchObject({ npSpecialMultipliers: [1.1, 1, 1.3, 1.4, 1.5] });
+    expect(
+      evaluateNpDamageOperation(perCell, {
+        ...context,
+        battlePointPhase: (level, domain) => bpRead(level === 3 ? null : level, domain),
+      }),
+    ).toEqual({ status: 'unsupported', missingEvidence: 'missing_battle_point_phase' });
+    expect(() =>
+      evaluateNpDamageOperation(perCell, {
+        ...context,
+        battlePointPhase: () => bpRead(1, 'wrong-domain'),
+      }),
+    ).toThrow('invalid_np_battle_point_read');
     expect(noblePhantasmDamageDependency(hp, 1, 1)).toEqual({
       kind: 'quantity',
       quantity: 'attackerHpPermille',
@@ -238,6 +317,7 @@ describe('NP damage operation', () => {
     expect(noblePhantasmDamageDependency(battle, 1, 1)).toEqual({
       kind: 'quantity',
       quantity: 'battlePointPhase',
+      subjectId: '1',
       comparison: 'atLeast',
       value: 0,
     });
@@ -270,7 +350,11 @@ describe('NP damage operation', () => {
       kind: 'battlePointPhase',
       rawFunctionType: 'damageNpBattlePointPhase',
       maximumBattlePointPhase: 10,
-      parametersByOvercharge: matrix({ secondaryValuePermille: 1_000, correctionPermille: 100 }),
+      parametersByOvercharge: matrix({
+        targetId: 1,
+        secondaryValuePermille: 1_000,
+        correctionPermille: 100,
+      }),
     } as NpDamageSpec;
     expect(evaluateNpDamageOperation(rarity, context)).toEqual({
       status: 'unsupported',

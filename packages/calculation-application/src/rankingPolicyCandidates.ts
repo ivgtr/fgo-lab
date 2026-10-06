@@ -13,7 +13,7 @@ import type {
 import { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
-import type { calculateDamageResolution } from './damageResolution';
+import type { DamageResolutionValue } from './damageResolution';
 import { rankingPolicyKey } from './rankingComparisonPolicy';
 import type {
   CalculationExecution,
@@ -82,7 +82,7 @@ export function calculateRankingCandidateSet(
   conditions: RankingPolicyConditions,
   versions: VersionContext,
   includeAreaSupport: boolean,
-  damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>(),
+  damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
   captureExecutionObservation = false,
 ): RankingCandidateCalculation {
   const plan = compileRankingExecutionPlan(
@@ -92,6 +92,7 @@ export function calculateRankingCandidateSet(
     conditions,
     versions,
     captureExecutionObservation,
+    damageCache,
   );
   const candidates = executeRankingScenarios(
     plan.preparedRankingScenarios,
@@ -132,6 +133,7 @@ export function calculateRankingCandidateSet(
           ? reapplyPreparedCalculationPolicy(
               plan.preparedRankingScenarios[selectedIndex]!,
               withoutAreaPolicy,
+              damageCache,
             )
           : null;
       const withoutAreaExecution =
@@ -259,7 +261,7 @@ export function calculateRankingCandidates(
   conditions: RankingPolicyConditions,
   versions: VersionContext,
   includeAreaSupport: boolean,
-  damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>(),
+  damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
 ): ReadonlyMap<string, RankingPolicyDetail> {
   return calculateRankingCandidateSet(
     servant,

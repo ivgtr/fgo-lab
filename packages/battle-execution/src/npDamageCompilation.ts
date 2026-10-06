@@ -82,13 +82,16 @@ export function noblePhantasmDamageDependency(
       comparison: 'lessThan',
       value: 1_000,
     };
-  if (damage.kind === 'battlePointPhase')
+  if (damage.kind === 'battlePointPhase') {
+    if (item.targetId === undefined) throw new TypeError('missing_np_battle_point_domain');
     return {
       kind: 'quantity',
       quantity: 'battlePointPhase',
+      subjectId: String(item.targetId),
       comparison: 'atLeast',
       value: 0,
     };
+  }
   if (damage.kind === 'traitCount' && damage.quantity.kind === 'stacks')
     return {
       kind: 'any',

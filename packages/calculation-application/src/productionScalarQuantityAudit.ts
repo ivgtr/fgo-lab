@@ -14,15 +14,39 @@ type Consumption = OrderedCandidateStateAudit['scalarNpConsumptions'][number];
 const address = 'quantity:battlePointPhase';
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
-function snapshot(value: unknown): CanonicalAuditValue {
-  if (value === undefined) return { kind: 'absent' };
-  if (value instanceof Set) return [...value].map(snapshot);
-  if (value instanceof Map) return [...value].map(([key, item]) => [snapshot(key), snapshot(item)]);
-  if (Array.isArray(value)) return value.map(snapshot);
-  if (record(value))
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, snapshot(item)]));
-  return value as CanonicalAuditValue;
+/** A call owns its converted graph; shared native data is converted once, without dropping fields. */
+export function createScalarQuantitySnapshotter() {
+  const converted = new WeakMap<object, CanonicalAuditValue>();
+  const ancestors = new WeakSet<object>();
+  const visit = (item: unknown): CanonicalAuditValue => {
+    if (item === undefined) return { kind: 'absent' };
+    if (item === null || typeof item !== 'object') return item as CanonicalAuditValue;
+    if (ancestors.has(item)) throw new TypeError('cyclic_scalar_quantity_audit_value');
+    const prior = converted.get(item);
+    if (prior !== undefined) return prior;
+    ancestors.add(item);
+    try {
+      const result: CanonicalAuditValue =
+        item instanceof Set
+          ? [...item].map(visit)
+          : item instanceof Map
+            ? [...item].map(([key, child]) => [visit(key), visit(child)])
+            : Array.isArray(item)
+              ? item.map(visit)
+              : Object.fromEntries(Object.entries(item).map(([key, child]) => [key, visit(child)]));
+      converted.set(item, result);
+      return result;
+    } finally {
+      ancestors.delete(item);
+    }
+  };
+  return visit;
 }
+
+function snapshot(value: unknown): CanonicalAuditValue {
+  return createScalarQuantitySnapshotter()(value);
+}
+
 export { snapshot as scalarQuantitySnapshot };
 const equal = (left: unknown, right: unknown) =>
   JSON.stringify(snapshot(left)) === JSON.stringify(snapshot(right));

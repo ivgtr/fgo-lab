@@ -1,5 +1,5 @@
 import { ConditionReadIdentityError, type ConditionFactProof } from './conditionRead';
-import { readInputFact, writeInputFact } from './inputFacts';
+import { readInputFact, writeInputFact, type InputFact } from './inputFacts';
 import { commitTraitFact, readTraitQuantity } from './traitFactLayers';
 import { isBuffCountInput, markerTraitRead } from './buffInstances';
 import type {
@@ -13,13 +13,24 @@ import { traitConditionEvaluationSource } from './conditionSemantics';
 import type { SourceEffect } from './sourceCollection';
 import { resolveResourceTargetPolicy } from './effectRouting';
 
+/** Declaration equality includes every field; object property order has no meaning. */
+function inputDeclarationIdentity(definition: CanonicalInputDefinition): string {
+  return JSON.stringify(definition, (_key, value: unknown) =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? Object.fromEntries(
+          Object.entries(value).sort(([left], [right]) => left.localeCompare(right)),
+        )
+      : value,
+  );
+}
+
 export function mergeInputDefinitions(
   definitions: readonly CanonicalInputDefinition[],
 ): CanonicalInputDefinition[] {
   const result = new Map<string, CanonicalInputDefinition>();
   for (const definition of definitions) {
     const previous = result.get(definition.key);
-    if (previous && JSON.stringify(previous) !== JSON.stringify(definition)) {
+    if (previous && inputDeclarationIdentity(previous) !== inputDeclarationIdentity(definition)) {
       if (
         previous.kind !== 'effectStackCount' ||
         definition.kind !== 'effectStackCount' ||
@@ -49,25 +60,21 @@ export function seedStackQuantities(
       throw new TypeError(`invalid_stack_count:${definition.key}`);
     const { scope, trait } = definition.quantitySource;
     state.stackQuantitySources[definition.key] = definition.quantitySource;
-    state.traitCounts[scope] =
-      count === 0
-        ? Object.fromEntries(
-            Object.entries(state.traitCounts[scope]).filter(([key]) => key !== trait),
-          )
-        : { ...state.traitCounts[scope], [trait]: count };
-    (state.traits[scope] as Map<string, boolean>).set(trait, count > 0);
     const proof: ConditionFactProof = {
       kind: 'selectedInitialResource',
       clock: state.conditionReadClock,
     };
-    commitTraitFact(state.traitFactLayers, scope, trait, count > 0, count, proof, [proof]);
-    (state.conditionFactProofs.traits[scope] as Map<string, ConditionFactProof>).set(trait, proof);
-    state.inputFacts = writeInputFact(
-      state.inputFacts,
-      definition.key,
+    state.traitFactLayers = commitTraitFact(
+      state.traitFactLayers,
+      scope,
+      trait,
+      count > 0,
       count,
+      proof,
       [proof],
     );
+
+    state.inputFacts = writeInputFact(state.inputFacts, definition.key, count, [proof]);
   }
 }
 
@@ -95,14 +102,30 @@ export function liveInputQuantityRead(
     | 'buffInstances'
   >,
   key: string,
-): { value: number | undefined; support: readonly ConditionFactProof[] } {
+): {
+  value: number | undefined;
+  support: readonly ConditionFactProof[];
+  fact: InputFact | undefined;
+} {
   const source = state.stackQuantitySources[key];
   if (!source) return readInputFact(state.inputFacts, key);
+  return liveTraitQuantityRead(state, source);
+}
+
+/** Read the explicit canonical quantity source, including physical marker instances. */
+export function liveTraitQuantityRead(
+  state: Parameters<typeof liveInputQuantityRead>[0],
+  source: StackInputDefinition['quantitySource'],
+): {
+  value: number | undefined;
+  support: readonly ConditionFactProof[];
+  fact: InputFact | undefined;
+} {
   if (source.scope !== 'field') {
     const actor = source.scope === 'attackerState' ? 'attacker' : 'target';
     const marker = markerTraitRead(state.buffInstances ?? [], actor, source.trait);
     if (marker) {
-      if (!marker.known) return { value: undefined, support: [] };
+      if (!marker.known) return { value: undefined, support: [], fact: undefined };
       const support = (state.buffInstances ?? [])
         .filter(
           (instance) =>
@@ -115,16 +138,15 @@ export function liveInputQuantityRead(
           if (!proof) throw new ConditionReadIdentityError(`marker:${instance.identity}`);
           return proof;
         });
-      return { value: marker.count, support };
+      return { value: marker.count, support, fact: undefined };
     }
   }
-  const read = readTraitQuantity(
-    state.traitFactLayers,
-    source.scope,
-    source.trait,
-    state.conditionFactProofs.completeTraits[source.scope],
-  );
-  return { value: read.value === null ? undefined : read.value, support: read.support };
+  const read = readTraitQuantity(state.traitFactLayers, source.scope, source.trait);
+  return {
+    value: read.value === null ? undefined : read.value,
+    support: read.support,
+    fact: undefined,
+  };
 }
 
 /** Replace only world-fact presence dimensions already owned by an exact stack assignment. */

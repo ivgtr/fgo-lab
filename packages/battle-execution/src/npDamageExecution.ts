@@ -1,3 +1,4 @@
+import { liveTraitQuantityRead } from './stackQuantities';
 import type { HpNpEvaluation } from './hpExecutionObservation';
 import { hpRatio } from './hpResource';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
@@ -5,11 +6,18 @@ import type { BattleOperation, EffectDecision, ExecutableBattleState } from './c
 import type { ContributionApplicationPolicy } from './executionTypes';
 import { contributionIsIncluded } from './effectiveContributions';
 import { evaluateCondition } from './condition';
+import { noblePhantasmDamageDependency } from './npDamageCompilation';
 import {
   applyNpDamageOperationWithAudit,
+  npBattlePointValue,
+  type NpBattlePointRead,
   type ScalarNpDamageConsumption,
 } from './npDamageOperation';
-import { readTraitQuantity, type TraitQuantityRead } from './traitFactLayers';
+import {
+  readTraitQuantity,
+  projectBattleTraitPresence,
+  type TraitQuantityRead,
+} from './traitFactLayers';
 import { proofIsGuaranteed, type ConditionRead } from './conditionRead';
 
 export function applyNoblePhantasmDamage(
@@ -52,12 +60,8 @@ export function applyNoblePhantasmDamage(
         (input) => input.quantitySource.trait === trait && input.quantitySource.scope === scope,
       );
       if (!definition) return { value: null, support: [] };
-      return readTraitQuantity(
-        state.traitFactLayers,
-        definition.quantitySource.scope,
-        trait,
-        state.conditionFactProofs.completeTraits[definition.quantitySource.scope],
-      );
+      const read = liveTraitQuantityRead(state, definition.quantitySource);
+      return { value: read.value === undefined ? null : read.value, support: read.support };
     }
     if (
       operation.damage.kind === 'traitCount' &&
@@ -69,19 +73,9 @@ export function applyNoblePhantasmDamage(
       );
       return { value: read.truth === null ? null : Number(read.truth), support: read.support };
     }
-    const applied = readTraitQuantity(
-      state.traitFactLayers,
-      scope,
-      trait,
-      state.conditionFactProofs.completeTraits[scope],
-    );
+    const applied = readTraitQuantity(state.traitFactLayers, scope, trait);
     if (layer === 'state') return applied;
-    const intrinsic = readTraitQuantity(
-      state.traitFactLayers,
-      actor,
-      trait,
-      state.conditionFactProofs.completeTraits[actor],
-    );
+    const intrinsic = readTraitQuantity(state.traitFactLayers, actor, trait);
     return {
       value:
         intrinsic.value === null || applied.value === null ? null : intrinsic.value + applied.value,
@@ -111,6 +105,43 @@ export function applyNoblePhantasmDamage(
           }
         : { ...dependencyRead, support };
   }
+  const battlePointReads = new Map<number, NpBattlePointRead>();
+  const battlePointPhase = (npLevel: number, subjectId: string): NpBattlePointRead => {
+    const existing = battlePointReads.get(npLevel);
+    if (existing) {
+      npBattlePointValue(existing, subjectId);
+      return existing;
+    }
+    const dependency =
+      npLevel === operation.selectedNpLevel
+        ? dependencyRead
+        : evaluateCondition(
+            noblePhantasmDamageDependency(operation.damage, operation.overcharge, npLevel),
+            readState,
+          );
+    const read = {
+      dependency,
+      included: contributionIsIncluded(operation, dependency, contributionPolicy),
+    };
+    battlePointReads.set(npLevel, read);
+    return read;
+  };
+  let damageInput = input;
+  if (operation.damage.kind === 'battlePointPhase') {
+    const parameter =
+      operation.damage.parametersByOvercharge[operation.overcharge - 1]?.[
+        operation.selectedNpLevel - 1
+      ];
+    if (parameter?.targetId === undefined) throw new TypeError('missing_np_battle_point_domain');
+    const subjectId = String(parameter.targetId);
+    damageInput = {
+      ...input,
+      battlePointPhase: npBattlePointValue(
+        battlePointPhase(operation.selectedNpLevel, subjectId),
+        subjectId,
+      ),
+    };
+  }
   observeDependency?.(dependencyRead);
   const specialCondition = evaluateCondition(operation.specialAttackCondition, readState).truth;
   const specialDecision = operation.specialAttackDecisionKey
@@ -129,20 +160,20 @@ export function applyNoblePhantasmDamage(
       specialDecision !== undefined ||
       state.quantities.targetRarity !== null);
   return applyNpDamageOperationWithAudit(
-    input,
+    damageInput,
     operation.damage,
     {
       overcharge: operation.overcharge,
       selectedNpLevel: operation.selectedNpLevel,
       traitQuantity,
-      targetTraits: state.traits.target,
-      targetStateTraits: state.traits.targetState,
+      targetTraits: projectBattleTraitPresence(state, 'target'),
+      targetStateTraits: projectBattleTraitPresence(state, 'targetState'),
       targetPredicateValues: new Map(
         [...state.actorPredicates.target].map(([key, value]) => [key, value.present]),
       ),
       attackerHpRatio: state.hp ? hpRatio(state.hp.actors.attacker) : null,
       targetRarity: state.quantities.targetRarity,
-      battlePointPhase: state.quantities.battlePointPhase,
+      battlePointPhase,
       effectLocalConditionSatisfied: specialContributionEnabled && effectLocalConditionSatisfied,
       includeSpecialContribution: specialContributionEnabled,
     },

@@ -3,8 +3,9 @@ import { stackInputKey, type NoblePhantasmVariant } from '@fgo-lab/master-data';
 import type { ActivationContext, TargetPredicateAssertion } from './contracts';
 import type { ConditionEvaluationState } from './condition';
 import { targetPredicateKey } from './targetPredicate';
+import { emptyConditionFactProofs } from './conditionRead';
 import type { ConditionFactProof, ConditionReadClock } from './conditionRead';
-import { createTraitFactLayers, commitTraitFact, projectTraitFacts } from './traitFactLayers';
+import { createTraitFactLayers, commitTraitFact } from './traitFactLayers';
 import { createInputFacts } from './inputFacts';
 
 export type ConditionStateInput = Pick<
@@ -50,7 +51,7 @@ export function createConditionState<
   const intrinsic: ConditionFactProof = { kind: 'canonicalIntrinsic', clock };
   const external: ConditionFactProof = { kind: 'externalAssumption', clock };
   const initial: ConditionFactProof = { kind: 'selectedInitialResource', clock };
-  const traitFactLayers = createTraitFactLayers(
+  let traitFactLayers = createTraitFactLayers(
     attacker,
     {
       attackerState: input.attackerStateTraits,
@@ -63,33 +64,14 @@ export function createConditionState<
   );
   for (const scope of ['attackerState', 'targetState', 'field'] as const)
     for (const [trait, count] of Object.entries(input.stackStateCounts?.[scope] ?? {}))
-      commitTraitFact(traitFactLayers, scope, trait, count > 0, count, initial, [initial]);
-  const scopes = ['attacker', 'attackerState', 'target', 'targetState', 'field'] as const;
-  const projected = Object.fromEntries(
-    scopes.map((scope) => [scope, projectTraitFacts(traitFactLayers, scope)]),
-  ) as Record<(typeof scopes)[number], ReturnType<typeof projectTraitFacts>>;
+      traitFactLayers = commitTraitFact(traitFactLayers, scope, trait, count > 0, count, initial, [
+        initial,
+      ]);
   return {
     traitFactLayers,
     conditionReadClock: clock,
     conditionFactProofs: {
-      traits: {
-        attacker: new Map([...projected.attacker].map(([trait, fact]) => [trait, fact.proof])),
-        attackerState: new Map(
-          [...projected.attackerState].map(([trait, fact]) => [trait, fact.proof]),
-        ),
-        target: new Map([...projected.target].map(([trait, fact]) => [trait, fact.proof])),
-        targetState: new Map(
-          [...projected.targetState].map(([trait, fact]) => [trait, fact.proof]),
-        ),
-        field: new Map([...projected.field].map(([trait, fact]) => [trait, fact.proof])),
-      },
-      completeTraits: {
-        attacker: intrinsic,
-        attackerState: null,
-        target: null,
-        targetState: null,
-        field: null,
-      },
+      ...emptyConditionFactProofs(),
       suppressions: { attacker: new Map(), target: new Map() },
       predicates: {
         attacker: new Map(
@@ -109,17 +91,6 @@ export function createConditionState<
     },
     noblePhantasmVariant,
     card: input.cardType,
-    traits: {
-      attacker: new Map([...projected.attacker].map(([trait, fact]) => [trait, fact.present])),
-      attackerState: new Map(
-        [...projected.attackerState].map(([trait, fact]) => [trait, fact.present]),
-      ),
-      target: new Map([...projected.target].map(([trait, fact]) => [trait, fact.present])),
-      targetState: new Map(
-        [...projected.targetState].map(([trait, fact]) => [trait, fact.present]),
-      ),
-      field: new Map([...projected.field].map(([trait, fact]) => [trait, fact.present])),
-    },
     actorPredicates: {
       attacker: new Map(
         attackerPredicateAssertions.map((assertion) => [
@@ -142,19 +113,6 @@ export function createConditionState<
         }),
       ),
     ),
-    traitCounts: {
-      attacker: traitCounts(attacker),
-      attackerState: {
-        ...traitCounts(input.attackerStateTraits),
-        ...input.stackStateCounts?.attackerState,
-      },
-      target: traitCounts(input.target.traits),
-      targetState: {
-        ...traitCounts(input.targetStateTraits),
-        ...input.stackStateCounts?.targetState,
-      },
-      field: { ...traitCounts(input.fieldTraits), ...input.stackStateCounts?.field },
-    },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: {
       attackerHpPermille: input.attackerHpPermille,
@@ -164,13 +122,4 @@ export function createConditionState<
     activationContext,
     inputFacts: createInputFacts(resolvedInputValues, external),
   };
-}
-
-export function traitFacts(traits: Iterable<string>): ReadonlyMap<string, boolean> {
-  return new Map([...traits].map((trait) => [trait, true] as const));
-}
-export function traitCounts(traits: Iterable<string>): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (const trait of traits) result[trait] = (result[trait] ?? 0) + 1;
-  return result;
 }

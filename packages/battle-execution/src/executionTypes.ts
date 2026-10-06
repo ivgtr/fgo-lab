@@ -1,4 +1,7 @@
 import type { ScalarNpDamageConsumption } from './npDamageOperation';
+import type { PreNoblePhantasmState } from './preparationContracts';
+import type { RejectedPreparationDiagnostic } from './preparationExecution';
+import type { PreparationRequiredInput } from './sourceCollection';
 import type {
   CanonicalInputDefinition,
   BattlePointDomain,
@@ -148,7 +151,12 @@ export interface OrderedScenarioExecutionWithAuditObservation {
 
 export interface PreparedOrderedScenario {
   preparationExecution:
-    | { kind: 'available'; state: import('./preparationContracts').PreNoblePhantasmState }
+    | { kind: 'available'; state: PreNoblePhantasmState }
+    | {
+        kind: 'diagnostic';
+        state: PreNoblePhantasmState;
+        continuation: RejectedPreparationDiagnostic;
+      }
     | { kind: 'unavailable'; issues: readonly ExecutionIssue[] };
   battlePointDomains: readonly BattlePointDomain[];
   baseInput: DamageResolutionInput;
@@ -167,9 +175,7 @@ export interface PreparedOrderedScenario {
   attackerClass: string;
   attackerAttribute: CombatAttribute;
   inputDefinitions: readonly CanonicalInputDefinition[];
-  preparationRequiredInputs: readonly (CanonicalInputDefinition & {
-    effectOccurrenceIds: string[];
-  })[];
+  preparationRequiredInputs: readonly PreparationRequiredInput[];
   preparationInputKeys: ReadonlySet<string>;
   appliedPreparationActions: readonly AppliedPreparationAction[];
 }
@@ -182,7 +188,7 @@ export interface ResolvedCanonicalInputSet {
 
 /** Expose the retained physical snapshot without reconstructing or copying its identity. */
 export function preparationExecutionStateFor(prepared: PreparedOrderedScenario | null | undefined) {
-  return prepared?.preparationExecution.kind === 'available'
+  return prepared && prepared.preparationExecution.kind !== 'unavailable'
     ? prepared.preparationExecution.state
     : undefined;
 }

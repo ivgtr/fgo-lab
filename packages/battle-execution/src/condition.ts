@@ -1,7 +1,9 @@
+import { readTraitPresence } from './traitFactLayers';
 import type { BattleOperation } from './contracts';
 import { executionBindingFor } from './executionBinding';
 import { observeHpQuantity } from './hpExecutionObservation';
 import { liveInputQuantityRead } from './stackQuantities';
+import { inputFactPredicate } from './inputFacts';
 import { markerTraitRead } from './buffInstances';
 import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
 import {
@@ -76,10 +78,8 @@ export type ConditionEvaluationState = Pick<
   ExecutableBattleState,
   | 'hp'
   | 'buffInstances'
-  | 'traits'
   | 'initialTraitSuppressions'
   | 'actorPredicates'
-  | 'traitCounts'
   | 'stackQuantitySources'
   | 'inputFacts'
   | 'quantities'
@@ -150,21 +150,8 @@ export function evaluateCondition(
       unknown,
     );
   type TraitRead = { value: boolean | undefined; support: readonly ConditionFactProof[] };
-  const scopeRead = (scope: TraitScope, trait: string): TraitRead => {
-    const value = state.traits[scope].get(trait);
-    if (value !== undefined)
-      return {
-        value,
-        support: [
-          requiredProof(
-            state.conditionFactProofs.traits[scope].get(trait),
-            `trait:${scope}:${trait}`,
-          ),
-        ],
-      };
-    const complete = state.conditionFactProofs.completeTraits[scope];
-    return complete ? { value: false, support: [complete] } : { value: undefined, support: [] };
-  };
+  const scopeRead = (scope: TraitScope, trait: string): TraitRead =>
+    readTraitPresence(state.traitFactLayers, scope, trait);
   const traitValue = (scope: TraitScope, trait: string): TraitRead => {
     const semantics = traitConditionScopeSemantics(scope);
     if (semantics.actor !== 'field') {
@@ -400,8 +387,7 @@ export function evaluateCondition(
       const quantityRead = liveInputQuantityRead(state, condition.inputKey);
       const actual = quantityRead.value;
       onConditionRead?.({ kind: 'inputQuantity', inputKey: condition.inputKey, value: actual });
-      if (actual === undefined) return leaf(null, null, []);
-      const truth =
+      const compare = (actual: number) =>
         condition.comparison === 'lessThan'
           ? actual < condition.value
           : condition.comparison === 'atMost'
@@ -411,7 +397,21 @@ export function evaluateCondition(
               : condition.comparison === 'atLeast'
                 ? actual >= condition.value
                 : actual > condition.value;
-      return leaf(actual, truth, quantityRead.support);
+      if (quantityRead.fact?.kind === 'conditional')
+        return result(
+          inputFactPredicate(quantityRead.fact, compare),
+          [
+            {
+              expression: condition,
+              value: actual ?? null,
+              proof: null,
+              quantityFact: quantityRead.fact,
+            },
+          ],
+          quantityRead.support,
+        );
+      if (actual === undefined) return leaf(null, null, []);
+      return leaf(actual, compare(actual), quantityRead.support);
     }
     case 'all':
     case 'any': {

@@ -1,3 +1,5 @@
+import type { DamageResolutionValue } from './damageResolution';
+import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
 import { compileRankingSelection, resolveRankingBasis } from './rankingBasis';
 import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
@@ -44,6 +46,7 @@ export function compileRankingExecutionPlan(
   conditions: RankingPolicyConditions,
   _versions: VersionContext,
   captureExecutionObservation = false,
+  damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
 ): RankingExecutionPlan {
   const selection = compileRankingSelection(conditions);
   if (selection.status === 'invalid') throw new TypeError(selection.reason);
@@ -68,6 +71,7 @@ export function compileRankingExecutionPlan(
         initialNpGauge: candidate.evidence.startNpGauge,
       },
       captureExecutionObservation,
+      damageCache,
     ),
   );
   const baselineGauge = master.npResourceSemantics.noblePhantasmUse.requirement;
