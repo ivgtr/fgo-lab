@@ -12,6 +12,12 @@ updated_at: "2026-10-07"
 
 ### 明示確認後の再開とbasis直接caller訂正（2026-10-07 15:52 JST）
 
+**09:38 UTC final source direct反証:** 製品sourceがHEAD `264bfc08001f184434e0538179d2a2d9fa7de467`と同一（docsのみdirty）の状態で`preparationTransaction`／`operationCompiler`／`engineAudit`3file112/112・warning0、原 `.test-results/2026-10-07T09-37-24-219Z-15-dc99fa/`。先の09:03版だけに依存せず、native source/物理no-op/compiler identity/auditの局所証拠を現在製品sourceへ結ぶ。全source/marker/policy/productionを閉じたとは扱わない。
+
+**09:38 UTC session終了Handoff:** 製品checkpointは`171f223`→`2579ebb`→`264bfc0`。最後のclean HEAD `264bfc08001f184434e0538179d2a2d9fa7de467`でE2E-051成功、詳細と保証範囲は上記09:35。現局所の意味成功・原失敗・未達・直接次操作は[Taskの09:38 Handoff](../tasks/development-redesign-tasks.md#tsk-14-ranking最終方針の実装と正本収束)へ一本化する。固定契約/検査緩和なし、全15 Apply未Verified、TSK-14 in_progress、R1未受入。今回増えたrun artifactは反証・後続受入の参照中に保持し、長期bundle契約や原pathの処遇変更としない。
+
+**09:35 UTC 実UI/worker保存代表経路:** clean HEAD `264bfc08001f184434e0538179d2a2d9fa7de467`でE2E-051を単独実行し、setup＋本case2/2・warning/skip/retry0、原 `.test-results/2026-10-07T09-32-36-651Z-15-208ddc/`。公開masterの保存subjectのLv90/NP2/Fou1234/skill1・5・9、初期OC操作、module workerランキング→同条件calculator同値、detail、reloadで同request/result、保存編集後のpinned再表示、backup復元・履歴再開・share URL/JSON同値の一経路が成立。runner所要96.48s。固定差分の意味全体、別の修復失敗/stale、対象production/正式性能/qualityへは拡張しない。自起動server/browser終了、結果後のproduct差分なし。
+
 **09:31 UTC preflight条件のtyped owner:** `decisionConditions`の元source条件とterminal NP special条件を明示unionにし、assumed decisionの全体整合制約をnative truthで省略しない理由を同consumerへ記載。意味は09:25成功差分と同じ。typecheck／限定lint・format成功、direct10/10の原 `.test-results/2026-10-07T09-30-41-353Z-15-225a08/`。実scenario43/43は09:25原を再利用し、新たな同条件全件runは不要と判断。未達は前記のまま。
 
 **09:29 UTC preflight局所差分の固定範囲:** 元source readのlinked decision／variant選択と、独立したassumed decision整合制約を分離。direct fixture10/10は変更前card=false／最終card=true、linked write無効、unread現state、terminal NP special trueを確認（原 `.test-results/2026-10-07T09-26-58-209Z-15-4b243b/`）。実scenario43/43・warning0の原 `.test-results/2026-10-07T09-25-07-722Z-15-e09413/`を再利用し、現在差分の型／対象lint／書式／diff check成功。これらは本局所read境界の証拠であり、実masterのcard差、初期factの他reader、全source／rollback、UI/worker/save、production/perf/qualityの受入ではない。
