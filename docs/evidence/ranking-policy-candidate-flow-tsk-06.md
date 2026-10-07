@@ -12,6 +12,14 @@ updated_at: "2026-10-07"
 
 ### 明示確認後の再開とbasis直接caller訂正（2026-10-07 15:52 JST）
 
+**09:46 UTC E2E-050 Blocking:** clean製品source `b7eff993ed42741d934a10332b4de6edf4796a95`、docsだけdirtyの実ブラウザーで期待433計算に対し425計算・順位外8。原 `.test-results/2026-10-07T09-42-04-002Z-15-2df638/`、setup1成功／本case1失敗、warning0。最初のsummaryで停止したため後続detail/handoff/stale検査は未実施。原traceの最終frame-snapshotは`unsupported` 5件（黒姫、美遊、エリザベート2形態、紅閻魔）と`invalid` 3件（ジョン・ラックランド、キングプロテア・オルタ、ハベトロット）。前者の画面理由は候補実行意味論の未対応、後者は予期しないランキング失敗。旧427/6診断との差は単純な2件増ではなく、root cause／actual source readは未確定。追加run/製品編集を停止し、同familyのsource→候補→実行→worker→表示と旧inventoryを読み取りで照合する。09:50上限前に未確定なら原結果のままTask冒頭へ引継ぐ。E2E-051～054の成功で相殺しない。
+
+`rankingPolicyCalculation.calculateRankingPolicy`は候補集合生成と結果解決をservantごとにcatchし、予期しない例外をそのinventoryの各profileで`invalid`／`unexpectedRankingFailure`へ写す。`Ranking.tsx`はstatus/理由のみ表示し、catchが保持した`detail`はこのtraceに出ない。したがって3件の例外内容／catch位置を画面から確定できない。次回は固定8 profileを共有inventoryの同じ入力・版で直接ownerへ通し、既存のdetailとfirst differenceを記録し、合法性・rollback・parityを確認する。UI名／IDをruntime例外に用いず、schema42／engine49／固定433 expectedを維持する。
+
+**09:42 UTC marker/BP実UI追補:** 製品sourceは`b7eff993ed42741d934a10332b4de6edf4796a95`と同一、dirtyはdocsのみ。E2E-053/054は各setup＋本case2/2・warning/skip/retry0、原 `.test-results/2026-10-07T09-40-11-576Z-15-0f0fad/`／`.test-results/2026-10-07T09-40-57-985Z-15-5c1fb0/`。前者は4騎のmarker profile保存再生、後者は開始BP50の保存再生と攻撃役変更後resetを確認。代表経路の追加であり全件意味受入へ昇格させない。詳細はTask冒頭。
+
+**09:40 UTC HP実画面の代表経路:** docs checkpoint `b7eff993ed42741d934a10332b4de6edf4796a95`のclean sourceでE2E-052 2/2・warning/skip/retry0、原 `.test-results/2026-10-07T09-38-55-658Z-15-5a29f6/`。HP0拒否、吸収元修復、準備後HPの保存再生と形態/Lv/NP/OC/礼装変更時の再計算を3騎＋形態1騎で実画面確認。現Handoffの代表経路へ追加するが、full HP/rollbackや全Applyへ一般化しない。詳細はTask冒頭。
+
 **09:38 UTC final source direct反証:** 製品sourceがHEAD `264bfc08001f184434e0538179d2a2d9fa7de467`と同一（docsのみdirty）の状態で`preparationTransaction`／`operationCompiler`／`engineAudit`3file112/112・warning0、原 `.test-results/2026-10-07T09-37-24-219Z-15-dc99fa/`。先の09:03版だけに依存せず、native source/物理no-op/compiler identity/auditの局所証拠を現在製品sourceへ結ぶ。全source/marker/policy/productionを閉じたとは扱わない。
 
 **09:38 UTC session終了Handoff:** 製品checkpointは`171f223`→`2579ebb`→`264bfc0`。最後のclean HEAD `264bfc08001f184434e0538179d2a2d9fa7de467`でE2E-051成功、詳細と保証範囲は上記09:35。現局所の意味成功・原失敗・未達・直接次操作は[Taskの09:38 Handoff](../tasks/development-redesign-tasks.md#tsk-14-ranking最終方針の実装と正本収束)へ一本化する。固定契約/検査緩和なし、全15 Apply未Verified、TSK-14 in_progress、R1未受入。今回増えたrun artifactは反証・後続受入の参照中に保持し、長期bundle契約や原pathの処遇変更としない。
