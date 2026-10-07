@@ -1,4 +1,5 @@
 import { addTraitFact } from './traitFactLayers';
+import { capturePhysicalOperationTransition } from './preparationPhysicalTransition';
 import { exactInputFactValue, inputFactValues } from './inputFacts';
 import { CRITICAL_STARS_INITIAL_INPUT, mutateConditionalCriticalStars } from './resourceSemantics';
 import type { ModifierValueRead, PhysicalInputCommit } from './executionBinding';
@@ -108,6 +109,21 @@ import {
   battlePointEffectKey,
   reconcilePreparationBattlePoints,
 } from './battlePointResource';
+
+function nativePhysicalFactChanged(
+  before: PreNoblePhantasmState,
+  after: PreNoblePhantasmState,
+): boolean {
+  return (
+    before.inputFacts !== after.inputFacts ||
+    before.traitFactLayers !== after.traitFactLayers ||
+    before.buffInstances !== after.buffInstances ||
+    before.hp !== after.hp ||
+    before.currentFormId !== after.currentFormId ||
+    before.selectedNoblePhantasmVariant !== after.selectedNoblePhantasmVariant ||
+    before.initialTraitSuppressions !== after.initialTraitSuppressions
+  );
+}
 
 export function preparationEffectSource(args: {
   servant: ServantMaster;
@@ -405,6 +421,9 @@ export function executePreparationOc(args: {
         conditionReads,
         physicalInputs: [],
         modifierValueReads: [],
+        committedPhysicalOperationIndexes: [],
+        sourcePhysicalCommitted: false,
+        physicalTransitions: [],
       },
       operations: source.effect.execution.map((operation, operationIndex) => ({
         operation,
@@ -1936,12 +1955,49 @@ export function executePreparationOc(args: {
       );
       const step = completePhysicalSource(outcomes, commit);
       if (step.kind !== 'reject') {
+        const changedOperations = commit
+          ? sourceExecution.operations.filter(({ steps: operationSteps }) =>
+              operationSteps.some(({ before, after }) => nativePhysicalFactChanged(before, after)),
+            )
+          : [];
+        const changedIndexes = new Set(
+          changedOperations.map(({ operationIndex }) => operationIndex),
+        );
+        const structuralChanged = changedOperations.some(
+          ({ operation }) =>
+            operation.kind === 'transformActorForm' ||
+            operation.kind === 'selectNoblePhantasmVariant',
+        );
         sourceExecution.status = 'completed';
         sourceExecution.binding = {
           ...sourceExecution.binding,
           activation: requiredPreparationConditionRead(source.effect, activation),
           physicalInputs: commit ? [...physicalInputs] : [],
           modifierValueReads: commit ? [...modifierValueReads] : [],
+          committedPhysicalOperationIndexes: sourceExecution.operations.flatMap(
+            ({ operation, operationIndex }) =>
+              changedIndexes.has(operationIndex) ||
+              (structuralChanged &&
+                (operation.kind === 'transformActorForm' ||
+                  operation.kind === 'selectNoblePhantasmVariant'))
+                ? [operationIndex]
+                : [],
+          ),
+          sourcePhysicalCommitted: commit,
+          physicalTransitions: commit
+            ? changedOperations
+                .filter(
+                  ({ operationIndex }) =>
+                    !physicalInputs.some((input) => input.operationIndex === operationIndex),
+                )
+                .map(({ operationIndex, steps: operationSteps }) =>
+                  capturePhysicalOperationTransition(
+                    operationIndex,
+                    operationSteps[0]!.before,
+                    operationSteps.at(-1)!.after,
+                  ),
+                )
+            : [],
         };
         current = {
           ...current,

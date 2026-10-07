@@ -136,7 +136,16 @@ function sealSource(
   const identity = {
     actionId: draft.actionId,
     source: draft.source,
-    binding: draft.binding,
+    binding: applied
+      ? draft.binding
+      : {
+          ...draft.binding,
+          physicalInputs: [],
+          modifierValueReads: [],
+          committedPhysicalOperationIndexes: [],
+          sourcePhysicalCommitted: false,
+          physicalTransitions: [],
+        },
     operations: draft.operations.map((operation) => ({
       ...operation,
       steps: [...operation.steps],

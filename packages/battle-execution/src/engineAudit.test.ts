@@ -2,6 +2,8 @@ import { projectBattleTraitPresence } from './traitFactLayers';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { createPreparationState } from './preparationState';
+import { captureInitialPreparationFacts } from './preparationInitialFacts';
+import { bindExecutionOperation, type SourceExecutionBinding } from './executionBinding';
 import { describe, expect, it } from 'vitest';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
@@ -178,11 +180,50 @@ function prepared(operations: readonly BattleOperation[] = [operation]): Prepare
     attackerClass: 'saber',
     attackerAttribute: 'earth',
     inputDefinitions: [],
-    preparationExecution: { kind: 'available', state: initialized.state },
+    preparationExecution: {
+      kind: 'available',
+      state: initialized.state,
+      initialFacts: captureInitialPreparationFacts(initialized.state),
+    },
   } as unknown as PreparedOrderedScenario;
 }
 
 describe('public ordered execution audit parity', () => {
+  it('does not replay a physical no-op from a committed preparation source', () => {
+    const write: BattleOperation = {
+      ...operation,
+      operationId: 'native-no-op',
+      kind: 'addTrait',
+      scope: 'attackerState',
+      trait: 'created',
+    };
+    const binding: SourceExecutionBinding = {
+      actionId: 'native-action',
+      actorFormId: variant.ref.actorFormId,
+      sourceInstanceId: write.source.sourceInstanceId,
+      skillId: write.source.skillId,
+      occurrenceId: write.source.effectOccurrenceId,
+      valueSetIndex: 0,
+      valueIndex: 0,
+      activation: { kind: 'unread' },
+      conditionReads: [],
+      physicalInputs: [],
+      modifierValueReads: [],
+      committedPhysicalOperationIndexes: [],
+      sourcePhysicalCommitted: true,
+      physicalTransitions: [],
+    };
+    const executed = executeOrderedScenario(
+      prepared([bindExecutionOperation(write, binding, 0)]),
+      inputs,
+    );
+    expect(executed.issues).toEqual([]);
+    expect(
+      projectBattleTraitPresence(executed.state, 'attackerState').get('created'),
+    ).toBeUndefined();
+    expect(executed.state.traitFactLayers.writes.attackerState.has('created')).toBe(false);
+  });
+
   it('commits a trait write and its fact layer through the public candidate executor', () => {
     const write: BattleOperation = {
       ...operation,

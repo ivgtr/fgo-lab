@@ -1,6 +1,7 @@
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type ServantMaster } from '@fgo-lab/master-data';
 import { createPreparationState } from './preparationState';
+import { captureInitialPreparationFacts } from './preparationInitialFacts';
 import { describe, expect, it } from 'vitest';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { BattleOperation } from './contracts';
@@ -18,12 +19,23 @@ function preparationExecution(): PreparedOrderedScenario['preparationExecution']
     traits: [],
     skills: [],
     passives: [],
-    noblePhantasmVariantGroups: [{ ...original.noblePhantasmVariantGroups[0]!, variants: [noblePhantasmVariant] }],
+    noblePhantasmVariantGroups: [
+      { ...original.noblePhantasmVariantGroups[0]!, variants: [noblePhantasmVariant] },
+    ],
     actorFormGraph: {
       actorId: input.attackerId,
       defaultInitialFormId: noblePhantasmVariant.ref.actorFormId,
       initialFormIds: [noblePhantasmVariant.ref.actorFormId],
-      forms: [{ ...original.actorFormGraph.forms[0]!, id: noblePhantasmVariant.ref.actorFormId, traits: [], skillIds: [], passiveIds: [], baseNoblePhantasmVariant: noblePhantasmVariant.ref }],
+      forms: [
+        {
+          ...original.actorFormGraph.forms[0]!,
+          id: noblePhantasmVariant.ref.actorFormId,
+          traits: [],
+          skillIds: [],
+          passiveIds: [],
+          baseNoblePhantasmVariant: noblePhantasmVariant.ref,
+        },
+      ],
       transitions: [],
     },
   };
@@ -35,7 +47,11 @@ function preparationExecution(): PreparedOrderedScenario['preparationExecution']
     overcharge: 1,
   });
   if (initialized.status !== 'applied') throw new Error('preparation_fixture_required');
-  return { kind: 'available', state: initialized.state };
+  return {
+    kind: 'available',
+    state: initialized.state,
+    initialFacts: captureInitialPreparationFacts(initialized.state),
+  };
 }
 
 const source = {

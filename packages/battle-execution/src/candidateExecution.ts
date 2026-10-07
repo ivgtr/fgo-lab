@@ -7,6 +7,7 @@ import {
 } from './conditionRead';
 import { physicalInputCommitFor, type SourceExecutionBinding } from './executionBinding';
 import { exactInputFactValue } from './inputFacts';
+import { applyCommittedPreparationTransition } from './preparationPhysicalTransition';
 import {
   applyObservedNpDamage,
   evaluateObservedCondition,
@@ -142,6 +143,31 @@ function applyOrderedTraitWrite(
   state.traitFactLayers = changed.traitFactLayers;
   state.conditionFactProofs = changed.conditionFactProofs;
   state.initialTraitSuppressions = changed.initialTraitSuppressions;
+}
+
+function applyAuditedQuantityMutation(
+  operation: Extract<BattleOperation, { kind: 'resourceMutation' | 'addQuantity' }>,
+  before: ExecutableBattleState,
+  after: ExecutableBattleState,
+  proof: ConditionFactProof,
+  operationSequence: number,
+  pending: PendingMutationAuditEvent[] | null,
+): ExecutionIssue | null {
+  const mutationBefore = pending ? mutationAuditAddress(operation, before) : null;
+  const issue =
+    operation.kind === 'resourceMutation'
+      ? applyOrderedCriticalStarsMutation(operation, after, proof)
+      : applyOrderedQuantityMutation(operation, after);
+  if (pending && mutationBefore)
+    pending.push({
+      operationSequence,
+      operationId: operation.operationId,
+      operationKind: operation.kind,
+      stateAddress: mutationBefore.stateAddress,
+      before: mutationBefore.value,
+      attemptedAfter: mutationAuditAddress(operation, after)?.value ?? null,
+    });
+  return issue;
 }
 
 export function executeOrderedScenarioCandidates(
@@ -317,25 +343,29 @@ function executeOrderedScenarioCandidateInternal(
       });
       if (outcome === 'applied') {
         const candidateState = cloneBattleState(state);
+        const nativePhysical = applyCommittedPreparationTransition(operation, candidateState);
         if (recordPreparationPhysicalInput(operation, operationSequence, pendingMutationEvents)) {
-          // The preparation source already committed this physical input.
+          const committed = physicalInputCommitFor(operation)!;
+          candidateState.inputFacts = new Map([
+            ...candidateState.inputFacts,
+            [committed.inputKey, committed.after],
+          ]);
+        } else if (nativePhysical) {
+          // The sealed source has already handled this physical operation.
         } else if (preappliedOperationIds.has(operation.operationId)) {
           // Preparation already committed this canonical form/variant mutation.
         } else if (operation.kind === 'preserveSemanticEffect' && operation.buffMutation) {
           issue = applyOrderedMarkerMutation(operation, candidateState, condition, writeProof);
           if (issue) [outcome, code] = ['unsupported', 'unresolved'];
-        } else if (operation.kind === 'resourceMutation') {
-          const mutationBefore = audit ? mutationAuditAddress(operation, state) : null;
-          issue = applyOrderedCriticalStarsMutation(operation, candidateState, writeProof);
-          if (audit && mutationBefore && pendingMutationEvents)
-            pendingMutationEvents.push({
-              operationSequence,
-              operationId: operation.operationId,
-              operationKind: operation.kind,
-              stateAddress: mutationBefore.stateAddress,
-              before: mutationBefore.value,
-              attemptedAfter: mutationAuditAddress(operation, candidateState)?.value ?? null,
-            });
+        } else if (operation.kind === 'resourceMutation' || operation.kind === 'addQuantity') {
+          issue = applyAuditedQuantityMutation(
+            operation,
+            state,
+            candidateState,
+            writeProof,
+            operationSequence,
+            pendingMutationEvents,
+          );
           if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (
           operation.kind === 'addTrait' ||
@@ -343,19 +373,6 @@ function executeOrderedScenarioCandidateInternal(
           operation.kind === 'suppressInitialTrait'
         ) {
           applyOrderedTraitWrite(operation, candidateState, writeProof);
-        } else if (operation.kind === 'addQuantity') {
-          const mutationBefore = audit ? mutationAuditAddress(operation, state) : null;
-          issue = applyOrderedQuantityMutation(operation, candidateState);
-          if (audit && mutationBefore && pendingMutationEvents)
-            pendingMutationEvents.push({
-              operationSequence,
-              operationId: operation.operationId,
-              operationKind: operation.kind,
-              stateAddress: mutationBefore.stateAddress,
-              before: mutationBefore.value,
-              attemptedAfter: mutationAuditAddress(operation, candidateState)?.value ?? null,
-            });
-          if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (operation.kind === 'addModifier' && contributionIncluded)
           appendModifier(candidateState, operation, resolvedModifierValue!);
         else if (operation.kind === 'changeModifierRate' && contributionIncluded)

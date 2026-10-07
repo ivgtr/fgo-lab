@@ -360,6 +360,11 @@ describe('transactional preparation execution', () => {
     expect(source.transaction.after.currentFormId).toEqual(changedForm);
     expect(source.transaction.after.selectedNoblePhantasmVariant).toEqual(changedAttack.ref);
     expect(source.operations.map(({ status }) => status)).toEqual(['reached', 'reached']);
+    expect(source.binding.committedPhysicalOperationIndexes).toEqual([0, 1]);
+    expect(source.binding.sourcePhysicalCommitted).toBe(true);
+    expect(source.binding.physicalTransitions.map(({ operationIndex }) => operationIndex)).toEqual([
+      0,
+    ]);
     expect(source.operations[0]?.steps.at(-1)?.after.currentFormId).toEqual(changedForm);
     expect(source.operations[1]?.steps[0]?.before.currentFormId).toEqual(changedForm);
     expect(result.committedSources).toContain(source);
@@ -438,6 +443,7 @@ describe('transactional preparation execution', () => {
     expect(result.state.sourceBindings.at(-1)?.modifierValueReads).toMatchObject([
       { operationIndex: 0, result: { value: 100, dependency: { kind: 'known' } } },
     ]);
+    expect(result.state.sourceBindings.at(-1)?.committedPhysicalOperationIndexes).toEqual([1]);
     expect(
       readTraitQuantity(result.state.traitFactLayers, 'attackerState', 'sequenced').value,
     ).toBe(1);
@@ -512,6 +518,8 @@ describe('transactional preparation execution', () => {
     const source = result.sources.find(({ source }) => source.effect === staged);
     if (source?.status !== 'completed') throw new Error('completed source required');
     expect(source.transaction.kind).toBe('stochasticFailure');
+    expect(source.binding.committedPhysicalOperationIndexes).toEqual([]);
+    expect(source.binding.sourcePhysicalCommitted).toBe(false);
     expect(source.transaction.before.npResource.gauge).toBe(10000);
     expect(source.transaction.attempted.npResource.gauge).toBe(11000);
     expect(source.transaction.attempted.ocState.boosts).toHaveLength(1);
@@ -585,6 +593,8 @@ describe('transactional preparation execution', () => {
     expect(exactInputFactValue(commit.before)).toBe(0);
     expect(exactInputFactValue(commit.after)).toBeUndefined();
     expect(commit.after).toEqual(used.state.inputFacts.get('battle:criticalStars'));
+    expect(action.sources[0]!.binding.physicalTransitions).toEqual([]);
+    expect(action.sources[0]!.binding.sourcePhysicalCommitted).toBe(true);
     expect(readInputFact(created.state.inputFacts, 'battle:criticalStars').value).toBe(0);
 
     const later = effect(
@@ -619,6 +629,7 @@ describe('transactional preparation execution', () => {
     const rolledBack = failed.sources[0]!;
     expect(rolledBack.status).toBe('rolledBack');
     if (rolledBack.status !== 'rolledBack') throw new Error('source rollback required');
+    expect(rolledBack.binding.committedPhysicalOperationIndexes).toEqual([]);
     expect(rolledBack.restored).toBe(original.state);
     expect(rolledBack.transaction.kind).toBe('committed');
     expect(
@@ -1088,6 +1099,10 @@ describe('transactional preparation execution', () => {
       status: 'applied',
       state: { currentFormId: baseForm, selectedNoblePhantasmVariant: baseAttack.ref },
     });
+    expect(
+      result.sources.find(({ source }) => source.effect === conditional)?.binding
+        .committedPhysicalOperationIndexes,
+    ).toEqual([]);
   });
 
   it('rejects an ambiguous structural condition without committing its action', () => {

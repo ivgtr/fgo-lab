@@ -14,7 +14,12 @@ import {
 } from '@fgo-lab/schema';
 import { analyzeActivationCondition } from './activationCondition';
 import { planOperationActivations } from './activation';
-import type { BattleOperation, EffectProjection, ExecutionPhase } from './contracts';
+import type {
+  BattleOperation,
+  EffectProjection,
+  ExecutionIssue,
+  ExecutionPhase,
+} from './contracts';
 import type { PreparedOrderedScenario, ResolvedScenario } from './executionTypes';
 import {
   compileEffectCached,
@@ -36,7 +41,29 @@ import { effectChangesPreparation } from './preparationTransaction';
 import { operationSourceFor, retainCompiledSources } from './executionSourceObservation';
 import { closeResourceMutationSemantics } from './resourceSemantics';
 import { bindExecutionOperation, pendingNoblePhantasmSourceBinding } from './executionBinding';
+import { captureInitialPreparationFacts } from './preparationInitialFacts';
 import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
+
+function preparedPreparationExecution(
+  formExecution: ResolvedAttackerFormExecution | null,
+  issues: readonly ExecutionIssue[],
+  diagnostic: boolean,
+  continuation: ResolvedAttackerFormExecution['diagnostic'],
+): PreparedOrderedScenario['preparationExecution'] {
+  if (!formExecution) {
+    if (diagnostic) throw new TypeError('diagnostic_preparation_state_required');
+    return { kind: 'unavailable', issues };
+  }
+  const initial = formExecution.initializationExecution?.before;
+  if (!initial) throw new TypeError('missing_initial_preparation_execution');
+  const initialFacts = captureInitialPreparationFacts(initial);
+  if (diagnostic) {
+    if (!continuation) throw new TypeError('diagnostic_preparation_continuation_required');
+    return { kind: 'diagnostic', state: formExecution.state, initialFacts, continuation };
+  }
+  return { kind: 'available', state: formExecution.state, initialFacts };
+}
+
 export function compileExecutionPlan(
   baseInput: DamageResolutionInput,
   scenario: ResolvedScenario,
@@ -279,17 +306,12 @@ function compileExecutionPlanForPurpose(
     ...(collected.formExecution?.state.hp?.inputDefinitions ?? []),
     ...(collected.formExecution?.requiredInputs.map(({ definition }) => definition) ?? []),
   ]);
-  let preparationExecution: PreparedOrderedScenario['preparationExecution'];
-  if (diagnostic)
-    preparationExecution = {
-      kind: 'diagnostic',
-      state: collected.formExecution!.state,
-      continuation: resolvedFormExecution!.diagnostic!,
-    };
-  else
-    preparationExecution = collected.formExecution
-      ? { kind: 'available', state: collected.formExecution.state }
-      : { kind: 'unavailable', issues: collected.issues };
+  const preparationExecution = preparedPreparationExecution(
+    collected.formExecution,
+    collected.issues,
+    diagnostic,
+    resolvedFormExecution?.diagnostic,
+  );
   const plan: PreparedOrderedScenario = {
     baseInput,
     scenario: executionScenario,

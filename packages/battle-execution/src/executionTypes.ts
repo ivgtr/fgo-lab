@@ -27,6 +27,7 @@ import type {
 } from './contracts';
 import type { TargetCandidate, TargetResolution } from './targetContext';
 import type { AppliedPreparationAction } from './preNoblePhantasm';
+import type { InitialPreparationFacts } from './preparationInitialFacts';
 
 export type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -151,10 +152,15 @@ export interface OrderedScenarioExecutionWithAuditObservation {
 
 export interface PreparedOrderedScenario {
   preparationExecution:
-    | { kind: 'available'; state: PreNoblePhantasmState }
+    | {
+        kind: 'available';
+        state: PreNoblePhantasmState;
+        initialFacts: InitialPreparationFacts;
+      }
     | {
         kind: 'diagnostic';
         state: PreNoblePhantasmState;
+        initialFacts: InitialPreparationFacts;
         continuation: RejectedPreparationDiagnostic;
       }
     | { kind: 'unavailable'; issues: readonly ExecutionIssue[] };

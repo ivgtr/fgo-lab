@@ -560,6 +560,9 @@ it('binds each execution without mutating an unbound operation or an earlier cac
     conditionReads: [],
     physicalInputs: [],
     modifierValueReads: [],
+    committedPhysicalOperationIndexes: [],
+    sourcePhysicalCommitted: false,
+    physicalTransitions: [],
   });
   const firstBinding = binding('first');
   const secondBinding = binding('second');

@@ -1,7 +1,7 @@
 import { hpPermille } from './hpResource';
 import { cloneInputFacts, seedUnreadInputFacts } from './inputFacts';
-import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
-import { seedBuffInstances, isBuffCountInput } from './buffInstances';
+import type { ConditionFactProof } from './conditionRead';
+import { applyWorldFacts, createInitialBattleState } from './state';
 import { seedStackQuantities } from './stackQuantities';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
@@ -15,7 +15,6 @@ import type {
 } from './contracts';
 import { buildActivationContext } from './activationContext';
 import type { SatisfiableConditionConstraint } from './constraints';
-import { createInitialBattleState } from './state';
 import { materializeTargetCandidate, type TargetCandidate } from './targetContext';
 import type { PreparedOrderedScenario, ResolvedCanonicalInputSet } from './executionTypes';
 import { resolveCompileProjections } from './candidateDecisions';
@@ -110,19 +109,17 @@ function prepareExecutableCandidate(
   if (prepared.preparationExecution.kind === 'unavailable')
     throw new TypeError('preparation_execution_state_required');
   const preparationState = prepared.preparationExecution.state;
-  initialState.hp = preparationState.hp;
+  const initialPreparationFacts = prepared.preparationExecution.initialFacts;
+  initialState.hp = initialPreparationFacts.hp;
   initialState.inputFacts = seedUnreadInputFacts(
-    cloneInputFacts(preparationState.inputFacts),
+    cloneInputFacts(initialPreparationFacts.inputFacts),
     resolvedInputs.values,
     { kind: 'externalAssumption', clock: initialState.conditionReadClock },
   );
-  initialState.battlePoints = preparationState.battlePoints;
+  initialState.battlePoints = initialPreparationFacts.battlePoints;
   initialState.battlePointDomains = prepared.battlePointDomains;
   initialState.resourceActor = 'attacker';
-  initialState.buffInstances = seedBuffInstances(
-    prepared.inputDefinitions.filter(isBuffCountInput),
-    resolvedInputs.values,
-  );
+  initialState.buffInstances = initialPreparationFacts.buffInstances;
   const initialProof: ConditionFactProof = {
     kind: 'selectedInitialResource',
     clock: initialState.conditionReadClock,
@@ -133,14 +130,15 @@ function prepareExecutableCandidate(
       initialProof,
     );
   {
-    const proofs = cloneConditionFactProofs(preparationState.conditionFactProofs);
     initialState.conditionFactProofs.quantities = new Map([
       ...initialState.conditionFactProofs.quantities,
-      ...proofs.quantities,
+      ...initialPreparationFacts.quantityProofs,
     ]);
   }
-  if (preparationState.hp)
-    initialState.quantities.attackerHpPermille = hpPermille(preparationState.hp.actors.attacker);
+  if (initialPreparationFacts.hp)
+    initialState.quantities.attackerHpPermille = hpPermille(
+      initialPreparationFacts.hp.actors.attacker,
+    );
   seedStackQuantities(initialState, prepared.inputDefinitions);
   const selections = resolveCandidateSelections(
     prepared,
@@ -149,12 +147,31 @@ function prepareExecutableCandidate(
     initialState,
   );
   const validated = validateCandidateSelections(prepared, targetFacts, initialState, selections);
+  const preappliedOperations = prepared.operations.filter(({ operationId }) =>
+    selections.preappliedOperationIds.has(operationId),
+  );
+  const hasNativeStructuralCommit = preappliedOperations.some(
+    (operation) => operation.runtimeBinding?.sourcePhysicalCommitted,
+  );
+  const executionState =
+    validated.constraintIssues.length || !hasNativeStructuralCommit
+      ? validated.state
+      : applyWorldFacts(initialState, prepared.scenario.worldFactAssertions);
+  if (validated.constraintIssues.length === 0) {
+    executionState.hp = preparationState.hp;
+    executionState.battlePoints = preparationState.battlePoints;
+    executionState.quantities.attackerHpPermille = hpPermille(preparationState.hp?.actors.attacker);
+  }
   return {
     ...base,
     status: 'ready',
     selectionBaseState: initialState,
     ...selections,
+    preappliedOperationIds: hasNativeStructuralCommit
+      ? new Set()
+      : selections.preappliedOperationIds,
     ...validated,
+    state: executionState,
     resolvedCompileProjections: resolveCompileProjections(
       compileProjections,
       decisions,

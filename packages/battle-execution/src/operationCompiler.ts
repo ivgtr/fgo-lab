@@ -874,6 +874,7 @@ export function compileEffect(
     retainOperationSource(operation, semantic);
   }
   for (const semantic of retained) {
+    const operationCount = operations.length;
     const suffix = uniqueSuffix(`evidence:${semantic.kind}`);
     if (
       (retainedNeedsExecution ||
@@ -935,8 +936,10 @@ export function compileEffect(
         explanation: { code: 'stateMutationOnly', condition: null },
       });
     }
+    if (operations.length > operationCount) retainOperationSource(operations.at(-1)!, semantic);
   }
   for (const semantic of applicable) {
+    const operationCount = operations.length;
     const recipient = operationRecipient(semantic, source.origin);
     if (semantic.kind === 'contextMutation') {
       if (semantic.mutation === 'addQuantity') {
@@ -955,6 +958,7 @@ export function compileEffect(
           amount: semantic.amount,
           applicationTiming: semantic.applicationTiming,
         });
+        retainOperationSource(operations.at(-1)!, semantic);
         continue;
       }
       const scope =
@@ -1018,7 +1022,6 @@ export function compileEffect(
         ratePermille: selectedValue(source, semantic)!,
       };
       operations.push(operation);
-      retainOperationSource(operation, semantic);
     } else if (semantic.kind === 'ignoreDefense')
       operations.push({
         ...baseOperation(
@@ -1058,8 +1061,8 @@ export function compileEffect(
         card: semantic.card,
       };
       operations.push(operation);
-      retainOperationSource(operation, semantic);
     }
+    if (operations.length > operationCount) retainOperationSource(operations.at(-1)!, semantic);
   }
   return { operations, projections };
 }

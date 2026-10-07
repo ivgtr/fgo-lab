@@ -31,6 +31,7 @@ import type {
   SourceExecutionBinding,
   PhysicalInputCommit,
   ModifierValueRead,
+  PhysicalOperationTransition,
 } from './executionBinding';
 import type { InputFacts } from './inputFacts';
 
@@ -124,6 +125,9 @@ interface OperationBase {
     readonly source: SourceExecutionBinding;
     readonly physicalInput?: PhysicalInputCommit;
     readonly modifierValueRead?: ModifierValueRead;
+    readonly committedPhysical: boolean;
+    readonly sourcePhysicalCommitted: boolean;
+    readonly physicalTransition?: PhysicalOperationTransition;
   };
   operationId: string;
   order: number;
