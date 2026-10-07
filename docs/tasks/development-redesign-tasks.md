@@ -3266,6 +3266,20 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+16:20 UTC target UI修復とVRT（2026-10-07）: applicationのview-modelでTargetContext選択を束縛し、102900の可視button初回押下→beast設定→calculated、解除→inputRequired、portable再実行を反証。target/Web12/12、UI解除3/3、効果表示10/10、application control7/7、typecheck/lint/format成功。旧Engine48表示の全画面PNG3枚だけ更新し、通常E2E baseline全5/5・warning0、選択効果群画像は不変。更新時runnerの`contract_failure(code0)`は再生成ログ起因、通常run成功を採用。原と未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。422集合407/15は実結果として固定したが、監査digest/候補counterと全production/qualityは未達。TSK-14 in_progress／R1未受入。
+
+16:17 UTC VRT-004/005/006旧画像差の判断（2026-10-07）: 現file全5テスト中E2E-004/005/006の全画面3失敗は最終diff/actual確認でEngine48→49表示の22/20/23px、選択効果群と密度/overflow2件は成功、warning0。更新対象を全画面PNG3件に限定し、同file再実行・差分確認する。比較中の非安定frameは結果とは分けて記録。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。R1未受入。
+
+16:12 UTC target controlの修正境界（2026-10-07）: operation projectionの`decision.state`は実行側operationEnabledとtarget選択が混在する。物理実行を改変せず、applicationの`EffectControlViewModel`をresolved `TargetContext`からtargetPredicate選択として束縛する。未選択と明示非一致をUIで区別し、初回click→command→portableを同一実scenarioで反証する。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。R1未受入。
+
+16:09 UTC 約60分checkpointと102900 UI Blocking（2026-10-07）: HEAD `88881b5`、tracked9file dirty、自起動検証processなし。共有audit407/15、target fixture9/9、Web文言11/11、typecheck/eslint成功。102900の可視特攻宝具buttonはactiveをoperationEnabledから誤推論し、初回クリックでfalseを送りfamily未指定のまま（実UI fixture2/3失敗）。製品/test編集・新runを止め、通常NP projection→view→ModifierChip→commandとtraitCount別経路、portableを読み直し、直接owner修正の境界を[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ記録した。旧manifest digest/候補counter、VRT、最終production/quality等は未達。TSK-14 in_progress／R1未受入。
+
+16:01 UTC 相対対象15件の修復内訳（2026-10-07）: 合法class+concrete earthで15中14件calculated、102900はbeast family真偽が残りinputRequired、既存targetPredicate controlでbeast=true指定後calculated。新しい正本では15件の入力待ちを妥当な結果として固定し、familyも必要な場合がある旨をUIへ示す。非beast明示の現型能力はなく、これを黙ってfalseへ扱わない。planner digest/counterは未解決。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
+
+15:58 UTC 相対対象15件のfamily境界（2026-10-07）: 現共有auditは407/15、ranking失敗0、固定digest/counter差も確認。`TargetContext`のclass/attribute具体化だけでは参照familyの真偽候補を閉じない可能性があり、familyは現在positive指定のみ。旧422固定を数値追随で更新せず、15件の直接NP readとeffect control／UI／portable修復を確認してから契約を変える。原因・検証範囲・次の反証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
+
+15:55 UTC 固定契約の再判断（2026-10-07）: 利用者は旧構想と現実装が衝突する場合、全ての破壊的変更を許容し、俯瞰して正しい方向を選ぶよう明示した。旧expected／counter／VRTを無条件に維持する承認待ちは解消。各差分の原因、正しい意味、保証と対象範囲を直接示したうえで必要な固定契約を更新する。まずcalculator相対対象15件の`inputRequired`と具体identity選択による修復を共有production監査で固定し、旧422 calculated期待の置換とVRT版表示差を証拠に基づいて扱う。数字だけの追随や能力・coverage削減は行わず、R1未受入を維持する。
+
 15:57 UTC calculator対象UI改訂後の受入（2026-10-07）: 既存相性selectorへ具体identityを統合、公開UI局所11/11・typecheck、実browser E2E-017成功。混合E2Eで旧VRT-004/005はEngine48→49表示だけ22/20px差、warning0。起点8c08804もENGINE_VERSION49で、baseline同command未再現ゆえ帰属分類は`unverified`、詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。旧422 calculated固定期待とVRTの限定更新は原依頼の固定契約判断として利用者へ照会中。画像・expectedは未変更、全production/quality未達、R1未受入。
 
 15:47 UTC calculator対象入力のVRT境界（2026-10-07）: 常時2欄追加は固定VRTへ広域差を生むため、具体identity optionを既存相性selectorへ入れる設計へ改訂。通常画面の閉じた選択表示とレイアウトを保ち、曖昧案内から同selectorで修復する。15:42のE2E成功は改訂前UIの限定証拠。改訂後にUI/portable/E2E/VRTを再確認し、固定画像更新は行わない。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。

@@ -33,6 +33,72 @@ const productionMaster = readFile(resolve(root, 'apps/web/public/master/master.j
 const loadMaster = () => productionMaster;
 
 describe('production canonical target context', () => {
+  it('keeps every ambiguous default explicit and repairs each one with target identity and applicable family', async () => {
+    const master = await loadMaster();
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const ambiguousIds = [
+      '102900',
+      '303200',
+      '505200',
+      '505500',
+      '603300',
+      '605000',
+      '704400',
+      '901700',
+      '1100600',
+      '1101900',
+      '2500200',
+      '2500500',
+      '2500900',
+      '2501100',
+      '4000100',
+    ];
+    for (const id of ambiguousIds) {
+      const servant = master.servants.find((candidate) => candidate.id === id)!;
+      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      const initial = calculateScenarioOutcome(scenario, master, versions);
+      expect(initial.result, id).toMatchObject({
+        status: 'inputRequired',
+        issues: [{ code: 'invalidTargetContext:ambiguousTargetResult:' }],
+        rows: [],
+      });
+      const classId = targetClassCandidates(servant.classId, scenario.targetContext.class)[0]!;
+      const concrete = {
+        ...scenario,
+        targetContext: {
+          ...scenario.targetContext,
+          class: { kind: 'concrete' as const, classId },
+          attribute: { kind: 'concrete' as const, attribute: 'earth' as const },
+        },
+      };
+      const resolved = calculateScenarioOutcome(concrete, master, versions);
+      if (id !== '102900') {
+        expect(resolved.result.status, id).toBe('calculated');
+        continue;
+      }
+      expect(resolved.result.status).toBe('inputRequired');
+      const beastControl = resolved.effectControls.find(
+        ({ projection }) =>
+          projection.decision.state !== 'none' &&
+          projection.decision.kind === 'targetPredicate' &&
+          projection.decision.target.kind === 'familyMembership' &&
+          projection.decision.target.familyId === 'beast',
+      );
+      expect(beastControl).toBeDefined();
+      const withFamily = applyEffectProjectionDecision(concrete, beastControl!.projection, true);
+      expect(calculateScenarioOutcome(withFamily, master, versions).result.status).toBe(
+        'calculated',
+      );
+    }
+  }, 30_000);
+
   it('keeps scalar NP reads exact across relative identities and explicit local state', async () => {
     const master = await loadMaster();
     const versions: VersionContext = {

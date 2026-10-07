@@ -52,8 +52,8 @@ describe('shared calculation-application production audit', () => {
               opaqueOperations: 52299,
               digest: '28a827fe73d4cf2b06dbf6e9ae7a6f3633c130a20d853acf681e0c1b4f8ac891',
             },
-            calculated: 422,
-            inputRequired: 0,
+            calculated: 407,
+            inputRequired: 15,
             unsupported: 0,
             unavailable: 0,
             invalid: 0,
@@ -96,7 +96,28 @@ describe('shared calculation-application production audit', () => {
         counts[kind] = (counts[kind] ?? 0) + 1;
         return counts;
       }, {}),
-    ).toEqual({});
+    ).toEqual({ inputRequired: 15 });
+    expect(
+      audit.failures.filter(({ kind }) => kind === 'inputRequired').map(({ identity }) => identity),
+    ).toEqual(
+      [
+        '102900',
+        '303200',
+        '505200',
+        '505500',
+        '603300',
+        '605000',
+        '704400',
+        '901700',
+        '1100600',
+        '1101900',
+        '2500200',
+        '2500500',
+        '2500900',
+        '2501100',
+        '4000100',
+      ].map((id) => `calculator:${id}`),
+    );
     expect(
       audit.failures.filter(({ kind }) => kind === 'unsupported').map(({ identity }) => identity),
     ).toEqual([]);

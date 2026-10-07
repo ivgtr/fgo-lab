@@ -8,6 +8,7 @@ import type {
   CanonicalTargetAttribute,
   CanonicalTargetClassId,
   CanonicalTargetFamilyId,
+  TargetPredicate,
   TargetContext,
 } from '@fgo-lab/schema';
 
@@ -24,6 +25,19 @@ export function createDefaultTargetContext(attackerClassId: string): TargetConte
     attribute: { kind: 'relative', relation: 'neutral' },
     families: [],
   };
+}
+
+export function targetPredicateSelected(
+  context: TargetContext,
+  predicate: TargetPredicate,
+): boolean {
+  if (predicate.kind === 'classIdentity')
+    return context.class.kind === 'concrete' && context.class.classId === predicate.classId;
+  if (predicate.kind === 'attributeIdentity')
+    return (
+      context.attribute.kind === 'concrete' && context.attribute.attribute === predicate.attribute
+    );
+  return context.families.some(({ familyId }) => familyId === predicate.familyId);
 }
 
 export function applyTargetContextCommand(

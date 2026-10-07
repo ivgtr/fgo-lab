@@ -104,7 +104,9 @@ it('asks for target identity when relative candidates give different damage', ()
       },
     ],
   });
-  expect(screen.getByRole('alert').textContent).toContain('対象クラス・属性を指定してください');
+  expect(screen.getByRole('alert').textContent).toContain(
+    '必要なら適用内容で対象特性も選択してください',
+  );
   expect(screen.getAllByLabelText(/^クラス相性/)[0]).toBeTruthy();
   expect(screen.getAllByLabelText(/^属性相性/)[0]).toBeTruthy();
 });

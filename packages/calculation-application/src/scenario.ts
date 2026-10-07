@@ -1211,6 +1211,7 @@ function evaluateResolvedCalculation(
       Object.fromEntries(
         effectInputs.flatMap((input) => (input.value === null ? [] : [[input.key, input.value]])),
       ),
+      scenario.mode === 'resolved' ? scenario.targetContext : undefined,
     ),
     activationRequirements: resolved.activationRequirements,
     appliedPreparationActions: resolved.appliedPreparationActions,
@@ -1312,6 +1313,7 @@ export function projectPreparedCalculationScenario(
       Object.fromEntries(
         effectInputs.flatMap((input) => (input.value === null ? [] : [[input.key, input.value]])),
       ),
+      scenario.mode === 'resolved' ? scenario.targetContext : undefined,
     ),
     activationRequirements: resolved.activationRequirements,
     appliedPreparationActions: resolved.appliedPreparationActions,

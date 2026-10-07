@@ -3,6 +3,8 @@ import {
   conditionAllowsEffectLocalDecision,
   type EffectProjection,
 } from '@fgo-lab/battle-execution';
+import type { TargetContext } from '@fgo-lab/schema';
+import { targetPredicateSelected } from './targetContext';
 
 export interface EffectControlViewModel {
   key: string;
@@ -69,6 +71,19 @@ function projectionSelected(projection: EffectProjection): boolean {
   );
 }
 
+function bindTargetControlSelection(
+  projection: EffectProjection,
+  context: TargetContext | undefined,
+): EffectProjection {
+  const decision = projection.decision;
+  if (!context || decision.state === 'none' || decision.kind !== 'targetPredicate')
+    return projection;
+  const state: 'enabled' | 'disabled' = targetPredicateSelected(context, decision.target)
+    ? 'enabled'
+    : 'disabled';
+  return { ...projection, decision: { ...decision, state } };
+}
+
 export function deriveEffectPresentationState(
   projection: EffectProjection,
   active: boolean,
@@ -78,6 +93,10 @@ export function deriveEffectPresentationState(
   if (projection.outcome === 'impossible') return 'impossible';
   if (!projection.sourceActive) return 'sourceInactive';
   if (projection.proc.kind === 'chainedRolls' && !active) return 'procFailed';
+  if (projection.decision.state === 'disabled' && projection.decision.kind === 'targetPredicate')
+    return projection.explanation.code === 'targetMismatch'
+      ? 'conditionUnsatisfied'
+      : 'conditionUnselected';
   if (!projectionSelected(projection))
     return projection.proc.kind === 'guaranteed' || projection.procRatePermille === 1_000
       ? 'manuallyExcluded'
@@ -97,6 +116,7 @@ export function deriveEffectPresentationState(
 export function createEffectControlViewModels(
   effects: readonly EffectProjection[],
   canonicalInputValues: Readonly<Record<string, number>> = {},
+  targetContext?: TargetContext,
 ): EffectControlViewModel[] {
   const groups = new Map<string, EffectProjection[]>();
   for (const effect of effects) {
@@ -109,7 +129,7 @@ export function createEffectControlViewModels(
       ? [
           {
             key,
-            projection: aggregateProjection(members),
+            projection: bindTargetControlSelection(aggregateProjection(members), targetContext),
             operationIds: members.map((member) => member.operationId),
           },
         ]

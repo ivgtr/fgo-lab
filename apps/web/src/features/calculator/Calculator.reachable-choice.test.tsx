@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { targetClassCandidates } from '@fgo-lab/calc-core';
 import {
   calculateScenario,
   createCalculatorPortableRequest,
@@ -120,7 +121,7 @@ it('repairs a public ambiguous target result by selecting its attribute', () => 
   expect(ambiguous.result.status).toBe('inputRequired');
 
   const onScenarioChange = renderCalculator(initial);
-  expect(screen.getByRole('alert').textContent).toContain('対象クラス・属性を指定してください');
+  expect(screen.getByRole('alert').textContent).toContain('対象クラス・属性を指定し');
   fireEvent.change(screen.getAllByLabelText(/^属性相性/)[0]!, {
     target: { value: 'attribute:earth' },
   });
@@ -148,4 +149,55 @@ it('repairs a public ambiguous target result by selecting its attribute', () => 
   expect(screen.getAllByLabelText<HTMLSelectElement>(/^属性相性/)[0]?.value).toBe(
     'attribute:earth',
   );
+});
+
+it('offers the target-family control when class and attribute leave NP damage ambiguous', () => {
+  const servant = master.servants.find(({ id }) => id === '102900')!;
+  const defaultScenario = createDefaultResolvedScenario(master, undefined, servant);
+  const classId = targetClassCandidates(servant.classId, defaultScenario.targetContext.class)[0]!;
+  const concrete = {
+    ...defaultScenario,
+    targetContext: {
+      ...defaultScenario.targetContext,
+      class: { kind: 'concrete' as const, classId },
+      attribute: { kind: 'concrete' as const, attribute: 'earth' as const },
+    },
+  };
+  expect(calculateScenario(concrete, master, versions).result.status).toBe('inputRequired');
+  const onScenarioChange = renderCalculator(concrete);
+  expect(screen.getByRole('alert').textContent).toContain('対象特性も選択してください');
+  const familyButton = screen.getByRole('button', { name: /対象特性 ビースト・特攻宝具/ });
+  expect(familyButton.getAttribute('aria-pressed')).toBe('false');
+  fireEvent.click(familyButton);
+  const selected = onScenarioChange.mock.calls.at(-1)?.[0] as CalculationScenario;
+  expect(selected.mode).toBe('resolved');
+  if (selected.mode !== 'resolved') return;
+  expect(selected.targetContext.families).toEqual([{ familyId: 'beast' }]);
+  expect(calculateScenario(selected, master, versions).result.status).toBe('calculated');
+  const saved = portableCalculationRequestSchema.parse(
+    JSON.parse(
+      JSON.stringify(
+        createCalculatorPortableRequest(selected, {
+          schemaVersion: SCHEMA_VERSION,
+          masterDataVersion: master.version,
+          engineVersion: ENGINE_VERSION,
+        }),
+      ),
+    ),
+  );
+  expect(saved.scenario).toEqual(selected);
+  const replay = executePortableCalculation(saved, master);
+  expect(replay.status).toBe('executed');
+  if (replay.status === 'executed') expect(replay.execution.result.status).toBe('calculated');
+
+  cleanup();
+  const onReset = renderCalculator(selected);
+  const selectedButton = screen.getByRole('button', { name: /対象特性 ビースト・特攻宝具/ });
+  expect(selectedButton.getAttribute('aria-pressed')).toBe('true');
+  fireEvent.click(selectedButton);
+  const reset = onReset.mock.calls.at(-1)?.[0] as CalculationScenario;
+  expect(reset.mode).toBe('resolved');
+  if (reset.mode !== 'resolved') return;
+  expect(reset.targetContext.families).toEqual([]);
+  expect(calculateScenario(reset, master, versions).result.status).toBe('inputRequired');
 });

@@ -1,5 +1,4 @@
 import { liveTraitQuantityRead } from '@fgo-lab/battle-execution';
-import { projectBattleTraitPresence, readTraitPresence, readTraitQuantity } from '@fgo-lab/battle-execution';
 import { commonPreparationSkillLevels } from './rankingBasis';
 import { calculateScenarioWithPolicy } from './scenario';
 import { createRankingPortableRequest } from './portableCalculation';
@@ -52,6 +51,23 @@ describe('production execution parity ratchet', () => {
       masterDataVersion: master.version,
     };
     const typedUnsupported = new Set<string>();
+    const targetInputRequired = new Set([
+      '102900',
+      '303200',
+      '505200',
+      '505500',
+      '603300',
+      '605000',
+      '704400',
+      '901700',
+      '1100600',
+      '1101900',
+      '2500200',
+      '2500500',
+      '2500900',
+      '2501100',
+      '4000100',
+    ]);
     const records = master.servants.flatMap((servant) => {
       if (
         planPreNoblePhantasmCandidates(
@@ -67,8 +83,16 @@ describe('production execution parity ratchet', () => {
       const calculation = calculateScenario(scenario, master, versions);
       // E2E-A032-ORDER
       expect(calculation.result.status, `${servant.id}:${servant.name}`).toBe(
-        typedUnsupported.has(servant.id) ? 'unsupported' : 'calculated',
+        typedUnsupported.has(servant.id)
+          ? 'unsupported'
+          : targetInputRequired.has(servant.id)
+            ? 'inputRequired'
+            : 'calculated',
       );
+      if (targetInputRequired.has(servant.id))
+        expect(calculation.result.issues).toMatchObject([
+          { code: 'invalidTargetContext:ambiguousTargetResult:' },
+        ]);
       expect(calculation.appliedPreparationActions).toHaveLength(
         scenario.preNoblePhantasmPlan.length,
       );
@@ -90,6 +114,9 @@ describe('production execution parity ratchet', () => {
         .filter(({ attackerId }) => typedUnsupported.has(attackerId))
         .map(({ attackerId }) => attackerId),
     ).toEqual([]);
+    expect(records.filter(({ attackerId }) => targetInputRequired.has(attackerId))).toHaveLength(
+      targetInputRequired.size,
+    );
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
     expect(digest).toBe('ec4689d058e5eba034f9aafa905c1b5c9c3295369aeeccdc98334551a7fc6538');
   }, 60_000);
@@ -135,7 +162,12 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
         context,
       );
       if (initial.status !== 'applied') throw new Error(initial.code);
-      expect(liveTraitQuantityRead(initial.state, { scope: 'attackerState', trait: input.quantitySource.trait }).value).toBe(count);
+      expect(
+        liveTraitQuantityRead(initial.state, {
+          scope: 'attackerState',
+          trait: input.quantitySource.trait,
+        }).value,
+      ).toBe(count);
       const result = reducePreNoblePhantasmAction(
         actor,
         initial.state,
@@ -154,9 +186,19 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
       expect(result.state.npResource.gauge).toBe(
         Math.min(20_000, 10_000 + count * coefficient.amount.values[0][9]!),
       );
-      expect(liveTraitQuantityRead(result.state, { scope: 'attackerState', trait: input.quantitySource.trait }).value).toBe(0);
+      expect(
+        liveTraitQuantityRead(result.state, {
+          scope: 'attackerState',
+          trait: input.quantitySource.trait,
+        }).value,
+      ).toBe(0);
       expect(result.state.buffInstances).toHaveLength(0);
-      expect(liveTraitQuantityRead(initial.state, { scope: 'attackerState', trait: input.quantitySource.trait }).value).toBe(count);
+      expect(
+        liveTraitQuantityRead(initial.state, {
+          scope: 'attackerState',
+          trait: input.quantitySource.trait,
+        }).value,
+      ).toBe(count);
     }
     for (const npLevel of [1, 2, 5] as const)
       for (const selfBuffs of ['included', 'excluded'] as const)

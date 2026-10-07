@@ -5,6 +5,7 @@ import type {
   PreparationChoiceOption,
 } from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
+import type { CanonicalTargetFamilyId } from '@fgo-lab/schema';
 import type { ReactNode } from 'react';
 import { effectSourceImage } from '../../presentation/effectSourcePresentation';
 import { ModifierChip } from './ModifierChip';
@@ -13,6 +14,18 @@ import { traitLabel } from './traitPresentation';
 
 function conditionLabel(condition: EffectProjection['explanation']['condition']): string {
   if (!condition) return '';
+  if (condition.kind === 'targetPredicate' && condition.scope === 'target') {
+    if (condition.predicate.kind === 'familyMembership') {
+      const familyLabels: Record<CanonicalTargetFamilyId, string> = {
+        beast: 'ビースト',
+        demonGodPillar: '魔神柱',
+      };
+      return `対象特性 ${familyLabels[condition.predicate.familyId]}`;
+    }
+    if (condition.predicate.kind === 'classIdentity')
+      return `対象クラス ${condition.predicate.classId}`;
+    return `対象属性 ${condition.predicate.attribute}`;
+  }
   if (condition.kind === 'trait') return traitLabel(condition.trait);
   if (condition.kind === 'quantity' && condition.quantity === 'targetRarity')
     return `レアリティ${condition.value}`;
@@ -104,6 +117,8 @@ function compactEffectDetail(
   if (proc) return `${value}・${origin}・${proc}`;
   const selected = control.active;
   if (!selected) {
+    if (effect.decision.state !== 'none' && effect.decision.kind === 'targetPredicate')
+      return `${value}・${origin}・${control.presentationState === 'conditionUnsatisfied' ? '条件外' : '対象未選択'}`;
     const selection = scenarioSelectionLabel(effect, false);
     return `${value}・${origin}・${selection === '比較のため除外' ? '除外' : selection}`;
   }
@@ -124,15 +139,21 @@ function accessibleEffectLabel(
   const chainedInput = inputs.find((candidate) => candidate.kind === 'procSuccessCount');
   const chainedCount = chainedInput?.value ?? chainedInput?.defaultValue ?? 0;
   const selection =
-    effect.proc.kind === 'chainedRolls'
-      ? chainedCount === 0
-        ? `失敗・成功0/${String(effect.proc.maximumSuccesses)}`
-        : `成功${String(chainedCount)}/${String(effect.proc.maximumSuccesses)}`
-      : scenarioSelectionLabel(
-          effect,
-          control.presentationState !== 'manuallyExcluded' &&
-            control.presentationState !== 'procFailed',
-        );
+    effect.decision.state !== 'none' &&
+    effect.decision.kind === 'targetPredicate' &&
+    !control.active
+      ? control.presentationState === 'conditionUnsatisfied'
+        ? '条件不成立'
+        : '対象未選択'
+      : effect.proc.kind === 'chainedRolls'
+        ? chainedCount === 0
+          ? `失敗・成功0/${String(effect.proc.maximumSuccesses)}`
+          : `成功${String(chainedCount)}/${String(effect.proc.maximumSuccesses)}`
+        : scenarioSelectionLabel(
+            effect,
+            control.presentationState !== 'manuallyExcluded' &&
+              control.presentationState !== 'procFailed',
+          );
   const stateLabel = (() => {
     switch (control.presentationState) {
       case 'sourceInactive':
