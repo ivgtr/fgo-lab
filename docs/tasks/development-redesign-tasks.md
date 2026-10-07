@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+13:36 UTC buff-count固定形状の帰属（2026-10-07）: 公開1000900/1101600×初期0/1/10の6セルで使用後live数量0、count0 tombstone一件・known absence・初期/解除proofを直接確認。初期stack factはtrait rootにも残るためempty配列にすると初期positiveを再読し得る。旧配列長0 assertは内部形状契約差で、数値0の失敗ではない。旧assertionを未変更とし、詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
+
+13:34 UTC world counter66/1帰属（2026-10-07）: 新population local target readの公開4騎内訳は106200 +22、306000 +11、306200 +22、1001800 +11＝66条件。306000の現11件は全て新読取で唯一の追加servant。旧13615/212→現13681/213と一致し、実readerを削って固定値へ合わせない。固定counter判断待ち。直接算出と保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
+
 13:31 UTC star監査fast path後（2026-10-07）: buff配列参照同一では差分Mapを作らない局所修正でscenario43/43、監査4988.5ms、warning0。ただし5秒まで11.5msで安定性・原因は未証明。marker実変更セルはこのbranchを通らないため旧4成功を再利用し、性能未達は正式hot pathで評価する。timeout不変、詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
 
 13:29 UTC marker差分後star監査timeout（2026-10-07）: `scenario.test`42/43、star複数rollbackだけ5027.7msで5秒上限失敗。変更前の同test4703.4/4884.2msで元から近い。新instance差分生成がbuff配列参照同一でもMapを構築する無駄を直接経路で確認。環境変動と固有費用を断定せず、原を保持して編集/runを停止し[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ修正境界・次反証を記録。参照同一fast path後に意味・時間を限定再検証し、timeoutを緩和しない。R1未受入。
