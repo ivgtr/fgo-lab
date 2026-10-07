@@ -9,6 +9,8 @@ import {
   servantStackInputs,
 } from '@fgo-lab/battle-execution';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
+import { unresolvedProfileResult } from './rankingProfileOutcome';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import {
   currentCalculationVersionContext,
@@ -362,16 +364,36 @@ it('accepts all seven population-count profiles through calculator, four ranking
   const records = [];
   for (const id of ['106200', '306000', '306200', '502600', '1001800', '2501600']) {
     const actor = master.servants.find((actor) => actor.id === id)!;
-    for (const profile of createStaticAttackProfiles(actor)) {
-      for (const npLevel of [1, 2, 5] as const) {
-        const ranking = calculateRankingPolicyDetail(
+    const candidateSets = new Map<string, ReturnType<typeof calculateRankingCandidateSet>>();
+    const rankingFor = (
+      profile: ReturnType<typeof createStaticAttackProfiles>[number],
+      npLevel: 1 | 2 | 5,
+      selfBuffs: 'included' | 'excluded',
+      conditionalEffects: 'baseline' | 'satisfied',
+    ) => {
+      const key = `${npLevel}:${selfBuffs}:${conditionalEffects}`;
+      let candidateSet = candidateSets.get(key);
+      if (!candidateSet) {
+        candidateSet = calculateRankingCandidateSet(
           actor,
           master,
           { servantBuilds: {} },
-          { ...DEFAULT_RANKING_POLICY_CONDITIONS, npLevelBasis: { kind: 'specified', npLevel } },
+          {
+            ...DEFAULT_RANKING_POLICY_CONDITIONS,
+            npLevelBasis: { kind: 'specified', npLevel },
+            selfBuffs,
+            conditionalEffects,
+          },
           versions,
-          profile,
+          true,
         );
+        candidateSets.set(key, candidateSet);
+      }
+      return unresolvedProfileResult(candidateSet, profile);
+    };
+    for (const profile of createStaticAttackProfiles(actor)) {
+      for (const npLevel of [1, 2, 5] as const) {
+        const ranking = rankingFor(profile, npLevel, 'included', 'baseline');
         expect(
           ranking.status,
           JSON.stringify({ id, npLevel, reason: 'reason' in ranking ? ranking.reason : null }),
@@ -473,19 +495,7 @@ it('accepts all seven population-count profiles through calculator, four ranking
       }
       for (const selfBuffs of ['included', 'excluded'] as const)
         for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
-          const ranking = calculateRankingPolicyDetail(
-            actor,
-            master,
-            { servantBuilds: {} },
-            {
-              ...DEFAULT_RANKING_POLICY_CONDITIONS,
-              npLevelBasis: { kind: 'specified', npLevel: 2 },
-              selfBuffs,
-              conditionalEffects,
-            },
-            versions,
-            profile,
-          );
+          const ranking = rankingFor(profile, 2, selfBuffs, conditionalEffects);
           records.push({
             id,
             profile,

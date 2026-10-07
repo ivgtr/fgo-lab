@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+17:25 UTC 人口parityの時間修正（2026-10-07）: actor・条件ごとにapplicationの候補集合を共有し、49件のprofile/policy assertion、scenario replay、portable recoveryを維持。局所29.087秒成功・warning0、旧56.292秒成功原と49 recordが完全一致。全suite中timeout解消は次のproduction gate待ち。typecheck/eslint成功。詳細と原artifactは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
+
 17:20 UTC 全production後のHandoff（2026-10-07）: HEAD `7763a0e`、150/169成功・19失敗・warning0、原`.test-results/2026-10-07T17-12-25-470Z-15-dc5744/`。新たな人口parity timeoutは単独56.292秒成功、全suite61.908秒対上限60秒で、profileごとの全candidateSet再計算をreviewしてshared result ownerを決める。timeout増加/skipはしない。残る失敗familyと旧422→現422の全ID差分分類（407同status、15入力待ち、数値差205000/2501400、planner旧3640が現7596のsubset、state marker表示）は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。旧digest/counter追随は選択planとgoverning ruleの確認後。最終quality、全15 Apply、strict/80+saved、after性能は未達。TSK14/R1未受入。
 
 17:06 UTC 306200の人数読取修復（2026-10-07）: intrinsic特性は一つのidentityとして0/1、active付与はmarker優先の正確な数量で読み、unknown/proof欠落をfail closedにした。局所7/7、人口公開parity対象成功。parity全fileは5/6・warning0で、残りは旧422 digestだけ。現422集合と407成功/15修復待ちのstatus assertionsは通過し、旧`ec4689...`対現`fb7167...`の内容diffを確認してから固定値を更新する。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)に原runと不変条件。R1未受入。
