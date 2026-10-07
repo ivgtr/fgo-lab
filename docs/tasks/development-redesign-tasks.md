@@ -3266,6 +3266,14 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+13:31 UTC star監査fast path後（2026-10-07）: buff配列参照同一では差分Mapを作らない局所修正でscenario43/43、監査4988.5ms、warning0。ただし5秒まで11.5msで安定性・原因は未証明。marker実変更セルはこのbranchを通らないため旧4成功を再利用し、性能未達は正式hot pathで評価する。timeout不変、詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
+
+13:29 UTC marker差分後star監査timeout（2026-10-07）: `scenario.test`42/43、star複数rollbackだけ5027.7msで5秒上限失敗。変更前の同test4703.4/4884.2msで元から近い。新instance差分生成がbuff配列参照同一でもMapを構築する無駄を直接経路で確認。環境変動と固有費用を断定せず、原を保持して編集/runを停止し[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ修正境界・次反証を記録。参照同一fast path後に意味・時間を限定再検証し、timeoutを緩和しない。R1未受入。
+
+13:26 UTC current E2E-051（2026-10-07）: HEAD`e5ff86d`でbuild／setup＋実module worker・初期OC・saved pin→calculator→reload/edit/backup/history/shareの代表経路2/2、warning0、原`.test-results/2026-10-07T13-24-09-515Z-15-8d512e/`。相対対象15の入力修復、E2E-050 VRT、全80＋saved S0/S1、全productionを代替しない。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。
+
+13:25 UTC calculator対象UIの未達（2026-10-07）: 相対属性等倍で宝具倍率が分かれる4000100のdefaultはinputRequiredだがrequiredInputs空。画面は対象の相性倍率だけを選べ、具体属性earth/skyを選ぶ操作がない。man predicateのoffも相対等倍へ戻るため、現15騎を入力修復できない。具体対象picker追加か明示的な具体既定対象かを新根拠と固定422 expectedの衝突を添えて利用者へ再照会。回答まで製品/UI/固定期待は保留。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
+
 13:18 UTC marker差分の局所確認（2026-10-07）: native buff instanceの全snapshotをidentity別差分に変更し、CE→passiveのcanonical順で先行native instanceを持ち込まない。小fixture2/2、準備transaction84/84、型・lint・書式成功。公開marker全件は2/3、残る1件は既知の相対対象21セルのみで例外4セルはcalculated/issue0。原artifactと範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。固定期待・counter・VRT不変、R1未受入。
 
 13:16 UTC marker欠落の確定原因（2026-10-07）: 公開403700/405300+CE9305310の4セルだけ例外。nativeはpassive→CE、canonicalはCE→passiveで、CE physical transitionが先行passiveのinstance全snapshotを持つ一方、proofはCE identity差分だけ。空の候補へCEを先に再生してproofなしpassiveを作る。instanceをidentity差分で運び、追加proofと既存更新の整合を保つ同family修正へ進む。詳細・限定診断は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。固定期待・counter・VRT不変、R1未受入。

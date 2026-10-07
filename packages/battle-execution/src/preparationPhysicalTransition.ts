@@ -132,7 +132,10 @@ export function capturePhysicalOperationTransition(
     before.conditionFactProofs.markers,
     after.conditionFactProofs.markers,
   );
-  const buffInstances = changedBuffInstances(before.buffInstances, after.buffInstances);
+  const buffInstances =
+    before.buffInstances === after.buffInstances
+      ? null
+      : changedBuffInstances(before.buffInstances, after.buffInstances);
   return {
     operationIndex,
     ...(inputFacts.size ? { inputFacts } : {}),
@@ -146,7 +149,7 @@ export function capturePhysicalOperationTransition(
     ...(Object.keys(suppressionProofs).length ? { suppressionProofs } : {}),
     ...(quantityProofs.size ? { quantityProofs } : {}),
     ...(markerProofs.size ? { markerProofs } : {}),
-    ...(buffInstances.size ? { buffInstances } : {}),
+    ...(buffInstances?.size ? { buffInstances } : {}),
     ...(before.hp !== after.hp ? { hp: after.hp } : {}),
     ...(before.currentFormId !== after.currentFormId ? { currentFormId: after.currentFormId } : {}),
     ...(before.noblePhantasmVariant !== after.noblePhantasmVariant
