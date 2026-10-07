@@ -12,6 +12,8 @@ updated_at: "2026-10-07"
 
 ### 明示確認後の再開とbasis直接caller訂正（2026-10-07 15:52 JST）
 
+**09:49 UTC 同一入力の直接owner診断:** 公開`master.json`、画面と同じdefault ranking条件、空build、schema42／engine49の`calculateRankingPolicy`を一度実行し、425計算／順位外8を再現。5 `unsupported`のうち黒姫・美遊・エリザベート2形態は`preparation:unsupportedResourceMutation`、紅閻魔は`preparation:unsupportedHpExecution`。3 `invalid`（ジョン・ラックランド、キングプロテア・オルタ、ハベトロット）はすべて`unexpectedRankingFailure`、保存された例外detailは`missing_preparation_modifier_value_read`。該当throwは`battle-execution/src/projection.ts:116`。この診断は結果分類を深めるが、modifier read欠落の生成・writer・rollback時点、resource/HPの合法性、433回復をまだ証明しない。次はこの共有readと直接source transactionを同familyで反証する。
+
 **09:46 UTC E2E-050 Blocking:** clean製品source `b7eff993ed42741d934a10332b4de6edf4796a95`、docsだけdirtyの実ブラウザーで期待433計算に対し425計算・順位外8。原 `.test-results/2026-10-07T09-42-04-002Z-15-2df638/`、setup1成功／本case1失敗、warning0。最初のsummaryで停止したため後続detail/handoff/stale検査は未実施。原traceの最終frame-snapshotは`unsupported` 5件（黒姫、美遊、エリザベート2形態、紅閻魔）と`invalid` 3件（ジョン・ラックランド、キングプロテア・オルタ、ハベトロット）。前者の画面理由は候補実行意味論の未対応、後者は予期しないランキング失敗。旧427/6診断との差は単純な2件増ではなく、root cause／actual source readは未確定。追加run/製品編集を停止し、同familyのsource→候補→実行→worker→表示と旧inventoryを読み取りで照合する。09:50上限前に未確定なら原結果のままTask冒頭へ引継ぐ。E2E-051～054の成功で相殺しない。
 
 `rankingPolicyCalculation.calculateRankingPolicy`は候補集合生成と結果解決をservantごとにcatchし、予期しない例外をそのinventoryの各profileで`invalid`／`unexpectedRankingFailure`へ写す。`Ranking.tsx`はstatus/理由のみ表示し、catchが保持した`detail`はこのtraceに出ない。したがって3件の例外内容／catch位置を画面から確定できない。次回は固定8 profileを共有inventoryの同じ入力・版で直接ownerへ通し、既存のdetailとfirst differenceを記録し、合法性・rollback・parityを確認する。UI名／IDをruntime例外に用いず、schema42／engine49／固定433 expectedを維持する。
