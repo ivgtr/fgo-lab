@@ -3268,6 +3268,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 Depends on: TSK-13
 
+09:31 UTC preflight条件種別明示（2026-10-07）: decision条件の`source`と`terminalNpSpecial`をdiscriminated unionにし、利用者仮定の整合制約がnative観測だけで省略されない理由を直接consumerへ記載。実行意味は09:25成功差分と同じ。現差分typecheck／限定lint・format成功、direct variant10/10原 `.test-results/2026-10-07T09-30-41-353Z-15-225a08/`。実scenarioは09:25成功を同条件で再利用し、全件再runしない。全15 Apply未Verified。
+
 09:29 UTC preflight局所差分の保存準備（2026-10-07）: 元source readでlinked decision／variant選択を評価し、assumed decisionの全体制約は独立に維持。変更前card=false／最終card=true、linked write無効、unread現state、NP special終端trueのdirect fixture10/10（原 `.test-results/2026-10-07T09-26-58-209Z-15-4b243b/`）。実scenario43/43・warning0（原 `.test-results/2026-10-07T09-25-07-722Z-15-e09413/`）、現差分の型、対象lint、変更file書式、diff check成功。正式production/性能/qualityと実master card差・UI/saveは未達。元の2失敗artifactも保持。全15 Apply未Verified。
 
 09:26 UTC preflight縮小後（2026-10-07）: `assumedDecisionConstraints`を従来選択制約評価へ戻し、実scenario43/43・warning0、fixed-world/field mutation両conflictは`unsupported`に回復（原 `.test-results/2026-10-07T09-25-07-722Z-15-e09413/`）。rollback監査4.934sで上限まで66ms。direct card fixture10/10は縮小編集前の原 `.test-results/2026-10-07T09-22-50-043Z-15-60e242/`で、この編集は同direct判定を変えない。unread/rollback/alternateと実master card差、UI/worker/save/production/正式性能/qualityは未達。全15 Apply未Verified。

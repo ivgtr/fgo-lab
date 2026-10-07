@@ -12,6 +12,8 @@ updated_at: "2026-10-07"
 
 ### 明示確認後の再開とbasis直接caller訂正（2026-10-07 15:52 JST）
 
+**09:31 UTC preflight条件のtyped owner:** `decisionConditions`の元source条件とterminal NP special条件を明示unionにし、assumed decisionの全体整合制約をnative truthで省略しない理由を同consumerへ記載。意味は09:25成功差分と同じ。typecheck／限定lint・format成功、direct10/10の原 `.test-results/2026-10-07T09-30-41-353Z-15-225a08/`。実scenario43/43は09:25原を再利用し、新たな同条件全件runは不要と判断。未達は前記のまま。
+
 **09:29 UTC preflight局所差分の固定範囲:** 元source readのlinked decision／variant選択と、独立したassumed decision整合制約を分離。direct fixture10/10は変更前card=false／最終card=true、linked write無効、unread現state、terminal NP special trueを確認（原 `.test-results/2026-10-07T09-26-58-209Z-15-4b243b/`）。実scenario43/43・warning0の原 `.test-results/2026-10-07T09-25-07-722Z-15-e09413/`を再利用し、現在差分の型／対象lint／書式／diff check成功。これらは本局所read境界の証拠であり、実masterのcard差、初期factの他reader、全source／rollback、UI/worker/save、production/perf/qualityの受入ではない。
 
 **09:26 UTC 縮小案の実scenario回復:** `assumedDecisionConstraints`だけ従来の選択制約評価に戻し、同じscenario43/43・warning0、原 `.test-results/2026-10-07T09-25-07-722Z-15-e09413/`。原2件のexclusive fixed-world／field mutation conflictは`unsupported`へ戻り、card変化前native falseのdirect fixture10/10は上記09:22原run（縮小編集はこのdirect読取を変更しない）。rollback監査4.934sで上限まで66ms。native readによるlinked decisionとvariant preselection、利用者仮定の全体制約、terminal NP specialの読取責務を分けた。direct fixtureは実masterでのcard差とUI/worker/saveを証明しない。次は同familyのunread/rollback/alternateと実計算経路の反証を進め、最終検査前にtimeout近傍の性能を再評価する。

@@ -11,16 +11,19 @@ import {
 } from './condition';
 import type { SatisfiableConditionConstraint } from './constraints';
 
-interface DecisionCondition {
-  readonly expression: ConditionExpression;
-  readonly operation: BattleOperation | null;
-}
+type DecisionCondition =
+  | {
+      readonly kind: 'source';
+      readonly expression: ConditionExpression;
+      readonly operation: BattleOperation;
+    }
+  | { readonly kind: 'terminalNpSpecial'; readonly expression: ConditionExpression };
 
 function decisionConditionTruth(
   condition: DecisionCondition,
   state: ExecutableBattleState,
 ): boolean | null {
-  return condition.operation
+  return condition.kind === 'source'
     ? readOperationCondition(condition.operation, state).truth
     : evaluateCondition(condition.expression, state).truth;
 }
@@ -32,12 +35,12 @@ export function collectDecisionConditions(
   for (const operation of operations) {
     if (operation.decisionKey) {
       const conditions = conditionsByDecisionKey.get(operation.decisionKey) ?? [];
-      conditions.push({ expression: operation.condition, operation });
+      conditions.push({ kind: 'source', expression: operation.condition, operation });
       conditionsByDecisionKey.set(operation.decisionKey, conditions);
     }
     if (operation.kind === 'executeNpDamage' && operation.specialAttackDecisionKey) {
       const conditions = conditionsByDecisionKey.get(operation.specialAttackDecisionKey) ?? [];
-      conditions.push({ expression: operation.specialAttackCondition, operation: null });
+      conditions.push({ kind: 'terminalNpSpecial', expression: operation.specialAttackCondition });
       conditionsByDecisionKey.set(operation.specialAttackDecisionKey, conditions);
     }
   }
@@ -84,6 +87,7 @@ export function assumedDecisionConstraints(
     )
       return [];
     return expressions.flatMap((condition) => {
+      // A selected assumption must still be checked against other selected and fixed world facts.
       const evaluated = evaluateCondition(condition.expression, state).truth;
       return (evaluated === null ||
         (enforceKnownFalseDecisionKeys.has(decision.decisionKey) && !evaluated)) &&
