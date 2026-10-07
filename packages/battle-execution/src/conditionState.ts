@@ -1,5 +1,5 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
-import { stackInputKey, type NoblePhantasmVariant } from '@fgo-lab/master-data';
+import { stackInputKey, type NoblePhantasmVariant, type ActorFormId } from '@fgo-lab/master-data';
 import type { ActivationContext, TargetPredicateAssertion } from './contracts';
 import type { ConditionEvaluationState } from './condition';
 import { targetPredicateKey } from './targetPredicate';
@@ -24,22 +24,27 @@ export type ConditionStateInput = Pick<
 export function createConditionState<
   TActivationContext extends ActivationContext | null,
   TCard extends ConditionEvaluationState['card'],
+  TVariant extends NoblePhantasmVariant | null,
 >(
   input: Omit<ConditionStateInput, 'cardType'> & { cardType: TCard },
-  noblePhantasmVariant: NoblePhantasmVariant,
+  noblePhantasmVariant: TVariant,
   attackerTraits: readonly string[],
   resolvedInputValues: Readonly<Record<string, number>>,
   targetPredicateAssertions: readonly TargetPredicateAssertion[],
   attackerPredicateAssertions: readonly TargetPredicateAssertion[],
   activationContext: TActivationContext,
-): Omit<ConditionEvaluationState, 'activationContext' | 'card'> & {
+  actorFormId?: ActorFormId,
+): Omit<ConditionEvaluationState, 'activationContext' | 'card' | 'noblePhantasmVariant'> & {
   activationContext: TActivationContext;
   card: TCard;
+  noblePhantasmVariant: TVariant;
 } {
+  const formId = actorFormId ?? noblePhantasmVariant?.ref.actorFormId;
+  if (!formId) throw new TypeError('initial_actor_form_required');
   const attacker = [...attackerTraits, 'cardNP'];
   const clock: ConditionReadClock = {
     phase: 'initial',
-    actorFormId: noblePhantasmVariant.ref.actorFormId,
+    actorFormId: formId,
     actor: 'attacker',
     actionId: null,
     operationId: null,

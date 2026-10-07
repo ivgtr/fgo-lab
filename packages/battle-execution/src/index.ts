@@ -238,4 +238,6 @@ export {
 export { stochasticWitnessKey } from './stochasticPossibilities';
 export type { OcRateInstance, OcActionStep, OcApplicationRead } from './ocState';
 
-export { projectBattleTraitPresence } from './traitFactLayers';
+export { projectBattleTraitPresence, readTraitPresence, readTraitQuantity } from './traitFactLayers';
+
+export { liveTraitQuantityRead } from './stackQuantities';

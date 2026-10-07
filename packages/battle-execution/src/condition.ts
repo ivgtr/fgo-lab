@@ -83,13 +83,13 @@ export type ConditionEvaluationState = Pick<
   | 'stackQuantitySources'
   | 'inputFacts'
   | 'quantities'
-  | 'noblePhantasmVariant'
   | 'activationContext'
   | 'conditionFactProofs'
   | 'conditionReadClock'
   | 'traitFactLayers'
 > & {
   card: ExecutableBattleState['card'] | null;
+  noblePhantasmVariant: ExecutableBattleState['noblePhantasmVariant'] | null;
   battlePoints?: BattlePointState;
   battlePointDomains?: readonly BattlePointDomain[];
   resourceActor?: string;
@@ -269,6 +269,7 @@ export function evaluateCondition(
       );
     case 'noblePhantasmVariant': {
       const actual =
+        state.noblePhantasmVariant !== null &&
         noblePhantasmVariantKey(state.noblePhantasmVariant.ref) ===
         noblePhantasmVariantKey(condition.variant);
       return leaf(actual, actual, [constant]);

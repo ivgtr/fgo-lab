@@ -1,3 +1,4 @@
+import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { markerTraitRead } from './buffInstances';
 import type { ActorScope, BattleStateBase, TraitScope } from './contracts';
 import type { ConditionFactProof } from './conditionRead';
@@ -286,4 +287,13 @@ export function incrementTraitFact(
     proof,
     prior.value === null ? [] : [...prior.support, proof],
   );
+}
+
+/** Both preparation and ordinary writes use the same exclusion and quantity semantics. */
+export function addTraitFact(layers: TraitFactLayers, scope: TraitScope, trait: string, proof: ConditionFactProof): TraitFactLayers {
+  const group = canonicalExclusiveGroup(scope, trait);
+  if (group) for (const other of canonicalExclusiveTraits(scope, group)) {
+    if (other !== trait) layers = commitTraitFact(layers, scope, other, false, 0, proof, [proof]);
+  }
+  return incrementTraitFact(layers, scope, trait, proof, group !== null);
 }

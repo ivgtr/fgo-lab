@@ -1,3 +1,5 @@
+import { liveTraitQuantityRead } from './stackQuantities';
+import { projectBattleTraitPresence, readTraitPresence, readTraitQuantity } from './traitFactLayers';
 import type { SourceActivationReceipt } from './conditionRead';
 import type { ConditionRead } from './conditionRead';
 import type { SourceEffect } from './sourceCollection';
@@ -1283,7 +1285,7 @@ describe('transactional preparation execution', () => {
     expect(result.state.hp).toEqual(created.state.hp);
     expect(result.state.ocState).toEqual(created.state.ocState);
     expect(result.state.hp?.actors.attacker).toMatchObject({ current: 10000 });
-    expect(result.state.stateTraits.attackerState.has('prepared-trait')).toBe(false);
+    expect((projectBattleTraitPresence(result.state, 'attackerState').get('prepared-trait') === true)).toBe(false);
   });
 
   it('keeps the post-skill state intact when attack NP lacks gauge', () => {
@@ -1918,12 +1920,12 @@ describe('OC on the preparation command path', () => {
         expect(result.status).toBe('applied');
         expect(result.state.npResource.gauge).toBe(witness === 1 ? 13000 : 10000);
         expect(result.state.ocState.boosts).toHaveLength(witness);
-        const initialProof = initial.state.conditionWriteProofs.quantities.get('npGauge:attacker');
+        const initialProof = initial.state.conditionFactProofs.quantities.get('npGauge:attacker');
         expect(initialProof).toMatchObject({
           kind: 'selectedInitialResource',
           clock: { phase: 'initial' },
         });
-        const committedProof = result.state.conditionWriteProofs.quantities.get('npGauge:attacker');
+        const committedProof = result.state.conditionFactProofs.quantities.get('npGauge:attacker');
         if (witness === 1) expect(committedProof?.kind).toBe('possibleOutcome');
         else expect(committedProof).toEqual(initialProof);
         expect(result.state.appliedActions[0]?.selectedEffects[0]?.sourceActivation).toMatchObject({
@@ -2435,7 +2437,7 @@ it('keeps an unread uncertain trait write without rejecting the preparation comm
   expect(result.status).toBe('applied');
   if (result.status !== 'applied') throw new Error(result.code);
   expect(result.state.uncertainContextWrites).toHaveLength(1);
-  expect(result.state.stateTraits).not.toContain('prepared-trait');
+  expect(projectBattleTraitPresence(result.state, 'attackerState').get('prepared-trait')).not.toBe(true);
   expect(created.state.uncertainContextWrites).toHaveLength(0);
 });
 
@@ -2910,7 +2912,7 @@ it('executes marker grant, duplicate, read, remove and negative read in one tran
   const result = reducePreNoblePhantasmAction(actor, initial.state, command, ctx);
   expect(result.status).toBe('applied');
   expect(result.state.npResource.gauge).toBe(12000);
-  expect(result.state.stackCounts.attackerState['marker-actor']).toBe(0);
+  expect(liveTraitQuantityRead(result.state, { scope: 'attackerState', trait: 'marker-actor' }).value).toBe(0);
   expect(result.state.hp?.actors.attacker).toMatchObject({ current: 9000 });
   expect(initial.state.buffInstances).toEqual([]);
   const invalidActor = servantWithSkill([
@@ -3127,7 +3129,7 @@ it('rolls BP, HP, NP, context and receipts back together when a later effect fai
     resourceBefore: { gauge: 10_000 },
     resourceAfter: { gauge: 15_000 },
   });
-  expect(recoveredRead.state.stateTraits.attackerState.has('temporary')).toBe(false);
+  expect((projectBattleTraitPresence(recoveredRead.state, 'attackerState').get('temporary') === true)).toBe(false);
 
   const validActor = { ...servantWithSkill([applied]), battlePointDomains: [domain] };
   const committed = reducePreNoblePhantasmAction(validActor, initial.state, command, ctx);
@@ -3135,7 +3137,7 @@ it('rolls BP, HP, NP, context and receipts back together when a later effect fai
   expect(committed.state.battlePoints.actors.attacker?.domains.bp).toMatchObject({ point: 2 });
   expect(committed.state.hp?.actors.attacker).toMatchObject({ current: 9000 });
   expect(committed.state.npResource.gauge).toBe(11_000);
-  expect(committed.state.stateTraits.attackerState.has('temporary')).toBe(true);
+  expect((projectBattleTraitPresence(committed.state, 'attackerState').get('temporary') === true)).toBe(true);
 });
 
 describe('NP write ownership and quantity dependencies', () => {
@@ -3162,9 +3164,9 @@ describe('NP write ownership and quantity dependencies', () => {
       ]);
       const created = createPreNoblePhantasmState(servant, baseForm, context);
       if (created.status !== 'applied') throw new Error(created.code);
-      const prior = created.state.conditionWriteProofs.quantities.get('npGauge:attacker');
+      const prior = created.state.conditionFactProofs.quantities.get('npGauge:attacker');
       if (!prior) throw new Error('initial NP proof required');
-      (created.state.conditionWriteProofs.quantities as Map<string, typeof prior>).set(
+      (created.state.conditionFactProofs.quantities as Map<string, typeof prior>).set(
         'npGauge:attacker',
         { ...prior, kind: 'possibleOutcome' },
       );
@@ -3181,7 +3183,7 @@ describe('NP write ownership and quantity dependencies', () => {
       );
       expect(result.status).toBe('applied');
       expect(result.state.npResource.gauge).toBe(gauge);
-      expect(result.state.conditionWriteProofs.quantities.get('npGauge:attacker')).toMatchObject({
+      expect(result.state.conditionFactProofs.quantities.get('npGauge:attacker')).toMatchObject({
         kind: expectedProof,
         clock: { phase: 'operation', valueSetIndex: 0, valueIndex: 0 },
       });
@@ -3206,7 +3208,7 @@ describe('NP write ownership and quantity dependencies', () => {
       });
       expect(created.state.npQuantityWrites).toEqual([]);
       expect(created.state.npResource.gauge).toBe(10000);
-      expect(created.state.conditionWriteProofs.quantities.get('npGauge:attacker')?.kind).toBe(
+      expect(created.state.conditionFactProofs.quantities.get('npGauge:attacker')?.kind).toBe(
         'possibleOutcome',
       );
     },
@@ -3239,8 +3241,8 @@ it('does not invent an attacker NP write for a different canonical recipient', (
     status: 'applied',
     state: { npQuantityWrites: [], npResource: { gauge: 10000 } },
   });
-  expect(result.state.conditionWriteProofs.quantities.get('npGauge:attacker')).toEqual(
-    created.state.conditionWriteProofs.quantities.get('npGauge:attacker'),
+  expect(result.state.conditionFactProofs.quantities.get('npGauge:attacker')).toEqual(
+    created.state.conditionFactProofs.quantities.get('npGauge:attacker'),
   );
 });
 

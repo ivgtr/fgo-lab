@@ -1,16 +1,14 @@
+import { hpPermille } from './hpResource';
 import { SOURCE_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
 import { inputFactValues } from './inputFacts';
-import { hpPermille } from './hpResource';
 import type { OcSourceProgram } from './ocSourceProgram';
 import { activationFactKey, analyzeActivationFactSet, type ActivationFact } from '@fgo-lab/schema';
-import { findActorForm, findNoblePhantasmVariant, type ServantMaster } from '@fgo-lab/master-data';
-import { createConditionState } from './conditionState';
+import { type ServantMaster } from '@fgo-lab/master-data';
 import type { ConditionEvaluationState } from './condition';
 import type { PreNoblePhantasmState, PreparationExecutionContext } from './preparationContracts';
 import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
 import {
   assertExternalInitialTrait,
-  commitTraitFact,
   cloneTraitFactLayers,
   replaceIntrinsicTraitFacts,
   clearExternalTraitScopes,
@@ -18,15 +16,11 @@ import {
 
 /** Preparation uses the same condition facts as damage execution, without a synthetic damage input. */
 export function preparationConditionState(
-  servant: ServantMaster,
+  _servant: ServantMaster,
   state: PreNoblePhantasmState,
   context: PreparationExecutionContext,
   actionFacts: readonly ActivationFact[] = [],
 ): ConditionEvaluationState | null {
-  const variant = state.selectedNoblePhantasmVariant
-    ? findNoblePhantasmVariant(servant, state.selectedNoblePhantasmVariant)
-    : undefined;
-  if (!variant) return null;
   if (analyzeActivationFactSet(context.activationFacts ?? []).status !== 'valid') return null;
   const combinedFacts = [
     ...(context.activationFacts ?? []),
@@ -41,85 +35,10 @@ export function preparationConditionState(
     ),
   );
   if (activation.status !== 'valid') return null;
-  const facts = createConditionState(
-    {
-      cardType: variant.kind === 'attack' ? variant.card : null,
-      attackerStateTraits: [],
-      targetStateTraits: [],
-      fieldTraits: [],
-      target: { traits: [] },
-      attackerHpPermille: hpPermille(state.hp?.actors.attacker),
-      targetRarity: null,
-      battlePointPhase: context.battlePointPhase ?? null,
-    },
-    variant,
-    findActorForm(servant, state.currentFormId)?.traits ?? [],
-    inputFactValues(state.inputFacts),
-    context.targetPredicates ?? [],
-    context.attackerPredicates ?? [],
-    activation.factSet,
-  );
-  facts.inputFacts = state.inputFacts;
-  for (const { fact } of context.worldFacts ?? []) {
-    const proof: ConditionFactProof = {
-      kind: 'externalAssumption',
-      clock: facts.conditionReadClock,
-    };
-    if (fact.kind === 'quantity') {
-      if (fact.quantity !== 'attackerHpPermille') {
-        facts.quantities[fact.quantity] = fact.value;
-        (facts.conditionFactProofs.quantities as Map<string, ConditionFactProof>).set(
-          fact.quantity,
-          proof,
-        );
-      }
-    } else {
-      facts.traitFactLayers = assertExternalInitialTrait(
-        facts.traitFactLayers,
-        fact.scope,
-        fact.trait,
-        fact.present,
-        proof,
-      );
-    }
-  }
-  for (const scope of ['attackerState', 'targetState', 'field'] as const) {
-    for (const [trait, count] of Object.entries(state.stackCounts[scope])) {
-      const proof = state.conditionWriteProofs.traits[scope].get(trait);
-      if (!proof) return null;
-      facts.traitFactLayers = commitTraitFact(
-        facts.traitFactLayers,
-        scope,
-        trait,
-        count > 0,
-        count,
-        proof,
-        [proof],
-      );
-    }
-  }
-  facts.stackQuantitySources = {
-    ...facts.stackQuantitySources,
-    ...Object.fromEntries(
-      (context.stackInputs ?? []).map((input) => [input.key, input.quantitySource]),
-    ),
+  return {
+    ...state,
+    activationContext: activation.factSet,
   };
-  facts.hp = state.hp;
-  facts.buffInstances = state.buffInstances;
-  facts.battlePoints = state.battlePoints;
-  if (context.battlePointDomains) facts.battlePointDomains = context.battlePointDomains;
-  facts.resourceActor = 'attacker';
-  facts.initialTraitSuppressions = state.initialTraitSuppressions;
-  facts.conditionFactProofs.suppressions = {
-    attacker: new Map(state.conditionWriteProofs.suppressions.attacker),
-    target: new Map(state.conditionWriteProofs.suppressions.target),
-  };
-  facts.conditionFactProofs.quantities = new Map([
-    ...facts.conditionFactProofs.quantities,
-    ...state.conditionWriteProofs.quantities,
-  ]);
-  facts.conditionFactProofs.markers = new Map(state.conditionWriteProofs.markers);
-  return facts;
 }
 
 /** A support's self-condition reads that support, while enemy and field facts retain their scope. */

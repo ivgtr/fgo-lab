@@ -1,3 +1,5 @@
+import { liveTraitQuantityRead } from '@fgo-lab/battle-execution';
+import { projectBattleTraitPresence, readTraitPresence, readTraitQuantity } from '@fgo-lab/battle-execution';
 import { createDefaultCalculatorScenario, createDefaultResolvedScenario } from './scenario';
 import { stackEffectTemplate } from './stackQuantityFixture';
 import { servantBuildSchema } from '@fgo-lab/schema';
@@ -96,8 +98,8 @@ it('keeps initial stack counts in preparation and semantic plan identity', async
   );
   const a = one.candidates[0]!.terminalState;
   const b = maximum.candidates[0]!.terminalState;
-  expect(a.stateTraits).toEqual(b.stateTraits);
-  expect(b.stackCounts.attackerState[source.quantitySource.trait]).toBe(4);
+  expect(projectBattleTraitPresence(a, 'attackerState')).toEqual(projectBattleTraitPresence(b, 'attackerState'));
+  expect(liveTraitQuantityRead(b, { scope: 'attackerState', trait: source.quantitySource.trait }).value).toBe(4);
   expect(preNoblePhantasmSemanticStateKey(a)).not.toBe(preNoblePhantasmSemanticStateKey(b));
 });
 

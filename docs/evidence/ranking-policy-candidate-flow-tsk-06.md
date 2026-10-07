@@ -1,7 +1,7 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-10-06"
+updated_at: "2026-10-07"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
@@ -11,6 +11,36 @@ updated_at: "2026-10-06"
 ## TSK-14 起点a8f6a4eの直接経路調査と具体計画（2026-10-05 JST・新確認待ち）
 
 ### 起点b9881e0の直接経路再調査と新具体計画（2026-10-05 UTC・提示/確認待ち）
+
+#### session終了checkpointと次作業者の計画待ち（2026-10-07 15:12 JST・利用者依頼）
+
+利用者の最新指示は「一度sessionを閉じ、commit後に次作業者向け依頼文を作る。次作業者はいきなり実装せずコードから具体計画を提示し、確認後そのまま進める」。本節が最新の次操作を所有し、下の14:52自主継続や過去の確認待ちとは区別する。今回のcommit許可・過去のOKを、次作業者が提示する新計画の確認へ代入しない。以後このsessionでは製品/test追補・新検証/計測・format/lint/quality/docs検証を行わず、既存Task/flow記録と依頼されたstage/commitだけを行う。
+
+**checkpoint対象と成果:** 起点HEAD `836fa7dc29c7da644d57c55bb31926ac5e8d0d62`、親 `b9881e0c5ca830d77cda14a2eb39fea59676e333`。開始時worktree/index clean。今回差分はtracked25file（Task/flow2、battle-execution17、calculation-application6）、新fileなし。`PreNoblePhantasmState` を共通condition native factへ部分接続し、独立 `stateTraits/stackCounts/conditionWriteProofs` を撤去。initial form/world/inputを初期化し、`preparationConditionState` は再構築せずrootのread viewを返す。ordinary/preparationのtrait追加を `addTraitFact` に共通化し、fieldOther writerとBP/planner/直接fixture/HP auditをnative queryへ接続した。buff数量をtrait総量へ投影するhelperは宣言sourceの束縛へ置換した。non-attack variantをnullableで扱う。populationのunknown前値＋grantはpresence確定/quantity unknown/実operation proofを検査し、別の明示absence対照でexact1を検査する。部分接続であり完成state契約や全意味差の最終レビューではない。
+
+**有効な証拠と反証:** 今回namespaceは `.test-results/tsk-14-ranking-implementation-20261003/approved-run-0819/resume-0552/`。`typecheck-first.log` は旧field consumer等のexit1、移行後 `typecheck-second.log` は標準 `pnpm typecheck` exit0。固定6入力 `start-input.sha256` は `resume-1620/i1-start-input.sha256` と同一だった。代表診断wrapperは `native-preparation-first-wrapper.log`、原runは `.test-results/2026-10-07T06-02-52-147Z-19-3715b8/`。manifestはtest_failure/exit1、3file102件96成功/6失敗、warning0、artifactVerification errorsなし。この選択には旧missing receipt2種の必須契約がなく、その欠落のclosure成功を意味しない。原manifest/vitest.json/stdout.log/stderr.logを保持し、後続成功へ上書きしない。型成功も全意味・保存・production成功ではない。今回は新しい検証を追加していない。
+
+**未修正の6失敗:** (1) preparationTransactionのunknown marker originating conditionをrepairして同stateでretryするspec、(2) stackPreparationSupportのbuff count→NP→OC/解除spec、(3) field-wide grant→matching actor population→NP/OC、(4) inconsistent populationのrepair/retry、(5) 後続resource失敗時のcount receipt rollback/retry、(6) per-enemy function→NP/repair/rollback。最初のread-only照合では、repair contextの新world/inputがrootへ束縛されず、source readは旧native input、population functionはcontext inputを読む分裂を確認した。すべての原因を確定したとは扱わない。旧stackCountsのnested shape assertionも残る。元NP25000/OC2・per-enemy NP20000・空buff store・rollback能力を維持して再調査する。
+
+**残る修正境界と候補:** command transactionで新しい明示入力の修復を束縛し、physical write済み資源を初期contextで上書きせず、失敗時は原state/request/result/saveを保持する。毎readでcontextを再適用する案は採らない。finite populationの生成instanceと未知trait総量を分け、writer/readを同じ値・根拠へ接続する。現在 `publishTargetInstances` は文字列prefixでinstanceを識別する暫定接続であり、typed owner/実source lineage・根拠・閉じた数量契約の完成ではない。structural操作のsource末尾集約、後付けproof binder/NP finalizer、candidatePreparationの再seed、resourceActor/default/input binding、automatic/BP reconcile/全action rollback/実operation commit集合/templateとruntime binding/通常継続は未閉鎖。planner keyはproof/clockを含むnative factsを保持するため、将来意味のquotient/counter完成を保証しない。今回差分のformat/lint/unused importも未確認。これらは次作業者のコード調査から採否を決める候補で、既存案を最善として固定しない。
+
+**全体未達:** 固定inventory/admission counter2失敗、過去の5失敗/missing receipt2種のcurrent再接続、全BP×proc相関/合法枝/通常確定寄与最大/独立最大oracle/certificate、basis全cell/実保存復元、current実UI/worker/workspace/portable/修復/stale、独立current strict、80条件＋別S0/S1 saved production、正式before同条件after各3process、全意味差、全15Applyの証拠対応、差分レビュー/対象内Blocking0、固定最終差分quality→結果記録→docs検証は未達。前checkpointの局所成功は各当時sourceと対象範囲だけに有効で、今回commit全体の成功へ昇格しない。schema42/engine49/保存format、固定入力/provider/保持契約、damage式/master/raw・共通Lv/NP/編集/AttackProfile/正常current復元能力は今回変更していない。原artifactはcommit対象へ追加しない。
+
+**次sessionの運用:** 最初は読み取り・既存証拠照合・既存Task/flowへの計画記録のみ。直接生成→writer→read→source/action commit→rollback→通常継続、applicationからUI/worker/portable/保存までを追い、成果/不変条件/意味owner/対象外/撤去境界/依存順/早期代表経路/最初の反証/全受入を具体化し、提示して新計画への明示確認を待つ。製品/test/保存/index変更、install/取得、新検証/計測、計画記録後のdocs検証/diff-checkは禁止。確認後はその成果まで継続する。
+
+実装途中の問題・隣接例外・計画とのずれを検知したら、製品/test writeと新検証/計測を一度止め、原反証を保存し、自起動processを規約どおり管理する。俯瞰前に「もう一修正/もう一run」を行わず、読み取りで同familyの直接owner・alternate/recovery・実利用者経路を確認する。「破壊的変更許容/fallback不要/工数を惜しまず、複雑化せず最善の実装」を軸に、原因、旧案の不足、採否・直接修正境界、維持する成果/意味owner/能力/検証保証、説明できる差と次の反証をTask/flowへ記録する。goalと固定契約/保証を維持できる内部改訂は自主再開して進め、定型再承認を挟まない。説明不能/保証不能/判断不明、goalや未規定製品範囲の変更、新IR/別evaluator/戦闘機能、固定format/入力/provider/保持や既存能力の変更、unknown黙殺/候補切捨て/未承認expected/assertion/audit/counter/VRT/timeout/cap/ratchet緩和が必要なら停止を維持し、具体的な影響と利用者判断を提示する。破壊的変更許可をこれらの保証削除へ拡大しない。
+
+今回既知自起動検証は全exit回収済み。現tool namespaceのprocess表示はcodex/psだけで、他session/host process不存在の保証はしない。process終了操作なし。25fileの差分と主要変更を読み取り照合したが、最終品質レビュー/Blocking0ではない。次作業者は新checkpointのHEAD/親/worktree/index/並行編集とprocessを再照合する。60分checkpoint/90分上限は実行効率要件を維持。TSK-14 in_progress、TSK-13 done、TSK-12 ready、全15Apply未Verified、TSK-14 Done/R1受入ではない。
+
+#### goal継続とpreparation native fact接続（2026-10-07 14:52 JST・自主継続）
+
+最新利用者goal「TASK14の完了まで進める／破壊的変更許容・fallback不要／以後の実装方針確認不要／goalをずらさない」に従い再開。初回新計画の確認待ちはこの最新指示で解除し、12:35の具体方向と限定population assertion移行を採用する。HEAD836fa7d/親b988、worktree/index clean、tool namespaceに自起動検証なしを照合。05:52:28 UTC開始、06:52:28 checkpoint/07:22:28上限。他session差分/processを撤回しない。
+
+現コードの直接経路から、まず `PreNoblePhantasmState` に共通ConditionEvaluationStateのnative factを持たせ、独立stateTraits/stackCounts/trait proofを撤去する。`createPreparationState` で実initial form/world/inputを一度束縛し、`preparationConditionState` は再生成せず同rootのread viewを返す。non-attackのvariant/cardはnullableの実値で扱い、variant条件は未選択をfalseとする。structural/fieldOther/population直接writerを `traitFactLayers` の値＋根拠更新へ移し、finite buff/marker storeを未知trait総量へ投影しない。planner/BP/direct fixture/auditをnative queryへ移し、元明示countの期待・populationNP25000/OC2・解除/rollbackを維持する。source operation順/他resource後付けproof/NP finalizer/candidate再seed/全physical root継続は同Q1の未達として続ける。部分接続をQ1完了としない。
+
+最初の代表反証は元population入力のpresence確定/exact unknown/実writer-clockとNP25000/OC2、明示absence対照exact1、marker除去0、initial/current form・source/action rollback。実装境界内の不具合は俯瞰後に自主修正し、fixed input/provider/schema42-engine49/save/独立strict/counter/全15Apply/80＋別savedS0S1/正式after/全意味差/Blocking0-review-quality-docsを維持する。説明不能や保証不能をfallback/期待更新で押し切らない。TSK-14 in_progress/R1未受入。旧の確認待ちは履歴。
+
+**native接続の最初の反証と俯瞰（2026-10-07）:** 標準type第二runはexit0。原 `.test-results/2026-10-07T06-02-52-147Z-19-3715b8/` は3file102件96成功/6失敗、warning0で保持。unknown＋grant/presence-support-clockと明示absence対照、marker/大半rollbackは通過したが、同stateにrepair contextを与える直接callerでworld/inputの新しい意図がnative rootへ束縛されず後続readが旧値を使う。`preparationConditionState` の再生成撤去で、このcommand境界の不足が露出した。初期contextを毎readで再適用する修正は採らず、command transaction入口で新しい明示入力を束縛し、physical write済みinputを上書きせず、失敗は原stateを保持する契約へ接続する。population functionの有限生成instanceと未宣言trait総量は分け、cohort writer/readも同native inputを使う。buf除去specに残った旧stackCountsのネストshapeはnative quantity queryへ移し、元数値/空store保証を維持する。編集を一度停止してwriter/read/repair/rollbackを読み取り照合したうえで、同Q1の成果/保証を維持して自主継続する。原6失敗を後続成功へ書き換えず、counter/P3/UI/production/全15Apply/最終gateは未達のまま。
 
 #### 判断権限の変更と数量owner再判断（2026-10-06 02:52 JST・自主判断で再開）
 

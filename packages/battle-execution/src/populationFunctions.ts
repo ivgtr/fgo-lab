@@ -61,36 +61,13 @@ export function applyPopulationFunction(
   };
 }
 
-function projectTargetState(
-  current: PreNoblePhantasmState,
-  next: PopulationTargetState,
-): PreNoblePhantasmState {
-  const prior = [...current.populationEvents]
-    .reverse()
-    .find((event) => event.targetState)?.targetState;
-  const counts = { ...current.stackCounts.targetState };
-  const traits = new Set(current.stateTraits.targetState);
-  for (const trait of new Set([
-    ...Object.keys(prior?.traits[0] ?? {}),
-    ...Object.keys(next.traits[0] ?? {}),
-  ])) {
-    const delta = (next.traits[0]?.[trait] ?? 0) - (prior?.traits[0]?.[trait] ?? 0);
-    if (!delta) continue;
-    const count = (counts[trait] ?? Number(traits.has(trait))) + delta;
-    if (count > 0) {
-      counts[trait] = count;
-      traits.add(trait);
-    } else {
-      Reflect.deleteProperty(counts, trait);
-      traits.delete(trait);
-    }
-  }
-  return {
-    ...current,
-    stackCounts: { ...current.stackCounts, targetState: counts },
-    stateTraits: { ...current.stateTraits, targetState: traits },
-  };
+function publishTargetInstances(current: PreNoblePhantasmState, next: PopulationTargetState): PreNoblePhantasmState {
+  const prefix = 'populationFunction:';
+  const instances = (next.instances[0] ?? []).map((traits, index) => ({ identity: prefix + index, actor: 'target', traits, lifetime: 'active' as const, count: 1 }));
+  const removed = current.buffInstances.filter(instance => instance.identity.startsWith(prefix) && !instances.some(next => next.identity === instance.identity)).map(instance => ({ ...instance, count: 0 }));
+  return { ...current, buffInstances: [...current.buffInstances.filter(instance => !instance.identity.startsWith(prefix)), ...instances, ...removed] };
 }
+
 export function applyPopulationFunctionToState(
   operation: PopulationFunction,
   current: PreNoblePhantasmState,
@@ -100,7 +77,7 @@ export function applyPopulationFunctionToState(
 ): PreNoblePhantasmState {
   const applied = applyPopulationFunction(operation, current.populationEvents, values, actionId);
   return {
-    ...projectTargetState(current, applied.state),
+    ...publishTargetInstances(current, applied.state),
     uncertainContextWrites:
       operation.action.kind === 'removeOne' && applied.state.succeeded[0]
         ? [
@@ -150,7 +127,7 @@ export function removePopulationFunctionState(
   });
   const next = { ...prior, instances, traits };
   return {
-    ...projectTargetState(current, next),
+    ...publishTargetInstances(current, next),
     populationEvents: current.populationEvents.map((entry, index) =>
       index === current.populationEvents.length - 1 ? { ...entry, targetState: next } : entry,
     ),

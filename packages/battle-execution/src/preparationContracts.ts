@@ -1,6 +1,7 @@
+import type { ConditionEvaluationState } from './condition';
 import type { PreparationNpQuantityWrite } from './preparationProofs';
 import type { StochasticSelection } from './stochasticPossibilities';
-import type { SourceActivationReceipt, ConditionFactProofs } from './conditionRead';
+import type { SourceActivationReceipt } from './conditionRead';
 import type { HpState } from './hpResource';
 import type { NpTransferReceipt } from './npTransfer';
 import type {
@@ -88,10 +89,9 @@ export interface AppliedPreparationAction {
   ocOutcomes: readonly OcActionOutcome[];
 }
 
-export interface PreNoblePhantasmState {
+export interface PreNoblePhantasmState extends ConditionEvaluationState {
   inputFacts: import('./inputFacts').InputFacts;
   sourceBindings: readonly import('./executionBinding').SourceExecutionBinding[];
-  conditionWriteProofs: ConditionFactProofs;
   npQuantityWrites: readonly PreparationNpQuantityWrite[];
   battlePoints: BattlePointState;
   hp?: HpState | undefined;
@@ -106,11 +106,6 @@ export interface PreNoblePhantasmState {
   usedSkillSlots: ReadonlySet<1 | 2 | 3>;
   transformNoblePhantasmUsed: boolean;
   activeEffects: readonly AppliedPreparationEffect[];
-  stackCounts: Record<'attackerState' | 'targetState' | 'field', Readonly<Record<string, number>>>;
-  stateTraits: {
-    attackerState: ReadonlySet<string>;
-    targetState: ReadonlySet<string>;
-  };
   initialTraitSuppressions: { attacker: ReadonlySet<string>; target: ReadonlySet<string> };
   npResource: NpResourceState;
   ocState: OcState;

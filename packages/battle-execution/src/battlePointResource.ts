@@ -1,3 +1,4 @@
+import { projectBattleTraitPresence } from './traitFactLayers';
 import type { BattlePointDomain, EffectExecutionOperation } from '@fgo-lab/master-data';
 import type { SourceEffect } from './sourceCollection';
 import { resolveResourceTargetPolicy } from './effectRouting';
@@ -307,7 +308,7 @@ export function reconcilePreparationBattlePoints(
       actorId: servant.id,
       traits: [
         ...(findActorForm(servant, state.currentFormId)?.traits ?? []),
-        ...state.stateTraits.attackerState,
+        ...[...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) => present ? [trait] : []),
       ],
     },
     ...sources.map((source) => ({

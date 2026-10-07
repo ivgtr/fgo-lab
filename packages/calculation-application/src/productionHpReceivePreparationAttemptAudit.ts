@@ -1,3 +1,5 @@
+import { projectBattleTraitPresence, type PreNoblePhantasmState } from '@fgo-lab/battle-execution';
+function nativePresence(state: PreNoblePhantasmState | undefined) { return state === undefined ? undefined : { attackerState: new Set([...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) => present ? [trait] : [])), targetState: new Set([...projectBattleTraitPresence(state, 'targetState')].flatMap(([trait, present]) => present ? [trait] : [])) }; }
 import {
   firstCanonicalAuditDifference,
   type CanonicalAuditValue,
@@ -97,12 +99,12 @@ export function receiveAttemptDiagnostic(
       ordered: d.ordered,
       candidate: d.candidate,
       actorEnvironment: s.transitions?.map((t) => ({
-        before: t.before.stateTraits,
-        after: t.result.state.stateTraits,
+        before: nativePresence(t.before),
+        after: nativePresence(t.result.state),
         hp: t.hpActions?.map((n) => ({
-          start: n.start.stateTraits,
-          attempted: n.attempted?.stateTraits,
-          returned: n.returned?.stateTraits,
+          start: nativePresence(n.start),
+          attempted: nativePresence(n.attempted),
+          returned: nativePresence(n.returned),
         })),
       })),
     },

@@ -107,24 +107,8 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
     activeEffects: state.activeEffects.map(canonicalEffectKey).sort(),
     battlePoints: state.battlePoints.actors,
     ...(state.buffInstances.length ? { buffInstances: state.buffInstances } : {}),
-    stateTraits: {
-      attackerState: [...state.stateTraits.attackerState].sort(),
-      targetState: [...state.stateTraits.targetState].sort(),
-    },
-    ...(Object.values(state.stackCounts).some((counts) =>
-      Object.values(counts).some((count) => count > 1),
-    ) || Object.values(state.stackCounts.field).some((count) => count > 0)
-      ? {
-          stackCounts: Object.fromEntries(
-            Object.entries(state.stackCounts).map(([scope, counts]) => [
-              scope,
-              Object.entries(counts)
-                .filter(([, count]) => count > 0)
-                .sort(([left], [right]) => left.localeCompare(right)),
-            ]),
-          ),
-        }
-      : {}),
+    traitFacts: Object.fromEntries((['intrinsic', 'externalInitial', 'writes'] as const).map(layer => [layer, Object.fromEntries(Object.entries(state.traitFactLayers[layer]).map(([scope, facts]) => [scope, [...facts].sort(([a], [b]) => a.localeCompare(b))]))])),
+    closedTraitScopes: state.traitFactLayers.closedScopes,
     npResource: state.npResource,
     baseOvercharge: state.baseOvercharge,
     oc: {

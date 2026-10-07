@@ -1,3 +1,5 @@
+import { liveTraitQuantityRead } from '@fgo-lab/battle-execution';
+import { projectBattleTraitPresence, readTraitPresence, readTraitQuantity } from '@fgo-lab/battle-execution';
 import { commonPreparationSkillLevels } from './rankingBasis';
 import { calculateScenarioWithPolicy } from './scenario';
 import { createRankingPortableRequest } from './portableCalculation';
@@ -133,7 +135,7 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
         context,
       );
       if (initial.status !== 'applied') throw new Error(initial.code);
-      expect(initial.state.stackCounts.attackerState[input.quantitySource.trait]).toBe(count);
+      expect(liveTraitQuantityRead(initial.state, { scope: 'attackerState', trait: input.quantitySource.trait }).value).toBe(count);
       const result = reducePreNoblePhantasmAction(
         actor,
         initial.state,
@@ -152,9 +154,9 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
       expect(result.state.npResource.gauge).toBe(
         Math.min(20_000, 10_000 + count * coefficient.amount.values[0][9]!),
       );
-      expect(result.state.stackCounts.attackerState[input.quantitySource.trait]).toBe(0);
+      expect(liveTraitQuantityRead(result.state, { scope: 'attackerState', trait: input.quantitySource.trait }).value).toBe(0);
       expect(result.state.buffInstances).toHaveLength(0);
-      expect(initial.state.stackCounts.attackerState[input.quantitySource.trait]).toBe(count);
+      expect(liveTraitQuantityRead(initial.state, { scope: 'attackerState', trait: input.quantitySource.trait }).value).toBe(count);
     }
     for (const npLevel of [1, 2, 5] as const)
       for (const selfBuffs of ['included', 'excluded'] as const)

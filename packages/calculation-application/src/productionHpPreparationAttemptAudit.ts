@@ -1,3 +1,5 @@
+import { projectBattleTraitPresence, type PreNoblePhantasmState } from '@fgo-lab/battle-execution';
+function nativePresence(state: PreNoblePhantasmState | undefined) { return state === undefined ? undefined : { attackerState: new Set([...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) => present ? [trait] : [])), targetState: new Set([...projectBattleTraitPresence(state, 'targetState')].flatMap(([trait, present]) => present ? [trait] : [])) }; }
 import { preparationHpActionsFor } from '@fgo-lab/battle-execution/preparation-audit';
 import {
   firstCanonicalAuditDifference,
@@ -742,8 +744,8 @@ export function auditHpPreparationAttempts(input: {
     if (
       source.transitions.some(
         (t) =>
-          !equal(t.before.stateTraits, initial?.stateTraits) ||
-          !equal(t.result.state.stateTraits, initial?.stateTraits),
+          !equal(nativePresence(t.before), nativePresence(initial)) ||
+          !equal(nativePresence(t.result.state), nativePresence(initial)),
       )
     ) {
       boundaries.push({ identity, kind: 'outsideActorTraits', changed: 0 });
@@ -765,7 +767,7 @@ export function auditHpPreparationAttempts(input: {
           ) ||
           (action.attempted &&
             (!equal(action.start.currentFormId, action.attempted.currentFormId) ||
-              !equal(action.start.stateTraits, action.attempted.stateTraits))),
+              !equal(nativePresence(action.start), nativePresence(action.attempted)))),
       )
     ) {
       boundaries.push({ identity, kind: 'outsideAttemptEnvironment', changed: 0 });

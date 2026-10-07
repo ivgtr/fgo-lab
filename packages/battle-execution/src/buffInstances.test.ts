@@ -3,7 +3,7 @@ import {
   seedBuffInstances,
   countBuffInstances,
   applyBuffInstanceMutation,
-  projectBuffInstanceCounts,
+  markerTraitRead,
   type BuffCountInput,
 } from './buffInstances';
 
@@ -108,20 +108,9 @@ it('keeps recipient counts separate, applies the grant cap live, and projects re
     { origin: 'attacker' },
     'remove',
   )!;
-  const projected = projectBuffInstanceCounts(
-    {
-      buffInstances: removed,
-      stackCounts: { attackerState: {}, targetState: {}, field: {} },
-      stateTraits: { attackerState: new Set<string>(), targetState: new Set<string>(['a']) },
-    },
-    [input, target],
-  );
-  expect(projected.stackCounts).toEqual({
-    attackerState: { a: 3 },
-    targetState: { a: 0 },
-    field: {},
-  });
-  expect(projected.stateTraits.targetState.has('a')).toBe(false);
+  expect(countBuffInstances(removed, 'a', 'attacker', 'all')).toBe(3);
+  expect(countBuffInstances(removed, 'a', 'target', 'all')).toBe(0);
+  expect(markerTraitRead(removed, 'target', 'a')).toEqual({ known: true, count: 0 });
   expect(countBuffInstances(instances, 'a', 'target')).toBe(5);
 });
 
@@ -157,16 +146,7 @@ it('retains marker instances, actor individuality, recipient identity, removal a
     { origin: 'attacker' },
     'remove',
   )!;
-  const projected = projectBuffInstanceCounts(
-    {
-      buffInstances: removed,
-      stackCounts: { attackerState: { 'actor-trait': 10 }, targetState: {}, field: {} },
-      stateTraits: { attackerState: new Set(['actor-trait']), targetState: new Set<string>() },
-    },
-    [],
-  );
-  expect(projected.stackCounts.attackerState['actor-trait']).toBe(0);
-  expect(projected.stateTraits.attackerState.has('actor-trait')).toBe(false);
+  expect(markerTraitRead(removed, 'attacker', 'actor-trait')).toEqual({ known: true, count: 0 });
   expect(countBuffInstances(removed, 'marker', 'support:a')).toBe(1);
   expect(countBuffInstances(instances, 'marker')).toBe(2);
 });

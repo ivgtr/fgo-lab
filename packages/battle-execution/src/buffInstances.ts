@@ -153,49 +153,9 @@ export function countBuffInstances(
   );
 }
 
-/** Stack readers and NP count readers observe one instance store, including after removal. */
-export function projectBuffInstanceCounts<
-  T extends {
-    buffInstances: readonly CountedBuffInstance[];
-    stackCounts: {
-      attackerState: Readonly<Record<string, number>>;
-      targetState: Readonly<Record<string, number>>;
-      field: Readonly<Record<string, number>>;
-    };
-    stateTraits: { attackerState: ReadonlySet<string>; targetState: ReadonlySet<string> };
-  },
->(state: T, inputs: readonly BuffCountInput[]): T {
-  if (!inputs.length && !state.buffInstances.some((instance) => instance.marker)) return state;
-  const stackCounts = { ...state.stackCounts };
-  const stateTraits = { ...state.stateTraits };
-  for (const actor of ['attacker', 'target'] as const) {
-    const scope = actor === 'attacker' ? 'attackerState' : 'targetState';
-    const counts = markerTraitCounts(state.buffInstances, actor);
-    stackCounts[scope] = { ...stackCounts[scope], ...counts };
-    const traits = new Set(stateTraits[scope]);
-    for (const [trait, count] of Object.entries(counts)) {
-      if (count) traits.add(trait);
-      else traits.delete(trait);
-    }
-    stateTraits[scope] = traits;
-  }
-  for (const input of inputs) {
-    const { scope, trait } = input.quantitySource;
-    if (scope === 'field') throw new TypeError('invalid_buff_count_scope');
-    const count = countBuffInstances(
-      state.buffInstances,
-      trait,
-      scope === 'attackerState' ? 'attacker' : 'target',
-      'all',
-    );
-    if (count === null) continue;
-    stackCounts[scope] = { ...stackCounts[scope], [trait]: count };
-    const traits = new Set(stateTraits[scope]);
-    if (count) traits.add(trait);
-    else traits.delete(trait);
-    stateTraits[scope] = traits;
-  }
-  return { ...state, stackCounts, stateTraits };
+/** A buff-count declaration binds to the live instance store, without writing trait totals. */
+export function bindBuffCountSources<T extends { stackQuantitySources: Record<string, BuffCountInput['quantitySource']> }>(state: T, inputs: readonly BuffCountInput[]): T {
+  return { ...state, stackQuantitySources: { ...state.stackQuantitySources, ...Object.fromEntries(inputs.map(input => [input.key, input.quantitySource])) } };
 }
 
 /** Both read kinds retain multiplicity and observe the same actor-qualified instances. */

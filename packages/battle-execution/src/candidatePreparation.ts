@@ -133,7 +133,7 @@ function prepareExecutableCandidate(
       initialProof,
     );
   {
-    const proofs = cloneConditionFactProofs(preparationState.conditionWriteProofs);
+    const proofs = cloneConditionFactProofs(preparationState.conditionFactProofs);
     initialState.conditionFactProofs.quantities = new Map([
       ...initialState.conditionFactProofs.quantities,
       ...proofs.quantities,

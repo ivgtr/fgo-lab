@@ -11,7 +11,6 @@ import type {
   WorldFactAssertion,
 } from './contracts';
 import { createConditionState } from './conditionState';
-import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
 import { liveInputQuantity } from './stackQuantities';
 import { cloneInputFacts } from './inputFacts';
@@ -20,7 +19,7 @@ import {
   projectBattleTraitPresence,
   assertExternalInitialTrait,
   commitTraitFact,
-  incrementTraitFact,
+  addTraitFact,
   replaceIntrinsicTraitFacts,
 } from './traitFactLayers';
 
@@ -265,28 +264,7 @@ export function applyTraitAddition(
   proof: ConditionFactProof,
 ): ExecutableBattleState {
   const candidate = cloneBattleState(state);
-  const group = canonicalExclusiveGroup(scope, trait);
-  if (group)
-    for (const conflictingTrait of canonicalExclusiveTraits(scope, group)) {
-      if (conflictingTrait === trait) continue;
-
-      candidate.traitFactLayers = commitTraitFact(
-        candidate.traitFactLayers,
-        scope,
-        conflictingTrait,
-        false,
-        0,
-        proof,
-        [proof],
-      );
-    }
-  candidate.traitFactLayers = incrementTraitFact(
-    candidate.traitFactLayers,
-    scope,
-    trait,
-    proof,
-    group !== null,
-  );
+  candidate.traitFactLayers = addTraitFact(candidate.traitFactLayers, scope, trait, proof);
 
   return candidate;
 }

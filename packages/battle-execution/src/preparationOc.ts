@@ -1,3 +1,4 @@
+import { addTraitFact } from './traitFactLayers';
 import { inputFactValues } from './inputFacts';
 import { CRITICAL_STARS_INITIAL_INPUT, mutateConditionalCriticalStars } from './resourceSemantics';
 import type { PhysicalInputCommit } from './executionBinding';
@@ -49,7 +50,7 @@ import {
   applyPopulationFunctionToState,
   removePopulationFunctionState,
 } from './populationFunctions';
-import { isBuffCountInput, projectBuffInstanceCounts } from './buffInstances';
+import { isBuffCountInput, bindBuffCountSources } from './buffInstances';
 import { populationInputIssue } from './populationCounts';
 import { resolveResourceTargetPolicy } from './effectRouting';
 import { effectExecutesInNpProgram } from './npProgramScope';
@@ -808,21 +809,10 @@ export function executePreparationOc(args: {
             outcome?.conditionOutcome === true &&
             ['attacker', 'np', 'passive', 'craftEssence'].includes(source.origin)
           ) {
-            const counts = { ...current.stackCounts.targetState };
-            const traits = new Set(current.stateTraits.targetState);
-            for (const trait of operation.traits) {
-              counts[trait] = (counts[trait] ?? 0) + 1;
-              traits.add(trait);
-            }
-            current = bindPreparationWriteProofs(
-              current,
-              {
-                ...current,
-                stackCounts: { ...current.stackCounts, targetState: counts },
-                stateTraits: { ...current.stateTraits, targetState: traits },
-              },
-              sourceProof(),
-            );
+            const proof = sourceProof();
+            let layers = current.traitFactLayers;
+            for (const trait of operation.traits) layers = addTraitFact(layers, 'targetState', trait, { ...proof, clock: { ...proof.clock, phase: 'operation', operationId: JSON.stringify([args.actionId, source.sourceInstanceId, source.effect.occurrenceId, operationIndex]) } });
+            current = { ...current, traitFactLayers: layers };
           }
           return { kind: 'skip', outcome: 'notApplicable' };
         });
@@ -843,7 +833,7 @@ export function executePreparationOc(args: {
               if (absent)
                 current = bindPreparationWriteProofs(
                   current,
-                  projectBuffInstanceCounts(
+                  bindBuffCountSources(
                     {
                       ...current,
                       buffInstances: absent.map((instance) =>
@@ -903,7 +893,7 @@ export function executePreparationOc(args: {
             };
           current = bindPreparationWriteProofs(
             current,
-            projectBuffInstanceCounts(
+            bindBuffCountSources(
               {
                 ...current,
                 buffInstances: uncertainMarker
@@ -1740,6 +1730,7 @@ export function executePreparationOc(args: {
           },
         ],
         source.origin,
+        sourceProof(),
       );
       if (typeof structural === 'string')
         return { kind: 'reject', status: 'invalid', reason: structural };
@@ -1754,15 +1745,17 @@ export function executePreparationOc(args: {
           ),
           currentFormId: structural.currentFormId,
           selectedNoblePhantasmVariant: structural.selectedVariant,
-          stateTraits: structural.stateTraits,
-          stackCounts: structural.stackCounts,
+          traitFactLayers: structural.traitFactLayers,
+          conditionFactProofs: structural.conditionFactProofs,
+          noblePhantasmVariant: structural.noblePhantasmVariant,
+          card: structural.card,
           initialTraitSuppressions: structural.initialTraitSuppressions,
         },
         sourceProof(),
       );
       current = bindPreparationWriteProofs(
         current,
-        projectBuffInstanceCounts(current, buffInputs),
+        bindBuffCountSources(current, buffInputs),
         sourceProof(),
       );
       const beforeReconciliation = current;

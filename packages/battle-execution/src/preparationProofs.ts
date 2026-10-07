@@ -12,11 +12,7 @@ export function bindPreparationWriteProofs(
   after: PreNoblePhantasmState,
   proof: ConditionFactProof,
 ): PreNoblePhantasmState {
-  const facts = cloneConditionFactProofs(before.conditionWriteProofs);
-  for (const scope of ['attackerState', 'targetState', 'field'] as const)
-    for (const [trait, value] of Object.entries(after.stackCounts[scope]))
-      if (before.stackCounts[scope][trait] !== value)
-        (facts.traits[scope] as Map<string, ConditionFactProof>).set(trait, proof);
+  const facts = cloneConditionFactProofs(before.conditionFactProofs);
   for (const actor of ['attacker', 'target'] as const)
     for (const trait of after.initialTraitSuppressions[actor])
       if (!before.initialTraitSuppressions[actor].has(trait))
@@ -42,7 +38,7 @@ export function bindPreparationWriteProofs(
           `battlePoint:${actor}:${subject}`,
           proof,
         );
-  return { ...after, conditionWriteProofs: facts };
+  return { ...after, conditionFactProofs: facts };
 }
 
 export interface PreparationNpQuantityWrite {
@@ -88,7 +84,7 @@ export function commitPreparationNpQuantityWrite(args: {
   sourceActivation: Extract<SourceActivationReceipt, { kind: 'read' }>;
   activationProof: ConditionFactProof;
 }): PreNoblePhantasmState {
-  const prior = args.state.conditionWriteProofs.quantities.get('npGauge:attacker');
+  const prior = args.state.conditionFactProofs.quantities.get('npGauge:attacker');
   if (!prior) throw new TypeError('missing_np_quantity_write_dependency');
   if (!Number.isSafeInteger(args.cell) || args.cell < 0)
     throw new TypeError('invalid_np_quantity_write_cell');
@@ -121,12 +117,12 @@ export function commitPreparationNpQuantityWrite(args: {
     reads,
     proof: npWriteProof({ clock: args.clock, reads }, args.activationProof),
   };
-  const facts = cloneConditionFactProofs(args.state.conditionWriteProofs);
+  const facts = cloneConditionFactProofs(args.state.conditionFactProofs);
   (facts.quantities as Map<string, ConditionFactProof>).set(write.quantity, write.proof);
   return {
     ...args.state,
     npResource: args.after,
-    conditionWriteProofs: facts,
+    conditionFactProofs: facts,
     npQuantityWrites: [...args.state.npQuantityWrites, write],
   };
 }
@@ -154,10 +150,10 @@ export function finalizePreparationNpQuantityWrites(
     updatedProofs.set(JSON.stringify(write.proof.clock), updated.proof);
     return updated;
   });
-  const facts = cloneConditionFactProofs(state.conditionWriteProofs);
+  const facts = cloneConditionFactProofs(state.conditionFactProofs);
   const currentProof = facts.quantities.get('npGauge:attacker');
   const updated = currentProof && updatedProofs.get(JSON.stringify(currentProof.clock));
   if (updated)
     (facts.quantities as Map<string, ConditionFactProof>).set('npGauge:attacker', updated);
-  return { ...state, npQuantityWrites: writes, conditionWriteProofs: facts };
+  return { ...state, npQuantityWrites: writes, conditionFactProofs: facts };
 }
