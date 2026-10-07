@@ -59,12 +59,10 @@ export function resolveCanonicalInputValues(
       value > definition.maximum ||
       (value - definition.minimum) % definition.step !== 0
     ) {
-      if (definition.kind === 'effectStackCount') {
-        invalidInputKeys.push(definition.key);
-        continue;
-      }
       missingDefinitions.push(
-        value === null ? definition : { ...definition, defaultValue: null, defaultReason: null },
+        value === null || definition.kind === 'effectStackCount'
+          ? definition
+          : { ...definition, defaultValue: null, defaultReason: null },
       );
       continue;
     }

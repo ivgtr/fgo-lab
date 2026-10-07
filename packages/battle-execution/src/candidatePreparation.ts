@@ -117,7 +117,12 @@ function prepareExecutableCandidate(
   const initialPreparationFacts = prepared.preparationExecution.initialFacts;
   initialState.hp = initialPreparationFacts.hp;
   let initialInputFacts = cloneInputFacts(initialPreparationFacts.inputFacts);
-  for (const definition of resolvedInputs.missingDefinitions) {
+  const invalidKeys = new Set(resolvedInputs.invalidInputKeys);
+  const rejectedDefinitions = [
+    ...resolvedInputs.missingDefinitions,
+    ...prepared.inputDefinitions.filter((definition) => invalidKeys.has(definition.key)),
+  ];
+  for (const definition of rejectedDefinitions) {
     const fact = initialInputFacts.get(definition.key);
     if (fact?.kind === 'known')
       initialInputFacts = rejectInputFact(initialInputFacts, definition, fact);

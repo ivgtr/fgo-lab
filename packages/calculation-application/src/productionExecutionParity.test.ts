@@ -247,6 +247,26 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
           });
           if (npLevel !== 2 || selfBuffs !== 'included' || conditionalEffects !== 'satisfied')
             continue;
+          if (id === '1101600') {
+            const beyondNpRead = structuredClone(ranking.detail.scenario);
+            beyondNpRead.canonicalInputValues[input.key] = { kind: 'integer', value: 11 };
+            beyondNpRead.preNoblePhantasmPlan = [{ kind: 'executeAttackNoblePhantasm' }];
+            expect(calculateScenarioOutcome(beyondNpRead, master, versions).result.status).toBe(
+              'inputRequired',
+            );
+            beyondNpRead.canonicalInputValues[input.key] = { kind: 'integer', value: 10 };
+            expect(calculateScenarioOutcome(beyondNpRead, master, versions).result.status).toBe(
+              'calculated',
+            );
+            beyondNpRead.canonicalInputValues[input.key] = { kind: 'integer', value: 11 };
+            beyondNpRead.preNoblePhantasmPlan = [
+              { kind: 'useSkillSlot', slot: countSkill.slot, skillLevel: 10, choice: null },
+              { kind: 'executeAttackNoblePhantasm' },
+            ];
+            expect(calculateScenarioOutcome(beyondNpRead, master, versions).result.status).toBe(
+              'calculated',
+            );
+          }
           // Independent finite oracle: every integer initial count and every ordered skill subset.
           const permutations = (slots: readonly number[]): number[][] => [
             [],
@@ -268,7 +288,15 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
                 })),
                 { kind: 'executeAttackNoblePhantasm' },
               ];
-              const execution = calculateScenarioOutcome(scenario, master, versions);
+              let execution: ReturnType<typeof calculateScenarioOutcome>;
+              try {
+                execution = calculateScenarioOutcome(scenario, master, versions);
+              } catch (cause) {
+                throw new Error(
+                  `buff count scenario ${id} NP${npLevel} count${count} slots${slots.join(',')}`,
+                  { cause },
+                );
+              }
               if (execution.result.status === 'calculated')
                 averages.push(execution.result.rows[1].average);
             }
