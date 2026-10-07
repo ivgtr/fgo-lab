@@ -6,6 +6,8 @@ updated_at: "2026-10-07"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
+**2026-10-07 18:09 UTC 90分区間Handoff:** この区間の最終製品/test sourceはcommit `4309e0c`、続く記録commit `02acb6b`、index/worktree clean、自起動検証process終了。runner59/59、docs28/28、production33file/169test全成功（原と条件は直下）。旧固定counterの差を直接inventoryに帰属して更新したが、production成功をTSK-14 Doneへ拡張しない。次区間はまず現source/diff/processと固定6入力を照合し、独立current strictのproducer/reader/replay/merge境界を小さい再hash・unknown/missing・status/identity改竄で反証する。次にREADMEの8 shard→実mergeで旧80条件と別saved S0/S1の現producerを走らせ、全意味差をcanonical input/ordered plan/ruleで分類する。正式beforeの同条件after各3process・全15 Apply対応・正本/ADR・差分レビュー・最終quality/docsはその後。未成立のgateをskip/旧expected置換・取得元fallback・timeout/cap緩和で閉じない。TSK-14 in_progress/R1未受入。
+
 **2026-10-07 18:06 UTC 最終ソースproduction成功:** HEAD `4309e0c`／cleanで`pnpm test:production`を再実行し、33 file・169 test全成功、fail/skip/todo/warning各0、runner exit0。原`.test-results/2026-10-07T18-00-11-890Z-15-c2c4a2/`、352.59秒。17:51 runの唯一のrunner counter差は現固定8661/8651/7255/1627で閉じた。これは全productionの成立であり、独立current strict、固定80条件＋別saved S0/S1、正式after各3process、全15 Apply対応、最終qualityの代替ではない。
 
 **2026-10-07 17:59 UTC production gateの最後の契約差:** HEAD `363a040`でproduction 33 file／169 test全成功、skip0・warning0、artifact検査error0。ただしrunnerの固定runtime counterだけが旧6673/4194/2596/1489を要求し、実8661/8651/7255/1627と衝突して`contract_failure`（原`.test-results/2026-10-07T17-51-42-528Z-15-7e5306/`）。生成・候補・damage requestの現値と増分原因は直下のinventory／audit比較で確認済み。runner契約4値を現値へ更新し、runner unit59/59成功。production全体を新契約で再実行して初めて最終production成功と扱う。TSK-14のstrict／saved S0/S1／正式after性能／全15 Apply／qualityは未達。
