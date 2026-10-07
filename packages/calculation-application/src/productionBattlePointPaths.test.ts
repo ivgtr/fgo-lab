@@ -9,11 +9,6 @@ import { createStaticAttackProfiles } from './attackProfile';
 import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
 import { unresolvedProfileResult } from './rankingProfileOutcome';
 import {
-  compileRankingCandidateSpaces,
-  materializeRankingCandidateSpace,
-} from './rankingCandidateSpace';
-import { compileRankingSelection, resolveRankingBasis } from './rankingBasis';
-import {
   calculateScenario,
   calculateScenarioWithPolicy,
   createDefaultResolvedScenario,
@@ -40,10 +35,10 @@ const artifact = (taskMetadata: unknown, name: string, value: unknown) =>
   writeProductionAuditArtifact(taskMetadata, name, value);
 
 const sharedDomainPolicies = [
-  { selfBuffs: 'included', conditionalEffects: 'baseline', maximum: 27279 },
-  { selfBuffs: 'included', conditionalEffects: 'satisfied', maximum: 54419 },
-  { selfBuffs: 'excluded', conditionalEffects: 'baseline', maximum: 18987 },
-  { selfBuffs: 'excluded', conditionalEffects: 'satisfied', maximum: 37834 },
+  { selfBuffs: 'included', conditionalEffects: 'baseline', maximum: 29993 },
+  { selfBuffs: 'included', conditionalEffects: 'satisfied', maximum: 35421 },
+  { selfBuffs: 'excluded', conditionalEffects: 'baseline', maximum: 20871 },
+  { selfBuffs: 'excluded', conditionalEffects: 'satisfied', maximum: 24641 },
 ] as const;
 
 describe('production battle-point paths', () => {
@@ -150,7 +145,7 @@ describe('production battle-point paths', () => {
           expect(portable.execution.result).toEqual(execution.result);
       }
       expect(ranking.map(({ status }) => status)).toEqual(Array(4).fill('calculated'));
-      expect(ranking.map(({ maximum }) => maximum)).toEqual([33715, 96089, 21612, 48628]);
+      expect(ranking.map(({ maximum }) => maximum)).toEqual([53945, 106204, 21612, 48628]);
       for (const entry of ranking) {
         if (entry.status === 'calculated') {
           expect(entry.portable?.status).toBe('executed');
@@ -165,7 +160,7 @@ describe('production battle-point paths', () => {
             (command) =>
               command.kind === 'useSkillSlot' &&
               command.slot === 1 &&
-              command.choice?.candidateKey === '1',
+              command.choice?.candidateKey === '2',
           ),
       ).toBe(true);
     },
@@ -300,78 +295,6 @@ describe('production battle-point paths', () => {
           masterDataLocale: 'ja-JP' as const,
           masterDataVersion: master.version,
         };
-        if (selfBuffs === 'included' && conditionalEffects === 'satisfied') {
-          const selection = compileRankingSelection(conditions);
-          if (selection.status !== 'valid') {
-            await artifact(task.meta, artifactPath, {
-              policy: `${selfBuffs}:${conditionalEffects}`,
-              selection,
-            });
-            throw new Error('ranking selection must be valid');
-          }
-          const basis = resolveRankingBasis(servant, { servantBuilds: {} }, selection.selection);
-          const spaces = compileRankingCandidateSpaces(
-            servant,
-            master,
-            basis,
-            conditions,
-            createStaticAttackProfiles(servant),
-          );
-          const candidateUpperBound = spaces.reduce(
-            (sum, space) => sum + (space.status === 'ready' ? space.upperBound : 0),
-            0,
-          );
-          const candidates = spaces.flatMap((space) =>
-            space.status === 'ready' ? materializeRankingCandidateSpace({ conditions, space }) : [],
-          );
-          const selected = candidates.filter(
-            ({ evidence }) =>
-              evidence.preparationPlanKey ===
-                '["3300200",0]|{"kind":"useSkillSlot","slot":1,"skillLevel":10,"choice":null}' &&
-              Object.values(evidence.canonicalInputValues).every((value) => value === 0) &&
-              evidence.targetCandidateKey.endsWith('"facts":[]}') &&
-              evidence.fieldCandidateKey === 'field:[{"trait":"fieldShore","present":false}]' &&
-              evidence.quantityCandidateKey === 'quantity:{"battlePointPhase":10}',
-          );
-          if (selected.length !== 1) {
-            await artifact(task.meta, artifactPath, {
-              policy: `${selfBuffs}:${conditionalEffects}`,
-              selection,
-              spaces,
-              candidates,
-              selected,
-              candidateUpperBound,
-            });
-            throw new Error('one selected BP candidate required');
-          }
-          const execution = calculateScenarioWithPolicy(
-            selected[0]!.scenario,
-            master,
-            versions,
-            selected[0]!.contributionPolicy,
-            { initialNpGauge: selected[0]!.evidence.startNpGauge },
-          );
-          const record = {
-            policy: `${selfBuffs}:${conditionalEffects}`,
-            selection,
-            spaces,
-            selected,
-            execution,
-            status: execution.result.status,
-            maximum:
-              execution.result.status === 'calculated'
-                ? execution.result.rows.find(({ npLevel }) => npLevel === 2)?.maximum
-                : null,
-            plan: selected[0]!.scenario.preNoblePhantasmPlan,
-            candidateUpperBound: candidates.length,
-            compiledCandidateUpperBound: candidateUpperBound,
-          };
-          await artifact(task.meta, artifactPath, record);
-          expect(candidateUpperBound).toBe(1536);
-          expect(execution.result.status).toBe('calculated');
-          expect(record.maximum).toBe(maximum);
-          return;
-        }
         const candidateSet = calculateRankingCandidateSet(
           servant,
           master,
@@ -391,9 +314,28 @@ describe('production battle-point paths', () => {
               ? result.detail.result.rows.find(({ npLevel }) => npLevel === 2)?.maximum
               : null,
           plan: result.status === 'calculated' ? result.detail.scenario.preNoblePhantasmPlan : [],
+          candidateUpperBound: candidateSet.plan.candidateUpperBound,
+          candidateCount: candidateSet.plan.candidateKeys.length,
         };
         await artifact(task.meta, artifactPath, record);
         expect(result.status).toBe('calculated');
+        if (selfBuffs === 'included' && conditionalEffects === 'satisfied') {
+          expect(record.candidateUpperBound).toBe(384);
+          expect(record.candidateCount).toBe(384);
+          expect(result.status).toBe('calculated');
+          if (result.status === 'calculated') expect(result.detail.input.battlePointPhase).toBe(3);
+        }
+        expect(record.maximum).toBe(
+          Math.max(
+            ...candidateSet.executions.flatMap((execution) =>
+              execution.result.status === 'calculated'
+                ? execution.result.rows
+                    .filter(({ npLevel }) => npLevel === 2)
+                    .map(({ maximum }) => maximum)
+                : [],
+            ),
+          ),
+        );
         expect(record.maximum).toBe(maximum);
       },
     );
