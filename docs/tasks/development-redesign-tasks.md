@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+16:35 UTC buff原因の確度訂正（2026-10-07）: native初期化にもmerged definitionの上限検査があり、16:35の`invalidInputKeys`片側欠落は実値・定義差を未観測のため原因確定から候補へ戻す。最初のthrowセルと両側のdefinition/fact/proofを採取して決める。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。R1未受入。
+
+16:35 UTC buff例外の直接原因訂正（2026-10-07）: `initialFacts`は準備前の`initializationExecution.before`から採取。上限超過effectStackCountは`invalidInputKeys`へ分類されるが、candidateは`missingDefinitions`だけをinvalid fact化し、raw knownが`seedStackQuantities`へ届いてthrowする。準備後数量仮説を撤回。原値とdefinitionは修復用に保持しつつ、native/candidate全readerより前にtyped invalidへ束縛する設計を次に確認する。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。R1未受入。
+
 16:31 UTC parity後段の直接調査（2026-10-07）: 306200の公開2 AttackProfileは各1134候補が`preparation:unsupportedResourceMutation`でranking全体unsupported。skill2 allActors traitId:10010読取とskill3同trait grantの順序、初期world fact・native transactionが次の反証。buffは準備後live input factを初期上限で再seedする経路が疑わしいが、失敗候補の実値・definition/proofは未観測。数値更新やunsupported除外はせず、原と次操作を[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ残した。R1未受入。
 
 16:26 UTC parity後段の新Blocking（2026-10-07）: count0 buff tombstoneと106200修復fixtureの意味を直した後、parity全file3/6成功・warning0。旧422 digestのほか、準備後`manuscriptComplete`を初期上限で再検査するstack例外、306200/satisfied ranking候補unsupportedが露出した。製品/test編集と新runを停止し、生成→native live fact→candidate再seedとranking candidate→result集約を読み直した。直接根拠・次の反証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。HEAD `80322d4`、parity testと記録2fileがdirty。R1未受入。
