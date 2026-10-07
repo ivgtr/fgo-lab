@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+17:20 UTC 全production後のHandoff（2026-10-07）: HEAD `7763a0e`、150/169成功・19失敗・warning0、原`.test-results/2026-10-07T17-12-25-470Z-15-dc5744/`。新たな人口parity timeoutは単独56.292秒成功、全suite61.908秒対上限60秒で、profileごとの全candidateSet再計算をreviewしてshared result ownerを決める。timeout増加/skipはしない。残る失敗familyと旧422→現422の全ID差分分類（407同status、15入力待ち、数値差205000/2501400、planner旧3640が現7596のsubset、state marker表示）は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。旧digest/counter追随は選択planとgoverning ruleの確認後。最終quality、全15 Apply、strict/80+saved、after性能は未達。TSK14/R1未受入。
+
 17:06 UTC 306200の人数読取修復（2026-10-07）: intrinsic特性は一つのidentityとして0/1、active付与はmarker優先の正確な数量で読み、unknown/proof欠落をfail closedにした。局所7/7、人口公開parity対象成功。parity全fileは5/6・warning0で、残りは旧422 digestだけ。現422集合と407成功/15修復待ちのstatus assertionsは通過し、旧`ec4689...`対現`fb7167...`の内容diffを確認してから固定値を更新する。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)に原runと不変条件。R1未受入。
 
 17:01 UTC 306200のrepresentative root（2026-10-07）: included/satisfiedのunsupported2268/5700候補。代表skill1→2→NP、外部人数0、attackerState false・target intrinsic true・targetState falseが渡る。欠けたworld factではなく、positive intrinsicは数量unknownなのに`readPopulationCount`が個性数でも数量readを要求する点が直接原因。intrinsic membershipをproof付き0/1、activeはmarker優先のlive数量として読む修正を行い、unknownはfail closedを保つ。観測根拠と検証境界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。一時観測code削除済み。R1未受入。
