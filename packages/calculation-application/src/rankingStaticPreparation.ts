@@ -48,6 +48,7 @@ export interface StaticRankingPreparationProgram {
   key: string;
   attackProfile: AttackProfile;
   initialFormId: ActorFormId;
+  initialNoblePhantasmVariant: NoblePhantasmVariantRef | null;
   expectedTerminalFormId: ActorFormId;
   commands: readonly PreNoblePhantasmCommand[];
   sourceUses: readonly RankingPreparationSourceUse[];
@@ -260,6 +261,8 @@ export function compileStaticRankingPreparationPrograms(
         key: `${actorFormKey(state.initialFormId)}|${commandsKey}`,
         attackProfile,
         initialFormId: state.initialFormId,
+        initialNoblePhantasmVariant:
+          findActorForm(servant, state.initialFormId)?.baseNoblePhantasmVariant ?? null,
         expectedTerminalFormId: state.currentFormId,
         commands: [...state.commands, { kind: 'executeAttackNoblePhantasm' }],
         sourceUses: state.sourceUses,

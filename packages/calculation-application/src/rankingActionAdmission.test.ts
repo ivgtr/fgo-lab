@@ -95,6 +95,7 @@ function program(
     key,
     attackProfile,
     initialFormId: formId,
+    initialNoblePhantasmVariant: attackProfile.noblePhantasmVariant,
     expectedTerminalFormId: formId,
     commands: [
       {
@@ -118,6 +119,7 @@ const withoutAction: StaticRankingPreparationProgram = {
   key: 'without-action',
   attackProfile,
   initialFormId: formId,
+  initialNoblePhantasmVariant: attackProfile.noblePhantasmVariant,
   expectedTerminalFormId: formId,
   commands: [{ kind: 'executeAttackNoblePhantasm' }],
   sourceUses: [],
@@ -202,6 +204,20 @@ describe('candidate-local action admission', () => {
         baseline,
       ).programs.map(({ key }) => key),
     ).toEqual(['without-action']);
+
+    const cardChangingSource = effect('card-changing:0', [
+      {
+        kind: 'selectNoblePhantasmVariant',
+        route,
+        variant: attackProfile.noblePhantasmVariant,
+      },
+    ]);
+    expect(
+      compileCandidateLocalActionAdmission(
+        [withoutAction, program([cardChangingSource, otherCard])],
+        baseline,
+      ).programs.map(({ key }) => key),
+    ).toEqual(['without-action', 'with-action']);
   });
 
   it('admits a nested terminal-trait, selected-choice, and operation-trigger action', () => {
