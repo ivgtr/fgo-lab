@@ -26,6 +26,7 @@ import { CRITICAL_STARS_INITIAL_INPUT } from './resourceSemantics';
 import { preparationOcAttemptsFor, preparationSourcesFor } from './preparationAttemptObservation';
 import { compileEffectCached } from './operationCompiler';
 import { resolveModifierValue } from './projection';
+import { bindExecutionOperation } from './executionBinding';
 
 const semantics: CanonicalNpResourceSemantics = {
   unit: 'basisPoints',
@@ -475,6 +476,25 @@ describe('transactional preparation execution', () => {
         },
       },
     });
+    const missingNativeRead = bindExecutionOperation(
+      unbound,
+      { ...executedSource.binding, modifierValueReads: [] },
+      0,
+    );
+    expect(() => resolveModifierValue(missingNativeRead, ordinaryState)).toThrow(
+      'missing_preparation_modifier_value_read',
+    );
+    const pendingNormalRead = bindExecutionOperation(
+      unbound,
+      {
+        ...executedSource.binding,
+        modifierReadOwner: 'orderedExecution',
+        modifierValueReads: [],
+        sourcePhysicalCommitted: false,
+      },
+      0,
+    );
+    expect(resolveModifierValue(pendingNormalRead, ordinaryState).value).toBe(200);
   });
   it('retains staged NP and OC attempts while a failed native source restores its physical state', () => {
     type Boost = Extract<MasterEffect['execution'][number], { kind: 'grantOcBoost' }>;

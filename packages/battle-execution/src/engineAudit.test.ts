@@ -198,6 +198,7 @@ describe('public ordered execution audit parity', () => {
       trait: 'created',
     };
     const binding: SourceExecutionBinding = {
+      modifierReadOwner: 'nativePreparation',
       actionId: 'native-action',
       actorFormId: variant.ref.actorFormId,
       sourceInstanceId: write.source.sourceInstanceId,

@@ -45,6 +45,7 @@ export interface PhysicalOperationTransition {
 
 /** Runtime observations come from the source transaction, never the compilation template. */
 export interface SourceExecutionBinding {
+  readonly modifierReadOwner: 'nativePreparation' | 'orderedExecution';
   readonly actionId: string;
   readonly actorFormId: ActorFormId;
   readonly sourceInstanceId: string;
@@ -70,6 +71,7 @@ export function pendingNoblePhantasmSourceBinding(
   if (action.sourceKind !== 'attackNoblePhantasm' || !action.ocUse)
     throw new TypeError('missing_terminal_np_action_receipt');
   return {
+    modifierReadOwner: 'orderedExecution',
     actionId: action.ocUse.actionId,
     actorFormId: action.actorFormId,
     sourceInstanceId,

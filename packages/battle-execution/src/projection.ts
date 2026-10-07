@@ -112,7 +112,10 @@ export function resolveModifierValue(
 ): ResolvedModifierValue {
   const observed = operation.runtimeBinding?.modifierValueRead;
   if (observed) return observed.result;
-  if (operation.runtimeBinding && operation.valueExpression)
+  if (
+    operation.runtimeBinding?.source.modifierReadOwner === 'nativePreparation' &&
+    operation.valueExpression
+  )
     throw new TypeError('missing_preparation_modifier_value_read');
   const expression = operation.valueExpression;
   if (!expression) return { value: operation.valuePermille, dependency: null };

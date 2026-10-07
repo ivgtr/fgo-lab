@@ -549,6 +549,7 @@ it('binds each execution without mutating an unbound operation or an earlier cac
   ]);
   const template = compileEffectCached(input, 0).operations[0]!;
   const binding = (actionId: string): SourceExecutionBinding => ({
+    modifierReadOwner: 'nativePreparation',
     actionId,
     actorFormId: { actorId: 'fixture', limitCount: 0 },
     sourceInstanceId: input.sourceInstanceId,

@@ -410,6 +410,7 @@ export function executePreparationOc(args: {
       completion: null,
       rejection: null,
       binding: {
+        modifierReadOwner: 'nativePreparation',
         actionId: args.actionId,
         actorFormId: current.currentFormId,
         sourceInstanceId: source.sourceInstanceId,
