@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+17:33 UTC HP／構造golden収束（2026-10-07）: 1000100のskillUse封入は初期HP500/249/240を読み、後段live HP752/501/492で再評価しない。HP testのon applied、初期240 attackBuff0.705・NP1平均63972.61、off 0.3・48824.155へ修正し、保存復元/再on含め1/1。205000既定slot2→3のArts source-use→Buster reverse平均73679.02へ構造goldenを修正、4制御の復元含め5/5。各warning0、製品source不変。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)にruleとartifact。R1未受入。
+
 17:31 UTC BP固定受入（2026-10-07）: 12:07のsource-use/BP read根拠で705300の合法slot2→3→1 choice2最大53945/106204、3300200の合法384候補上限/生成からincluded 29993/35421、excluded 20871/24641へtest固定を更新。旧phase10外部quantity witnessは現初期state/行動に存在せず削除し、各policyの選択最大を全calculated候補最大と照合。BP file 7/7・warning0、typecheck/eslint成功。製品BP source不変。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
 
 17:27 UTC marker共有経路の対象入力（2026-10-07）: marker 30 actor・220 case中21旧失敗は303200/505200/505500各7件の相対target曖昧で、marker意味論失敗ではなかった。testで既存の具体対象修復を明示すると199既存成功維持、21入力待ち→計算可能、failures0。局所1成功・2 skip、warning0、typecheck/eslint成功。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)に原artifactと遷移。R1未受入。

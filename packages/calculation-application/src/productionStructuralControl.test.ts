@@ -135,7 +135,7 @@ describe('production structural control proof', () => {
     };
     for (const [ownerId, occurrenceId, expectedAverage, unavailableReason] of [
       ['505600', '2619550:532:0', 63235.92, 'selectedAttackProfileHasNoAttack'],
-      ['205000', '2281675:532:0', 88414.945, 'selectedAttackProfileChanged'],
+      ['205000', '2281675:532:0', 73679.02, 'selectedAttackProfileChanged'],
     ] as const) {
       const servant = master.servants.find(({ id }) => id === ownerId);
       expect(servant).toBeDefined();

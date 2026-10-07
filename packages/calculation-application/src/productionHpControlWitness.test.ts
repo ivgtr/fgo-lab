@@ -113,11 +113,11 @@ describe('ordered HP control witness', () => {
 
     const initial500 = run(500);
     expect(initial500.live).toBe(752);
-    expect(initial500.event(initial500.on)?.operationOutcome).toBe('notApplied');
+    expect(initial500.event(initial500.on)?.operationOutcome).toBe('applied');
     expect(initial500.event(initial500.off)?.operationOutcome).toBe('notApplied');
     const initial249 = run(249);
     expect(initial249.live).toBe(501);
-    expect(initial249.event(initial249.on)?.operationOutcome).toBe('notApplied');
+    expect(initial249.event(initial249.on)?.operationOutcome).toBe('applied');
     const witness = run(240);
     expect(witness.live).toBe(492);
     expect(witness.on.calculation.profileContinuity).toEqual(
@@ -131,13 +131,13 @@ describe('ordered HP control witness', () => {
     expect(witness.projection(witness.off)?.outcome).toBe('notApplied');
     expect(witness.contribution(witness.on)?.effective).toBe(true);
     expect(witness.contribution(witness.off)?.effective).toBe(false);
-    expect(witness.on.calculation.input.attackBuff).toBe(0.604);
+    expect(witness.on.calculation.input.attackBuff).toBe(0.705);
     expect(witness.off.calculation.input.attackBuff).toBe(0.3);
     if (
       witness.on.calculation.result.status === 'calculated' &&
       witness.off.calculation.result.status === 'calculated'
     ) {
-      expect(witness.on.calculation.result.rows[0].average).toBe(60194.84);
+      expect(witness.on.calculation.result.rows[0].average).toBe(63972.61);
       expect(witness.off.calculation.result.rows[0].average).toBe(48824.155);
     }
     const restored = calculationScenarioSchema.parse(
@@ -145,7 +145,7 @@ describe('ordered HP control witness', () => {
     );
     expect(restored.mode).toBe('resolved');
     if (restored.mode !== 'resolved') throw new TypeError('resolved_scenario_required');
-    expect(evaluate(restored).calculation.input.attackBuff).toBe(0.604);
+    expect(evaluate(restored).calculation.input.attackBuff).toBe(0.705);
     const offScenario = applyEffectControlPresentationDecision(
       witness.onScenario,
       witness.on.calculation.effectControls.find(({ key }) => key === control.key)!,
@@ -163,6 +163,6 @@ describe('ordered HP control witness', () => {
       off.effects,
       off.effectInputs,
     );
-    expect(evaluate(reon).calculation.input.attackBuff).toBe(0.604);
+    expect(evaluate(reon).calculation.input.attackBuff).toBe(0.705);
   });
 });
