@@ -192,7 +192,12 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
           trait: input.quantitySource.trait,
         }).value,
       ).toBe(0);
-      expect(result.state.buffInstances).toHaveLength(0);
+      expect(result.state.buffInstances).toHaveLength(1);
+      expect(result.state.buffInstances[0]).toMatchObject({
+        actor: 'attacker',
+        traits: [...new Set(input.instanceTraits)].sort(),
+        count: 0,
+      });
       expect(
         liveTraitQuantityRead(initial.state, {
           scope: 'attackerState',
@@ -394,6 +399,17 @@ it('accepts all seven population-count profiles through calculator, four ranking
             value: 0,
           };
           inconsistent.canonicalInputValues[count.key] = { kind: 'integer', value: 1 };
+          inconsistent.worldFactAssertions.push(
+            ...(['dragon', 'lamia'] as const).map((trait) => ({
+              decisionKey: `population:attackerState:${trait}:absent`,
+              fact: {
+                kind: 'trait' as const,
+                scope: 'attackerState' as const,
+                trait,
+                present: false,
+              },
+            })),
+          );
           const failed = attemptPortableCalculationScenarioChange(
             request,
             replay.result,

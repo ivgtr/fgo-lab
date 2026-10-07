@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+16:31 UTC parity後段の直接調査（2026-10-07）: 306200の公開2 AttackProfileは各1134候補が`preparation:unsupportedResourceMutation`でranking全体unsupported。skill2 allActors traitId:10010読取とskill3同trait grantの順序、初期world fact・native transactionが次の反証。buffは準備後live input factを初期上限で再seedする経路が疑わしいが、失敗候補の実値・definition/proofは未観測。数値更新やunsupported除外はせず、原と次操作を[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ残した。R1未受入。
+
+16:26 UTC parity後段の新Blocking（2026-10-07）: count0 buff tombstoneと106200修復fixtureの意味を直した後、parity全file3/6成功・warning0。旧422 digestのほか、準備後`manuscriptComplete`を初期上限で再検査するstack例外、306200/satisfied ranking候補unsupportedが露出した。製品/test編集と新runを停止し、生成→native live fact→candidate再seedとranking candidate→result集約を読み直した。直接根拠・次の反証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。HEAD `80322d4`、parity testと記録2fileがdirty。R1未受入。
+
 16:20 UTC target UI修復とVRT（2026-10-07）: applicationのview-modelでTargetContext選択を束縛し、102900の可視button初回押下→beast設定→calculated、解除→inputRequired、portable再実行を反証。target/Web12/12、UI解除3/3、効果表示10/10、application control7/7、typecheck/lint/format成功。旧Engine48表示の全画面PNG3枚だけ更新し、通常E2E baseline全5/5・warning0、選択効果群画像は不変。更新時runnerの`contract_failure(code0)`は再生成ログ起因、通常run成功を採用。原と未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。422集合407/15は実結果として固定したが、監査digest/候補counterと全production/qualityは未達。TSK-14 in_progress／R1未受入。
 
 16:17 UTC VRT-004/005/006旧画像差の判断（2026-10-07）: 現file全5テスト中E2E-004/005/006の全画面3失敗は最終diff/actual確認でEngine48→49表示の22/20/23px、選択効果群と密度/overflow2件は成功、warning0。更新対象を全画面PNG3件に限定し、同file再実行・差分確認する。比較中の非安定frameは結果とは分けて記録。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。R1未受入。
