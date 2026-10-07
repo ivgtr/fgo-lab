@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { getBaseAttackNoblePhantasmVariant, masterSnapshotSchema } from '@fgo-lab/master-data';
+import { targetClassCandidates } from '@fgo-lab/calc-core';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -126,7 +127,7 @@ describe('unsupported convergence production golden', () => {
             "np:np:["106600",0,"106601"]:np:["106600",0,"106601"]:23291:0:addTrait-target:buffBurn",
             "np:["106600",0,"106601"]:5337:damage",
           ],
-          "inputDigest": "89ce208759578265817997dad21629c6640120464edb472b164bc42943e59dcb",
+          "inputDigest": "55a43e2cf82c88026292e698ea1dacd07ca28632261f112afdb3ed67922adc17",
           "name": "ジャック・ド・モレー",
           "np1To5Average": [
             31998.575,
@@ -331,13 +332,67 @@ describe('unsupported convergence production golden', () => {
       getBaseAttackNoblePhantasmVariant(servant),
     );
     expect(attackingServants).toHaveLength(419);
+    const ambiguousTargets: string[] = [];
+    const familyRepairs: string[] = [];
     for (const servant of attackingServants) {
-      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      let scenario = createDefaultResolvedScenario(master, undefined, servant);
       scenario.preNoblePhantasmPlan = [{ kind: 'executeAttackNoblePhantasm' }];
-      const calculation = calculateScenario(scenario, master, versions);
+      let calculation = calculateScenario(scenario, master, versions);
+      if (calculation.result.status === 'inputRequired') {
+        expect(calculation.result.issues, servant.id).toMatchObject([
+          { code: 'invalidTargetContext:ambiguousTargetResult:' },
+        ]);
+        ambiguousTargets.push(servant.id);
+        const classId = targetClassCandidates(servant.classId, scenario.targetContext.class)[0];
+        expect(classId).toBeDefined();
+        if (!classId) throw new Error(`target candidate missing:${servant.id}`);
+        scenario = {
+          ...scenario,
+          targetContext: {
+            ...scenario.targetContext,
+            class: { kind: 'concrete', classId },
+            attribute: { kind: 'concrete', attribute: 'earth' },
+          },
+        };
+        calculation = calculateScenario(scenario, master, versions);
+        if (calculation.result.status === 'inputRequired') {
+          const familyControl = calculation.effectControls.find(
+            ({ projection }) =>
+              projection.decision.state !== 'none' &&
+              projection.decision.kind === 'targetPredicate' &&
+              projection.decision.target.kind === 'familyMembership',
+          );
+          expect(familyControl, servant.id).toBeDefined();
+          if (!familyControl) throw new Error(`target family decision missing:${servant.id}`);
+          familyRepairs.push(servant.id);
+          scenario = applyEffectInclusionDecision(scenario, familyControl.projection, true);
+          calculation = calculateScenario(scenario, master, versions);
+        }
+      }
       expect(calculation.result.status, `${servant.id}:${servant.name}`).toBe('calculated');
     }
+    expect(ambiguousTargets.sort()).toEqual(
+      [
+        '102900',
+        '303200',
+        '505200',
+        '505500',
+        '603300',
+        '605000',
+        '704400',
+        '901700',
+        '1100600',
+        '1101900',
+        '2500200',
+        '2500500',
+        '2500900',
+        '2501100',
+        '4000100',
+      ].sort(),
+    );
+    expect(familyRepairs).toEqual(['102900']);
 
+    const selectedTargetRepairs: { identity: string; classId: string; attribute: string }[] = [];
     const records = formerlyUnsupportedSelections.map(([servantId, occurrenceId]) => {
       const automaticInput = occurrenceId === 'automaticReference';
       const initiallyHiddenByInput = occurrenceId.startsWith('23594:');
@@ -397,13 +452,36 @@ describe('unsupported convergence production golden', () => {
       const currentProjection = withInputs.effects.find(
         (effect) => effect.projectionKey === projection!.projectionKey,
       )!;
-      const selected = calculateScenario(
-        automaticInput
-          ? scenario
-          : selectProjectionAlone(scenario, currentProjection, withInputs.effects),
-        master,
-        versions,
-      );
+      let selectedScenario = automaticInput
+        ? scenario
+        : selectProjectionAlone(scenario, currentProjection, withInputs.effects);
+      let selected = calculateScenario(selectedScenario, master, versions);
+      if (selected.result.status === 'inputRequired') {
+        expect(selected.result.issues, `${servantId}:${occurrenceId}`).toHaveLength(1);
+        expect(
+          selected.result.issues[0]?.code.startsWith('invalidTargetContext:ambiguousTargetResult:'),
+        ).toBe(true);
+        const classId = targetClassCandidates(
+          servant.classId,
+          selectedScenario.targetContext.class,
+        )[0];
+        expect(classId).toBeDefined();
+        if (!classId) throw new Error(`selected target missing:${servantId}:${occurrenceId}`);
+        selectedTargetRepairs.push({
+          identity: `${servantId}:${occurrenceId}`,
+          classId,
+          attribute: 'earth',
+        });
+        selectedScenario = {
+          ...selectedScenario,
+          targetContext: {
+            ...selectedScenario.targetContext,
+            class: { kind: 'concrete', classId },
+            attribute: { kind: 'concrete', attribute: 'earth' },
+          },
+        };
+        selected = calculateScenario(selectedScenario, master, versions);
+      }
       if (
         servant.skills
           .flatMap((skill) => skill.effects)
@@ -445,6 +523,9 @@ describe('unsupported convergence production golden', () => {
       };
     });
     expect(records).toHaveLength(25);
+    expect(selectedTargetRepairs).toEqual([
+      { identity: '2500200:2096:0', classId: 'berserker', attribute: 'earth' },
+    ]);
     expect(
       records.map(({ servantId, occurrenceId, rows }) => ({
         servantId,
@@ -708,11 +789,11 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "np1To5Average": [
-            53947.7,
-            67391,
-            74112.7,
-            77473.53,
-            80834.36,
+            48570.41,
+            60669.385,
+            66718.865,
+            69743.62,
+            72768.365,
           ],
           "occurrenceId": "2096:0",
           "servantId": "2500200",
@@ -731,7 +812,7 @@ describe('unsupported convergence production golden', () => {
       ]
     `);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '94fcb0acfd65c242f3dbedae63e739981f25e572b737752c4a341ae032e72f6d',
+      '85f57751946fb87b1bd84178755e01e6abe3a17ff87f9ecdc410d21e42d40506',
     );
   }, 30_000);
 
