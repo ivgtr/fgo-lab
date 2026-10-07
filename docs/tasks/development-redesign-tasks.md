@@ -3266,6 +3266,14 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+12:45 UTC session handoff（2026-10-07）: 今sessionの製品checkpointは`da9e8c1`→`ff2c712`→`b291666`。最後のHP支援routingは公開HP path7/7、準備transaction84/84、typecheck／対象lint/format成功。直近の共有production auditは19/20でrankingFailure0、calculator default相対対象15のinputRequiredのみ（12:22原）。全productionの有効な最後の原は`da9e8c1`上の140/166・26失敗（11:51原）であり、その後のconstant/支援routing差分の最終全件成功証拠ではない。固定expected/counter/VRTは未変更。製品判断待ちは(1)相対対象でNP scalarが異なるcalculator default、(2)skillUse HP条件のsource時snapshotと旧期待、(3)calculator初期plan固定順と最大合法順。今回の直接帰属は構造205000が行動順差、buff-count内部形状期待が既知0 instance、population 106200修復後unsupportedのnative branch未確定。次sessionはpopulation native reason/current facts/eventsの限定採取、独立した未解決familyの直接owner修正、回答後の固定契約判断、最終source全production→80+saved/S0/S1/性能/全15 Apply/qualityの順。現TSK-14 in_progress／R1未受入、対象内Blockingと旧固定差が残る。`.test-results/tsk14-*-diagnostic.ts`は一時調査codeで恒久採用せず、原artifactは後続受入参照中だけ保持し、既存保存契約・処遇を変更しない。
+
+12:43 UTC population portable修復の未達（2026-10-07）: 公開106200/NP2のranking scenarioはcalculated。slot3を追加しcount1＋allies/enemies0ではinputRequired、allies1へ修復後は`preparation:unsupportedResourceMutation`で旧calculated期待へ戻らない。world target lamia/dragon false assertionとcohort上限は整合するが、実native拒否branchは未確定。次はnative receipt/facts/eventsの限定診断、outcome責務の判断。固定assertion不変。直接経路は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:39 UTC buff-count parity旧形状（2026-10-07）: 旧testはstack instance配列0件を要求するが現`seedBuffInstances`はcount0を既知不在の1 instanceとして保持し、removeもcount0へ写す。前後quantity0のassertionとは両立。内部形状の固定期待差が濃厚で、実instance/portable未再確認。固定assertion不変。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:38 UTC structural 205000の帰属（2026-10-07）: 公開defaultのslot1→2→3(reverse)はBuster buffを使用時に得ず平均`73679.02`。同じ合法planのslot1→3(reverse)→2はBuster buff +0.2を得て旧固定期待`88414.945`と正確に一致。計算機初期行動順を固定順にするか最大火力順にするか利用者へ照会中。固定expected・planner・control gate不変。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
 12:33 UTC HP支援routing局所確認（2026-10-07）: `preparationOc`の構造operationは共通recipientが攻撃役のものだけatomic pairへ入れる。実masterのHP支援を含む`productionHpPaths`全7/7・warning0（原`.test-results/2026-10-07T12-30-38-084Z-15-d06460/`）、構造／rollbackの`preparationTransaction`84/84・warning0（原`.test-results/2026-10-07T12-32-48-078Z-15-603c7a/`）、typecheck・対象eslint/Prettier成功。支援choice/入力修復/portable replayも同7件内で確認。単一case実行はtest自体成功だがskip6件によるrunner契約失敗なので受入証拠にせず全file結果を採用。固定expected/counter/VRT不変、全production・quality/全15 Apply未達。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
 
 12:30 UTC HP支援routing（2026-10-07）: support自身の構造operationを準備側だけ攻撃役へ誤適用し、HP支援3件がinvalidOcExecution。共通`operationRecipient`でattacker到達を絞り、同effectのHP/choiceを保持する修正を進める。直接経路は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
