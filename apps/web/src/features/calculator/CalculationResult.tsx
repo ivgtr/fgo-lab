@@ -62,6 +62,9 @@ export function CalculationResult({
     const value = effectInputValue(item);
     return value === null ? [] : [`${item.label} ${value}`];
   });
+  const ambiguousTarget = result.issues.some(({ code }) =>
+    code.startsWith('invalidTargetContext:ambiguousTargetResult:'),
+  );
   async function copyUrl() {
     try {
       await onFinalize();
@@ -162,7 +165,9 @@ export function CalculationResult({
         {result.status !== 'calculated' ? (
           <p className="empty" role="alert">
             {result.status === 'inputRequired'
-              ? '正確な計算に必要な戦闘情報を入力してください。'
+              ? ambiguousTarget
+                ? '対象によってダメージが変わります。クラス相性・属性相性の欄で対象クラス・属性を指定してください。'
+                : '正確な計算に必要な戦闘情報を入力してください。'
               : result.status === 'unavailable'
                 ? result.reason === 'attackerDead'
                   ? 'HPが0のため宝具を使用できません。準備開始時のHPと準備操作を確認してください。'

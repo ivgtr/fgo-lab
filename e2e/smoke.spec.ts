@@ -70,6 +70,13 @@ async function storedDraftVersionContext(page: Page) {
 }
 
 test('[E2E-017] setup to calculator package journey @desktop @journey', async ({ page }) => {
+  const image = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=',
+    'base64',
+  );
+  await page.route('https://static.atlasacademy.io/**', (route) =>
+    route.fulfill({ contentType: 'image/png', body: image }),
+  );
   await openCalculator(page);
   await page.reload();
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
@@ -86,6 +93,30 @@ test('[E2E-017] setup to calculator package journey @desktop @journey', async ({
   await expect(page).toHaveURL(/\/$/);
   await page.goBack();
   await expect(page).toHaveURL(/\/calculator$/);
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await picker.getByRole('tab', { name: '全DB' }).click();
+  await picker.getByLabel('名前で検索').fill('オルガマリー');
+  await picker
+    .getByRole('button', { name: /Ｕ－オルガマリー.*Lv/ })
+    .first()
+    .click();
+  await expect(
+    page.getByText(
+      '対象によってダメージが変わります。クラス相性・属性相性の欄で対象クラス・属性を指定してください。',
+    ),
+  ).toBeVisible();
+  await page.getByRole('combobox', { name: '属性相性の状況' }).selectOption('attribute:earth');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await openTestHome(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await expect(page.getByRole('combobox', { name: '属性相性の状況' })).toHaveValue(
+    'attribute:earth',
+  );
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 });
 

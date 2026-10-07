@@ -3266,6 +3266,12 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+15:57 UTC calculator対象UI改訂後の受入（2026-10-07）: 既存相性selectorへ具体identityを統合、公開UI局所11/11・typecheck、実browser E2E-017成功。混合E2Eで旧VRT-004/005はEngine48→49表示だけ22/20px差、warning0。起点8c08804もENGINE_VERSION49で、baseline同command未再現ゆえ帰属分類は`unverified`、詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。旧422 calculated固定期待とVRTの限定更新は原依頼の固定契約判断として利用者へ照会中。画像・expectedは未変更、全production/quality未達、R1未受入。
+
+15:47 UTC calculator対象入力のVRT境界（2026-10-07）: 常時2欄追加は固定VRTへ広域差を生むため、具体identity optionを既存相性selectorへ入れる設計へ改訂。通常画面の閉じた選択表示とレイアウトを保ち、曖昧案内から同selectorで修復する。15:42のE2E成功は改訂前UIの限定証拠。改訂後にUI/portable/E2E/VRTを再確認し、固定画像更新は行わない。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+15:42 UTC calculator対象の製品判断と実装（2026-10-07）: 利用者が具体クラス・属性選択と曖昧時の選択要求を採用。現行TargetContext commandを画面へ接続し、公開4000100の相対inputRequired→earth選択calculated、JSON/portable再実行、既存E2E-017に統合した実ブラウザ保存再訪を通した。E2E setup込み2/2・warning0、原`.test-results/2026-10-07T15-40-54-495Z-15-93d72b/`。新IDを作らず54件catalogを維持、case契約5/5。詳細と限定範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。旧422全calculated固定期待、VRT/counterは未変更。現sourceの最終全production／qualityは未実施で、TSK-14 in_progress／R1未受入。
+
 13:42 UTC planner key限定pair（2026-10-07）: 505300のterminal181は同使用command集合8群、最大96。同順でもsource-use truth差があるため集合一律collapseは不正。一方slot1→2/2→1のpairはread truth/certainty/value/procが一致し、差はactiveEffectsのaction/proof clockで、双方NP1〜5最大値一致。一時的にclock等metadataだけをkeyから外す診断では181→68 distinctだが、実visited変更・全候補最大/trace/rollbackの証明ではない。typed意味summaryと証拠receiptを分ける設計を継続調査。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。固定counter未変更、R1未受入。
 
 13:40 UTC preparation固定inventory現集合（2026-10-07）: 全422同条件の直接planはgenerated8661/dedup8651/terminal7596/exactDup10/reject17/maxStates181、旧固定6673/4194/3640/2479/7/56。`preNoblePhantasmSemanticStateKey`がsourceActivationのclock/proofを含む等、行動順の同値化がほぼ消えた疑義はあるが、現集計だけで安全なfield削除や最大保存を証明できない。固定counter不変、代表同値candidateの将来read/結果/traceを直接調べる。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。

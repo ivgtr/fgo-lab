@@ -24,6 +24,8 @@ import {
   classRelationFromMultiplier,
   classAttackRate as resolveClassAttackRate,
 } from '@fgo-lab/calc-core';
+import { canonicalTargetClassIdSchema, canonicalTargetAttributeSchema } from '@fgo-lab/schema';
+import type { CanonicalTargetClassId, CanonicalTargetAttribute } from '@fgo-lab/schema';
 import type {
   EffectControlViewModel,
   EffectInputViewModel,
@@ -68,6 +70,7 @@ import type {
 } from '@fgo-lab/schema';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
+import { servantClassLabels } from '../../ui/servantFilterOptions';
 import {
   AttackerPicker,
   CraftEssencePicker,
@@ -83,6 +86,13 @@ import { QuickValuePresets } from './QuickValuePresets';
 import { SupportSourceCard } from '../support/SupportSourceCard';
 import './calculator.css';
 import './calculator-form.css';
+
+function targetClassName(classId: CanonicalTargetClassId): string {
+  const label = servantClassLabels.get(classId) ?? classId;
+  return classId === 'beastEresh' || classId === 'unBeastOlgaMarie'
+    ? `${label}（${classId}）`
+    : label;
+}
 
 export function Calculator({
   master,
@@ -265,6 +275,17 @@ export function Calculator({
     selectedSupport,
     supportComposition,
   });
+  const concreteTargetSummary =
+    resolvedScenario === null
+      ? []
+      : [
+          ...(resolvedScenario.targetContext.class.kind === 'concrete'
+            ? [`対象クラス ${targetClassName(resolvedScenario.targetContext.class.classId)}`]
+            : []),
+          ...(resolvedScenario.targetContext.attribute.kind === 'concrete'
+            ? [`対象属性 ${resolvedScenario.targetContext.attribute.attribute}`]
+            : []),
+        ];
   function changeManualInput(patch: Partial<DamageResolutionInput>) {
     if (scenario.mode !== 'manual') return;
     void onScenarioChange({ ...scenario, manual: { ...scenario.manual, ...patch } });
@@ -294,6 +315,23 @@ export function Calculator({
           ? { kind: 'setClassRelation', relation: classRelationFromMultiplier(value) }
           : { kind: 'setAttributeRelation', relation: attributeRelationFromMultiplier(value) },
       ),
+    });
+  }
+  function changeTargetIdentity(kind: 'class' | 'attribute', value: string) {
+    if (scenario.mode !== 'resolved') return;
+    const command =
+      kind === 'class'
+        ? {
+            kind: 'setConcreteClass' as const,
+            classId: canonicalTargetClassIdSchema.parse(value),
+          }
+        : {
+            kind: 'setConcreteAttribute' as const,
+            attribute: canonicalTargetAttributeSchema.parse(value),
+          };
+    void onScenarioChange({
+      ...scenario,
+      targetContext: applyTargetContextCommand(scenario.targetContext, command),
     });
   }
   function changeDamageContext(
@@ -905,10 +943,17 @@ export function Calculator({
           <label>
             クラス相性の状況
             <select
-              value={String(input.classAffinity)}
-              onChange={(event) =>
-                changeAffinitySituation('classAffinity', Number(event.target.value))
+              value={
+                resolvedScenario?.targetContext.class.kind === 'concrete'
+                  ? `class:${resolvedScenario.targetContext.class.classId}`
+                  : String(input.classAffinity)
               }
+              onChange={(event) => {
+                const selected = event.target.value;
+                if (selected.startsWith('class:'))
+                  changeTargetIdentity('class', selected.slice('class:'.length));
+                else changeAffinitySituation('classAffinity', Number(selected));
+              }}
             >
               <option
                 value="2"
@@ -939,15 +984,33 @@ export function Calculator({
                   直接入力（{input.classAffinity}倍）
                 </option>
               ) : null}
+              {resolvedScenario ? (
+                <optgroup label="対象クラスを指定">
+                  {master.targetSemantics.execution.classIdentities.map(
+                    (classId: CanonicalTargetClassId) => (
+                      <option key={classId} value={`class:${classId}`}>
+                        {targetClassName(classId)}
+                      </option>
+                    ),
+                  )}
+                </optgroup>
+              ) : null}
             </select>
           </label>
           <label>
             属性相性の状況
             <select
-              value={String(input.attributeAffinity)}
-              onChange={(event) =>
-                changeAffinitySituation('attributeAffinity', Number(event.target.value))
+              value={
+                resolvedScenario?.targetContext.attribute.kind === 'concrete'
+                  ? `attribute:${resolvedScenario.targetContext.attribute.attribute}`
+                  : String(input.attributeAffinity)
               }
+              onChange={(event) => {
+                const selected = event.target.value;
+                if (selected.startsWith('attribute:'))
+                  changeTargetIdentity('attribute', selected.slice('attribute:'.length));
+                else changeAffinitySituation('attributeAffinity', Number(selected));
+              }}
             >
               <option value="1.1">有利（1.1倍）</option>
               <option value="1">等倍（1.0倍）</option>
@@ -956,6 +1019,17 @@ export function Calculator({
                 <option value={String(input.attributeAffinity)}>
                   直接入力（{input.attributeAffinity}倍）
                 </option>
+              ) : null}
+              {resolvedScenario ? (
+                <optgroup label="対象属性を指定">
+                  {master.targetSemantics.execution.attributeIdentities.map(
+                    (attribute: CanonicalTargetAttribute) => (
+                      <option key={attribute} value={`attribute:${attribute}`}>
+                        {attribute}
+                      </option>
+                    ),
+                  )}
+                </optgroup>
               ) : null}
             </select>
           </label>
@@ -1350,7 +1424,7 @@ export function Calculator({
         resetError={resetError}
         attackerName={attacker?.name ?? input.attackerId}
         attackerImage={attacker?.imageKey ?? null}
-        targetSummary={targetSummary}
+        targetSummary={[...concreteTargetSummary, targetSummary].join('・')}
         craftEssenceSummary={craftEssenceSummary}
         supportSummary={supportSummary}
         enabledAttackerSkillCount={enabledAttackerSkillCount}

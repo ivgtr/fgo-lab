@@ -63,6 +63,52 @@ it('keeps repairable enemy defense text without committing a numeric fallback', 
   expect(onScenarioChange).toHaveBeenCalledWith({ ...resolvedScenario, enemyDefenseBuff: -0.255 });
 });
 
+it('selects physical target identities through the scenario command', () => {
+  const onScenarioChange = vi.fn();
+  renderCalculator(resolvedScenario, onScenarioChange);
+  fireEvent.change(screen.getAllByLabelText(/^クラス相性/)[0]!, {
+    target: { value: 'class:lancer' },
+  });
+  const withClass = onScenarioChange.mock.calls.at(-1)?.[0] as CalculationScenario;
+  expect(withClass.mode).toBe('resolved');
+  if (withClass.mode !== 'resolved') return;
+  expect(withClass.targetContext.class).toEqual({ kind: 'concrete', classId: 'lancer' });
+
+  cleanup();
+  renderCalculator(withClass, onScenarioChange);
+  fireEvent.change(screen.getAllByLabelText(/^属性相性/)[0]!, {
+    target: { value: 'attribute:earth' },
+  });
+  const withAttribute = onScenarioChange.mock.calls.at(-1)?.[0] as CalculationScenario;
+  expect(withAttribute.mode).toBe('resolved');
+  if (withAttribute.mode !== 'resolved') return;
+  expect(withAttribute.targetContext).toEqual({
+    ...withClass.targetContext,
+    attribute: { kind: 'concrete', attribute: 'earth' },
+  });
+  expect(createCalculatorPortableRequest(withAttribute, requestVersions).scenario).toEqual(
+    withAttribute,
+  );
+});
+
+it('asks for target identity when relative candidates give different damage', () => {
+  renderCalculator(resolvedScenario, vi.fn(), {
+    ...resolved.result,
+    status: 'inputRequired',
+    rows: [],
+    requiredInputs: [],
+    issues: [
+      {
+        code: 'invalidTargetContext:ambiguousTargetResult:operation:1',
+        detail: 'ambiguousTargetResult',
+      },
+    ],
+  });
+  expect(screen.getByRole('alert').textContent).toContain('対象クラス・属性を指定してください');
+  expect(screen.getAllByLabelText(/^クラス相性/)[0]).toBeTruthy();
+  expect(screen.getAllByLabelText(/^属性相性/)[0]).toBeTruthy();
+});
+
 it('sends a domain-keyed initial battle point and clears legacy phase intent', () => {
   const domain = {
     id: 'fixture-point-domain',

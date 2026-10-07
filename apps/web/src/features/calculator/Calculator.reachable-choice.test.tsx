@@ -8,12 +8,15 @@ import {
   calculateScenario,
   createCalculatorPortableRequest,
   createDefaultCalculatorScenario,
+  createDefaultResolvedScenario,
+  executePortableCalculation,
   requireExecutableCalculation,
 } from '@fgo-lab/calculation-application';
 import {
   APP_VERSION,
   ENGINE_VERSION,
   SCHEMA_VERSION,
+  portableCalculationRequestSchema,
   type CalculationScenario,
 } from '@fgo-lab/schema';
 import { Calculator } from './Calculator';
@@ -105,5 +108,44 @@ it('shows the selected preparation choice and sends its own command', () => {
   );
   expect(screen.getAllByRole('radio', { name: /日輪/ })[0]?.getAttribute('aria-checked')).toBe(
     'false',
+  );
+});
+
+it('repairs a public ambiguous target result by selecting its attribute', () => {
+  const servant = master.servants.find(({ id }) => id === '4000100')!;
+  const initial = createDefaultResolvedScenario(master, undefined, servant);
+  const ambiguous = calculateScenario(initial, master, versions);
+  expect(ambiguous.status).toBe('executable');
+  if (ambiguous.status !== 'executable') return;
+  expect(ambiguous.result.status).toBe('inputRequired');
+
+  const onScenarioChange = renderCalculator(initial);
+  expect(screen.getByRole('alert').textContent).toContain('対象クラス・属性を指定してください');
+  fireEvent.change(screen.getAllByLabelText(/^属性相性/)[0]!, {
+    target: { value: 'attribute:earth' },
+  });
+  const selected = onScenarioChange.mock.calls.at(-1)?.[0] as CalculationScenario;
+  expect(selected.mode).toBe('resolved');
+  if (selected.mode !== 'resolved') return;
+  expect(selected.targetContext.attribute).toEqual({ kind: 'concrete', attribute: 'earth' });
+  expect(calculateScenario(selected, master, versions).result.status).toBe('calculated');
+  const saved = JSON.stringify(
+    createCalculatorPortableRequest(selected, {
+      schemaVersion: SCHEMA_VERSION,
+      masterDataVersion: master.version,
+      engineVersion: ENGINE_VERSION,
+    }),
+  );
+  const restored = portableCalculationRequestSchema.parse(JSON.parse(saved));
+  expect(restored.scenario).toEqual(selected);
+  const replay = executePortableCalculation(restored, master);
+  expect(replay.status).toBe('executed');
+  if (replay.status === 'executed') expect(replay.execution.result.status).toBe('calculated');
+
+  cleanup();
+  renderCalculator(selected);
+  expect(screen.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeTruthy();
+  expect(screen.getAllByLabelText<HTMLSelectElement>(/^属性相性/)[0]?.value).toBe(
+    'attribute:earth',
   );
 });
