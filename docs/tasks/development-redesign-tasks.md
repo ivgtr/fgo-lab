@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+12:33 UTC HP支援routing局所確認（2026-10-07）: `preparationOc`の構造operationは共通recipientが攻撃役のものだけatomic pairへ入れる。実masterのHP支援を含む`productionHpPaths`全7/7・warning0（原`.test-results/2026-10-07T12-30-38-084Z-15-d06460/`）、構造／rollbackの`preparationTransaction`84/84・warning0（原`.test-results/2026-10-07T12-32-48-078Z-15-603c7a/`）、typecheck・対象eslint/Prettier成功。支援choice/入力修復/portable replayも同7件内で確認。単一case実行はtest自体成功だがskip6件によるrunner契約失敗なので受入証拠にせず全file結果を採用。固定expected/counter/VRT不変、全production・quality/全15 Apply未達。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:30 UTC HP支援routing（2026-10-07）: support自身の構造operationを準備側だけ攻撃役へ誤適用し、HP支援3件がinvalidOcExecution。共通`operationRecipient`でattacker到達を絞り、同effectのHP/choiceを保持する修正を進める。直接経路は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
 12:24 UTC shared audit（2026-10-07）: current code19/20・warning0、残るcalculator相対対象`inputRequired`15は前回と同集合、rankingFailure0。最終diffの全productionやqualityは未実施。原と範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
 
 12:23 UTC 限定audit（2026-10-07）: `productionMasterControlAudit`はproducer receipt10種欠落で`artifact_failure`、1/10成功（CE/mystic code全projection）、9失敗は現source帰属未確定。局所52/52へ上書きせず原を保持。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。

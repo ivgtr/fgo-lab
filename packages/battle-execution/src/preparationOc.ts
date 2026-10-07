@@ -55,7 +55,7 @@ import {
 } from './populationFunctions';
 import { isBuffCountInput, bindBuffCountSources } from './buffInstances';
 import { populationInputIssue } from './populationCounts';
-import { resolveResourceTargetPolicy } from './effectRouting';
+import { operationRecipient, resolveResourceTargetPolicy } from './effectRouting';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import { applyBuffInstanceMutation } from './buffInstances';
 import { servantBuffCountInputs } from './stackQuantities';
@@ -665,11 +665,15 @@ export function executePreparationOc(args: {
     let ocIndex = 0;
     const structuralOperations = source.effect.execution.filter(
       (operation) =>
-        operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant',
+        (operation.kind === 'transformActorForm' ||
+          operation.kind === 'selectNoblePhantasmVariant') &&
+        operationRecipient(operation, source.origin) === 'attacker',
     );
     const firstStructuralIndex = source.effect.execution.findIndex(
       (operation) =>
-        operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant',
+        (operation.kind === 'transformActorForm' ||
+          operation.kind === 'selectNoblePhantasmVariant') &&
+        operationRecipient(operation, source.origin) === 'attacker',
     );
     for (const [operationIndex, operation] of source.effect.execution.entries()) {
       const operationFirstStep = steps.length;
@@ -717,7 +721,11 @@ export function executePreparationOc(args: {
         operation.kind === 'selectNoblePhantasmVariant'
       ) {
         steps.push(() => {
-          if (!sourceApplies || operationIndex !== firstStructuralIndex)
+          if (
+            !sourceApplies ||
+            operationIndex !== firstStructuralIndex ||
+            operationRecipient(operation, source.origin) !== 'attacker'
+          )
             return { kind: 'skip', outcome: 'notApplicable' };
           if (activation.get(source.effect)?.conditionOutcome !== true)
             return { kind: 'skip', outcome: 'notApplicable' };
