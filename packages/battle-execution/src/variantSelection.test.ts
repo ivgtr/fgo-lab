@@ -1,4 +1,6 @@
-import { readOperationCondition } from './condition';
+import { evaluateCondition, readOperationCondition } from './condition';
+import { collectDecisionConditions, resolveSatisfiedDecisionKeys } from './decisionConditions';
+import { resolveOperationActivation } from './activation';
 import { conditionWriteProof } from './conditionRead';
 import {
   projectBattleTraitPresence,
@@ -26,6 +28,7 @@ import { applyNoblePhantasmDamage } from './npDamageExecution';
 import {
   applyRuntimeNoblePhantasmVariantSelection,
   applySelectedNoblePhantasmContext,
+  resolveActiveVariantTransactions,
   resolveSelectedNoblePhantasmVariant,
 } from './variantSelection';
 
@@ -124,6 +127,122 @@ const selection = {
 } satisfies BattleOperation;
 
 describe('noble phantasm variant selection', () => {
+  it('uses the source read before a card change when selecting decisions and variants', () => {
+    const condition = { kind: 'card' as const, card: 'arts' as const };
+    const finalState = createInitialBattleState(
+      { ...input, cardType: 'arts' },
+      changed,
+      [],
+      {},
+      [],
+      [],
+      activation.factSet,
+    );
+    const sourceRead = evaluateCondition(condition, state);
+    expect(sourceRead.truth).toBe(false);
+    expect(evaluateCondition(condition, finalState).truth).toBe(true);
+    const conditionalSelection = {
+      ...selection,
+      condition,
+      decisionKey: 'early-card',
+      decisionPlan: { activation: 'user' as const, condition: 'userMayAssume' as const },
+      sourceActivation: {
+        kind: 'read' as const,
+        read: sourceRead,
+        proc: { kind: 'unread' as const },
+      },
+    } satisfies BattleOperation;
+    const decisions = new Map([
+      [
+        'early-card',
+        {
+          decisionKey: 'early-card',
+          operationEnabled: true,
+          conditionSatisfaction: 'assumeSatisfied' as const,
+        },
+      ],
+    ]);
+    const conditions = collectDecisionConditions([conditionalSelection]);
+    expect(resolveSatisfiedDecisionKeys(decisions, conditions, finalState).has('early-card')).toBe(
+      false,
+    );
+    const linkedWrite = {
+      ...operationBase,
+      operationId: 'linked-write',
+      kind: 'addTrait' as const,
+      scope: 'attackerState' as const,
+      trait: 'early-card-only',
+      activation: {
+        kind: 'linkedDecisions' as const,
+        links: [
+          {
+            decisionKey: 'early-card',
+            reason: 'sourceSkill' as const,
+            selection: 'conditionSatisfied' as const,
+          },
+        ],
+      },
+    } satisfies BattleOperation;
+    expect(resolveOperationActivation(linkedWrite, decisions, new Map(), new Set()).enabled).toBe(
+      false,
+    );
+    expect(
+      resolveSatisfiedDecisionKeys(
+        decisions,
+        collectDecisionConditions([
+          { ...conditionalSelection, sourceActivation: { kind: 'unread' } },
+        ]),
+        finalState,
+      ).has('early-card'),
+    ).toBe(true);
+    const activations = new Map([
+      [
+        conditionalSelection.operationId,
+        {
+          enabled: true,
+          enabledBeforeStochasticOutcome: true,
+          stochasticOutcome: { status: 'success' as const },
+          activeDecisionKeys: ['early-card'],
+          assumesLocalCondition: false,
+        },
+      ],
+    ]);
+    expect(
+      resolveActiveVariantTransactions([conditionalSelection], activations, decisions, finalState)
+        .finalSelection,
+    ).toBeUndefined();
+    const terminalDamage = {
+      ...operationBase,
+      operationId: 'terminal-damage',
+      phase: 'npDamage' as const,
+      kind: 'executeNpDamage' as const,
+      damage,
+      overcharge: 1,
+      selectedNpLevel: 1,
+      npMultipliers: [30, 30, 30, 30, 30] as const,
+      specialAttackCondition: condition,
+      specialAttackDependency: { kind: 'always' as const },
+      specialAttackDecisionKey: 'terminal-card',
+    } satisfies BattleOperation;
+    const terminalDecisions = new Map([
+      [
+        'terminal-card',
+        {
+          decisionKey: 'terminal-card',
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate' as const,
+        },
+      ],
+    ]);
+    expect(
+      resolveSatisfiedDecisionKeys(
+        terminalDecisions,
+        collectDecisionConditions([terminalDamage]),
+        finalState,
+      ).has('terminal-card'),
+    ).toBe(true);
+  });
+
   it('carries an external initial trait across a form transition while replacing intrinsic traits', () => {
     const damageInput = {
       ...input,

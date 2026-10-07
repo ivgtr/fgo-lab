@@ -3268,6 +3268,16 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 Depends on: TSK-13
 
+09:29 UTC preflight局所差分の保存準備（2026-10-07）: 元source readでlinked decision／variant選択を評価し、assumed decisionの全体制約は独立に維持。変更前card=false／最終card=true、linked write無効、unread現state、NP special終端trueのdirect fixture10/10（原 `.test-results/2026-10-07T09-26-58-209Z-15-4b243b/`）。実scenario43/43・warning0（原 `.test-results/2026-10-07T09-25-07-722Z-15-e09413/`）、現差分の型、対象lint、変更file書式、diff check成功。正式production/性能/qualityと実master card差・UI/saveは未達。元の2失敗artifactも保持。全15 Apply未Verified。
+
+09:26 UTC preflight縮小後（2026-10-07）: `assumedDecisionConstraints`を従来選択制約評価へ戻し、実scenario43/43・warning0、fixed-world/field mutation両conflictは`unsupported`に回復（原 `.test-results/2026-10-07T09-25-07-722Z-15-e09413/`）。rollback監査4.934sで上限まで66ms。direct card fixture10/10は縮小編集前の原 `.test-results/2026-10-07T09-22-50-043Z-15-60e242/`で、この編集は同direct判定を変えない。unread/rollback/alternateと実master card差、UI/worker/save/production/正式性能/qualityは未達。全15 Apply未Verified。
+
+09:25 UTC preflight反証・縮小（2026-10-07）: native readを`assumedDecisionConstraints`へ使った差分の実scenarioは41/43、exclusive fixed-worldとfield mutation conflictで期待`unsupported`が`calculated`（原 `.test-results/2026-10-07T09-23-59-792Z-15-22fcc3/`）。観測truthと利用者仮定の全体整合制約を混同し、既知falseの条件を制約から落とす経路。元の選択制約評価へ戻し、native readはlinked decision／variant選択だけに限定する。直接card fixtureと実scenarioで再反証し、残る選択制約の時点は未達として扱う。詳細はflow冒頭。全15 Apply未Verified。
+
+09:24 UTC preflight read改訂（2026-10-07）: decisionの元operation条件とterminal NP special条件をtyped entryで分け、前者およびvariant選択は通常と同じ`readOperationCondition`、後者はNP時点の`evaluateCondition`を維持する。native read false／最終card trueのdirect fixtureを最初の反証とし、unread/notApplicable、source rollback/pendingを推測しない。実scenario・型/lintで局所確認後、初期stateの他consumerを継続監査する。詳細はflow冒頭。全15 Apply未Verified。
+
+09:22 UTC 隣接例外の停止（2026-10-07）: candidate初期`card`は最終damage input由来だが、preparation nativeは初期variantからsource順にcardを更新する。通常operationのnative read優先と異なり、decision/variant事前選択はinitial candidate stateへ`evaluateCondition`して未来cardを読める。`sourceCollection`のapplied receipt、preflight、normal、rollback/pending、terminal NP specialの別readを読み取り照合中。編集・新runを止め、元operation readとterminal readを分ける境界・direct fixture・app反証をflowへ記録してから再開する。既存43/43はこの例外を閉じない。全15 Apply未Verified。
+
 09:19 UTC 60分checkpoint準備（2026-10-07）: native物理operationのsealed commit→canonical index→順序付きdelta／star既存receipt→normalを接続した局所差分。source identityの欠落4件を修復し、同一最終製品差分の実scenario43/43・warning0（原 `.test-results/2026-10-07T09-16-14-427Z-15-29696f/`）、直接prep/compiler/audit112/112はlint整理前の原 `.test-results/2026-10-07T09-03-43-687Z-15-2594ba/`。現在差分の`pnpm typecheck`、変更15 TSのeslint、17変更fileのPrettier check、`git diff --check`は成功。direct112は同一最終差分の成功とは扱わず、再実行要否は次のsemantic change後に判断する。rollback監査は5s上限近傍で性能受入未達。初期candidateのcard/formと最終selection、native source以外のread、policy/marker/全source/UI/worker/save/80条件・S0/S1/正式性能/quality、全15 Apply/R1は未達。開始時clean、現差分は本TSKの17fileのみ、index空を照合してcheckpoint commitする。これはTSK-14完了ではない。
 
 09:17 UTC 同sourceの再測定（2026-10-07）: 製品/test/runner/lockfileを変えず単独scenario43/43・warning0、rollback監査4.878s／star2.001s、必要3 artifact receipt成立（原 `.test-results/2026-10-07T09-16-14-427Z-15-29696f/`）。09:11の5.617s timeoutと同sourceで所要変動があるため帰属分類を`environmentDependent`へ更新。意味局所の成功は採用するが5s上限まで122msで、正式performance/quality前の評価余地を残す。検査緩和なし、全15 Apply未Verified。

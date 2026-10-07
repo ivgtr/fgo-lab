@@ -7,7 +7,7 @@ import {
 } from '@fgo-lab/master-data';
 import type { BattleOperation, ExecutableBattleState, ExecutionIssue } from './contracts';
 import type { EffectDecision } from './contracts';
-import { activationRequirementsSatisfied, evaluateCondition } from './condition';
+import { activationRequirementsSatisfied } from './condition';
 import type { OperationActivation } from './candidateSelection';
 import type { PreparedOrderedScenario } from './executionTypes';
 import { validateActorFormWorldFacts } from './formConstraintValidation';
@@ -56,7 +56,7 @@ export function resolveActiveVariantTransactions(
     if (operation.kind !== 'selectNoblePhantasmVariant') return false;
     if (activations.get(operation.operationId)?.enabled !== true) return false;
     if (operation.decisionPlan.condition !== 'userMayAssume') return true;
-    const evaluated = evaluateCondition(operation.condition, state).truth;
+    const evaluated = readOperationCondition(operation, state).truth;
     if (evaluated === true) return true;
     const decision = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
     return (

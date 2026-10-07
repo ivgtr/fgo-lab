@@ -4,22 +4,40 @@ import type {
   ConditionExpression,
   EffectDecision,
 } from './contracts';
-import { activationRequirementsSatisfied, evaluateCondition } from './condition';
+import {
+  activationRequirementsSatisfied,
+  evaluateCondition,
+  readOperationCondition,
+} from './condition';
 import type { SatisfiableConditionConstraint } from './constraints';
+
+interface DecisionCondition {
+  readonly expression: ConditionExpression;
+  readonly operation: BattleOperation | null;
+}
+
+function decisionConditionTruth(
+  condition: DecisionCondition,
+  state: ExecutableBattleState,
+): boolean | null {
+  return condition.operation
+    ? readOperationCondition(condition.operation, state).truth
+    : evaluateCondition(condition.expression, state).truth;
+}
 
 export function collectDecisionConditions(
   operations: readonly BattleOperation[],
-): ReadonlyMap<string, readonly ConditionExpression[]> {
-  const conditionsByDecisionKey = new Map<string, ConditionExpression[]>();
+): ReadonlyMap<string, readonly DecisionCondition[]> {
+  const conditionsByDecisionKey = new Map<string, DecisionCondition[]>();
   for (const operation of operations) {
     if (operation.decisionKey) {
       const conditions = conditionsByDecisionKey.get(operation.decisionKey) ?? [];
-      conditions.push(operation.condition);
+      conditions.push({ expression: operation.condition, operation });
       conditionsByDecisionKey.set(operation.decisionKey, conditions);
     }
     if (operation.kind === 'executeNpDamage' && operation.specialAttackDecisionKey) {
       const conditions = conditionsByDecisionKey.get(operation.specialAttackDecisionKey) ?? [];
-      conditions.push(operation.specialAttackCondition);
+      conditions.push({ expression: operation.specialAttackCondition, operation: null });
       conditionsByDecisionKey.set(operation.specialAttackDecisionKey, conditions);
     }
   }
@@ -28,7 +46,7 @@ export function collectDecisionConditions(
 
 export function resolveSatisfiedDecisionKeys(
   decisions: ReadonlyMap<string, EffectDecision>,
-  conditionsByDecisionKey: ReadonlyMap<string, readonly ConditionExpression[]>,
+  conditionsByDecisionKey: ReadonlyMap<string, readonly DecisionCondition[]>,
   state: ExecutableBattleState,
 ): ReadonlySet<string> {
   return new Set(
@@ -37,12 +55,12 @@ export function resolveSatisfiedDecisionKeys(
       const conditions = conditionsByDecisionKey.get(decisionKey);
       if (!conditions) return [];
       return conditions.every((condition) => {
-        const evaluated = evaluateCondition(condition, state).truth;
+        const evaluated = decisionConditionTruth(condition, state);
         return (
           evaluated === true ||
           (evaluated === null &&
             decision.conditionSatisfaction === 'assumeSatisfied' &&
-            activationRequirementsSatisfied(condition, state))
+            activationRequirementsSatisfied(condition.expression, state))
         );
       })
         ? [decisionKey]
@@ -53,7 +71,7 @@ export function resolveSatisfiedDecisionKeys(
 
 export function assumedDecisionConstraints(
   decisions: readonly EffectDecision[],
-  conditionsByDecisionKey: ReadonlyMap<string, readonly ConditionExpression[]>,
+  conditionsByDecisionKey: ReadonlyMap<string, readonly DecisionCondition[]>,
   state: ExecutableBattleState,
   enforceKnownFalseDecisionKeys: ReadonlySet<string> = new Set(),
 ): readonly SatisfiableConditionConstraint[] {
@@ -65,12 +83,12 @@ export function assumedDecisionConstraints(
       !expressions
     )
       return [];
-    return expressions.flatMap((expression) => {
-      const evaluated = evaluateCondition(expression, state).truth;
+    return expressions.flatMap((condition) => {
+      const evaluated = evaluateCondition(condition.expression, state).truth;
       return (evaluated === null ||
         (enforceKnownFalseDecisionKeys.has(decision.decisionKey) && !evaluated)) &&
-        activationRequirementsSatisfied(expression, state)
-        ? [{ sourceKey: decision.decisionKey, expression }]
+        activationRequirementsSatisfied(condition.expression, state)
+        ? [{ sourceKey: decision.decisionKey, expression: condition.expression }]
         : [];
     });
   });
