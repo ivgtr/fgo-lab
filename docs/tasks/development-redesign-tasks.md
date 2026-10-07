@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+13:42 UTC planner key限定pair（2026-10-07）: 505300のterminal181は同使用command集合8群、最大96。同順でもsource-use truth差があるため集合一律collapseは不正。一方slot1→2/2→1のpairはread truth/certainty/value/procが一致し、差はactiveEffectsのaction/proof clockで、双方NP1〜5最大値一致。一時的にclock等metadataだけをkeyから外す診断では181→68 distinctだが、実visited変更・全候補最大/trace/rollbackの証明ではない。typed意味summaryと証拠receiptを分ける設計を継続調査。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。固定counter未変更、R1未受入。
+
+13:40 UTC preparation固定inventory現集合（2026-10-07）: 全422同条件の直接planはgenerated8661/dedup8651/terminal7596/exactDup10/reject17/maxStates181、旧固定6673/4194/3640/2479/7/56。`preNoblePhantasmSemanticStateKey`がsourceActivationのclock/proofを含む等、行動順の同値化がほぼ消えた疑義はあるが、現集計だけで安全なfield削除や最大保存を証明できない。固定counter不変、代表同値candidateの将来read/結果/traceを直接調べる。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
+
 13:36 UTC buff-count固定形状の帰属（2026-10-07）: 公開1000900/1101600×初期0/1/10の6セルで使用後live数量0、count0 tombstone一件・known absence・初期/解除proofを直接確認。初期stack factはtrait rootにも残るためempty配列にすると初期positiveを再読し得る。旧配列長0 assertは内部形状契約差で、数値0の失敗ではない。旧assertionを未変更とし、詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
 
 13:34 UTC world counter66/1帰属（2026-10-07）: 新population local target readの公開4騎内訳は106200 +22、306000 +11、306200 +22、1001800 +11＝66条件。306000の現11件は全て新読取で唯一の追加servant。旧13615/212→現13681/213と一致し、実readerを削って固定値へ合わせない。固定counter判断待ち。直接算出と保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。R1未受入。
