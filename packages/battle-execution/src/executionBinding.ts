@@ -9,9 +9,14 @@ import type { PreNoblePhantasmState } from './preparationContracts';
 import type { ConditionFactProof } from './conditionRead';
 import type { TraitFact } from './traitFactLayers';
 import type { TraitScope } from './contracts';
+import type { CountedBuffInstance } from './buffInstances';
 
 type MapDelta<T> = ReadonlyMap<string, T | null>;
 type ScopedMapDelta<T> = Partial<Record<TraitScope, MapDelta<T>>>;
+type BuffInstanceDelta = ReadonlyMap<
+  string,
+  { readonly previous: 'present' | 'absent'; readonly current: CountedBuffInstance | null }
+>;
 
 export interface PhysicalInputCommit {
   readonly operationIndex: number;
@@ -36,7 +41,7 @@ export interface PhysicalOperationTransition {
   readonly suppressionProofs?: Partial<Record<'attacker' | 'target', MapDelta<ConditionFactProof>>>;
   readonly quantityProofs?: MapDelta<ConditionFactProof>;
   readonly markerProofs?: MapDelta<ConditionFactProof>;
-  readonly buffInstances?: PreNoblePhantasmState['buffInstances'];
+  readonly buffInstances?: BuffInstanceDelta;
   readonly hp?: PreNoblePhantasmState['hp'];
   readonly currentFormId?: PreNoblePhantasmState['currentFormId'];
   readonly noblePhantasmVariant?: PreNoblePhantasmState['noblePhantasmVariant'];

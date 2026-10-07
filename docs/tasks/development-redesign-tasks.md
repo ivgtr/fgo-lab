@@ -3266,6 +3266,16 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+13:18 UTC marker差分の局所確認（2026-10-07）: native buff instanceの全snapshotをidentity別差分に変更し、CE→passiveのcanonical順で先行native instanceを持ち込まない。小fixture2/2、準備transaction84/84、型・lint・書式成功。公開marker全件は2/3、残る1件は既知の相対対象21セルのみで例外4セルはcalculated/issue0。原artifactと範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。固定期待・counter・VRT不変、R1未受入。
+
+13:16 UTC marker欠落の確定原因（2026-10-07）: 公開403700/405300+CE9305310の4セルだけ例外。nativeはpassive→CE、canonicalはCE→passiveで、CE physical transitionが先行passiveのinstance全snapshotを持つ一方、proofはCE identity差分だけ。空の候補へCEを先に再生してproofなしpassiveを作る。instanceをidentity差分で運び、追加proofと既存更新の整合を保つ同family修正へ進む。詳細・限定診断は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。固定期待・counter・VRT不変、R1未受入。
+
+13:08 UTC marker proof経路（2026-10-07）: Nemo passive6116/6117のconstant markerはnative準備・physical transitionかruntime ordered mutationでinstanceとproofを同時に運ぶ設計だが、403700のoperation readでinstanceのみ見えてproof identityがない。source/initial/transition/candidate各段階をread-onlyで照合し、次は公開scenarioの限定観測で欠落位置を特定する。例外抑制やproof補完はしない。直接境界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+13:00 UTC latest full productionとmarker停止（2026-10-07）: HEAD`863af1c`製品sourceで145/166成功・21失敗、20file成功／13file失敗、warning0、原`.test-results/2026-10-07T12-52-11-282Z-15-7c9772/`。先行`da9e8c1`より5件回復。ただしmarker全件は新たに403700 passive6116:0の`missing_condition_fact_proof`例外で止まり、旧runは先行inputRequiredで停止していたため回帰と断定できない。製品/test編集・新検証を止め、直接familyの生成・read・proof・projection・portableをread-onlyで調べ、根拠記録後に再開する。残る固定契約差と未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14 in_progress／R1未受入。
+
+12:52 UTC population native帰属（2026-10-07）: 106200/NP2の修復後も攻撃者state dragon/lamiaはunknown。native population countがnull、ゲージ未飽和のpositive gainは`unsupportedResourceMutation`。同2特性のabsentを明示するとcalculatedへ回復。既存局所fixtureも世界事実なしではunknownを拒否する。旧productionParityの「人数だけ修復→calculated」は不足入力を含む固定期待で、暗黙absentへ補わない。resultをworldTraitPresenceの修復入力へ変えるなら分類・固定期待の判断が必要。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
 12:45 UTC session handoff（2026-10-07）: 今sessionの製品checkpointは`da9e8c1`→`ff2c712`→`b291666`。最後のHP支援routingは公開HP path7/7、準備transaction84/84、typecheck／対象lint/format成功。直近の共有production auditは19/20でrankingFailure0、calculator default相対対象15のinputRequiredのみ（12:22原）。全productionの有効な最後の原は`da9e8c1`上の140/166・26失敗（11:51原）であり、その後のconstant/支援routing差分の最終全件成功証拠ではない。固定expected/counter/VRTは未変更。製品判断待ちは(1)相対対象でNP scalarが異なるcalculator default、(2)skillUse HP条件のsource時snapshotと旧期待、(3)calculator初期plan固定順と最大合法順。今回の直接帰属は構造205000が行動順差、buff-count内部形状期待が既知0 instance、population 106200修復後unsupportedのnative branch未確定。次sessionはpopulation native reason/current facts/eventsの限定採取、独立した未解決familyの直接owner修正、回答後の固定契約判断、最終source全production→80+saved/S0/S1/性能/全15 Apply/qualityの順。現TSK-14 in_progress／R1未受入、対象内Blockingと旧固定差が残る。`.test-results/tsk14-*-diagnostic.ts`は一時調査codeで恒久採用せず、原artifactは後続受入参照中だけ保持し、既存保存契約・処遇を変更しない。
 
 12:43 UTC population portable修復の未達（2026-10-07）: 公開106200/NP2のranking scenarioはcalculated。slot3を追加しcount1＋allies/enemies0ではinputRequired、allies1へ修復後は`preparation:unsupportedResourceMutation`で旧calculated期待へ戻らない。world target lamia/dragon false assertionとcohort上限は整合するが、実native拒否branchは未確定。次はnative receipt/facts/eventsの限定診断、outcome責務の判断。固定assertion不変。直接経路は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。

@@ -3,6 +3,7 @@ import type { PreNoblePhantasmState } from './preparationContracts';
 import type { PhysicalOperationTransition } from './executionBinding';
 import type { ConditionFactProof } from './conditionRead';
 import type { TraitFact } from './traitFactLayers';
+import type { CountedBuffInstance } from './buffInstances';
 import { cloneInputFacts } from './inputFacts';
 import { cloneConditionFactProofs } from './conditionRead';
 import { traitScopes } from './traitFactLayers';
@@ -34,6 +35,54 @@ function applyEntries<T>(
     else result.set(key, value);
   }
   return result;
+}
+
+function buffInstanceMap(
+  instances: readonly CountedBuffInstance[],
+): Map<string, CountedBuffInstance> {
+  const byIdentity = new Map<string, CountedBuffInstance>();
+  for (const instance of instances) {
+    if (byIdentity.has(instance.identity)) throw new TypeError('duplicate_buff_instance_identity');
+    byIdentity.set(instance.identity, instance);
+  }
+  return byIdentity;
+}
+
+export function changedBuffInstances(
+  before: readonly CountedBuffInstance[],
+  after: readonly CountedBuffInstance[],
+): NonNullable<PhysicalOperationTransition['buffInstances']> {
+  const beforeByIdentity = buffInstanceMap(before);
+  const afterByIdentity = buffInstanceMap(after);
+  const changes = new Map<
+    string,
+    { readonly previous: 'present' | 'absent'; readonly current: CountedBuffInstance | null }
+  >();
+  for (const identity of new Set([...beforeByIdentity.keys(), ...afterByIdentity.keys()])) {
+    const previous = beforeByIdentity.get(identity);
+    const current = afterByIdentity.get(identity);
+    if (previous === current) continue;
+    changes.set(identity, { previous: previous ? 'present' : 'absent', current: current ?? null });
+  }
+  return changes;
+}
+
+export function applyBuffInstanceChanges(
+  instances: readonly CountedBuffInstance[],
+  changes: NonNullable<PhysicalOperationTransition['buffInstances']>,
+): readonly CountedBuffInstance[] {
+  const byIdentity = buffInstanceMap(instances);
+  for (const [identity, change] of changes) {
+    if (change.previous === 'present') {
+      if (!byIdentity.has(identity)) continue;
+      if (change.current === null) byIdentity.delete(identity);
+      else byIdentity.set(identity, change.current);
+    } else if (change.current !== null) {
+      if (byIdentity.has(identity)) throw new TypeError('duplicate_buff_instance_identity');
+      byIdentity.set(identity, change.current);
+    }
+  }
+  return [...byIdentity.values()];
 }
 
 /** Keep changed physical entries only; the binding must never retain a native state root. */
@@ -83,6 +132,7 @@ export function capturePhysicalOperationTransition(
     before.conditionFactProofs.markers,
     after.conditionFactProofs.markers,
   );
+  const buffInstances = changedBuffInstances(before.buffInstances, after.buffInstances);
   return {
     operationIndex,
     ...(inputFacts.size ? { inputFacts } : {}),
@@ -96,7 +146,7 @@ export function capturePhysicalOperationTransition(
     ...(Object.keys(suppressionProofs).length ? { suppressionProofs } : {}),
     ...(quantityProofs.size ? { quantityProofs } : {}),
     ...(markerProofs.size ? { markerProofs } : {}),
-    ...(before.buffInstances !== after.buffInstances ? { buffInstances: after.buffInstances } : {}),
+    ...(buffInstances.size ? { buffInstances } : {}),
     ...(before.hp !== after.hp ? { hp: after.hp } : {}),
     ...(before.currentFormId !== after.currentFormId ? { currentFormId: after.currentFormId } : {}),
     ...(before.noblePhantasmVariant !== after.noblePhantasmVariant
@@ -174,7 +224,11 @@ export function applyCommittedPreparationTransition(
     if (change.markerProofs) proofs.markers = applyEntries(proofs.markers, change.markerProofs);
     state.conditionFactProofs = proofs;
   }
-  if ('buffInstances' in change) state.buffInstances = change.buffInstances!;
+  if (change.buffInstances)
+    state.buffInstances = applyBuffInstanceChanges(state.buffInstances ?? [], change.buffInstances);
+  for (const instance of state.buffInstances ?? [])
+    if (!state.conditionFactProofs.markers.has(instance.identity))
+      throw new TypeError(`missing_committed_marker_proof:${instance.identity}`);
   if ('hp' in change) {
     state.hp = change.hp!;
     state.quantities.attackerHpPermille = hpPermille(change.hp?.actors.attacker);
