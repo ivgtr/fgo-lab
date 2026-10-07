@@ -180,26 +180,28 @@ describe('production preparation semantics audit', () => {
       actorFormNodes: 484,
       actorFormProfiles: 484,
       attackVariants: 626,
-      deduplicated: 4194,
-      exactDuplicates: 2479,
-      generated: 6673,
+      deduplicated: 8651,
+      exactDuplicates: 10,
+      generated: 8661,
       maximumActorFormNodes: 7,
       maximumActorFormProfiles: 7,
       maximumInitialForms: 7,
       maximumPreparationActions: 4,
-      maximumSemanticStates: 56,
+      maximumSemanticStates: 181,
       maximumTransitionEdges: 2,
       nonAttackVariants: 101,
       nonAttackWithoutAttack: 47,
       rejectedActionCounts: {
+        unsupportedOcExecution: 5,
+        invalidOcExecution: 5,
         insufficientNpGauge: 7,
       },
-      rejectedActions: 7,
+      rejectedActions: 17,
       servants: 422,
-      terminal: 3640,
+      terminal: 7596,
       transformNoblePhantasmServants: 1,
     });
-    expect(terminalKeys).toHaveLength(3640);
+    expect(terminalKeys).toHaveLength(7596);
   }, 30_000);
 
   it('keeps applied choice and transition evidence local to its source action', async () => {

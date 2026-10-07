@@ -485,31 +485,39 @@ describe('ranking target witness completeness', () => {
     }).toEqual({ conditions: 0, servants: 0 });
 
     const inventory = productionConditions.flatMap(
-      ({ servant: candidateServant, program, condition }) =>
-        isWorldFactOnlyTargetCondition(condition) &&
-        (targetConditionWitnessSpace(condition).traitFacts.length > 0 ||
-          targetConditionWitnessSpace(condition).predicates.length > 0)
+      ({ servant: candidateServant, program, condition }) => {
+        if (!isWorldFactOnlyTargetCondition(condition)) return [];
+        const witnessSpace = targetConditionWitnessSpace(condition);
+        return witnessSpace.traitFacts.length > 0 || witnessSpace.predicates.length > 0
           ? [{ servant: candidateServant, program, condition }]
-          : [],
+          : [];
+      },
     );
+    const witnessed = new Map<string, boolean>();
     const missing = inventory.flatMap(({ servant: candidateServant, program, condition }) => {
-      const generated = enumerateRankingWorldDomain({
-        servant: candidateServant,
-        master,
-        scenario: createRankingBaseScenario(
-          candidateServant,
+      const witnessKey = JSON.stringify([candidateServant.id, program.initialFormId, condition]);
+      let hasWitness = witnessed.get(witnessKey);
+      if (hasWitness === undefined) {
+        const generated = enumerateRankingWorldDomain({
+          servant: candidateServant,
           master,
-          rankingBasisFixture(candidateServant),
-          DEFAULT_RANKING_POLICY_CONDITIONS,
-          program.initialFormId,
-        ),
-        conditions: [condition],
-      });
-      return generated.some(
-        (candidate) =>
-          evaluateConditionExpression(condition, stateFor(candidateServant, candidate, master))
-            .truth === true,
-      )
+          scenario: createRankingBaseScenario(
+            candidateServant,
+            master,
+            rankingBasisFixture(candidateServant),
+            DEFAULT_RANKING_POLICY_CONDITIONS,
+            program.initialFormId,
+          ),
+          conditions: [condition],
+        });
+        hasWitness = generated.some(
+          (candidate) =>
+            evaluateConditionExpression(condition, stateFor(candidateServant, candidate, master))
+              .truth === true,
+        );
+        witnessed.set(witnessKey, hasWitness);
+      }
+      return hasWitness
         ? []
         : [`${candidateServant.id}:${program.key}:${JSON.stringify(condition)}`];
     });
@@ -518,8 +526,8 @@ describe('ranking target witness completeness', () => {
       conditions: inventory.length,
       servants: new Set(inventory.map(({ servant: candidateServant }) => candidateServant.id)).size,
     }).toEqual({
-      conditions: 13615,
-      servants: 212,
+      conditions: 13681,
+      servants: 213,
     });
     const canonicalDefaultProvenance = inventory.filter(({ condition }) =>
       conditionLeaves(condition).some(

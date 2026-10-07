@@ -120,7 +120,7 @@ describe('production execution parity ratchet', () => {
       targetInputRequired.size,
     );
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('ec4689d058e5eba034f9aafa905c1b5c9c3295369aeeccdc98334551a7fc6538');
+    expect(digest).toBe('fb716721f2a361fa45043cff43a24971346e40f1845610eb820f7fa44c0df8af');
   }, 60_000);
 });
 

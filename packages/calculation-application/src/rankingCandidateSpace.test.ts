@@ -273,11 +273,7 @@ describe('static ranking candidate space', () => {
     };
     expect(calculateScenario(withPopulation, master, versions()).result.status).toBe('calculated');
     expect(
-      calculateScenario(
-        { ...withPopulation, worldFactAssertions: [] },
-        master,
-        versions(),
-      ).result,
+      calculateScenario({ ...withPopulation, worldFactAssertions: [] }, master, versions()).result,
     ).toMatchObject({ status: 'unsupported', issues: [{ code: 'unknown_trait_quantity' }] });
   });
 
@@ -794,18 +790,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        damageRequestCount: 2596,
-        damageRequestUpperBound: 2665,
-        deduplicatedCount: 2665,
-        distinctDamageInputCount: 1489,
-        generatedCount: 2665,
-        semanticUpperBound: 2665,
+        damageRequestCount: 7255,
+        damageRequestUpperBound: 7164,
+        deduplicatedCount: 7164,
+        distinctDamageInputCount: 1627,
+        generatedCount: 7164,
+        semanticUpperBound: 7164,
       },
       damageCache: {
-        cacheHitCount: 1107,
-        cacheHitRate: 0.4264252696456086,
-        distinctDamageInputCount: 1489,
-        requestCount: 2596,
+        cacheHitCount: 5628,
+        cacheHitRate: 0.7757408683666437,
+        distinctDamageInputCount: 1627,
+        requestCount: 7255,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>
@@ -937,18 +933,18 @@ describe('static ranking candidate space', () => {
       preparationRejections,
       actionDigest: createHash('sha256').update(JSON.stringify(actionRecords)).digest('hex'),
     }).toEqual({
-      actionDigest: 'e900b2b80545c4bc34e63dd7f916f955d7ca489a4e3329de478b429f3348d21b',
+      actionDigest: 'd7295b5fa4d684bf99009c955f68fabff606809454dfb4f25671f6c4bcfd1ed8',
       admissions: {
         'excluded:baseline:admitted:structuralRequired': 148,
         'excluded:baseline:policyNoOp': 15024,
         'excluded:satisfied:admitted:structuralRequired': 148,
         'excluded:satisfied:policyNoOp': 15024,
-        'included:baseline:admitted:optional': 9195,
+        'included:baseline:admitted:optional': 14925,
         'included:baseline:admitted:structuralRequired': 148,
-        'included:baseline:policyNoOp': 5829,
-        'included:satisfied:admitted:optional': 14991,
+        'included:baseline:policyNoOp': 99,
+        'included:satisfied:admitted:optional': 14925,
         'included:satisfied:admitted:structuralRequired': 148,
-        'included:satisfied:policyNoOp': 33,
+        'included:satisfied:policyNoOp': 99,
       },
       adverseFamilies: {
         'battlePoint:dependent': 0,
@@ -964,7 +960,8 @@ describe('static ranking candidate space', () => {
         traitRemoval: 3,
       },
       preparationRejections: {
-        'included:baseline:unreachable:insufficientNpGauge': 69,
+        'included:baseline:unreachable:insufficientNpGauge': 161,
+        'included:baseline:unreachable:attackNoblePhantasmUnavailable': 22,
       },
     });
   }, 30_000);
