@@ -23,6 +23,14 @@ import type { SourceEffect } from './sourceCollection';
 import type { CountedBuffInstance } from './buffInstances';
 import type { PopulationEvent } from './populationCounts';
 import type { BattlePointState } from './battlePointResource';
+import type { InputFacts } from './inputFacts';
+import type { SourceExecutionBinding } from './executionBinding';
+import type { PreparationSourceExecution } from './preparationExecution';
+import type {
+  PreparationOcAttempt,
+  PreparationBattlePointStep,
+} from './preparationAttemptObservation';
+import type { PreparationHpAction } from './hpExecutionObservation';
 
 export interface PreparationExecutionContext {
   stochasticSelection: StochasticSelection;
@@ -90,8 +98,13 @@ export interface AppliedPreparationAction {
 }
 
 export interface PreNoblePhantasmState extends ConditionEvaluationState {
-  inputFacts: import('./inputFacts').InputFacts;
-  sourceBindings: readonly import('./executionBinding').SourceExecutionBinding[];
+  /** Last explicit external intent; live physical facts remain in the state below. */
+  externalBinding: {
+    readonly inputs: Readonly<Record<string, number>>;
+    readonly worldFacts: readonly WorldFactAssertion[];
+  };
+  inputFacts: InputFacts;
+  sourceBindings: readonly SourceExecutionBinding[];
   npQuantityWrites: readonly PreparationNpQuantityWrite[];
   battlePoints: BattlePointState;
   hp?: HpState | undefined;
@@ -121,6 +134,7 @@ export interface PreNoblePhantasmState extends ConditionEvaluationState {
 }
 
 export type PreparationFailureCode =
+  | 'invalidPreparationBinding'
   | 'attackerDead'
   | 'unknownInitialForm'
   | 'actionAfterAttack'
@@ -164,12 +178,12 @@ export type PreparationTransitionResult =
 export type PreparationCompletedTransitionResult = Readonly<PreparationTransitionResult> & {
   readonly before: PreNoblePhantasmState;
   readonly command: PreNoblePhantasmCommand | null;
-  readonly sources: readonly import('./preparationExecution').PreparationSourceExecution[];
-  readonly committedSources: readonly import('./preparationExecution').PreparationSourceExecution[];
+  readonly sources: readonly PreparationSourceExecution[];
+  readonly committedSources: readonly PreparationSourceExecution[];
   readonly observations: {
-    readonly ocAttempts: readonly import('./preparationAttemptObservation').PreparationOcAttempt[];
-    readonly battlePointSteps: readonly import('./preparationAttemptObservation').PreparationBattlePointStep[];
-    readonly hpActions: readonly import('./hpExecutionObservation').PreparationHpAction[];
+    readonly ocAttempts: readonly PreparationOcAttempt[];
+    readonly battlePointSteps: readonly PreparationBattlePointStep[];
+    readonly hpActions: readonly PreparationHpAction[];
   };
 };
 

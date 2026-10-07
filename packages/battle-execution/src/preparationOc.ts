@@ -1,7 +1,9 @@
 import { addTraitFact } from './traitFactLayers';
-import { inputFactValues } from './inputFacts';
+import { exactInputFactValue, inputFactValues } from './inputFacts';
 import { CRITICAL_STARS_INITIAL_INPUT, mutateConditionalCriticalStars } from './resourceSemantics';
-import type { PhysicalInputCommit } from './executionBinding';
+import type { ModifierValueRead, PhysicalInputCommit } from './executionBinding';
+import { operationSourceFor } from './executionSourceObservation';
+import { resolveModifierValue } from './projection';
 import {
   registerPreparationSourceExecution,
   commitPreparationSourceExecution,
@@ -64,6 +66,7 @@ import {
 } from './preparationContextWrites';
 import {
   compileEffectCondition,
+  compileEffectCached,
   sourceMaximumHpInput,
   sourceHpInputKey,
 } from './operationCompiler';
@@ -81,6 +84,7 @@ import { bindOcSourceOperation, ocSourceOperationKey } from './ocSourceBinding';
 import { executeOcAction, type OcActionStep, type OcActionOutcome } from './ocState';
 import type { SourceEffect } from './sourceCollection';
 import {
+  applyPreparationTraitOperation,
   resolvePreparationStructuralOutcome,
   requiredPreparationConditionRead,
 } from './preparationState';
@@ -253,6 +257,11 @@ export function executePreparationOc(args: {
     }
     return sharedFacts;
   };
+  const unresolvedDeclaredInput = (definitions: readonly CanonicalInputDefinition[]) =>
+    definitions.find((definition) => {
+      const fact = current.inputFacts.get(definition.key);
+      return fact !== undefined && exactInputFactValue(fact) === undefined;
+    });
   const inputDefinitions = new Map(
     args.state.ocInputDefinitions.map((definition) => [definition.key, definition]),
   );
@@ -374,6 +383,7 @@ export function executePreparationOc(args: {
     let sourceState = current;
     const conditionReads: ConditionReadAudit[] = [];
     const physicalInputs: PhysicalInputCommit[] = [];
+    const modifierValueReads: ModifierValueRead[] = [];
     const sourceExecution: PreparationSourceDraft = {
       actionId: args.actionId,
       source: initialSource,
@@ -394,6 +404,7 @@ export function executePreparationOc(args: {
         activation: { kind: 'unread' },
         conditionReads,
         physicalInputs: [],
+        modifierValueReads: [],
       },
       operations: source.effect.execution.map((operation, operationIndex) => ({
         operation,
@@ -480,7 +491,7 @@ export function executePreparationOc(args: {
       for (const input of providedSourceConditionInputs(
         program,
         facts,
-        args.context.canonicalInputValues ?? {},
+        inputFactValues(current.inputFacts),
       ))
         inputDefinitions.set(input.key, input);
       if (args.context.planningOnly)
@@ -632,9 +643,189 @@ export function executePreparationOc(args: {
     });
     const firstStep = steps.length;
     let ocIndex = 0;
+    const structuralOperations = source.effect.execution.filter(
+      (operation) =>
+        operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant',
+    );
+    const firstStructuralIndex = source.effect.execution.findIndex(
+      (operation) =>
+        operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant',
+    );
     for (const [operationIndex, operation] of source.effect.execution.entries()) {
       const operationFirstStep = steps.length;
       origins.push({ index: operationFirstStep, source, operationIndex });
+      if (operation.kind === 'damageModifier') {
+        steps.push(() => {
+          const compiled = compileEffectCached(
+            source,
+            0,
+            args.servant.actorFormGraph.forms,
+          ).operations.filter(
+            (candidate) =>
+              candidate.kind === 'addModifier' && operationSourceFor(candidate) === operation,
+          );
+          if (compiled.length > 1) throw new TypeError('duplicate_preparation_modifier_operation');
+          const candidate = compiled[0];
+          if (candidate?.kind === 'addModifier' && candidate.valueExpression) {
+            const result = resolveModifierValue(candidate, {
+              ...current,
+              actorFormId: current.currentFormId,
+              conditionReadClock: {
+                phase: 'operation',
+                actorFormId: current.currentFormId,
+                actor: program.conditionActor === 'source' ? source.sourceInstanceId : 'attacker',
+                actionId: args.actionId,
+                operationId: candidate.operationId,
+                sourceInstanceId: source.sourceInstanceId,
+                occurrenceId: source.effect.occurrenceId,
+                valueSetIndex: source.valueSetIndex,
+                valueIndex: source.valueIndex,
+              },
+              quantities: {
+                ...current.quantities,
+                attackerHpPermille: hpPermille(current.hp?.actors.attacker),
+              },
+            });
+            modifierValueReads.push({ operationIndex, result });
+          }
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
+      if (
+        operation.kind === 'transformActorForm' ||
+        operation.kind === 'selectNoblePhantasmVariant'
+      ) {
+        steps.push(() => {
+          if (!sourceApplies || operationIndex !== firstStructuralIndex)
+            return { kind: 'skip', outcome: 'notApplicable' };
+          if (activation.get(source.effect)?.conditionOutcome !== true)
+            return { kind: 'skip', outcome: 'notApplicable' };
+          const proof: ConditionFactProof = {
+            ...sourceProof(),
+            clock: {
+              ...sourceProof().clock,
+              phase: 'operation',
+              operationId: JSON.stringify([
+                args.actionId,
+                source.sourceInstanceId,
+                source.effect.occurrenceId,
+                operationIndex,
+              ]),
+            },
+          };
+          const structural = resolvePreparationStructuralOutcome(
+            args.servant,
+            current,
+            [{ ...source.effect, execution: structuralOperations }],
+            source.origin,
+            proof,
+          );
+          if (typeof structural === 'string')
+            return { kind: 'reject', status: 'invalid', reason: structural };
+          current = bindPreparationWriteProofs(
+            current,
+            {
+              ...current,
+              currentFormId: structural.currentFormId,
+              selectedNoblePhantasmVariant: structural.selectedVariant,
+              traitFactLayers: structural.traitFactLayers,
+              conditionFactProofs: structural.conditionFactProofs,
+              noblePhantasmVariant: structural.noblePhantasmVariant,
+              card: structural.card,
+              initialTraitSuppressions: structural.initialTraitSuppressions,
+            },
+            proof,
+          );
+          current = bindPreparationWriteProofs(
+            current,
+            bindBuffCountSources(current, buffInputs),
+            proof,
+          );
+          const beforeReconciliation = current;
+          current = bindPreparationWriteProofs(
+            current,
+            reconcilePreparationBattlePoints(args.servant, current, args.context),
+            proof,
+          );
+          battlePointCapture?.push({
+            kind: 'reconcile',
+            owner: 'operation',
+            actionId: args.actionId,
+            source,
+            before: beforeReconciliation,
+            after: current,
+            domains: args.context.battlePointDomains,
+          });
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
+      if (operation.kind === 'contextMutation') {
+        const single = { ...source.effect, execution: [operation] };
+        steps.push(() => {
+          if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
+          const proof: ConditionFactProof = {
+            ...sourceProof(),
+            clock: {
+              ...sourceProof().clock,
+              phase: 'operation',
+              operationId: JSON.stringify([
+                args.actionId,
+                source.sourceInstanceId,
+                source.effect.occurrenceId,
+                operationIndex,
+              ]),
+            },
+          };
+          const writes = uncertainPreparationWrites(single, source.origin, source.sourceInstanceId);
+          if (activation.get(source.effect)?.conditionOutcome !== true) {
+            current = bindPreparationWriteProofs(
+              current,
+              {
+                ...current,
+                uncertainContextWrites: [...current.uncertainContextWrites, ...writes],
+              },
+              proof,
+            );
+            return { kind: 'skip', outcome: 'notApplicable' };
+          }
+          const before = current;
+          const applied = applyPreparationTraitOperation(current, operation, source.origin, proof);
+          current = bindPreparationWriteProofs(
+            before,
+            {
+              ...applied,
+              uncertainContextWrites: [
+                ...closeUncertainPreparationWrites(
+                  applied.uncertainContextWrites,
+                  single,
+                  source.origin,
+                ),
+                ...writes.filter((write) => write.actor !== undefined),
+              ],
+            },
+            proof,
+          );
+          const beforeReconciliation = current;
+          current = bindPreparationWriteProofs(
+            current,
+            reconcilePreparationBattlePoints(args.servant, current, args.context),
+            proof,
+          );
+          battlePointCapture?.push({
+            kind: 'reconcile',
+            owner: 'operation',
+            actionId: args.actionId,
+            source,
+            before: beforeReconciliation,
+            after: current,
+            domains: args.context.battlePointDomains,
+          });
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
       if (operation.kind === 'resourceMutation' && operation.resource === 'criticalStars') {
         steps.push(() => {
           if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
@@ -739,13 +930,23 @@ export function executePreparationOc(args: {
               reason: 'populationFunctionOpaqueInput',
             };
           const definitions = sources.flatMap((source) => source.effect.inputDefinitions);
+          const unresolved = unresolvedDeclaredInput(definitions);
+          if (unresolved) {
+            requiredInput = unresolved;
+            occurrenceId = source.effect.occurrenceId;
+            return {
+              kind: 'reject',
+              status: 'inputRequired',
+              reason: 'preparationPopulationInput',
+            };
+          }
           const values = {
             ...Object.fromEntries(
               definitions
                 .filter((input) => input.defaultValue !== null)
                 .map((input) => [input.key, input.defaultValue!]),
             ),
-            ...args.context.canonicalInputValues,
+            ...inputFactValues(current.inputFacts),
           };
           const issue = populationInputIssue(definitions, values);
           if (issue) {
@@ -811,7 +1012,20 @@ export function executePreparationOc(args: {
           ) {
             const proof = sourceProof();
             let layers = current.traitFactLayers;
-            for (const trait of operation.traits) layers = addTraitFact(layers, 'targetState', trait, { ...proof, clock: { ...proof.clock, phase: 'operation', operationId: JSON.stringify([args.actionId, source.sourceInstanceId, source.effect.occurrenceId, operationIndex]) } });
+            for (const trait of operation.traits)
+              layers = addTraitFact(layers, 'targetState', trait, {
+                ...proof,
+                clock: {
+                  ...proof.clock,
+                  phase: 'operation',
+                  operationId: JSON.stringify([
+                    args.actionId,
+                    source.sourceInstanceId,
+                    source.effect.occurrenceId,
+                    operationIndex,
+                  ]),
+                },
+              });
             current = { ...current, traitFactLayers: layers };
           }
           return { kind: 'skip', outcome: 'notApplicable' };
@@ -1045,11 +1259,16 @@ export function executePreparationOc(args: {
             ? ocState.receipts.find((receipt) => receipt.actionId === args.actionId)
             : null;
           const hpBefore = current.hp;
+          const unresolved = unresolvedDeclaredInput(source.effect.inputDefinitions);
+          if (unresolved) {
+            requiredInput = unresolved;
+            return { kind: 'reject', status: 'inputRequired', reason: 'preparationHpInput' };
+          }
           const hpArguments: Parameters<typeof executeHpOperation>[0] = {
             state: current.hp,
             operation,
             source,
-            values: args.context.canonicalInputValues ?? {},
+            values: inputFactValues(current.inputFacts),
             actionId: args.actionId,
             valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
             ...(hpAction
@@ -1451,6 +1670,15 @@ export function executePreparationOc(args: {
               source.effect.inputDefinitions,
               inputFactValues(facts.inputFacts),
             );
+            const unresolved = unresolvedDeclaredInput(source.effect.inputDefinitions);
+            if (unresolved) {
+              requiredInput = unresolved;
+              return {
+                kind: 'reject',
+                status: 'inputRequired',
+                reason: 'preparationPopulationInput',
+              };
+            }
             if (issue) {
               requiredInput = issue;
               return {
@@ -1481,10 +1709,25 @@ export function executePreparationOc(args: {
                 status: 'unsupported',
                 reason: 'unresolvedTransferDonorWrite',
               };
+            const unresolved = unresolvedDeclaredInput(
+              source.effect.inputDefinitions.filter(
+                (definition) =>
+                  operation.amount.kind === 'npTransfer' &&
+                  operation.amount.inputKeys.includes(definition.key),
+              ),
+            );
+            if (unresolved) {
+              requiredInput = unresolved;
+              return {
+                kind: 'reject',
+                status: 'inputRequired',
+                reason: 'preparationTransferInput',
+              };
+            }
             const transfer = applyNpTransfer({
               amount: operation.amount,
               source,
-              values: args.context.canonicalInputValues ?? {},
+              values: inputFactValues(current.inputFacts),
               prior: current.npTransfers ?? [],
               state: current.npResource,
               semantics: args.context.resourceSemantics,
@@ -1684,96 +1927,6 @@ export function executePreparationOc(args: {
           );
         return { kind: 'skip', outcome: 'notApplicable' };
       }
-      const structuralOperations = source.effect.execution.filter(
-        (operation) =>
-          operation.kind === 'contextMutation' ||
-          operation.kind === 'transformActorForm' ||
-          operation.kind === 'selectNoblePhantasmVariant',
-      );
-      if (structuralOperations.length === 0) return { kind: 'skip', outcome: 'notApplicable' };
-      if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
-      if (activation.get(source.effect)?.conditionOutcome !== true) {
-        current = bindPreparationWriteProofs(
-          current,
-          {
-            ...current,
-            uncertainContextWrites: [
-              ...current.uncertainContextWrites,
-              ...uncertainPreparationWrites(source.effect, source.origin, source.sourceInstanceId),
-            ],
-          },
-          sourceProof(),
-        );
-        return { kind: 'skip', outcome: 'notApplicable' };
-      }
-      const externalWrites = uncertainPreparationWrites(
-        source.effect,
-        source.origin,
-        source.sourceInstanceId,
-      ).filter((write) => write.actor !== undefined);
-      if (externalWrites.length)
-        current = bindPreparationWriteProofs(
-          current,
-          {
-            ...current,
-            uncertainContextWrites: [...current.uncertainContextWrites, ...externalWrites],
-          },
-          sourceProof(),
-        );
-      const structural = resolvePreparationStructuralOutcome(
-        args.servant,
-        current,
-        [
-          {
-            ...source.effect,
-            execution: structuralOperations,
-          },
-        ],
-        source.origin,
-        sourceProof(),
-      );
-      if (typeof structural === 'string')
-        return { kind: 'reject', status: 'invalid', reason: structural };
-      current = bindPreparationWriteProofs(
-        current,
-        {
-          ...current,
-          uncertainContextWrites: closeUncertainPreparationWrites(
-            current.uncertainContextWrites,
-            source.effect,
-            source.origin,
-          ),
-          currentFormId: structural.currentFormId,
-          selectedNoblePhantasmVariant: structural.selectedVariant,
-          traitFactLayers: structural.traitFactLayers,
-          conditionFactProofs: structural.conditionFactProofs,
-          noblePhantasmVariant: structural.noblePhantasmVariant,
-          card: structural.card,
-          initialTraitSuppressions: structural.initialTraitSuppressions,
-        },
-        sourceProof(),
-      );
-      current = bindPreparationWriteProofs(
-        current,
-        bindBuffCountSources(current, buffInputs),
-        sourceProof(),
-      );
-      const beforeReconciliation = current;
-      current = bindPreparationWriteProofs(
-        current,
-        reconcilePreparationBattlePoints(args.servant, current, args.context),
-        sourceProof(),
-      );
-      if (battlePointCapture)
-        battlePointCapture.push({
-          kind: 'reconcile',
-          owner: 'source',
-          actionId: args.actionId,
-          source,
-          before: beforeReconciliation,
-          after: current,
-          domains: args.context.battlePointDomains,
-        });
       return { kind: 'skip', outcome: 'notApplicable' };
     };
     const completeSource: (typeof steps)[number] = (_state, outcomes) => {
@@ -1788,6 +1941,7 @@ export function executePreparationOc(args: {
           ...sourceExecution.binding,
           activation: requiredPreparationConditionRead(source.effect, activation),
           physicalInputs: commit ? [...physicalInputs] : [],
+          modifierValueReads: commit ? [...modifierValueReads] : [],
         };
         current = {
           ...current,

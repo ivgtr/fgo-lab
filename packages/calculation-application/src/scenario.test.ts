@@ -985,7 +985,7 @@ describe('scenario calculation facade', () => {
       calculateScenario(decide(offScenario, true), rarityMaster, version).input
         .npSpecialMultipliers,
     ).toEqual(on.input.npSpecialMultipliers);
-    for (const rarity of [1, 2, 3, 6]) {
+    for (const rarity of [1, 2, 3, 5]) {
       const withFact = {
         ...onScenario,
         worldFactAssertions: [

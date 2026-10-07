@@ -4,10 +4,14 @@ import type { PopulationMutation } from './populationCounts';
 import type { EffectExecutionOperation } from '@fgo-lab/master-data';
 import type { PopulationEvent } from './populationCounts';
 export type PopulationFunction = Extract<EffectExecutionOperation, { kind: 'populationFunction' }>;
+type PopulationInstance = {
+  traits: readonly string[];
+  owner: NonNullable<PreNoblePhantasmState['buffInstances'][number]['owner']>;
+};
 export interface PopulationTargetState {
   buffs: Readonly<Record<string, readonly number[]>>;
   traits: readonly Readonly<Record<string, number>>[];
-  instances: readonly (readonly (readonly string[])[])[];
+  instances: readonly (readonly PopulationInstance[])[];
   actionId: string;
   position: number;
   succeeded: readonly boolean[];
@@ -19,6 +23,7 @@ export function applyPopulationFunction(
   events: readonly PopulationEvent[],
   values: Readonly<Record<string, number>>,
   actionId: string,
+  source: Pick<SourceEffect, 'origin' | 'sourceInstanceId'>,
 ): { state: PopulationTargetState; granted: readonly number[] } {
   const prior = [...events].reverse().find((event) => event.targetState)?.targetState;
   const count = 1 + (values['population:enemies:additional'] ?? 0);
@@ -49,7 +54,17 @@ export function applyPopulationFunction(
         (traits[index]![action.condition.trait] ?? 0) > 0 ||
         (values[action.condition.inputKeys[index]!] ?? 0) > 0;
       if (!previous || !condition) continue;
-      instances[index]!.push(action.traits);
+      instances[index]!.push({
+        traits: action.traits,
+        owner: {
+          kind: 'populationFunction',
+          actionId,
+          actorIndex: index,
+          grantIndex: instances[index]!.length,
+          source: { origin: source.origin, sourceInstanceId: source.sourceInstanceId },
+          position: operation.position,
+        },
+      });
       succeeded[index] = true;
       granted[index] = 1;
       for (const trait of action.traits) traits[index]![trait] = (traits[index]![trait] ?? 0) + 1;
@@ -61,11 +76,37 @@ export function applyPopulationFunction(
   };
 }
 
-function publishTargetInstances(current: PreNoblePhantasmState, next: PopulationTargetState): PreNoblePhantasmState {
-  const prefix = 'populationFunction:';
-  const instances = (next.instances[0] ?? []).map((traits, index) => ({ identity: prefix + index, actor: 'target', traits, lifetime: 'active' as const, count: 1 }));
-  const removed = current.buffInstances.filter(instance => instance.identity.startsWith(prefix) && !instances.some(next => next.identity === instance.identity)).map(instance => ({ ...instance, count: 0 }));
-  return { ...current, buffInstances: [...current.buffInstances.filter(instance => !instance.identity.startsWith(prefix)), ...instances, ...removed] };
+function publishTargetInstances(
+  current: PreNoblePhantasmState,
+  next: PopulationTargetState,
+): PreNoblePhantasmState {
+  const instances = (next.instances[0] ?? []).map(({ traits, owner }) => ({
+    identity: JSON.stringify([
+      'populationFunction',
+      owner.actionId,
+      owner.actorIndex,
+      owner.grantIndex,
+    ]),
+    owner,
+    actor: 'target',
+    traits,
+    lifetime: 'active' as const,
+    count: 1,
+  }));
+  const owned = current.buffInstances.filter(
+    (instance) => instance.owner?.kind === 'populationFunction',
+  );
+  const removed = owned
+    .filter((instance) => !instances.some((next) => next.identity === instance.identity))
+    .map((instance) => ({ ...instance, count: 0 }));
+  return {
+    ...current,
+    buffInstances: [
+      ...current.buffInstances.filter((instance) => instance.owner?.kind !== 'populationFunction'),
+      ...instances,
+      ...removed,
+    ],
+  };
 }
 
 export function applyPopulationFunctionToState(
@@ -75,7 +116,13 @@ export function applyPopulationFunctionToState(
   actionId: string,
   source: Pick<SourceEffect, 'origin' | 'sourceInstanceId'>,
 ): PreNoblePhantasmState {
-  const applied = applyPopulationFunction(operation, current.populationEvents, values, actionId);
+  const applied = applyPopulationFunction(
+    operation,
+    current.populationEvents,
+    values,
+    actionId,
+    source,
+  );
   return {
     ...publishTargetInstances(current, applied.state),
     uncertainContextWrites:
@@ -118,11 +165,12 @@ export function removePopulationFunctionState(
     .find((event) => event.targetState)?.targetState;
   if (!prior) return current;
   const instances = prior.instances.map((buffs) =>
-    buffs.filter((traits) => !traits.some((trait) => operation.traits.includes(trait))),
+    buffs.filter((instance) => !instance.traits.some((trait) => operation.traits.includes(trait))),
   );
   const traits = instances.map((buffs) => {
     const counts: Record<string, number> = {};
-    for (const buff of buffs) for (const trait of buff) counts[trait] = (counts[trait] ?? 0) + 1;
+    for (const buff of buffs)
+      for (const trait of buff.traits) counts[trait] = (counts[trait] ?? 0) + 1;
     return counts;
   });
   const next = { ...prior, instances, traits };

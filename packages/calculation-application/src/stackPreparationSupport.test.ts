@@ -1,5 +1,9 @@
 import { liveTraitQuantityRead } from '@fgo-lab/battle-execution';
-import { projectBattleTraitPresence, readTraitPresence, readTraitQuantity } from '@fgo-lab/battle-execution';
+import {
+  projectBattleTraitPresence,
+  readTraitPresence,
+  readTraitQuantity,
+} from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
 import {
   masterSnapshotSchema,
@@ -126,6 +130,53 @@ const versions = {
 };
 
 describe('live preparation stack reads', () => {
+  it('uses the native modifier value before a later stack write in calculator execution', () => {
+    const { data, scenario, input } = fixture('attackerState', 'addTrait');
+    const actor = data.servants[0]!;
+    const change = actor.skills[0]!.effects[0]!;
+    change.inputDefinitions = [input];
+    const modifier: MasterEffect['execution'][number] = {
+      kind: 'damageModifier',
+      route: {
+        target: 'sourceSelf',
+        contributionScope: 'personal',
+        eligibility: { kind: 'anyRecipient', onMissing: 'ignore' },
+      },
+      semanticSupport: 'supported',
+      modifier: 'attackBuff',
+      sign: 1,
+      card: null,
+      values: [Array.from({ length: 10 }, () => 100), [], [], [], []],
+      valueExpressions: [
+        Array.from({ length: 10 }, () => ({
+          kind: 'inputLinear' as const,
+          inputKey: input.key,
+          basePermille: 100,
+          perUnitPermille: 100,
+          maximumUnits: 4,
+          maximumValuePermille: null,
+        })),
+        [],
+        [],
+        [],
+        [],
+      ],
+    };
+    const mutation = change.execution[0]!;
+    const value = () => {
+      const execution = calculateScenario(scenario, data, versions);
+      expect(execution.result.status).toBe('calculated');
+      return execution.effectiveContributions.contributions.find(
+        (contribution) =>
+          contribution.modifier === 'attackBuff' &&
+          contribution.source.effectOccurrenceId === change.occurrenceId,
+      )?.resolvedValue;
+    };
+    change.execution = [modifier, mutation];
+    expect(value()).toBe(100);
+    change.execution = [mutation, modifier];
+    expect(value()).toBe(200);
+  });
   it('counts buff instances separately from actor traits and commits count → NP → OC', () => {
     const { data } = fixture('attackerState', 'addTrait');
     const actor = data.servants[0]!;
@@ -255,9 +306,12 @@ describe('live preparation stack reads', () => {
       expect(result.state.buffInstances.reduce((sum, instance) => sum + instance.count, 0)).toBe(
         initialCount + 2,
       );
-      expect(liveTraitQuantityRead(result.state, { scope: 'attackerState', trait: definition.quantitySource.trait }).value).toBe(
-        initialCount + 2,
-      );
+      expect(
+        liveTraitQuantityRead(result.state, {
+          scope: 'attackerState',
+          trait: definition.quantitySource.trait,
+        }).value,
+      ).toBe(initialCount + 2);
       expect(result.state.npResource.gauge).toBe(20_000);
       expect(initial.state.buffInstances.reduce((sum, instance) => sum + instance.count, 0)).toBe(
         initialCount,
@@ -349,10 +403,15 @@ describe('live preparation stack reads', () => {
       { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
       context,
     );
-    expect(removed).toMatchObject({
-      status: 'applied',
-      state: { buffInstances: [], npResource: { gauge: 15_000 } },
-    });
+    expect(removed).toMatchObject({ status: 'applied', state: { npResource: { gauge: 15_000 } } });
+    if (removed.status !== 'applied') throw new Error(removed.code);
+    expect(removed.state.buffInstances.filter((instance) => instance.count > 0)).toEqual([]);
+    expect(
+      liveTraitQuantityRead(removed.state, { scope: 'attackerState', trait: 'counted' }).value,
+    ).toBe(0);
+    expect(readTraitQuantity(removed.state.traitFactLayers, 'attackerState', 'counted').value).toBe(
+      2,
+    );
     const scenario = createDefaultResolvedScenario(data, undefined, actor);
     scenario.canonicalInputValues[definition.key] = { kind: 'integer', value: 2 };
     scenario.preNoblePhantasmPlan = [
@@ -569,7 +628,16 @@ describe('live preparation stack reads', () => {
       context,
     );
     if (used.status !== 'applied') throw new Error(used.code);
-    expect(liveTraitQuantityRead(used.state, { scope: 'attackerState', trait: 'fixture-stack' }).value).toBe(1);
+    expect(
+      liveTraitQuantityRead(used.state, { scope: 'attackerState', trait: 'fixture-stack' }).value,
+    ).toBe(1);
+    const operationClock = readTraitPresence(
+      used.state.traitFactLayers,
+      'attackerState',
+      'fixture-stack',
+    ).support[0]?.clock;
+    expect(operationClock?.phase).toBe('operation');
+    expect(typeof operationClock?.operationId).toBe('string');
     expect(used.state.npResource.gauge).toBe(20_000);
     const attack = reducePreNoblePhantasmAction(
       actor,
@@ -626,7 +694,9 @@ describe('live preparation stack reads', () => {
           if (attack.status !== 'applied') throw new Error('attack');
           expect(attack.state.baseOvercharge).toBe(mutation === 'addTrait' ? 2 : 1);
           expect(initial.state.npResource.gauge).toBe(15_000);
-          expect(liveTraitQuantityRead(initial.state, { scope, trait: 'fixture-stack' }).value).toBe(count);
+          expect(
+            liveTraitQuantityRead(initial.state, { scope, trait: 'fixture-stack' }).value,
+          ).toBe(count);
         }
       }
     },
@@ -683,7 +753,10 @@ describe('live preparation stack reads', () => {
     expect(rejected).toMatchObject({ status: 'rejected', code: 'invalidResourceMutation' });
     expect(rejected.state).toBe(changed.state);
     expect(rejected.state.npResource.gauge).toBe(15_000);
-    expect(liveTraitQuantityRead(rejected.state, { scope: 'attackerState', trait: 'fixture-stack' }).value).toBe(1);
+    expect(
+      liveTraitQuantityRead(rejected.state, { scope: 'attackerState', trait: 'fixture-stack' })
+        .value,
+    ).toBe(1);
     actor.skills[1]!.effects.pop();
     const retried = reducePreNoblePhantasmAction(actor, rejected.state, command, context);
     expect(retried).toMatchObject({ status: 'applied', state: { npResource: { gauge: 20_000 } } });
@@ -952,6 +1025,17 @@ describe('population count through shared preparation transaction', () => {
         'population:enemies:additional': 1,
         [inputKey]: 0,
       },
+      worldFacts: [
+        {
+          decisionKey: 'attacker-state-absence',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'attackerState' as const,
+            trait: 'fixture-stack',
+            present: false,
+          },
+        },
+      ],
     };
     const initial = createPreNoblePhantasmState(
       actor,
@@ -973,8 +1057,14 @@ describe('population count through shared preparation transaction', () => {
     expect(grant.state.populationEvents).toHaveLength(1);
     const presence = readTraitPresence(grant.state.traitFactLayers, 'targetState', 'fixture-stack');
     expect(presence.value).toBe(true);
-    expect(presence.support).toEqual([expect.objectContaining({ kind: 'guaranteedWrite', clock: expect.objectContaining({ phase: 'operation', operationId: expect.any(String), occurrenceId: actor.skills[0]!.effects[0]!.occurrenceId }) })]);
-    expect(readTraitQuantity(grant.state.traitFactLayers, 'targetState', 'fixture-stack').value).toBeNull();
+    expect(presence.support).toHaveLength(1);
+    expect(presence.support[0]?.kind).toBe('guaranteedWrite');
+    expect(presence.support[0]?.clock.phase).toBe('operation');
+    expect(typeof presence.support[0]?.clock.operationId).toBe('string');
+    expect(presence.support[0]?.clock.occurrenceId).toBe(actor.skills[0]!.effects[0]!.occurrenceId);
+    expect(
+      readTraitQuantity(grant.state.traitFactLayers, 'targetState', 'fixture-stack').value,
+    ).toBeNull();
     expect(grant.committedSources).toHaveLength(1);
     const gain = reducePreNoblePhantasmAction(
       actor,
@@ -997,19 +1087,70 @@ describe('population count through shared preparation transaction', () => {
   });
   it('establishes exact one only when the initial target absence is declared', () => {
     const fixture = populationFixture();
-    const context = { ...fixture.context, worldFacts: [{ decisionKey: 'absence-control', fact: { kind: 'trait' as const, scope: 'targetState' as const, trait: 'fixture-stack', present: false } }] };
-    const initial = createPreNoblePhantasmState(fixture.actor, fixture.actor.actorFormGraph.defaultInitialFormId, context);
+    const context = {
+      ...fixture.context,
+      worldFacts: [
+        {
+          decisionKey: 'absence-control',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'targetState' as const,
+            trait: 'fixture-stack',
+            present: false,
+          },
+        },
+      ],
+    };
+    const initial = createPreNoblePhantasmState(
+      fixture.actor,
+      fixture.actor.actorFormGraph.defaultInitialFormId,
+      context,
+    );
     if (initial.status !== 'applied') throw new Error(initial.code);
-    const grant = reducePreNoblePhantasmAction(fixture.actor, initial.state, { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null }, context);
+    const grant = reducePreNoblePhantasmAction(
+      fixture.actor,
+      initial.state,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      context,
+    );
     if (grant.status !== 'applied') throw new Error(grant.code);
     const quantity = readTraitQuantity(grant.state.traitFactLayers, 'targetState', 'fixture-stack');
     expect(quantity.value).toBe(1);
-    expect(quantity.support.map(proof => proof.kind)).toEqual(['externalAssumption', 'guaranteedWrite']);
+    expect(quantity.support.map((proof) => proof.kind)).toEqual([
+      'externalAssumption',
+      'guaranteedWrite',
+    ]);
     expect(quantity.support.at(-1)?.clock.phase).toBe('operation');
-    expect(readTraitQuantity(initial.state.traitFactLayers, 'targetState', 'fixture-stack').value).toBe(0);
+    expect(
+      readTraitQuantity(initial.state.traitFactLayers, 'targetState', 'fixture-stack').value,
+    ).toBe(0);
   });
   it('returns a repairable inconsistent population and preserves the prior command on retry', () => {
     const { actor, context, initial, inputKey } = populationFixture();
+    const readable = {
+      ...context,
+      worldFacts: [
+        ...context.worldFacts,
+        {
+          decisionKey: 'target-absence',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'target' as const,
+            trait: 'fixture-stack',
+            present: false,
+          },
+        },
+        {
+          decisionKey: 'target-state-absence',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'targetState' as const,
+            trait: 'fixture-stack',
+            present: false,
+          },
+        },
+      ],
+    };
     const command = {
       kind: 'useSkillSlot' as const,
       slot: 2 as const,
@@ -1017,8 +1158,8 @@ describe('population count through shared preparation transaction', () => {
       choice: null,
     };
     const bad = {
-      ...context,
-      canonicalInputValues: { ...context.canonicalInputValues, [inputKey]: 3 },
+      ...readable,
+      canonicalInputValues: { ...readable.canonicalInputValues, [inputKey]: 3 },
     };
     const failed = reducePreNoblePhantasmAction(actor, initial, command, bad);
     expect(failed).toMatchObject({
@@ -1028,7 +1169,7 @@ describe('population count through shared preparation transaction', () => {
     });
     if (failed.status !== 'rejected') throw new Error('rejection');
     expect(failed.state).toBe(initial);
-    const retry = reducePreNoblePhantasmAction(actor, failed.state, command, context);
+    const retry = reducePreNoblePhantasmAction(actor, failed.state, command, readable);
     expect(retry.status).toBe('applied');
   });
   it('retains an opaque cohort writer when a local condition is false', () => {
@@ -1071,6 +1212,30 @@ describe('population count through shared preparation transaction', () => {
   });
   it('rolls back a later resource failure including the count receipt and retries the same skill', () => {
     const { actor, context, initial } = populationFixture();
+    const readable = {
+      ...context,
+      worldFacts: [
+        ...context.worldFacts,
+        {
+          decisionKey: 'target-absence',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'target' as const,
+            trait: 'fixture-stack',
+            present: false,
+          },
+        },
+        {
+          decisionKey: 'target-state-absence',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'targetState' as const,
+            trait: 'fixture-stack',
+            present: false,
+          },
+        },
+      ],
+    };
     const effect = actor.skills[1]!.effects[0]!;
     effect.execution.push({
       kind: 'resourceMutation',
@@ -1087,17 +1252,17 @@ describe('population count through shared preparation transaction', () => {
       skillLevel: 1,
       choice: null,
     };
-    const failed = reducePreNoblePhantasmAction(actor, initial, command, context);
+    const failed = reducePreNoblePhantasmAction(actor, initial, command, readable);
     expect(failed).toMatchObject({ status: 'rejected', code: 'unsupportedResourceMutation' });
     if (failed.status !== 'rejected') throw new Error('rejection');
     expect(failed.state).toBe(initial);
     effect.execution.pop();
-    expect(reducePreNoblePhantasmAction(actor, failed.state, command, context).status).toBe(
+    expect(reducePreNoblePhantasmAction(actor, failed.state, command, readable).status).toBe(
       'applied',
     );
   });
   it('executes per-enemy function outcomes inside NP transaction, repairs inputs and rolls back a later failure', () => {
-    const { actor, context, initial } = populationFixture();
+    const { actor, context } = populationFixture();
     const template = structuredClone(actor.skills[1]!.effects[0]!);
     const keys = ['target:0', 'target:1', 'target:2'] as [string, string, string];
     const definitions = [
@@ -1110,6 +1275,25 @@ describe('population count through shared preparation transaction', () => {
         description: 'enemies',
         minimum: 0,
         maximum: 2,
+        step: 1,
+        defaultValue: 0,
+        defaultReason: 'none',
+      },
+      {
+        kind: 'populationCount' as const,
+        selector: {
+          scope: 'enemies' as const,
+          counting: 'individualities' as const,
+          basis: 'buffInstances' as const,
+          traits: ['counter'],
+          includePassive: false,
+        },
+        key: 'counter',
+        owner: 'field' as const,
+        label: 'initial counter buffs',
+        description: 'initial counter buffs',
+        minimum: 0,
+        maximum: 3,
         step: 1,
         defaultValue: 0,
         defaultReason: 'none',
@@ -1181,15 +1365,25 @@ describe('population count through shared preparation transaction', () => {
       ...context,
       canonicalInputValues: {
         'population:enemies:additional': 2,
+        counter: 0,
         'target:0': 0,
         'target:1': 1,
         'target:2': 2,
       },
     };
+    const current = createPreNoblePhantasmState(
+      actor,
+      actor.actorFormGraph.defaultInitialFormId,
+      good,
+    );
+    if (current.status !== 'applied') throw new Error(current.code);
+    const initial = current.state;
     const applied = reducePreNoblePhantasmAction(actor, initial, command, good);
     if (applied.status !== 'applied') throw new Error(applied.code);
     expect(applied.state.npResource.gauge).toBe(20000);
-    expect((projectBattleTraitPresence(applied.state, 'targetState').get('counter') === true)).toBe(false);
+    expect(projectBattleTraitPresence(applied.state, 'targetState').get('counter') === true).toBe(
+      false,
+    );
     expect(applied.state.populationEvents[1]!.targetState?.succeeded).toEqual([false, true, true]);
     const bad = {
       ...good,

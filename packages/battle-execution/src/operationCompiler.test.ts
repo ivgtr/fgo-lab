@@ -559,6 +559,7 @@ it('binds each execution without mutating an unbound operation or an earlier cac
     activation: { kind: 'unread' },
     conditionReads: [],
     physicalInputs: [],
+    modifierValueReads: [],
   });
   const firstBinding = binding('first');
   const secondBinding = binding('second');

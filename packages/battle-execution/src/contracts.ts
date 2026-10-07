@@ -27,7 +27,11 @@ import type {
   TargetPredicate,
 } from '@fgo-lab/schema';
 import type { EffectiveContributionSet } from './executionTypes';
-import type { SourceExecutionBinding, PhysicalInputCommit } from './executionBinding';
+import type {
+  SourceExecutionBinding,
+  PhysicalInputCommit,
+  ModifierValueRead,
+} from './executionBinding';
 import type { InputFacts } from './inputFacts';
 
 export type ActorScope = 'attacker' | 'target';
@@ -119,6 +123,7 @@ interface OperationBase {
   readonly runtimeBinding?: {
     readonly source: SourceExecutionBinding;
     readonly physicalInput?: PhysicalInputCommit;
+    readonly modifierValueRead?: ModifierValueRead;
   };
   operationId: string;
   order: number;

@@ -1,16 +1,18 @@
 import { analyzeActivationFactSet } from '@fgo-lab/schema';
 import { createConditionState } from './conditionState';
-import { assertExternalInitialTrait, commitTraitFact, addTraitFact, replaceIntrinsicTraitFacts } from './traitFactLayers';
+import {
+  assertExternalInitialTrait,
+  commitTraitFact,
+  addTraitFact,
+  replaceIntrinsicTraitFacts,
+} from './traitFactLayers';
 import type { ConditionFactProof } from './conditionRead';
 import { createInputFacts, writeInputFact } from './inputFacts';
 import { CRITICAL_STARS_INITIAL_INPUT } from './resourceSemantics';
 import { sourceMaximumHpInputKey, sourceHpInputKey } from './operationCompiler';
 import { seedHp } from './hpResource';
 import { npProgramEffects, effectExecutesInNpProgram } from './npProgramScope';
-import {
-  ConditionReadIdentityError,
-  type SourceActivationReceipt,
-} from './conditionRead';
+import { ConditionReadIdentityError, type SourceActivationReceipt } from './conditionRead';
 import { cloneConditionFactProofs } from './conditionRead';
 import {
   actorFormEquals,
@@ -111,13 +113,27 @@ export function resolvePreparationStructuralOutcome(
   const { currentFormId, selectedVariant } = identity;
   const operations = operationsOf(effects);
   let current = state;
-  for (const operation of operations) current = applyPreparationTraitOperation(current, operation, origin, proof);
+  for (const operation of operations)
+    current = applyPreparationTraitOperation(current, operation, origin, proof);
   const form = findActorForm(servant, currentFormId);
-  const variant = selectedVariant ? findNoblePhantasmVariant(servant, selectedVariant) ?? null : null;
-  const intrinsic: ConditionFactProof = { kind: 'canonicalIntrinsic', clock: { ...proof.clock, actorFormId: currentFormId } };
+  const variant = selectedVariant
+    ? (findNoblePhantasmVariant(servant, selectedVariant) ?? null)
+    : null;
+  const intrinsic: ConditionFactProof = {
+    kind: 'canonicalIntrinsic',
+    clock: { ...proof.clock, actorFormId: currentFormId },
+  };
   return {
-    currentFormId, selectedVariant,
-    traitFactLayers: actorFormEquals(state.currentFormId, currentFormId) ? current.traitFactLayers : replaceIntrinsicTraitFacts(current.traitFactLayers, 'attacker', [...(form?.traits ?? []), 'cardNP'], intrinsic),
+    currentFormId,
+    selectedVariant,
+    traitFactLayers: actorFormEquals(state.currentFormId, currentFormId)
+      ? current.traitFactLayers
+      : replaceIntrinsicTraitFacts(
+          current.traitFactLayers,
+          'attacker',
+          [...(form?.traits ?? []), 'cardNP'],
+          intrinsic,
+        ),
     conditionFactProofs: current.conditionFactProofs,
     noblePhantasmVariant: variant,
     card: variant?.kind === 'attack' ? variant.card : null,
@@ -126,19 +142,48 @@ export function resolvePreparationStructuralOutcome(
 }
 
 /** A canonical context writer changes its native fact and proof at the actual operation. */
-export function applyPreparationTraitOperation(state: PreNoblePhantasmState, operation: CanonicalOperation, origin: Origin, proof: ConditionFactProof): PreNoblePhantasmState {
+export function applyPreparationTraitOperation(
+  state: PreNoblePhantasmState,
+  operation: CanonicalOperation,
+  origin: Origin,
+  proof: ConditionFactProof,
+): PreNoblePhantasmState {
   if (!isRecipientTraitMutation(operation)) return state;
-  const actor = operation.scope === 'field' ? null : resolveTargetPolicy(origin, operation.route.target);
+  const actor =
+    operation.scope === 'field' ? null : resolveTargetPolicy(origin, operation.route.target);
   if (operation.scope !== 'field' && !actor) return state;
-  const scope = operation.scope === 'field' ? 'field' : actor === 'attacker' ? 'attackerState' : 'targetState';
+  const scope =
+    operation.scope === 'field' ? 'field' : actor === 'attacker' ? 'attackerState' : 'targetState';
   if (operation.mutation === 'suppressInitialTrait') {
     if (!actor) return state;
-    const suppressions = { ...state.initialTraitSuppressions, [actor]: new Set([...state.initialTraitSuppressions[actor], operation.trait]) };
+    const suppressions = {
+      ...state.initialTraitSuppressions,
+      [actor]: new Set([...state.initialTraitSuppressions[actor], operation.trait]),
+    };
     const proofs = cloneConditionFactProofs(state.conditionFactProofs);
     (proofs.suppressions[actor] as Map<string, ConditionFactProof>).set(operation.trait, proof);
-    return { ...state, initialTraitSuppressions: suppressions, conditionFactProofs: proofs, traitFactLayers: commitTraitFact(state.traitFactLayers, actor, operation.trait, false, 0, proof, [proof]) };
+    return {
+      ...state,
+      initialTraitSuppressions: suppressions,
+      conditionFactProofs: proofs,
+      traitFactLayers: commitTraitFact(
+        state.traitFactLayers,
+        actor,
+        operation.trait,
+        false,
+        0,
+        proof,
+        [proof],
+      ),
+    };
   }
-  return { ...state, traitFactLayers: operation.mutation === 'addTrait' ? addTraitFact(state.traitFactLayers, scope, operation.trait, proof) : commitTraitFact(state.traitFactLayers, scope, operation.trait, false, 0, proof, [proof]) };
+  return {
+    ...state,
+    traitFactLayers:
+      operation.mutation === 'addTrait'
+        ? addTraitFact(state.traitFactLayers, scope, operation.trait, proof)
+        : commitTraitFact(state.traitFactLayers, scope, operation.trait, false, 0, proof, [proof]),
+  };
 }
 
 export function requiredPreparationConditionRead(
@@ -230,17 +275,39 @@ export function createPreparationState(
   context: PreparationExecutionContext,
 ): PreparationTransitionResult {
   const form = findActorForm(servant, initialFormId);
-  const variant = form?.baseNoblePhantasmVariant ? findNoblePhantasmVariant(servant, form.baseNoblePhantasmVariant) ?? null : null;
+  const variant = form?.baseNoblePhantasmVariant
+    ? (findNoblePhantasmVariant(servant, form.baseNoblePhantasmVariant) ?? null)
+    : null;
   const initialActivation = analyzeActivationFactSet([]);
   if (initialActivation.status !== 'valid') throw new TypeError('invalid_empty_activation');
   const placeholder: PreNoblePhantasmState = {
     ...createConditionState(
-      { cardType: variant?.kind === 'attack' ? variant.card : null, attackerStateTraits: [], targetStateTraits: [], fieldTraits: [], target: { traits: [] }, attackerHpPermille: context.attackerHpPermille ?? null, targetRarity: null, battlePointPhase: context.battlePointPhase ?? null },
+      {
+        cardType: variant?.kind === 'attack' ? variant.card : null,
+        attackerStateTraits: [],
+        targetStateTraits: [],
+        fieldTraits: [],
+        target: { traits: [] },
+        attackerHpPermille: context.attackerHpPermille ?? null,
+        targetRarity: null,
+        battlePointPhase: context.battlePointPhase ?? null,
+      },
       variant,
-      form?.traits ?? [], context.canonicalInputValues ?? {}, context.targetPredicates ?? [], context.attackerPredicates ?? [],
-      initialActivation.factSet, initialFormId,
+      form?.traits ?? [],
+      context.canonicalInputValues ?? {},
+      context.targetPredicates ?? [],
+      context.attackerPredicates ?? [],
+      initialActivation.factSet,
+      initialFormId,
     ),
     sourceBindings: [],
+    externalBinding: {
+      inputs: { ...context.canonicalInputValues },
+      worldFacts: (context.worldFacts ?? []).map(({ decisionKey, fact }) => ({
+        decisionKey,
+        fact: { ...fact },
+      })),
+    },
     npQuantityWrites: [],
     battlePoints: emptyBattlePointState(),
     hp: {
@@ -301,10 +368,20 @@ export function createPreparationState(
   });
   for (const { fact } of context.worldFacts ?? []) {
     const external: ConditionFactProof = { kind: 'externalAssumption', clock: initialProof.clock };
-    if (fact.kind === 'trait') placeholder.traitFactLayers = assertExternalInitialTrait(placeholder.traitFactLayers, fact.scope, fact.trait, fact.present, external);
+    if (fact.kind === 'trait')
+      placeholder.traitFactLayers = assertExternalInitialTrait(
+        placeholder.traitFactLayers,
+        fact.scope,
+        fact.trait,
+        fact.present,
+        external,
+      );
     else if (fact.quantity !== 'attackerHpPermille') {
       placeholder.quantities[fact.quantity] = fact.value;
-      (placeholder.conditionFactProofs.quantities as Map<string, ConditionFactProof>).set(fact.quantity, external);
+      (placeholder.conditionFactProofs.quantities as Map<string, ConditionFactProof>).set(
+        fact.quantity,
+        external,
+      );
     }
   }
   const initialEffects = [
@@ -389,8 +466,18 @@ export function createPreparationState(
       const count = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
       const { scope, trait } = definition.quantitySource;
       placeholder.stackQuantitySources[definition.key] = definition.quantitySource;
-      placeholder.traitFactLayers = commitTraitFact(placeholder.traitFactLayers, scope, trait, count > 0, count, initialProof, [initialProof]);
-      placeholder.inputFacts = writeInputFact(placeholder.inputFacts, definition.key, count, [initialProof]);
+      placeholder.traitFactLayers = commitTraitFact(
+        placeholder.traitFactLayers,
+        scope,
+        trait,
+        count > 0,
+        count,
+        initialProof,
+        [initialProof],
+      );
+      placeholder.inputFacts = writeInputFact(placeholder.inputFacts, definition.key, count, [
+        initialProof,
+      ]);
     }
     const buffInputs = inputs.filter(isBuffCountInput);
     placeholder.buffInstances = seedBuffInstances(buffInputs, context.canonicalInputValues ?? {});
@@ -400,7 +487,6 @@ export function createPreparationState(
         instance.identity,
         initialProof,
       );
-
   } catch {
     return rejectPreparation(placeholder, 'invalidPreparationActivation');
   }

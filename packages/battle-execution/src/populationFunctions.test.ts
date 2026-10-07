@@ -27,7 +27,7 @@ function execute(
 ) {
   const events: PopulationEvent[] = [];
   for (const operation of steps) {
-    const result = applyPopulationFunction(operation, events, values, 'action');
+    const result = applyPopulationFunction(operation, events, values, 'action', source);
     events.push({
       operation: {
         kind: 'populationMutation',
@@ -91,7 +91,7 @@ describe('target-specific removal and marker results', () => {
     expect(events[1]!.affectedCount).toBe(0);
     expect(events[0]!.targetState!.succeeded).toEqual([true]);
     expect(
-      applyPopulationFunction(grant(1), [events[0]!], { a: 1 }, 'different-action').granted,
+      applyPopulationFunction(grant(1), [events[0]!], { a: 1 }, 'different-action', source).granted,
     ).toEqual([0]);
   });
 });

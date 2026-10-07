@@ -96,9 +96,24 @@ export interface ResolvedModifierValue {
 
 export function resolveModifierValue(
   operation: Extract<BattleOperation, { kind: 'addModifier' }>,
-  state: ExecutableBattleState,
+  state: Pick<
+    ExecutableBattleState,
+    | 'stackQuantitySources'
+    | 'traitFactLayers'
+    | 'conditionFactProofs'
+    | 'inputFacts'
+    | 'buffInstances'
+    | 'conditionReadClock'
+    | 'actorFormId'
+    | 'quantities'
+    | 'hp'
+  >,
   observeHpRead?: (read: { permille: number | null; value: number | null }) => void,
 ): ResolvedModifierValue {
+  const observed = operation.runtimeBinding?.modifierValueRead;
+  if (observed) return observed.result;
+  if (operation.runtimeBinding && operation.valueExpression)
+    throw new TypeError('missing_preparation_modifier_value_read');
   const expression = operation.valueExpression;
   if (!expression) return { value: operation.valuePermille, dependency: null };
   if (expression.kind === 'inputLinear' || expression.kind === 'stackLinear') {

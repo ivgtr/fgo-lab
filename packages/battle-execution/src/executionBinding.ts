@@ -4,12 +4,18 @@ import type { ConditionReadAudit } from './condition';
 import type { BattleOperation } from './contracts';
 import type { AppliedPreparationAction } from './preparationContracts';
 import type { InputFact } from './inputFacts';
+import type { ResolvedModifierValue } from './projection';
 
 export interface PhysicalInputCommit {
   readonly operationIndex: number;
   readonly inputKey: string;
   readonly before: InputFact;
   readonly after: InputFact;
+}
+
+export interface ModifierValueRead {
+  readonly operationIndex: number;
+  readonly result: ResolvedModifierValue;
 }
 
 /** Runtime observations come from the source transaction, never the compilation template. */
@@ -24,6 +30,7 @@ export interface SourceExecutionBinding {
   readonly activation: SourceActivationReceipt;
   readonly conditionReads: readonly ConditionReadAudit[];
   readonly physicalInputs: readonly PhysicalInputCommit[];
+  readonly modifierValueReads: readonly ModifierValueRead[];
 }
 
 export function pendingNoblePhantasmSourceBinding(
@@ -45,6 +52,7 @@ export function pendingNoblePhantasmSourceBinding(
     activation: { kind: 'unread' },
     conditionReads: [],
     physicalInputs: [],
+    modifierValueReads: [],
   };
 }
 
@@ -56,11 +64,15 @@ export function bindExecutionOperation<TOperation extends BattleOperation>(
   const commit = binding.physicalInputs.find(
     (candidate) => candidate.operationIndex === canonicalOperationIndex,
   );
+  const modifierValueRead = binding.modifierValueReads.find(
+    (candidate) => candidate.operationIndex === canonicalOperationIndex,
+  );
   return {
     ...operation,
     runtimeBinding: Object.freeze({
       source: binding,
       ...(commit ? { physicalInput: commit } : {}),
+      ...(modifierValueRead ? { modifierValueRead } : {}),
     }),
   };
 }

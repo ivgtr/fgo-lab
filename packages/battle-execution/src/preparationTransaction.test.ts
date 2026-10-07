@@ -1,5 +1,5 @@
 import { liveTraitQuantityRead } from './stackQuantities';
-import { projectBattleTraitPresence, readTraitPresence, readTraitQuantity } from './traitFactLayers';
+import { projectBattleTraitPresence, readTraitQuantity } from './traitFactLayers';
 import type { SourceActivationReceipt } from './conditionRead';
 import type { ConditionRead } from './conditionRead';
 import type { SourceEffect } from './sourceCollection';
@@ -24,6 +24,8 @@ import { diagnoseRejectedPreparation } from './preparationDiagnostic';
 import { readInputFact, writeInputFact, exactInputFactValue } from './inputFacts';
 import { CRITICAL_STARS_INITIAL_INPUT } from './resourceSemantics';
 import { preparationOcAttemptsFor, preparationSourcesFor } from './preparationAttemptObservation';
+import { compileEffectCached } from './operationCompiler';
+import { resolveModifierValue } from './projection';
 
 const semantics: CanonicalNpResourceSemantics = {
   unit: 'basisPoints',
@@ -357,10 +359,116 @@ describe('transactional preparation execution', () => {
     expect(source.transaction.attempted.selectedNoblePhantasmVariant).toEqual(changedAttack.ref);
     expect(source.transaction.after.currentFormId).toEqual(changedForm);
     expect(source.transaction.after.selectedNoblePhantasmVariant).toEqual(changedAttack.ref);
+    expect(source.operations.map(({ status }) => status)).toEqual(['reached', 'reached']);
+    expect(source.operations[0]?.steps.at(-1)?.after.currentFormId).toEqual(changedForm);
+    expect(source.operations[1]?.steps[0]?.before.currentFormId).toEqual(changedForm);
     expect(result.committedSources).toContain(source);
     expect(result.state.usedSkillSlots).toEqual(new Set([1]));
     expect(initialized.state.currentFormId).toEqual(baseForm);
     expect(structuredClone(result)).toEqual(result);
+  });
+  it('binds a dynamic modifier to the source operation before a later quantity write', () => {
+    const key = 'stack:attackerState:sequenced';
+    const definition = {
+      kind: 'effectStackCount' as const,
+      key,
+      owner: 'attacker' as const,
+      label: 'sequenced',
+      description: 'initial quantity',
+      minimum: 0 as const,
+      maximum: 4,
+      step: 1 as const,
+      defaultValue: 0,
+      defaultReason: 'initially absent',
+      quantitySource: { scope: 'attackerState' as const, trait: 'sequenced' },
+    };
+    const source = effect(
+      'sequenced-effect',
+      null,
+      [
+        {
+          kind: 'damageModifier',
+          route,
+          semanticSupport: 'supported',
+          modifier: 'attackBuff',
+          sign: 1,
+          card: null,
+          values: [[100], [], [], [], []],
+          valueExpressions: [
+            [
+              {
+                kind: 'inputLinear',
+                inputKey: key,
+                basePermille: 100,
+                perUnitPermille: 100,
+                maximumUnits: 4,
+                maximumValuePermille: null,
+              },
+            ],
+            [],
+            [],
+            [],
+            [],
+          ],
+        },
+        {
+          kind: 'contextMutation',
+          mutation: 'addTrait',
+          scope: 'recipientState',
+          trait: 'sequenced',
+          damageRelevant: true,
+          route,
+        },
+      ],
+      { kind: 'always' },
+      { inputDefinitions: [definition] },
+    );
+    const servant = servantWithSkill([source]);
+    const setup = { ...context, stackInputs: [definition] };
+    const initialized = createPreNoblePhantasmState(servant, baseForm, setup);
+    if (initialized.status !== 'applied') throw new Error(initialized.code);
+    const result = reducePreNoblePhantasmAction(
+      servant,
+      initialized.state,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      setup,
+    );
+    expect(result.status).toBe('applied');
+    if (result.status !== 'applied') throw new Error(result.code);
+    expect(result.state.sourceBindings.at(-1)?.modifierValueReads).toMatchObject([
+      { operationIndex: 0, result: { value: 100, dependency: { kind: 'known' } } },
+    ]);
+    expect(
+      readTraitQuantity(result.state.traitFactLayers, 'attackerState', 'sequenced').value,
+    ).toBe(1);
+    const executedSource = result.sources.find(({ source: item }) => item.effect === source);
+    if (!executedSource || executedSource.status !== 'completed')
+      throw new Error('committed modifier source required');
+    const ordinaryState = { ...result.state, actorFormId: result.state.currentFormId };
+    const unbound = compileEffectCached(executedSource.source, 0).operations.find(
+      (operation) => operation.kind === 'addModifier',
+    );
+    const bound = compileEffectCached(
+      { ...executedSource.source, runtimeBinding: executedSource.binding },
+      0,
+    ).operations.find((operation) => operation.kind === 'addModifier');
+    if (unbound?.kind !== 'addModifier' || bound?.kind !== 'addModifier')
+      throw new Error('compiled modifier required');
+    expect(resolveModifierValue(unbound, ordinaryState).value).toBe(200);
+    expect(resolveModifierValue(bound, ordinaryState)).toMatchObject({
+      value: 100,
+      dependency: {
+        clock: {
+          phase: 'operation',
+          actionId: executedSource.binding.actionId,
+          operationId: bound.operationId,
+          sourceInstanceId: executedSource.source.sourceInstanceId,
+          occurrenceId: source.occurrenceId,
+          valueSetIndex: 0,
+          valueIndex: 0,
+        },
+      },
+    });
   });
   it('retains staged NP and OC attempts while a failed native source restores its physical state', () => {
     type Boost = Extract<MasterEffect['execution'][number], { kind: 'grantOcBoost' }>;
@@ -1285,7 +1393,9 @@ describe('transactional preparation execution', () => {
     expect(result.state.hp).toEqual(created.state.hp);
     expect(result.state.ocState).toEqual(created.state.ocState);
     expect(result.state.hp?.actors.attacker).toMatchObject({ current: 10000 });
-    expect((projectBattleTraitPresence(result.state, 'attackerState').get('prepared-trait') === true)).toBe(false);
+    expect(
+      projectBattleTraitPresence(result.state, 'attackerState').get('prepared-trait') === true,
+    ).toBe(false);
   });
 
   it('keeps the post-skill state intact when attack NP lacks gauge', () => {
@@ -2437,7 +2547,9 @@ it('keeps an unread uncertain trait write without rejecting the preparation comm
   expect(result.status).toBe('applied');
   if (result.status !== 'applied') throw new Error(result.code);
   expect(result.state.uncertainContextWrites).toHaveLength(1);
-  expect(projectBattleTraitPresence(result.state, 'attackerState').get('prepared-trait')).not.toBe(true);
+  expect(projectBattleTraitPresence(result.state, 'attackerState').get('prepared-trait')).not.toBe(
+    true,
+  );
   expect(created.state.uncertainContextWrites).toHaveLength(0);
 });
 
@@ -2912,7 +3024,9 @@ it('executes marker grant, duplicate, read, remove and negative read in one tran
   const result = reducePreNoblePhantasmAction(actor, initial.state, command, ctx);
   expect(result.status).toBe('applied');
   expect(result.state.npResource.gauge).toBe(12000);
-  expect(liveTraitQuantityRead(result.state, { scope: 'attackerState', trait: 'marker-actor' }).value).toBe(0);
+  expect(
+    liveTraitQuantityRead(result.state, { scope: 'attackerState', trait: 'marker-actor' }).value,
+  ).toBe(0);
   expect(result.state.hp?.actors.attacker).toMatchObject({ current: 9000 });
   expect(initial.state.buffInstances).toEqual([]);
   const invalidActor = servantWithSkill([
@@ -3129,7 +3243,9 @@ it('rolls BP, HP, NP, context and receipts back together when a later effect fai
     resourceBefore: { gauge: 10_000 },
     resourceAfter: { gauge: 15_000 },
   });
-  expect((projectBattleTraitPresence(recoveredRead.state, 'attackerState').get('temporary') === true)).toBe(false);
+  expect(
+    projectBattleTraitPresence(recoveredRead.state, 'attackerState').get('temporary') === true,
+  ).toBe(false);
 
   const validActor = { ...servantWithSkill([applied]), battlePointDomains: [domain] };
   const committed = reducePreNoblePhantasmAction(validActor, initial.state, command, ctx);
@@ -3137,7 +3253,9 @@ it('rolls BP, HP, NP, context and receipts back together when a later effect fai
   expect(committed.state.battlePoints.actors.attacker?.domains.bp).toMatchObject({ point: 2 });
   expect(committed.state.hp?.actors.attacker).toMatchObject({ current: 9000 });
   expect(committed.state.npResource.gauge).toBe(11_000);
-  expect((projectBattleTraitPresence(committed.state, 'attackerState').get('temporary') === true)).toBe(true);
+  expect(
+    projectBattleTraitPresence(committed.state, 'attackerState').get('temporary') === true,
+  ).toBe(true);
 });
 
 describe('NP write ownership and quantity dependencies', () => {

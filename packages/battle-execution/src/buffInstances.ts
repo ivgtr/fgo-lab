@@ -4,6 +4,14 @@ import { resolveResourceTargetPolicy } from './effectRouting';
 
 export interface CountedBuffInstance {
   identity: string;
+  owner?: {
+    kind: 'populationFunction';
+    actionId: string;
+    actorIndex: number;
+    grantIndex: number;
+    source: Pick<SourceEffect, 'origin' | 'sourceInstanceId'>;
+    position: number;
+  };
   actor: string;
   traits: readonly string[];
   lifetime: 'active' | 'constant';
@@ -154,8 +162,16 @@ export function countBuffInstances(
 }
 
 /** A buff-count declaration binds to the live instance store, without writing trait totals. */
-export function bindBuffCountSources<T extends { stackQuantitySources: Record<string, BuffCountInput['quantitySource']> }>(state: T, inputs: readonly BuffCountInput[]): T {
-  return { ...state, stackQuantitySources: { ...state.stackQuantitySources, ...Object.fromEntries(inputs.map(input => [input.key, input.quantitySource])) } };
+export function bindBuffCountSources<
+  T extends { stackQuantitySources: Record<string, BuffCountInput['quantitySource']> },
+>(state: T, inputs: readonly BuffCountInput[]): T {
+  return {
+    ...state,
+    stackQuantitySources: {
+      ...state.stackQuantitySources,
+      ...Object.fromEntries(inputs.map((input) => [input.key, input.quantitySource])),
+    },
+  };
 }
 
 /** Both read kinds retain multiplicity and observe the same actor-qualified instances. */

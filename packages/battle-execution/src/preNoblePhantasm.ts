@@ -4,6 +4,10 @@ import {
   finishPreparationExecution,
   abandonPreparationExecution,
 } from './preparationExecution';
+import type {
+  PreparationActionExecution,
+  PreparationInitializationExecution,
+} from './preparationExecution';
 import { activatePreparationForm, executePreparationPhase } from './preparationPhases';
 import {
   getPassivesForActorForm,
@@ -22,6 +26,7 @@ import { reducePreparationSkillAction } from './preparationSkillReducer';
 import { createPreparationState } from './preparationState';
 import { reducePreparationTransformNoblePhantasmAction } from './preparationTransformNpReducer';
 import { reconcilePreparationBattlePoints } from './battlePointResource';
+import { bindPreparationActionContext } from './preparationContextBinding';
 
 export type {
   AppliedPreparationAction,
@@ -38,7 +43,7 @@ export function createPreNoblePhantasmState(
   servant: ServantMaster,
   initialFormId: ActorFormId,
   context: PreparationExecutionContext,
-): import('./preparationExecution').PreparationInitializationExecution {
+): PreparationInitializationExecution {
   const created = createPreparationState(servant, initialFormId, context);
   beginPreparationExecution(context);
   try {
@@ -77,13 +82,34 @@ export function reducePreNoblePhantasmAction(
   state: PreNoblePhantasmState,
   command: PreNoblePhantasmCommand,
   context: PreparationExecutionContext,
-): import('./preparationExecution').PreparationActionExecution {
-  beginPreparationExecution(context);
+): PreparationActionExecution {
+  const binding = bindPreparationActionContext(servant, state, command, context);
+  const actionContext = binding.status === 'bound' ? binding.context : context;
+  beginPreparationExecution(actionContext);
   try {
-    const result = reducePreparationAction(servant, state, command, context);
-    return finishPreparationExecution(context, command, state, result);
+    if (binding.status === 'invalid')
+      return finishPreparationExecution(
+        actionContext,
+        command,
+        state,
+        rejectPreparation(state, 'invalidPreparationBinding'),
+      );
+    if (binding.status === 'required')
+      return finishPreparationExecution(
+        actionContext,
+        command,
+        state,
+        rejectPreparation(state, 'preparationInputRequired', binding.definition),
+      );
+    const result = reducePreparationAction(servant, binding.state, command, actionContext);
+    return finishPreparationExecution(
+      actionContext,
+      command,
+      state,
+      result.status === 'rejected' ? { ...result, state } : result,
+    );
   } catch (error) {
-    abandonPreparationExecution(context);
+    abandonPreparationExecution(actionContext);
     throw error;
   }
 }
