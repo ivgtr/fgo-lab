@@ -20,6 +20,7 @@ export type NpResourceMutation =
   | { kind: 'gain'; amount: number }
   | { kind: 'loss'; amount: number }
   | { kind: 'gainCurrentGaugeRatio'; permille: number }
+  | { kind: 'saturatedGain' }
   | { kind: 'consumeAll' }
   | { kind: 'unsupported'; family: string };
 
@@ -126,6 +127,10 @@ export function applyNpResourceTransaction(
   let baseOvercharge: number | null = null;
   for (const mutation of transaction.mutations) {
     if (mutation.kind === 'unsupported') return reject('unsupportedMutation');
+    if (mutation.kind === 'saturatedGain') {
+      if (gauge !== state.capacity) return reject('unsupportedMutation');
+      continue;
+    }
     if (mutation.kind === 'consumeAll') {
       if (gauge < semantics.noblePhantasmUse.requirement) return reject('insufficientGauge');
       baseOvercharge = deriveBaseOvercharge(semantics, gauge);

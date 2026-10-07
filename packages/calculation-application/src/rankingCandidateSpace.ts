@@ -209,7 +209,9 @@ function materializeFixedRankingWorld(
     ...scenario,
     worldFactAssertions: [
       ...scenario.worldFactAssertions.filter(
-        ({ decisionKey }) => !decisionKey.startsWith('ranking:'),
+        ({ decisionKey }) =>
+          !decisionKey.startsWith('ranking:') &&
+          !decisionKey.startsWith('calculator:population:'),
       ),
       ...assertions,
     ],

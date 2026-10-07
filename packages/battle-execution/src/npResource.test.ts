@@ -45,6 +45,22 @@ describe('canonical NP resource execution', () => {
     expect(lost).toMatchObject({ status: 'applied', state: { gauge: 0 } });
   });
 
+  it('accepts an unknown nonnegative gain only at capacity and checks operation order', () => {
+    const full = createNpResourceState(semantics, 2, 20_000);
+    expect(
+      applyNpResourceTransaction(semantics, full, {
+        requirement: null,
+        mutations: [{ kind: 'saturatedGain' }],
+      }),
+    ).toMatchObject({ status: 'applied', state: { gauge: 20_000 } });
+    expect(
+      applyNpResourceTransaction(semantics, full, {
+        requirement: null,
+        mutations: [{ kind: 'loss', amount: 1 }, { kind: 'saturatedGain' }],
+      }),
+    ).toEqual({ status: 'rejected', code: 'unsupportedMutation', state: full });
+  });
+
   it('derives base OC before all-consume', () => {
     expect(deriveBaseOvercharge(semantics, 10_000)).toBe(1);
     expect(deriveBaseOvercharge(semantics, 20_000)).toBe(2);

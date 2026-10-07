@@ -43,6 +43,8 @@ function selectedNpMutation(
   if (recipient === 'unresolved')
     return { kind: 'unsupported', family: 'unresolvedResourceRecipient' };
   if (recipient !== 'attacker') return null;
+  if (operation.unit !== 'fixed' || operation.subjectId !== null)
+    return { kind: 'unsupported', family: 'invalidNpResource' };
   if (operation.amount.kind === 'npTransfer')
     return { kind: 'unsupported', family: 'unboundNpTransfer' };
   if (operation.amount.kind === 'dependent')
@@ -80,9 +82,15 @@ function selectedNpMutation(
       values: inputFactValues(population.facts.inputFacts),
     });
     return count === null
-      ? { kind: 'unsupported', family: 'unresolvedPopulationCount' }
+      ? operation.direction === 'gain' &&
+        Number.isSafeInteger(amount) &&
+        amount !== undefined &&
+        amount !== null &&
+        amount >= 0
+        ? { kind: 'saturatedGain' }
+        : { kind: 'unsupported', family: 'unresolvedPopulationCount' }
       : {
-          kind: 'gain',
+          kind: operation.direction,
           amount: amount === null || amount === undefined ? Number.NaN : amount * count,
         };
   }
@@ -93,7 +101,7 @@ function selectedNpMutation(
   if (selected !== null && selected !== undefined && !Number.isSafeInteger(selected))
     return { kind: 'gain', amount: Number.NaN };
   if (operation.amount.kind === 'buffCount' && selected !== null && selected !== undefined)
-    return { kind: 'gain', amount: selected };
+    return { kind: operation.direction, amount: selected };
   return npMutationFromCanonicalAmount(operation, selected);
 }
 

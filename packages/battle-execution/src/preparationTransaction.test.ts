@@ -8,6 +8,7 @@ import type { PreNoblePhantasmState } from './preparationContracts';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type {
   CanonicalNpResourceSemantics,
+  BattlePointDomain,
   MasterEffect,
   MasterSkill,
   ServantMaster,
@@ -27,6 +28,8 @@ import { preparationOcAttemptsFor, preparationSourcesFor } from './preparationAt
 import { compileEffectCached } from './operationCompiler';
 import { resolveModifierValue } from './projection';
 import { bindExecutionOperation } from './executionBinding';
+import { preparationConditionState } from './preparationFacts';
+import { evaluateCondition } from './condition';
 
 const semantics: CanonicalNpResourceSemantics = {
   unit: 'basisPoints',
@@ -46,6 +49,54 @@ const context: PreparationExecutionContext = {
 };
 const baseForm = { actorId: 'actor', limitCount: 0 };
 const changedForm = { actorId: 'actor', limitCount: 1 };
+
+it('reads a known absent battle-point rate from preparation state for a party recipient', () => {
+  const servant = servantWithSkill([]);
+  const initial = createPreNoblePhantasmState(servant, baseForm, context);
+  if (initial.status !== 'applied') throw new Error(initial.code);
+  const domain: BattlePointDomain = {
+    id: 'actor',
+    phaseScale: 'permille',
+    phases: [{ phase: 0, threshold: -1 }],
+    eligibility: [{ kind: 'actor', actorId: 'actor' }],
+    capacity: { default: 4, maximum: 4, traitOverrides: [] },
+  };
+  const state = {
+    ...initial.state,
+    conditionFactProofs: {
+      ...initial.state.conditionFactProofs,
+      quantities: new Map([
+        ...initial.state.conditionFactProofs.quantities,
+        [
+          'battlePoint:attacker:actor',
+          { kind: 'canonicalIntrinsic' as const, clock: initial.state.conditionReadClock },
+        ] as const,
+      ]),
+    },
+    battlePoints: {
+      actors: { attacker: { actorId: 'actor', domains: { actor: { kind: 'absent' as const, eligible: true } } } },
+      receipts: [],
+      executedEffects: [],
+    },
+  };
+  const condition = {
+    kind: 'sourceQuantity' as const,
+    source: { origin: 'attacker' as const, sourceInstanceId: 'attacker:actor', skillId: 'skill' },
+    quantity: 'battlePointRate' as const,
+    subjectId: 'actor',
+    comparison: 'atMost' as const,
+    value: 999,
+  };
+  const facts = preparationConditionState(servant, state, {
+    ...context,
+    battlePointDomains: [domain],
+  });
+  if (!facts) throw new Error('missing preparation facts');
+  expect(evaluateCondition(condition, facts).truth).toBe(true);
+  const withoutDomain = { ...facts };
+  delete withoutDomain.battlePointDomains;
+  expect(evaluateCondition(condition, withoutDomain).truth).toBe(null);
+});
 
 function fixtureResourceRead(
   truth: boolean | null,
@@ -2721,6 +2772,74 @@ it('selects live buff count coefficients from normal/LB and OC cells without a m
   expect(run(true, 1, 0)).toMatchObject({ status: 'applied', state: { gauge: 10_000 } });
   expect(run(true, 2, 2).status).toBe('rejected');
   expect(run(true, 1, 2, false).status).toBe('rejected');
+});
+
+it('keeps an unknown population NP gain inert only at full gauge and respects loss direction', async () => {
+  const { preparationEffectSource } = await import('./preparationOc');
+  const { applyPreparationNpOperation } = await import('./preparationResourcePlan');
+  const operation = {
+    kind: 'resourceMutation',
+    resource: 'npGauge',
+    direction: 'gain',
+    unit: 'fixed',
+    recipient: 'sourceSelf',
+    subjectId: null,
+    amount: {
+      kind: 'populationCount',
+      selector: {
+        scope: 'recipient',
+        counting: 'actors',
+        basis: 'actorTraits',
+        traits: ['fixtureTrait'],
+        includePassive: true,
+      },
+      inputKey: 'population:fixture',
+      values: [[1000], [], [], [], []],
+    },
+  } as const satisfies Extract<MasterEffect['execution'][number], { kind: 'resourceMutation' }>;
+  const servant = servantWithSkill([]);
+  const initial = createPreNoblePhantasmState(servant, baseForm, context);
+  if (initial.status !== 'applied') throw new Error(initial.code);
+  const canonical = effect('population-np', null, [operation]);
+  const source = preparationEffectSource({
+    servant,
+    state: initial.state,
+    effect: canonical,
+    origin: 'craftEssence',
+    sourceInstanceId: 'ce',
+    skillId: 'ce',
+    skillName: 'CE',
+    valueSetIndex: 0,
+    valueIndex: 0,
+  });
+  const apply = (
+    gauge: number,
+    selected: MasterEffect['execution'][number] = operation,
+  ) =>
+    applyPreparationNpOperation({
+      semantics,
+      initial: { ...initial.state.npResource, gauge },
+      source,
+      operation: selected,
+      sourceActivation: fixtureResourceRead(true, source, 0),
+      phase: 'resolvedSource',
+      valueSetIndex: 0,
+      buffInstances: [],
+      population: { facts: initial.state, events: [] },
+    });
+  expect(apply(20_000)).toMatchObject({ status: 'applied', state: { gauge: 20_000 } });
+  expect(apply(19_000)).toMatchObject({ status: 'rejected', code: 'unsupportedMutation' });
+  expect(apply(20_000, { ...operation, direction: 'loss' })).toMatchObject({
+    status: 'rejected',
+    code: 'unsupportedMutation',
+  });
+  expect(
+    apply(20_000, {
+      ...operation,
+      direction: 'loss',
+      amount: { ...operation.amount, selector: { ...operation.amount.selector, basis: 'inBattle' } },
+    }),
+  ).toMatchObject({ status: 'applied', state: { gauge: 19_000 } });
 });
 
 it('selects proportional normal/LB and OC cells, routes recipients, and classifies uncertain writes', async () => {

@@ -1,6 +1,10 @@
 import { rankingStaticSourceProjection } from './rankingProgramSources';
 import { stackDomainWitnesses, UnsupportedStackQuantity } from './rankingStackDomain';
-import { mergeInputDefinitions, stackOwnedWitnessCondition } from '@fgo-lab/battle-execution';
+import {
+  mergeInputDefinitions,
+  populationLocalActors,
+  stackOwnedWitnessCondition,
+} from '@fgo-lab/battle-execution';
 import {
   compileEffectCached,
   effectReadsOc,
@@ -30,6 +34,23 @@ export interface StaticRankingSemantics {
   conditions: readonly ConditionExpression[];
   inputDefinitions: readonly CanonicalInputDefinition[];
   stackWitnesses: ReadonlyMap<string, readonly number[]>;
+}
+
+function populationReadConditions(sources: readonly SourceEffect[]): readonly ConditionExpression[] {
+  const reads = new Map<string, ConditionExpression>();
+  for (const source of sources)
+    for (const operation of source.effect.execution) {
+      if (
+        operation.kind !== 'resourceMutation' ||
+        operation.amount.kind !== 'populationCount' ||
+        operation.amount.selector.basis !== 'actorTraits'
+      )
+        continue;
+      for (const scope of populationLocalActors(operation.amount.selector.scope))
+        for (const trait of operation.amount.selector.traits)
+          reads.set(`${scope}:${trait}`, { kind: 'trait', scope, trait, present: true });
+    }
+  return [...reads.values()];
 }
 
 export function compileStaticRankingSemantics(
@@ -115,6 +136,7 @@ export function compileStaticRankingSemantics(
       ),
       ...damageConditions,
       ...preparationSources.map((source) => compileOcSourceProgram(source).condition),
+      ...populationReadConditions(sources),
     ].map((condition) => stackOwnedWitnessCondition(condition, definitions)),
     stackWitnesses: uncertainOcCell
       ? new Map()

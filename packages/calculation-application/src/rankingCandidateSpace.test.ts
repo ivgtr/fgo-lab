@@ -16,6 +16,7 @@ import { compileRankingExecutionPlan, executeRankingScenarios } from './rankingP
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileCandidateLocalActionAdmissionDispositions } from './rankingActionAdmission';
 import {
+  calculateScenario,
   calculateScenarioWithPolicy,
   createDefaultResolvedScenario,
   prepareCalculationScenarioWithPolicy,
@@ -242,6 +243,42 @@ describe('static ranking candidate space', () => {
         status: 'invalid',
         result: { issue: { kind: 'invalidBattlePointIntent', detail: 'invalidInitialPoint' } },
       });
+  });
+
+  it('keeps the default absent battle-point state readable for a party HP writer', () => {
+    const servant = master.servants.find(({ id }) => id === '705300')!;
+    const result = calculateRankingPolicyDetail(
+      servant,
+      master,
+      profile,
+      DEFAULT_RANKING_POLICY_CONDITIONS,
+      versions(),
+    );
+    expect(result.status, JSON.stringify(result)).toBe('calculated');
+  });
+
+  it('binds the calculator default population world and still rejects an omitted local trait fact', () => {
+    const servant = master.servants.find(({ id }) => id === '106200')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const inputKey = servant.skills
+      .flatMap((skill) => skill.effects.flatMap((effect) => effect.inputDefinitions))
+      .find((definition) => definition.kind === 'populationCount')?.key;
+    if (!inputKey) throw new Error('population input missing');
+    const withPopulation = {
+      ...scenario,
+      canonicalInputValues: {
+        'population:allies:additional': { kind: 'integer' as const, value: 1 },
+        [inputKey]: { kind: 'integer' as const, value: 1 },
+      },
+    };
+    expect(calculateScenario(withPopulation, master, versions()).result.status).toBe('calculated');
+    expect(
+      calculateScenario(
+        { ...withPopulation, worldFactAssertions: [] },
+        master,
+        versions(),
+      ).result,
+    ).toMatchObject({ status: 'unsupported', issues: [{ code: 'unknown_trait_quantity' }] });
   });
 
   it.each([-1, 0, 2, 3, 4])(

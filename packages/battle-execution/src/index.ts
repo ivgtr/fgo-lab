@@ -194,6 +194,7 @@ export {
   populationInputIssue,
   populationInputEquivalenceKey,
   populationCountSaturation,
+  populationLocalActors,
 } from './populationCounts';
 
 export { populationInputsHaveEquivalentTerminalDamage } from './populationGaugeEquivalence';

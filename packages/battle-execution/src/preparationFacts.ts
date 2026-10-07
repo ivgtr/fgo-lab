@@ -37,6 +37,7 @@ export function preparationConditionState(
   if (activation.status !== 'valid') return null;
   return {
     ...state,
+    ...(context.battlePointDomains ? { battlePointDomains: context.battlePointDomains } : {}),
     activationContext: activation.factSet,
   };
 }

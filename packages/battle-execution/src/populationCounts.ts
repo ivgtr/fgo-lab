@@ -73,6 +73,23 @@ export interface PopulationEvent {
 type PopulationSide = 'allies' | 'enemies';
 type PopulationScope = PopulationCountSelector['scope'] | 'target';
 
+/** The local actors observed by a population selector, independent of external cohort sizes. */
+export function populationLocalActors(
+  scope: PopulationScope,
+): readonly ('attacker' | 'target')[] {
+  switch (scope) {
+    case 'allies':
+    case 'recipient':
+      return ['attacker'];
+    case 'enemies':
+    case 'otherActors':
+    case 'target':
+      return ['target'];
+    case 'allActors':
+      return ['attacker', 'target'];
+  }
+}
+
 function populationScopeSides(scope: PopulationScope): readonly PopulationSide[] {
   switch (scope) {
     case 'recipient':
@@ -278,12 +295,10 @@ function observePopulationEvent(
     return { kind: 'unknown' };
   const overlap = querySides.filter((side) => populationScopeSides(operation.scope).includes(side));
   const count = overlap.reduce((sum, side) => sum + populationSideSize(side, values), 0);
-  const localAttacker =
-    !['enemies', 'otherActors'].includes(selector.scope) &&
-    !['enemies', 'otherActors', 'target'].includes(operation.scope);
-  const localTarget =
-    !['allies', 'recipient'].includes(selector.scope) &&
-    !['allies', 'recipient'].includes(operation.scope);
+  const queryActors = populationLocalActors(selector.scope);
+  const writtenActors = populationLocalActors(operation.scope);
+  const localAttacker = queryActors.includes('attacker') && writtenActors.includes('attacker');
+  const localTarget = queryActors.includes('target') && writtenActors.includes('target');
   const affected =
     (event.affectedCount === undefined ? undefined : localTarget ? event.affectedCount : 0) ??
     (selector.basis === 'buffInstances'
@@ -352,11 +367,10 @@ export function readPopulationCount(args: {
     } else return null;
   }
   if (selector.basis === 'buffInstances') return buffCount;
-  const attacker = ['enemies', 'otherActors'].includes(selector.scope)
-    ? 0
-    : localTraitCount(selector, facts, 'attacker');
-  const target = ['allies', 'recipient'].includes(selector.scope)
-    ? 0
-    : localTraitCount(selector, facts, 'target');
+  const localActors = populationLocalActors(selector.scope);
+  const attacker = localActors.includes('attacker')
+    ? localTraitCount(selector, facts, 'attacker')
+    : 0;
+  const target = localActors.includes('target') ? localTraitCount(selector, facts, 'target') : 0;
   return attacker === null || target === null ? null : external + attacker + target;
 }

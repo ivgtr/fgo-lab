@@ -1,6 +1,8 @@
 import {
   preparationExecutionStateFor,
+  populationLocalActors,
   projectBattleTraitPresence,
+  traitConditionReadScopes,
 } from '@fgo-lab/battle-execution';
 import { calculatorPreparationSkillLevels } from './rankingBasis';
 import type {
@@ -61,6 +63,7 @@ import {
   canonicalRequirementLeaves,
   findActorForm,
   findNoblePhantasmVariant,
+  getNoblePhantasmVariants,
   noblePhantasmVariantKey,
   naturalServantLevel,
   type MasterDataSnapshot,
@@ -257,6 +260,42 @@ export function createDefaultResolvedScenario(
   return resolvedScenarioForPreparationCandidate(master, build, servant, candidate, npLevel);
 }
 
+/** The calculator's default world explicitly contains no external local trait additions. */
+export function defaultCalculatorPopulationWorldFacts(
+  servant: ServantMaster,
+): Extract<CalculationScenario, { mode: 'resolved' }>['worldFactAssertions'] {
+  const assertions = new Map<
+    string,
+    Extract<CalculationScenario, { mode: 'resolved' }>['worldFactAssertions'][number]
+  >();
+  const effects = [
+    ...servant.skills.flatMap((skill) => skill.effects),
+    ...servant.passives.flatMap((passive) => passive.effects),
+    ...getNoblePhantasmVariants(servant).flatMap((variant) => variant.effects),
+  ];
+  for (const effect of effects)
+    for (const operation of effect.execution) {
+      if (
+        operation.kind !== 'resourceMutation' ||
+        operation.amount.kind !== 'populationCount' ||
+        operation.amount.selector.basis !== 'actorTraits'
+      )
+        continue;
+      for (const actor of populationLocalActors(operation.amount.selector.scope))
+        for (const scope of traitConditionReadScopes(actor)) {
+          if (scope === 'attacker') continue;
+          for (const trait of operation.amount.selector.traits) {
+            const decisionKey = `calculator:population:${scope}:${trait}`;
+            assertions.set(decisionKey, {
+              decisionKey,
+              fact: { kind: 'trait', scope, trait, present: false },
+            });
+          }
+        }
+    }
+  return [...assertions.values()];
+}
+
 function resolvedScenarioForPreparationCandidate(
   master: MasterDataSnapshot,
   build: ServantBuild | undefined,
@@ -294,7 +333,7 @@ function resolvedScenarioForPreparationCandidate(
     support: null,
     effectDecisions: [],
     activationFacts: [],
-    worldFactAssertions: [],
+    worldFactAssertions: defaultCalculatorPopulationWorldFacts(servant),
     explicitOverrides: {},
   };
 }
