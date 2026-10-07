@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+16:36 UTC 今区間のHandoff（2026-10-07）: HEAD `de2fb20`、index/worktree clean、自起動test/browser processなし。target UI修復と公開15件のidentity/修復fixture、Engine49のVRT全画面3枚更新をコミットし、対象UI・portable・VRT全5件・typecheck/lint/docsの成功範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全production最終source成功は未取得。直近parity全fileは旧422 digest、buff `invalid_stack_count:stack:attackerState:manuscriptComplete`、306200 included/satisfied `preparation:unsupportedResourceMutation`で3失敗、3成功、warning0（`.test-results/2026-10-07T16-22-54-426Z-15-1dfb36/`）。次の第一操作はbuff例外の最初の`id,npLevel,policy,count,plan`を特定し、同一セルのnative初期化前後とcandidate seed直前のdefinition.maximum・fact kind/value/proofを照合すること。続いて306200の代表candidateのworld assertions、skill2 count read、skill3 grant、transaction/rollbackを追う。現時点のbuff原因は未確定、旧仮説はflowで撤回済み。これらを閉じるまでdigest/counter追随・unsupported除外・最終qualityへ進まない。全15 Apply、独立strict、80＋別saved S0/S1、正式after各3process、全意味差、Blocking0／最終qualityは未達。TSK-14 in_progress／R1未受入、次区間で継続する。
+
 16:35 UTC buff原因の確度訂正（2026-10-07）: native初期化にもmerged definitionの上限検査があり、16:35の`invalidInputKeys`片側欠落は実値・定義差を未観測のため原因確定から候補へ戻す。最初のthrowセルと両側のdefinition/fact/proofを採取して決める。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。R1未受入。
 
 16:35 UTC buff例外の直接原因訂正（2026-10-07）: `initialFacts`は準備前の`initializationExecution.before`から採取。上限超過effectStackCountは`invalidInputKeys`へ分類されるが、candidateは`missingDefinitions`だけをinvalid fact化し、raw knownが`seedStackQuantities`へ届いてthrowする。準備後数量仮説を撤回。原値とdefinitionは修復用に保持しつつ、native/candidate全readerより前にtyped invalidへ束縛する設計を次に確認する。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。R1未受入。
