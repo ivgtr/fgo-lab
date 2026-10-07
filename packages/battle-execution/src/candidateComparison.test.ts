@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { OrderedScenarioExecution } from './executionTypes';
-import { compareCandidateResults } from './candidateComparison';
+import {
+  compareCandidateResults,
+  summarizeExcludedExternalTargetContributions,
+} from './candidateComparison';
 
 function execution(
   targetClass: 'saber' | 'lancer',
@@ -68,5 +71,83 @@ describe('candidate comparison', () => {
     expect(
       compareCandidateResults([execution('saber'), execution('lancer', 'notApplied')]).kind,
     ).toBe('ambiguous');
+  });
+
+  it('summarizes only excluded external NP special truth across relative targets', () => {
+    const excluded = (outcome: 'applied' | 'notApplied') => {
+      const result = execution('saber', outcome);
+      return {
+        ...result,
+        projections: [
+          {
+            ...result.projections[0]!,
+            contributionId: 'operation:npSpecial' as const,
+            modifier: 'npSpecial' as const,
+            contributionControl: 'worldAssumption' as const,
+          },
+        ],
+        effectiveContributions: {
+          contributions: [
+            {
+              contributionId: 'operation:npSpecial',
+              presentationGroupId: 'group',
+              operationId: 'operation',
+              component: 'npSpecial',
+              modifier: 'npSpecial',
+              resolvedValue: null,
+              outputAddress: 'damage.npSpecial',
+              source: {
+                origin: 'np',
+                sourceInstanceId: 'np',
+                sourceId: '1',
+                skillId: 'np',
+                effectId: 'effect',
+                effectOccurrenceId: 'effect',
+              },
+              selfDecision: { kind: 'included' },
+              conditionDecision: { kind: 'excluded', reason: 'conditionalEffectPolicy' },
+              areaViewDecision: { kind: 'included' },
+              executionOutcome: outcome,
+              effective: false,
+              presentationCounted: true,
+            },
+          ],
+          effectivePresentationGroupIds: new Set<string>(),
+        },
+      } as OrderedScenarioExecution;
+    };
+    const trueWorld = excluded('applied');
+    const falseWorld = excluded('notApplied');
+    expect(compareCandidateResults([trueWorld, falseWorld]).kind).toBe('equivalent');
+    const summary = summarizeExcludedExternalTargetContributions(trueWorld);
+    expect(summary.projections[0]).toMatchObject({
+      outcome: 'notRelevant',
+      explanation: { code: 'disabled' },
+      decision: { state: 'none' },
+    });
+    expect(summary.effectiveContributions.contributions[0]?.executionOutcome).toBe('notRelevant');
+    const activeWorld = {
+      ...trueWorld,
+      effectiveContributions: {
+        ...trueWorld.effectiveContributions,
+        contributions: trueWorld.effectiveContributions.contributions.map((contribution) => ({
+          ...contribution,
+          conditionDecision: { kind: 'included' as const },
+        })),
+      },
+    };
+    expect(compareCandidateResults([activeWorld, falseWorld]).kind).toBe('ambiguous');
+    const operationProjection = (world: OrderedScenarioExecution) => ({
+      ...world,
+      projections: world.projections.map((projection) => ({
+        ...projection,
+        contributionControl: 'operation' as const,
+        modifier: 'npSpecial' as const,
+      })),
+    });
+    expect(
+      compareCandidateResults([operationProjection(trueWorld), operationProjection(falseWorld)])
+        .kind,
+    ).toBe('equivalent');
   });
 });

@@ -20,7 +20,10 @@ import {
 const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
   requireExecutableCalculation(calculateScenarioOutcome(...args));
 import { applyEffectProjectionDecision } from './effectDecision';
+import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { getAttackReachableInitialActorForms } from './actorFormGraph';
+import { createStaticAttackProfiles } from './attackProfile';
 
 const root = resolve(import.meta.dirname, '../../..');
 
@@ -30,6 +33,113 @@ const productionMaster = readFile(resolve(root, 'apps/web/public/master/master.j
 const loadMaster = () => productionMaster;
 
 describe('production canonical target context', () => {
+  it('keeps scalar NP reads exact across relative identities and explicit local state', async () => {
+    const master = await loadMaster();
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const musashi = master.servants.find(({ id }) => id === '101700')!;
+    const tell = master.servants.find(({ id }) => id === '203400')!;
+    const olga = master.servants.find(({ id }) => id === '4000100')!;
+    const musashiResult = calculateScenarioOutcome(
+      createDefaultResolvedScenario(master, undefined, musashi),
+      master,
+      versions,
+    );
+    expect(musashiResult.result.status).toBe('calculated');
+    if (musashiResult.status === 'executable')
+      expect(musashiResult.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+
+    const musashiRanking = calculateRankingPolicyDetail(
+      musashi,
+      master,
+      { servantBuilds: {} },
+      DEFAULT_RANKING_POLICY_CONDITIONS,
+      versions,
+    );
+    expect(musashiRanking.status).toBe('calculated');
+    if (musashiRanking.status === 'calculated') {
+      expect(musashiRanking.detail.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+      expect(
+        musashiRanking.detail.effects
+          .filter(({ contributionControl }) => contributionControl === 'worldAssumption')
+          .map(({ outcome }) => outcome),
+      ).toEqual(['notRelevant', 'notRelevant']);
+    }
+
+    const tellScenario = createDefaultResolvedScenario(master, undefined, tell);
+    expect(
+      tellScenario.worldFactAssertions
+        .filter(
+          ({ fact }) => fact.kind === 'trait' && ['buffEvade', 'marking'].includes(fact.trait),
+        )
+        .map(({ fact }) => fact),
+    ).toEqual([
+      { kind: 'trait', scope: 'targetState', trait: 'buffEvade', present: false },
+      { kind: 'trait', scope: 'targetState', trait: 'marking', present: false },
+    ]);
+    const tellResult = calculateScenarioOutcome(tellScenario, master, versions);
+    expect(tellResult.result.status).toBe('calculated');
+
+    const relative = createDefaultResolvedScenario(master, undefined, olga);
+    for (const profile of createStaticAttackProfiles(olga)) {
+      const ranking = calculateRankingPolicyDetail(
+        olga,
+        master,
+        { servantBuilds: {} },
+        DEFAULT_RANKING_POLICY_CONDITIONS,
+        versions,
+        profile,
+      );
+      expect(ranking.status).toBe('calculated');
+      if (ranking.status === 'calculated') {
+        const inactive = ranking.detail.effects.filter(
+          ({ contributionControl, visibility }) =>
+            contributionControl === 'worldAssumption' && visibility === 'hidden',
+        );
+        expect(inactive.length).toBeGreaterThan(0);
+        expect(inactive.every(({ outcome }) => outcome === 'impossible')).toBe(true);
+      }
+    }
+    const ambiguous = calculateScenarioOutcome(
+      {
+        ...relative,
+        targetContext: {
+          ...relative.targetContext,
+          attribute: { kind: 'relative', relation: 'neutral' },
+        },
+      },
+      master,
+      versions,
+    );
+    expect(ambiguous.result).toMatchObject({
+      status: 'inputRequired',
+      issues: [{ code: 'invalidTargetContext:ambiguousTargetResult:' }],
+      rows: [],
+    });
+    for (const [attribute, multiplier] of [
+      ['man', 1.625],
+      ['earth', 1],
+    ] as const) {
+      const concrete = calculateScenarioOutcome(
+        {
+          ...relative,
+          targetContext: { ...relative.targetContext, attribute: { kind: 'concrete', attribute } },
+        },
+        master,
+        versions,
+      );
+      expect(concrete.result.status).toBe('calculated');
+      if (concrete.status === 'executable')
+        expect(concrete.input.npSpecialMultipliers).toEqual(Array(5).fill(multiplier));
+    }
+  });
+
   it('derives every default relation from the canonical class relation', async () => {
     const master = await loadMaster();
     const attackers = master.servants.filter(

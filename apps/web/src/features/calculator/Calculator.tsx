@@ -1,7 +1,7 @@
 import {
   preparationSkillLevelsForScenario,
   calculatorPreparationSkillLevels,
-  defaultCalculatorPopulationWorldFacts,
+  defaultCalculatorLocalWorldFacts,
 } from '@fgo-lab/calculation-application';
 import { EffectInlineInput } from './EffectInlineInput';
 import { useEffect, useRef, useState } from 'react';
@@ -421,7 +421,7 @@ export function Calculator({
           support: null,
           effectDecisions: [],
           activationFacts: [],
-          worldFactAssertions: defaultCalculatorPopulationWorldFacts(attacker),
+          worldFactAssertions: defaultCalculatorLocalWorldFacts(attacker),
           explicitOverrides: {
             attackerAtk: input.attackerAtk,
             fouAtk: input.fouAtk,
@@ -482,7 +482,7 @@ export function Calculator({
               },
               preNoblePhantasmPlan: [...defaultPlan.commands],
               effectDecisions: [],
-              worldFactAssertions: defaultCalculatorPopulationWorldFacts(candidate),
+              worldFactAssertions: defaultCalculatorLocalWorldFacts(candidate),
               attackerHpPermille: 1000,
               battleState: { battlePointPhase: candidate.battlePointDomains?.length ? 0 : null },
               initialBattlePointPoints: {},

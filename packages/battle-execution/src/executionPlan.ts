@@ -295,6 +295,9 @@ function compileExecutionPlanForPurpose(
     attackerAttribute,
     domain: master.targetSemantics.execution,
     constraints: targetConstraints,
+    readExpressions: operations.flatMap((operation) =>
+      operation.kind === 'executeNpDamage' ? [operation.specialAttackDependency] : [],
+    ),
   });
   const preparationInputDefinitions = collected.sources
     .filter(({ effect }) => effectChangesPreparation(effect))

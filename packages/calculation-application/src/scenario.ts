@@ -261,17 +261,28 @@ export function createDefaultResolvedScenario(
 }
 
 /** The calculator's default world explicitly contains no external local trait additions. */
-export function defaultCalculatorPopulationWorldFacts(
+export function defaultCalculatorLocalWorldFacts(
   servant: ServantMaster,
 ): Extract<CalculationScenario, { mode: 'resolved' }>['worldFactAssertions'] {
   const assertions = new Map<
     string,
     Extract<CalculationScenario, { mode: 'resolved' }>['worldFactAssertions'][number]
   >();
+  const variants = getNoblePhantasmVariants(servant);
+  const assertAbsent = (
+    scope: 'attackerState' | 'target' | 'targetState' | 'field',
+    trait: string,
+  ) => {
+    const decisionKey = `calculator:initial:${scope}:${trait}`;
+    assertions.set(decisionKey, {
+      decisionKey,
+      fact: { kind: 'trait', scope, trait, present: false },
+    });
+  };
   const effects = [
     ...servant.skills.flatMap((skill) => skill.effects),
     ...servant.passives.flatMap((passive) => passive.effects),
-    ...getNoblePhantasmVariants(servant).flatMap((variant) => variant.effects),
+    ...variants.flatMap((variant) => variant.effects),
   ];
   for (const effect of effects)
     for (const operation of effect.execution) {
@@ -284,15 +295,20 @@ export function defaultCalculatorPopulationWorldFacts(
       for (const actor of populationLocalActors(operation.amount.selector.scope))
         for (const scope of traitConditionReadScopes(actor)) {
           if (scope === 'attacker') continue;
-          for (const trait of operation.amount.selector.traits) {
-            const decisionKey = `calculator:population:${scope}:${trait}`;
-            assertions.set(decisionKey, {
-              decisionKey,
-              fact: { kind: 'trait', scope, trait, present: false },
-            });
-          }
+          for (const trait of operation.amount.selector.traits) assertAbsent(scope, trait);
         }
     }
+  for (const variant of variants) {
+    if (variant.kind !== 'attack') continue;
+    for (const damage of variant.damage) {
+      if (damage.kind !== 'traitCount' || damage.quantity.kind !== 'finiteTraits') continue;
+      const stateTraits = new Set(damage.stateTraitNames);
+      for (const parameter of damage.parametersByOvercharge.flat())
+        for (const trait of parameter.targetTraits ?? [])
+          if (trait.kind === 'trait' && stateTraits.has(trait.name))
+            assertAbsent(parameter.targetId === 1 ? 'targetState' : 'attackerState', trait.name);
+    }
+  }
   return [...assertions.values()];
 }
 
@@ -333,7 +349,7 @@ function resolvedScenarioForPreparationCandidate(
     support: null,
     effectDecisions: [],
     activationFacts: [],
-    worldFactAssertions: defaultCalculatorPopulationWorldFacts(servant),
+    worldFactAssertions: defaultCalculatorLocalWorldFacts(servant),
     explicitOverrides: {},
   };
 }

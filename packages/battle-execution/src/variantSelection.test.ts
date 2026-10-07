@@ -15,7 +15,8 @@ import type {
   NoblePhantasmVariant,
   NpDamageSpec,
 } from '@fgo-lab/master-data';
-import type { BattleOperation } from './contracts';
+import type { BattleOperation, EffectProjection } from './contracts';
+import { projectWorldAssumptionAtDamageEvaluation } from './projection';
 import {
   applyTraitAddition,
   applyInitialTraitSuppression,
@@ -127,6 +128,43 @@ const selection = {
 } satisfies BattleOperation;
 
 describe('noble phantasm variant selection', () => {
+  it('hides target world projections from an unselected NP variant', () => {
+    const operation = {
+      ...operationBase,
+      operationId: 'other-variant-damage',
+      phase: 'npDamage' as const,
+      condition: { kind: 'noblePhantasmVariant' as const, variant: changed.ref },
+      kind: 'executeNpDamage' as const,
+      damage,
+      overcharge: 1,
+      selectedNpLevel: 1,
+      npMultipliers: [30, 30, 30, 30, 30] as const,
+      specialAttackCondition: { kind: 'always' as const },
+      specialAttackDependency: { kind: 'always' as const },
+      specialAttackDecisionKey: null,
+    } satisfies BattleOperation;
+    const projection = {
+      operationId: operation.operationId,
+      contributionControl: 'worldAssumption',
+      explanation: {
+        code: 'applied',
+        condition: { kind: 'trait', scope: 'target', trait: 'dragon', present: true },
+      },
+      visibility: 'visible',
+      controllability: 'user',
+      outcome: 'applied',
+      decision: { state: 'enabled', decisionKey: 'target-dragon', kind: 'worldFact' },
+      conditionDecision: 'evaluate',
+    } as unknown as EffectProjection;
+    expect(projectWorldAssumptionAtDamageEvaluation(projection, state, operation)).toMatchObject({
+      outcome: 'impossible',
+      visibility: 'hidden',
+      decision: { state: 'none' },
+    });
+    expect(() => projectWorldAssumptionAtDamageEvaluation(projection, state, undefined)).toThrow(
+      'missing_world_assumption_np_operation',
+    );
+  });
   it('uses the source read before a card change when selecting decisions and variants', () => {
     const condition = { kind: 'card' as const, card: 'arts' as const };
     const finalState = createInitialBattleState(

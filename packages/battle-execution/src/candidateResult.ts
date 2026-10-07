@@ -60,9 +60,14 @@ export function assembleCandidateResult({
 }): OrderedScenarioExecution {
   const { operations, inputDefinitions } = prepared;
   const issues = executionIssues(prepared, resolvedInputs, candidate, state);
+  const operationsById = new Map(operations.map((operation) => [operation.operationId, operation]));
   const projections = attachActivationSources(prepared, [
     ...candidate.resolvedCompileProjections.map((projection) =>
-      projectWorldAssumptionAtDamageEvaluation(projection, state),
+      projectWorldAssumptionAtDamageEvaluation(
+        projection,
+        state,
+        operationsById.get(projection.operationId),
+      ),
     ),
     ...results.map((result) => projectAtDamageEvaluation(result, state)),
   ]);

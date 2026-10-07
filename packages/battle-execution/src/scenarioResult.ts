@@ -1,5 +1,6 @@
 import type { BattleExecutionState } from './contracts';
 import type { OrderedScenarioExecution, PreparedOrderedScenario } from './executionTypes';
+import { summarizeExcludedExternalTargetContributions } from './candidateComparison';
 
 function redactRelativeTargetWitnesses<T extends BattleExecutionState>(
   prepared: PreparedOrderedScenario,
@@ -52,12 +53,16 @@ export function assembleEquivalentTargetResult(
   execution: OrderedScenarioExecution,
 ): OrderedScenarioExecution {
   const { targetContext } = prepared.scenario;
+  const summarized =
+    targetContext.class.kind === 'concrete' && targetContext.attribute.kind === 'concrete'
+      ? execution
+      : summarizeExcludedExternalTargetContributions(execution);
   return {
-    ...execution,
+    ...summarized,
     input: {
-      ...execution.input,
+      ...summarized.input,
       target: {
-        ...execution.input.target,
+        ...summarized.input.target,
         classId: targetContext.class.kind === 'concrete' ? targetContext.class.classId : null,
         attribute:
           targetContext.attribute.kind === 'concrete'
@@ -65,8 +70,8 @@ export function assembleEquivalentTargetResult(
             : 'unknown',
       },
     },
-    state: redactRelativeTargetWitnesses(prepared, execution.state),
-    operations: execution.operations.map((result) => ({
+    state: redactRelativeTargetWitnesses(prepared, summarized.state),
+    operations: summarized.operations.map((result) => ({
       ...result,
       state: redactRelativeTargetWitnesses(prepared, result.state),
     })),

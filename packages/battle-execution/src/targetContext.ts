@@ -14,7 +14,11 @@ import type {
   TargetContext,
   TargetPredicate,
 } from '@fgo-lab/schema';
-import type { ConstraintValidationIssue, TargetPredicateAssertion } from './contracts';
+import type {
+  ConditionExpression,
+  ConstraintValidationIssue,
+  TargetPredicateAssertion,
+} from './contracts';
 import { validateConstraintSet, type SatisfiableConditionConstraint } from './constraints';
 import { targetCandidateAssertions } from './targetCandidateConstraint';
 import { targetPredicateKey } from './targetPredicate';
@@ -84,12 +88,14 @@ export function resolveTargetCandidates({
   attackerAttribute,
   domain,
   constraints,
+  readExpressions,
 }: {
   context: TargetContext;
   attackerClass: string;
   attackerAttribute: CombatAttribute;
   domain: CanonicalTargetDomain;
   constraints: readonly SatisfiableConditionConstraint[];
+  readExpressions: readonly ConditionExpression[];
 }): TargetResolution {
   const knownFamilies = new Set(domain.families.map(({ familyId }) => familyId));
   const requiredFamilies = new Set(context.families.map(({ familyId }) => familyId));
@@ -99,12 +105,14 @@ export function resolveTargetCandidates({
       kind: 'impossible',
       sourceKeys: unknownFamilies.map((familyId) => `target-family:${familyId}`),
     };
+  const referencedExpressions = [
+    ...constraints.map(({ expression }) => expression),
+    ...readExpressions,
+  ];
   const referencedFamilies = [
-    ...new Set(constraints.flatMap(({ expression }) => collectReferencedFamilies(expression))),
+    ...new Set(referencedExpressions.flatMap(collectReferencedFamilies)),
   ].filter((familyId) => !requiredFamilies.has(familyId));
-  const referencedPredicates = constraints.flatMap(({ expression }) =>
-    collectReferencedPredicates(expression),
-  );
+  const referencedPredicates = referencedExpressions.flatMap(collectReferencedPredicates);
   const exposeClass =
     context.class.kind === 'concrete' ||
     referencedPredicates.some(({ kind }) => kind === 'classIdentity');

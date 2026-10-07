@@ -425,25 +425,8 @@ export function projectAtDamageEvaluation(
   result: OperationResult,
   finalState: ExecutableBattleState,
 ): EffectProjection {
-  const selectedVariant = finalState.noblePhantasmVariant.ref;
-  const variantRefs = collectNoblePhantasmVariantConditions(result.operation.condition);
-  if (
-    variantRefs.length > 0 &&
-    !variantRefs.some(
-      (variant) =>
-        variant.actorFormId === selectedVariant.actorFormId &&
-        variant.noblePhantasmId === selectedVariant.noblePhantasmId,
-    )
-  )
-    return {
-      ...result.projection,
-      outcome: 'impossible',
-      visibility: 'hidden',
-      controllability: 'automatic',
-      decision: { state: 'none' },
-      conditionDecision: 'none',
-      explanation: { ...result.projection.explanation, code: 'conditionNotMet' },
-    };
+  if (!operationVariantMatchesFinal(result.operation, finalState))
+    return inactiveVariantProjection(result.projection);
   if (
     result.operation.kind !== 'addModifier' ||
     result.operation.card === null ||
@@ -461,15 +444,45 @@ export function projectAtDamageEvaluation(
   };
 }
 
+function operationVariantMatchesFinal(
+  operation: BattleOperation,
+  finalState: ExecutableBattleState,
+): boolean {
+  const selectedVariant = finalState.noblePhantasmVariant.ref;
+  const variantRefs = collectNoblePhantasmVariantConditions(operation.condition);
+  return (
+    variantRefs.length === 0 ||
+    variantRefs.some(
+      (variant) =>
+        variant.actorFormId === selectedVariant.actorFormId &&
+        variant.noblePhantasmId === selectedVariant.noblePhantasmId,
+    )
+  );
+}
+
+function inactiveVariantProjection(projection: EffectProjection): EffectProjection {
+  return {
+    ...projection,
+    outcome: 'impossible',
+    visibility: 'hidden',
+    controllability: 'automatic',
+    decision: { state: 'none' },
+    conditionDecision: 'none',
+    explanation: { ...projection.explanation, code: 'conditionNotMet' },
+  };
+}
+
 export function projectWorldAssumptionAtDamageEvaluation(
   projection: EffectProjection,
   finalState: ExecutableBattleState,
+  operation: BattleOperation | undefined,
 ): EffectProjection {
-  if (
-    projection.contributionControl !== 'worldAssumption' ||
-    projection.explanation.condition === null
-  )
-    return projection;
+  if (projection.contributionControl !== 'worldAssumption') return projection;
+  if (operation?.kind !== 'executeNpDamage')
+    throw new TypeError(`missing_world_assumption_np_operation:${projection.operationId}`);
+  if (!operationVariantMatchesFinal(operation, finalState))
+    return inactiveVariantProjection(projection);
+  if (projection.explanation.condition === null) return projection;
   const condition = evaluateCondition(projection.explanation.condition, finalState).truth;
   if (condition === null) return projection;
   const applied = condition;

@@ -26,6 +26,7 @@ export function preparationTargetFacts(
     attackerAttribute: attribute,
     domain,
     constraints: [],
+    readExpressions: [],
   });
   const candidates = resolution.kind === 'candidates' ? resolution.candidates : [];
   const first = candidates[0]?.facts ?? [];

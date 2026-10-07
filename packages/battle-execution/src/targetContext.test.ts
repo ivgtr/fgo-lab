@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CanonicalTargetDomain } from '@fgo-lab/master-data';
-import { validateTargetCandidateConstraint } from './targetContext';
+import { resolveTargetCandidates, validateTargetCandidateConstraint } from './targetContext';
 
 const domain: CanonicalTargetDomain = {
   classIdentities: ['saber', 'lancer'],
@@ -46,5 +46,58 @@ describe('target candidate constraint validation', () => {
         present: true,
       }),
     ).toEqual({ kind: 'conflict' });
+  });
+
+  it('exposes both polarities of a damage read without constraining a relative target', () => {
+    const resolved = resolveTargetCandidates({
+      context: {
+        class: { kind: 'relative', relation: 'neutral' },
+        attribute: { kind: 'relative', relation: 'neutral' },
+        families: [],
+      },
+      attackerClass: 'shielder',
+      attackerAttribute: 'star',
+      domain,
+      constraints: [],
+      readExpressions: [
+        {
+          kind: 'targetPredicate',
+          scope: 'target',
+          predicate: { kind: 'classIdentity', classId: 'saber' },
+          present: true,
+        },
+        {
+          kind: 'targetPredicate',
+          scope: 'target',
+          predicate: { kind: 'attributeIdentity', attribute: 'sky' },
+          present: true,
+        },
+      ],
+    });
+    expect(resolved.kind).toBe('candidates');
+    if (resolved.kind !== 'candidates') return;
+    expect(resolved.candidates).toHaveLength(4);
+    expect(
+      new Set(
+        resolved.candidates.map(
+          (candidate) =>
+            candidate.facts.find(
+              ({ predicate }) =>
+                predicate.kind === 'classIdentity' && predicate.classId === 'saber',
+            )?.present,
+        ),
+      ),
+    ).toEqual(new Set([true, false]));
+    expect(
+      new Set(
+        resolved.candidates.map(
+          (candidate) =>
+            candidate.facts.find(
+              ({ predicate }) =>
+                predicate.kind === 'attributeIdentity' && predicate.attribute === 'sky',
+            )?.present,
+        ),
+      ),
+    ).toEqual(new Set([true, false]));
   });
 });
