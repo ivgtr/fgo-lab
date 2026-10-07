@@ -8,8 +8,9 @@ import type { ConditionEvaluationState } from './condition';
 import type { SourceEffect } from './sourceCollection';
 import { resourceSourceActor } from './resourceQueries';
 import { canonicalRequirementLeaves } from '@fgo-lab/master-data';
-import { readTraitQuantity } from './traitFactLayers';
+import { readTraitPresence } from './traitFactLayers';
 import { evaluateCondition } from './condition';
+import { liveTraitQuantityRead } from './stackQuantities';
 
 /** Above this count, every selected positive NP reader saturates even from an empty gauge. */
 export function populationCountSaturation(
@@ -74,9 +75,7 @@ type PopulationSide = 'allies' | 'enemies';
 type PopulationScope = PopulationCountSelector['scope'] | 'target';
 
 /** The local actors observed by a population selector, independent of external cohort sizes. */
-export function populationLocalActors(
-  scope: PopulationScope,
-): readonly ('attacker' | 'target')[] {
+export function populationLocalActors(scope: PopulationScope): readonly ('attacker' | 'target')[] {
   switch (scope) {
     case 'allies':
     case 'recipient':
@@ -258,12 +257,13 @@ function localTraitCount(
   }
   let count = 0;
   for (const trait of selector.traits) {
+    // An intrinsic trait is one individuality; active grants retain their live multiplicity.
     const intrinsic = facts.initialTraitSuppressions[actor].has(trait)
-      ? { value: 0 }
-      : readTraitQuantity(facts.traitFactLayers, actor, trait);
-    const applied = readTraitQuantity(facts.traitFactLayers, stateScope, trait);
-    if (intrinsic.value === null || applied.value === null) return null;
-    count += intrinsic.value + applied.value;
+      ? false
+      : readTraitPresence(facts.traitFactLayers, actor, trait).value;
+    const applied = liveTraitQuantityRead(facts, { scope: stateScope, trait }).value;
+    if (intrinsic === undefined || applied === undefined) return null;
+    count += Number(intrinsic) + applied;
   }
   return count;
 }

@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+17:06 UTC 306200の人数読取修復（2026-10-07）: intrinsic特性は一つのidentityとして0/1、active付与はmarker優先の正確な数量で読み、unknown/proof欠落をfail closedにした。局所7/7、人口公開parity対象成功。parity全fileは5/6・warning0で、残りは旧422 digestだけ。現422集合と407成功/15修復待ちのstatus assertionsは通過し、旧`ec4689...`対現`fb7167...`の内容diffを確認してから固定値を更新する。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)に原runと不変条件。R1未受入。
+
+17:01 UTC 306200のrepresentative root（2026-10-07）: included/satisfiedのunsupported2268/5700候補。代表skill1→2→NP、外部人数0、attackerState false・target intrinsic true・targetState falseが渡る。欠けたworld factではなく、positive intrinsicは数量unknownなのに`readPopulationCount`が個性数でも数量readを要求する点が直接原因。intrinsic membershipをproof付き0/1、activeはmarker優先のlive数量として読む修正を行い、unknownはfail closedを保つ。観測根拠と検証境界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。一時観測code削除済み。R1未受入。
+
 16:50 UTC buff数量の局所修復（2026-10-07）: 公開1101600のNP側最大10、skill3込み最大30を同じcanonical入力のplan別定義として扱い、範囲外の既知値はrepairable inputRequiredに分類した。候補seed前にはinvalid factへ束縛する。count11・NPのみ入力待ち→count10計算成功、count11・skill3込み計算成功を追加fixtureで確認。buff parity対象1test成功・warning0だが`-t` skip5件によりrunner総合contract_failure(code0)、full file完了証拠ではない（原と判断は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)）。306200と旧digestは残る。R1未受入。
 
 16:49 UTC buff数量の直接原因と次修正（2026-10-07）: 最初のthrowは公開1101600・NP2・初期count11・skillなし。同一keyのNP読取最大10とskill付与数最大30はplanにより別の有効範囲となる。nativeは初期11を保持、候補はNP最大10に対する既知値を無効化せずseedで例外。候補側invalid fact化で例外は消えたが`unsupported`になり、既知定義の修復可能な範囲外値を`invalidInputKeys`で`unknownInputKey`とする分類が原因。非stackの既存規則と同様にこの値を`missingDefinitions`へ分類し、count10修復とskill3有りの最大30経路を反証する。直接生成→分類→候補→結果の証拠は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。306200と最終productionは残る。R1未受入。

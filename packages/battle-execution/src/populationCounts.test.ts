@@ -133,6 +133,61 @@ describe('live actor population count', () => {
       }),
     ).toBe(2);
   });
+  it('counts a selected intrinsic trait once and reads live marker multiplicity', () => {
+    const current = facts();
+    const proof = { kind: 'selectedInitialResource' as const, clock: current.conditionReadClock };
+    current.traitFactLayers = assertExternalInitialTrait(
+      current.traitFactLayers,
+      'target',
+      'a',
+      true,
+      proof,
+    );
+    expect(
+      readPopulationCount({
+        selector: { ...selector, scope: 'enemies', counting: 'individualities', traits: ['a'] },
+        inputKey: 'unused',
+        values: {},
+        facts: current,
+        events: [],
+      }),
+    ).toBe(1);
+
+    const marker = {
+      identity: 'marker:a',
+      actor: 'attacker',
+      traits: ['buffId:5966'],
+      lifetime: 'active' as const,
+      count: 2,
+      marker: {
+        actorTrait: 'a',
+        buffIdentity: 'buffId:5966',
+        removable: true,
+        onField: false,
+        recipientSide: 'both' as const,
+      },
+    };
+    current.buffInstances = [marker];
+    (current.conditionFactProofs.markers as Map<string, typeof proof>).set(marker.identity, proof);
+    const args = {
+      selector: {
+        ...selector,
+        scope: 'recipient' as const,
+        counting: 'individualities' as const,
+        traits: ['a'],
+      },
+      inputKey: 'unused',
+      values: {},
+      facts: current,
+      events: [],
+    };
+    expect(readPopulationCount(args)).toBe(3);
+    current.buffInstances = [{ ...marker, uncertain: true }];
+    expect(readPopulationCount(args)).toBeNull();
+    current.buffInstances = [marker];
+    (current.conditionFactProofs.markers as Map<string, typeof proof>).delete(marker.identity);
+    expect(() => readPopulationCount(args)).toThrow('marker:marker:a');
+  });
   it('counts enemy-wide buff grants once per target and clears them on removal', () => {
     const event: PopulationEvent = {
       source,
