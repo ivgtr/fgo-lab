@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { targetClassCandidates } from '@fgo-lab/calc-core';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { createStaticAttackProfiles } from './attackProfile';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
@@ -198,6 +199,7 @@ it('executes the shared marker population across legal NP/OC cells, CE normal/LB
     await import('@fgo-lab/master-data');
   const { createDefaultResolvedScenario, calculateScenario } = await import('./scenario');
   const { applyCanonicalInputCommand } = await import('./canonicalInputs');
+  const { applyTargetContextCommand } = await import('./targetContext');
   const master = await masterPromise;
   const versions = {
     ...currentCalculationVersionContext(master),
@@ -224,6 +226,39 @@ it('executes the shared marker population across legal NP/OC cells, CE normal/LB
   );
   const records: unknown[] = [],
     failures: unknown[] = [];
+  const targetRepairs: string[] = [];
+  const repairAmbiguousTarget = (
+    actor: (typeof master.servants)[number],
+    scenario: ReturnType<typeof createDefaultResolvedScenario>,
+    execution: ReturnType<typeof calculateScenario>,
+  ) => {
+    if (
+      execution.result.status !== 'inputRequired' ||
+      !execution.result.issues.some(
+        ({ code }) => code === 'invalidTargetContext:ambiguousTargetResult:',
+      )
+    )
+      return { scenario, execution, repaired: false };
+    expect(execution.result.issues).toMatchObject([
+      { code: 'invalidTargetContext:ambiguousTargetResult:' },
+    ]);
+    const classId = targetClassCandidates(actor.classId, scenario.targetContext.class)[0];
+    expect(classId).toBeDefined();
+    if (!classId) throw new Error(`marker target class candidate missing:${actor.id}`);
+    const concrete = {
+      ...scenario,
+      targetContext: applyTargetContextCommand(
+        applyTargetContextCommand(scenario.targetContext, { kind: 'setConcreteClass', classId }),
+        { kind: 'setConcreteAttribute', attribute: 'earth' },
+      ),
+    };
+    targetRepairs.push(actor.id);
+    return {
+      scenario: concrete,
+      execution: calculateScenario(concrete, master, versions),
+      repaired: true,
+    };
+  };
   const ces = master.craftEssences.filter((ce) => ce.effects.some(hasMarker));
   for (const actor of actors) {
     const base = createDefaultResolvedScenario(master, undefined, actor);
@@ -242,7 +277,13 @@ it('executes the shared marker population across legal NP/OC cells, CE normal/LB
       let execution = calculateScenario(scenario, master, versions);
       const initialStatus = execution.result.status;
       const repairedKeys = new Set<string>();
-      for (let attempt = 0; attempt < 3 && execution.result.status === 'inputRequired'; attempt++) {
+      for (
+        let attempt = 0;
+        attempt < 3 &&
+        execution.result.status === 'inputRequired' &&
+        execution.result.requiredInputs.some(({ key }) => key.startsWith('oc:world:'));
+        attempt++
+      ) {
         for (const input of execution.result.requiredInputs) {
           expect(input.key).toMatch(/^oc:world:/);
           expect(repairedKeys.has(input.key)).toBe(false);
@@ -255,11 +296,15 @@ it('executes the shared marker population across legal NP/OC cells, CE normal/LB
         }
         execution = calculateScenario(scenario, master, versions);
       }
+      const target = repairAmbiguousTarget(actor, scenario, execution);
+      scenario = target.scenario;
+      execution = target.execution;
       const record = {
         actor: actor.id,
         npLevel,
         initialOvercharge,
         initialStatus,
+        targetRepaired: target.repaired,
         scenario,
         status: execution.result.status,
         issues: execution.result.issues,
@@ -278,11 +323,17 @@ it('executes the shared marker population across legal NP/OC cells, CE normal/LB
             limitBreak,
           },
         };
-        const execution = calculateScenario(scenario, master, versions);
+        const target = repairAmbiguousTarget(
+          actor,
+          scenario,
+          calculateScenario(scenario, master, versions),
+        );
+        const execution = target.execution;
         const record = {
           actor: actor.id,
           ce: ce.id,
           limitBreak,
+          targetRepaired: target.repaired,
           status: execution.result.status,
           issues: execution.result.issues,
         };
@@ -338,4 +389,6 @@ it('executes the shared marker population across legal NP/OC cells, CE normal/LB
       JSON.stringify({ actors: actors.map((a) => a.id), records, failures }, null, 2) + '\n',
     );
   expect(failures).toEqual([]);
+  expect(targetRepairs).toHaveLength(21);
+  expect([...new Set(targetRepairs)].sort()).toEqual(['303200', '505200', '505500']);
 }, 120_000);
