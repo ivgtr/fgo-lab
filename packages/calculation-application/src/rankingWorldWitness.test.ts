@@ -3,10 +3,10 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
   evaluateConditionExpression,
+  createPreNoblePhantasmState,
   targetConditionWitnessSpace,
   traitConditionEvaluationSource,
   type ConditionExpression,
-  type ExecutableBattleState,
 } from '@fgo-lab/battle-execution';
 import {
   masterSnapshotSchema,
@@ -29,70 +29,44 @@ const root = resolve(import.meta.dirname, '../../..');
 function stateFor(
   servant: ServantMaster,
   candidate: RankingWorldCandidate,
-  master?: MasterDataSnapshot,
-): ExecutableBattleState {
-  const traits = {
-    attacker: new Map<string, boolean>(),
-    attackerState: new Map<string, boolean>(),
-    target: new Map<string, boolean>(),
-    targetState: new Map<string, boolean>(),
-    field: new Map<string, boolean>(),
-  };
-  for (const fact of candidate.traitFacts) traits[fact.scope].set(fact.trait, fact.present);
+  master: MasterDataSnapshot,
+) {
   const variant = servant.noblePhantasmVariantGroups[0]!.variants[0]!;
-  const predicateFacts = master
-    ? [
-        ...master.targetSemantics.execution.classIdentities.map((classId) => ({
-          key: `class:${classId}`,
-          predicate: { kind: 'classIdentity' as const, classId },
-          present: classId === candidate.classId,
-        })),
-        ...master.targetSemantics.execution.attributeIdentities.map((attribute) => ({
-          key: `attribute:${attribute}`,
-          predicate: { kind: 'attributeIdentity' as const, attribute },
-          present: attribute === candidate.attribute,
-        })),
-        ...master.targetSemantics.execution.families.map(({ familyId }) => ({
-          key: `family:${familyId}`,
-          predicate: { kind: 'familyMembership' as const, familyId },
-          present: candidate.familyIds.includes(familyId),
-        })),
-      ]
-    : [];
-  return {
-    actorFormId: variant.ref.actorFormId,
-    noblePhantasmVariant: variant,
-    card: variant.kind === 'attack' ? variant.card : 'buster',
-    traits,
-    actorPredicates: {
-      attacker: new Map(),
-      target: new Map(
-        predicateFacts.map(({ key, predicate, present }) => [key, { predicate, present }]),
-      ),
-    },
-    stackQuantitySources: {},
-    traitCounts: {
-      attacker: {},
-      attackerState: {},
-      target: Object.fromEntries(
-        [...traits.target].flatMap(([trait, present]) => (present ? [[trait, 1]] : [])),
-      ),
-      targetState: Object.fromEntries(
-        [...traits.targetState].flatMap(([trait, present]) => (present ? [[trait, 1]] : [])),
-      ),
-      field: {},
-    },
-    initialTraitSuppressions: { attacker: new Set(), target: new Set() },
-    quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
-    inputFacts: new Map(),
-    modifiers: [],
-    modifierRates: {},
-    ignoreDefense: false,
-    ignoreDamageCut: false,
-    evidence: [],
-    unresolved: [],
-    activationContext: { facts: [], byKey: new Map() },
-  } as unknown as ExecutableBattleState;
+  const predicateFacts = [
+    ...master.targetSemantics.execution.classIdentities.map((classId) => ({
+      key: `class:${classId}`,
+      predicate: { kind: 'classIdentity' as const, classId },
+      present: classId === candidate.classId,
+    })),
+    ...master.targetSemantics.execution.attributeIdentities.map((attribute) => ({
+      key: `attribute:${attribute}`,
+      predicate: { kind: 'attributeIdentity' as const, attribute },
+      present: attribute === candidate.attribute,
+    })),
+    ...master.targetSemantics.execution.families.map(({ familyId }) => ({
+      key: `family:${familyId}`,
+      predicate: { kind: 'familyMembership' as const, familyId },
+      present: candidate.familyIds.includes(familyId),
+    })),
+  ];
+  const created = createPreNoblePhantasmState(servant, variant.ref.actorFormId, {
+    stochasticSelection: { kind: 'declared' },
+    resourceSemantics: master.npResourceSemantics,
+    npLevel: 1,
+    initialGauge: 10_000,
+    overcharge: 1,
+    targetPredicates: predicateFacts.map(({ predicate, present }) => ({
+      sourceKey: 'witness:target',
+      predicate,
+      present,
+    })),
+    worldFacts: candidate.traitFacts.map((fact) => ({
+      decisionKey: `witness:${fact.scope}:${fact.trait}`,
+      fact: { kind: 'trait', ...fact },
+    })),
+  });
+  if (created.status !== 'applied') throw new Error(`witness_state:${created.code}`);
+  return created.state;
 }
 
 function positiveExclusiveTraits(facts: readonly RankingTraitFact[]): string[] {
@@ -416,7 +390,7 @@ describe('ranking target witness completeness', () => {
         count: 1,
       },
     ];
-    const score = (state: ExecutableBattleState) =>
+    const score = (state: ReturnType<typeof stateFor>) =>
       conditions.reduce(
         (total, condition, index) =>
           total +
