@@ -25,7 +25,11 @@ import {
   traitConditionConstraintScope,
   traitConstraintActorScope,
 } from './conditionSemantics';
-import { conditionRequiresQuantity, evaluateCondition } from './condition';
+import {
+  conditionRequiresQuantity,
+  evaluateCondition,
+  readsLiveConstantModifier,
+} from './condition';
 import { contributionId } from './contributionIdentity';
 
 export function resolveOperationProjectionEvaluation(
@@ -110,9 +114,11 @@ export function resolveModifierValue(
   >,
   observeHpRead?: (read: { permille: number | null; value: number | null }) => void,
 ): ResolvedModifierValue {
-  const observed = operation.runtimeBinding?.modifierValueRead;
+  const liveConstant = readsLiveConstantModifier(operation);
+  const observed = liveConstant ? undefined : operation.runtimeBinding?.modifierValueRead;
   if (observed) return observed.result;
   if (
+    !liveConstant &&
     operation.runtimeBinding?.source.modifierReadOwner === 'nativePreparation' &&
     operation.valueExpression
   )
@@ -127,7 +133,7 @@ export function resolveModifierValue(
             read: liveTraitQuantityRead(state, source.quantitySource),
           }))
         : [{ key: expression.inputKey, read: liveInputQuantityRead(state, expression.inputKey) }];
-    const binding = executionBindingFor(operation);
+    const binding = liveConstant ? undefined : executionBindingFor(operation);
     const clock = {
       ...state.conditionReadClock,
       phase: 'operation' as const,

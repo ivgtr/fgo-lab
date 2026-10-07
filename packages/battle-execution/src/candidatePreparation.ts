@@ -222,5 +222,13 @@ export function prepareCandidateExecution(
         new Set(),
       ),
     };
-  return prepareExecutableCandidate(prepared, resolvedInputs, base, activation.context);
+  const candidate = prepareExecutableCandidate(prepared, resolvedInputs, base, activation.context);
+  if (candidate.constraintIssues.some((issue) => issue.kind === 'constraintConflict'))
+    return {
+      ...base,
+      status: 'invalidActivationContext',
+      issues: candidate.constraintIssues,
+      resolvedCompileProjections: candidate.resolvedCompileProjections,
+    };
+  return candidate;
 }

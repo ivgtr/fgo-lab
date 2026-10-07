@@ -3266,7 +3266,31 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+12:24 UTC shared audit（2026-10-07）: current code19/20・warning0、残るcalculator相対対象`inputRequired`15は前回と同集合、rankingFailure0。最終diffの全productionやqualityは未実施。原と範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:23 UTC 限定audit（2026-10-07）: `productionMasterControlAudit`はproducer receipt10種欠落で`artifact_failure`、1/10成功（CE/mystic code全projection）、9失敗は現source帰属未確定。局所52/52へ上書きせず原を保持。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:21 UTC conflict投影局所修正（2026-10-07）: hard conflictを実行前拒否しながら効果ごとの`notApplied`投影を保持。scenario43＋reachable3＋candidate prep5＋CE HP1＝52/52・warning0。最終codeの型/lint/書式と広いproductionは未検証。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:19 UTC 60分checkpoint（2026-10-07）: HEAD`da9e8c1`から6file dirty。constant live readでreachable control3/3・CE HP golden成功、型検査・局所20/20。一方`scenario.test.ts`は42/43、hard conflict拒否の投影が空で、既存期待`notApplied`×2と不一致。競合時の未実行operation投影を保持する同atomic familyを修正中。HP skillUse/BPとcalculator相対対象の固定契約判断、他production、全15Apply/最終qualityは未達。詳細・原artifact・次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:16 UTC constant modifier局所収束（2026-10-07）: constant addModifierの実行時readとhard conflictの早期拒否を接続。reachable control／variant／candidate prep／CE HP golden20/20・warning0、型検査・eslint・diff check成功。書式2fileと広いproductionは未完、根拠は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:15 UTC preflight縮小（2026-10-07）: 全constraint issue早期拒否はstochastic不正の操作診断1件を欠落させた。hard `constraintConflict`だけを開始前拒否し、他のtyped不正のtraceを保つ。原19/20と境界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:14 UTC constant modifier反証の残件（2026-10-07）: moon通常／rankingは回復したが、競合world factの`unsupported`結果でprojectionだけ`applied`となる。constraint issueを候補実行前にfail closedへする設計を直接経路で確認中。`variantSelection`手製fixtureの型差も未修正。原と境界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:10 UTC constant modifier修正境界（2026-10-07）: 初期passive読取が後続form/trait変化後の`damageModifier`を旧falseへ固定する共通原因を確認。constant単一modifierのpassive385／CE945件はdamage時条件・値式を読む。skillUse receiptや物理writeは保持。局所実装と直接反証へ進む。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:07 UTC BP固定差（2026-10-07）: 705300の実最大はslot2→3→slot1 choice2でsource時BP0の読取に基づき、通常53945／成立込み106204。3300200のpassive確定BP+5はNP scalar phase1／1.1に反映、旧成立込みphase10世界は現固定初期stateの合法候補ではない。固定数値・候補counterを変更せず、詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:03 UTC HP読取の直接帰属（2026-10-07）: slot2使用時のHP500/240をnative source receiptが封印し、後段回復後HP752/492とは別。現on値はattackBuff0.601/0.705、旧固定はnotApplied/0.604。`gameActivation=skillUse`との整合から使用時snapshotを推奨し、固定期待を変える判断は利用者照会中。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+12:01 UTC HP controlの未確定帰属（2026-10-07）: 旧固定は初期HP500→準備後752でHP条件効果`notApplied`、現productionは`applied`。公開IRはskill使用時条件付き攻撃力効果、native bindingはsource activation読取を後段で再利用する。準備行動順・read値・ゲーム規則の確認前に旧期待またはexecutorを変更しない。調査経路と証拠は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
 Depends on: TSK-13
+
+11:58 UTC `da9e8c1` production全件（2026-10-07）: 単独suite 140/166成功・26失敗、17file成功／16file失敗・warning0、原`.test-results/2026-10-07T11-51-47-043Z-15-20e105/`。rankingFailure 0だがcalculator default相対対象15件が複数固定suiteへ伝播。BP、HP、control、marker、旧golden/counter/world inventory等の別familyも残る。新26件の差分帰属は未確定、固定入力/期待/VRTは維持。独立familyを一つずつ直接調査し、局所反証へ進む。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14 in_progress／R1未受入。
 
 11:52 UTC 相対target局所収束（2026-10-07）: 除外済み`npSpecial`投影の相対集約と非選択variant world投影のtyped gateを実装。公開Olga2 profileを含む局所22/22、型検査・対象eslint/format/diff check成功。共有production auditはrankingFailure 0、calculator defaultの相対対象15件`inputRequired`のみ残り19/20（原`.test-results/2026-10-07T11-49-33-186Z-15-0f0175/`）。calculatorの実二値と固定422 calculatedの扱いは製品判断照会中。固定expected／counter／VRTは未変更、全production・実UI/save・性能/quality/全15 Apply未達。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14 in_progress／R1未受入。
 

@@ -271,7 +271,7 @@ export function evaluateCondition(
       const actual =
         state.noblePhantasmVariant !== null &&
         noblePhantasmVariantKey(state.noblePhantasmVariant.ref) ===
-        noblePhantasmVariantKey(condition.variant);
+          noblePhantasmVariantKey(condition.variant);
       return leaf(actual, actual, [constant]);
     }
     case 'choice':
@@ -450,19 +450,30 @@ export function evaluateCondition(
   }
 }
 
-/** Explicit unread sources are evaluated at this operation; a prior source read is immutable. */
+/** Constant modifiers are continuous reads; command sources keep their sealed use-time receipt. */
+export function readsLiveConstantModifier(
+  operation: Pick<BattleOperation, 'kind' | 'gameActivation'>,
+): boolean {
+  return operation.kind === 'addModifier' && operation.gameActivation === 'constant';
+}
+
+/** Explicit unread sources and continuous modifiers are evaluated at this operation. */
 export function readOperationCondition(
-  operation: Pick<BattleOperation, 'sourceActivation' | 'condition' | 'operationId' | 'source'>,
+  operation: Pick<
+    BattleOperation,
+    'kind' | 'gameActivation' | 'sourceActivation' | 'condition' | 'operationId' | 'source'
+  >,
   state: ConditionEvaluationState,
   onConditionRead?: (read: ConditionReadAudit) => void,
 ): ConditionRead {
-  if (operation.sourceActivation.kind === 'read') {
+  const liveConstant = readsLiveConstantModifier(operation);
+  if (!liveConstant && operation.sourceActivation.kind === 'read') {
     const binding = executionBindingFor(operation as BattleOperation);
     if (onConditionRead && binding)
       for (const read of binding.conditionReads) onConditionRead(read);
     return operation.sourceActivation.read;
   }
-  const binding = executionBindingFor(operation as BattleOperation);
+  const binding = liveConstant ? undefined : executionBindingFor(operation as BattleOperation);
   const clock = {
     ...state.conditionReadClock,
     phase: binding ? ('sourceUse' as const) : ('operation' as const),

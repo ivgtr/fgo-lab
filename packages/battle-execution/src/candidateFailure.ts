@@ -8,6 +8,8 @@ import type {
   ResolvedCanonicalInputSet,
 } from './executionTypes';
 import { createRejectedBattleState } from './state';
+import { createOperationProjection } from './projection';
+import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 
 export function assembleInvalidActivationResult({
   prepared,
@@ -30,7 +32,33 @@ export function assembleInvalidActivationResult({
       present: true,
     })),
   );
-  const projections = attachActivationSources(prepared, candidate.resolvedCompileProjections);
+  const conflict = candidate.issues.some((issue) => issue.kind === 'constraintConflict');
+  const projections = attachActivationSources(prepared, [
+    ...candidate.resolvedCompileProjections.map((projection) =>
+      conflict && projection.outcome === 'applied'
+        ? {
+            ...projection,
+            outcome: 'notApplied' as const,
+            explanation: { ...projection.explanation, code: 'unresolved' as const },
+          }
+        : projection,
+    ),
+    ...(conflict
+      ? prepared.operations.map((operation) =>
+          createOperationProjection(
+            operation,
+            'notApplied',
+            'unresolved',
+            null,
+            operation.decisionKey ? candidate.decisions.get(operation.decisionKey) : undefined,
+            null,
+            false,
+            { kind: 'relative', relation: defaultTargetClassRelation(prepared.attackerClass) },
+            { kind: 'relative', relation: 'neutral' },
+          ),
+        )
+      : []),
+  ]);
   const issues = [
     ...targetResolutionIssues(prepared.targetResolution),
     ...resolvedInputs.invalidInputKeys.map<ExecutionIssue>((inputKey) => ({

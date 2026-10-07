@@ -93,6 +93,7 @@ const activation = analyzeActivationFactSet([]);
 if (activation.status !== 'valid') throw new Error('empty activation facts must be valid');
 const state = createInitialBattleState(input, base, [], {}, [], [], activation.factSet);
 const operationBase = {
+  kind: 'addTrait' as const,
   order: 1,
   phase: 'attackerSkill' as const,
   source: {
