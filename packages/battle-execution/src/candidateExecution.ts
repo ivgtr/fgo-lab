@@ -45,7 +45,11 @@ import type {
 import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
 import { assembleInvalidActivationResult } from './candidateFailure';
-import { markOperationGroupUnsupported } from './candidateRollback';
+import {
+  markOperationGroupInputRequired,
+  markOperationGroupUnsupported,
+} from './candidateRollback';
+import { contributionIsIncluded } from './effectiveContributions';
 import {
   applyOrderedCriticalStarsMutation,
   applyOrderedQuantityMutation,
@@ -81,6 +85,115 @@ import {
 function requireNormalPreparation(prepared: PreparedOrderedScenario): void {
   if (prepared.preparationExecution.kind === 'diagnostic')
     throw new TypeError('diagnostic_preparation_is_not_normal_execution');
+}
+
+function groupHasMissingActiveInput(
+  results: readonly OperationResult[],
+  issues: readonly ExecutionIssue[],
+  missingDefinitions: ResolvedCanonicalInputSet['missingDefinitions'],
+  activations: ReadonlyMap<string, { enabled: boolean }>,
+  policy: ContributionApplicationPolicy,
+): boolean {
+  if (
+    issues.some(
+      (issue) =>
+        issue.kind !== 'unsupportedOperation' || issue.detail !== 'modifier_value_quantity_missing',
+    )
+  )
+    return false;
+  return missingDefinitions.some((definition) =>
+    results.some(
+      (result) =>
+        result.operation.inputDefinitions.some((input) => input.key === definition.key) &&
+        activations.get(result.operation.operationId)?.enabled === true &&
+        result.conditionRead.truth !== false &&
+        contributionIsIncluded(result.operation, result.conditionRead, policy) &&
+        (result.outcome === 'applied' ||
+          (result.valueDependencyRead?.kind === 'inputRequired' &&
+            result.valueDependencyRead.evidence.some(
+              ({ expression }) =>
+                expression.kind === 'inputQuantity' && expression.inputKey === definition.key,
+            ))),
+    ),
+  );
+}
+
+function recordMissingInputRollback(args: {
+  audit: MutableCandidateStateAudit | undefined;
+  pendingMutationEvents: PendingMutationAuditEvent[] | null;
+  results: readonly OperationResult[];
+  initialGroupResultIndex: number;
+  groupIndex: number;
+  operationGroup: readonly BattleOperation[];
+  initialGroupState: ExecutableBattleState;
+  initialGroupInput: PreparedOrderedScenario['baseInput'];
+  state: ExecutableBattleState;
+  input: PreparedOrderedScenario['baseInput'];
+}): void {
+  const {
+    audit,
+    pendingMutationEvents,
+    results,
+    initialGroupResultIndex,
+    groupIndex,
+    operationGroup,
+    initialGroupState,
+    initialGroupInput,
+    state,
+    input,
+  } = args;
+  if (!audit || !pendingMutationEvents) return;
+  appendExecutionGroupAudit({
+    audit,
+    groupIndex,
+    operationGroup,
+    operationIdsApplied: collectAppliedOperationIds(results, initialGroupResultIndex),
+    outcome: 'rolledBack',
+    issues: [],
+    pendingMutationEvents,
+    restoredState: initialGroupState,
+    rollbackProof: {
+      battleStateRestored: battleStateRestoredToGroupStart(initialGroupState, state),
+      damageInputRestored: auditValuesEqual(initialGroupInput, input),
+    },
+  });
+}
+
+function rollbackUnsupportedGroup(args: {
+  audit: MutableCandidateStateAudit | undefined;
+  pendingMutationEvents: PendingMutationAuditEvent[] | null;
+  results: OperationResult[];
+  initialGroupResultIndex: number;
+  groupIndex: number;
+  operationGroup: readonly BattleOperation[];
+  initialGroupState: ExecutableBattleState;
+  initialGroupInput: PreparedOrderedScenario['baseInput'];
+  issues: readonly ExecutionIssue[];
+}): ExecutableBattleState {
+  const attemptedAppliedOperationIds = args.audit
+    ? collectAppliedOperationIds(args.results, args.initialGroupResultIndex)
+    : null;
+  const state = {
+    ...args.initialGroupState,
+    unresolved: [...args.initialGroupState.unresolved, ...args.issues],
+  };
+  markOperationGroupUnsupported(args.results, args.initialGroupResultIndex, state, args.issues);
+  if (args.audit && args.pendingMutationEvents && attemptedAppliedOperationIds)
+    appendExecutionGroupAudit({
+      audit: args.audit,
+      groupIndex: args.groupIndex,
+      operationGroup: args.operationGroup,
+      operationIdsApplied: attemptedAppliedOperationIds,
+      outcome: 'rolledBack',
+      issues: [...args.issues],
+      pendingMutationEvents: args.pendingMutationEvents,
+      restoredState: args.initialGroupState,
+      rollbackProof: {
+        battleStateRestored: battleStateRestoredToGroupStart(args.initialGroupState, state),
+        damageInputRestored: auditValuesEqual(args.initialGroupInput, args.initialGroupInput),
+      },
+    });
+  return state;
 }
 
 function recordPreparationPhysicalInput(
@@ -470,6 +583,31 @@ function executeOrderedScenarioCandidateInternal(
         contributionIncluded,
       );
     }
+    const missingActiveInput = groupHasMissingActiveInput(
+      results.slice(initialGroupResultIndex),
+      groupIssues,
+      resolvedInputs.missingDefinitions,
+      candidate.activations,
+      contributionPolicy,
+    );
+    if (missingActiveInput) {
+      state = initialGroupState;
+      input = initialGroupInput;
+      recordMissingInputRollback({
+        audit,
+        pendingMutationEvents,
+        results,
+        initialGroupResultIndex,
+        groupIndex,
+        operationGroup,
+        initialGroupState,
+        initialGroupInput,
+        state,
+        input,
+      });
+      markOperationGroupInputRequired(results, initialGroupResultIndex, state);
+      continue;
+    }
     if (groupIssues.length === 0) {
       if (audit && pendingMutationEvents)
         appendExecutionGroupAudit({
@@ -485,30 +623,18 @@ function executeOrderedScenarioCandidateInternal(
         });
       continue;
     }
-    const attemptedAppliedOperationIds = audit
-      ? collectAppliedOperationIds(results, initialGroupResultIndex)
-      : null;
-    state = {
-      ...initialGroupState,
-      unresolved: [...initialGroupState.unresolved, ...groupIssues],
-    };
     input = initialGroupInput;
-    markOperationGroupUnsupported(results, initialGroupResultIndex, state, groupIssues);
-    if (audit && pendingMutationEvents && attemptedAppliedOperationIds)
-      appendExecutionGroupAudit({
-        audit,
-        groupIndex,
-        operationGroup,
-        operationIdsApplied: attemptedAppliedOperationIds,
-        outcome: 'rolledBack',
-        issues: [...groupIssues],
-        pendingMutationEvents,
-        restoredState: initialGroupState,
-        rollbackProof: {
-          battleStateRestored: battleStateRestoredToGroupStart(initialGroupState, state),
-          damageInputRestored: auditValuesEqual(initialGroupInput, input),
-        },
-      });
+    state = rollbackUnsupportedGroup({
+      audit,
+      pendingMutationEvents,
+      results,
+      initialGroupResultIndex,
+      groupIndex,
+      operationGroup,
+      initialGroupState,
+      initialGroupInput,
+      issues: groupIssues,
+    });
   }
   return assembleCandidateResult({
     prepared,

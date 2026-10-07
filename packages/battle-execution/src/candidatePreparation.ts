@@ -1,5 +1,10 @@
 import { hpPermille } from './hpResource';
-import { cloneInputFacts, seedUnreadInputFacts } from './inputFacts';
+import {
+  cloneInputFacts,
+  rejectInputFact,
+  seedUnreadInputFacts,
+  writeInputFact,
+} from './inputFacts';
 import type { ConditionFactProof } from './conditionRead';
 import { applyWorldFacts, createInitialBattleState } from './state';
 import { seedStackQuantities } from './stackQuantities';
@@ -111,11 +116,18 @@ function prepareExecutableCandidate(
   const preparationState = prepared.preparationExecution.state;
   const initialPreparationFacts = prepared.preparationExecution.initialFacts;
   initialState.hp = initialPreparationFacts.hp;
-  initialState.inputFacts = seedUnreadInputFacts(
-    cloneInputFacts(initialPreparationFacts.inputFacts),
-    resolvedInputs.values,
-    { kind: 'externalAssumption', clock: initialState.conditionReadClock },
-  );
+  let initialInputFacts = cloneInputFacts(initialPreparationFacts.inputFacts);
+  for (const definition of resolvedInputs.missingDefinitions) {
+    const fact = initialInputFacts.get(definition.key);
+    if (fact?.kind === 'known')
+      initialInputFacts = rejectInputFact(initialInputFacts, definition, fact);
+    else if (fact === undefined)
+      initialInputFacts = writeInputFact(initialInputFacts, definition.key, null, []);
+  }
+  initialState.inputFacts = seedUnreadInputFacts(initialInputFacts, resolvedInputs.values, {
+    kind: 'externalAssumption',
+    clock: initialState.conditionReadClock,
+  });
   initialState.battlePoints = initialPreparationFacts.battlePoints;
   initialState.battlePointDomains = prepared.battlePointDomains;
   initialState.resourceActor = 'attacker';

@@ -156,8 +156,16 @@ export function resolveModifierValue(
       ...(read.fact ? { quantityFact: read.fact } : {}),
     }));
     const missing = quantities.some(({ read }) => read.value === undefined);
+    const invalidInput = quantities.some(({ read }) => read.fact?.kind === 'invalid');
     const dependency: ConditionRead = missing
-      ? { kind: 'unsupported', truth: null, certainty: null, clock, evidence, support }
+      ? {
+          kind: invalidInput ? 'inputRequired' : 'unsupported',
+          truth: null,
+          certainty: null,
+          clock,
+          evidence,
+          support,
+        }
       : {
           kind: 'known',
           truth: true,

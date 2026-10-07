@@ -6,8 +6,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   calculateScenario as calculateScenarioOutcome,
   createDefaultResolvedScenario,
+  prepareCalculationScenario,
   requireExecutableCalculation,
 } from './scenario';
+import { applyCanonicalInputCommand } from './canonicalInputs';
 const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
   requireExecutableCalculation(calculateScenarioOutcome(...args));
 
@@ -162,5 +164,44 @@ describe('canonical actor population counts', () => {
         attackerId,
       ).toBe(true);
     }
+  });
+
+  it('invalidates the source read and rolls back both NP effects until input repair', () => {
+    const baseline = calculate('1102000');
+    const input = baseline.calculation.inputDefinitions.find(
+      (definition) => definition.kind === 'matchingActorCount',
+    )!;
+    const invalid = calculate('1102000', { [input.key]: input.minimum - 1 });
+    const prepared = prepareCalculationScenario(invalid.scenario, master);
+    const reads = prepared.orderedExecution?.operations.filter(({ operation }) =>
+      operation.source.effectOccurrenceId.startsWith('249:'),
+    );
+    expect(reads).toHaveLength(2);
+    expect(reads?.[0]?.valueDependencyRead).toMatchObject({
+      kind: 'inputRequired',
+      evidence: [{ value: null, quantityFact: { kind: 'invalid', value: input.minimum - 1 } }],
+    });
+    expect(reads?.map(({ outcome }) => outcome)).toEqual(['notApplied', 'notApplied']);
+    expect(invalid.calculation.result.status).toBe('inputRequired');
+    expect(invalid.calculation.input.npDamageBuff).toBe(0);
+
+    const repaired = applyCanonicalInputCommand(invalid.scenario, {
+      kind: 'setCanonicalIntegerInput',
+      key: input.key,
+      value: input.minimum,
+    });
+    expect(repaired.canonicalInputValues[input.key]?.value).toBe(input.minimum);
+    const result = requireExecutableCalculation(
+      calculateScenarioOutcome(repaired, master, {
+        schemaVersion: SCHEMA_VERSION,
+        engineVersion: ENGINE_VERSION,
+        appVersion: '0.1.0',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+        masterDataVersion: master.version,
+      }),
+    );
+    expect(result.result.status).toBe('calculated');
+    expect(result.input.npDamageBuff).toBe(baseline.calculation.input.npDamageBuff);
   });
 });
