@@ -4,6 +4,7 @@ import type {
   SourceActivationReceipt,
 } from './conditionRead';
 import { cloneConditionFactProofs, proofIsGuaranteed } from './conditionRead';
+import { hpPermille } from './hpResource';
 import type { PreNoblePhantasmState } from './preparationContracts';
 
 /** The value owner supplies the before/after states and the proof of that committed write. */
@@ -38,7 +39,19 @@ export function bindPreparationWriteProofs(
           `battlePoint:${actor}:${subject}`,
           proof,
         );
-  return { ...after, conditionFactProofs: facts };
+  const attackerHpChanged = before.hp?.actors.attacker !== after.hp?.actors.attacker;
+  return {
+    ...after,
+    ...(attackerHpChanged
+      ? {
+          quantities: {
+            ...after.quantities,
+            attackerHpPermille: hpPermille(after.hp?.actors.attacker),
+          },
+        }
+      : {}),
+    conditionFactProofs: facts,
+  };
 }
 
 export interface PreparationNpQuantityWrite {

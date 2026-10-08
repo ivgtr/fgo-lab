@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+03:21 UTC checkpoint（2026-10-08）: HP割合のnative準備write同期を共通`bindPreparationWriteProofs`で修正。変更前にも存在したHP unit4失敗は対象36/36成功へ回復、現source production全172/172・warning0、原artifactと実HP/quantity/proofの根拠は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。80条件の旧原runは修正前sourceなので新受入へ転用しない。別saved S0/S1、全6800 damage rowの帰属と新source差分、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
+
+03:07 UTC checkpoint（2026-10-08）: HP周辺unit4件は固定HEAD `fce4332`の独立worktreeで同Node/pnpm/lockfileの比較runを得た。現差分と同じ32成功／4失敗・warning0であり、今回監査差分の新規回帰ではない。ただし最終unit/qualityのBlockingとして残る。比較原、直接経路の次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。
+
 02:52 UTC checkpoint（2026-10-08）: 現差分のproduction全件は171/172成功・1失敗、warning0（原`.test-results/2026-10-08T02-43-07-049Z-15-e26d18/`）。失敗は3300200 included:satisfiedの旧候補数384期待で、物理target重複解消後の実上限/候補192、calculated最大35421・phase3、他3policyの数値は固定通り。fixtureの候補数だけ192へ更新し、対象file7/7・warning0（原`.test-results/2026-10-08T02-51-12-360Z-15-accbb1/`）。全productionは最終差分では未再実行。HP unit4件は未帰属・未修正。saved S0/S1、全6800 damage rowの帰属、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityも未達。根拠・次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。
 
 02:42 UTC checkpoint（2026-10-08）: 六クラス6/6/receipt0、HP published audit unit20/20・warning0（最終`.test-results/2026-10-08T02-40-34-541Z-15-ca3706/`）、対象typecheck/ESLint/Prettier成功。native source-useとconstant candidateのHP readを分け、condition captureの評価viewと元stateの共有quantity identityを接続した。docs gateは28/28・103 Markdown/44 evidence/1122 references成功（`.test-results/2026-10-08T02-41-48-620Z-560-c7ca36/`）。ただし追加`hpExecution.test`は4件失敗で、変更前HEAD `fce4332`の独立worktreeはoffline依存tarball欠落により同条件再現できず、診断帰属は`unverified`。詳細・原と次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全production現source、saved S0/S1、6800 damage rowの全帰属、正式after3process、全15 Apply、最終qualityは未達。TSK-14/R1未受入。

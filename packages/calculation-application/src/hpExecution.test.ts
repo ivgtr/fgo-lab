@@ -348,6 +348,10 @@ describe('HP initial intent through common preparation and recovery', () => {
       { operationIndex: 0, operationStatus: 'applied', transaction: 'rejected' },
       { operationIndex: 1, operationStatus: 'unsupported', transaction: 'rejected' },
     ]);
+    const rejected = resolveScenarioPreparationOutcome(scenario, master);
+    expect(rejected.status).toBe('rejected');
+    if (rejected.status === 'rejected')
+      expect(rejected.formExecution.state.quantities.attackerHpPermille).toBe(500);
   });
 
   it(
@@ -681,6 +685,7 @@ describe('HP initial intent through common preparation and recovery', () => {
         current: 7300,
         maximum: 11000,
       });
+      expect(execution.formExecution.state.quantities.attackerHpPermille).toBe(663);
       expect(
         execution.formExecution.state.hp?.receipts
           .filter((r) => r.occurrenceId.endsWith('heal'))
@@ -739,6 +744,7 @@ describe('HP initial intent through common preparation and recovery', () => {
       current: 5000,
       maximum: 11000,
     });
+    expect(r.formExecution.state.quantities.attackerHpPermille).toBe(454);
     expect(r.formExecution.actions[0]?.resourceAfter.gauge).toBe(11000);
     expect(
       r.formExecution.state.hp?.receipts.filter((x) => x.occurrenceId === 'loss'),
