@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+04:20 UTC checkpoint（2026-10-08）: 旧→現80条件34,640 recordの全receipt・status対応後、変化したdamage6,800/173,000行は1,360 recordすべてcanonical input差あり、旧・現の各行が同一現行damage式で完全再計算一致。21入力field集合、47 actor、旧現formula不一致0。原SHA・§20.2〜20.3への分類と未保証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。非数値record path全体、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
+
 04:18 UTC checkpoint（2026-10-08）: 別saved S0/S1 production12条件・5,196 outcomeは全gate成功。S0 common対応1,732件一致、S0計算可能1,730／policy unavailable2、S1計算可能3,456／policy unavailable8、非数値失敗0、計算可能5,186件parity一致、receipt0 error。固定source／manifest SHA・保証境界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。旧80全数値差の帰属、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
 
 04:09 UTC checkpoint（2026-10-08）: 別saved S0/S1の条件・profile・静的inventory接続を局所検査し、partition0の単一run digestへ修正。対象unit56/56・warning0、typecheck成功。直接理由・原artifactは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全433 profileの保存run／S0 common parity、全6800 damage row帰属、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
