@@ -12,6 +12,7 @@ import {
 import { inspectProductionConditionRecords } from './productionClosureRecordIntegrity';
 import { verifyCurrentProductionRecord } from './productionCurrentRecord';
 import { attackProfileKey, createStaticAttackProfiles } from './attackProfile';
+import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 
 const root = resolve(import.meta.dirname, '../../..');
 const master = masterSnapshotSchema.parse(
@@ -55,6 +56,7 @@ it('accepts the current producer record through an independent scenario replay',
       condition,
       master,
       versions,
+      profile: { servantBuilds: {} },
     }),
   ).toEqual([]);
 });
@@ -126,13 +128,19 @@ it('rejects nested unknown, missing, range, receipt and rehashed numeric mutatio
         profileCount: 1,
       }).status,
     ).toBe('accepted');
-    const failures = verifyCurrentProductionRecord({ value: changed, condition, master, versions });
+    const failures = verifyCurrentProductionRecord({
+      value: changed,
+      condition,
+      master,
+      versions,
+      profile: { servantBuilds: {} },
+    });
     expect(failures.length, expectedPath).toBeGreaterThan(0);
     expect(failures[0]!.firstDifference.path, expectedPath).toContain(expectedPath.split('.')[0]!);
   }
 });
 
-it('checks a noncalculated record against the static profile catalog and exact blocker shape', () => {
+it('rejects a noncalculated record without a matching semantic outcome', () => {
   const attackProfile = createStaticAttackProfiles(master.servants[0]!)[0]!;
   const profileKey = attackProfileKey(attackProfile);
   const empty = { count: 0, digest: 'fnv1a32:741638a5', representatives: [] };
@@ -155,9 +163,60 @@ it('checks a noncalculated record against the static profile catalog and exact b
     },
   };
   const verify = (value: unknown) =>
-    verifyCurrentProductionRecord({ value, condition, master, versions });
-  expect(verify(current)).toEqual([]);
+    verifyCurrentProductionRecord({
+      value,
+      condition,
+      master,
+      versions,
+      profile: { servantBuilds: {} },
+    });
+  expect(verify(current)[0]?.reason).toBe('canonicalRecordMismatch');
   const changed = structuredClone(current);
   Object.assign(changed.diagnostics.classes.inputRequired, { unknown: true });
   expect(verify(changed)[0]?.firstDifference.path).toBe('diagnostics.classes.inputRequired');
+});
+
+it('replays a published noncalculated outcome and rejects rehashed reason and blocker changes', () => {
+  const published = masterSnapshotSchema.parse(
+    JSON.parse(readFileSync(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+  );
+  const publishedVersions = { ...versions, masterDataVersion: published.version };
+  const servant = published.servants.find(({ id }) => id === '2501400')!;
+  const attackProfile = createStaticAttackProfiles(servant)[0]!;
+  const selectedCondition = productionClosureConditions()[20]!;
+  const outcome = calculateRankingPolicyDetail(
+    servant,
+    published,
+    { servantBuilds: {} },
+    selectedCondition,
+    publishedVersions,
+    attackProfile,
+    false,
+  );
+  expect(outcome.status).toBe('unavailableUnderPolicy');
+  if (outcome.status !== 'unavailableUnderPolicy') throw new Error('unavailable_fixture_required');
+  const saved: Record<string, unknown> = {
+    profileKey: attackProfileKey(attackProfile),
+    ...outcome,
+  };
+  const verify = (value: unknown) =>
+    verifyCurrentProductionRecord({
+      value,
+      condition: selectedCondition,
+      master: published,
+      versions: publishedVersions,
+      profile: { servantBuilds: {} },
+    });
+  expect(verify(saved)).toEqual([]);
+  const reasonChanged = structuredClone(saved);
+  reasonChanged['reason'] = 'noSatisfiableCandidate';
+  expect(verify(reasonChanged)[0]?.reason).toBe('canonicalRecordMismatch');
+  const blockerChanged = structuredClone(saved);
+  const classes = (blockerChanged['diagnostics'] as Record<string, unknown>)['classes'] as Record<
+    string,
+    unknown
+  >;
+  const unavailable = classes['unavailableUnderPolicy'] as Record<string, unknown>;
+  unavailable['digest'] = 'fnv1a32:00000000';
+  expect(verify(blockerChanged)[0]?.reason).toBe('canonicalRecordMismatch');
 });

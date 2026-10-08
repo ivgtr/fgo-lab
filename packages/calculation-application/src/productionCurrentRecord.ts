@@ -10,11 +10,12 @@ import {
   type VersionContext,
 } from '@fgo-lab/schema';
 import { attackProfileKey, createStaticAttackProfiles, type AttackProfile } from './attackProfile';
-import { compileRankingContributionPolicy, isAreaDamageContribution } from './contributionPolicy';
+import { compileRankingContributionPolicy } from './contributionPolicy';
 import { rankingPolicyKey } from './rankingComparisonPolicy';
 import { calculateScenarioWithPolicy } from './scenario';
+import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { recordFailure, type ProductionRecordFailure } from './productionClosureRecordIntegrity';
-import type { RankingPolicyConditions } from './rankingContracts';
+import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
 
 const nonempty = z.string().min(1);
 const count = z.number().int().nonnegative();
@@ -286,6 +287,7 @@ export function verifyCurrentProductionRecord(input: {
   condition: RankingPolicyConditions;
   master: MasterDataSnapshot;
   versions: VersionContext;
+  profile: RankingProfileInput;
   profilesByKey?: ReadonlyMap<string, AttackProfile>;
 }): ProductionRecordFailure[] {
   const { value, condition, master, versions } = input;
@@ -328,6 +330,43 @@ export function verifyCurrentProductionRecord(input: {
       );
       if (mismatch) return [mismatch];
     }
+    const servant = master.servants.find(({ id }) => id === expectedProfile.id.servantLineageId);
+    if (!servant)
+      return [
+        failure(
+          'canonicalRecordMismatch',
+          identity,
+          'attackProfile.id.servantLineageId',
+          { catalogServant: true },
+          { catalogServant: false },
+        ),
+      ];
+    const expectedOutcome = calculateRankingPolicyDetail(
+      servant,
+      master,
+      input.profile,
+      condition,
+      versions,
+      expectedProfile,
+      false,
+    );
+    if (expectedOutcome.status !== current.status)
+      return [
+        failure(
+          'canonicalRecordMismatch',
+          identity,
+          'status',
+          expectedOutcome.status,
+          current.status,
+        ),
+      ];
+    const outcomeFailure = recordFailure(
+      'canonicalRecordMismatch',
+      identity,
+      { profileKey, ...expectedOutcome },
+      current,
+    );
+    if (outcomeFailure) return [outcomeFailure];
     return [];
   }
   const actualKeys = Object.keys(record).sort();
@@ -623,77 +662,7 @@ export function verifyCurrentProductionRecord(input: {
       },
     ];
   const area = record['areaContribution'];
-  const areaAvailable = replay.effects.some(isAreaDamageContribution);
-  if ((area !== null) !== areaAvailable)
-    return [
-      failure(
-        'canonicalRecordMismatch',
-        identity,
-        'areaContribution',
-        { present: areaAvailable },
-        { present: area !== null },
-      ),
-    ];
-  if (area !== null) {
-    const areaKeys = ['scenario', 'input', 'result', 'effects', 'warnings'];
-    if (
-      typeof area !== 'object' ||
-      Array.isArray(area) ||
-      JSON.stringify(Object.keys(area).sort()) !== JSON.stringify(areaKeys.sort())
-    )
-      return [
-        failure(
-          'recordShapeInvalid',
-          identity,
-          'areaContribution',
-          areaKeys,
-          typeof area === 'object' ? Object.keys(area) : area,
-        ),
-      ];
-    const areaRecord = area as Record<string, unknown>;
-    const invalid = schemaFailure(
-      identity,
-      'areaContribution.scenario',
-      resolvedScenarioSchema,
-      areaRecord['scenario'],
-    );
-    if (invalid) return [invalid];
-    let areaReplay: ReturnType<typeof calculateScenarioWithPolicy>;
-    try {
-      areaReplay = calculateScenarioWithPolicy(
-        areaRecord['scenario'] as z.infer<typeof resolvedScenarioSchema>,
-        master,
-        versions,
-        compileRankingContributionPolicy(condition, 'excluded'),
-      );
-    } catch (cause) {
-      return [
-        failure(
-          'canonicalRecordMismatch',
-          identity,
-          'areaContribution.scenario',
-          { replay: true },
-          { replay: cause instanceof Error ? cause.message : String(cause) },
-        ),
-      ];
-    }
-    const expectedArea = {
-      scenario: areaReplay.scenario,
-      input: areaReplay.status === 'executable' ? areaReplay.input : null,
-      result:
-        areaReplay.result.status === 'calculated'
-          ? compactResult(areaReplay.result)
-          : areaReplay.result,
-      effects: compactEffects(areaReplay.effects),
-      warnings: areaReplay.effectWarnings,
-    };
-    const areaFailure = recordFailure(
-      'canonicalRecordMismatch',
-      identity,
-      expectedArea,
-      areaRecord,
-    );
-    if (areaFailure) return [areaFailure];
-  }
+  if (area !== null)
+    return [failure('recordShapeInvalid', identity, 'areaContribution', null, area)];
   return [];
 }

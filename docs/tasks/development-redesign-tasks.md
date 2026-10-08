@@ -3266,6 +3266,12 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+00:21 UTC 対象表現の製品判断（2026-10-08）: 利用者は対象familyの明示不在を表す入力を優先し、schema／保存形式改訂を許容。現行の正選択だけでは「不在」と「未指定」を区別できないため、三状態のtyped入力をnative実行・ranking候補・portable/保存/表示に一貫して接続する。旧形式の黙示互換はしない。baseline relative候補は物理worldとの被覆を確かめて扱い、18件を消すための候補除外や最終gate緩和はしない。直接根拠と未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
+
+00:19 UTC current strictの非計算閉鎖（2026-10-08）: 現readerは非計算recordも同profile/条件でapplication detailを再実行し、status/reason/diagnostics全値を照合する。公開`insufficientNpGauge`の正値と改竄2種、偽unavailableを反証。監査producerは`includeAreaSupport=false`なのでareaContributionは常にnullとして厳密検査し、詳細用alternateを監査recordに捏造しない。focused4/4・warning0、型検査／対象lint成功。詳細と再検証範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。80条件と最終qualityは未達。
+
+00:16 UTC 80条件producerの先行Blocking（2026-10-08）: index30は414 calculated／18 inputRequired／1 unavailable。18件すべてでrelative `target:baseline`が曖昧で、102900は具体class/attributeでもfamily不在を現保存入力に表せず曖昧。候補の無条件除外・不在補完・gate緩和をしない。schema42／保存形式維持との優先順位を利用者へ照会し、その間は独立strict等を進める。候補別実測、owner、未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。
+
 00:11 UTC current strict局所（2026-10-08）: 実mergeへ現recordのstrict shape/identityとscenario再実行によるnested receipt・数値比較を接続、旧baseline reader不変。fixtureの再hash済み改竄を含む関連2file56/56・warning0、公開4条件×433 recordの局所検査失敗0、typecheck/対象lint/docs成功。非計算semantic replay、area positive、80条件/別saved、正式after、全15 Apply/qualityは未達。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)に直接経路と原。
 
 23:47 UTC current strict再開（2026-10-07）: HEAD `3a9ffe9`／clean、固定入力4path・Node/pnpm/lockはbefore identity一致。現matrix record readerはstatus/profile/count/digestまででnested strictではない。現producer shapeを限定採取し、旧baseline readerとcurrent strict DTO＋独立semantic/replayを分けて実mergeへ接続する。直接経路・未保証範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。80条件/別saved、正式after、全15 Apply、qualityは未達。

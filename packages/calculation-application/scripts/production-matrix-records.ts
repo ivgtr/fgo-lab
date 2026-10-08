@@ -255,6 +255,7 @@ export async function verifyProductionMatrixRecords(input: {
         condition: productionClosureConditions()[index]!,
         master: input.master,
         versions: input.versions,
+        profile: { servantBuilds: {} },
         profilesByKey,
       }),
     );
