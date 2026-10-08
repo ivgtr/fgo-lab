@@ -1,14 +1,17 @@
 ---
 title: "ADR 020: ranking condition provenance and field policy"
-status: "accepted"
+status: "superseded"
 recorded_commit: "0487e90e21766431cf8d790555c0841db2ef9eca"
+superseded_by: "ADR-030"
 ---
 
 # ADR 020: ranking condition provenance and field policy
 
 ## Status
 
-accepted
+superseded
+
+[ADR-030](030-ranking-basis-and-certain-contributions.md)が現在の条件出自・通常寄与を所有する。
 
 ## Context
 

@@ -1,17 +1,17 @@
 ---
 title: "FGO Lab UI設計仕様"
-document_version: "1.5.1"
+document_version: "1.5.2"
 status: "Active"
 approval: "approved"
-approved_at: "2026-09-06"
-updated_at: "2026-09-06"
+approved_at: "2026-10-03"
+updated_at: "2026-10-08"
 ---
 
 # FGO Lab UI設計仕様
 
-更新日: 2026-09-06
+更新日: 2026-10-08
 対象: 初回セットアップ、ホーム、所持・育成管理、概念礼装、支援条件、ダメージ計算、火力ランキング、育成計画、結果共有
-本仕様は、対象欄に記載した画面と操作の承認済み実装基準である。v1.5.0の§12と対応受入条件は2026-09-05に設計承認された。比較デモとoptions文書はローカルな検討履歴であり、実装要件として使用しない。
+本仕様は、対象欄に記載した画面と操作の承認済み実装基準である。§12は2026-10-03の[ランキング最終判断](ranking-self-and-conditional-effects-requirements.md#20-2026-10-03の最終製品判断)を反映する。比較デモとoptions文書はローカルな検討履歴であり、実装要件として使用しない。
 
 ## 1. 文書の目的
 
@@ -296,25 +296,24 @@ noticeのheading、status、説明、buttonをDOM順に置き、buttonのaccessi
 
 ## 12. 火力ランキング
 
-共通の攻撃対象、礼装、支援テンプレートを候補全員へ適用し、各サーヴァントの自バフを個別に解決する。シナリオ比較は設けず、比較画面をランキングへ一本化する。
+共通育成基準と保存育成状態を選び、各サーヴァントの自前行動・対象状態・条件効果を個別に解決する。礼装・支援・個別対象の編集はランキングへ追加しない。シナリオ比較は設けず、比較画面をランキングへ一本化する。
 
-閉じた一覧はsemanticな順位リストとし、順位、顔、名称、選択中の基準damage、宝具card、単体／全体、class／rarity、適用effect数、支援数だけを表示する。選択中の母集団、レベル基準、宝具レベル基準、Fouは条件summaryへ一度だけ表示する。詳細は同時に一行だけ開き、最小／平均／最大、final input、effect stack、成立条件、proc、計算外理由、typed issueを表示する。詳細DOMは開いた行だけ構築する。
+閉じた一覧はsemanticな順位リストとし、順位、顔、名称、選択中の基準damage、宝具card、単体／全体、class／rarity、適用effect数だけを表示する。選択中の母集団、育成基準、レベル・宝具レベル基準、Fou、初期OCは条件summaryへ一度だけ表示する。詳細は同時に一行だけ開き、最小／平均／最大、final input、effect stack、成立条件、proc、計算外理由、typed issueを表示する。詳細DOMは開いた行だけ構築する。
 
 計算条件と表示filterは別領域・別stateとする。PCでは主要条件を常時表示し、詳細条件を一つのaccordionへ収納する。390px／320pxではfilterを件数付きの開閉操作へ圧縮し、閉じたranking rowの比較密度を優先する。Top 3は順位または細いborderだけで強調し、row高を変えない。
 
 ### 12.1 対象範囲
 
-既定は「全サーヴァント」「自然上限」「NP1」とする。計算条件は次の三つを独立controlとして表示する。
+既定は「全サーヴァント」「共通条件」「自然上限」「NP1」「初期OC1」とする。母集団、育成基準、レベル、宝具Lv、初期OCを別controlとして表示する。
 
 - 対象: `全サーヴァント | 保有サーヴァント`。保有への切替は母集団だけを絞る。
+- 育成基準: `共通条件 | 保存育成状態`。保存育成状態は保有母集団でだけ選べる。保存Lv・NP Lv・Fou ATK・active skill Lvを使い、不足値を共通値で補わない。
 - レベル: `自然上限 | Lv.90統一 | 保有レベル`。
 - 宝具Lv: `NP1 | NP2 | NP3 | NP4 | NP5 | 保有宝具レベル`。
-- 初期OC: `1 | 2 | 3`、既定値1。capacity制約、宝具Lv変更command、保有混在時の扱いはranking requirements v0.10.2 §9.1に従う。
+- 初期OC: `1 | 2 | 3`、既定値1。capacity制約、宝具Lv変更command、保有混在時の扱いは[ranking requirements §9.1](ranking-self-and-conditional-effects-requirements.md#91-製品仕様)に従う。
   計算基準には選択初期OC、detailとcalculator引継ぎには開始NPと発動時OCを表示する。成立込みでも初期OCを自動変更しない。
 
-`保有レベル`と`保有宝具レベル`は保有サーヴァントでだけ有効にする。保有母集団でも自然上限／Lv.90統一と
-指定NPを選択でき、保存済みFou／skill Lvへは暗黙に切り替えない。対象切替時は行、controlの有効状態、件数、
-条件summary、注記を同期する。`参考サイト基準`や、保存済みbuild全体を反映したように読める`現在戦力`は使わない。
+`保有レベル`と`保有宝具レベル`は保有サーヴァントでだけ有効にする。共通育成基準なら保有母集団でも自然上限／Lv.90統一と指定NPを選べ、保存Fou／skill Lvへ暗黙に切り替えない。保存育成状態では保存Lv／NP Lvを使い、共通用のレベル／NP controlは変更できない。対象・育成基準の切替時は行、controlの有効状態、件数、条件summary、注記を同期する。`参考サイト基準`を追加せず、保存値を採用しているか明示する。
 
 ### 12.2 フィルター
 
@@ -325,7 +324,7 @@ noticeのheading、status、説明、buttonをDOM順に置き、buttonのaccessi
 - 宝具カード。Buster、Arts、Quick
 - レアリティ
 
-将来追加する場合も、サーヴァント自身の分類条件と計算条件を同じ領域へ混在させない。攻撃対象、礼装、支援テンプレートは候補全員へ共通適用する計算条件として別領域に置く。
+将来追加する場合も、サーヴァント自身の分類条件と計算条件を同じ領域へ混在させない。
 
 フィルターは積集合で適用し、件数と空状態を即時更新する。モバイルでは二列以下に折り返す。
 
@@ -336,6 +335,8 @@ noticeのheading、status、説明、buttonをDOM順に置き、buttonのaccessi
 - 平均ダメージ順
 - 自己バフあり
 - 条件効果は通常のみ
+
+通常のみは、自前の合法なskill組合せと使用順で確実に成立するtarget state／field等の寄与を含む。外部条件や確率的成功を通常へ仮定しない。成立込みは共存可能な条件から単体の理想火力を比較し、初期OCを暗黙に増やさない。この意味を説明する新しい一文はUIへ追加せず、採用条件と順序は既存詳細・計算機引継ぎで確認できるようにする。
 
 各行には選択条件の平均damageと乱数幅、実効effect数を表示する。行を展開するとlogical effectごとの寄与、
 自己バフ／条件効果／エリア表示の独立判定、最終適用結果、成立stack count、自動適用根拠と不適用理由を確認できる。
@@ -429,11 +430,10 @@ R1はプロフィールごとに直近20件を保持する。独立ページは�
 
 - 初期表示は全サーヴァントを自然上限、NP1、共通Fou／skill条件で比較する。
 - 保有サーヴァントへの切替は母集団だけを絞り、自然上限／Lv.90統一／保有レベルと指定NP／保有宝具Lvを独立に選べる。
-- 保有レベル／保有宝具Lv以外の保存済みbuild値を暗黙に反映せず、反映中の条件をsummaryから判定できる。
+- 共通条件では保有レベル／保有宝具Lvの明示選択以外の保存値を暗黙に反映せず、保存育成状態を選ぶと保存Lv・NP Lv・Fou ATK・active skill Lvが反映される。採用基準をsummaryから判定できる。
 - クラス、宝具範囲、宝具カード、レアリティを組み合わせて絞り込める。
 - 範囲とフィルターの変更に合わせて順位、件数、列見出し、空状態が更新される。
-- 攻撃対象、礼装、支援条件が全候補へ共通適用される。
-- 条件付き自バフを無条件に適用せず、行の内訳で根拠を確認できる。
+- 自前の合法な使用順で確実に成立したtarget state／field等の通常寄与と、成立込みの外部候補・確率的成功を区別し、行の内訳で根拠を確認できる。
 
 ### 共有
 
@@ -656,6 +656,7 @@ R1は個人・非営利用途としてAtlas Academy由来のサーヴァント�
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 1.5.2 | §12とranking受入条件を承認済み[ランキング要件§20](ranking-self-and-conditional-effects-requirements.md#20-2026-10-03の最終製品判断)へ同期。母集団と共通／保存育成、通常の自前確定寄与、成立込みの理想火力、初期OCを分離し、旧共通対象／礼装／支援の記述を撤去 | approved 2026-10-03: ranking要件v0.11.0の最終製品判断を反映。新しいUI説明文や機能は追加しない | TSK-13決定の伝播、TSK-14 UI／引継ぎ受入 | 文書同期自体はruntime／固定VRTを変えない。TSK-14で変更した育成control・初期順位のVRTは対応する原画像と現80条件recordで個別に帰属済み。旧expectedをこの文書のために再生成しない |
 | 1.4.0 | ダメージ計算、ranking、管理、育成計画、homeの承認済みUI基準 | approved 2026-08-24 | current product baseline | none |
 | 1.4.1 | portable calculation identityのversion／intent表示と明示的なreset／upgrade／invalid recoveryを追加（`UI-CALC-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07 | docs phaseはnone。implementationでcalculator context notice、focus、responsive artifactが変わる |
 | 1.5.0 | rankingの母集団、自然上限／Lv.90統一／保有レベル、指定NP／保有宝具Lvを独立controlへ変更し、寄与判定detailの表示境界を追加 | approved 2026-09-05: user confirmed the comparison labels and owned level／NP behavior | TSK-06.42、TSK-06.47、TSK-07 | ranking controls、summary、responsive／a11y fixtureが変わる。保存済みFou／skill Lvは反映しない |

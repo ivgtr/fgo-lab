@@ -27,6 +27,8 @@ pnpm quality
 
 変更中は`pnpm test:diagnostic -- <filter>`で対象を絞り、必要に応じて`pnpm test:unit`または`pnpm test:production`へ広げます。全件・特殊経路を広く走査する明示登録済みauditは`pnpm test:audit`で実行し、通常の全体テスト`pnpm test:agent`と`pnpm quality`には含めません。TSK／受入条件がauditを要求する作業では、その結果も記録します。`pnpm quality`はformat、lint、typecheck、runner／Suite／workflow contracts、重複しないunit／production Vitest、published master検証、build、Chromium／mobile Chromium E2Eを一度ずつ実行する、local／CI／Vercel共通の完了ゲートです。`validate:evidence`と`validate:master`は対象を絞った診断にも使用できます。qualityに含まれる検査を成功後に追加実行しません。
 
+TSK-14の最終受入だけは利用者の2026-10-08の選択により[テスト戦略§7](docs/requirements/test-strategy-redesign.md#7-コマンド仕様)の代表ケースへ限定します。`pnpm quality`や全production監査のcommand・CI設定は変更せず、TSK-14の最終差分へ全件保証を主張しません。対象と有効な既存証拠は[TSK-14](docs/tasks/development-redesign-tasks.md#tsk-14-ranking最終方針の実装と正本収束)に記録します。
+
 検査の選択と完全診断:
 
 `test:unit`は通常unitと完全状態の診断検査をどちらも実行します。前者は最大4 worker、後者はその後の独立groupで1 workerです。published masterを検査するproductionも、suiteごとの大きな入力graphが競合しないよう1 workerで実行します。診断検査をopt-inへ移したり、5秒のtest制限・assertionを緩めたりしません。分類は`scripts/test-suites.mjs`、順序と予算は`vitest.config.ts`が所有し、CLIの`--suite=unit`／既定全件から両groupへ到達します。新しい完全状態writerの配置はrunnerの分類検査で確認します。
@@ -50,7 +52,7 @@ localとCIは同じ`pnpm quality`を一度実行します。CI固有のbrowser i
 
 pnpmがscript開始前に停止した場合は依存整合とstore書込を確認し、上の固定installへ戻ります。sandbox内の拒否だけから実環境の設定不正を推定せず、承認範囲の同じ操作を正式な権限審査で確認します。認証・接続、提供元の固定入力不足、bytes／SHA不一致は区別し、別認証・別版・別pathで補いません。
 
-製品実装phaseの完了は`pnpm quality`で判定します。文書・指示だけの変更は、書式、`pnpm test:docs`、変更した参照・設定・配置を確認して閉じます。コード・実行設定にも影響する場合は対応するゲートを使います。規約は[AGENTS.md](AGENTS.md)を正本とし、`CLAUDE.md`も同じ内容を参照します。
+通常の製品実装phaseの完了は`pnpm quality`で判定します。TSK-14だけは上記の利用者選択による代表ケースの限定受入を適用し、全件保証は主張しません。文書・指示だけの変更は、書式、`pnpm test:docs`、変更した参照・設定・配置を確認して閉じます。コード・実行設定にも影響する場合は対応するゲートを使います。規約は[AGENTS.md](AGENTS.md)を正本とし、`CLAUDE.md`も同じ内容を参照します。
 
 通常productionの「damage relevanceで除外する前のraw HP条件」検査は、[data-pipelineの固定CI入力宣言](packages/data-pipeline/test-inputs/raw-hp-v1/manifest.json)と同directoryの全raw圧縮2件を読みます。現行宣言は`raw-hp-inputs-v2`です。既存directory名は保存pathであり形式versionではありません。Git checkoutで取得でき、可変な`data/raw/`や外部のlatest取得には依存しません。consumerは宣言の現行形式・全field・有限2件・固定出自／raw identityと、対応するpublished masterのversion・bytes・SHAを確認します。gzipの保存／復元identityを照合してから元の全母集団を走査し、masterはsuite内で一度だけ読取・解析します。
 

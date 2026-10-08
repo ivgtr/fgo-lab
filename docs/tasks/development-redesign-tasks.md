@@ -3266,7 +3266,9 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
-09:52 UTC 検証時間の整理（2026-10-08）: 利用者から「モデルケースを揃え、その部分だけチェック」を提案された。保存S0/S1の12条件×433 profileを3回走らせた結果はすでに同一digestで固定済みで、変更前の保存条件3processもないため、同じ計算source・入力で再実行しない。以後の開発中確認は変更ownerに応じて既存の小fixtureを選ぶ。保存条件・slot値は`productionSavedAudit.test.ts`、保存値のdamage／NP容量・欠損／固定buildは`rankingSavedBasis.test.ts`、4 policyは`rankingPolicy.test.ts`、worker detail／staleは`rankingWorkerRuntime.test.ts`、calculator引継ぎと書込失敗保持は`rankingHandoff.test.ts`。対象ファイルだけを`pnpm test:diagnostic -- <file>`で実行し、新しい全件testやcase別master再読込を増やさない。全production inventory／parityが新sourceで必要になる意味変更時と最終品質判定は現行README／テスト戦略のgateに従い、同条件の有効な34,640／5,196結果は再利用する。最終受入も代表だけへ変更するかは利用者へ確認中で、その回答まで品質契約は緩めない。TSK-14/R1未受入。
+10:04 UTC 要件・ADRと代表受入への正本伝播（2026-10-08）: 承認済みranking §20にproduct v0.3.10・UI v1.5.2を同期し、旧6条件／共通礼装・支援／保存Fou・skill Lv非反映の現行記述を解消。ranking v0.11.1は現行比較owner ADR-030を参照し、ADR-018／020をsuperseded、ADR-028のsource-program／portable判断を維持した。テスト戦略v1.3.5とREADMEには利用者が選択したTSK-14限定の代表最終受入、既存全件原証拠のsource identityと最終HEAD全件未保証を明記。変更は文書13pathと新ADR1path、製品・test・固定expectedには触れていない。`pnpm test:docs`は28/28・104 Markdown／44 machine evidence／1,171 refsで成功（原`.test-results/2026-10-08T10-04-00-501Z-560-5beaa4/`）。次は代表fixture／profile invalid回復の実経路、15 Applyの限定帰属、性能の既存証拠解釈と差分review。TSK-14/R1未受入。
+
+09:59 UTC 検証時間と最終受入の整理（2026-10-08）: 利用者は開発中だけでなくTSK-14の最終受入も代表ケースだけに絞ると明示。保存S0/S1の12条件×433 profile×3processは同一digestで固定済みなので同条件で再実行しない。変更ownerに応じて既存小fixtureを選ぶ。保存条件・slot値は`productionSavedAudit.test.ts`、保存値damage／NP容量・欠損／固定buildは`rankingSavedBasis.test.ts`、4 policyは`rankingPolicy.test.ts`、worker detail／staleは`rankingWorkerRuntime.test.ts`、calculator引継ぎと書込失敗保持は`rankingHandoff.test.ts`。必要な対象ファイルだけ`pnpm test:diagnostic -- <file>`で実行し、新しい全件testやcase別master再読込は増やさない。最終差分ではこれらの小fixtureと代表実UI／worker経路、型／静的検査、文書整合を確認し、`pnpm quality`・全production／audit・80条件／別savedの再実行は求めない。監査command自体は縮小せず、既存34,640／5,196結果を当時のsource identityの証拠として再利用するが、最終HEADの全件保証とは呼ばない。この例外は[テスト戦略§7](../requirements/test-strategy-redesign.md#7-コマンド仕様)に記録し、他Task／CIへ広げない。TSK-14/R1未受入。
 
 08:14 UTC 別saved 3process特性と区間handoff（2026-10-08）: 固定HEAD `39a05d2`／clean、既存現80 matrixを入力に保存S0/S1監査を3独立processで完走。各12条件5,196結果、計算可能5,186件parity・S0 common1,732件一致、receipt error／非数値失敗0、S0/S1 audit digestは3回同一。wall中央値628.37秒、max RSS中央値3,513,332 KiB。前版の保存3processはないので現特性値とする。原manifest3件／`after3-summary.json`のSHAと保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。製品・test追加なし。旧product／UI要件・ADRの§20整合、15 Apply帰属、正式性能の残帰属、profile削除実ブラウザー受入、最終review／Blocking0・quality／結果後docsが未達。90分上限後に新familyを始めず、TSK-14/R1未受入。
 
@@ -3764,7 +3766,7 @@ Done gate:
 - TSK-13で確定した新方針との差が解消し、両比較・自前確定寄与・合法なNP補完が利用者の直接経路で成立する。
 - 保存値不足・不正state・未知semantics・部分適用・stale結果を数値fallbackせず、schema-legalな反例と保存／再開を検証する。
 - damage差はcanonical input・ordered plan・governing ruleで説明し、期待値の再生成だけを修正としない。能力損失・新製品判断・取得元／保持拡張は明示確認する。
-- 必要な局所gate・性能・最終quality／docs・正本・Handoffが同じ最終差分に一致する。全R1の未調査範囲を成功へ拡張しない。
+- 利用者が2026-10-08に選択した代表ケースによる最終差分の局所gate・性能の既存同条件証拠・docs・正本・Handoffを照合する。`pnpm quality`未実行と最終HEADの全件保証なしを明示し、全R1の未調査範囲を成功へ拡張しない。
 
 Contract closure matrix:
 
@@ -3776,13 +3778,13 @@ Contract closure matrix:
 | `RK-UI-001` | Apply | 共通／保存control、URL／worker、invalid修復・実UI | Handoff |
 | `RK-HANDOFF-001` | Apply | 同一requestのcalculator／draft／history／share／backup再現とfail-closed | Handoff |
 | `RK-CACHE-001` | Apply | 新basis・profile変更・context／fingerprint・stale／bounded cache照合 | Handoff |
-| `RK-AUDIT-001` | Apply | 変更familyのproduction inventory／damage差／parity、必要なmatrix範囲の確定 | Handoff |
+| `RK-AUDIT-001` | Apply | 既存全件原証拠のsource identity・差分と、最終HEADの代表fixture／parity／fail-closedを分けて照合。最終HEADの全件保証は主張しない | Handoff |
 | `RK-PERF-001` | Apply | 同環境・入力・workload前後各3process、candidate／damage／rankingと診断の区別 | Handoff |
-| `RK-FINAL-001` | Apply | §20・TSK-13受入項目の閉鎖と残る全体保証限界の照合 | Handoff |
+| `RK-FINAL-001` | Apply | §20・TSK-13受入項目を代表ケースの範囲で閉じ、未実行全件・残る保証限界を明示 | Handoff |
 | `DOC-REV-001` | Apply | 新version／承認／影響Task／baseline、旧ADR有効範囲・相互参照の照合 | Handoff |
 | `DOC-CLOSE-001` | Apply | 各改修owner／局所gate／最終受入のTask対応 | Handoff |
 | `DOC-LINT-001` | Apply | 明示書式／registry／参照と `pnpm test:docs` | Handoff |
-| `TS-QUAL-001` | Apply | 対象内Blocking・局所検証・差分レビュー後の最終 `pnpm quality` | Handoff |
+| `TS-QUAL-001` | N/A: 2026-10-08利用者承認のTSK-14限定例外。`pnpm quality`／最終HEAD全件を実行・主張しない | 代表ケースの診断、型・静的検査、必要な実UI、文書gateを別々に記録 | Handoff |
 | `TS-PERF-002` | Apply | 構造変更した経路の同条件前後3process、未変更範囲の一致証拠継承 | Handoff |
 | `DX-HANDOFF-001` | Apply | source／入力／diff／有効証拠・未達条件・次操作の照合 | Handoff |
 

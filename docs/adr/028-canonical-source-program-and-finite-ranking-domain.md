@@ -3,13 +3,15 @@ title: "Canonical source programと有限ranking domain"
 status: accepted
 date: "2026-09-02"
 approved_at: "2026-09-02"
-amended_at: "2026-09-26"
+amended_at: "2026-10-08"
 supersedes:
   - "ADR-019"
   - "ADR-027"
 ---
 
 # ADR 028: Canonical source programと有限ranking domain
+
+2026-10-03に承認された現在のranking比較基準・通常寄与・保存育成状態は[ADR-030](030-ranking-basis-and-certain-contributions.md)と[ランキング要件§20](../requirements/ranking-self-and-conditional-effects-requirements.md#20-2026-10-03の最終製品判断)が所有する。本ADRのsource program、ordered operation、有限certificate、portable identityの判断は維持する。以下のschema v41や当時のproduction最大2,880等は採用時点の版・観測値であり、現行版・件数の保証として使用しない。実装の版・inventory・受入結果は[TSK-14 flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)を参照する。
 
 ## Context
 

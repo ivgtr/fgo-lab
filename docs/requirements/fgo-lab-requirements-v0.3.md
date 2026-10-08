@@ -1,13 +1,13 @@
 ---
 title: "FGO Lab プロダクト要件定義書"
-document_version: "0.3.9"
+document_version: "0.3.10"
 status: "Active"
 approval: "approved"
-approved_at: "2026-09-26"
+approved_at: "2026-10-03"
 created_at: "2026-08-24"
-updated_at: "2026-09-26"
+updated_at: "2026-10-08"
 supersedes: "FGO Lab requirements v0.2.2 (docs/archive/README.md recovery index)"
-ui_baseline: "docs/requirements/ui-design-spec.md v1.4.1 approved"
+ui_baseline: "docs/requirements/ui-design-spec.md v1.5.2 approved"
 ---
 
 # FGO Lab プロダクト要件定義書
@@ -98,7 +98,7 @@ FGO Labは、Fate/Grand Orderのサーヴァント、概念礼装、支援条件
 2. 支援サーヴァントと使用スキルを条件として保存する。
 3. 攻撃役、礼装、支援、攻撃対象を選び、宝具ダメージを見る。
 4. NP1〜5の結果から宝具育成の目安を得る。
-5. 共通条件で火力ランキングを表示し、候補を絞り込む。
+5. 共通条件または保存育成状態で火力ランキングを表示し、候補を絞り込む。
 6. 育成目標を設定し、必要素材の合計と使用先を確認する。
 7. 全データをバックアップ・復元する。
 8. 計算結果を画像またはURLで共有する。
@@ -112,7 +112,7 @@ FGO Labは、Fate/Grand Orderのサーヴァント、概念礼装、支援条件
 | 初回セットアップ | ローカルDB作成、マスターデータ取得、索引構築、検証 | 必須 |
 | ホーム | 前回計算と主要機能への入口 | 必須 |
 | ダメージ計算 | 宝具条件入力、特攻確認、NP1〜5結果 | 必須 |
-| 火力ランキング | 全体／所持の共通条件比較 | 必須 |
+| 火力ランキング | 全体／所持の選択と共通条件／保存育成状態での比較 | 必須 |
 | 所持・育成管理 | サーヴァントの現在値と育成目標 | 必須 |
 | 概念礼装 | 使用する礼装コピーの登録・編集 | 必須 |
 | 支援条件 | 支援元と使用スキルの保存・編集 | 必須 |
@@ -215,24 +215,24 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 
 | ID | 要件 |
 |---|---|
-| FR-RANK-001 | 初期状態は全サーヴァントを共通育成値で比較する |
+| FR-RANK-001 | 初期状態は全サーヴァントを共通育成値で比較する。保存育成状態は保有母集団で明示選択する |
 | FR-RANK-002 | 全サーヴァントと所持サーヴァントを切り替えられる |
 | FR-RANK-003 | クラス、宝具範囲、宝具カード、レアリティ等で絞り込める |
-| FR-RANK-004 | 標準比較は自然上限、Fou+1000、skill Lv10、OC1、属性等倍、HP100%、礼装・支援なし等の単一fixed policyを全候補へ適用する |
-| FR-RANK-005 | 各候補の自身スキル、自バフ、特攻条件を候補ごとに解決する |
+| FR-RANK-004 | 共通育成基準では選択した自然上限／Lv.90統一／保有レベルと指定NP／保有宝具LvにFou ATK1000、skill Lv10を組み合わせる。保存育成基準では保存Lv・NP Lv・Fou ATK・active skill Lvを使う。初期OC、属性等倍、HP100%、礼装・支援なし等の共通初期条件は両基準へ適用する |
+| FR-RANK-005 | 各候補の自前の合法なスキル組合せと使用順を実行し、自己生成state／field等から確実に成立する通常寄与を含める。外部条件や確率的成功を通常へ仮定せず、成立込みは共存可能な条件だけを同じ実行経路で比較する |
 | FR-RANK-006 | 順位、平均ダメージ、主要条件を一覧し、行から根拠と内訳を確認できる |
-| FR-RANK-007 | 所持戦力は保存済みLv・NP Lv・Fou・skill Lvを使い、未所持へ標準値をfallbackしない |
+| FR-RANK-007 | 保存育成状態の比較は保存Lv・NP Lv・Fou ATK・active skill Lvを使い、欠落・不正値を共通値へfallbackしない |
 | FR-RANK-008 | 計算をWorker等へ分離し、計算中も入力とスクロールを阻害しない |
 | FR-RANK-009 | 複数条件を横に並べるシナリオ比較は設けない |
 | FR-RANK-010 | 単発計算と同じ計算コア、効果解決、丸め規則を使用し、ランキング専用の簡易式を持たない |
 | FR-RANK-011 | `unsupported`な候補を通常順位へ混在させず、対象外理由を確認できる |
-| FR-RANK-012 | 標準比較と所持戦力を別modeとし、保存値のない候補へ標準値をfallbackしない |
-| FR-RANK-013 | 変更可能な計算条件は比較mode、NP Lv、class等倍／有利、自己buff、特攻なし／成立、外部fieldなし／成立の6項目だけとし、廃止条件をhidden stateやlegacy URLとして残さない |
+| FR-RANK-012 | 全体／保有の母集団と共通／保存の育成基準を別条件とし、保存育成状態は保有母集団でだけ選べる。保存値のない候補へ共通値をfallbackしない |
+| FR-RANK-013 | 計算条件は母集団、育成基準、レベル基準、宝具Lv基準、初期OC、クラス相性、自己バフ、条件効果を別々に所有する。自己バフはあり／なし、条件効果は通常のみ／成立込みとし、旧特攻・外部fieldの独立条件をhidden stateやlegacy URLとして残さない |
 | FR-RANK-014 | 計算条件と表示filterを別stateとし、filter変更だけでは全候補を再計算しない |
 | FR-RANK-015 | 閉じた行は順位・対象・主damage・主要属性だけを表示し、一度に一行だけcanonical evidenceの詳細を展開する |
 | FR-RANK-016 | 採用したportable calculation requestを計算機へ引き継ぎ、再計算したdamage・effect・condition・procを一致させる |
 | FR-RANK-017 | 条件、filter、sortを単一URL modelで共有可能にし、展開行等の一時UI stateとは分離する |
-| FR-RANK-018 | 特攻成立はcanonical `powerMod`／`npSpecial`の成立可能scenarioを同一executorで有限探索し、一騎一行の最大damageと採用TargetContextを返す |
+| FR-RANK-018 | 条件効果の成立込みはcanonical `powerMod`／`npSpecial`の共存可能なscenarioを同一executorで有限探索し、合法な使用順・NP消費後の自前補完を含む一つの採用scenarioからAttackProfileごとの最大damageとTargetContextを返す |
 
 ### 6.8 育成計画
 
@@ -745,5 +745,6 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 0.3.10 | ranking §6.7を承認済み[ランキング要件§20](ranking-self-and-conditional-effects-requirements.md#20-2026-10-03の最終製品判断)へ同期。母集団と共通／保存育成基準を分離し、通常の自前確定寄与、条件成立の有限探索、合法NP補完を明示（`FR-RANK-001`／`004`／`005`／`007`／`012`／`013`／`018`） | approved 2026-10-03: ranking要件v0.11.0の最終製品判断を本書へ反映。新しい製品判断は追加しない | TSK-13決定の伝播、TSK-14実装・正本収束 | 文書同期自体はruntime／固定入力を変更しない。TSK-14実装のschema43／engine50・canonical input／候補・保存profile identityによる旧現damage差は既存原artifactで個別帰属し、旧expectedやfixtureを文書更新のために再生成しない |
 | 0.3.9 | v41 resolved／manual requestのversion contextにschemaVersionを必須化し、v40 manual requestと新identityの衝突を解消（`CALC-PORTABLE-001`） | approved 2026-09-26: user confirmed the staged-plan contract | TSK-08、TSK-09.1／09の依存確認 | v41 portable fingerprintとTSK-06.5 matrix mergedDigestは意図的に変わる。旧v40 request／result／fingerprintと旧digestを履歴として保持し、S4 1,590 identity、34,640 outcomes、ranking条件fingerprint、candidate status／eligibility、production output／canonical input、TSK-07 cache／stale-responseを別定義の保護対象として検証する |
 | 0.3.8 | version context／originを内包するportable calculation identity、明示version遷移、schema 32 migrationを追加（`CALC-PORTABLE-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでschema／engine version、fingerprint、draft／history／share／backup schemaが破壊的に変わる。damage digestは不変を期待するが実装時に検証する |

@@ -7,7 +7,7 @@ updated_at: "2026-10-02"
 
 # Architecture Decision Records
 
-ADRは採用時点のarchitecture判断を記録する。statusは`accepted`または`superseded`とし、重要な契約変更は承認時に新しいADRで置き換えて相互に参照する。承認前のproposalはrequirementsとflow noteで管理し、ADR indexへ登録しない。現在、ADR-015のselection契約をADR-026が、ADR-019／027のranking／portable契約をADR-028が置き換える。
+ADRは採用時点のarchitecture判断を記録する。statusは`accepted`または`superseded`とし、重要な契約変更は承認時に新しいADRで置き換えて相互に参照する。承認前のproposalはrequirementsとflow noteで管理し、ADR indexへ登録しない。現在、ADR-015のselection契約をADR-026が、ADR-019／027のsource-program／portable契約をADR-028が、ADR-018／020のranking比較条件をADR-030が置き換える。
 
 | ADR | Status | 判断 |
 | --- | --- | --- |
@@ -28,9 +28,9 @@ ADRは採用時点のarchitecture判断を記録する。statusは`accepted`ま�
 | [015](015-effect-inclusion-activation-and-proc-semantics.md) | superseded | effect inclusion、activation、旧proc selection semantics |
 | [016](016-ranking-canonical-scenario-and-presentation.md) | superseded | ranking canonical scenarioと一覧presentation。ADR-027が置換 |
 | [017](017-canonical-target-context.md) | accepted | canonical target context |
-| [018](018-ranking-comparison-policy.md) | accepted | ranking comparison policy |
+| [018](018-ranking-comparison-policy.md) | superseded | ranking comparison policy。ADR-030が置換 |
 | [019](019-ranking-contribution-and-execution-plan.md) | superseded | ranking contribution and execution plan。ADR-028が置換 |
-| [020](020-ranking-condition-provenance-and-field-policy.md) | accepted | ranking condition provenance and field policy |
+| [020](020-ranking-condition-provenance-and-field-policy.md) | superseded | ranking condition provenance and field policy。ADR-030が置換 |
 | [021](021-canonical-activation-witness.md) | accepted | canonical activation witness |
 | [022](022-activation-structure-cleanup.md) | accepted | activation structure cleanup |
 | [023](023-canonical-noble-phantasm-variants.md) | accepted | canonical noble phantasm variant selection |
@@ -40,3 +40,4 @@ ADRは採用時点のarchitecture判断を記録する。statusは`accepted`ま�
 | [027](027-portable-calculation-request-and-ranking-presentation.md) | superseded | 版付きportable calculation identity、ranking presentation、evidence-free cache。ADR-028が置換 |
 | [028](028-canonical-source-program-and-finite-ranking-domain.md) | accepted | source program、finite ranking domain、portable execution identity |
 | [029](029-next-vercel-routing.md) | accepted | Next.js App Router、browser state境界、Vercel配信 |
+| [030](030-ranking-basis-and-certain-contributions.md) | accepted | 共通／保存育成基準、通常の自前確定寄与、成立込みの合法候補 |

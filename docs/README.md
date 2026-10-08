@@ -41,12 +41,12 @@ rootは一般docsのfrontmatterを要求しない専用kindである。metadata�
 | Path | Kind／status | Authority／scope |
 | --- | --- | --- |
 | [docs/README.md](README.md) | registry／Active v1.5.223 | 唯一のdocumentation navigation entry |
-| [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.9／approved | product目的、機能範囲、portable calculation identity、データ境界、横断受入条件 |
-| [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.5.1／approved | 画面構造、ranking comparison controls、versioned calculator recovery、responsive、a11y、UI受入条件 |
+| [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.10／approved | product目的、機能範囲、portable calculation identity、データ境界、横断受入条件 |
+| [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.5.2／approved | 画面構造、ranking comparison controls、versioned calculator recovery、responsive、a11y、UI受入条件 |
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
 | [damage effect execution requirements](requirements/damage-effect-execution-requirements.md) | requirement／Active v1.2.4 | condition、state mutation、ordered damage execution、UI不変条件 |
-| [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.11.0／approved | §20の最終製品判断、共通／保存育成、通常自前確定／理想、合法NP補完、source-program／portable／candidate／parity |
-| [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.4 | 有限CI入力の取得・更新・差戻し、入力と診断artifactの保持、canonical quality |
+| [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.11.1／approved | §20の最終製品判断、共通／保存育成、通常自前確定／理想、合法NP補完、source-program／portable／candidate／parity |
+| [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.5 | 有限CI入力の取得・更新・差戻し、入力と診断artifactの保持、canonical qualityとTSK-14限定受入 |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.3.1 | 権限境界と正式審査、取得元の判断、bounded output、artifact、実装修正と検証の範囲、session分離・上限、handoff |
 | [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.196 | 唯一の実装順序、依存、status、handoff |
 | [TSK-06.48 package semantic convergence plan](tasks/package-semantic-convergence-tsk-06-48.md) | task plan／Complete v1.0.10 | 固有のsemantic owner判断・検証範囲・性能・テスト境界を保持する完了計画。本文のTask状態は履歴 |

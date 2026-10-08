@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.3.4"
+document_version: "1.3.5"
 status: "Active"
-approved_at: "2026-10-03"
-updated_at: "2026-10-03"
+approved_at: "2026-10-08"
+updated_at: "2026-10-08"
 created_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
@@ -209,6 +209,8 @@ result formatter
 | `pnpm results:clean` | `.test-results`のcanonical run | 最新10完了runを残す明示的なローカル整理 |
 
 `test:unit`と`check`は開発中のfeedbackであり、単独では完了判定に使用しない。damage semantics、master、scenario、execution、rankingに触れた変更は、必ず`test:production`を含む`quality`を実行する。opt-in auditが該当する受入条件を所有する作業では、そのauditも明示実行してartifactとともにhandoffへ記録する。`check`と`quality`は同じquality runnerとstep定義を使い、quick profileはfull profileのstrict subsetとする。
+
+**TSK-14に限る2026-10-08の受入例外:** 利用者は最終受入も代表ケースだけに絞ることを選択した。[TSK-14](../tasks/development-redesign-tasks.md#tsk-14-ranking最終方針の実装と正本収束)では、変更ownerへ対応する既存の小fixtureと代表のUI／worker経路、型・静的検査、文書整合を最終差分で確認し、`pnpm quality`／全production・全audit・80条件／別savedの再実行を完了条件にしない。監査command自体の対象集合・assertion・runner設定は縮小しない。既採取の全件原証拠はそのsource identityの保証として再利用し、最終差分がそれ以後に変更した意味へは全件保証を主張しない。対象外の不具合を無視せず、代表ケースの失敗は同じ直接familyを調べて修正する。この例外を他Task、CI、公開前のproject closureへ自動適用しない。
 
 `quality`の実行集合は重複させない。
 
@@ -552,7 +554,7 @@ wall-clock短縮が必要になった場合だけ導入する。shardはsemantic
 ## 17. 禁止事項
 
 - ログを減らすためだけに独立したsemantic testを巨大loopへ統合する。
-- production testをsample、changed files、通常値だけへ縮小して完了判定する。
+- production auditそのものをsample、changed files、通常値だけへ縮小して全件保証を主張する。TSK-14の代表ケースによる限定受入は§7の例外として保証範囲を明示する。
 - failureを`tail`だけで診断し、構造化resultを保存しない。
 - stdoutだけを保存してstderrを破棄する。
 - pipe後の終了コードをラッパー自身の成功で上書きする。
@@ -601,6 +603,7 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 1.3.5 | TSK-14の最終受入だけを代表ケースへ限定する例外を§7／17に明記し、既存全件監査のsource identityと新差分の保証を分ける（`TS-QUAL-001`のtask適用境界） | approved 2026-10-08: user explicitly chose representative cases for final acceptance | TSK-14。通常CI／他Task／project closureは従来の全件gateを維持 | none for runtime／master／expected／fixture／全件audit実装。TSK-14最終run集合は小fixture＋代表UI／workerへ縮小し、新しい最終HEADの全production保証は主張しない |
 | 1.3.4 | 有限CI入力のowner・保存追加判断・容量分類・同revisionの更新／差戻し・fail-closed／再開を明示（TS-ART-001、TS-QUAL-001、TS-RUN-001）。raw宣言は既存pathのv2にmaster対応・固定capture出自を追加 | approved 2026-10-03: user OK confirmed TSK-10 implementation plan | TSK-10のApply matrixとREADME運用。先行完了Taskの意味受入は維持 | none for damage／baseline／expected／fixture／全母集団・timeout／CI14日・local最新10run。CI raw metadata／consumer検査だけ改訂、gzip2件とpublished本文は不変 |
 | 1.3.3 | 必須consumer／契約のない歴史原内容の再監査能力を手放す承認・記録と物理処遇の分離を明示。09.13のHP保持解除を同期（TS-ART-001） | approved 2026-10-02: user OK confirmed TSK-09.13 full-disposal judgment plan | TSK-09.13、TSK-09.1 STEP 3〜6、TSK-09 | none: 現行baseline・fixture・expected・damage・CI14日・local最新10runは不変。旧HP原byteの再監査能力を手放す |
 | 1.3.2 | 09.11移管結果からrepositoryの回帰入力／fixture／判断記録と調査artifactの保持責務・不足時の能力制限を明示（TS-ART-001） | approved 2026-10-01: user confirmed TSK-09.1 STEP 2 plan | TSK-09.1 STEP 2、TSK-09 | none: CI14日・local最新10完了run、実行経路・expected・damageは不変 |

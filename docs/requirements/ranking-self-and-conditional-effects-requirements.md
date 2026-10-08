@@ -1,12 +1,13 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.11.0"
+document_version: "0.11.1"
 status: "Active"
 approval: "approved"
 approved_at: "2026-10-03"
-updated_at: "2026-10-03"
+updated_at: "2026-10-08"
 created_at: "2026-08-30"
 related_adrs:
+  - "docs/adr/030-ranking-basis-and-certain-contributions.md"
   - "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md"
   - "docs/adr/027-portable-calculation-request-and-ranking-presentation.md"
   - "docs/adr/018-ranking-comparison-policy.md"
@@ -19,7 +20,7 @@ implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 
 # ランキング自己バフ・条件効果統合仕様
 
-2026-10-03の最終製品判断は[§20](#20-2026-10-03の最終製品判断)を正本とする。§4〜7／17の比較基準・通常寄与・action admissionに相違がある場合は§20を適用する。旧条件の歴史的承認と実装済み証拠を新方針の受入へ読み替えない。具体的な実装差と既存product／UI／ADRへの伝播はTSK-13で調査し、実装修正と正本の全面整合は後続Taskで閉じる。
+2026-10-03の最終製品判断は[§20](#20-2026-10-03の最終製品判断)を正本とする。§4〜7／17の比較基準・通常寄与・action admissionに相違がある場合は§20を適用する。旧条件の歴史的承認と実装済み証拠を新方針の受入へ読み替えない。比較基準と確定寄与の現行ADRは[ADR-030](../adr/030-ranking-basis-and-certain-contributions.md)。具体的な実装差とproduct／UI／ADRへの伝播・受入はTSK-14で追跡する。
 
 ## 1. WHY
 
@@ -986,6 +987,7 @@ damage差分、性能見積もりを提示してから再開する。
 | 0.10.2 | 初期OC1／2／3を第7条件として固定し、成立込みの開始NP自動最大化を廃止。自前OC加算と発動時OCを分離（RK-IR／EXEC／POLICY／UI／HANDOFF／CACHE／AUDIT／PERF） | approved 2026-09-06: user confirmed initial OC only without external support and requested insertion into the existing plan | TSK-06.44、TSK-06.45、TSK-06.5、TSK-07〜09 | docs phaseはruntime不変。実装時はNP5順位・OC加算damage、schema／URL／worker／portable identity、production digestを意図的に更新する |
 | 0.10.3 | 初期最大HPを選択Lvのmaster HP＋固定HPフォウ1000へ明示。通常計算機は装備礼装HPも加算し、canonical成長表から解決する。HPフォウ編集UIなし | approved 2026-09-08: user specified separate ranking／calculator HP conditions | TSK-06.45 | 今回は要件反映のみ。実装時にHP依存damage、canonical master／schema／復元identityを更新する。欠損HPの0補完とATK由来推定は禁止 |
 | 0.11.0 | 共通条件と保存育成状態の両対応、自前で確実に成立する通常寄与、合法な組合せ・使用順とNP消費後の自前補完、単体の理想火力を最終製品判断として確定（`RK-IR-001`、`RK-EXEC-001`、`RK-POLICY-001`、`RK-UI-001`、`RK-HANDOFF-001`、`RK-CACHE-001`、`RK-AUDIT-001`、`RK-FINAL-001`）。詳細は§20 | approved 2026-10-03: 利用者が両比較への対応、通常の確定条件採用、成立込みの理想火力・説明文追加不要、合法な組合せとNP消費後の自前補完を明示し、最終意思決定Taskの作成を指示 | TSK-13（決定・実装事実／改修前調査）、TSK-14（実装・正本伝播）。TSK-12の旧ranking文書整合案を分離 | docs phaseはruntime／保存入力／expected／digest不変。実装時は保存育成basis、通常寄与、候補、URL／worker／portable identityと意図的damage差が変わり得る。基準の更新範囲はTSK-13の差分調査で確定し、今回再生成しない |
+| 0.11.1 | §20の比較判断をproduct／UIの現行版とADR-030へ結び、旧§4〜7／17との優先関係とTSK-14受入ownerを明記 | retained: 2026-10-03承認の§20を変更せず、文書間の参照と有効範囲だけを同期 | TSK-14のDOC-REV／DOC-CLOSE。TSK-13の歴史判断は保持 | none: 文書相互参照のみ。runtime、固定master／expected、保存schema、既存原artifactは変更しない |
 
 ## 20. 2026-10-03の最終製品判断
 

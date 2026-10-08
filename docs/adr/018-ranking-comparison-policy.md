@@ -1,13 +1,16 @@
 ---
 title: "ADR-018: rankingを少数の比較policyへ限定する"
-status: "accepted"
+status: "superseded"
 date: "2026-08-27"
+superseded_by: "ADR-030"
 ---
 
 # ADR-018: rankingを少数の比較policyへ限定する
 
-- Status: accepted
+- Status: superseded
 - Date: 2026-08-27
+
+[ADR-030](030-ranking-basis-and-certain-contributions.md)が現在のランキング比較基準を所有する。
 
 ## Context
 
