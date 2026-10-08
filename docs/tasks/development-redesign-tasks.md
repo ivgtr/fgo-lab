@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+00:41 UTC 固定版metadata局所閉鎖（2026-10-08）: 版metadata3と共有監査digest1のみを更新し、対象7file37/37・warning0。旧算術数値・caseは不変、全production再成功はまだ未確認。原と次の80条件8 shard/実mergeは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。
+
+00:39 UTC schema版改訂の全production差分（2026-10-08）: commit `b85f8f0`の全productionは167/171、失敗4はengine metadata固定3と監査digest1。旧greenとの監査8885 record全比較では変更855件すべてがcalculator/rankingの`executionTrace[0].detail`のschema42→43だけ、数値差0・inventory/status不変。版metadata3とdigest1だけを原因に沿って更新し再検証する。原と境界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全production/80条件/別saved/正式after/qualityは未達、TSK-14/R1未受入。
+
 00:31 UTC 対象family三状態の局所接続（2026-10-08）: schema43/engine50で明示不在を必須typed入力へ追加し、native読取・ranking物理worldの正負・baseline物理束縛・UI/portable保存復元まで接続。条件30は433 profileすべてcalculated、候補26/26、UI12/12、native/schema/current strict等37/37、warning0・typecheck成功。直接変更、原artifactと未保証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全production、80条件＋別saved S0/S1、固定期待差、正式after、全15 Apply/qualityは未達。TSK-14/R1未受入。
 
 00:21 UTC 対象表現の製品判断（2026-10-08）: 利用者は対象familyの明示不在を表す入力を優先し、schema／保存形式改訂を許容。現行の正選択だけでは「不在」と「未指定」を区別できないため、三状態のtyped入力をnative実行・ranking候補・portable/保存/表示に一貫して接続する。旧形式の黙示互換はしない。baseline relative候補は物理worldとの被覆を確かめて扱い、18件を消すための候補除外や最終gate緩和はしない。直接根拠と未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。

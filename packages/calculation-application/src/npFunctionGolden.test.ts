@@ -216,7 +216,7 @@ describe('NP Function golden matrix', () => {
     // The immutable arithmetic baseline belongs to engine 48. Its exact values
     // still run below; current state/outcome semantics require the separate strict gate.
     expect(golden.engineVersion).toBe('48.0.0');
-    expect(ENGINE_VERSION).toBe('49.0.0');
+    expect(ENGINE_VERSION).toBe('50.0.0');
   });
 
   for (const testCase of golden.cases) {
