@@ -5939,6 +5939,7 @@ describe('scenario calculation facade', () => {
         class: { kind: 'relative' as const, relation: 'neutral' as const },
         attribute: { kind: 'relative' as const, relation: 'neutral' as const },
         families: [],
+        absentFamilies: [],
       },
       craftEssence: { craftEssenceId: 'fixture-ce', level: 1, limitBreak: 0 },
       preNoblePhantasmPlan: [

@@ -11,6 +11,7 @@ import {
 } from '@fgo-lab/battle-execution';
 import { UnsupportedStackQuantity } from './rankingStackDomain';
 import type { ConditionExpression, ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
+import type { CanonicalTargetFamilyId } from '@fgo-lab/schema';
 import {
   findNoblePhantasmVariant,
   type ActorFormId,
@@ -60,6 +61,7 @@ import {
 } from './rankingStaticSemantics';
 import { materializeRankingWorld, type RankingWorldCandidate } from './rankingWorld';
 import { enumerateRankingWorldDomain } from './rankingWorldDomain';
+import { referencedRankingTargetFamilies } from './rankingWorldDomain';
 import { compileRankingWorldObservationPlan } from './rankingWorldObservation';
 import { analyzeRankingWorldDomain } from './rankingWorldQuotient';
 
@@ -106,6 +108,8 @@ interface ProgramCandidateDomain {
   populationInputs: readonly Readonly<Record<string, number>>[];
   canonicalInputDefaults: ReadonlyMap<string, number | null>;
   targets: readonly (RankingWorldCandidate | null)[];
+  baselineTarget: RankingWorldCandidate | null;
+  targetFamilyIds: readonly CanonicalTargetFamilyId[];
   fields: readonly RankingFieldCandidate[];
   quantities: readonly RankingQuantityCandidate[];
   rawWorldCardinality: number;
@@ -210,8 +214,7 @@ function materializeFixedRankingWorld(
     worldFactAssertions: [
       ...scenario.worldFactAssertions.filter(
         ({ decisionKey }) =>
-          !decisionKey.startsWith('ranking:') &&
-          !decisionKey.startsWith('calculator:population:'),
+          !decisionKey.startsWith('ranking:') && !decisionKey.startsWith('calculator:population:'),
       ),
       ...assertions,
     ],
@@ -327,6 +330,7 @@ function compileProgramDomain(input: {
     : [];
   const worldDomain = analyzeRankingWorldDomain(rawTargets, observationPlan);
   const generatedTargets = worldDomain.representatives;
+  if (active && rawTargets.length === 0) throw new TypeError('ranking_world_baseline_missing');
   const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
   const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
   const inputDefinitionsByKey = new Map(
@@ -396,6 +400,8 @@ function compileProgramDomain(input: {
       semantics.inputDefinitions.map((definition) => [definition.key, definition.defaultValue]),
     ),
     targets: [null, ...generatedTargets],
+    baselineTarget: active ? rawTargets[0]! : null,
+    targetFamilyIds: referencedRankingTargetFamilies(semantics.conditions),
     fields: [
       ...new Map(
         [baselineField, ...(active ? generatedFields : [])].map((candidate) => [
@@ -594,7 +600,9 @@ function materializeProgramCandidates(input: {
         origin: resolveCanonicalInputOrigin(conditions.conditionalEffects, value, definition),
       };
     }
-    if (target) scenario = materializeRankingWorld(scenario, target);
+    const physicalTarget = target ?? domain.baselineTarget;
+    if (physicalTarget)
+      scenario = materializeRankingWorld(scenario, physicalTarget, domain.targetFamilyIds);
     scenario = materializeRankingField(
       scenario,
       field,

@@ -102,6 +102,12 @@ function collectPredicateReferences(
   return { classes, attributes, familyIds: [...familyIds].sort() };
 }
 
+export function referencedRankingTargetFamilies(
+  conditions: readonly (ConditionExpression | null)[],
+): readonly CanonicalTargetFamilyId[] {
+  return collectPredicateReferences(conditions.map(targetConditionWitnessSpace)).familyIds;
+}
+
 function collectExplicitTargetStateTraits(
   conditions: readonly (ConditionExpression | null)[],
 ): ReadonlySet<string> {

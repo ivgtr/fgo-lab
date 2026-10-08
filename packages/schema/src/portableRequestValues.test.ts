@@ -26,6 +26,7 @@ const scenario = resolvedScenarioSchema.parse({
     class: { kind: 'concrete', classId: 'lancer' },
     attribute: { kind: 'concrete', attribute: 'earth' },
     families: [],
+    absentFamilies: [],
   },
   attackerHpPermille: null,
   battleState: { battlePointPhase: null },

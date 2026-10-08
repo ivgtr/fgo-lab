@@ -197,7 +197,7 @@ describe('HP initial intent through common preparation and recovery', () => {
     ]);
     expect(evidence.modifierReads.every((read) => read.consumed)).toBe(true);
     const transition = battlePointPreparationRejectionObservationFor(prepared)?.transitions[0];
-    const action = transition && preparationHpActionsFor(transition.result)?.[0];
+    const action = transition && preparationHpActionsFor(transition.result)[0];
     if (!action) throw new TypeError('hp_fixture_capture_missing');
     const original = action.operations[0]!;
     action.operations[0] = { ...original, step: original.step + 1 };
@@ -1127,6 +1127,7 @@ it('preserves the exhaustive legal optimum after a heal shifts an HP condition b
     class: { kind: 'concrete', classId: 'saber' },
     attribute: { kind: 'concrete', attribute: 'man' },
     families: [],
+    absentFamilies: [],
   };
   let maximum = -Infinity,
     best = 0;
@@ -1177,6 +1178,7 @@ it('retains HP-conditioned NP updates in structural search and validates OC thro
     class: { kind: 'concrete', classId: 'saber' },
     attribute: { kind: 'concrete', attribute: 'man' },
     families: [],
+    absentFamilies: [],
   };
   for (const group of master.servants[0]!.noblePhantasmVariantGroups)
     for (const variant of group.variants)
@@ -1238,6 +1240,7 @@ it('keeps an interior maximum when increasing HP power competes with an inverse 
     class: { kind: 'concrete', classId: 'saber' },
     attribute: { kind: 'concrete', attribute: 'man' },
     families: [],
+    absentFamilies: [],
   };
   for (const group of master.servants[0]!.noblePhantasmVariantGroups)
     for (const variant of group.variants)
@@ -1427,6 +1430,7 @@ it.each([false, true])(
       class: { kind: 'concrete', classId: 'saber' },
       attribute: { kind: 'concrete', attribute: 'man' },
       families: [],
+      absentFamilies: [],
     };
     for (const group of master.servants[0]!.noblePhantasmVariantGroups)
       for (const variant of group.variants)
@@ -1517,6 +1521,7 @@ it('retains a separate HP-conditioned damage skill after an ordered writer under
     class: { kind: 'concrete', classId: 'saber' },
     attribute: { kind: 'concrete', attribute: 'man' },
     families: [],
+    absentFamilies: [],
   };
   const oracle = calculateScenario(scenario, master, versions);
   const ranked = calculateRankingPolicyDetail(
@@ -1564,6 +1569,7 @@ it('keeps a maximum-HP prerequisite for a terminal normal loss even without an H
     class: { kind: 'concrete', classId: 'saber' },
     attribute: { kind: 'concrete', attribute: 'man' },
     families: [],
+    absentFamilies: [],
   };
   const oracle = calculateScenario(scenario, master, versions);
   expect(oracle.result.status).toBe('calculated');

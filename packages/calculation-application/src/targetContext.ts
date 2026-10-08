@@ -17,13 +17,15 @@ export type TargetContextCommand =
   | { kind: 'setConcreteClass'; classId: CanonicalTargetClassId }
   | { kind: 'setAttributeRelation'; relation: RelativeTargetAttributeRelation }
   | { kind: 'setConcreteAttribute'; attribute: CanonicalTargetAttribute }
-  | { kind: 'setFamily'; familyId: CanonicalTargetFamilyId; enabled: boolean };
+  | { kind: 'setFamily'; familyId: CanonicalTargetFamilyId; enabled: boolean }
+  | { kind: 'setFamilyAbsent'; familyId: CanonicalTargetFamilyId; absent: boolean };
 
 export function createDefaultTargetContext(attackerClassId: string): TargetContext {
   return {
     class: { kind: 'relative', relation: defaultTargetClassRelation(attackerClassId) },
     attribute: { kind: 'relative', relation: 'neutral' },
     families: [],
+    absentFamilies: [],
   };
 }
 
@@ -60,7 +62,27 @@ export function applyTargetContextCommand(
         families = [...context.families, { familyId: command.familyId }];
       if (!command.enabled)
         families = context.families.filter(({ familyId }) => familyId !== command.familyId);
-      return { ...context, families };
+      return {
+        ...context,
+        families,
+        absentFamilies: command.enabled
+          ? context.absentFamilies.filter(({ familyId }) => familyId !== command.familyId)
+          : context.absentFamilies,
+      };
+    }
+    case 'setFamilyAbsent': {
+      const absentFamilies = context.absentFamilies.filter(
+        ({ familyId }) => familyId !== command.familyId,
+      );
+      return {
+        ...context,
+        families: command.absent
+          ? context.families.filter(({ familyId }) => familyId !== command.familyId)
+          : context.families,
+        absentFamilies: command.absent
+          ? [...absentFamilies, { familyId: command.familyId }]
+          : absentFamilies,
+      };
     }
   }
 }

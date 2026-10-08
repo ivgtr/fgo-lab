@@ -54,6 +54,7 @@ describe('target candidate constraint validation', () => {
         class: { kind: 'relative', relation: 'neutral' },
         attribute: { kind: 'relative', relation: 'neutral' },
         families: [],
+        absentFamilies: [],
       },
       attackerClass: 'shielder',
       attackerAttribute: 'star',
@@ -99,5 +100,49 @@ describe('target candidate constraint validation', () => {
         ),
       ),
     ).toEqual(new Set([true, false]));
+  });
+
+  it('resolves explicit family absence without inferring it from an omitted selection', () => {
+    const context = {
+      class: { kind: 'concrete' as const, classId: 'saber' as const },
+      attribute: { kind: 'concrete' as const, attribute: 'sky' as const },
+      families: [],
+      absentFamilies: [{ familyId: 'demonGodPillar' as const }],
+    };
+    const readExpressions = [
+      {
+        kind: 'targetPredicate' as const,
+        scope: 'target' as const,
+        predicate: { kind: 'familyMembership' as const, familyId: 'demonGodPillar' as const },
+        present: true,
+      },
+    ];
+    const absent = resolveTargetCandidates({
+      context,
+      attackerClass: 'shielder',
+      attackerAttribute: 'star',
+      domain,
+      constraints: [],
+      readExpressions,
+    });
+    expect(absent.kind).toBe('candidates');
+    if (absent.kind !== 'candidates') return;
+    expect(absent.candidates).toHaveLength(1);
+    expect(absent.candidates[0]?.families).toEqual([]);
+    expect(
+      absent.candidates[0]?.facts.find(({ predicate }) => predicate.kind === 'familyMembership')
+        ?.present,
+    ).toBe(false);
+    const unspecified = resolveTargetCandidates({
+      context: { ...context, absentFamilies: [] },
+      attackerClass: 'shielder',
+      attackerAttribute: 'star',
+      domain,
+      constraints: [],
+      readExpressions,
+    });
+    expect(unspecified.kind).toBe('candidates');
+    if (unspecified.kind !== 'candidates') return;
+    expect(unspecified.candidates).toHaveLength(2);
   });
 });

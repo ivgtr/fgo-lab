@@ -29,8 +29,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 42 as const;
-export const ENGINE_VERSION = '49.0.0' as const;
+export const SCHEMA_VERSION = 43 as const;
+export const ENGINE_VERSION = '50.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z
@@ -198,8 +198,17 @@ export const targetContextSchema = z
     class: targetClassContextSchema,
     attribute: targetAttributeContextSchema,
     families: z.array(z.object({ familyId: canonicalTargetFamilyIdSchema }).strict()).max(20),
+    absentFamilies: z.array(z.object({ familyId: canonicalTargetFamilyIdSchema }).strict()).max(20),
   })
-  .strict();
+  .strict()
+  .superRefine((context, issues) => {
+    const present = new Set(context.families.map(({ familyId }) => familyId));
+    const absent = new Set(context.absentFamilies.map(({ familyId }) => familyId));
+    if (present.size !== context.families.length || absent.size !== context.absentFamilies.length)
+      issues.addIssue({ code: 'custom', message: 'duplicate_target_family_decision' });
+    if ([...present].some((familyId) => absent.has(familyId)))
+      issues.addIssue({ code: 'custom', message: 'conflicting_target_family_decision' });
+  });
 export type TargetContext = z.infer<typeof targetContextSchema>;
 
 export const operationOriginSchema = z.enum([

@@ -25,7 +25,11 @@ import {
   classAttackRate as resolveClassAttackRate,
 } from '@fgo-lab/calc-core';
 import { canonicalTargetClassIdSchema, canonicalTargetAttributeSchema } from '@fgo-lab/schema';
-import type { CanonicalTargetClassId, CanonicalTargetAttribute } from '@fgo-lab/schema';
+import type {
+  CanonicalTargetClassId,
+  CanonicalTargetAttribute,
+  CanonicalTargetFamilyId,
+} from '@fgo-lab/schema';
 import type {
   EffectControlViewModel,
   EffectInputViewModel,
@@ -86,6 +90,11 @@ import { QuickValuePresets } from './QuickValuePresets';
 import { SupportSourceCard } from '../support/SupportSourceCard';
 import './calculator.css';
 import './calculator-form.css';
+
+const targetFamilyLabels: Record<CanonicalTargetFamilyId, string> = {
+  beast: 'ビースト',
+  demonGodPillar: '魔神柱',
+};
 
 function targetClassName(classId: CanonicalTargetClassId): string {
   const label = servantClassLabels.get(classId) ?? classId;
@@ -285,6 +294,10 @@ export function Calculator({
           ...(resolvedScenario.targetContext.attribute.kind === 'concrete'
             ? [`対象属性 ${resolvedScenario.targetContext.attribute.attribute}`]
             : []),
+          ...resolvedScenario.targetContext.families.map(({ familyId }) => `対象特性 ${familyId}`),
+          ...resolvedScenario.targetContext.absentFamilies.map(
+            ({ familyId }) => `対象特性 ${familyId}ではない`,
+          ),
         ];
   function changeManualInput(patch: Partial<DamageResolutionInput>) {
     if (scenario.mode !== 'manual') return;
@@ -333,6 +346,35 @@ export function Calculator({
       ...scenario,
       targetContext: applyTargetContextCommand(scenario.targetContext, command),
     });
+  }
+  function changeTargetFamily(familyId: CanonicalTargetFamilyId, value: string) {
+    if (scenario.mode !== 'resolved') return;
+    let targetContext = scenario.targetContext;
+    if (value === 'present')
+      targetContext = applyTargetContextCommand(targetContext, {
+        kind: 'setFamily',
+        familyId,
+        enabled: true,
+      });
+    else if (value === 'absent')
+      targetContext = applyTargetContextCommand(targetContext, {
+        kind: 'setFamilyAbsent',
+        familyId,
+        absent: true,
+      });
+    else if (value === 'unspecified') {
+      targetContext = applyTargetContextCommand(targetContext, {
+        kind: 'setFamily',
+        familyId,
+        enabled: false,
+      });
+      targetContext = applyTargetContextCommand(targetContext, {
+        kind: 'setFamilyAbsent',
+        familyId,
+        absent: false,
+      });
+    } else throw new TypeError(`unknown_target_family_selection:${value}`);
+    void onScenarioChange({ ...scenario, targetContext });
   }
   function changeDamageContext(
     key: 'attackerHpPermille' | 'battlePointPhase',
@@ -1033,6 +1075,31 @@ export function Calculator({
               ) : null}
             </select>
           </label>
+          {resolvedScenario
+            ? master.targetSemantics.execution.families.map(({ familyId }) => (
+                <label key={`target-family:${familyId}`}>
+                  対象特性 {targetFamilyLabels[familyId]}
+                  <select
+                    value={
+                      resolvedScenario.targetContext.families.some(
+                        (family) => family.familyId === familyId,
+                      )
+                        ? 'present'
+                        : resolvedScenario.targetContext.absentFamilies.some(
+                              (family) => family.familyId === familyId,
+                            )
+                          ? 'absent'
+                          : 'unspecified'
+                    }
+                    onChange={(event) => changeTargetFamily(familyId, event.target.value)}
+                  >
+                    <option value="unspecified">未指定</option>
+                    <option value="present">該当する</option>
+                    <option value="absent">該当しない</option>
+                  </select>
+                </label>
+              ))
+            : null}
           {requiresAttackerHp || scenario.mode === 'resolved' ? (
             <label className="damage-context-input form-grid-wide">
               準備開始時のHP（%）

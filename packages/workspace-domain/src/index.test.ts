@@ -164,6 +164,7 @@ describe('workspace derivations', () => {
           class: { kind: 'relative' as const, relation: 'neutral' as const },
           attribute: { kind: 'relative' as const, relation: 'neutral' as const },
           families: [],
+          absentFamilies: [],
         },
         attackerHpPermille: null,
         enemyDefenseBuff: 0,

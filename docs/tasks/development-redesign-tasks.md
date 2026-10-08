@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+00:31 UTC 対象family三状態の局所接続（2026-10-08）: schema43/engine50で明示不在を必須typed入力へ追加し、native読取・ranking物理worldの正負・baseline物理束縛・UI/portable保存復元まで接続。条件30は433 profileすべてcalculated、候補26/26、UI12/12、native/schema/current strict等37/37、warning0・typecheck成功。直接変更、原artifactと未保証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全production、80条件＋別saved S0/S1、固定期待差、正式after、全15 Apply/qualityは未達。TSK-14/R1未受入。
+
 00:21 UTC 対象表現の製品判断（2026-10-08）: 利用者は対象familyの明示不在を表す入力を優先し、schema／保存形式改訂を許容。現行の正選択だけでは「不在」と「未指定」を区別できないため、三状態のtyped入力をnative実行・ranking候補・portable/保存/表示に一貫して接続する。旧形式の黙示互換はしない。baseline relative候補は物理worldとの被覆を確かめて扱い、18件を消すための候補除外や最終gate緩和はしない。直接根拠と未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
 
 00:19 UTC current strictの非計算閉鎖（2026-10-08）: 現readerは非計算recordも同profile/条件でapplication detailを再実行し、status/reason/diagnostics全値を照合する。公開`insufficientNpGauge`の正値と改竄2種、偽unavailableを反証。監査producerは`includeAreaSupport=false`なのでareaContributionは常にnullとして厳密検査し、詳細用alternateを監査recordに捏造しない。focused4/4・warning0、型検査／対象lint成功。詳細と再検証範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。80条件と最終qualityは未達。

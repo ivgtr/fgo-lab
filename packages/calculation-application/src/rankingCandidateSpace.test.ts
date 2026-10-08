@@ -145,6 +145,67 @@ describe('static ranking candidate space', () => {
     masterDataLocale: 'ja-JP' as const,
   });
 
+  it('materializes a physical baseline and both family polarities for satisfied target worlds', () => {
+    const servant = master.servants.find(({ id }) => id === '102900')!;
+    const conditions = {
+      ...DEFAULT_RANKING_POLICY_CONDITIONS,
+      selfBuffs: 'excluded' as const,
+      conditionalEffects: 'satisfied' as const,
+    };
+    const plan = compileRankingExecutionPlan(servant, master, profile, conditions, versions());
+    const executions = executeRankingScenarios(
+      plan.preparedRankingScenarios,
+      master,
+      versions(),
+      plan.contributionPolicies,
+    );
+    expect(executions.length).toBeGreaterThan(1);
+    expect(executions.every(({ result }) => result.status === 'calculated')).toBe(true);
+    const contexts = plan.preparedRankingScenarios.map(({ scenario }) => {
+      if (scenario.mode !== 'resolved') throw new Error('resolved_ranking_scenario_required');
+      return scenario.targetContext;
+    });
+    expect(
+      contexts.every(
+        ({ class: classContext, attribute }) =>
+          classContext.kind === 'concrete' && attribute.kind === 'concrete',
+      ),
+    ).toBe(true);
+    expect(
+      contexts.some(({ absentFamilies }) =>
+        absentFamilies.some(({ familyId }) => familyId === 'beast'),
+      ),
+    ).toBe(true);
+    expect(
+      contexts.some(({ families }) => families.some(({ familyId }) => familyId === 'beast')),
+    ).toBe(true);
+    expect(
+      calculateRankingPolicyDetail(servant, master, profile, conditions, versions()).status,
+    ).toBe('calculated');
+  });
+
+  it('calculates every reachable published profile under the satisfied NP1 target policy', () => {
+    const result = calculateRankingPolicy(
+      master,
+      profile,
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        selfBuffs: 'excluded',
+        conditionalEffects: 'satisfied',
+      },
+      versions(),
+    );
+    const statuses = Object.values(result.profileResults).map(({ status }) => status);
+    expect(statuses).toHaveLength(433);
+    expect(statuses.filter((status) => status === 'calculated')).toHaveLength(432);
+    expect(statuses.filter((status) => status === 'unavailableUnderPolicy')).toHaveLength(1);
+    expect(
+      statuses.filter(
+        (status) => status === 'inputRequired' || status === 'unsupported' || status === 'invalid',
+      ),
+    ).toEqual([]);
+  });
+
   it('selects a reachable battle-point choice after the ordered preparation mutations', () => {
     const servant = master.servants.find(({ id }) => id === '705300')!;
     const result = calculateRankingPolicyDetail(
@@ -313,6 +374,7 @@ describe('static ranking candidate space', () => {
             class: { kind: 'concrete' as const, classId: 'shielder' as const },
             attribute: { kind: 'concrete' as const, attribute: 'earth' as const },
             families: [],
+            absentFamilies: [],
           },
           worldFactAssertions: [
             ...['alignmentEvil', 'undead'].map((trait) => ({

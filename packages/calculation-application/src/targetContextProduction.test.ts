@@ -329,6 +329,7 @@ describe('production canonical target context', () => {
         class: { kind: 'concrete', classId },
         attribute: { kind: 'concrete', attribute: 'sky' },
         families: [{ familyId: 'demonGodPillar' }],
+        absentFamilies: [],
       };
       const calculation = calculateScenario(scenario, master, versions);
       expect(calculation.result.status).toBe('calculated');
@@ -357,6 +358,7 @@ describe('production canonical target context', () => {
       class: { kind: 'concrete', classId: 'lancer' },
       attribute: { kind: 'relative', relation: 'neutral' },
       families: [{ familyId: 'demonGodPillar' }],
+      absentFamilies: [],
     };
     expect(calculateScenario(independent, master, versions).result.status).toBe('calculated');
 

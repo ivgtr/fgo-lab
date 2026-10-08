@@ -165,7 +165,9 @@ it('offers the target-family control when class and attribute leave NP damage am
   };
   expect(calculateScenario(concrete, master, versions).result.status).toBe('inputRequired');
   const onScenarioChange = renderCalculator(concrete);
-  expect(screen.getByRole('alert').textContent).toContain('対象特性も選択してください');
+  expect(screen.getByRole('alert').textContent).toContain(
+    '対象特性の該当・非該当も選択してください',
+  );
   const familyButton = screen.getByRole('button', { name: /対象特性 ビースト・特攻宝具/ });
   expect(familyButton.getAttribute('aria-pressed')).toBe('false');
   fireEvent.click(familyButton);
@@ -200,4 +202,35 @@ it('offers the target-family control when class and attribute leave NP damage am
   if (reset.mode !== 'resolved') return;
   expect(reset.targetContext.families).toEqual([]);
   expect(calculateScenario(reset, master, versions).result.status).toBe('inputRequired');
+
+  cleanup();
+  const onAbsent = renderCalculator(reset);
+  fireEvent.change(screen.getByLabelText<HTMLSelectElement>('対象特性 ビースト'), {
+    target: { value: 'absent' },
+  });
+  const absent = onAbsent.mock.calls.at(-1)?.[0] as CalculationScenario;
+  expect(absent.mode).toBe('resolved');
+  if (absent.mode !== 'resolved') return;
+  expect(absent.targetContext.families).toEqual([]);
+  expect(absent.targetContext.absentFamilies).toEqual([{ familyId: 'beast' }]);
+  expect(calculateScenario(absent, master, versions).result.status).toBe('calculated');
+  const savedAbsent = portableCalculationRequestSchema.parse(
+    JSON.parse(
+      JSON.stringify(
+        createCalculatorPortableRequest(absent, {
+          schemaVersion: SCHEMA_VERSION,
+          masterDataVersion: master.version,
+          engineVersion: ENGINE_VERSION,
+        }),
+      ),
+    ),
+  );
+  expect(savedAbsent.scenario).toEqual(absent);
+  const replayAbsent = executePortableCalculation(savedAbsent, master);
+  expect(replayAbsent.status).toBe('executed');
+  if (replayAbsent.status === 'executed')
+    expect(replayAbsent.execution.result.status).toBe('calculated');
+  cleanup();
+  renderCalculator(absent);
+  expect(screen.getByLabelText<HTMLSelectElement>('対象特性 ビースト').value).toBe('absent');
 });

@@ -166,7 +166,7 @@ export function CalculationResult({
           <p className="empty" role="alert">
             {result.status === 'inputRequired'
               ? ambiguousTarget
-                ? '対象によってダメージが変わります。クラス相性・属性相性の欄で対象クラス・属性を指定し、必要なら適用内容で対象特性も選択してください。'
+                ? '対象によってダメージが変わります。クラス相性・属性相性の欄で対象クラス・属性を指定し、必要なら対象特性の該当・非該当も選択してください。'
                 : '正確な計算に必要な戦闘情報を入力してください。'
               : result.status === 'unavailable'
                 ? result.reason === 'attackerDead'

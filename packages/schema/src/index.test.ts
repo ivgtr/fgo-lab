@@ -10,8 +10,28 @@ import {
   parseStoredProfileCollection,
   SCHEMA_VERSION,
   supportTemplateSchema,
+  targetContextSchema,
   QUANTITY_FACT_DOMAINS,
 } from './index';
+
+it('requires an explicit family absence set and rejects contradictory family selections', () => {
+  const context = {
+    class: { kind: 'concrete', classId: 'saber' },
+    attribute: { kind: 'concrete', attribute: 'earth' },
+    families: [],
+    absentFamilies: [{ familyId: 'beast' }],
+  };
+  expect(targetContextSchema.safeParse(context).success).toBe(true);
+  const oldShape = {
+    class: context.class,
+    attribute: context.attribute,
+    families: context.families,
+  };
+  expect(targetContextSchema.safeParse(oldShape).success).toBe(false);
+  expect(
+    targetContextSchema.safeParse({ ...context, families: [{ familyId: 'beast' }] }).success,
+  ).toBe(false);
+});
 
 const servantIdentityProfileId = '00000000-0000-4000-8000-000000000047';
 const servantIdentityTimestamp = '2026-09-05T00:00:00.000Z';
@@ -96,6 +116,7 @@ describe('portable schema boundaries', () => {
         class: { kind: 'concrete', classId: 'lancer' },
         attribute: { kind: 'concrete', attribute: 'earth' },
         families: [],
+        absentFamilies: [],
       },
       attackerHpPermille: 1000,
       battleState: { battlePointPhase: null },
@@ -211,6 +232,7 @@ describe('portable schema boundaries', () => {
         class: { kind: 'concrete', classId: 'lancer' },
         attribute: { kind: 'concrete', attribute: 'earth' },
         families: [],
+        absentFamilies: [],
       },
       attackerHpPermille: 1000,
       battleState: { battlePointPhase: null },
@@ -256,6 +278,7 @@ describe('portable schema boundaries', () => {
         class: { kind: 'concrete', classId: 'lancer' },
         attribute: { kind: 'concrete', attribute: 'earth' },
         families: [],
+        absentFamilies: [],
       },
       attackerHpPermille: null,
       battleState: { battlePointPhase: null },

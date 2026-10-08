@@ -324,6 +324,12 @@ export function presentRankingDetailEvidence(
     });
   for (const { familyId } of detail.scenario.targetContext.families)
     conditions.push({ key: `family:${familyId}`, label: '対象family', value: familyId });
+  for (const { familyId } of detail.scenario.targetContext.absentFamilies)
+    conditions.push({
+      key: `family-absent:${familyId}`,
+      label: '対象family',
+      value: `${familyId}ではない`,
+    });
   const visibleProcEffects = [
     ...new Map(
       detail.effects

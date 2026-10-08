@@ -99,19 +99,29 @@ export function resolveTargetCandidates({
 }): TargetResolution {
   const knownFamilies = new Set(domain.families.map(({ familyId }) => familyId));
   const requiredFamilies = new Set(context.families.map(({ familyId }) => familyId));
-  const unknownFamilies = [...requiredFamilies].filter((familyId) => !knownFamilies.has(familyId));
+  const absentFamilies = new Set(context.absentFamilies.map(({ familyId }) => familyId));
+  const unknownFamilies = [...requiredFamilies, ...absentFamilies].filter(
+    (familyId) => !knownFamilies.has(familyId),
+  );
   if (unknownFamilies.length > 0)
     return {
       kind: 'impossible',
       sourceKeys: unknownFamilies.map((familyId) => `target-family:${familyId}`),
     };
+  if ([...requiredFamilies].some((familyId) => absentFamilies.has(familyId)))
+    return { kind: 'impossible', sourceKeys: ['target-family:contradictory'] };
+  if (
+    requiredFamilies.size !== context.families.length ||
+    absentFamilies.size !== context.absentFamilies.length
+  )
+    return { kind: 'impossible', sourceKeys: ['target-family:duplicate'] };
   const referencedExpressions = [
     ...constraints.map(({ expression }) => expression),
     ...readExpressions,
   ];
   const referencedFamilies = [
     ...new Set(referencedExpressions.flatMap(collectReferencedFamilies)),
-  ].filter((familyId) => !requiredFamilies.has(familyId));
+  ].filter((familyId) => !requiredFamilies.has(familyId) && !absentFamilies.has(familyId));
   const referencedPredicates = referencedExpressions.flatMap(collectReferencedPredicates);
   const exposeClass =
     context.class.kind === 'concrete' ||
@@ -119,7 +129,7 @@ export function resolveTargetCandidates({
   const exposeAttribute =
     context.attribute.kind === 'concrete' ||
     referencedPredicates.some(({ kind }) => kind === 'attributeIdentity');
-  const exposedFamilies = new Set([...requiredFamilies, ...referencedFamilies]);
+  const exposedFamilies = new Set([...requiredFamilies, ...absentFamilies, ...referencedFamilies]);
   const selections = familySelections(requiredFamilies, referencedFamilies);
   const sourceKeys = constraints.map(({ sourceKey }) => sourceKey);
   if (!selections) return { kind: 'unsupported', reason: 'targetSearchLimit', sourceKeys };

@@ -21,6 +21,7 @@ describe('resolved scenario commands', () => {
         class: { kind: 'relative' as const, relation: 'disadvantage' as const },
         attribute: { kind: 'concrete' as const, attribute: 'earth' as const },
         families: [{ familyId: 'beast' as const }],
+        absentFamilies: [],
       },
     };
     expect(resetTargetClassContextForAttacker(selected, 'berserker').targetContext).toEqual({
