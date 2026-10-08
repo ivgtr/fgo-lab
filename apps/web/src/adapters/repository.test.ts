@@ -103,6 +103,30 @@ describe('profile repository migration boundary', () => {
     check.close();
   });
 
+  it('replaces an invalid profile only once and preserves master data', async () => {
+    const invalid = { schemaVersion: 32, activeProfileId: profileId, profiles: [] };
+    const fresh: ProfileCollection = {
+      schemaVersion: SCHEMA_VERSION,
+      activeProfileId: profileId,
+      profiles: [{ ...legacyProfile, draft: null, history: [] }],
+    };
+    const db = await userStore();
+    await db.put('user', invalid, 'profiles');
+    await db.put('master', { retained: true }, 'active');
+    db.close();
+
+    const repository = new IndexedDbProfileRepository();
+    expect(await repository.replaceInvalidWithFresh(fresh)).toEqual({ status: 'committed' });
+    expect(await repository.replaceInvalidWithFresh(fresh)).toEqual({
+      status: 'aborted',
+      reason: 'stale',
+    });
+    const check = await userStore();
+    expect(await check.get('user', 'profiles')).toEqual(fresh);
+    expect(await check.get('master', 'active')).toEqual({ retained: true });
+    check.close();
+  });
+
   it.each([SCHEMA_VERSION, 34, 33, 32] as const)(
     'rejects a schema %s servant identity mismatch without upgrading or replacing stored bytes',
     async (schemaVersion) => {

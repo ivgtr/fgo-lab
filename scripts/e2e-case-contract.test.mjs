@@ -15,7 +15,10 @@ const specSource = readdirSync(resolve(root, 'e2e'))
   .join('\n');
 
 test('E2E catalog closes every legacy case and every retained case has executable metadata', () => {
-  assert.equal(catalog.filter(({ id }) => /^E2E-\d{3}$/.test(id)).length, 54);
+  assert.equal(
+    catalog.filter(({ id }) => /^E2E-\d{3}$/.test(id) && Number(id.slice(4)) <= 54).length,
+    54,
+  );
   assert.equal(new Set(catalog.map(({ id }) => id)).size, catalog.length);
   for (const item of catalog) {
     assert.match(item.id, /^E2E-(?:SETUP-)?\d{3}$/);

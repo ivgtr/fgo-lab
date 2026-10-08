@@ -341,6 +341,76 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
   }
 });
 
+test('[E2E-055] invalid profile requires confirmation before fresh setup @desktop @journey', async ({
+  newObservedPage,
+}) => {
+  const { context, page } = await freshPage(newObservedPage);
+  try {
+    await openTestHome(page);
+    const oldProfileId = await page.evaluate(
+      () =>
+        new Promise<string>((resolve, reject) => {
+          const opening = indexedDB.open('fgo-lab', 1);
+          opening.onerror = () => reject(opening.error);
+          opening.onsuccess = () => {
+            const db = opening.result;
+            const transaction = db.transaction('user', 'readwrite');
+            const request = transaction.objectStore('user').get('profiles');
+            transaction.onerror = () => reject(transaction.error);
+            let profileId = '';
+            transaction.oncomplete = () => {
+              db.close();
+              resolve(profileId);
+            };
+            request.onsuccess = () => {
+              const collection = request.result as {
+                activeProfileId: string;
+                schemaVersion: number;
+              };
+              profileId = collection.activeProfileId;
+              transaction.objectStore('user').put({ ...collection, schemaVersion: 32 }, 'profiles');
+            };
+          };
+        }),
+    );
+    await page.reload();
+    const reset = page.getByRole('button', { name: '保存プロフィールを削除して新規開始' });
+    await expect(reset).toBeVisible();
+    page.once('dialog', (dialog) => void dialog.dismiss());
+    await reset.click();
+    await page.reload();
+    await expect(reset).toBeVisible();
+    page.once('dialog', (dialog) => void dialog.accept());
+    await reset.click();
+    await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 30_000 });
+    const recovered = await page.evaluate(
+      () =>
+        new Promise<{ profileId: string; hasMaster: boolean }>((resolve, reject) => {
+          const opening = indexedDB.open('fgo-lab', 1);
+          opening.onerror = () => reject(opening.error);
+          opening.onsuccess = () => {
+            const db = opening.result;
+            const transaction = db.transaction(['user', 'master'], 'readonly');
+            const user = transaction.objectStore('user').get('profiles');
+            const master = transaction.objectStore('master').get('active');
+            transaction.onerror = () => reject(transaction.error);
+            transaction.oncomplete = () => {
+              resolve({
+                profileId: (user.result as { activeProfileId: string }).activeProfileId,
+                hasMaster: master.result !== undefined,
+              });
+              db.close();
+            };
+          };
+        }),
+    );
+    expect(recovered.profileId).not.toBe(oldProfileId);
+    expect(recovered.hasMaster).toBe(true);
+  } finally {
+    await context.close();
+  }
+});
+
 test('[E2E-027] calculator draft autosave restore @desktop @journey', async ({ page }) => {
   await openCalculator(page);
   await page.getByRole('tab', { name: '直接入力' }).click();

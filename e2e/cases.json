@@ -548,5 +548,15 @@
     "replacement": "one BP browser journey; point/capacity arithmetic and maximum oracle in shared fixtures",
     "costMs": 0,
     "status": "retained"
+  },
+  {
+    "id": "E2E-055",
+    "title": "Invalid profile confirmation and fresh setup",
+    "owner": "web/IndexedDB and startup",
+    "failure": "cancel loses the invalid profile or acceptance cannot start a fresh profile",
+    "project": "desktop",
+    "replacement": "one isolated browser journey; atomic stale write in repository test",
+    "costMs": 0,
+    "status": "retained"
   }
 ]
