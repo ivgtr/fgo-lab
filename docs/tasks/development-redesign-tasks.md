@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+09:52 UTC 検証時間の整理（2026-10-08）: 利用者から「モデルケースを揃え、その部分だけチェック」を提案された。保存S0/S1の12条件×433 profileを3回走らせた結果はすでに同一digestで固定済みで、変更前の保存条件3processもないため、同じ計算source・入力で再実行しない。以後の開発中確認は変更ownerに応じて既存の小fixtureを選ぶ。保存条件・slot値は`productionSavedAudit.test.ts`、保存値のdamage／NP容量・欠損／固定buildは`rankingSavedBasis.test.ts`、4 policyは`rankingPolicy.test.ts`、worker detail／staleは`rankingWorkerRuntime.test.ts`、calculator引継ぎと書込失敗保持は`rankingHandoff.test.ts`。対象ファイルだけを`pnpm test:diagnostic -- <file>`で実行し、新しい全件testやcase別master再読込を増やさない。全production inventory／parityが新sourceで必要になる意味変更時と最終品質判定は現行README／テスト戦略のgateに従い、同条件の有効な34,640／5,196結果は再利用する。最終受入も代表だけへ変更するかは利用者へ確認中で、その回答まで品質契約は緩めない。TSK-14/R1未受入。
+
 08:14 UTC 別saved 3process特性と区間handoff（2026-10-08）: 固定HEAD `39a05d2`／clean、既存現80 matrixを入力に保存S0/S1監査を3独立processで完走。各12条件5,196結果、計算可能5,186件parity・S0 common1,732件一致、receipt error／非数値失敗0、S0/S1 audit digestは3回同一。wall中央値628.37秒、max RSS中央値3,513,332 KiB。前版の保存3processはないので現特性値とする。原manifest3件／`after3-summary.json`のSHAと保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。製品・test追加なし。旧product／UI要件・ADRの§20整合、15 Apply帰属、正式性能の残帰属、profile削除実ブラウザー受入、最終review／Blocking0・quality／結果後docsが未達。90分上限後に新familyを始めず、TSK-14/R1未受入。
 
 07:38 UTC 利用者のランキング詳細／順位照合（2026-10-08）: 新規profile初期条件のカーマ1位クリックで一度`invalid`詳細errorが出たが、再読込後は利用者も結果を確認。公開masterの同一worker runtimeでsummary433行ready・カーマdetail calculated平均87,564.525／issues空、response parser受理。前記portable request versionContext欠落説は誤認で訂正し、最初のerror reasonは未取得。現80条件原recordで上位4件の選択skill・対象state・NP特攻／powerMod・平均値を照合し、画面の順位と一致した。カーマ・リリスは自前対象state成立でNP特攻1.5、アビゲイルはpowerMod1。旧画像との差も旧現input差と一致。原画像・経路・数値と証拠限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。再現なしの仮修正はせず、TSK-14/R1未受入。
