@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+04:30 UTC checkpoint（2026-10-08）: calculator VRT画像4枚を対象family欄・Engine50表示に限定更新し、通常modeの対象5/5・warning/retry/unexpected0・artifact error0。E2E-051は先行2/2成功。更新modeの`contract_failure`は成功証拠に数えず原を保持。画像比較・結果・保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。ranking VRT、正式after3process、全15 Apply、最終qualityは未達、TSK-14/R1未受入。
+
+04:27 UTC checkpoint（2026-10-08）: 現UI E2E-051はsetup込み2/2成功、保存育成→ranking/calc平均→再読込・編集後pin→backup復元・history・share一致。VRTは2成功／3失敗で、対象family selector2個とEngine50 metadataの表示差、selected effect局所の1px文字輪郭差を原画像で確認。更新前の範囲判断・原は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全VRT／正式after3process／全15 Apply／最終qualityは未達、TSK-14/R1未受入。
+
 04:23 UTC checkpoint（2026-10-08）: 旧→現の正規化record差155 pathは最終HP同期matrixの80 condition digest同一を確認して再利用。8 owner群（execution69、plan/world29、damage input/rows24、inventory12、identity7、projection6、trace5、unavailable3）に全件割当・未分類0。原・SHA・保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
 
 04:20 UTC checkpoint（2026-10-08）: 旧→現80条件34,640 recordの全receipt・status対応後、変化したdamage6,800/173,000行は1,360 recordすべてcanonical input差あり、旧・現の各行が同一現行damage式で完全再計算一致。21入力field集合、47 actor、旧現formula不一致0。原SHA・§20.2〜20.3への分類と未保証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。非数値record path全体、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
