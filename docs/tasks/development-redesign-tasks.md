@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+06:44 UTC 90分区間Handoff（2026-10-08）: 固定HEAD `83c572e`／cleanで正式afterのranking／旧baseline reader／80条件8-shard producer＋現行strict mergeを各3独立process、計33子processすべてexit0で完了。3 matrixは各34,640結果・34,600 parity・現行strict／transaction／final passed・receipt error0、audit digest同一。中央値はranking6.942→26.253秒（+278.2%）、旧baseline reader56.405→55.440秒（-1.7%）、matrix producer1,130.297→1,306.740秒（+15.6%）、merge140.552→282.398秒（+100.9%、現行body追加費用を含み同一workload率にしない）。原summary／各manifest・policy別候補／本文bytesと保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。default ranking候補2,665→7,164、全matrix候補988,570→797,660、条件本文約463→605MB。増加がpolicy／本文量に対応することは観測済みだが、phase別CPU／peak memoryの帰属は未達で、10%超退行の説明を完了扱いにしない。saved S0/S1各3process特性値、ADR／15 Apply、差分review／Blocking0、最終quality／結果後docsを残し、TSK-14/R1未受入。90分上限後の新familyは開始しない。次区間はこの原identityとclean差分を照合し、性能残件から進める。
+
 05:18 UTC ranking実画面受入（2026-10-08）: 旧現input差と画面順位を照合したdesktop通常・詳細の2画像だけを更新し、通常modeの既存ranking E2Eはsetup込み9/9・warning/retry/unexpected/artifact error0で成功。更新modeはbrowser9/9でも画像再生成通知によりcontract_failureであり、正常成功へ数えない。原・保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。次は固定sourceの正式after3process。全15 Apply、正本整合・最終qualityは未達。
 
 05:12 UTC ranking E2E/VRT原差（2026-10-08）: 現HEADの既存ranking E2Eは8/9成功・1画像失敗、warning0。desktop上位順／数値は現80条件recordと一致し、旧画像との差は対象状態・NP特攻のcanonical input／選択plan差に対応。詳細・原artifact・次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。対象画像更新後の通常mode成功まではranking VRT未達。正式after3process、全15 Apply、最終qualityも未達。
