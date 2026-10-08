@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+07:38 UTC 利用者のランキング詳細／順位照合（2026-10-08）: 新規profile初期条件のカーマ1位クリックで一度`invalid`詳細errorが出たが、再読込後は利用者も結果を確認。公開masterの同一worker runtimeでsummary433行ready・カーマdetail calculated平均87,564.525／issues空、response parser受理。前記portable request versionContext欠落説は誤認で訂正し、最初のerror reasonは未取得。現80条件原recordで上位4件の選択skill・対象state・NP特攻／powerMod・平均値を照合し、画面の順位と一致した。カーマ・リリスは自前対象state成立でNP特攻1.5、アビゲイルはpowerMod1。旧画像との差も旧現input差と一致。原画像・経路・数値と証拠限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。再現なしの仮修正はせず、TSK-14/R1未受入。
+
 07:20 UTC 起動阻害の明示削除導線（2026-10-08）: 利用者の追加判断に従い、invalid保存時だけ「削除して新規開始」→全プロフィール等の不可逆削除確認→現行空profileへ単一IDB transactionで置換する導線を実装中。取消・stale・検証不能時は旧値を維持。旧版自動移行／別保存先fallbackは追加しない。型検査、対象lint/format/diff check成功、実ブラウザー確認・新testは未実施。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1全体は未受入。
 
 07:04 UTC 起動URL（2026-10-08）: 利用者は`http://localhost:4173/`、HTTP入口の応答は別hostname `127.0.0.1` で200。実旧recordを調べず原因断定・origin切替による読取成功扱いはしない。同じURLの隔離ブラウザーで現行新規セットアップの可否を照会中。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
