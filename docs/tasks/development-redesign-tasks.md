@@ -3266,6 +3266,14 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+02:52 UTC checkpoint（2026-10-08）: 現差分のproduction全件は171/172成功・1失敗、warning0（原`.test-results/2026-10-08T02-43-07-049Z-15-e26d18/`）。失敗は3300200 included:satisfiedの旧候補数384期待で、物理target重複解消後の実上限/候補192、calculated最大35421・phase3、他3policyの数値は固定通り。fixtureの候補数だけ192へ更新し、対象file7/7・warning0（原`.test-results/2026-10-08T02-51-12-360Z-15-accbb1/`）。全productionは最終差分では未再実行。HP unit4件は未帰属・未修正。saved S0/S1、全6800 damage rowの帰属、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityも未達。根拠・次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。
+
+02:42 UTC checkpoint（2026-10-08）: 六クラス6/6/receipt0、HP published audit unit20/20・warning0（最終`.test-results/2026-10-08T02-40-34-541Z-15-ca3706/`）、対象typecheck/ESLint/Prettier成功。native source-useとconstant candidateのHP readを分け、condition captureの評価viewと元stateの共有quantity identityを接続した。docs gateは28/28・103 Markdown/44 evidence/1122 references成功（`.test-results/2026-10-08T02-41-48-620Z-560-c7ca36/`）。ただし追加`hpExecution.test`は4件失敗で、変更前HEAD `fce4332`の独立worktreeはoffline依存tarball欠落により同条件再現できず、診断帰属は`unverified`。詳細・原と次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全production現source、saved S0/S1、6800 damage rowの全帰属、正式after3process、全15 Apply、最終qualityは未達。TSK-14/R1未受入。
+
+02:25 UTC checkpoint（2026-10-08）: 現80条件34,640 recordの実mergeは旧固定資料80 receiptを保持しつつ現行strict body/transaction/final/parityを通過。matrix改竄11/11・receipt0、旧baseline隔離readerも成功。六失敗クラスは6/6・完全artifact receipt0（`.test-results/tsk14-baseline-six-20261008-0218/acceptance.json`）。関連HP audit unitはnative準備readとcandidate再readを分ける修正後18/20で、残る2件は旧宣言削除reasonと候補時readが存在しないfixtureの再設計。完全経路・原artifact・差分診断/未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。saved S0/S1、全6800 damage rowの帰属、正式after3process、全15 Apply、最終qualityは未達。TSK-14/R1未受入。
+
+01:29 UTC 結合gate直接経路の再評価（2026-10-08）: 旧baseline readerが現行条件で旧資料を検査して80件拒否するため、前runは現行body strict・transaction/final/capまで到達していなかった。34,640 recordの独立読取差分ではprofile key/status欠落0、damage row差6800を含み、代表の確率buff差は要件§20.2で説明可能。全差帰属は未完了。旧固定readerと現行gateを分離し、旧資料のreceipt/改竄拒否と全意味差診断を保持する設計・原artifactは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。現行受入は未成立。
+
 01:24 UTC 90分上限後の80条件原run／引継ぎ（2026-10-08）: HEAD `c955f12`/worktree空の8 shard全成功、34,640 outcomeは34,600 calculated/40 policy unavailable、非数値0、parity失敗0、artifact error0、候補最大3358≤4096。実mergeは旧固定condition summaryとの`growthBasis`差で80件失敗し、現行契約の結合受入未達。固定資料は保持、old/new一致への書換えはしない。実run identity・原artifact・直接比較器/caller・次の操作・未達gateは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。上限超過により新familyへ進まず、TSK-14/R1未受入。
 
 01:02 UTC 候補同値類局所収束（2026-10-08）: 5秒小testからNP5全実行を分離し、公開306200のNP5/OC1,2×2 profileのready/4096内/各world観測key一意を175msで確認。候補file全27/27・warning0、最大積は同2801300の2968。旧timeout/上限反証は保持、最終80条件実行は未達。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。TSK-14/R1未受入。

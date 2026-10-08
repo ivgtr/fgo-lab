@@ -14,7 +14,7 @@ import type {
 } from './ocState';
 import type { HpState } from './hpResource';
 export { hpPermille } from './hpResource';
-export { ocRateAppliesToGrant } from './ocState';
+export { ocRateAppliesToGrant, ocApplicationParticipates, ocBindingParticipates } from './ocState';
 import type {
   PreparationExecutionContext,
   PreparationCompletedTransitionResult,

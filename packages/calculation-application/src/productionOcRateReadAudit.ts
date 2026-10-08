@@ -3,6 +3,8 @@ import {
   hpPermille,
   preparationOcRatesFor,
   ocRateAppliesToGrant,
+  ocApplicationParticipates,
+  ocBindingParticipates,
 } from '@fgo-lab/battle-execution/preparation-audit';
 import { firstCanonicalAuditDifference } from '@fgo-lab/master-data/production-audit';
 import type { OcLifetimeLimit } from '@fgo-lab/master-data';
@@ -10,22 +12,11 @@ import type { HpProofDeclaration } from './productionHpProofCoverage';
 import type { HpPublishedDependencyRequest } from './productionHpPublishedDependencyCoverage';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
 import { scalarQuantitySnapshot } from './productionScalarQuantityAudit';
+import type { OcActionStep, OcRateInstance } from '@fgo-lab/battle-execution';
 
-function participates(rate: { decision: import('@fgo-lab/battle-execution').OcRateInstance['decision'] }) {
-  return rate.decision.binding.executionIntent === 'physicalBranch' ||
-    Object.values(rate.decision.adoption).every(({ kind }) => kind === 'included');
-}
-function boundParticipation(step: Extract<import('@fgo-lab/battle-execution').OcActionStep, { kind: 'grant' }>) {
-  const { binding } = step;
-  if (binding.executionIntent === 'physicalBranch' || binding.policy.kind === 'calculator') return true;
-  const { policy, activation } = binding;
-  return !(policy.selfBuffs === 'excluded' && step.sourceEvidence.source.origin === 'attacker' &&
-    binding.gameActivation === 'skillUse') &&
-    !(policy.areaView === 'excluded' && binding.contributionScope === 'partyWide') &&
-    !(policy.conditionalEffects === 'baseline' &&
-      (activation.read.certainty !== 'guaranteed' ||
-       activation.proc.kind !== 'resolved' || activation.proc.certainty !== 'guaranteed'));
-}
+const participates = (rate: OcRateInstance) => ocApplicationParticipates(rate.decision);
+const boundParticipation = (step: Extract<OcActionStep, { kind: 'grant' }>) =>
+  ocBindingParticipates(step.binding, step.sourceEvidence.source);
 
 /** Join native query obligations to physical reads; never evaluate rate/damage semantics here. */
 export function reconcileOcRateReads(
@@ -93,20 +84,12 @@ export function reconcileOcRateReads(
     transport.transitions.forEach((transition, actionIndex) => {
       transition.attempts?.forEach((attempt) => {
         const capture = preparationOcRatesFor(attempt);
-        if (!capture) {
-          check(
-            'ocRateReadMismatch',
-            JSON.stringify([requestIndex, actionIndex, attempt.actionId]),
-            'capture',
-            true,
-            attempt.native === undefined,
-          );
-          return;
-        }
         const actionIdentity = JSON.stringify([requestIndex, actionIndex, attempt.actionId]);
         const isHp = (rate: (typeof capture.queries)[number]['rate']) =>
           rate.amount.kind === 'inverseHpLinear' || rate.amount.kind === 'hpRangeLinear';
-        const expectedReads = capture.queries.filter(({ rate }) => participates(rate) && isHp(rate));
+        const expectedReads = capture.queries.filter(
+          ({ rate }) => participates(rate) && isHp(rate),
+        );
         // Rejection discards native outcomes. Earlier reached grants still crossed the
         // selection boundary; missing captures must not turn them into absent consumers.
         const lastReached = attempt.reached.at(-1)?.index;
@@ -161,7 +144,8 @@ export function reconcileOcRateReads(
           // unresolved HP read or a native unsupported expression, never an absent observation.
           const stopped =
             attempt.native?.status !== 'committed' &&
-            blocked && participates(blocked.rate) &&
+            blocked &&
+            participates(blocked.rate) &&
             (isHp(blocked.rate)
               ? hpPermille(blocked.hp?.actors[blocked.rate.valueOwner]) === null
               : blocked.rate.amount.kind !== 'fixed');

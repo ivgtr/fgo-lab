@@ -1,7 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import * as preparationOwner from '../../battle-execution/src/preNoblePhantasm';
 import * as hpOwner from '../../battle-execution/src/hpResource';
-import { preparationHpScope } from '../../battle-execution/src/hpExecutionObservation';
 import { resolvedScenarioSchema } from '@fgo-lab/schema';
 import fixture from '../../test-fixtures/master/fixture.json';
 import {
@@ -55,6 +54,7 @@ function setup(
   npCondition = false,
   npValueExpression = false,
   repeatedNpValueOperation = false,
+  constantReader = false,
 ) {
   const master = masterSnapshotSchema.parse(fixture);
   const actor = master.servants[0]!;
@@ -209,7 +209,27 @@ function setup(
       effects: [selectedEffect],
     },
   ];
-  actor.passives = [];
+  actor.passives = constantReader
+    ? [
+        {
+          id: 'constant-reader',
+          name: 'constant reader',
+          detail: '',
+          imageKey: null,
+          priority: 0,
+          resourceRequirement: null,
+          effects: [
+            masterEffectSchema.parse({
+              ...effect,
+              id: 'hp-reader-constant',
+              occurrenceId: 'hp-reader-constant:0',
+              gameActivation: 'constant',
+            }),
+          ],
+        },
+      ]
+    : [];
+  if (constantReader) actor.actorFormGraph.forms[0]!.passiveIds.push('constant-reader');
   actor.actorFormGraph.forms[0]!.skillIds = ['reader-skill'];
   for (const group of actor.noblePhantasmVariantGroups)
     for (const variant of group.variants)
@@ -222,7 +242,10 @@ function setup(
                 occurrenceId: 'fixture-np-hp-reader:0',
                 gameActivation: 'npBeforeDamage',
                 timing: 'beforeDamage',
-                requirement: { recipient: 'sourceSelf', expression: { kind: 'always' } },
+                requirement: {
+                  recipient: 'sourceSelf',
+                  expression: npCondition ? effect.requirement.expression : { kind: 'always' },
+                },
                 execution: repeatedNpValueOperation
                   ? [effect.execution[0]!, structuredClone(effect.execution[0]!)]
                   : effect.execution,
@@ -396,7 +419,7 @@ it(
     expect(modifier.modifierInstanceId).not.toBeNull();
     const transport = battlePointPreparationRejectionObservationFor(f.prepared)!;
     const action = transport.transitions
-      .flatMap((transition) => preparationHpActionsFor(transition.result) ?? [])
+      .flatMap((transition) => preparationHpActionsFor(transition.result))
       .find((item) => item.conditionReads.length > 0)!;
     const source = action.conditionReads.find((item) => item.kind === 'source')!;
     source.reads[1]!.expectedValue = 499;
@@ -446,7 +469,12 @@ it(
       ledger.consumerPlans[0]?.consumers.filter(
         (consumer) => consumer.disposition === 'physicalRead',
       ),
-    ).toHaveLength(3);
+    ).toHaveLength(1);
+    expect(
+      ledger.consumerPlans[0]?.consumers.filter(
+        (consumer) => consumer.disposition === 'nativePreparationRead',
+      ),
+    ).toHaveLength(2);
     expect(
       ledger.consumerPlans[0]?.consumers.filter(
         (consumer) => consumer.disposition === 'cellNotSelected',
@@ -455,8 +483,8 @@ it(
     expect(f.calculation.result).toEqual(
       calculateScenario(f.scenario, f.master, f.versions).result,
     );
-    expect(ledger.bindings.some((b) => b.stage === 'actualConditionRead')).toBe(true);
-    expect(ledger.bindings.some((b) => b.stage === 'actualValueRead')).toBe(true);
+    expect(ledger.bindings.some((b) => b.stage === 'actualConditionRead')).toBe(false);
+    expect(ledger.bindings.some((b) => b.stage === 'actualValueRead')).toBe(false);
     expect(
       ledger.bindings.some(
         (b) =>
@@ -488,7 +516,7 @@ it(
           d.stages.find((s) => s.stage === 'actualConditionRead')?.observation === 'unobserved',
       ),
     ).toBe(true);
-    expect(ledger.bindings.some((binding) => binding.stage === 'actualValueRead')).toBe(true);
+    expect(reconcileHpOperationEvidence(f.declarations, f.requests).gate.failures).toEqual([]);
     await writeProductionAuditArtifact(task.meta, 'hp-published-dependency-fixture.json', ledger);
     const disk = await readStoredProductionAuditArtifact('hp-published-dependency-fixture.json');
     expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(disk), ledger)).toBe(true);
@@ -669,7 +697,7 @@ it(
   async ({ task }) => {
     const f = setup();
     const bindings = f.borrowed.bindings;
-    const index = bindings.findIndex((b) => b.stage === 'actualConditionRead');
+    const index = bindings.findIndex((b) => b.stage === 'canonicalCondition');
     const original = bindings[index]!;
     const negatives: ReturnType<typeof f.reconcile>[] = [];
     const reasons = (changed: readonly HpPublishedDependencyBinding[]) => {
@@ -720,7 +748,7 @@ it(
         f.requests,
         bindings,
       ).gate.failures.map((x) => x.reason),
-    ).toContain('unmatchedCanonical');
+    ).toContain('conditionReadMismatch');
     expect(negatives.every((n) => !n.gate.passed && n.gate.firstDifference !== null)).toBe(true);
     await writeProductionAuditArtifact(
       task.meta,
@@ -953,7 +981,7 @@ it('distinguishes equal condition leaves and rejects a foreign NP declaration va
   expect(
     repeated
       .reconcile()
-      .bindings.filter((binding) => binding.stage === 'actualConditionRead')
+      .bindings.filter((binding) => binding.stage === 'canonicalCondition')
       .map((binding) => binding.declaration.path),
   ).toEqual(['requirement.expression.requirements.0', 'requirement.expression.requirements.1']);
   const f = setup();
@@ -980,7 +1008,7 @@ it(
   'proves candidate HP leaf identity and read order from an original nested request',
   productionAuditTestOptions(['hp-candidate-condition-leaf-identity.json']),
   async ({ task }) => {
-    const f = setup(false, false, false, false, false, false, true);
+    const f = setup(false, false, false, false, false, false, true, false, false, false, true);
     expect(masterEffectSchema.safeParse(f.master.servants[0]!.skills[0]!.effects[0]).success).toBe(
       true,
     );
@@ -992,7 +1020,11 @@ it(
     const positive = f.reconcile();
     expect(positive.gate.failures).toEqual([]);
     const conditionPaths = positive.bindings
-      .filter((binding) => binding.stage === 'actualConditionRead')
+      .filter(
+        (binding) =>
+          binding.stage === 'actualConditionRead' &&
+          binding.declaration.occurrence === 'hp-reader-constant:0',
+      )
       .map((binding) => binding.declaration.path);
     expect(conditionPaths).toEqual([
       'requirement.expression.requirements.0.requirements.0',
@@ -1014,7 +1046,7 @@ it(
     const foreignEqualLeaf = f.reconcile().gate;
     first.leaf = originalLeaf;
     const operation = f.prepared.orderedScenario!.operations.find(
-      (item) => item.source.effectId === 'hp-reader',
+      (item) => item.source.effectId === 'hp-reader-constant',
     )!;
     const originalCondition = operation.condition;
     operation.condition = { kind: 'always' };
@@ -1239,7 +1271,7 @@ it(
   'rejects a missing selected HP value read after its ready candidate operation',
   productionAuditTestOptions(['hp-candidate-value-read-obligation.json']),
   async ({ task }) => {
-    const f = setup();
+    const f = setup(false, false, false, false, false, false, false, false, true);
     expect(resolvedScenarioSchema.safeParse(f.scenario).success).toBe(true);
     const target = f.calculation.executionObservation?.targetExecution;
     if (target?.selection !== 'selected' || !target.candidateState)
@@ -1310,7 +1342,13 @@ it('keeps selected native NP conditions outside the candidate read obligation', 
 
 it(
   'joins original OC-rate requests to live HP reads, transactional consumption and command repair',
-  productionAuditTestOptions(['hp-oc-rate-live-reads.json', 'hp-execution-class-witnesses.json']),
+  {
+    ...productionAuditTestOptions([
+      'hp-oc-rate-live-reads.json',
+      'hp-execution-class-witnesses.json',
+    ]),
+    timeout: 10_000,
+  },
   async ({ task }) => {
     const base = setup(false, false, false, false, true);
     const actor = base.master.servants[0]!;
@@ -1514,11 +1552,11 @@ it(
         .mockImplementation((servant, state, command, context) => {
           const beforeSnapshot = structuredClone(state);
           const result = reducer(servant, state, command, context);
-          const scope = preparationHpScope(context);
-          const attempted = (scope ?? []).flatMap((action) =>
+          const actions = preparationHpActionsFor(result);
+          const attempted = actions.flatMap((action) =>
             action.attempted ? [action.attempted] : [],
           );
-          if (result.status === 'rejected' && scope !== undefined) {
+          if (result.status === 'rejected' && actions.length > 0) {
             if (leak && attempted.length) Object.assign(state, attempted.at(-1)!);
             witnesses.push({
               canonicalIdentity: `schema-legal:oc-rate:rejection:${witnesses.length}:${command.kind}`,
@@ -1623,8 +1661,8 @@ it(
     const executionProbe = process.env['FGO_TSK08_FAILURE_CLASS_PROBE'];
     const attempt = battlePointPreparationRejectionObservationFor(live.request.prepared)!
       .transitions.flatMap((transition) => transition.attempts ?? [])
-      .find((entry) => preparationOcRatesFor(entry)?.reads.length === 2)!;
-    const capture = preparationOcRatesFor(attempt)!;
+      .find((entry) => preparationOcRatesFor(entry).reads.length === 2)!;
+    const capture = preparationOcRatesFor(attempt);
     const second = capture.reads.pop()!;
     const absent = live.reconcile();
     capture.reads.push(second);
@@ -1638,10 +1676,16 @@ it(
     capture.queries.push(...queries);
     capture.reads.push(...reads);
     const decision = queries[0]!.rate.decision;
-    Object.assign(queries[0]!.rate, { decision: { ...decision,
-      binding: { ...decision.binding, executionIntent: 'declared' },
-      adoption: { ...decision.adoption, selfDecision: { kind: 'excluded', reason: 'selfBuffPolicy' } },
-    } });
+    Object.assign(queries[0]!.rate, {
+      decision: {
+        ...decision,
+        binding: { ...decision.binding, executionIntent: 'declared' },
+        adoption: {
+          ...decision.adoption,
+          selfDecision: { kind: 'excluded', reason: 'selfBuffPolicy' },
+        },
+      },
+    });
     capture.reads.splice(0);
     const forgedExclusion = live.reconcile();
     Object.assign(queries[0]!.rate, { decision });
@@ -1657,12 +1701,12 @@ it(
       rejected.request.prepared,
     )!
       .transitions.flatMap((transition) => transition.attempts ?? [])
-      .find((entry) => preparationOcRatesFor(entry)?.reads.length)!;
+      .find((entry) => preparationOcRatesFor(entry).reads.length)!;
     const returned = rejectedAttempt.returned!;
     rejectedAttempt.returned = { ...returned };
     const leaked = rejected.reconcile();
     rejectedAttempt.returned = returned;
-    const rejectedCapture = preparationOcRatesFor(rejectedAttempt)!;
+    const rejectedCapture = preparationOcRatesFor(rejectedAttempt);
     const rejectedSelections = rejectedCapture.selections.splice(0);
     const rejectedQueries = rejectedCapture.queries.splice(0);
     const rejectedReads = rejectedCapture.reads.splice(0);

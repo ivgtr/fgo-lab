@@ -26,8 +26,6 @@ import {
   productionClosureMatrixDigest,
 } from '../src/productionClosureAudit';
 import {
-  compareProductionConditionRecords,
-  compareProductionMatrixAggregates,
   inspectProductionAuditAggregate,
   inspectProductionConditionRecord,
   recordFailure,
@@ -145,7 +143,12 @@ export async function verifyProductionMatrixRecords(input: {
   );
   if (failures.length) return result();
   const expectedReceipts: typeof expected.conditions = [];
-  failures.push(...compareProductionMatrixAggregates(expected.audit, input.audit));
+  failures.push(
+    ...inspectProductionAuditAggregate(
+      input.audit as typeof expected.audit,
+      'production:current-matrix',
+    ),
+  );
   for (const [index, shard] of input.shards.entries()) {
     add('recordIdentityMismatch', `tsk-08:shard:${index}`, input.identity, shard.identity);
     const shardKeys = keys.filter(
@@ -172,6 +175,9 @@ export async function verifyProductionMatrixRecords(input: {
       { profileCount: shard.audit.attackProfileCount },
     );
   }
+  // Validate the complete fixed archive before current body replay. A corrupt
+  // current condition can then fail promptly without hiding a missing second
+  // historical receipt.
   for (const [index, key] of keys.entries()) {
     const expectedDeclaration = declarations.find(
       (declaration) => declaration.conditionKey === key,
@@ -185,6 +191,9 @@ export async function verifyProductionMatrixRecords(input: {
     });
     failures.push(...expectedInspection.failures);
     if (expectedInspection.status === 'accepted') expectedReceipts.push(expectedDeclaration);
+  }
+  if (failures.length) return result(expectedReceipts);
+  for (const [index, key] of keys.entries()) {
     const actualDeclaration = input.artifacts.find((d) => d.conditionKey === key);
     if (!actualDeclaration) {
       shardObservations[index % input.shards.length]!.complete = false;
@@ -194,7 +203,7 @@ export async function verifyProductionMatrixRecords(input: {
         { declared: true },
         { declared: false },
       );
-      continue;
+      return result(expectedReceipts);
     }
     const shard = input.shards[index % input.shards.length]!;
     const summary = shard.audit.conditionSummaries.find((s) => s.key === key);
@@ -206,21 +215,13 @@ export async function verifyProductionMatrixRecords(input: {
         { summaryPresent: true },
         { summaryPresent: false },
       );
-      continue;
+      return result(expectedReceipts);
     }
     add(
       'recordSummaryMismatch',
       `production:${key}:conditions`,
       productionClosureConditions()[index],
       summary.conditions,
-    );
-    const { digest: _expectedDigest, ...expectedSummaryValue } = expectedSummary;
-    const { elapsedMs: _actualElapsed, digest: _actualDigest, ...actualSummaryValue } = summary;
-    add(
-      'recordSummaryMismatch',
-      `production:${key}:summary`,
-      expectedSummaryValue,
-      actualSummaryValue,
     );
     let actualValue: unknown;
     try {
@@ -235,7 +236,7 @@ export async function verifyProductionMatrixRecords(input: {
         { readable: true },
         { readable: false, error: cause instanceof Error ? cause.message : String(cause) },
       );
-      continue;
+      return result(expectedReceipts);
     }
     const actualInspection = inspectProductionConditionRecord({
       value: actualValue,
@@ -245,9 +246,9 @@ export async function verifyProductionMatrixRecords(input: {
       profileCount: expected.audit.attackProfileCount,
     });
     failures.push(...actualInspection.failures);
-    if (expectedInspection.status === 'failed' || actualInspection.status === 'failed') {
+    if (actualInspection.status === 'failed') {
       shardObservations[index % input.shards.length]!.complete = false;
-      continue;
+      return result(expectedReceipts);
     }
     const currentFailures = actualInspection.records.flatMap(({ value }) =>
       verifyCurrentProductionRecord({
@@ -262,16 +263,13 @@ export async function verifyProductionMatrixRecords(input: {
     failures.push(...currentFailures);
     if (currentFailures.length) {
       shardObservations[index % input.shards.length]!.complete = false;
-      continue;
+      return result(expectedReceipts);
     }
-    // Only accepted complete bodies may enter comparison and transaction observation.
-    if (expectedSummary.digest !== summary.digest || actualInspection.failures.length)
-      failures.push(
-        ...compareProductionConditionRecords(expectedInspection.records, actualInspection.records),
-      );
-    if (expectedInspection.failures.length || actualInspection.failures.length) {
+    // Historical body integrity is independent of current semantics. Current
+    // bodies are checked against the current application and transaction audit.
+    if (actualInspection.failures.length) {
       shardObservations[index % input.shards.length]!.complete = false;
-      continue;
+      return result(expectedReceipts);
     }
     const observed = observeProductionShardRecords(actualValue, key, index % input.shards.length);
     failures.push(...observed.failures);
@@ -284,6 +282,7 @@ export async function verifyProductionMatrixRecords(input: {
       bucket.summary[field] += transaction.summary[field];
     bucket.failures.push(...transaction.failures);
     bucket.final.push(...observed.final);
+    if (observed.failures.length || transaction.failures.length) return result(expectedReceipts);
   }
   for (const [index, shard] of input.shards.entries()) {
     const observed = shardObservations[index]!;

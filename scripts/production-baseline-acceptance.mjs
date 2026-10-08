@@ -184,6 +184,12 @@ function main() {
           allowEmpty: d.allowEmpty,
           expectedBytes: d.bytes,
           expectedSha256: d.sha256,
+          ...(d.format === 'json-gzip'
+            ? {
+                expectedDecodedBytes: d.expectedDecodedBytes,
+                expectedDecodedSha256: d.expectedDecodedSha256,
+              }
+            : {}),
         })),
       );
       assert.deepEqual(receipt.errors, []);
@@ -255,9 +261,14 @@ function main() {
         body.records[3].canonicalInput.fouAtk = null;
       }),
     (_m, f) => {
-      const differences = f.filter((x) => x.reason === 'canonicalRecordMismatch');
+      const differences = f.filter(
+        (x) =>
+          (x.reason === 'canonicalRecordMismatch' || x.reason === 'recordShapeInvalid') &&
+          (x.firstDifference.path === 'canonicalInput' ||
+            x.firstDifference.path.startsWith('canonicalInput.')),
+      );
       assert.equal(differences.length, 4);
-      assert.ok(differences.every((x) => x.firstDifference.path.startsWith('canonicalInput.')));
+      assert.equal(new Set(differences.map((x) => x.canonicalIdentity)).size, 4);
     },
   );
   mergeCase(
@@ -293,7 +304,14 @@ function main() {
         },
         true,
       ),
-    (_m, f) => assert.ok(f.some((x) => x.reason === 'shardGateBodyMismatch')),
+    (_m, f) =>
+      assert.ok(
+        f.some(
+          (x) =>
+            x.reason === 'canonicalRecordMismatch' &&
+            x.firstDifference.path.startsWith('appliedPreparationActions'),
+        ),
+      ),
   );
   for (const [name, mutate] of [
     [

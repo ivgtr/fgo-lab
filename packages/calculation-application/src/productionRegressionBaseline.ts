@@ -6,8 +6,6 @@ import { z } from 'zod';
 import type { Tsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import { inspectProductionAuditValue } from './productionAuditValue';
 import {
-  productionClosureConditions,
-  productionClosureConditionKey,
   productionClosureMatrixDigest,
   type ProductionClosureAudit,
   type ProductionClosureConditionRecord,
@@ -69,6 +67,32 @@ export type ProductionBaselineManifest = Omit<
 > & { audit: ProductionBaselineAudit };
 export const productionBaselineSha256 = (bytes: Uint8Array) =>
   createHash('sha256').update(bytes).digest('hex');
+
+// Frozen production-regression-v1 selection. Its seven fields describe the
+// historical bytes; current RankingSelection must not reinterpret this input.
+const historicalConditions = () => {
+  const conditions = [];
+  for (const levelBasis of ['naturalLimit', 'uniformLevel90'] as const)
+    for (const selfBuffs of ['included', 'excluded'] as const)
+      for (const conditionalEffects of ['baseline', 'satisfied'] as const)
+        for (const npLevel of [1, 2, 3, 4, 5] as const)
+          for (const initialOvercharge of [1, 2, 3] as const) {
+            const legalMaximum = npLevel === 1 ? 1 : npLevel === 5 ? 3 : 2;
+            if (initialOvercharge > legalMaximum) continue;
+            conditions.push({
+              population: 'all' as const,
+              initialOvercharge,
+              levelBasis,
+              npLevelBasis: { kind: 'specified' as const, npLevel },
+              classAffinity: 'neutral' as const,
+              selfBuffs,
+              conditionalEffects,
+            });
+          }
+  return conditions;
+};
+const historicalConditionKey = (condition: ReturnType<typeof historicalConditions>[number]) =>
+  `${condition.levelBasis}-${condition.selfBuffs}-${condition.conditionalEffects}-np${String(condition.npLevelBasis.npLevel)}-oc${String(condition.initialOvercharge)}`;
 
 function failure(
   reason: ProductionRecordFailure['reason'],
@@ -176,7 +200,8 @@ export async function readProductionBaselineManifest(
     ...inspectProductionConditionSummaries(manifest.audit.conditionSummaries, 'baseline').failures,
   );
   if (failures.length) return reject();
-  const keys = productionClosureConditions().map(productionClosureConditionKey);
+  const conditions = historicalConditions();
+  const keys = conditions.map(historicalConditionKey);
   add(
     'recordSummaryMismatch',
     'coverage',
@@ -200,7 +225,7 @@ export async function readProductionBaselineManifest(
     add(
       'recordSummaryMismatch',
       `${summary.key}:conditions`,
-      productionClosureConditions()[index] ?? { present: false },
+      conditions[index] ?? { present: false },
       summary.conditions,
     );
   failures.push(...inspectProductionAuditAggregate(manifest.audit, 'tsk-06.5:baseline-matrix'));

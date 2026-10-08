@@ -386,17 +386,24 @@ export interface HpQuantityRead {
 }
 type HpQuantityObserver = (read: HpQuantityRead) => void;
 const conditionScopes = new WeakMap<object, HpQuantityObserver>();
-export function beginHpConditionCapture(state: object, observer: HpQuantityObserver) {
-  const previous = conditionScopes.get(state);
-  conditionScopes.set(state, observer);
+export function beginHpConditionCapture(
+  state: Pick<ExecutableBattleState, 'quantities'>,
+  observer: HpQuantityObserver,
+) {
+  // readOperationCondition evaluates a shallow clock view of the same quantities.
+  const previous = conditionScopes.get(state.quantities);
+  conditionScopes.set(state.quantities, observer);
   return previous;
 }
-export function finishHpConditionCapture(state: object, previous: HpQuantityObserver | undefined) {
-  if (previous) conditionScopes.set(state, previous);
-  else conditionScopes.delete(state);
+export function finishHpConditionCapture(
+  state: Pick<ExecutableBattleState, 'quantities'>,
+  previous: HpQuantityObserver | undefined,
+) {
+  if (previous) conditionScopes.set(state.quantities, previous);
+  else conditionScopes.delete(state.quantities);
 }
 export function observeHpQuantity(
-  state: object,
+  state: Pick<ExecutableBattleState, 'quantities'>,
   leaf: Extract<ConditionExpression, { kind: 'quantity' }>,
   actor: string,
   permille: number | null,
@@ -404,7 +411,14 @@ export function observeHpQuantity(
   expectedValue: number,
   evaluated: boolean | null,
 ): void {
-  conditionScopes.get(state)?.({ leaf, actor, permille, comparison, expectedValue, evaluated });
+  conditionScopes.get(state.quantities)?.({
+    leaf,
+    actor,
+    permille,
+    comparison,
+    expectedValue,
+    evaluated,
+  });
 }
 
 export function applyObservedNpDamage(

@@ -355,7 +355,13 @@ export function hpPublishedDependencyBindings(
           `requests.${requestIndex}.operations.${sequence}.conditions.${position}`,
         );
         if (d) {
-          conditionReadPlan.push({ operation, sequence, declaration: d, leaf });
+          // A source-use read is owned by native preparation and carried into ordered
+          // execution. The candidate must not manufacture a second physical read.
+          if (
+            operation.sourceActivation.kind !== 'read' ||
+            (operation.kind === 'addModifier' && operation.gameActivation === 'constant')
+          )
+            conditionReadPlan.push({ operation, sequence, declaration: d, leaf });
           push(d, {
             stage: 'canonicalCondition',
             position,
@@ -606,7 +612,17 @@ export function hpPublishedDependencyBindings(
               detail: {
                 ratio: np.ratio,
                 disposition: np.disposition,
-                context: np.context,
+                context: {
+                  overcharge: np.context.overcharge,
+                  selectedNpLevel: np.context.selectedNpLevel,
+                  targetTraits: np.context.targetTraits,
+                  targetStateTraits: np.context.targetStateTraits,
+                  targetPredicateValues: np.context.targetPredicateValues,
+                  attackerHpRatio: np.context.attackerHpRatio,
+                  targetRarity: np.context.targetRarity,
+                  effectLocalConditionSatisfied: np.context.effectLocalConditionSatisfied,
+                  includeSpecialContribution: np.context.includeSpecialContribution,
+                },
                 evaluation: np.evaluation,
                 input: np.input,
                 hp: np.state.hp,
@@ -721,10 +737,12 @@ export function hpPublishedDependencyBindings(
       compiledSources
         ?.filter(
           (source) =>
-            source.phase === 'beforeNpDamage' &&
-            source.noblePhantasmVariant !== null &&
-            ref !== null &&
-            noblePhantasmVariantKey(source.noblePhantasmVariant) === noblePhantasmVariantKey(ref),
+            (source.phase === 'beforeNpDamage' &&
+              source.noblePhantasmVariant !== null &&
+              ref !== null &&
+              noblePhantasmVariantKey(source.noblePhantasmVariant) ===
+                noblePhantasmVariantKey(ref)) ||
+            (source.phase === 'passive' && source.origin === 'passive'),
         )
         .forEach((source, position) => {
           const operationSource = {
@@ -774,7 +792,7 @@ export function hpPublishedDependencyBindings(
                   },
                   phase: source.phase,
                   qualification:
-                    'Compiled NP beforeDamage source cell; candidate read and consumption are separate.',
+                    'Compiled ordered source cell; candidate read and consumption are separate.',
                 },
               }),
             );
@@ -904,6 +922,14 @@ export function hpPublishedDependencyBindings(
           operation.valueExpression?.kind !== 'hpRangeLinear')
       )
         return;
+      if (
+        operation.runtimeBinding?.source.modifierReadOwner === 'nativePreparation' &&
+        operation.gameActivation !== 'constant'
+      ) {
+        if (!operation.runtimeBinding.modifierValueRead)
+          fail('missingCapture', `requests.${requestIndex}.operations.${sequence}.nativeValueRead`);
+        return;
+      }
       const event = target.operationEvents[sequence];
       if (!event) return; // A selected operation without an event has its own typed gate.
       const matches = selected.filter(
@@ -1128,6 +1154,13 @@ export function reconcileHpPublishedDependencyCoverage(
               group.operationIds.includes(binding.operation?.operationId ?? ''),
             ) ?? [])
           : [];
+      const nativePreparationRead =
+        (binding.stage === 'canonicalCondition' &&
+          operation?.sourceActivation.kind === 'read' &&
+          !(operation.kind === 'addModifier' && operation.gameActivation === 'constant')) ||
+        (binding.stage === 'expressionContext' &&
+          operation?.runtimeBinding?.source.modifierReadOwner === 'nativePreparation' &&
+          operation.runtimeBinding.modifierValueRead !== undefined);
       if (
         event &&
         (event.sequence !== binding.sequence ||
@@ -1153,11 +1186,13 @@ export function reconcileHpPublishedDependencyCoverage(
           ? ('cellNotSelected' as const)
           : reads.length
             ? ('physicalRead' as const)
-            : target?.selection !== 'selected'
-              ? ('consumerSelectionUnresolved' as const)
-              : event
-                ? ('consumerReachedWithoutRead' as const)
-                : ('consumerNotReached' as const),
+            : nativePreparationRead
+              ? ('nativePreparationRead' as const)
+              : target?.selection !== 'selected'
+                ? ('consumerSelectionUnresolved' as const)
+                : event
+                  ? ('consumerReachedWithoutRead' as const)
+                  : ('consumerNotReached' as const),
         readCount: reads.length,
       };
     });

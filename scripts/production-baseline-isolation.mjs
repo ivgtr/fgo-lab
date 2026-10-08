@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
 const root = path.resolve(import.meta.dirname, '..');
 const [checkoutArgument, receiptArgument] = process.argv.slice(2);
 assert.ok(
@@ -65,35 +66,47 @@ for(const name of ['readFile','open','stat','lstat']){const original=fs.promises
 syncBuiltinESMExports();\n`,
 );
 const loader = path.join(checkout, 'packages/data-pipeline/node_modules/tsx/dist/loader.mjs');
-const results = [];
-for (const [name, script, args] of [
-  ['replay', 'replay-production-baseline.ts', [path.join(checkout, 'actual')]],
-  ['merge', 'merge-oc-matrix.ts', [path.join(checkout, 'actual')]],
-]) {
-  const started = performance.now();
-  const p = spawnSync(
-    process.execPath,
-    [
-      '--import',
-      guard,
-      '--import',
-      loader,
-      path.join(checkout, 'packages/calculation-application/scripts', script),
-      ...args,
-    ],
-    { cwd: checkout, encoding: 'utf8' },
-  );
-  fs.writeFileSync(path.join(checkout, `${name}.stdout.log`), p.stdout ?? '');
-  fs.writeFileSync(path.join(checkout, `${name}.stderr.log`), p.stderr ?? '');
-  assert.equal(p.status, 0, `${name}:${p.stderr}`);
-  results.push({ name, exit: p.status, elapsedMs: performance.now() - started });
+const baselineReader = pathToFileURL(
+  path.join(checkout, 'packages/calculation-application/src/productionRegressionBaseline.ts'),
+).href;
+const verification = `
+import fs from 'node:fs';
+import path from 'node:path';
+import { readProductionBaselineManifest, readProductionBaselineCondition } from ${JSON.stringify(baselineReader)};
+const root = ${JSON.stringify(checkout)};
+const source = JSON.parse(fs.readFileSync(path.join(root, 'docs/evidence/tsk-06-5-production-closure.json'), 'utf8'));
+const reference = source.productionMatrix.canonicalRecords;
+const result = await readProductionBaselineManifest(root, reference);
+if (result.status !== 'accepted') throw new Error('baseline_manifest_rejected:' + JSON.stringify(result.failures[0]));
+let records = 0;
+for (const [index, declaration] of result.manifest.conditions.entries()) {
+  const body = await readProductionBaselineCondition({
+    directory: result.directory,
+    declaration,
+    summary: result.manifest.audit.conditionSummaries[index],
+    profileCount: result.manifest.audit.attackProfileCount,
+  });
+  if (body.status !== 'accepted') throw new Error('baseline_condition_rejected:' + declaration.conditionKey + ':' + JSON.stringify(body.failures[0]));
+  records += body.records.length;
 }
+console.log(JSON.stringify({ status: 'passed', conditions: result.manifest.conditions.length, records, digest: result.manifest.audit.digest }));
+`;
+const started = performance.now();
+const p = spawnSync(
+  process.execPath,
+  ['--import', guard, '--import', loader, '--input-type=module', '--eval', verification],
+  { cwd: checkout, encoding: 'utf8' },
+);
+fs.writeFileSync(path.join(checkout, 'reader.stdout.log'), p.stdout ?? '');
+fs.writeFileSync(path.join(checkout, 'reader.stderr.log'), p.stderr ?? '');
+assert.equal(p.status, 0, `reader:${p.stderr}`);
+const reader = JSON.parse((p.stdout ?? '').trim());
+assert.equal(reader.status, 'passed');
+assert.equal(reader.conditions, 80);
+assert.equal(reader.records, 34640);
+const results = [{ name: 'reader', exit: p.status, elapsedMs: performance.now() - started }];
 const accesses = path.join(checkout, 'original-run-access.jsonl');
 assert.ok(!fs.existsSync(accesses));
-const manifest = JSON.parse(fs.readFileSync(path.join(checkout, 'actual/manifest.json')));
-assert.equal(manifest.audit.outcomeCount, 34640);
-assert.equal(manifest.canonicalRecords.comparison.status, 'passed');
-assert.deepEqual(manifest.artifactVerification.errors, []);
 fs.writeFileSync(
   receiptArgument,
   JSON.stringify(
@@ -103,10 +116,9 @@ fs.writeFileSync(
       originalRunReads: 0,
       results,
       qualification:
-        'Dependencies shared with installed checkout; source, published master, baseline and replay fixture copied without any local run. Replay verifies saved-body acceptance, not fresh damage execution.',
-      digest: manifest.audit.digest,
-      eligibilityDigest: manifest.audit.eligibility.candidates.digest,
-      source: manifest.canonicalRecords.reference,
+        'Dependencies shared with installed checkout; fixed baseline manifest and all 80 compressed bodies read without any original local run. This checks historical storage only, not current damage execution.',
+      digest: reader.digest,
+      source: 'docs/evidence/tsk-06-5-production-closure.json',
     },
     null,
     2,

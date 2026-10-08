@@ -117,7 +117,7 @@ git fetch --depth=1 --no-tags file:///home/ivgtr/pj/fgo-lab/fgo-lab dd1a0ebc8723
 
 remoteが固定revisionを提供しない、Git／SSH設定・認証・接続が失敗する、取得後に固定bytes／SHAが一致しない場合は、原因と必要なrevision・入力を記録して停止します。最新revision・別SHA・local objectコピー・旧bundle・期待値再生成で取得成功を補わないでください。worktreeへの取得と依存installを終えてから、下のcommandをそのcheckout内で実行します。元run禁止の実利用は09.11で受入済みですが、その受入はインストール済み依存を共有した別rootのreplay／実mergeです。ネットワーク取得や新規依存installまで受入済みとは扱いません。 STEP 6の別checkout受入と固定取得の成立範囲・不足時再開は[判定台帳](docs/evidence/tsk-09-1-documentation-closure.md#step-6-統合受入handoff)を参照してください。
 
-現在のproducerの回帰は既存の `audit-oc-matrix.ts` を8 shardで実行し、同じ出力directoryを `merge-oc-matrix.ts` へ渡します。mergeは全production record／aggregateを期待値と比較し、actual本文のtransaction／gateも検査します。baselineを更新する場合は、独立した期待値の承認と全意味値・inventory／digestの移行照合が必要です。
+現在のproducerの回帰は既存の `audit-oc-matrix.ts` を8 shardで実行し、同じ出力directoryを `merge-oc-matrix.ts` へ渡します。mergeは現行record本文のstrict検査、shard／aggregate／transaction／final outcome／parity／capを検査します。固定旧baselineは専用readerでreceipt・identity・旧本文を検査し、旧schemaの全record／digest一致を現行版の成功条件にはしません。差分は原body同士で診断し、input・実行順・ruleへ帰属します。baselineを更新する場合は、独立した期待値の承認と全意味値・inventory／digestの移行照合が必要です。
 
 全matrixを新しく生成する場合の実入口は次のとおりです。`tsk09-matrix-new`は例であり、実際には未使用のpathを指定します。8 shardをすべて成功させてからmergeします。性能比較では同じ環境・入力・workloadと並列条件を使い、標準の8 shard／最大4並列・2 waveを維持します。次の逐次例はcommandとshard割当ての説明で、正式性能測定の並列条件を代替しません。
 
@@ -134,14 +134,12 @@ if [ "$matrix_complete" = yes ]; then
 fi
 ```
 
-途中失敗したdirectoryを正常入力として再利用せず、失敗manifest・完全logを保存します。source declarationの期待値は固定baselineだけです。producer出力から承認済みexpectedを再生成しません。
+途中失敗したdirectoryを正常入力として再利用せず、失敗manifest・完全logを保存します。固定source declarationは旧資料のidentity・件数・outcomeを確認するために使い、旧digestを現行結果の期待値へ流用しません。producer出力から承認済みexpectedを再生成しません。
 
-保存readerの再現だけを行う場合は、次のcommandを新しい出力directoryで実行します。replayはbaselineから実merge用の入力を構成し、damage producerの再実行とは区別します。
+現行matrixの拒否反例と固定旧資料readerの独立性を確認する場合は、成功した現行matrix directoryと新しい出力directoryを指定します。旧baselineからのreplayは現行schemaのmerge入力ではありません。
 
 ```sh
-node --import ./packages/data-pipeline/node_modules/tsx/dist/loader.mjs packages/calculation-application/scripts/replay-production-baseline.ts .test-results/baseline-replay
-node --import ./packages/data-pipeline/node_modules/tsx/dist/loader.mjs packages/calculation-application/scripts/merge-oc-matrix.ts .test-results/baseline-replay
-node scripts/production-baseline-acceptance.mjs matrix .test-results/baseline-replay .test-results/baseline-negative
+node scripts/production-baseline-acceptance.mjs matrix .test-results/tsk09-matrix-new .test-results/baseline-negative
 node scripts/production-baseline-acceptance.mjs six .test-results/baseline-six
 node scripts/production-baseline-isolation.mjs /tmp/fgo-baseline-new-checkout .test-results/baseline-isolation.json
 ```

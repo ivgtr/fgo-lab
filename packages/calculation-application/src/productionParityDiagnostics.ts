@@ -10,7 +10,6 @@ import {
 } from './productionCriticalStarsAudit';
 import {
   firstCanonicalAuditDifference,
-  productionAuditMatrixRecords,
   type CanonicalAuditDifference,
   type CanonicalAuditRecord,
   type CanonicalAuditValue,
@@ -1681,10 +1680,28 @@ function canonicalParityMatrixValue(
   source: Tsk065ProductionAuditSource,
   audit: ProductionParityGateInput,
 ): { expected: CanonicalAuditValue; actual: CanonicalAuditValue } {
-  const records = productionAuditMatrixRecords(source, audit);
+  // The source fixes the historical population and numeric outcome contract.
+  // Its old record and eligibility digests describe a different schema and
+  // cannot be the authority for a current record body.
+  const expected = {
+    conditionCount: source.matrix.conditionCount,
+    attackProfileCount: source.matrix.attackProfileCount,
+    outcomeCount: source.matrix.outcomeCount,
+    outcomes: source.matrix.outcomes,
+    parityCount: source.matrix.parityCount,
+    parityFailures: source.matrix.parityFailures,
+  };
+  const actual = {
+    conditionCount: audit.conditionCount,
+    attackProfileCount: audit.attackProfileCount,
+    outcomeCount: audit.outcomeCount,
+    outcomes: audit.outcomes,
+    parityCount: audit.parityCount,
+    parityFailures: audit.parityFailures.length,
+  };
   return {
-    expected: records.expected[0]!.value,
-    actual: records.actual[0]!.value,
+    expected: canonicalValue(expected, 'tsk-06.5:production-matrix'),
+    actual: canonicalValue(actual, 'tsk-06.5:production-matrix'),
   };
 }
 
@@ -1715,6 +1732,22 @@ export function evaluateProductionParityGate(
   const recordGate = productionRecordComparisonFailure(records);
   if (recordGate) return recordGate;
   const canonicalIdentity = 'tsk-06.5:production-matrix';
+  if (!records || records.status !== 'passed') {
+    const expected = canonicalValue({ canonicalRecords: 'verified' }, canonicalIdentity);
+    const actual = canonicalValue({ canonicalRecords: 'missing' }, canonicalIdentity);
+    return {
+      status: 'failed',
+      reason: 'canonicalRecordsMissing',
+      canonicalIdentity,
+      expected,
+      actual,
+      firstDifference: firstCanonicalAuditDifference(
+        [{ identity: canonicalIdentity, value: expected }],
+        [{ identity: canonicalIdentity, value: actual }],
+      )!,
+      failures: [],
+    };
+  }
   const { expected, actual } = canonicalParityMatrixValue(source, audit);
   const firstDifference = firstCanonicalAuditDifference(
     [{ identity: canonicalIdentity, value: expected }],
@@ -1734,9 +1767,7 @@ export function evaluateProductionParityGate(
     reason:
       audit.parityFailures.length > 0 || firstDifference.path === 'parityFailures'
         ? 'parityFailure'
-        : firstDifference.path === 'digest' && !records
-          ? 'canonicalRecordsMissing'
-          : 'matrixMismatch',
+        : 'matrixMismatch',
     canonicalIdentity,
     expected,
     actual,

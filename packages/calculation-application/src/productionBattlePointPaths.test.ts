@@ -320,8 +320,8 @@ describe('production battle-point paths', () => {
         await artifact(task.meta, artifactPath, record);
         expect(result.status).toBe('calculated');
         if (selfBuffs === 'included' && conditionalEffects === 'satisfied') {
-          expect(record.candidateUpperBound).toBe(384);
-          expect(record.candidateCount).toBe(384);
+          expect(record.candidateUpperBound).toBe(192);
+          expect(record.candidateCount).toBe(192);
           expect(result.status).toBe('calculated');
           if (result.status === 'calculated') expect(result.detail.input.battlePointPhase).toBe(3);
         }

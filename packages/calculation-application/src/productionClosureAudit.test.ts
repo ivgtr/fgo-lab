@@ -573,27 +573,44 @@ it(
       digest: source.matrix.mergedDigest,
       eligibility: { candidates: { digest: source.matrix.eligibilityDigest } },
     };
-    const parityGate = evaluateProductionParityGate(source, {
+    const acceptedRecords = { status: 'passed' as const, failures: [], firstDifference: null };
+    const parityGate = evaluateProductionParityGate(
+      source,
+      {
+        ...matrixInput,
+        parityFailures: canonicalFailure ? [canonicalFailure] : [],
+      },
+      acceptedRecords,
+    );
+    const passingParityGate = evaluateProductionParityGate(
+      source,
+      {
+        ...matrixInput,
+        parityFailures: [],
+      },
+      acceptedRecords,
+    );
+    const historicalDigestChanged = evaluateProductionParityGate(
+      source,
+      {
+        ...matrixInput,
+        digest: '0'.repeat(64),
+        eligibility: { candidates: { digest: '0'.repeat(64) } },
+        parityFailures: [],
+      },
+      acceptedRecords,
+    );
+    const outcomeCountMismatch = evaluateProductionParityGate(
+      source,
+      {
+        ...matrixInput,
+        outcomeCount: matrixInput.outcomeCount + 1,
+        parityFailures: [],
+      },
+      acceptedRecords,
+    );
+    const missingRecords = evaluateProductionParityGate(source, {
       ...matrixInput,
-      parityFailures: canonicalFailure ? [canonicalFailure] : [],
-    });
-    const passingParityGate = evaluateProductionParityGate(source, {
-      ...matrixInput,
-      parityFailures: [],
-    });
-    const digestMismatch = evaluateProductionParityGate(source, {
-      ...matrixInput,
-      digest: '0'.repeat(64),
-      parityFailures: [],
-    });
-    const eligibilityMismatch = evaluateProductionParityGate(source, {
-      ...matrixInput,
-      eligibility: { candidates: { digest: '0'.repeat(64) } },
-      parityFailures: [],
-    });
-    const missingEligibilityMismatch = evaluateProductionParityGate(source, {
-      ...matrixInput,
-      eligibility: {} as typeof matrixInput.eligibility,
       parityFailures: [],
     });
     const portableRequests: {
@@ -656,9 +673,9 @@ it(
       preparationGate,
       passingParityGate,
       parityGate,
-      digestMismatch,
-      eligibilityMismatch,
-      missingEligibilityMismatch,
+      historicalDigestChanged,
+      outcomeCountMismatch,
+      missingRecords,
       comparisons: { canonicalFailure, statusFailure, matchingParity },
       failures: [canonicalFailure, statusFailure].filter(Boolean),
       firstDifference: canonicalFailure?.firstDifference,
@@ -748,37 +765,28 @@ it(
       },
       failures: [canonicalFailure],
     });
-    expect(digestMismatch).toMatchObject({
+    expect(missingRecords).toMatchObject({
       status: 'failed',
       reason: 'canonicalRecordsMissing',
       firstDifference: {
         identity: 'tsk-06.5:production-matrix',
-        path: 'digest',
-        expected: source.matrix.mergedDigest,
-        actual: '0'.repeat(64),
+        path: 'canonicalRecords',
+        expected: 'verified',
+        actual: 'missing',
       },
       failures: [],
     });
-    expect(eligibilityMismatch).toMatchObject({
+    expect(outcomeCountMismatch).toMatchObject({
       status: 'failed',
       reason: 'matrixMismatch',
       firstDifference: {
         identity: 'tsk-06.5:production-matrix',
-        path: 'eligibilityDigest',
-        expected: source.matrix.eligibilityDigest,
-        actual: '0'.repeat(64),
+        path: 'outcomeCount',
+        expected: matrixInput.outcomeCount,
+        actual: matrixInput.outcomeCount + 1,
       },
     });
-    expect(missingEligibilityMismatch).toMatchObject({
-      status: 'failed',
-      reason: 'matrixMismatch',
-      firstDifference: {
-        identity: 'tsk-06.5:production-matrix',
-        path: 'eligibilityDigest',
-        expected: source.matrix.eligibilityDigest,
-        actual: undefined,
-      },
-    });
+    expect(historicalDigestChanged).toMatchObject({ status: 'passed' });
   },
 );
 

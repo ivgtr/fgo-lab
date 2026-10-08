@@ -11,7 +11,6 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { verifyArtifactFiles } from '../../../scripts/test-observation-lib.mjs';
 import {
-  connectProductionAuditMatrix,
   createTsk065ProductionAuditSource,
   firstCanonicalAuditDifference,
 } from '@fgo-lab/master-data/production-audit';
@@ -398,7 +397,6 @@ async function merge(): Promise<void> {
     summary: preparationSummary,
     failures: preparationFailures,
   });
-  const sharedAuditModel = connectProductionAuditMatrix(source, audit);
   failureArtifact = {
     identity,
     audit,
@@ -410,7 +408,6 @@ async function merge(): Promise<void> {
       preparationTransactions: preparationTransactionGate,
     },
     parityGate,
-    ...(sharedAuditModel ? { sharedAuditModel } : {}),
     stage: 'production-parity-gate',
   };
   if (artifactVerification.errors.length > 0)
@@ -476,7 +473,6 @@ async function merge(): Promise<void> {
           preparationTransactions: preparationTransactionGate,
         },
         parityGate,
-        ...(sharedAuditModel ? { sharedAuditModel } : {}),
       },
       null,
       2,
