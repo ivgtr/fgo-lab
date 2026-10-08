@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+05:18 UTC ranking実画面受入（2026-10-08）: 旧現input差と画面順位を照合したdesktop通常・詳細の2画像だけを更新し、通常modeの既存ranking E2Eはsetup込み9/9・warning/retry/unexpected/artifact error0で成功。更新modeはbrowser9/9でも画像再生成通知によりcontract_failureであり、正常成功へ数えない。原・保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。次は固定sourceの正式after3process。全15 Apply、正本整合・最終qualityは未達。
+
+05:12 UTC ranking E2E/VRT原差（2026-10-08）: 現HEADの既存ranking E2Eは8/9成功・1画像失敗、warning0。desktop上位順／数値は現80条件recordと一致し、旧画像との差は対象状態・NP特攻のcanonical input／選択plan差に対応。詳細・原artifact・次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。対象画像更新後の通常mode成功まではranking VRT未達。正式after3process、全15 Apply、最終qualityも未達。
+
 05:09 UTC テスト整理（2026-10-08）: HP依存監査fixtureの11個の位置真偽値を名前付き設定へ置換し、既存20件の意味・期待・artifactを維持した。対象unit20/20・warning0、typecheck／ESLint／Prettier成功。新規testは追加しない。保存静的inventoryを実監査へ置換する案は単独test9.20秒・30行増のため採用せず、短い既存検査を維持した。ranking VRT、正式after3process、全15 Apply、最終qualityは未達。詳細は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
 
 04:31 UTC 90分区間Handoff（2026-10-08）: 実装・画像確定checkpoint `b98068b`、後続は本記録文書のみ変更。引継ぎcommit後はclean、自起動process終了。今回のHP同期、現80／別saved、旧現全damage行・path、現E2E-051／calculator VRTの成果・原source identityは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。未達はranking VRT／残る現実経路、正式after各3process、product/UI/ranking・ADRの正本整合、全15 Apply対応・Blocking0、最終固定差分`pnpm quality`と結果後docs。各部分成功をTSK-14 Done/R1受入へ数えない。次区間は最新HEAD/差分/自起動processを照合して上記未達から進める。
