@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.196"
+document_version: "1.7.197"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-08"
@@ -78,7 +78,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-11 | 既存最終受入の範囲照合と残条件の確定 | done | TSK-10 | product R1／§13、UI育成受入、既存TSK-09／10証拠 |
 | TSK-12 | 確認済みR1育成未達の収束 | ready | TSK-11 | R11-GROWTH、product育成契約／UI §17〜18 |
 | TSK-13 | Ranking最終製品判断と改修前調査 | done | TSK-11 | ranking §20、R11-DOCの再判断、現コードの直接経路 |
-| TSK-14 | Ranking最終方針の実装と正本収束 | in_progress | TSK-13 | ranking §20、TSK-13の実装差・局所受入条件 |
+| TSK-14 | Ranking最終方針の実装と正本収束 | done | TSK-13 | ranking §20、TSK-13の実装差・局所受入条件 |
 
 ```text
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
@@ -3266,6 +3266,12 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+Current status: `done`（2026-10-08の利用者指定による代表ケース限定受入。下の古いstatus・未達記録は各時点の履歴）。
+
+最終Handoff（2026-10-08、TSK-14限定受入）: `done`。製品ranking sourceは正式after3のHEAD `83c572e`以後変更なし。追加製品差はinvalid保存の明示削除導線3fileだけで、隔離ブラウザーE2E-055、repository unit、typecheckで検証した。検証対象testを`a6a4006`へcommitし、現E2E-050で実Worker433行・詳細・calculator同値、既存5 ranking unit＋repositoryの44/44を確認した。正式80条件34,640×3、別saved5,196×3、before/after各3processは各原sourceで成功し、最終HEAD全件成功へ読み替えない。正式ranking中央値6.942→26.253秒、candidate2,665→7,164、限定CPU／RSS診断が条件判定・宝具前準備・GC増を示す。約26秒／単独最大約1.49GiBを既知の費用として残す。product／UI／ranking・ADR-030の有効範囲を同期。全15 Contract IDは下表で14件Verified（うち限定範囲を明示）・`TS-QUAL-001`のみ利用者選択のN/A、対象内Blocking 0。元の一時的ランキング詳細errorは再読込後と現E2Eで再現せず、初回reason未取得という観測限界を保持する。TSK-12育成未達のためR1全体受入は別。`pnpm quality`・最終HEAD全件は利用者選択により未実行、CIや他Taskのゲートは変更しない。証拠identity・path・保持／保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。最終差分reviewでは正式after3のHEAD `83c572e`からranking／execution／audit producer source差0、追加製品はprofile復旧3fileだけと確認し、`git diff --check`成功・無関係変更なし。結果記録後の`pnpm test:docs`は28/28、104 Markdown／44 machine evidence／1,173 refsで成功（`.test-results/2026-10-08T10-27-46-985Z-560-488a35/`）。
+
+10:22 UTC 代表経路・性能帰属（2026-10-08）: 固定製品sourceからのprofile削除導線をunit 1例と隔離ブラウザーE2E-055 1経路で確認。既存5 ranking unit fileと合計44/44、実WorkerランキングE2E-050は433行→詳細→calculator同値まで成功。2 E2Eは各setup込み2/2・warning0、typecheck／対象lint／書式／E2E catalog契約5/5成功。原artifact・sourceとテスト増分（unit 1、E2E 1）を[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ記録。正式3processのranking +278.2%は合法候補2,665→7,164と条件判定／宝具前準備のCPU増が主因。旧新各1 CPU／RSS sampleでは最大RSS 689,336→1,490,968 KiBで、初期rank約26秒の既知費用は残る。全matrix／savedや`pnpm quality`は利用者の限定受入に従い再実行しない。次は15 Apply帰属、差分・Blocking0・結果後docsの照合。TSK-14/R1未受入。
+
 10:04 UTC 要件・ADRと代表受入への正本伝播（2026-10-08）: 承認済みranking §20にproduct v0.3.10・UI v1.5.2を同期し、旧6条件／共通礼装・支援／保存Fou・skill Lv非反映の現行記述を解消。ranking v0.11.1は現行比較owner ADR-030を参照し、ADR-018／020をsuperseded、ADR-028のsource-program／portable判断を維持した。テスト戦略v1.3.5とREADMEには利用者が選択したTSK-14限定の代表最終受入、既存全件原証拠のsource identityと最終HEAD全件未保証を明記。変更は文書13pathと新ADR1path、製品・test・固定expectedには触れていない。`pnpm test:docs`は28/28・104 Markdown／44 machine evidence／1,171 refsで成功（原`.test-results/2026-10-08T10-04-00-501Z-560-5beaa4/`）。次は代表fixture／profile invalid回復の実経路、15 Applyの限定帰属、性能の既存証拠解釈と差分review。TSK-14/R1未受入。
 
 09:59 UTC 検証時間と最終受入の整理（2026-10-08）: 利用者は開発中だけでなくTSK-14の最終受入も代表ケースだけに絞ると明示。保存S0/S1の12条件×433 profile×3processは同一digestで固定済みなので同条件で再実行しない。変更ownerに応じて既存小fixtureを選ぶ。保存条件・slot値は`productionSavedAudit.test.ts`、保存値damage／NP容量・欠損／固定buildは`rankingSavedBasis.test.ts`、4 policyは`rankingPolicy.test.ts`、worker detail／staleは`rankingWorkerRuntime.test.ts`、calculator引継ぎと書込失敗保持は`rankingHandoff.test.ts`。必要な対象ファイルだけ`pnpm test:diagnostic -- <file>`で実行し、新しい全件testやcase別master再読込は増やさない。最終差分ではこれらの小fixtureと代表実UI／worker経路、型／静的検査、文書整合を確認し、`pnpm quality`・全production／audit・80条件／別savedの再実行は求めない。監査command自体は縮小せず、既存34,640／5,196結果を当時のsource identityの証拠として再利用するが、最終HEADの全件保証とは呼ばない。この例外は[テスト戦略§7](../requirements/test-strategy-redesign.md#7-コマンド仕様)に記録し、他Task／CIへ広げない。TSK-14/R1未受入。
@@ -3746,7 +3752,7 @@ Current status／最新Handoff（2026-10-04 16:56 UTC・90分上限）: `in_prog
 
 以下は各時点の履歴checkpointであり、確認状態・成果・未達の現在値は上の最新Handoffを優先する。
 
-Current status: `in_progress`（2026-10-04、HEAD3b307e92c93b06afa5687f2feb0aafbe4a654652・親a3dc85a7f68fc5e4e5b9a72ab31a8598277917f5。15:52 UTCにN1〜N7を確認して部分実装、16:20 UTCの代表12fileは236成功／13失敗＋receipt2種欠落でartifact_failure。16:24 UTCまでに強制停止し、読取と既存Task／flow記録だけを継続。利用者の破壊的変更許容・fallback不要の再指示で16:30 UTCから直接writer／consumerを再評価し、2test限定検証契約置換に加えてN2のcanonical snapshot→source/resource writer→condition／NP presence・quantity／projection→normal bindingを一つの接続単位へ修正する具体案を記録した。この再指示は改訂への再開確認ではなく、現在明示確認待ち。未commit16tracked file＝product/test14＋docs2、HEAD／親不変・index空、自起動検証process終了済み。全15 Apply未Verified、固定counter未解消、N2全接続・N3以降・current実UI／worker／保存・P3独立strict・80＋別S0/S1・正式after／全意味差・Blocking0／quality／docs未達。60分checkpointは16:28 UTC記録へ収束し、元90分上限16:56 UTCを維持して停止を自己解除しない）。
+Historical status: `in_progress`（2026-10-04、HEAD3b307e92c93b06afa5687f2feb0aafbe4a654652・親a3dc85a7f68fc5e4e5b9a72ab31a8598277917f5。15:52 UTCにN1〜N7を確認して部分実装、16:20 UTCの代表12fileは236成功／13失敗＋receipt2種欠落でartifact_failure。16:24 UTCまでに強制停止し、読取と既存Task／flow記録だけを継続。利用者の破壊的変更許容・fallback不要の再指示で16:30 UTCから直接writer／consumerを再評価し、2test限定検証契約置換に加えてN2のcanonical snapshot→source/resource writer→condition／NP presence・quantity／projection→normal bindingを一つの接続単位へ修正する具体案を記録した。この再指示は改訂への再開確認ではなく、現在明示確認待ち。未commit16tracked file＝product/test14＋docs2、HEAD／親不変・index空、自起動検証process終了済み。全15 Apply未Verified、固定counter未解消、N2全接続・N3以降・current実UI／worker／保存・P3独立strict・80＋別S0/S1・正式after／全意味差・Blocking0／quality／docs未達。60分checkpointは16:28 UTC記録へ収束し、元90分上限16:56 UTCを維持して停止を自己解除しない）。
 
 最新再評価Handoff（2026-10-04 16:30 UTC開始・破壊的置換／fallback不要・確認待ち）: [破壊的置換を前提にした再評価](../evidence/ranking-policy-candidate-flow-tsk-06.md#破壊的置換を前提にした再評価2026-10-04-1630-utc確認待ち)を今回の改訂正本とする。criticalStars通常writerがresolvedInputValuesだけを書き、preparationのsource readが初期contextを読む分裂、NP evaluator／projection／populationがpresenceとquantityを同じmapから読む経路を直接確認した。unknown countの0/1補完、caller identity再決定、旧scalar型へのadapterを棄却し、物理value／依存proof／clock／実commit集合を同source/action snapshotに接続する。今回のcount:null／countSupportとsource snapshot返却は途中実装であり最終互換型として維持しない。N2の代表resource／identity writerと全直接consumerを垂直に接続してから元12file／artifactと実calculator/ranking→portable→worker→保存reloadを先行確認し、N3全writer以降へ続く案。旧静的NP特攻除外／未知exclusiveGroup discardの2testだけ現行契約へ置換し、原fixture／historical expectationを保持する。それ以外の固定expected／counter／audit／VRT／cap／timeout／ratchet・schema42／engine49／保存format・固定入力／取得元／保持・P3／全15 Apply／正式性能／qualityと停止境界は維持。停止後の製品／test変更・新検証／docs検証／計測は行っていない。原13反証の全帰属・current全受入は未成立。次はこの具体改訂の明示確認を待つ。
 
@@ -3756,10 +3762,10 @@ Current status: `in_progress`（2026-10-04、HEAD3b307e92c93b06afa5687f2feb0aafb
 
 最新追加Handoff（2026-10-04・破壊的内部置換の再評価／確認待ち）: [内部stateと実行bindingを直接置換する再評価](../evidence/ranking-policy-candidate-flow-tsk-06.md#内部stateと実行bindingを直接置換する再評価2026-10-04-1543-utc開始確認待ち)をN2/N3の具体契約正本とする。完成action外側APIだけを変える案から、準備／通常execution共通のfact/resource snapshotと実commit operation集合、compile-only templateと実行bindingを分離する案へ具体化した。preparationFactsの再構築、executionPlanのHP/BP/proof別受渡し、candidatePreparationの再seed／proof部分合成、variantSelectionのpreapplied推定を直接置換し、source/action結果をcallerで合成しない。traits/counts/proofの独立writeとHP/BP/OCのcommitted flagを維持対象にせず、readonly view／実operation identityで接続する。終端stateを過去clockへ流用せず、既存physical reducer・canonical operation・damage／phase境界は維持。N1・N4〜N7、P1〜P8、全15 Apply・current保存／固定counter・schema42/engine49・性能／quality／停止契約は変更しない。製品／test／保存／index非変更、新検証／計測／docs検証／取得／installなし、差分は既存Task/flow2文書だけ、自起動検証processなし。下のHandoffはこの再評価前の提示記録として読み、今回の追加指示を実装開始承認にしない。次は改訂を含む具体計画の明示確認を待つ。
 
-- [ ] ranking §20とTSK-13の実装差に基づき、共通／保存育成basisと通常／理想の候補・寄与を共通application／executionへ接続する。
-- [ ] UI／URL／worker／portable／保存復元／入力修復を同じidentityへ収束し、既存選択能力とcalculator parityを維持する。
-- [ ] product／UI／ranking本文とaccepted ADRの有効範囲を新version／判断へ整合し、古い意味を履歴として辿れるようにする。
-- [ ] 対象内Blocking、局所反証・差分レビュー、必要な対象production／同条件前後3process、固定差分の最終quality／docsとHandoffを閉じる。
+- [x] ranking §20とTSK-13の実装差に基づき、共通／保存育成basisと通常／理想の候補・寄与を共通application／executionへ接続する。
+- [x] UI／URL／worker／portable／保存復元／入力修復を同じidentityへ収束し、既存選択能力とcalculator parityを維持する。
+- [x] product／UI／ranking本文とaccepted ADRの有効範囲を新version／判断へ整合し、古い意味を履歴として辿れるようにする。
+- [x] 対象内Blocking、代表局所反証・差分レビュー、正式性能の既存証拠、利用者選択の限定最終受入／docsとHandoffを閉じる。
 
 Done gate:
 
@@ -3772,21 +3778,21 @@ Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `RK-IR-001` | Apply | 保存basis・condition／resourceのtyped input、direct producer／consumer照合 | Handoff |
-| `RK-EXEC-001` | Apply | 合法使用順・NP消費／回復／容量・途中拒否／rollbackの局所反証 | Handoff |
-| `RK-POLICY-001` | Apply | 通常自前確定／理想・自己buff二値の寄与／admission・最大候補反証 | Handoff |
-| `RK-UI-001` | Apply | 共通／保存control、URL／worker、invalid修復・実UI | Handoff |
-| `RK-HANDOFF-001` | Apply | 同一requestのcalculator／draft／history／share／backup再現とfail-closed | Handoff |
-| `RK-CACHE-001` | Apply | 新basis・profile変更・context／fingerprint・stale／bounded cache照合 | Handoff |
-| `RK-AUDIT-001` | Apply | 既存全件原証拠のsource identity・差分と、最終HEADの代表fixture／parity／fail-closedを分けて照合。最終HEADの全件保証は主張しない | Handoff |
-| `RK-PERF-001` | Apply | 同環境・入力・workload前後各3process、candidate／damage／rankingと診断の区別 | Handoff |
-| `RK-FINAL-001` | Apply | §20・TSK-13受入項目を代表ケースの範囲で閉じ、未実行全件・残る保証限界を明示 | Handoff |
-| `DOC-REV-001` | Apply | 新version／承認／影響Task／baseline、旧ADR有効範囲・相互参照の照合 | Handoff |
-| `DOC-CLOSE-001` | Apply | 各改修owner／局所gate／最終受入のTask対応 | Handoff |
-| `DOC-LINT-001` | Apply | 明示書式／registry／参照と `pnpm test:docs` | Handoff |
-| `TS-QUAL-001` | N/A: 2026-10-08利用者承認のTSK-14限定例外。`pnpm quality`／最終HEAD全件を実行・主張しない | 代表ケースの診断、型・静的検査、必要な実UI、文書gateを別々に記録 | Handoff |
-| `TS-PERF-002` | Apply | 構造変更した経路の同条件前後3process、未変更範囲の一致証拠継承 | Handoff |
-| `DX-HANDOFF-001` | Apply | source／入力／diff／有効証拠・未達条件・次操作の照合 | Handoff |
+| `RK-IR-001` | Apply | 保存basis・condition／resourceのtyped input、direct producer／consumer照合 | Verified: `rankingSavedBasis.test.ts`、`productionSavedAudit.test.ts`、現80条件原manifest。最終HEADは代表範囲 |
+| `RK-EXEC-001` | Apply | 合法使用順・NP消費／回復／容量・途中拒否／rollbackの局所反証 | Verified: `rankingSavedBasis.test.ts`、正式after3のtransaction/final gate、flowの局所反証 |
+| `RK-POLICY-001` | Apply | 通常自前確定／理想・自己buff二値の寄与／admission・最大候補反証 | Verified: `rankingPolicy.test.ts`、4 policy別正式matrixと候補上限3358≤4096 |
+| `RK-UI-001` | Apply | 共通／保存control、URL／worker、invalid修復・実UI | Verified: 現E2E-050／055、先行ranking通常9/9、flowの共通／保存UI原 |
+| `RK-HANDOFF-001` | Apply | 同一requestのcalculator／draft／history／share／backup再現とfail-closed | Verified: `rankingHandoff.test.ts`、現E2E-050、flowのportable／保存修復原 |
+| `RK-CACHE-001` | Apply | 新basis・profile変更・context／fingerprint・stale／bounded cache照合 | Verified: `rankingWorkerRuntime.test.ts`、現E2E-050、flowのstale/fingerprint境界 |
+| `RK-AUDIT-001` | Apply | 既存全件原証拠のsource identity・差分と、最終HEADの代表fixture／parity／fail-closedを分けて照合。最終HEADの全件保証は主張しない | Verified（限定）: 現80条件34,640×3／saved5,196×3原と現44/44、製品ranking source差なしの照合 |
+| `RK-PERF-001` | Apply | 同環境・入力・workload前後各3process、candidate／damage／rankingと診断の区別 | Verified（費用明記）: 正式before/after3と前後各1 CPU/RSS診断、flow冒頭。初期約26秒／約1.49GiBは残る |
+| `RK-FINAL-001` | Apply | §20・TSK-13受入項目を代表ケースの範囲で閉じ、未実行全件・残る保証限界を明示 | Verified（限定）: §20、ADR-030、代表44/44＋E2E-050／055、先行全件のsource限界 |
+| `DOC-REV-001` | Apply | 新version／承認／影響Task／baseline、旧ADR有効範囲・相互参照の照合 | Verified: product v0.3.10、UI v1.5.2、ranking v0.11.1、ADR-030／018／020／028、test strategy v1.3.5 |
+| `DOC-CLOSE-001` | Apply | 各改修owner／局所gate／最終受入のTask対応 | Verified: 本TSK-14、flow冒頭、README／docs index、限定受入と旧全件原の区別 |
+| `DOC-LINT-001` | Apply | 明示書式／registry／参照と `pnpm test:docs` | Verified: 最終結果記録後の文書gate、104 Markdown／44 evidence／全参照成功 |
+| `TS-QUAL-001` | N/A: 2026-10-08利用者承認のTSK-14限定例外。`pnpm quality`／最終HEAD全件を実行・主張しない | 代表ケースの診断、型・静的検査、必要な実UI、文書gateを別々に記録 | Verified（限定）: 6file44/44、E2E-050／055、typecheck、対象lint／書式。全件保証なし |
+| `TS-PERF-002` | Apply | 構造変更した経路の同条件前後3process、未変更範囲の一致証拠継承 | Verified（費用明記）: 正式3processのmatrix producer +15.6%、merge追加workload +100.9%、saved現特性3process。flow冒頭 |
+| `DX-HANDOFF-001` | Apply | source／入力／diff／有効証拠・未達条件・次操作の照合 | Verified: 本最終Handoff／flow冒頭、固定identityと限定保証・TSK-12残件を区別 |
 
 最新Handoff（2026-10-04・起点3b307e9の具体計画確認待ち）: [新しい具体実装計画N1〜N7](../evidence/ranking-policy-candidate-flow-tsk-06.md#tsk-14-起点3b307e9の具体実装計画2026-10-04確認待ち)が今回の採否・owner・型／identity伝播・全direct writer／consumer・最初の反証・P1〜P8／旧I2〜I6対応・全15 Apply／停止境界の正本。開始HEAD／親は上記、開始と記録直前worktree／index clean、今回差分は既存Task／flow2文書の計画記録だけ。製品／test・保存・index・入力非変更、install／取得・新規検証／計測・docs検証／diff --checkなし。15:10方向はsource commitと公開action完成境界として採用し、NP専用finalizer／caller phase・断片合成・identity再決定・第二scalarを撤去する具体案へ収束。basis→source/action→全writer/automatic→相関候補/計数→全実UI/保存→独立strict→production/性能/正本/review/qualityの順、代表calculator/portable/worker/保存はN2で先行接続する。全Apply未Verified、固定counterは元assertionのままBlocking。固定6入力とbefore inventory宣言SHAは一致、R0帰属／局所89／過去E2Eの保証は各原sourceに限定。Handoff宣言からのproduct25path／unit5artifact追加照合は環境file保護hookで実行前拒否され未成立、同操作の別経路再試行／設定変更なし。sandbox起動ENOSPCは正式読取審査で成立した事実と区別する。他session processは存在し編集不在まで保証しない、自起動test/build/測定processなし。他差分／processを撤回しない。次はこの具体計画への明示確認を待ち、確認後に開始identity／並行状態を再照合してN1から継続する。成果／owner／境界／検証変更・説明不能差・保証不能・判断不能等で即停止し、改訂確認まで読取と既存Handoff記録だけ。TSK-14 Done／R1全体受入は未成立。
 
