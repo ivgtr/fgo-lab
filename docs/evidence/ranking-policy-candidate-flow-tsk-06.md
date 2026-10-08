@@ -6,6 +6,8 @@ updated_at: "2026-10-08"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
+**2026-10-08 07:20 UTC 起動不能時の明示削除導線:** 利用者は「起動できないことが問題」であり、スキーマ変更が続く間は移行より削除確認→新規開始を選択。現 `load` はZod schema失敗／既知のrequest fingerprint不一致だけを `invalid` とし、未知の読取・暗号化障害は削除候補へ変えずthrow。`bootstrapApplication` のinvalidはtyped `invalidStoredProfiles` でsetupへ渡し、他のmaster／通信失敗と分ける。画面の「保存プロフィールを削除して新規開始」は全プロフィール・育成・計算履歴が戻らずmasterは残るとnative確認を出し、取消時はwriteなし。承諾後の `setupApplication` はmasterを先に有効化し、`replaceInvalidWithFresh` が新collectionの現行schema／fingerprintを検証、直前に旧値がなおinvalidであることを確認し、同じ`user/profiles`を単一IDB transactionで置換する。途中で値が変わればcanonical identity比較でstale abort、旧値を残す。空／readyへ変わった場合も回復callbackは拒否。`onComplete`の再読込一致が成功して画面へ進む。stale時は再読込を案内。旧schema42を読取変換する経路・alternate store・自動削除は追加しない。対象は`repository.ts`→`startup.ts`→`App.tsx`、master/staging/metaは変更しない。静的`pnpm typecheck`成功、対象ESLint／Prettier／`git diff --check`成功。利用者から新test実行依頼はなく、実ブラウザーの確認は未実施・TSK-14最終quality未達。元の`localhost:4173`保存実体は未取得／未削除。
+
 **2026-10-08 07:04 UTC 起動URL:** 利用者は `http://localhost:4173/` を使用。開発serverの `http://127.0.0.1:4173/` 応答はHTTP 200（HTML入口のみ）だが、別originへの切替を既存recordの復旧・読取成功とは数えない。同じlocalhost URLの隔離されたプライベートウィンドウで現行新規セットアップへ進めるかを照会中。旧保存のread失敗原因は実recordを未確認のまま。製品code／保存を変更していない。
 
 **2026-10-08 07:01 UTC 利用者の新規確認優先:** 利用者は以前の保存データがあると回答し、新規プロフィールでの動作確認を優先。現recordのversion／失敗箇所はまだ取得していないため旧schemaが実原因との断定はしない。既存originの`user/profiles`を削除・上書きしない。別ブラウザープロファイルの独立した現行プロフィールで同一URLを開く案を提示し、URLと結果を照会中。これは既存保存の読み取り成功や旧版移行の証拠にはしない。現行新規経路の既存E2E証拠は最終HEADの範囲で再利用し、実利用者の結果を待つ。旧形式の黙示移行・保存削除は今回行わない。

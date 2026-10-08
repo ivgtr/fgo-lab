@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+07:20 UTC 起動阻害の明示削除導線（2026-10-08）: 利用者の追加判断に従い、invalid保存時だけ「削除して新規開始」→全プロフィール等の不可逆削除確認→現行空profileへ単一IDB transactionで置換する導線を実装中。取消・stale・検証不能時は旧値を維持。旧版自動移行／別保存先fallbackは追加しない。型検査、対象lint/format/diff check成功、実ブラウザー確認・新testは未実施。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1全体は未受入。
+
 07:04 UTC 起動URL（2026-10-08）: 利用者は`http://localhost:4173/`、HTTP入口の応答は別hostname `127.0.0.1` で200。実旧recordを調べず原因断定・origin切替による読取成功扱いはしない。同じURLの隔離ブラウザーで現行新規セットアップの可否を照会中。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。
 
 07:01 UTC 起動阻害の利用者判断（2026-10-08）: 旧保存があるが新規プロフィール確認を優先する回答。既存originの保存を変更せず、別ブラウザープロファイルで同一URLの現行新規経路を案内。実recordの版・原因は未確認、URLと実結果を照会中。旧版移行・保存削除は行わない。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。

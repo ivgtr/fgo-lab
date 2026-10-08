@@ -5,6 +5,7 @@ import {
   type Clock,
   type IdGenerator,
   type ProfileRepository,
+  type ProfileWriteResult,
 } from '@fgo-lab/profile-domain';
 import type {
   CalculationResult,
@@ -49,6 +50,7 @@ interface SetupRequiredResult extends StartupBase {
   state: 'setup-required';
   master: undefined;
   profiles: undefined;
+  invalidStoredProfiles: boolean;
 }
 
 export type StartupResult = ReadyStartupResult | SetupRequiredResult;
@@ -96,7 +98,12 @@ export async function bootstrapApplication(
     const activeLoad = await loadActiveMaster();
     let active = activeLoad.state === 'ready' ? activeLoad.active : undefined;
     const profilesLoad = await profilesRepository.load();
-    if (profilesLoad.state === 'invalid') throw new Error(profilesLoad.reason);
+    if (profilesLoad.state === 'invalid')
+      return emptyResult(
+        '保存済みプロフィールを検証できません。削除して新規開始する場合は、確認画面で内容を確認してください。',
+        offline,
+        true,
+      );
     const profiles = profilesLoad.state === 'ready' ? profilesLoad.collection : undefined;
     if (activeLoad.state === 'discarded') {
       try {
@@ -162,16 +169,24 @@ export async function setupApplication(
   clock: Clock,
   ids: IdGenerator,
   options: StartupOptions,
+  replaceInvalidWithFresh?: (collection: ProfileCollection) => Promise<ProfileWriteResult>,
 ): Promise<ReadyStartupResult> {
   const { active, fromOfflineCache } = await activateCurrentMaster(options);
   const profilesLoad = await profilesRepository.load();
-  if (profilesLoad.state === 'invalid') throw new Error(profilesLoad.reason);
-  const profiles =
-    profilesLoad.state === 'ready'
-      ? profilesLoad.collection
-      : createProfileCollection('マスター', clock, ids);
-  if (profilesLoad.state === 'empty') {
-    const initialized = await profilesRepository.replace(profiles, { requireEmpty: true });
+  if (replaceInvalidWithFresh && profilesLoad.state !== 'invalid')
+    throw new Error('profile_recovery_stale');
+  let profiles: ProfileCollection;
+  if (profilesLoad.state === 'ready') {
+    profiles = profilesLoad.collection;
+  } else {
+    profiles = createProfileCollection('マスター', clock, ids);
+    let initialized: ProfileWriteResult;
+    if (profilesLoad.state === 'invalid') {
+      if (!replaceInvalidWithFresh) throw new Error(profilesLoad.reason);
+      initialized = await replaceInvalidWithFresh(profiles);
+    } else {
+      initialized = await profilesRepository.replace(profiles, { requireEmpty: true });
+    }
     if (initialized.status !== 'committed') throw new Error('profile_initialization_stale');
   }
   let warning = '';
@@ -204,11 +219,16 @@ function assertActivatable(
     throw new Error('diagnostic_fixture_cannot_be_activated');
 }
 
-function emptyResult(warning: string, offline: boolean): StartupResult {
+function emptyResult(
+  warning: string,
+  offline: boolean,
+  invalidStoredProfiles = false,
+): StartupResult {
   return {
     state: 'setup-required',
     master: undefined,
     profiles: undefined,
+    invalidStoredProfiles,
     calculation: { request: undefined, storedResult: undefined, source: undefined },
     warning,
     offline,

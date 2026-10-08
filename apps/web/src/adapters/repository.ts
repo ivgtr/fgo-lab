@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { ZodError } from 'zod';
 import type { MasterDataSnapshot, MasterManifest } from '@fgo-lab/master-data';
 import {
   masterManifestSchema,
@@ -31,6 +32,12 @@ function database() {
     },
   }));
 }
+function isInvalidProfileCause(cause: unknown): boolean {
+  return (
+    cause instanceof ZodError ||
+    (cause instanceof TypeError && cause.message === 'calculation_request_fingerprint_mismatch')
+  );
+}
 export class IndexedDbProfileRepository implements ProfileRepository {
   async clear() {
     await (await database()).clear('user');
@@ -42,8 +49,41 @@ export class IndexedDbProfileRepository implements ProfileRepository {
     try {
       const collection = await validateProfileCollection(value, digestProfileRequest);
       return { state: 'ready' as const, collection };
-    } catch {
+    } catch (cause) {
+      if (!isInvalidProfileCause(cause)) throw cause;
       return { state: 'invalid' as const, reason: 'profile_parse_failed' as const };
+    }
+  }
+  async replaceInvalidWithFresh(collection: ProfileCollection): Promise<ProfileWriteResult> {
+    const parsed = await validateProfileCollection(collection, digestProfileRequest);
+    const db = await database();
+    const original = await db.get('user', 'profiles');
+    if (original === undefined) return { status: 'aborted', reason: 'stale' };
+    try {
+      await validateProfileCollection(original, digestProfileRequest);
+      return { status: 'aborted', reason: 'stale' };
+    } catch (cause) {
+      if (!isInvalidProfileCause(cause)) throw cause;
+    }
+    const originalIdentity = canonicalize(original);
+    const transaction = db.transaction('user', 'readwrite');
+    void transaction.done.catch(() => undefined);
+    const stale = new Error('profile_recovery_stale');
+    try {
+      const current = await transaction.objectStore('user').get('profiles');
+      if (current === undefined || canonicalize(current) !== originalIdentity) throw stale;
+      await transaction.objectStore('user').put(parsed, 'profiles');
+      await transaction.done;
+      return { status: 'committed' };
+    } catch (cause) {
+      try {
+        transaction.abort();
+      } catch {
+        /* Commit or abort has already completed. */
+      }
+      await transaction.done.catch(() => undefined);
+      if (cause === stale) return { status: 'aborted', reason: 'stale' };
+      throw cause;
     }
   }
   async replace(

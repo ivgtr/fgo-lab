@@ -108,23 +108,46 @@ export interface CalculationWorkspace {
 function Setup({
   onComplete,
   startupWarning,
+  invalidStoredProfiles,
 }: {
   onComplete: (result: ReadyStartupResult) => Promise<void>;
   startupWarning?: string;
+  invalidStoredProfiles: boolean;
 }) {
   const [state, setState] = useState<'idle' | 'running' | 'error'>('idle');
   const [error, setError] = useState('');
+  const [recoveryRequired, setRecoveryRequired] = useState(invalidStoredProfiles);
+  const stale = error === 'profile_recovery_stale' || error === 'profile_initialization_stale';
   async function run() {
+    if (
+      recoveryRequired &&
+      !confirm(
+        'この端末に保存された全プロフィール、育成状態、計算履歴を削除して新規開始します。元に戻せません。マスターデータは残ります。実行しますか？',
+      )
+    )
+      return;
     setState('running');
     setError('');
     try {
       await onComplete(
-        await setupApplication(repository, clock, ids, {
-          baseUrl: '/',
-          development: process.env.NODE_ENV !== 'production',
-          fragment: location.hash,
-          now: new Date(),
-        }),
+        await setupApplication(
+          repository,
+          clock,
+          ids,
+          {
+            baseUrl: '/',
+            development: process.env.NODE_ENV !== 'production',
+            fragment: location.hash,
+            now: new Date(),
+          },
+          recoveryRequired
+            ? async (fresh) => {
+                const outcome = await repository.replaceInvalidWithFresh(fresh);
+                if (outcome.status === 'committed') setRecoveryRequired(false);
+                return outcome;
+              }
+            : undefined,
+        ),
       );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -137,9 +160,23 @@ function Setup({
     <StartupScreen
       mode={state === 'error' ? 'error' : 'setup'}
       notice={startupWarning}
-      errorDetail={state === 'error' ? error : undefined}
-      actionLabel={state === 'error' ? t('setup.retry') : t('setup.start')}
-      onAction={() => void run()}
+      errorDetail={
+        state === 'error'
+          ? stale
+            ? '保存データが他の画面で変更されました。再読み込みしてください。'
+            : error
+          : undefined
+      }
+      actionLabel={
+        stale
+          ? '再読み込み'
+          : recoveryRequired
+            ? '保存プロフィールを削除して新規開始'
+            : state === 'error'
+              ? t('setup.retry')
+              : t('setup.start')
+      }
+      onAction={stale ? () => location.reload() : () => void run()}
     />
   );
 }
@@ -151,6 +188,7 @@ export function App() {
   const [master, setMaster] = useState<MasterDataSnapshot>();
   const [loading, setLoading] = useState(true);
   const [startupWarning, setStartupWarning] = useState('');
+  const [invalidStoredProfiles, setInvalidStoredProfiles] = useState(false);
   const [calculationMutation] = useState(createCalculationMutationGate);
   const {
     profiles,
@@ -200,6 +238,7 @@ export function App() {
       setMaster(result.master);
       setCalculation(result.calculation);
       setStartupWarning(result.warning);
+      setInvalidStoredProfiles(result.state === 'setup-required' && result.invalidStoredProfiles);
       if (result.offline) setOnline(false);
       if (
         result.calculation.source === 'share' &&
@@ -239,6 +278,7 @@ export function App() {
     return (
       <Setup
         startupWarning={startupWarning}
+        invalidStoredProfiles={invalidStoredProfiles}
         onComplete={async (result) => {
           calculationMutation.begin();
           const initialized = await initializeProfiles(result.profiles);
@@ -246,6 +286,7 @@ export function App() {
           setMaster(result.master);
           setCalculation(result.calculation);
           setStartupWarning(result.warning);
+          setInvalidStoredProfiles(false);
           if (result.offline) setOnline(false);
           if (result.calculation.source === 'share' && page !== 'calculate')
             router.replace(`${pagePaths.calculate}${location.hash}` as Route);
