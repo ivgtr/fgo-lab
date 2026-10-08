@@ -3266,6 +3266,10 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+00:11 UTC current strict局所（2026-10-08）: 実mergeへ現recordのstrict shape/identityとscenario再実行によるnested receipt・数値比較を接続、旧baseline reader不変。fixtureの再hash済み改竄を含む関連2file56/56・warning0、公開4条件×433 recordの局所検査失敗0、typecheck/対象lint/docs成功。非計算semantic replay、area positive、80条件/別saved、正式after、全15 Apply/qualityは未達。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)に直接経路と原。
+
+23:47 UTC current strict再開（2026-10-07）: HEAD `3a9ffe9`／clean、固定入力4path・Node/pnpm/lockはbefore identity一致。現matrix record readerはstatus/profile/count/digestまででnested strictではない。現producer shapeを限定採取し、旧baseline readerとcurrent strict DTO＋独立semantic/replayを分けて実mergeへ接続する。直接経路・未保証範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。80条件/別saved、正式after、全15 Apply、qualityは未達。
+
 18:09 UTC 区間Handoff（2026-10-07）: 最終source `4309e0c`、記録commit `02acb6b`、worktree/index clean、test process終了。production169/169・warning/skip0、runner59/59、docs28/28の有効範囲は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。次は固定6入力／source identity照合、独立current strictの負例、80条件＋別saved S0/S1の8 shard→実merge、全意味差、正式after各3process、全15 Apply・正本/ADR・差分レビュー→quality/docs。session上限で新familyは開始せず、TSK-14/R1未受入。
 
 18:06 UTC production成功（2026-10-07）: HEAD `4309e0c`／cleanの`pnpm test:production`は33 file・169 test全成功、skip/todo/warning0、runner exit0（原`.test-results/2026-10-07T18-00-11-890Z-15-c2c4a2/`）。counter契約更新後の同一最終sourceで確認。残る独立current strict、80条件＋別saved S0/S1、正式after性能各3process、全15 Apply証拠対応と正本、最終qualityは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ。TSK-14/R1未受入。

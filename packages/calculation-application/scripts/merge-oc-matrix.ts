@@ -8,6 +8,7 @@ import {
   shardInputFailure,
 } from '../src/productionShardAcceptance';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { verifyArtifactFiles } from '../../../scripts/test-observation-lib.mjs';
 import {
   connectProductionAuditMatrix,
@@ -333,6 +334,15 @@ async function merge(): Promise<void> {
     shards,
     artifacts: conditionArtifacts,
     audit,
+    master,
+    versions: {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: APP_VERSION,
+      masterDataVersion: master.version,
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+    },
   });
   const receiptFailure = recordFailure(
     'recordArtifactUnavailable',

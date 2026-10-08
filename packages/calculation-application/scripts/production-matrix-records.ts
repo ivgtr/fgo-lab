@@ -11,6 +11,10 @@ import {
 } from '../src/productionShardAcceptance';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import type { MasterDataSnapshot } from '@fgo-lab/master-data';
+import type { VersionContext } from '@fgo-lab/schema';
+import { attackProfileKey, createStaticAttackProfiles } from '../src/attackProfile';
+import { verifyCurrentProductionRecord } from '../src/productionCurrentRecord';
 import {
   readProductionBaselineManifest,
   readProductionBaselineCondition,
@@ -46,8 +50,15 @@ export async function verifyProductionMatrixRecords(input: {
   shards: ProductionSerializedShard[];
   artifacts: ConditionArtifact[];
   audit: unknown;
+  master: MasterDataSnapshot;
+  versions: VersionContext;
 }) {
   const failures: ProductionRecordFailure[] = [];
+  const profilesByKey = new Map(
+    input.master.servants
+      .flatMap(createStaticAttackProfiles)
+      .map((profile) => [attackProfileKey(profile), profile] as const),
+  );
   const shardObservations = input.shards.map(() => ({
     summary: {
       calculatedProfiles: 0,
@@ -235,6 +246,20 @@ export async function verifyProductionMatrixRecords(input: {
     });
     failures.push(...actualInspection.failures);
     if (expectedInspection.status === 'failed' || actualInspection.status === 'failed') {
+      shardObservations[index % input.shards.length]!.complete = false;
+      continue;
+    }
+    const currentFailures = actualInspection.records.flatMap(({ value }) =>
+      verifyCurrentProductionRecord({
+        value,
+        condition: productionClosureConditions()[index]!,
+        master: input.master,
+        versions: input.versions,
+        profilesByKey,
+      }),
+    );
+    failures.push(...currentFailures);
+    if (currentFailures.length) {
       shardObservations[index % input.shards.length]!.complete = false;
       continue;
     }
