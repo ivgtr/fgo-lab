@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.197"
+document_version: "1.7.200"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-10-08"
@@ -79,6 +79,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-12 | 確認済みR1育成未達の収束 | ready | TSK-11 | R11-GROWTH、product育成契約／UI §17〜18 |
 | TSK-13 | Ranking最終製品判断と改修前調査 | done | TSK-11 | ranking §20、R11-DOCの再判断、現コードの直接経路 |
 | TSK-14 | Ranking最終方針の実装と正本収束 | done | TSK-13 | ranking §20、TSK-13の実装差・局所受入条件 |
+| TSK-15 | Ranking高速化の実装確認と計画策定 | done | TSK-14 | ranking §21、サイズ非増加・master更新追従、現行の共通execution |
+| TSK-15.1 | Ranking静的解決・接頭辞共有の実装と受入 | in_progress | TSK-15 | 承認済みTSK-15計画、同じ論理候補・共通execution・全配信JS非増加 |
 
 ```text
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
@@ -91,6 +93,7 @@ TSK-09.12 -> TSK-09.13（done: 非依存・全廃棄条件確定、物理処遇�
 TSK-09 -> TSK-10（将来の入力更新・取得・保持を既存ownerへ収束）
 TSK-10 -> TSK-11 -> TSK-12（育成未達。rankingとは独立）
 TSK-11 -> TSK-13（最終製品判断・改修前調査）-> TSK-14（ranking実装・正本収束）
+TSK-14 -> TSK-15（高速化の現行確認・具体計画。実装は計画確認後の別依頼）
 ```
 
 ## 3. Tasks
@@ -4093,6 +4096,195 @@ identity改訂承認後の再開（2026-10-03 11:38 UTC）:
 - 固定inventory・resource program inventory／digest／criticalStarPaths、runner runtime counter、VRT、旧母集団・数値fixture・baseline、cap／timeout／ratchetは維持。今回必要なaudit入力DTOの限定改訂を確認対象へ含め、製品schema42／engine49・ゲームIR・保存／UI能力・取得元／保持契約は変更しない。別契約の追加変更が必要または差を説明不能なら再停止。P3のmatrix current gateを含め検査owner・producer／reader／merge／runner直接consumerを閉じる。
 - 次操作は改訂案の利用者確認。確認後D0で既存同条件証拠を再利用し、不足なら起点6074の隔離sourceを同じ固定入力／runner／契約で一度照合。旧固定digestの全差は別に原出自で説明し、別入力・再生成・暗黙の取得元変更で埋めない。拒否commandの安全性・必要対象集合を正式審査規則で調べ、guardrail緩和・保護文字列削除の再試行・別経路への迂回は行わない。source／原入力／原反証・失敗logは維持する。
 - 現在HEAD6074dbd不変、index空、停止時23path差分を保持。今回の製品／test／保存変更・新検証／計測・install／取得はなし、既存Task／flowの記録のみ。前Handoffの限定成功と独立終了SHA未達を継承。全15 Apply未Verified、TSK-14 in_progress・TSK-12 ready、I2残件・I3〜I6／対象production／80＋saved／正式after／Blocking0／quality・結果後docsは未達で、Done／R1受入ではない。
+
+### TSK-15: Ranking高速化の実装確認と計画策定
+
+Depends on: TSK-14
+
+Current status: `done`（2026-10-08、現行経路の確認と具体計画の作成まで完了。以下は提案設計であり、製品実装・性能改善・サイズ非増加の受入は未実施）。
+
+目的・停止境界: [ranking §20・§21](../requirements/ranking-self-and-conditional-effects-requirements.md#21-2026-10-08の高速化制約と計画境界)を守り、初回rankingの重複計算を減らす実装計画を作る。本Taskでは製品source／schema／master／期待値を変更しない。計画提示で停止し、利用者の確認と実装依頼を後続Taskの開始条件とする。TSK-14の限定受入を再開せず、TSK-12／R1全体の未達とも分ける。
+
+調査identity: HEAD `bd2d7f5574578f19e884e159e0e29d7ae8ca131e`。開始時の未commit差分は本Tasks・ranking要件・registryの起票だけ。master `20260920.3`、32,953,998 bytes／SHA `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`。`git diff --stat a6a4006 HEAD -- packages apps/web/src`は空で、既存CPU／ranking測定の製品sourceを再利用できる。今回のsource照合とbuild条件は `.test-results/tsk15-planning-20261008-1246/identity.json` に固定した。
+
+#### 1. 現行構造・費用・共有と保証限界
+
+| 直接経路 | 現行のowner／APIと根拠 | 共有済み／残る重複 |
+| --- | --- | --- |
+| 論理候補生成 | application `rankingStaticPreparation.ts::compileStaticRankingPreparationPrograms` → `rankingCandidateSpace.ts::compileRankingCandidateSpaces / compileProgramDomain / materializeRankingCandidateSpace`。form・variant・skill choiceをmasterから列挙し、ordered program、world／field／quantity／canonical inputの有限積をcertifyしてmaterializeする | baseline、順序、AttackProfile、全semantic productへの4096 capを保持。静的programのvisited keyはcommandsを含み、使用slotだけのDPではない。候補別のstatic source投影・input domain構築は残る |
+| world同値化 | `rankingStaticSemantics.ts` → `rankingWorldObservation.ts` → `rankingWorldQuotient.ts::analyzeRankingWorldDomain`。ordered read／mutationの観測keyでworldをまとめ、代表とraw cardinalityを保持する | world factの観測同値化であり、実行後state・準備履歴・確率witnessの同値化ではない。今回この縮約規則・候補集合を変えない |
+| 準備 | `rankingPolicyScenario.ts::compileRankingExecutionPlan` が全候補へ `scenario.ts::prepareCalculationScenarioWithPolicy` を呼ぶ。stochastic possibilities → BP witness → `sourceCollection.ts::resolveAttackerFormExecution` → `createPreNoblePhantasmState / reducePreNoblePhantasmAction` | 候補・確率attempt・BP witnessごとにcontext解決、初期化、同じskill接頭辞を反復。form別maximum HP、auxiliary source、target predicates、stack inputsも組み直す |
+| 終端compile／ordered execution | 準備結果から `executionPlan.ts::compileExecutionPlanForPurpose` がsourceを再収集、operationをbind・sort、targetをresolve、input definitionをmerge。`engine.ts` → `candidateExecution.ts` がtarget candidate、transaction、projection、damage inputを決定する | `operationCompiler.ts::compileEffectCached` はeffect objectのWeakMap＋source／値cell／form／commit flags／marker readers等のkeyで静的compileだけを共有。毎回key生成・operation wrapper・runtime binding・終端plan組立ては残る。`ocSourceProgram.ts::compileOcSourceProgram` にもeffect単位の静的condition／OC program cacheがある。activation・state・receiptは再利用していない |
+| 数値・選択・分類 | `PreparedDamageMatrixCache` → `rankingExecution.ts::selectRankingExecutionIndexes` → `rankingCandidateSelection.ts`、`rankingPolicyCandidates.ts`、`rankingProfileOutcome.ts::unresolvedProfileResult` | damage cacheは完全なprepared numeric input＋variantのNP1〜5 matrixだけを共有。inputのnpLevelをkey上で1へ揃えても、準備は各NP levelで完全実行する。全候補を保持してから同点選択し、負け候補のinvalid／unsupported／inputRequiredもprofileをBlockingにする |
+| summary／detail | `calculateRankingPolicy` はservantごとに全prepared／execution配列、最後にprofileResults／detailを作る。Workerはrows／exclusionsだけ直近1件保存。detail requestは該当servantの候補集合を再計算し、要求AttackProfileを返す | Workerに候補evidenceは0件。application内のeager配列と全profile detailは計算中に存在する。summaryからdetailへのevidence再利用は今回追加しない |
+| calculator引継ぎ・復元 | `rankingHandoff.ts` → `createRankingPortableRequest` → `executePortableCalculation` → 同じ `prepareCalculationScenarioWithPolicy`。選択scenario、開始NP、比較basis、policyをportableで固定し、draftを保存する | calculatorの通常実行、ranking intentの再実行、保存復元・入力修復は共通ownerへ戻る。UI／workerの独自damage semanticsはない |
+
+支配費用の根拠は[既存flow冒頭の正式測定・CPU診断](../evidence/ranking-policy-candidate-flow-tsk-06.md)。正式3独立processの初回ranking中央値26.253秒、422 servant／433 profile／7,164候補、damage request7,255／distinct input1,627、cache hit77.57%。原 `.test-results/tsk14-after-20261008-0513/after-summary.json` のSHAは `d809e9cc90dd86ebd8d3c545fa027f960d44e57692f5cda27fd780a168b1fafe`。単発非profile RSSは1,490,968 KiBで、3回中央値やブラウザーWorkerのheapではない。
+
+既存単発CPU sampleの分類は初期化2.702秒／skill3.958秒／変身0.035秒／終端compile5.213秒／終端execution6.079秒／その他・候補生成・GC等9.133秒、計27.120秒。終端compile＋executionは約42%、準備は約25%。compile費用全体をpure effect compilerへ帰属しない。既存pure compile cacheの増設やdamage cache拡大だけでは、この残余経路を消せない。
+
+起票時のread-only候補グラフは、plan以外の宣言初期scenario・開始NP・寄与policyで612 group。初期化／skill／終端／変身の宣言回数7,164／14,902／7,164／49に対し、接頭辞の構造上の回数612／7,316／7,076／16。これは準備・damage未実行であり、後述する完全context・確率選択・BP witness・diagnostic suffixを加えた実共有数ではない。順序違いまで統合した612／5,983／3,535／8もstate同値性の証拠ではない。旧試算21.8秒、順序統合半分18.9秒／全部16.0秒は、phase平均費用が回数へ比例し管理費用0という仮説として残す。改善率・達成秒数の受入目標へ固定しない。
+
+**今回取得したbundle baseline:** `pnpm build` → Next16.3.4 `next build --webpack`、Node26.3.1、pnpm11.20.0、lock SHA `a53bbe80cc1b2e3541540fd78cdbf65ad684427bb7f6e8e2cf18c85899a66d65`。next.configのsource maps／typedRoutes等を変更せず、build exit0／wall46.97秒。gzipはPython3.14.4／zlib1.3.1、level9／mtime0／filenameなし、assetごとに独立圧縮する。
+
+| 配信集合（distinct URL、共有は一度だけ加算） | asset数 | 非圧縮bytes | gzip bytes |
+| --- | ---: | ---: | ---: |
+| 全配信JS: `.next/static`の全JS＋公開`sw.js` | 43 | 1,919,524 | 566,157 |
+| `/ranking` HTMLが宣言する初期script（nomodule polyfillを含む） | 7 | 761,988 | 228,049 |
+| その他の遅延・別route JS | 36 | 1,157,536 | 338,108 |
+| Worker entry＋直接共有chunkのclosure（全体・初期との重複あり） | 4 | 597,588 | 163,873 |
+| 上のWorker集合からHTML初期集合を除く追加分 | 3 | 498,649 | 136,596 |
+
+Worker entryは `8691.c1443e0b438ad0fc.js`、bootstrapが要求する共有chunkは5471／1618／9436。ranking UIは6109（39,511／12,724 bytes）、detail UIは1809（9,911／3,534 bytes）。source mapではexecution／applicationの153 source entry中80がWorkerとmain側chunk等へ重複収録されている。ただしtree-shaking後の内容は異なり、80 module分を丸ごと削れるという推定には使わない。上表はbuildの配信集合／HTML／Worker bootstrapの静的確認で、実ブラウザーのcold network waterfallは未測定。source map・server JSはJS合計へ混ぜず、後続比較でも同じ境界を使う。新案の追加配信データは0 bytes、現master配信は維持する。
+
+asset path／bytes／gzip／SHA、source mapによる到達、build条件は `.test-results/tsk15-planning-20261008-1246/bundle-baseline.json`（41,050 bytes／SHA `1ab0b322520042f628cdb8a509a37207bd37f5c9ff8df1435744fd7b2d8fab4e`）。初期／遅延の移動を全体削減と数えない。環境ファイル保護フックの2拒否は読取前に止まり、対象をbuild内の正のJS／map許可集合と明示`public/sw.js`に限定し、basename・path containment・symlink拒否を読取前に検査して集計した。環境設定の変更や秘密値の読取は行っていない。
+
+未確認: 安全なcontext分割後の接頭辞hit数、静的recipe生成／binding／forkの実費、実WorkerのCPU／heap、cold browser転送、確率・BP別の実行multiplicity、新sourceの全件parityとbundle差分。source確認・グラフ・単発profile・buildからこれらの成功を推定しない。
+
+#### 2. 採用する実装案と比較
+
+**提案採用: 共通executionの静的source／終端recipeを再利用し、完全context内の同じordered prefixだけを共有する。applicationは全論理候補の結果を順に選択へfoldする。** 新しいdamage evaluator・state同値化規則・配信済み計算表は作らない。候補generator・world quotient・damage cache・同点規則を維持し、その前後で繰り返す解決・準備・一時保持を減らす。単発費用と共有可能な宣言接頭辞の両方に直接根拠があり、順序統合の新しい意味論証明を要しないため、この組合せを選ぶ。
+
+| 比較案 | 判断・理由 |
+| --- | --- |
+| 静的解決だけ | 第1実装単位として採用。masterからsource・値cell・form・依存・input definitionを一度解決し、動的activation／stateを毎回bindする。初期／skill実行の重複は残るので全体案はここで止めない |
+| 同contextの共通接頭辞 | 採用。実行順を変えず、同じ祖先stateとcommandから得るsealed transitionを再利用する。管理・fork費用とbundle差分は実装後の採用gateで測る |
+| 数値／used-slot maskによる状態DP、順序の交換・dominance pruning | 棄却。NP容量clip、source-use時の条件、marker instance／proof、HP、form、certainty、receipt・同点に必要な履歴が一致しない。全state＋observable historyでのDPもhash／比較・保持が重く、追加共有数は未実証。今回は追加しない |
+| 終端結果・detail evidenceのrequest間cache、NP levelを跨ぐ部分準備再利用 | 棄却。master／basis更新とevidence ownershipを複雑にし、§11.5／15.3の寿命を広げる。既存のcomplete numeric input matrix cacheを維持する |
+| 候補削減・上位だけ実行・world縮約拡大 | 棄却。負け候補のBlockingとmaximum completenessを損なう可能性があり、今回の重複除去とは別の証明が必要 |
+| masterへ事前compile表を追加、servant別設定、別ranking engine、並列Worker増設 | 棄却。追加配信bytes・更新時の二重正本・memoryまたは規則の分裂を招く。今回のmaster／bundle制約を解く主軸にしない |
+
+#### 3. semantic context・branch・receiptの具体契約
+
+1. **静的recipe:** 共通executionが、検証済みmaster snapshotからcanonical source・actor form・skill choice・level／NP／OC value cell・variant・source traits・modifier read owner・commit flags・marker reader contract・compilation purposeを型付きdescriptorとして解決する。sourceの説明identityも保持する。`operationCompiler`と`ocSourceProgram`の静的compileをこのrecipeに収束させ、同じfull-source keyを毎候補JSON化する旧cacheを置換する。OC全cell列挙など既存のcompleteness用要求は保持し、不要cellの先行生成はしない。activation、read結果、physical transition、order、receiptは静的recipeへ入れない。
+2. **終端recipe:** source sequence、form／variant inventory、静的operation order／phase、condition dependency、static input definitionsのmerge、activation requirementを共有する。毎branchのsource binding、commit状態、dynamic required input、effect decisions／activation facts、target constraint／resolutionはbind段階へ残す。target resolutionを再利用する場合も同じtyped target context・constraint・read expressionの全tupleが必要。source集合やmarker reader setがsuffixで変わる場合は別recipeにする。game ruleの単純化やvalidationの省略はしない。
+3. **rootの完全context:** snapshot object identity＋engine identityをsessionへ固定し、servant／initial form・variant、比較basisの実効Lv／NP／Fou／skill levels／保存値、ATK／HP・form別maximum、開始NP／OC、BP phaseと具体initial point witness、target context／predicates、world facts、canonical input values・定義identity、effect decisions、activation facts、CE／support／mystic source、policy、全stochastic selection、observation／diagnostic modeをrootへ含める。値が同じでも出自・certainty・raw declarationが異なるものは統合しない。terminal descriptorとcandidate metadataは個別に保持する。rootはexecutionが生成する型付きcontextから同一性を決め、rankingのscenario文字列から規則を推測しない。
+4. **prefixのidentity:** 同じroot＋同じ親node＋canonical commandの全field（slot／level／choiceを含む）＋当該source recipe。異なる親・順序・rootを接続しない。共有nodeはinitializationまたはcommand transactionが完了し、sourceをsealした時点だけで公開する。full BattleStateをhashして合流するDAGは作らない。
+5. **branch isolation:** prefix frameはread-onlyな `PreNoblePhantasmState`、action history、source bindings、proof、recovery・seal済みtransitionを所有する。forkはproof／trait layers／Map・Set／quantities／input facts／buff instances／NP・OC・HP・BPとcertaintyを含む、書込可能な全fieldを共通ownerで分離する。浅いspreadや `cloneBattleState` だけで準備state全体が分離したとはみなさない。sealed receipt／canonical IRのみ共有可能とし、writerからの参照を残さない。診断時にfreezeしてsibling汚染を反証し、productionで常時deep-freezeする費用は別判断する。
+6. **rollback／特殊経路:** source単位のtransaction内のdraft、`actions`／attempt captureのcontext-key WeakMap、OC／HP／BP scopeはbranch専用。commit／finish後にsealし、throw／branch要求はabandonしてcacheしない。rejected edgeの復元済みstateとtyped reasonは同じprefixへ共有できるが、`diagnoseRejectedPreparation` のremaining commandsと回復入力はcandidateのsuffixごとに組み立てる。診断continuationを正常なprefixへcommitしない。ordered executionのunsupported／inputRequired rollbackは既存ownerを使い、prepared physical deltaの二重適用を禁止する。
+7. **確率・BP・certainty:** `executeStochasticPossibilities` のbranch order、illegal witness、4096 cap、unknown優先、通常の最小／成立込みの最大、witness keyの同点選択、BPの最大値選択を変えない。初回実装はstochastic selectionの**全Map**と具体BP witnessごとにrootを分け、未読の将来choiceだけが違っても共有しない。read footprintによる別witness間の共有は今回は採らない。certificateのattempt／illegal／branch数は論理attemptを示し、physical transition reuseを別counterで観測する。procの成功／失敗、確定寄与／不確実書込、source-use時の条件readを後段の数値から再生成しない。
+8. **receipt所有権:** source read、value read、physical commit／delta、action ID、occurrence ID、OC use、resourceBefore／After、certaintyをexecutionがsealする。applicationは各論理candidateに同じprefix receiptを順序どおり接続してcertificate／detailを組み立て、receipt内容を編集しない。IDは現行のsource／action意味で維持し、内部node IDをportableや表示へ出さない。observed executionと通常実行を別rootにし、cache hitでも必要な観測をcandidate順に届ける。
+9. **寿命・更新:** 静的recipe／prefix frameは一つのcalculation request内、prefixはservantのcandidate batch終了まで。summaryへのfold後はwinnerまたは要求detail／audit output以外を解放し、request終了・例外でsession全体を破棄する。Worker contextには保存しない。新master object・profile／basis・policy・engine変更は新requestで必ず新session。masterのversion文字列だけで再利用せず、in-place master書換えを許可するcacheも作らない。§21のrequest内execution state共有であり、§15.3が禁止するrequest間evidence cacheとは異なる。
+10. **候補・選択・失敗:** materialize順と論理candidate key／certificate／upper boundを固定する。全leafについてoutcomeを観測し、数値の負け候補でもinvalid／unsupported／inputRequiredを集約する。profile分類の優先順と最初のreason／input、正常なunavailableは既存通り。同点は平均降順→external facts→baseline deviation→action数→transition数→candidate key→variant key→activation fact数、完全同点は元候補順。選択とBlocking集約は同じstreamから行い、早期打切りしない。logical candidate／attempt数と、recipe compile／root init／transition／ordered execution／damage requestのphysical回数を分ける。
+
+#### 4. 変更・削除するmodule／APIと直接consumer
+
+以下は実装時の責務境界。型名は予定名で、旧実装を併存させる互換APIではない。
+
+| 変更先・予定API／型 | 責務と置換・削除 | 直接consumer |
+| --- | --- | --- |
+| battle-execution `operationCompiler.ts`、`ocSourceProgram.ts` | `CompiledSourceRecipe` をcompileし、`bindCompiledSource` でorder／runtime bindingを接続。`compileEffectCached`／`compilationCacheKey`／`compiledEffectCache` と `staticPrograms` の重複cacheを一本へ置換。pure compilerとOC／condition ruleはこのownerに残す | `executionPlan`、`preparationOc`、`sourceCollection`、`ocTerminalDependencies`、application `rankingStaticSemantics`／`resourceProgramAudit`、package export・compiler／transaction／HP attempt fixture |
+| `sourceCollection.ts`＋焦点を絞った `preparationSession.ts` | `ResolvedPreparationContext`／`PreparationFrame`／`PreparationSession`。masterからのform別HP・predicate・stack・auxiliary解決を分離し、initialize／step／fork／finishを共有ownerにする。`resolveAttackerFormExecution` の候補ごとのcontext構築とloopを置換 | `preNoblePhantasm`、skill／transform／attack reducer、`preparationExecution`／attempt capture、diagnostic、application `scenario` |
+| `executionPlan.ts` | `CompiledExecutionRecipe`＋`bindExecutionPlan`。静的組立てと動的bind／validationを分け、`compileExecutionPlanForPurpose` の一括再構築を置換。diagnostic purposeも同じrecipe ownerへ接続 | common engine／candidate execution、`prepareOrderedScenario`、rejected diagnostic、scenarioのnormal／observed execution |
+| application `scenario.ts` | `CalculationPreparationSession` を作り、stochastic→BP→preparation→ordered execution→damageの現在の選択規則を所有する。単発・batchとも同じsessionのprepareへ収束し、`prepareCalculationScenarioWithPolicy` 等の旧内部入口を直接callerごと置換。公開`calculateScenario`／portableは一回のsessionを使う | ranking、calculator、portable、without-area reprepare、production HP／BP／scalar観測・局所fixture。別のranking実行engineを作らない |
+| `rankingPolicyScenario.ts`、`rankingExecution.ts`、`rankingPolicyCandidates.ts`、`rankingContracts.ts` | planを `RankingCandidateDescriptor` の順序付き列へ変え、parallel arraysとeagerな全prepared保持を廃止。`evaluateRankingCandidateBatch` のsummary／detail／audit collectorを一つの評価経路にする。未参照の `createRankingScenarioFromPolicy`、`calculateRankingCandidates`、`selectRankingDetail` は削除候補（Serena参照0、実装着手時にexport／string参照を再確認）。旧 `compileRankingExecutionPlan`／`executeRankingScenarios` はconsumerを移して削除 | `calculateRankingPolicy`／detail、`rankingPolicyMatrix`、production parity／audit、candidate space・scenario／reachable control fixture |
+| `rankingCandidateSelection.ts`、`rankingProfileOutcome.ts` | stable comparatorと `RankingProfileAccumulator`。全candidateのwinner／Blocking recordsを順序付きfoldで保持し、array選択と分類の重複走査を置換。audit collectorだけ全candidate observationを保持 | summary／detail／audit、candidate maximum oracle、selection・profile outcome fixture |
+| `rankingPolicyCalculation.ts`、Worker runtime | UI summaryはrows／exclusions／inventoryだけ返す型へ置換し、通常requestの全profileResults／detail生成・保持を廃止。auditは同じfoldのprofile collectorから生成する。detailは要求entryをmaterializeするが、そのprofileの全候補Blockingは評価する | Worker summary、`productionAudit`／`productionClosureAudit`、policy matrix、worker tests。summary cache直近1・detail cache0・React active1を維持 |
+| `preparedDamageInputCache.ts`、portable／handoff／UI | numeric matrix cache、portable schema、source／action receiptの外部表現は維持。API接続を変更し、同じselected scenarioの再実行／draft復元を確認する | actual module Worker→detail→`rankingHandoff`→`executePortableCalculation`→calculator、保存draft／history reader |
+
+新dependency・別package・masterへの追加表は不要。現在の旧APIをexport名だけ残すadapter、旧loopへ戻るruntime fallback、二重compilerは残さない。単発calculatorも同じ新ownerを通り、audit collectorは観測量の違いだけで規則を再実装しない。
+
+外部契約: 保存collection／draft／history、portable request、worker request／response、master schema、damageの数値・receipt identityを変える必要はない。利用者データの移管・削除、schema versionの変更は計画へ含めない。logical inventoryは維持し、physical性能counterは内部診断へ置く。内部audit APIの移行は上表の直接consumer更新で行い、既存baseline recordを自動再生成しない。実装で外部形式変更が必要になった場合はこの計画の条件を満たさないため、利用者への影響・移管を具体化して再判断する。設計承認後に必要なら内部sharing判断のADRを追加し、ADR-028のsource-program／portable責務を置換しない。現時点でaccepted ADRには登録しない。
+
+#### 5. 実装単位・順序・段階の完了条件
+
+| 単位 | 作業順と完了条件 |
+| --- | --- |
+| A: 固定baselineと反証境界 | 実装開始時のHEAD／差分、上の入力・build条件・原receiptを照合。小fixtureでcandidate order／winner／失敗priority／source receiptと既存single calculator経路の変更前結果を固定し、構造的counterとsemantic結果を分ける。今回取得済みbuild・既存性能を有効範囲で再利用し、変更前quality／全matrixを重ねない |
+| B: 静的recipeと動的bind | 共通compiler／source resolver／terminal recipeへ収束。static analysis・preparation・ordered executionの直接callerを接続し、同じfixtureをcalculator／rankingで通す。source-use read、全OC cell、choice・form・marker reader、unknown semanticsのfail-closedが維持され、旧cache／重複key経路が消える。小fixture・型／lintと同条件buildでJS非増加を確認する |
+| C: request内prefixとbranch isolation | frame fork／seal／rollback／stochastic全Map・BP witness別rootを実装し、application batchへ接続。通常single・observed・rejected diagnosticを同じownerへ移す。独立skillでphysical遷移が減り、順序依存fixtureでは別prefix、sibling／rollback汚染0、certificate／certainty同値。早期に実Worker summary→detail→portable calculatorの代表経路を通し、部品だけの成功にしない |
+| D: 候補のfoldと保持縮小 | descriptor列・comparator・outcome accumulatorへ切替え、eager parallel arrays／全profile detail／未参照APIを削除。summary・requested detail・audit collectorの論理candidate／選択／失敗が一致し、負け候補Blocking・without-area policy再実行を保持。audit時以外に全実行graphを保持せず、request終了後のframe残存0を確認する |
+| E: 最終差分受入 | 下記の必要局所反例・実経路・変更ownerのaudit、性能／bundle／memory比較を閉じる。対象内Blocking0・旧経路削除・candidate cap／timeout不変をreviewし、固定差分でREADMEの `pnpm quality` を一度実行。成功後の結果記録はdocs gateだけで閉じる。速度改善・両JS byte非増加・master追従・canonical結果同値が揃うまで実装完了としない |
+
+B／C／Dの局所成功を全体完成とは呼ばない。中間buildは当該差分で一度だけ採り、次のsource変更まで再測定しない。追加費用がbundle非増加を破る場合は、同じcompiler／保持経路の置換・削除を見直し、別routeへの移動・圧縮設定変更・cap緩和で帳尻を合わせない。安全な共有が狭すぎて初回rankingを改善できない場合も、DPを自動追加せず未達と記録する。
+
+#### 6. 比較・反例・検証範囲と時間予算
+
+**速度:** 初回requestを独立Node processで測る。既存正式helper SHA `f428f28fcaa338f830b565e6a78e415614d64cb3d3c848770f2214535183cce9`、loader SHA `0b1c5b86192772fe9257710e739959cee5947c11ae1f93b61abfaa9b80c6def1`、CPU／affinity0–11、master・条件・lock・Node・出力範囲を固定し、same-process warmupをしない。既存 `scripts/measure-ranking-resources.ts` はwarmup＋同一process3回なので、初回の正式比較へそのまま使わない。正式before3の26.253秒を再利用できる環境ではafter3だけ採る。環境が変われば新しいbefore／after pairと明示し、旧測定を同条件に見せない。raw3値・中央値、read／parseとranking区間、論理候補数、physical init／skill／transform／terminal／compile／ordered execution数、cache・GCを記録する。CPU profileは費用が説明できない場合の一回に限定する。実cold module Workerはinitialize／parse／summary往復・detail往復を別に採り、Node秒数をブラウザー実測と呼ばない。初回median改善と重複遷移削減が必要で、21.8秒等の試算はgateにしない。10%超の主要suite／hot path退行は原因・workloadを説明し、候補切捨てやratchet緩和を採らない。
+
+**bundle:** Aの全asset baselineを使い、B／C／D・最終quality buildの全 `.next/static` JSと公開JSのdistinct URL合計を同じgzip条件で比較する。route script・dynamic import・Worker importScriptsのclosureと、cold networkのURL集合を照合し、共有chunkを二重計上せず、Workerを除外しない。raw差分≤0かつgzip差分≤0を必須とし、許容率を設定しない。43 assetのpath／SHA／bytes一覧、初期／その他／Workerの内訳を記録し、追加データ0も照合する。source map設定・build条件は固定し、map bytesは参考欄へ分ける。build IDやchunk名だけの変化はpath identityとcontent identityを区別する。境界や入力が異なるbuildを比較しない。
+
+**memory:** 同じsingle-call helperを `/usr/bin/time -v` で測り、RSS peak、before／after3値・中央値を比較する。既存1回RSSは特性値として利用でき、同じ条件なら不足2回beforeだけ補う。追加測定のwallもspeed証拠に共用する。Node heapUsed／heap peak、frame／recipe最大数・receipt参照数とrequest終了後の到達を短い診断で確認する。実Workerのheap／browser全体は別値として記録する。候補全配列をframe trieへ置換して保持量を減らす設計だが、未測定の削減量は約束しない。採用条件は同条件peak非増加とrequest後のevidence／frame非保持。欠測値を0にせず、RSS1回からmedian改善を主張しない。
+
+代表反証は[体系レビューガイド§8](../guides/systematic-review-guidelines.md#8-execution-familyのflow-closure)のforward／recovery・alternate pathで選ぶ。現行の小fixtureを拡張し、master全件をcaseごとに読まない。
+
+| 反例family | 最小の確認・直接経路 |
+| --- | --- |
+| 独立と順序依存 | 同rootのskill1→2／1→3は接頭辞だけ共有。1→2と2→1は別node。buff条件read→grant／remove、marker instance／proof、same numeric valueだがcertainty／source receiptが違うstateを合流しない。`rankingCandidateSpace`／`preparationTransaction`／world maximum oracle |
+| NP資源・OC・form | 消費→回復で合法、回復→消費で容量clip、過去不足の遡及禁止、確率procがNP／HP／formを書き換える枝、NP1／2／5の容量差、変身前後のsource値・選択variant。`npResource`／`preparationPhysicalTransition`／reachable control、公開resource receipt |
+| choice・確率・BP | choice排他、同じfull stochastic witnessと別witness、illegal witness、通常で一枝unavailable／unknown、成立込みの低damage枝unsupported、BP位相に複数point witness・容量条件read。certificate count／order／selected witnessとsource-use receiptをsingle／batch／observedで一致させる |
+| HP・marker・rollback | 最大HP更新・死亡、marker grant/removeとproof identity、sourceの途中inputRequired／unsupportedでresource／form／buffをrollback、siblingは成功、diagnostic suffixだけ異なる二候補、preparation physical deltaのordered replay一回。`hpResource`／`candidateRollback`／HP・BP preparation attempt audits |
+| 候補完全性・tie・Blocking | 全numeric同点のplan／key比較、非winnerのinvalid／unsupported／inputRequiredとnormal unavailableを区別、candidate certificate・baseline・raw world cardinality・upper bound4096を維持。少数の有限全状態oracleでmaximumまで一致し、選ばれたcandidateのreplayだけで済ませない |
+| master／入力更新 | current schemaのfixtureで効果cell・choice・form・marker reader・canonical operationを変更し、新snapshotで結果・候補・recipeが変わることを確認。未対応operationはunsupported。master／profile／policy切替中のstale summary／detail、再initializeとinvalid initialize後の破棄をWorker実callerで確認。ID／名前の例外なし |
+| 表示・保存・修復 | 実module Workerのsummary→entry detail→calculator handoff→draft保存／reload、HP／marker／BP入力修復、condition／basis／profile変更後のstale拒否。`ranking-baseline.spec.ts` E2E-050／052〜054と既存portable／handoff／Worker tests。normal calculator、without-area、audit observationをalternate pathへ含める |
+
+success、正常非適用／unavailable、修正可能入力、invalid、unsupported、確率的失敗を、normal loop／prefix fork・rollback／physical replay・projection／recoveryで交差させる。実装時は既存ranking flowをこのdeltaだけ更新し、ここに新しいflow noteを複製しない。productionにないschema-legal反例も小fixtureで確認し、0件を免除理由にしない。
+
+検証の必要範囲・運用予算（test timeoutの変更ではなく、sessionの作業配分）:
+
+- **局所:** 上表に対応する既存fileを `pnpm test:diagnostic -- <file...>` で責務単位にまとめる。1単位5〜10分の調査予算。`-t` で他caseをskipしたrunはfull file／runner成功に数えない。型／lintは変更範囲、公開routeは既存E2Eへ接続し、新しい全件testを重複追加しない。
+- **短い性能／bundle:** ranking after3と不足RSS before2、代表cold Worker／detail、1 buildを合わせ10分以内を目安。各単独rankingは120秒・buildは今回と同じ180秒の外側診断予算を置き、超過時は子を停止して原因を記録する。production testの既存timeout・capは延長しない。
+- **production:** 最終qualityのshared inventory／公開433 profile、calculator／ranking parity、HP／marker／BP／resource／condition coverageを必須とする。共通preparation・binding・attempt captureを変えるため、登録auditの `productionMasterControlAudit`、`productionHpSelectedAllyMaximumFixedPreparationAudit`、`productionHpMaximumFixedPreparationAttemptAudit`、`productionHpReceivePreparationAudit`、`productionHpReceivePreparationAttemptAudit` も対象にする。現行suiteをsample化せず、一回15〜30分を計画予算として、超過は記録・区切りで扱う。旧sourceの成功を新ownerの成功へ代入しない。
+- **policy matrix:** 共通ownerの変更は全policy／NP／OCへ到達するため、現行80条件34,640 outcome・34,600 parity・logical candidate797,660の現行source結果と比較する。旧§20前baselineの数値へ戻さず、TSK-14 afterの原record／receiptを比較元にする。新producerの3独立processは一回目をfunctional＋performanceのsample1へ兼用し、その同じ最終sourceで残り2回を採る。既存before3中央値producer1,306.740秒／merge282.398秒と同条件で比較し、receipt・selected plan／input／effects／失敗分類を確認する。時間目安はproducer＋merge各回約27分、計約80分。8 shard／4並列／2 waveの承認済みcommand構成を維持し、別の重い検証を重ねない。
+- **saved:** 共通basis／保存Lv・Fou・skill levelに対する別12条件5,196 outcome・5,186 parityも同じ新ownerを通す。既存before3中央値628.37秒を再利用し、新after3（目安約32分）のsample1をfunctional受入に兼用する。全matrixへ保存axisを黙って増やさない。保存codec自体は変更しないので旧保存reader／raw pipeline全監査は追加しない。
+- **最終gate:** `pnpm quality` を固定差分で一度（計画上20分枠、実際の既存runner予算を維持）。局所・audit・matrixの対象内Blockingを先に閉じ、品質に含むunit／production／master／build／desktop・mobile E2Eを別に再走しない。full Vitest／entry生成・影響production suiteの既存同workload時間を再利用し、同条件を証明できないものだけ不足baselineを対象fileで採る。TSK-14の代表最終受入例外を後続Taskへ拡張しない。
+
+matrix／saved／qualityを同じ90分sessionへ詰め込まない。60分で既存Task／flowへcheckpoint、90分で新familyを開始しない。baseline・原log・artifactは既存保持集合を参照し、全run／master／build directoryを新たに複製しない。今回のlocal build log2件＋asset metadata／identity2件（計46,236 bytes）はTSK-15と後続実装比較が直接consumerで、受入までの調査receipt。恒久fixture／CI入力へ昇格せず、参照終了時の処遇は保持ownerが判断する。原receipt欠落は明示し、再buildを元測定の再現済み原物に見せない。
+
+#### 7. 未解決事項・実装開始条件
+
+技術的な未解決事項は第1節の実共有数・binding／fork費用・Worker memory／転送・新bundle差分で、B〜Eの完了条件として検証する。安全なroot keyの取りこぼし、mutable receipt、負け候補のBlocking漏れは実装中のBlockingであり、性能のためにDeferredへ移さない。旧秒数の達成、新sourceの全件成功、byte削減はまだ証明していない。
+
+実装開始には利用者による本具体計画の確認と実装依頼が必要。その時点で現HEAD／差分・入力／原artifactを再照合し、後続実装Taskを一件確定する。通常の内部API名やfile抽出は上の責務と証拠から決められ、逐次再承認を求めない。外部契約の変更、candidate／失敗意味論の変更、bundle非増加の緩和、保持集合の拡張が必要になった場合だけ範囲変更として確認する。本Taskはここで停止し、実装へ進まない。
+
+成果物／Done gate: 現行sourceと費用・共有の根拠、採用／棄却案、semantic context／branch／receipt／寿命、直接consumer付き置換境界、段階ごとの完了条件、速度・bundle・memoryと反例／production／実経路の検証計画、未達と開始条件を上に記録した。調査・計画のDoneであり製品受入ではない。
+
+Flow closure: N/A: 本Taskはruntime／state／outcome／書込経路を変更しない。実装計画には体系レビューガイドのforward／rollback／alternate path・schema-legal反例とBlocking0の受入を適用した。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-BUNDLE-001` | Verified: 計画の比較境界と変更前bytes。実装後非増加は未受入 | 同条件webpack build・全配信JS／Worker closure集計、第1・6節照合 | bundle-baseline／build logs |
+| `RK-UPDATE-001` | Verified: canonical master由来のrecipe・identity／寿命・更新反例の計画。runtime追従は未受入 | source／reader照合、第3・4・6節 | identity／本Task |
+| `RK-PERF-001` | Verified: 原測定再利用・試算の仮定・同条件比較計画。改善は未受入 | source差分と固定measurement照合、第1・6節 | 原TSK-14 receipt／本Task |
+| `RK-EXEC-001` | N/A: runtime未変更。共通ownerと反証範囲は計画した | - | - |
+| `RK-AUDIT-001` | N/A: 新source全件監査なし。後続の必要範囲を第6節へ指定 | - | - |
+| `TS-QUAL-001` | N/A: 計画のみ。後続実装のqualityは必須 | - | - |
+| `TS-PERF-002` | N/A: 構造／workload未変更。後続比較を計画した | - | - |
+| `DOC-REV-001` | Verified: §21制約と未承認の具体設計を区別 | version／registry／baseline照合 | 本Task |
+| `DOC-CLOSE-001` | Verified: 計画成果・停止境界・後続開始条件一致 | Done gateと本節の照合 | 本Task |
+| `DOC-LINT-001` | Verified: 書式・文書参照・registry整合 | Prettier／diff check／`pnpm test:docs` | Handoffの文書検証 |
+| `DX-HANDOFF-001` | Verified: source／差分・有効証拠・未達・次操作を固定 | identity／第1・7節照合 | 本Task |
+
+Handoff: 調査・具体計画まで完了、runtime未変更。採用提案は第2〜5節、検証と時間配分は第6節、未確認・実装開始条件は第7節。今回実行したのはsource／参照照合、変更前webpack build一回とJS／Worker到達・bytes集計。全quality／matrix／audit、速度の新しい全件測定は実行していない。今回のtracked編集は本Tasksとregistryだけで、開始時のranking要件の差分は保持した。次操作は利用者が計画を確認し実装を依頼した後の、HEAD／差分・原receiptの照合と後続Task確定。commit／pushは行わない。
+
+文書検証: Prettier／`git diff --check`成功、`pnpm test:docs`は28/28・skip0、docs integrityは104 Markdown／44 machine evidence／1,178 referencesで成功。原 `.test-results/2026-10-08T13-12-07-389Z-560-4ec8c8/` と今回directoryの `docs.stdout.log`／`docs.stderr.log`。これは計画文書の検証であり、提案runtimeの検証ではない。
+
+### TSK-15.1: Ranking静的解決・接頭辞共有の実装と受入
+
+Depends on: TSK-15
+
+Current status: `in_progress`（2026-10-08、利用者「OK進めて」でTSK-15の具体計画を承認し、実装・必要検証を開始）。
+
+Scope／Done gate: TSK-15第2〜6節の採用案・semantic context・直接consumer・段階・比較／反証を実装する。ゲーム規則と全論理候補、damage／採用plan／同点・失敗分類／calculator同値性を維持し、同条件の全配信JS raw／gzip非増加、初回速度改善、master更新追従、memoryとrequest寿命、対象内Blocking0、最終qualityを閉じる。内部構造は現コードと証拠から再判断できるが、外部保存／portable契約・候補削減・DP・cap／timeout緩和・保持拡張は自動追加しない。TSK-14の代表最終受入例外は適用しない。
+
+Baseline: 開始HEAD `bd2d7f5574578f19e884e159e0e29d7ae8ca131e`、未commit差分は承認された起票・計画の3文書のみ。master／bundle／正式3process・CPU／RSSと原receiptはTSK-15第1節を参照する。製品sourceの変更前quality／全matrixは重複実行しない。開始時のSerena lookupはsourceCollection定義の取得後に120秒timeoutしたため、未取得の定義だけ必要file範囲で確認している。
+
+Flow closure: 既存 `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` を正本に、このsharing familyのnormal／observed／rejected diagnostic／rollback／physical replay／worker／portableのdeltaを記録する。初期状態は未検証、対象内Blockingは新runtimeのbranch isolation・receipt・logical coverageと受入gate。
+
+Implementation progress: Aは入力・source identity照合済み。B静的解決から着手。C prefix、D fold・保持縮小、E局所／実経路・audit・matrix／saved・性能／bundle／memory・最終qualityは未達。最終成功までdoneにしない。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification | Artifact |
+| --- | --- | --- | --- |
+| `RK-BUNDLE-001` / `RK-UPDATE-001` / `RK-PERF-001` / `TS-PERF-002` | Apply | TSK-15第6節の同条件比較・更新反例 | 後続handoff |
+| `RK-EXEC-001` / `RK-AUDIT-001` / `RK-CACHE-001` | Apply | 共通owner・receipt／certainty／Blocking・全論理候補と共有寿命 | 既存flow／新run |
+| `TS-QUAL-001` | Apply | 局所Blocking0・固定差分の `pnpm quality` | 新quality manifest |
+| `DOC-REV-001` / `DOC-CLOSE-001` / `DOC-LINT-001` / `DX-HANDOFF-001` | Apply | 実装／反証／比較／正本一致・文書gate | 本Task／既存flow |
+
+Handoff: 実装承認済み、まだ製品変更なし。次操作は共通source compiler／context・準備stateのwrite siteを限定照合し、static recipeとbranch forkを接続する。通常実装・診断・統合は親が行い、childは起動しない。60分checkpoint／90分で新family開始停止の規約を維持する。
 
 ## 4. 更新規則
 

@@ -1,9 +1,9 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.11.1"
+document_version: "0.11.2"
 status: "Active"
 approval: "approved"
-approved_at: "2026-10-03"
+approved_at: "2026-10-08"
 updated_at: "2026-10-08"
 created_at: "2026-08-30"
 related_adrs:
@@ -967,6 +967,8 @@ damage差分、性能見積もりを提示してから再開する。
 | `RK-CACHE-001` | 11.5、12、15.3、20 | summary cacheをevidence-freeにし、比較basis／profile変更をidentityへ反映する。workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
 | `RK-AUDIT-001` | 3.2、14、15、17、20 | 全playable AttackProfile、四policy、NP1〜5と共通／保存育成のparityを共有production inventoryで監査する。現行masterの合法条件で実装unsupported／invalid／inputRequiredによる順位外0件を維持し、選択条件の合法性によるunavailableと区別する。 |
 | `RK-PERF-001` | 15.3 | 2^N探索を避け、candidate／damage requestを説明し、主要suiteの10%超の未説明退行を拒否する。 |
+| `RK-BUNDLE-001` | 21 | 高速化で配信JS全体を増加させない。同じbuild条件でWorker・共有chunkを含むdistinct assetの非圧縮／gzip bytesを比較し、初期chunkからの移動だけを削減と扱わない。 |
+| `RK-UPDATE-001` | 21 | 現行schemaのcanonical masterから操作と共有範囲を導出し、master更新時に旧計算を再利用しない。servant別設定・raw再解釈を追加せず、新しい意味論はcanonical IR／共通executionで扱う。 |
 | `RK-FINAL-001` | 17、20 | §20の最終製品判断と17章の有効なUI、IR、execution、parity、damage evidenceをproject closureで全て満たす。 |
 
 ## 19. Revision log
@@ -988,6 +990,7 @@ damage差分、性能見積もりを提示してから再開する。
 | 0.10.3 | 初期最大HPを選択Lvのmaster HP＋固定HPフォウ1000へ明示。通常計算機は装備礼装HPも加算し、canonical成長表から解決する。HPフォウ編集UIなし | approved 2026-09-08: user specified separate ranking／calculator HP conditions | TSK-06.45 | 今回は要件反映のみ。実装時にHP依存damage、canonical master／schema／復元identityを更新する。欠損HPの0補完とATK由来推定は禁止 |
 | 0.11.0 | 共通条件と保存育成状態の両対応、自前で確実に成立する通常寄与、合法な組合せ・使用順とNP消費後の自前補完、単体の理想火力を最終製品判断として確定（`RK-IR-001`、`RK-EXEC-001`、`RK-POLICY-001`、`RK-UI-001`、`RK-HANDOFF-001`、`RK-CACHE-001`、`RK-AUDIT-001`、`RK-FINAL-001`）。詳細は§20 | approved 2026-10-03: 利用者が両比較への対応、通常の確定条件採用、成立込みの理想火力・説明文追加不要、合法な組合せとNP消費後の自前補完を明示し、最終意思決定Taskの作成を指示 | TSK-13（決定・実装事実／改修前調査）、TSK-14（実装・正本伝播）。TSK-12の旧ranking文書整合案を分離 | docs phaseはruntime／保存入力／expected／digest不変。実装時は保存育成basis、通常寄与、候補、URL／worker／portable identityと意図的damage差が変わり得る。基準の更新範囲はTSK-13の差分調査で確定し、今回再生成しない |
 | 0.11.1 | §20の比較判断をproduct／UIの現行版とADR-030へ結び、旧§4〜7／17との優先関係とTSK-14受入ownerを明記 | retained: 2026-10-03承認の§20を変更せず、文書間の参照と有効範囲だけを同期 | TSK-14のDOC-REV／DOC-CLOSE。TSK-13の歴史判断は保持 | none: 文書相互参照のみ。runtime、固定master／expected、保存schema、既存原artifactは変更しない |
+| 0.11.2 | 高速化の配信JS非増加・master更新追従を追加（`RK-BUNDLE-001`、`RK-UPDATE-001`）。現行確認・計画提示を先に行い、具体計画の確認前に実装しない境界を記録 | approved 2026-10-08: 利用者がサイズ非増加・更新追従を求め、この前提で計画と実行プロンプトの作成を指示。個別の共有方式・内部設計は未採用 | TSK-15（調査・計画）。実装Taskは具体計画の確認後に確定 | none: 本改訂は制約と計画境界のみ。runtime／master／schema／expected／digestを変更せず、実装時も正しい意味値と候補完全性を維持する |
 
 ## 20. 2026-10-03の最終製品判断
 
@@ -1020,3 +1023,16 @@ data pipelineがrawをcanonical IRへ変換し、applicationが比較基準と�
 参考条件は[神ゲー攻略の宝具威力ランキング](https://kamigame.jp/fgo/%E5%88%9D%E5%BF%83%E8%80%85%E6%94%BB%E7%95%A5/%E5%AE%9D%E5%85%B7%E5%A8%81%E5%8A%9B%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0.html)を2026-10-03に閲覧した。自前buff／debuff、共通育成、通常と特殊条件の分離を参考にする。同siteは確率buff成功を仮定するが、本決定では通常の確定分と成立込みの成功仮定を分ける。[遊びゴコロの指定ページ](https://asobigokoro.work/Game-strategy-site/fgo-hougu-iryoku-ranking/)は同日の取得が失敗しており、条件を確認済みと扱わない。参考siteの数値を原raw／master／expectedの代替入力に採用しない。
 
 本決定の承認は新runtimeの受入ではない。TSK-13で既存実装・正本・同条件証拠との差を確定し、TSK-14で必要な局所反証、保存復元／入力修復、calculator handoff、対象production差分・同条件性能・固定差分の最終qualityを閉じる。旧baseline／expected／fixtureの意味と母集団を今回変更せず、改修時の意図的差分と適用契約を明示して受け入れる。
+
+## 21. 2026-10-08の高速化制約と計画境界
+
+§20の利用者成果・正しいdamage・採用plan・同点選択・非数値outcomeを維持して、初回rankingの重複計算を減らす。
+
+- 配信するJS全体の非圧縮／gzip bytesを増加させない。同じsource基底・lockfile・Node・build設定・圧縮条件で、Workerと共有chunkを含むdistinct assetを比較する。初期読込と遅延読込を分けて示すが、chunkの移動だけで全体の非増加を満たしたことにしない。高速化のための追加配信データも必要性・bytesを計画で示す。
+- 現行schemaで表現できるservant・効果値・choice・form等の更新はcanonical masterから処理する。servant ID／名前別の設定やraw語彙の再解釈を追加しない。共有のidentity・寿命・更新時の破棄条件を明示し、master変更後に旧計算を再利用しない。
+- 新しいoperationの意味はdata pipelineと共通executionで対応する。未知の意味論を既知の効果へ読み替えず、型とfail-closedを維持する。ranking独自のdamage evaluatorを追加しない。
+- 共通接頭辞、静的コンパイルの再利用、状態DPは調査候補であり、採用済み方式ではない。論理候補数と物理的な実行回数を区別し、候補完全性・Blocking判定・transaction・certainty・receiptの責務を維持する。request内の状態共有と、§15.3で制限するevidence cacheの違いを具体計画で説明する。
+- 内部API・型・module境界・不要な旧経路は、より良い実装のため置換・削除できる。変更理由・直接consumer・削除範囲を計画へ示す。保存・portable等の外部契約変更が必要な場合は、利用者への影響と必要な移管を具体計画に含める。既存データの削除や未定義の製品変更を自動的に実施しない。
+- まず現行実装の確認と実装計画を提示し、そこで停止する。利用者による具体計画の確認と実装依頼後に実装する。試算を実測改善・サイズ非増加・安全なstate統合の証明へ読み替えない。
+
+調査・計画と次の実装開始条件は[TSK-15](../tasks/development-redesign-tasks.md#tsk-15-ranking高速化の実装確認と計画策定)を正本とする。TSK-14の限定受入を再開せず、TSK-12／R1全体の未達とは別に扱う。
