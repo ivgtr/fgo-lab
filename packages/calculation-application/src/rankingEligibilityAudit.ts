@@ -6,7 +6,7 @@ import {
   type StaticRankingProgramDisposition,
 } from './rankingActionAdmission';
 import { attackProfileKey } from './attackProfile';
-import type { RankingPolicyConditions } from './rankingContracts';
+import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
 import type { RankingCandidateCalculation } from './rankingPolicyCandidates';
 import { compileStaticRankingSemantics } from './rankingStaticSemantics';
 import { UnsupportedStackQuantity } from './rankingStackDomain';
@@ -161,12 +161,16 @@ function admissionKey(admission: CandidateLocalActionAdmission): string {
       : admission.kind;
 }
 
-function staticProgramRecords(master: MasterDataSnapshot): {
+function staticProgramRecords(
+  master: MasterDataSnapshot,
+  profile: RankingProfileInput = { servantBuilds: {} },
+  rankingConditions: RankingPolicyConditions = DEFAULT_RANKING_POLICY_CONDITIONS,
+): {
   programsByServant: ReadonlyMap<string, readonly StaticRankingPreparationProgram[]>;
   inventory: RankingStaticSemanticsInventory;
 } {
-  const commonSelection = compileRankingSelection(DEFAULT_RANKING_POLICY_CONDITIONS);
-  if (commonSelection.status === 'invalid') throw new TypeError(commonSelection.reason);
+  const selection = compileRankingSelection(rankingConditions);
+  if (selection.status === 'invalid') throw new TypeError(selection.reason);
   const programsByServant = new Map<string, readonly StaticRankingPreparationProgram[]>();
   const records: StaticProgramRecord[] = [];
   const sourceKinds: CountMap = {};
@@ -184,7 +188,7 @@ function staticProgramRecords(master: MasterDataSnapshot): {
   let invalidPrograms = 0;
 
   for (const servant of master.servants) {
-    const basis = resolveRankingBasis(servant, { servantBuilds: {} }, commonSelection.selection);
+    const basis = resolveRankingBasis(servant, profile, selection.selection);
     const programs = compileStaticRankingPreparationPrograms(servant, basis.skillLevels);
     programsByServant.set(servant.id, programs);
     attackProfiles += new Set(programs.map(({ attackProfile }) => attackProfileKey(attackProfile)))
@@ -242,6 +246,14 @@ function staticProgramRecords(master: MasterDataSnapshot): {
       digest: digestRecords(records),
     },
   };
+}
+
+export function rankingStaticSemanticsInventory(
+  master: MasterDataSnapshot,
+  profile?: RankingProfileInput,
+  conditions?: RankingPolicyConditions,
+): RankingStaticSemanticsInventory {
+  return staticProgramRecords(master, profile, conditions).inventory;
 }
 
 function updateAdmissionInventory(
@@ -306,8 +318,12 @@ export class RankingEligibilityAuditAccumulator {
   };
   private readonly conditionKeys = new Set<string>();
 
-  constructor(master: MasterDataSnapshot) {
-    this.staticData = staticProgramRecords(master);
+  constructor(
+    master: MasterDataSnapshot,
+    profile?: RankingProfileInput,
+    conditions?: RankingPolicyConditions,
+  ) {
+    this.staticData = staticProgramRecords(master, profile, conditions);
   }
 
   observe(

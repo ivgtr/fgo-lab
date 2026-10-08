@@ -3266,6 +3266,12 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+04:09 UTC checkpoint（2026-10-08）: 別saved S0/S1の条件・profile・静的inventory接続を局所検査し、partition0の単一run digestへ修正。対象unit56/56・warning0、typecheck成功。直接理由・原artifactは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全433 profileの保存run／S0 common parity、全6800 damage row帰属、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
+
+03:59 UTC checkpoint（2026-10-08）: HP同期後matrixの現行strict拒否反例11/11・receipt error0（原`.test-results/tsk14-current-hp-negative-20261008-0351/acceptance.json`）。次の別saved S0/S1は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)の明示条件identityで同じaudit/application/executionを使用し、旧80expectedから分離する。保存結果classとS0 common parityは未実測、TSK-14/R1未受入。
+
+03:51 UTC checkpoint（2026-10-08）: HP同期後HEAD `846ae85`／cleanの現行80条件8 shardと実mergeは全成功。34,640 outcome＝34,600 calculated／40 policy unavailable、非数値失敗0、parity34,600／失敗0、現行strict body・旧固定80 receipt・transaction/final/parity gate passed、最大候補upper3358≤4096。原identity・manifest digestと未保証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。旧版との全数値差、別saved S0/S1、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
+
 03:21 UTC checkpoint（2026-10-08）: HP割合のnative準備write同期を共通`bindPreparationWriteProofs`で修正。変更前にも存在したHP unit4失敗は対象36/36成功へ回復、現source production全172/172・warning0、原artifactと実HP/quantity/proofの根拠は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。80条件の旧原runは修正前sourceなので新受入へ転用しない。別saved S0/S1、全6800 damage rowの帰属と新source差分、正式after3process、全15 Apply、現UI/E2E/VRT、最終qualityは未達。TSK-14/R1未受入。
 
 03:07 UTC checkpoint（2026-10-08）: HP周辺unit4件は固定HEAD `fce4332`の独立worktreeで同Node/pnpm/lockfileの比較runを得た。現差分と同じ32成功／4失敗・warning0であり、今回監査差分の新規回帰ではない。ただし最終unit/qualityのBlockingとして残る。比較原、直接経路の次操作は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。

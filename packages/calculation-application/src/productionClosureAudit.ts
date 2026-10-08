@@ -1,5 +1,6 @@
 import { acceptedProductionAuditValue } from './productionAuditValue';
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
@@ -107,6 +108,38 @@ export function productionClosureConditionKey(conditions: RankingPolicyCondition
   return `${conditions.levelBasis}-${conditions.selfBuffs}-${conditions.conditionalEffects}-np${String(conditions.npLevelBasis.npLevel)}-oc${String(conditions.initialOvercharge)}`;
 }
 
+export type ProductionSavedBasis = 'S0' | 'S1';
+
+export function productionSavedConditions(
+  basis: ProductionSavedBasis,
+): readonly RankingPolicyConditions[] {
+  return (basis === 'S0' ? [1] : [1, 2]).flatMap((initialOvercharge) =>
+    (['included', 'excluded'] as const).flatMap((selfBuffs) =>
+      (['baseline', 'satisfied'] as const).map((conditionalEffects) => ({
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        population: 'owned' as const,
+        growthBasis: 'saved' as const,
+        levelBasis: 'ownedLevel' as const,
+        npLevelBasis: { kind: 'owned' as const },
+        initialOvercharge: initialOvercharge as 1 | 2,
+        selfBuffs,
+        conditionalEffects,
+      })),
+    ),
+  );
+}
+
+export function productionSavedConditionKey(
+  basis: ProductionSavedBasis,
+  conditions: RankingPolicyConditions,
+): string {
+  if (
+    !productionSavedConditions(basis).some((candidate) => isDeepStrictEqual(candidate, conditions))
+  )
+    throw new TypeError('production_saved_condition_not_canonical');
+  return `saved-${basis.toLowerCase()}-${conditions.selfBuffs}-${conditions.conditionalEffects}-oc${String(conditions.initialOvercharge)}`;
+}
+
 const digest = (value: unknown) =>
   createHash('sha256')
     .update(JSON.stringify(acceptedProductionAuditValue(value)))
@@ -192,6 +225,48 @@ export async function auditProductionClosure(
   observe?: (record: ProductionClosureConditionRecord) => void | Promise<void>,
   selectedConditions: readonly RankingPolicyConditions[] = productionClosureConditions(),
 ): Promise<ProductionClosureAudit> {
+  const partitions = new Map(
+    productionClosureConditions().map((condition, index) => [
+      productionClosureConditionKey(condition),
+      index % RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT,
+    ]),
+  );
+  const plans = selectedConditions.map((conditions) => {
+    const key = productionClosureConditionKey(conditions);
+    const digestPartition = partitions.get(key);
+    if (digestPartition === undefined)
+      throw new TypeError(`production_closure_condition_not_canonical:${key}`);
+    return { conditions, key, digestPartition };
+  });
+  return auditProductionClosurePlans(master, profile, versions, observe, plans);
+}
+
+export async function auditProductionSavedClosure(
+  master: MasterDataSnapshot,
+  profile: RankingProfileInput,
+  versions: VersionContext,
+  basis: ProductionSavedBasis,
+  observe?: (record: ProductionClosureConditionRecord) => void | Promise<void>,
+): Promise<ProductionClosureAudit> {
+  const plans = productionSavedConditions(basis).map((conditions) => ({
+    conditions,
+    key: productionSavedConditionKey(basis, conditions),
+    digestPartition: 0,
+  }));
+  return auditProductionClosurePlans(master, profile, versions, observe, plans);
+}
+
+async function auditProductionClosurePlans(
+  master: MasterDataSnapshot,
+  profile: RankingProfileInput,
+  versions: VersionContext,
+  observe: ((record: ProductionClosureConditionRecord) => void | Promise<void>) | undefined,
+  plans: readonly {
+    conditions: RankingPolicyConditions;
+    key: string;
+    digestPartition: number;
+  }[],
+): Promise<ProductionClosureAudit> {
   const summaries: Omit<ProductionClosureConditionRecord, 'records'>[] = [];
   const unavailable: ProductionClosureUnavailable[] = [];
   const parityFailures: ProductionClosureParityFailure[] = [];
@@ -204,19 +279,15 @@ export async function auditProductionClosure(
   };
   let parityCount = 0;
   let attackProfileCount: number | null = null;
-  const eligibility = new RankingEligibilityAuditAccumulator(master);
-  const digestPartitionByCondition = new Map(
-    productionClosureConditions().map((condition, index) => [
-      productionClosureConditionKey(condition),
-      index % RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT,
-    ]),
-  );
-
-  for (const conditions of selectedConditions) {
-    const key = productionClosureConditionKey(conditions);
-    const digestPartition = digestPartitionByCondition.get(key);
-    if (digestPartition === undefined)
-      throw new TypeError(`production_closure_condition_not_canonical:${key}`);
+  const savedCondition = plans[0]?.conditions.growthBasis === 'saved' ? plans[0].conditions : null;
+  if (
+    plans.some(({ conditions }) => conditions.growthBasis !== (savedCondition ? 'saved' : 'common'))
+  )
+    throw new TypeError('production_closure_mixed_growth_basis');
+  const eligibility = savedCondition
+    ? new RankingEligibilityAuditAccumulator(master, profile, savedCondition)
+    : new RankingEligibilityAuditAccumulator(master);
+  for (const { conditions, key, digestPartition } of plans) {
     const startedAt = performance.now();
     const result = calculateRankingPolicy(
       master,
