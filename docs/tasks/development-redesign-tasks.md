@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.195"
+document_version: "1.7.196"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-10-05"
+updated_at: "2026-10-08"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -3265,6 +3265,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 新namespace `.test-results/tsk-13-ranking-decision-20261003/` のownerはTSK-13。用途は開始／最終identity、公開masterの限定source抽出、現実経路probeと失敗診断、文書gate。補助probeは一時的な調査codeで恒久採用せず、原raw／expectedの新入力や既存全runの保持も新設しない。参照期間は本調査と後続改修の受入で参照する間、参照終了後は残るconsumerを確認して既存policyで処遇する。docs実行は空き0のsystem `/tmp` に代えて、command単位の `TMPDIR` を同namespaceの `tmp/` へ指定した。これは新しい合成docs fixtureの一時置場だけで、product／raw／baselineの保存先やsystem設定を変更しない。正式権限審査で実行し、拒否迂回・cleanup／原物移動／旧directory変更／commit／pushは行わない。
 
 ### TSK-14: Ranking最終方針の実装と正本収束
+
+01:24 UTC 90分上限後の80条件原run／引継ぎ（2026-10-08）: HEAD `c955f12`/worktree空の8 shard全成功、34,640 outcomeは34,600 calculated/40 policy unavailable、非数値0、parity失敗0、artifact error0、候補最大3358≤4096。実mergeは旧固定condition summaryとの`growthBasis`差で80件失敗し、現行契約の結合受入未達。固定資料は保持、old/new一致への書換えはしない。実run identity・原artifact・直接比較器/caller・次の操作・未達gateは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。上限超過により新familyへ進まず、TSK-14/R1未受入。
 
 01:02 UTC 候補同値類局所収束（2026-10-08）: 5秒小testからNP5全実行を分離し、公開306200のNP5/OC1,2×2 profileのready/4096内/各world観測key一意を175msで確認。候補file全27/27・warning0、最大積は同2801300の2968。旧timeout/上限反証は保持、最終80条件実行は未達。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。TSK-14/R1未受入。
 

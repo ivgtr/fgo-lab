@@ -1,10 +1,12 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-10-07"
+updated_at: "2026-10-08"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
+
+**2026-10-08 01:24 UTC 90分上限後の80条件原run／引継ぎ:** HEAD `c955f12cce79ccbe9efdbe5973804b5ae4b5a45d`、worktree空、master `20260920.3`/SHA `2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a`で、`.test-results/tsk14-current-matrix-20261008-0102/`の8 shardすべてexit0。shard identityは一致し、80条件×433＝34,640 outcome（calculated 34,600、policy unavailable 40、inputRequired/invalid/unsupported 0）、parity34,600/失敗0、条件artifact SHA検査error0、候補最大upper/generatedとも3358でcap4096内。先の306200 NP5有限domain失敗はこのsourceのproducer全条件では再発しなかった。ただし実`merge-oc-matrix.ts`はexit1、失敗manifestのstageは`verify-canonical-records`。比較失敗80件はすべて旧固定recordの`conditions.growthBasis`欠落対現`common`という`recordSummaryMismatch`で、固定baseline manifest 376,249 bytes/SHA `50cbcb378d8743a9a678df5415eae93e269ffcc12514ed18344ee6a2e074534a`のreceipt検査自体はerror0。現`verifyProductionMatrixRecords`は旧source/旧condition summaryのliteral一致を各条件で要求し、`evaluateProductionParityGate`が最初の不一致で後段aggregate/transaction/final/capの結合受入へ進ませない。これは前記「単一の現行gate」計画で既知の比較契約衝突が実際に現れたもので、80条件の現行受入成功とは記録しない。原失敗manifest、全shard log/recordと旧baselineは保持し、旧expectedを現actualで上書きしない。次の作業は旧固定資料のreceipt/identity/数値差の独立診断を残したまま、`production-matrix-records.ts`→`productionParityDiagnostics.ts`→`merge-oc-matrix.ts`と`production-baseline-acceptance.mjs`の直接callerを現行strict record契約へ一つに収束し、80件の全意味差をinput/ordered plan/ruleで説明してから同じrecordを再利用してmergeすること。新たなproducer再実行は入力・sourceが変わる場合だけ行う。別saved S0/S1、正式before/after3process、現UI/E2E/VRT、全15 Apply、最終quality/文書gateは未達。90分上限を超えたため新familyへ着手せず、TSK-14/R1は未受入として引き継ぐ。製品commit `c955f12`以降はdocsだけ更新し、現runと異なるsourceの製品検証を成功証拠へ転用しない。
 
 **2026-10-08 01:02 UTC 候補同値類局所収束:** NP5公開全実行を5秒小testから分離し、有限domain／観測同値類一意の検査を175msで実施。`rankingCandidateSpace.test.ts`全27/27・warning0、原`.test-results/2026-10-08T00-59-40-753Z-15-4c1d80/`。公開306200のNP5/OC1,2×2 AttackProfileは全てreadyで4096以内、各準備programのtarget観測keyに重複なし。同fileの既存最大積は同servant2801300の2968を固定し、4096以下。先のtimeout原と4200>4096失敗原は保持。最終同一sourceの80条件全実行・mergeでstatus/選択最大/portable strictをまだ確認していない。
 
