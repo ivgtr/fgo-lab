@@ -43,7 +43,7 @@ import {
   readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
-function setup(
+function setup({
   excluded = false,
   repeated = false,
   alternateNp = false,
@@ -55,7 +55,19 @@ function setup(
   npValueExpression = false,
   repeatedNpValueOperation = false,
   constantReader = false,
-) {
+}: {
+  excluded?: boolean;
+  repeated?: boolean;
+  alternateNp?: boolean;
+  selectedStandard?: boolean;
+  ocRate?: boolean;
+  nativePreparation?: boolean;
+  nestedCondition?: boolean;
+  npCondition?: boolean;
+  npValueExpression?: boolean;
+  repeatedNpValueOperation?: boolean;
+  constantReader?: boolean;
+} = {}) {
   const master = masterSnapshotSchema.parse(fixture);
   const actor = master.servants[0]!;
   const effect = masterEffectSchema.parse({
@@ -372,7 +384,7 @@ it(
   'links native preparation HP reads to distinct original leaves and the filtered modifier',
   productionAuditTestOptions(['hp-native-condition-reads.json']),
   async ({ task }) => {
-    const f = setup(false, true, false, false, false, true);
+    const f = setup({ repeated: true, nativePreparation: true });
     const evidence = reconcileHpOperationEvidence(f.declarations, f.requests);
     expect(evidence.gate.failures).toEqual([]);
     expect(f.calculation.result.status).toBe('calculated');
@@ -524,7 +536,7 @@ it(
 );
 
 it('records an executable request with no ordered HP consumer without inferring a read', () => {
-  const f = setup(false, false, true, true);
+  const f = setup({ alternateNp: true, selectedStandard: true });
   const actor = f.master.servants[0]!;
   actor.skills = [];
   actor.actorFormGraph.forms[0]!.skillIds = [];
@@ -761,7 +773,7 @@ it(
 );
 
 it('keeps normal NP exclusion and absent request stages distinct from consumption and declaration counts', () => {
-  const f = setup(true);
+  const f = setup({ excluded: true });
   const ledger = f.reconcile();
   expect(ledger.gate.failures).toEqual([]);
   const nps = ledger.bindings.filter((b) => b.stage === 'npEvaluation');
@@ -780,7 +792,7 @@ it('keeps normal NP exclusion and absent request stages distinct from consumptio
 });
 
 it('proves an unselected NP variant through the original selected sibling and its NP capture', () => {
-  const f = setup(false, false, true);
+  const f = setup({ alternateNp: true });
   const ledger = f.reconcile();
   expect(ledger.gate.failures).toEqual([]);
   const variants = ledger.declarations.filter((d) => d.identity.kind === 'hpRatioLow');
@@ -841,7 +853,7 @@ it('proves an unselected NP variant through the original selected sibling and it
 });
 
 it('keeps a selected standard NP outside HP evaluation proof without rejecting a valid variant', () => {
-  const f = setup(false, false, true, true);
+  const f = setup({ alternateNp: true, selectedStandard: true });
   const ledger = f.reconcile();
   expect(ledger.gate.failures).toEqual([]);
   const hpVariant = ledger.declarations.find((d) => d.identity.kind === 'hpRatioLow');
@@ -855,7 +867,7 @@ it('keeps a selected standard NP outside HP evaluation proof without rejecting a
 });
 
 it('connects the selected NP OC-rate cell and proves terminal nonconsumption separately from other cells', () => {
-  const f = setup(false, false, false, false, true);
+  const f = setup({ ocRate: true });
   const ledger = f.reconcile();
   expect(ledger.gate.failures).toEqual([]);
   const cells = ledger.declarations.filter((d) => d.identity.kind === 'ocRateExpression');
@@ -878,7 +890,7 @@ it('connects the selected NP OC-rate cell and proves terminal nonconsumption sep
 });
 
 it('fails closed on missing, duplicate and foreign selected OC-rate capture', () => {
-  const f = setup(false, false, false, false, true);
+  const f = setup({ ocRate: true });
   const selected = f.borrowed.bindings.find(
     (binding) => binding.declaration.identity.kind === 'ocRateExpression',
   )!;
@@ -976,7 +988,7 @@ it('rejects incomplete requests and equal foreign request/candidate capture owne
 });
 
 it('distinguishes equal condition leaves and rejects a foreign NP declaration value', () => {
-  const repeated = setup(false, true);
+  const repeated = setup({ repeated: true });
   expect(repeated.reconcile().gate.failures).toEqual([]);
   expect(
     repeated
@@ -1008,7 +1020,7 @@ it(
   'proves candidate HP leaf identity and read order from an original nested request',
   productionAuditTestOptions(['hp-candidate-condition-leaf-identity.json']),
   async ({ task }) => {
-    const f = setup(false, false, false, false, false, false, true, false, false, false, true);
+    const f = setup({ nestedCondition: true, constantReader: true });
     expect(masterEffectSchema.safeParse(f.master.servants[0]!.skills[0]!.effects[0]).success).toBe(
       true,
     );
@@ -1087,7 +1099,7 @@ it(
   'joins a selected NP beforeDamage HP value cell to its candidate physical read',
   productionAuditTestOptions(['hp-np-before-damage-value-read.json']),
   async ({ task }) => {
-    const f = setup(false, false, false, false, false, false, false, false, true);
+    const f = setup({ npValueExpression: true });
     expect(resolvedScenarioSchema.safeParse(f.scenario).success).toBe(true);
     const target = f.calculation.executionObservation?.targetExecution;
     if (target?.selection !== 'selected' || target.candidateState?.preflight?.status !== 'ready')
@@ -1144,7 +1156,7 @@ it(
   'keeps the sibling NP beforeDamage value cell unselected',
   productionAuditTestOptions(['hp-np-before-damage-sibling.json']),
   async ({ task }) => {
-    const f = setup(false, false, true, false, false, false, false, false, true);
+    const f = setup({ alternateNp: true, npValueExpression: true });
     const result = f.reconcile();
     expect(result.gate.failures).toEqual([]);
     const selected = f.borrowed.bindings.filter(
@@ -1194,7 +1206,7 @@ it(
   'joins two HP value operations in one selected NP effect to their own physical reads',
   productionAuditTestOptions(['hp-np-before-damage-two-operations.json']),
   async ({ task }) => {
-    const f = setup(false, false, false, false, false, false, false, false, true, true);
+    const f = setup({ npValueExpression: true, repeatedNpValueOperation: true });
     expect(resolvedScenarioSchema.safeParse(f.scenario).success).toBe(true);
     const target = f.calculation.executionObservation?.targetExecution;
     if (target?.selection !== 'selected' || target.candidateState?.preflight?.status !== 'ready')
@@ -1271,7 +1283,7 @@ it(
   'rejects a missing selected HP value read after its ready candidate operation',
   productionAuditTestOptions(['hp-candidate-value-read-obligation.json']),
   async ({ task }) => {
-    const f = setup(false, false, false, false, false, false, false, false, true);
+    const f = setup({ npValueExpression: true });
     expect(resolvedScenarioSchema.safeParse(f.scenario).success).toBe(true);
     const target = f.calculation.executionObservation?.targetExecution;
     if (target?.selection !== 'selected' || !target.candidateState)
@@ -1323,7 +1335,7 @@ it(
 );
 
 it('keeps selected native NP conditions outside the candidate read obligation', () => {
-  const f = setup(false, false, false, false, true, false, false, true);
+  const f = setup({ ocRate: true, npCondition: true });
   const coverage = f.reconcile();
   expect(coverage.gate.failures).toEqual([]);
   const npConditionBindings = coverage.bindings.filter(
@@ -1350,7 +1362,7 @@ it(
     timeout: 10_000,
   },
   async ({ task }) => {
-    const base = setup(false, false, false, false, true);
+    const base = setup({ ocRate: true });
     const actor = base.master.servants[0]!;
     const np = actor.noblePhantasmVariantGroups[0]!.variants[0]!;
     const { timing, ...source } = np.effects[0]!;
