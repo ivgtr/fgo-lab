@@ -15,6 +15,7 @@ import { calculateRankingPolicy, calculateRankingPolicyDetail } from './rankingP
 import { compileRankingExecutionPlan, executeRankingScenarios } from './rankingPolicyScenario';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileCandidateLocalActionAdmissionDispositions } from './rankingActionAdmission';
+import { compileRankingWorldObservationPlan, observeRankingWorld } from './rankingWorldObservation';
 import {
   calculateScenario,
   calculateScenarioWithPolicy,
@@ -182,6 +183,46 @@ describe('static ranking candidate space', () => {
     expect(
       calculateRankingPolicyDetail(servant, master, profile, conditions, versions()).status,
     ).toBe('calculated');
+  });
+
+  it('counts each physical target equivalence class once for both NP5/OC1-2 profiles', () => {
+    const servant = master.servants.find(({ id }) => id === '306200')!;
+    const attackProfiles = createStaticAttackProfiles(servant);
+    expect(attackProfiles).toHaveLength(2);
+    for (const initialOvercharge of [1, 2] as const) {
+      const conditions = {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        selfBuffs: 'included' as const,
+        conditionalEffects: 'satisfied' as const,
+        npLevelBasis: { kind: 'specified' as const, npLevel: 5 as const },
+        initialOvercharge,
+      };
+      const spaces = compileRankingCandidateSpaces(
+        servant,
+        master,
+        rankingBasisFixture(servant, conditions),
+        conditions,
+        attackProfiles,
+      );
+      expect(spaces).toHaveLength(2);
+      for (const space of spaces) {
+        expect(space.status, JSON.stringify(space)).toBe('ready');
+        if (space.status !== 'ready') continue;
+        expect(space.upperBound).toBeLessThanOrEqual(4_096);
+        for (const program of space.programs) {
+          const observationPlan = compileRankingWorldObservationPlan(
+            program.semantics.operations,
+            program.semantics.conditions,
+          );
+          const worldKeys = program.targets.map((candidate) => {
+            const target = candidate ?? program.baselineTarget;
+            if (!target) throw new TypeError('physical_target_required');
+            return observeRankingWorld(observationPlan, target).key;
+          });
+          expect(new Set(worldKeys).size).toBe(worldKeys.length);
+        }
+      }
+    }
   });
 
   it('calculates every reachable published profile under the satisfied NP1 target policy', () => {
@@ -1051,7 +1092,7 @@ describe('static ranking candidate space', () => {
         servantId,
         upperBound: space.upperBound,
       }));
-    expect(largest).toEqual([{ servantId: '2801300', upperBound: 3_435 }]);
+    expect(largest).toEqual([{ servantId: '2801300', upperBound: 2_968 }]);
     expect(largest[0]!.upperBound).toBeLessThanOrEqual(4_096);
     if (process.env.FGO_TEST_ARTIFACT_DIR)
       await writeFile(

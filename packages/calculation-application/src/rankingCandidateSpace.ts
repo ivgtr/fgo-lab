@@ -329,8 +329,14 @@ function compileProgramDomain(input: {
       })
     : [];
   const worldDomain = analyzeRankingWorldDomain(rawTargets, observationPlan);
-  const generatedTargets = worldDomain.representatives;
   if (active && rawTargets.length === 0) throw new TypeError('ranking_world_baseline_missing');
+  const baselineWorldClass = active
+    ? worldDomain.classes.find(({ members }) => members.includes(rawTargets[0]!))
+    : null;
+  if (active && !baselineWorldClass) throw new TypeError('ranking_world_baseline_class_missing');
+  const generatedTargets = worldDomain.classes
+    .filter((worldClass) => worldClass !== baselineWorldClass)
+    .map(({ representative }) => representative);
   const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
   const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
   const inputDefinitionsByKey = new Map(
@@ -400,7 +406,7 @@ function compileProgramDomain(input: {
       semantics.inputDefinitions.map((definition) => [definition.key, definition.defaultValue]),
     ),
     targets: [null, ...generatedTargets],
-    baselineTarget: active ? rawTargets[0]! : null,
+    baselineTarget: baselineWorldClass?.representative ?? null,
     targetFamilyIds: referencedRankingTargetFamilies(semantics.conditions),
     fields: [
       ...new Map(
@@ -415,7 +421,7 @@ function compileProgramDomain(input: {
       active,
       hpBoundaries,
     ),
-    rawWorldCardinality: worldDomain.rawWorldCardinality + 1,
+    rawWorldCardinality: active ? worldDomain.rawWorldCardinality : 1,
   };
 }
 

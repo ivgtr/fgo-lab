@@ -3266,6 +3266,12 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+01:02 UTC 候補同値類局所収束（2026-10-08）: 5秒小testからNP5全実行を分離し、公開306200のNP5/OC1,2×2 profileのready/4096内/各world観測key一意を175msで確認。候補file全27/27・warning0、最大積は同2801300の2968。旧timeout/上限反証は保持、最終80条件実行は未達。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)参照。TSK-14/R1未受入。
+
+01:00 UTC 物理world同値類の局所反証（2026-10-08）: baselineと同じ代表classだけを通常target次元から除き、全classを一度ずつ保持。型/lint成功、候補file25/27で新testの過重timeoutと旧最大積3435→2968だけが失敗。timeoutを増やさず有限domain小testへ絞り、最大積は二重class除去の因果と上限内を検証して固定する。原/保証/未達は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。
+
+00:56 UTC 60分checkpoint・80条件反証（2026-10-08）: HEAD `b213b12`/cleanのshard0/3は各4326 calculated/4 unavailableで成功、shard1/2は公開306200の2 profile × NP5/OC1,2 × 両Lvで候補4200>cap4096、各4 unsupportedとなり最終gate失敗。後半4〜7/mergeは未着手。baseline物理targetと同じworld同値類代表を別キーで二重列挙した直接原因・losslessな代表一回化の設計、原artifact/保証/次の反証は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。cap緩和・候補切捨てはしない。90分上限01:13 UTC。TSK-14/R1未受入。
+
 00:41 UTC 固定版metadata局所閉鎖（2026-10-08）: 版metadata3と共有監査digest1のみを更新し、対象7file37/37・warning0。旧算術数値・caseは不変、全production再成功はまだ未確認。原と次の80条件8 shard/実mergeは[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1未受入。
 
 00:39 UTC schema版改訂の全production差分（2026-10-08）: commit `b85f8f0`の全productionは167/171、失敗4はengine metadata固定3と監査digest1。旧greenとの監査8885 record全比較では変更855件すべてがcalculator/rankingの`executionTrace[0].detail`のschema42→43だけ、数値差0・inventory/status不変。版metadata3とdigest1だけを原因に沿って更新し再検証する。原と境界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。全production/80条件/別saved/正式after/qualityは未達、TSK-14/R1未受入。
