@@ -3266,6 +3266,8 @@ Handoff: 決定・改修前調査を完了。I1〜I6は実装済み能力、新�
 
 ### TSK-14: Ranking最終方針の実装と正本収束
 
+08:14 UTC 別saved 3process特性と区間handoff（2026-10-08）: 固定HEAD `39a05d2`／clean、既存現80 matrixを入力に保存S0/S1監査を3独立processで完走。各12条件5,196結果、計算可能5,186件parity・S0 common1,732件一致、receipt error／非数値失敗0、S0/S1 audit digestは3回同一。wall中央値628.37秒、max RSS中央値3,513,332 KiB。前版の保存3processはないので現特性値とする。原manifest3件／`after3-summary.json`のSHAと保証限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。製品・test追加なし。旧product／UI要件・ADRの§20整合、15 Apply帰属、正式性能の残帰属、profile削除実ブラウザー受入、最終review／Blocking0・quality／結果後docsが未達。90分上限後に新familyを始めず、TSK-14/R1未受入。
+
 07:38 UTC 利用者のランキング詳細／順位照合（2026-10-08）: 新規profile初期条件のカーマ1位クリックで一度`invalid`詳細errorが出たが、再読込後は利用者も結果を確認。公開masterの同一worker runtimeでsummary433行ready・カーマdetail calculated平均87,564.525／issues空、response parser受理。前記portable request versionContext欠落説は誤認で訂正し、最初のerror reasonは未取得。現80条件原recordで上位4件の選択skill・対象state・NP特攻／powerMod・平均値を照合し、画面の順位と一致した。カーマ・リリスは自前対象state成立でNP特攻1.5、アビゲイルはpowerMod1。旧画像との差も旧現input差と一致。原画像・経路・数値と証拠限界は[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。再現なしの仮修正はせず、TSK-14/R1未受入。
 
 07:20 UTC 起動阻害の明示削除導線（2026-10-08）: 利用者の追加判断に従い、invalid保存時だけ「削除して新規開始」→全プロフィール等の不可逆削除確認→現行空profileへ単一IDB transactionで置換する導線を実装中。取消・stale・検証不能時は旧値を維持。旧版自動移行／別保存先fallbackは追加しない。型検査、対象lint/format/diff check成功、実ブラウザー確認・新testは未実施。[flow冒頭](../evidence/ranking-policy-candidate-flow-tsk-06.md)。TSK-14/R1全体は未受入。
