@@ -46,7 +46,6 @@ export function getAttackReachableInitialActorForms(
         skillLevels,
         npLevel,
         initialOvercharge,
-      )
-        .length > 0,
+      ).length > 0,
   );
 }

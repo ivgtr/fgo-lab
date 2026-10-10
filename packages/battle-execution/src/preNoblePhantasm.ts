@@ -19,6 +19,7 @@ import { prepareAttackNoblePhantasm } from './preparationAttackNp';
 import {
   rejectPreparation,
   type PreNoblePhantasmState,
+  type PreparationStateSnapshot,
   type PreparationTransitionResult,
   type PreparationExecutionContext,
 } from './preparationContracts';
@@ -79,7 +80,7 @@ function initializePreparation(
 
 export function reducePreNoblePhantasmAction(
   servant: ServantMaster,
-  state: PreNoblePhantasmState,
+  state: PreparationStateSnapshot,
   command: PreNoblePhantasmCommand,
   context: PreparationExecutionContext,
 ): PreparationActionExecution {

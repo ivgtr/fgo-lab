@@ -1,14 +1,16 @@
 import type { CanonicalInputDefinition, OcExecutionOperation } from '@fgo-lab/master-data';
-import {
-  containsUnsupportedCondition,
-  type ConditionEvaluationState,
-} from './condition';
+import { containsUnsupportedCondition, type ConditionEvaluationState } from './condition';
 import type { SourceActivationReceipt } from './conditionRead';
 import { contributionPolicyDecisions } from './effectiveContributions';
 import { resolveContributionScope, resolveTargetPolicy } from './effectRouting';
 import type { ContributionApplicationPolicy } from './executionTypes';
 import type { OcSourceProgram } from './ocSourceProgram';
-import { ocApplicationParticipates, ocRemovalIntersects, type OcActionStep, type OcState } from './ocState';
+import {
+  ocApplicationParticipates,
+  ocRemovalIntersects,
+  type OcActionStep,
+  type OcState,
+} from './ocState';
 import { sourceIdentity } from './operationCompiler';
 import { requiredOcConditionInput } from './ocConditionInputs';
 
@@ -90,7 +92,8 @@ export function bindOcSourceOperation(
     },
     context.activation.read,
     context.policy,
-    context.activation.proc.kind === 'resolved' && context.activation.proc.certainty === 'guaranteed',
+    context.activation.proc.kind === 'resolved' &&
+      context.activation.proc.certainty === 'guaranteed',
   );
   const included = Object.values(decisions).every(({ kind }) => kind === 'included');
   const condition = context.activation.read.truth;
@@ -219,7 +222,8 @@ export function bindOcSourceOperation(
     valueIndex: source.valueIndex,
     limitBreak: source.limitBreak,
     binding: {
-      activation: context.activation, policy: context.policy,
+      activation: context.activation,
+      policy: context.policy,
       executionIntent: context.executionIntent,
       gameActivation: source.effect.gameActivation,
       contributionScope: resolveContributionScope(source.origin, operation.route.contributionScope),

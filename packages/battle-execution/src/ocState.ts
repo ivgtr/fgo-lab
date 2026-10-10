@@ -6,11 +6,12 @@ import { resolveApplicationRateOutcome } from './applicationRate';
 import { deriveBaseOvercharge, DEFAULT_NP_RESOURCE_SEMANTICS } from './npResource';
 import type {
   CanonicalInputDefinition,
+  MasterEffect,
   OcExecutionOperation,
   OcLifetimeLimit,
   OcStateTrait,
 } from '@fgo-lab/master-data';
-import type { OperationSource } from './contracts';
+import type { BattleOperation, OperationSource } from './contracts';
 
 type BoostGrant = Extract<OcExecutionOperation, { kind: 'grantOcBoost' }>;
 type RateGrant = Extract<OcExecutionOperation, { kind: 'grantOcApplicationRate' }>;
@@ -25,8 +26,8 @@ export interface OcPolicyBinding {
   readonly activation: Extract<SourceActivationReceipt, { kind: 'read' }>;
   readonly policy: ContributionApplicationPolicy;
   readonly executionIntent: 'declared' | 'physicalBranch';
-  readonly gameActivation: import('@fgo-lab/master-data').MasterEffect['gameActivation'];
-  readonly contributionScope: import('./contracts').BattleOperation['contributionScope'];
+  readonly gameActivation: MasterEffect['gameActivation'];
+  readonly contributionScope: BattleOperation['contributionScope'];
 }
 export interface OcApplicationRead {
   readonly binding: OcPolicyBinding;

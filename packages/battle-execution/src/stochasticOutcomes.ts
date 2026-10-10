@@ -1,3 +1,4 @@
+import { sourceActivationOutcome } from './conditionRead';
 import type { SourceActivationReceipt } from './conditionRead';
 import type {
   CanonicalInputDefinition,
@@ -42,12 +43,8 @@ export function resolveStochasticActivationOutcome(
   operation: StochasticActivationContract,
   resolvedInputs: ResolvedCanonicalInputSet,
 ): ResolvedStochasticOutcome {
-  if (operation.sourceActivation.kind === 'read') {
-    const proc = operation.sourceActivation.proc;
-    if (proc.kind === 'resolved') return { status: proc.outcome };
-    if (proc.kind === 'inputRequired') return { status: 'inputRequired', inputKey: proc.inputKey };
-    if (proc.kind === 'invalid') return { status: 'invalid', issue: proc.issue };
-  }
+  const native = sourceActivationOutcome(operation.sourceActivation);
+  if (native) return native;
   if (operation.proc.kind === 'guaranteed')
     return operation.stochasticOutcome
       ? invalidOutcome(operation, 'contradictoryStochasticOutcome')
@@ -87,17 +84,13 @@ export function resolvedStochasticOutcomeForOperation(
   operation: BattleOperation,
   outcomes: ReadonlyMap<string, ResolvedStochasticOutcome>,
 ): ResolvedStochasticOutcome {
-  if (operation.sourceActivation.kind === 'read') {
-    const proc = operation.sourceActivation.proc;
-    if (proc.kind === 'resolved') return { status: proc.outcome };
-    if (proc.kind === 'inputRequired') return { status: 'inputRequired', inputKey: proc.inputKey };
-    if (proc.kind === 'invalid') return { status: 'invalid', issue: proc.issue };
-  }
-  if (operation.proc.kind === 'guaranteed' && !operation.stochasticOutcome)
-    return guaranteedSuccess;
-  const resolved = outcomes.get(operation.operationId);
-  if (resolved) return resolved;
-  return invalidOutcome(operation, 'missingStochasticOutcome');
+  return (
+    sourceActivationOutcome(operation.sourceActivation) ??
+    (operation.proc.kind === 'guaranteed' && !operation.stochasticOutcome
+      ? guaranteedSuccess
+      : (outcomes.get(operation.operationId) ??
+        invalidOutcome(operation, 'missingStochasticOutcome')))
+  );
 }
 
 export function resolveStochasticOutcomes(

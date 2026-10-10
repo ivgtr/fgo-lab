@@ -73,7 +73,7 @@ export function createRankingQuantityCandidatesForConditions(
     MAX_RANKING_QUANTITY_CANDIDATES,
     'ranking_quantity_candidate_limit',
   ).candidates;
-  const candidates = combinations.map((values) => ({
+  const candidates = Array.from(combinations).map((values) => ({
     key: `quantity:${JSON.stringify(values)}`,
     values,
   }));

@@ -17,6 +17,7 @@ import {
   resolveResourceTargetPolicy,
   type ConditionExpression,
   type BattleOperation,
+  type PreparationStateSnapshot,
 } from '@fgo-lab/battle-execution';
 import {
   firstCanonicalAuditDifference,
@@ -25,7 +26,10 @@ import {
 } from '@fgo-lab/master-data/production-audit';
 import { type CalculationExecution, type PreparedCalculationScenario } from './scenario';
 import { transactionIdentity } from './productionCriticalStarsAudit';
-import { scalarQuantitySnapshot as snapshot } from './productionScalarQuantityAudit';
+import {
+  createScalarQuantitySnapshotter,
+  scalarQuantitySnapshot as snapshot,
+} from './productionScalarQuantityAudit';
 
 type Prepared = Extract<PreparedCalculationScenario, { status: 'executable' }>;
 type Calculation = Extract<CalculationExecution, { status: 'executable' }>;
@@ -365,6 +369,7 @@ export function battlePointPreparationProgramFromCanonical<Writer extends Battle
   calculation: Calculation,
   expected: CanonicalProgram<Writer>,
 ): BattlePointPreparationProgram<Writer> {
+  const snapshot = createScalarQuantitySnapshotter();
   const canonicalIdentity = `tsk-08:preparation-battle-point:${JSON.stringify(expected.writers.map(({ identity }) => identity))}`;
   const program: BattlePointPreparationProgram<Writer> = {
     canonicalIdentity,
@@ -412,6 +417,8 @@ export function auditBattlePointPreparationObservations(input: {
   expected: readonly BattlePointPreparationProgram[];
   observations: readonly BattlePointPreparationSource[];
 }) {
+  // Only this synchronous audit owns the converted graph. A later fault probe starts fresh.
+  const snapshot = createScalarQuantitySnapshotter();
   const failures: BattlePointPreparationFailure[] = [];
   let changedWrites = 0;
   let npConsumptions = 0;
@@ -490,12 +497,20 @@ export function auditBattlePointPreparationObservations(input: {
       expected.nps.map(({ operation }) => operation.operationId),
     );
     const ordered = prepared.orderedScenario;
-    c('domainTraceMissing', 'preparation.state', true, !!preparationExecutionStateFor(ordered)?.battlePoints);
+    // Fault probes may remove a field; retain the native object and validate its actual presence.
+    const nativePreparationState: Partial<PreparationStateSnapshot> | undefined =
+      preparationExecutionStateFor(ordered);
+    c(
+      'domainTraceMissing',
+      'preparation.state',
+      true,
+      !!preparationExecutionStateFor(ordered)?.battlePoints,
+    );
     c(
       'domainIdentityMismatch',
       'preparation.actor',
       expected.scenario.attacker.servantId,
-      preparationExecutionStateFor(ordered)?.battlePoints?.actors.attacker?.actorId,
+      nativePreparationState?.battlePoints?.actors.attacker?.actorId,
     );
     c('domainIdentityMismatch', 'preparation.stateReference', true, ordered === refs.state);
     c('domainPopulationMismatch', 'canonical.writers', true, expected.writers.length > 0);
@@ -523,7 +538,13 @@ export function auditBattlePointPreparationObservations(input: {
     const target = observation?.targetExecution;
     c('domainTraceMissing', 'preparation.capture', true, !!preparation);
     c('domainIdentityMismatch', 'candidate.selection', 'selected', target?.selection);
-    if (!ordered || !preparation || target?.selection !== 'selected' || !preparationExecutionStateFor(ordered)?.battlePoints) continue;
+    if (
+      !ordered ||
+      !preparation ||
+      target?.selection !== 'selected' ||
+      !preparationExecutionStateFor(ordered)?.battlePoints
+    )
+      continue;
     const state = target.candidateState;
     c('domainTraceMissing', 'candidate.state', true, !!state);
     if (!state) continue;
@@ -793,7 +814,9 @@ export function auditBattlePointPreparationUse(
   c(
     'domainValueMismatch',
     'conversion.value',
-    preparationExecutionStateFor(ordered)?.battlePoints.actors.attacker?.domains[conversion.domain.id],
+    preparationExecutionStateFor(ordered)?.battlePoints.actors.attacker?.domains[
+      conversion.domain.id
+    ],
     conversion.value,
   );
   c(

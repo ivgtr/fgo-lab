@@ -151,11 +151,19 @@ export function RankingConditions({
         <summary>計算基準</summary>
         <label>
           育成基準
-          <select value={conditions.growthBasis} onChange={(event) => dispatch({
-            kind: 'setGrowthBasis', value: event.target.value as RankingPolicyConditions['growthBasis'],
-          })}>
+          <select
+            value={conditions.growthBasis}
+            onChange={(event) =>
+              dispatch({
+                kind: 'setGrowthBasis',
+                value: event.target.value as RankingPolicyConditions['growthBasis'],
+              })
+            }
+          >
             <option value="common">共通条件</option>
-            <option value="saved" disabled={conditions.population !== 'owned'}>保存育成状態</option>
+            <option value="saved" disabled={conditions.population !== 'owned'}>
+              保存育成状態
+            </option>
           </select>
         </label>
         <dl className="ranking-calculation-basis">
@@ -172,7 +180,10 @@ export function RankingConditions({
           </div>
           <div>
             <dt>宝具・スキル</dt>
-            <dd>初期OC{conditions.initialOvercharge}・{conditions.growthBasis === 'saved' ? '保存スキルLv' : 'スキルLv10'}</dd>
+            <dd>
+              初期OC{conditions.initialOvercharge}・
+              {conditions.growthBasis === 'saved' ? '保存スキルLv' : 'スキルLv10'}
+            </dd>
           </div>
           <div>
             <dt>外部条件</dt>

@@ -1,3 +1,5 @@
+import type { RankingCandidateEvent } from './rankingCandidateBatch';
+import { evaluateRankingCandidateBatch } from './rankingCandidateBatch';
 import { rankingBasisFixture } from './rankingBasisFixture';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -8,11 +10,12 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { attackProfileKey, createStaticAttackProfiles } from './attackProfile';
 import {
   compileRankingCandidateSpaces,
-  materializeRankingCandidateSpace,
+  iterateRankingCandidateSpace,
 } from './rankingCandidateSpace';
 import { DEFAULT_RANKING_POLICY_CONDITIONS, type RankingProfileInput } from './rankingContracts';
-import { calculateRankingPolicy, calculateRankingPolicyDetail } from './rankingPolicyCalculation';
-import { compileRankingExecutionPlan, executeRankingScenarios } from './rankingPolicyScenario';
+import { calculateRankingPolicy } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
+import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileCandidateLocalActionAdmissionDispositions } from './rankingActionAdmission';
 import { compileRankingWorldObservationPlan, observeRankingWorld } from './rankingWorldObservation';
@@ -153,19 +156,20 @@ describe('static ranking candidate space', () => {
       selfBuffs: 'excluded' as const,
       conditionalEffects: 'satisfied' as const,
     };
-    const plan = compileRankingExecutionPlan(servant, master, profile, conditions, versions());
-    const executions = executeRankingScenarios(
-      plan.preparedRankingScenarios,
-      master,
-      versions(),
-      plan.contributionPolicies,
+    const plan = compileRankingExecutionPlan(servant, master, profile, conditions);
+    const batchEvents: RankingCandidateEvent[] = [];
+    evaluateRankingCandidateBatch(plan, master, versions(), undefined, false, (event) =>
+      batchEvents.push(event),
     );
+    const executions = batchEvents.map(({ execution }) => execution);
     expect(executions.length).toBeGreaterThan(1);
     expect(executions.every(({ result }) => result.status === 'calculated')).toBe(true);
-    const contexts = plan.preparedRankingScenarios.map(({ scenario }) => {
-      if (scenario.mode !== 'resolved') throw new Error('resolved_ranking_scenario_required');
-      return scenario.targetContext;
-    });
+    const contexts = batchEvents
+      .map(({ prepared }) => prepared)
+      .map(({ scenario }) => {
+        if (scenario.mode !== 'resolved') throw new Error('resolved_ranking_scenario_required');
+        return scenario.targetContext;
+      });
     expect(
       contexts.every(
         ({ class: classContext, attribute }) =>
@@ -574,13 +578,15 @@ describe('static ranking candidate space', () => {
         0,
       );
       expect(space.upperBound).toBe(expectedBound);
-      const candidates = materializeRankingCandidateSpace({
-        conditions: {
-          ...DEFAULT_RANKING_POLICY_CONDITIONS,
-          conditionalEffects: 'satisfied',
-        },
-        space,
-      });
+      const candidates = Array.from(
+        iterateRankingCandidateSpace({
+          conditions: {
+            ...DEFAULT_RANKING_POLICY_CONDITIONS,
+            conditionalEffects: 'satisfied',
+          },
+          space,
+        }),
+      );
       expect(candidates).toHaveLength(space.upperBound);
       expect(
         candidates.some(
@@ -666,10 +672,12 @@ describe('static ranking candidate space', () => {
               };
               visitInputs(0, {});
             }
-    const materialized = materializeRankingCandidateSpace({
-      conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
-      space,
-    }).map(({ evidence }) =>
+    const materialized = Array.from(
+      iterateRankingCandidateSpace({
+        conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
+        space,
+      }),
+    ).map(({ evidence }) =>
       JSON.stringify({
         program: evidence.preparationPlanKey,
         startNpGauge: evidence.startNpGauge,
@@ -823,52 +831,57 @@ describe('static ranking candidate space', () => {
       conditionalEffects: 'baseline' | 'satisfied',
       initialOvercharge: 1 | 2 = 1,
     ) =>
-      compileRankingExecutionPlan(
-        servant,
-        fixtureMaster,
-        profile,
-        {
-          ...DEFAULT_RANKING_POLICY_CONDITIONS,
-          npLevelBasis: { kind: 'specified', npLevel },
-          conditionalEffects,
-          initialOvercharge,
-        },
-        versions(),
-      );
+      compileRankingExecutionPlan(servant, fixtureMaster, profile, {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        npLevelBasis: { kind: 'specified', npLevel },
+        conditionalEffects,
+        initialOvercharge,
+      });
     const baseline = compile(1, 'baseline');
-    const baselineExecutions = executeRankingScenarios(
-      baseline.preparedRankingScenarios,
-      fixtureMaster,
-      versions(),
-      baseline.contributionPolicies,
+    const baselineBatchEvents: RankingCandidateEvent[] = [];
+    evaluateRankingCandidateBatch(baseline, fixtureMaster, versions(), undefined, false, (event) =>
+      baselineBatchEvents.push(event),
     );
-    const costlyBaseline = baseline.preparationPlanKeys.flatMap((key, index) =>
-      key.includes('"slot":1') ? [{ index, key }] : [],
-    );
+    const baselineExecutions = baselineBatchEvents.map(({ execution }) => execution);
+    const costlyBaseline = Array.from(baseline.candidateDescriptors)
+      .map((candidate) => candidate.evidence.preparationPlanKey)
+      .flatMap((key, index) => (key.includes('"slot":1') ? [{ index, key }] : []));
     expect(costlyBaseline).not.toHaveLength(0);
     expect(
       costlyBaseline.every(
         ({ index }) =>
-          baseline.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ===
-            'insufficientNpGauge' && baselineExecutions[index]?.status === 'rejected',
+          baselineBatchEvents.map(({ prepared }) => prepared)[index]?.resolved.preparationRejection
+            ?.code === 'insufficientNpGauge' && baselineExecutions[index]?.status === 'rejected',
       ),
     ).toBe(true);
     expect(baselineExecutions.some(({ result }) => result.status === 'calculated')).toBe(true);
 
     for (const initialOvercharge of [1, 2] as const) {
       const satisfied = compile(2, 'satisfied', initialOvercharge);
-      const costly = satisfied.preparationPlanKeys.flatMap((key, index) =>
-        key.includes('"slot":1')
-          ? [
-              {
-                startNpGauge: satisfied.startNpGauges[index],
-                rejection:
-                  satisfied.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ??
-                  null,
-              },
-            ]
-          : [],
+      const satisfiedBatchEvents: RankingCandidateEvent[] = [];
+      evaluateRankingCandidateBatch(
+        satisfied,
+        fixtureMaster,
+        versions(),
+        undefined,
+        false,
+        (event) => satisfiedBatchEvents.push(event),
       );
+      const costly = Array.from(satisfied.candidateDescriptors)
+        .map((candidate) => candidate.evidence.preparationPlanKey)
+        .flatMap((key, index) =>
+          key.includes('"slot":1')
+            ? [
+                {
+                  startNpGauge: Array.from(satisfied.candidateDescriptors)[index]!.evidence
+                    .startNpGauge,
+                  rejection:
+                    satisfiedBatchEvents.map(({ prepared }) => prepared)[index]?.resolved
+                      .preparationRejection?.code ?? null,
+                },
+              ]
+            : [],
+        );
       expect(costly.length).toBeGreaterThan(0);
       expect(new Set(costly.map((candidate) => JSON.stringify(candidate)))).toEqual(
         new Set([
@@ -999,8 +1012,12 @@ describe('static ranking candidate space', () => {
           }
         }
         if (policyKey === 'included:baseline') {
-          const plan = compileRankingExecutionPlan(servant, master, profile, policy, versions());
-          for (const prepared of plan.preparedRankingScenarios) {
+          const plan = compileRankingExecutionPlan(servant, master, profile, policy);
+          const batchEvents: RankingCandidateEvent[] = [];
+          evaluateRankingCandidateBatch(plan, master, versions(), undefined, false, (event) =>
+            batchEvents.push(event),
+          );
+          for (const prepared of batchEvents.map(({ prepared }) => prepared)) {
             const code = prepared.resolved.preparationRejection?.code;
             if (code) {
               const key = `${policyKey}:unreachable:${code}`;

@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { targetClassCandidates } from '@fgo-lab/calc-core';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { createStaticAttackProfiles } from './attackProfile';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { calculateScenarioWithPolicy } from './scenario';

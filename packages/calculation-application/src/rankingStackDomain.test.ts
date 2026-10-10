@@ -9,7 +9,7 @@ import { compileStaticRankingSemantics } from './rankingStaticSemantics';
 import { stackDomainWitnesses } from './rankingStackDomain';
 import type { ConditionExpression } from '@fgo-lab/battle-execution';
 import { master, servant, source, stackEffectTemplate } from './stackQuantityFixture';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { calculateScenarioWithPolicy } from './scenario';
 import { applyCanonicalInputCommand } from './canonicalInputs';
@@ -144,23 +144,21 @@ describe('stack domain completeness proofs', () => {
     )[0]!;
     const semantics = compileStaticRankingSemantics(actor, program, 1);
     expect(semantics.stackWitnesses.size).toBe(0);
-    // Remove the exclusive source to isolate each additional-reader guard.
-    const operations = semantics.operations.map((operation) =>
-      operation.kind === 'addModifier'
-        ? {
-            ...operation,
-            inputDefinitions: [first, second],
-            valueExpression: {
-              kind: 'stackLinear' as const,
-              sources: [first, second],
-              basePermille: 0,
-              perUnitPermille: 100,
-              maximumUnits: 2,
-              maximumValuePermille: null,
-            },
-          }
-        : operation,
-    );
+    // Isolate the modifier: the full compiler also retains the original source's definitions.
+    const operations = semantics.operations
+      .filter((operation) => operation.kind === 'addModifier')
+      .map((operation) => ({
+        ...operation,
+        inputDefinitions: [first, second],
+        valueExpression: {
+          kind: 'stackLinear' as const,
+          sources: [first, second],
+          basePermille: 0,
+          perUnitPermille: 100,
+          maximumUnits: 2,
+          maximumValuePermille: null,
+        },
+      }));
     expect(stackDomainWitnesses([], operations).size).toBe(2);
     const conditions: ConditionExpression[] = [
       { kind: 'unsupported', reason: 'unresolvedRecipient' },

@@ -1,13 +1,15 @@
 import fixture from '../../test-fixtures/master/fixture.json';
-import { masterSnapshotSchema, type ServantMaster } from '@fgo-lab/master-data';
+import { masterSnapshotSchema, masterEffectSchema, type ServantMaster } from '@fgo-lab/master-data';
 import { createPreparationState } from './preparationState';
 import { captureInitialPreparationFacts } from './preparationInitialFacts';
+import { servantInitialBuffCounts } from './stackQuantities';
+import { seedBuffInstances, applyBuffInstanceMutation, markerTraitRead } from './buffInstances';
 import { describe, expect, it } from 'vitest';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { BattleOperation } from './contracts';
 import { resolveOperationActivation } from './activation';
 import { resolveStochasticOutcomes } from './stochasticOutcomes';
-import { executeOrderedScenarioCandidate } from './candidateExecution';
+import { executeOrderedScenarioCandidate } from './orderedCandidates';
 import type { PreparedOrderedScenario } from './executionTypes';
 
 const fixtureMaster = masterSnapshotSchema.parse(fixture);
@@ -428,4 +430,163 @@ describe('candidate activation preparation boundary', () => {
       },
     ]);
   });
+});
+
+it('keeps static initial instance identity separate from quantities, removal and updated master owners', () => {
+  const original = fixtureMaster.servants[0]!;
+  const stack = {
+    kind: 'effectStackCount' as const,
+    key: 'stack:attackerState:counted-state',
+    owner: 'attacker' as const,
+    quantitySource: { scope: 'attackerState' as const, trait: 'counted-state' },
+    label: '初期状態数',
+    description: '外部初期状態',
+    minimum: 0,
+    maximum: 6,
+    step: 1,
+    defaultValue: 0,
+    defaultReason: '外部付与なし',
+  };
+  const grant = {
+    kind: 'buffInstanceMutation' as const,
+    mutation: 'grant' as const,
+    recipient: 'sourceSelf' as const,
+    traits: ['physical-state'],
+    lifetime: 'active' as const,
+    marker: {
+      actorTrait: stack.quantitySource.trait,
+      buffIdentity: 'physical-state',
+      removable: true,
+      onField: false,
+      recipientSide: 'both' as const,
+    },
+  };
+  const skill = {
+    id: 'initial-stack-source',
+    slot: 1 as const,
+    priority: 0,
+    name: '初期状態の生成',
+    detail: '',
+    imageKey: null,
+    resourceRequirement: null,
+  };
+  const effect = masterEffectSchema.parse({
+    id: 'initial-stack',
+    occurrenceId: 'initial-stack:0',
+    label: '初期状態',
+    availability: 'allLimitBreakStates',
+    inclusionPolicy: { default: 'include' },
+    gameActivation: 'skillUse',
+    proc: { kind: 'guaranteed' },
+    selection: null,
+    interaction: null,
+    triggerScope: null,
+    operationTrigger: null,
+    operationReference: null,
+    stateIdentity: null,
+    inputDefinitions: [stack],
+    requirement: { recipient: 'sourceSelf', expression: { kind: 'always' } },
+    execution: [grant],
+    atlasEvidence: {
+      functionType: 'test',
+      target: 'self',
+      parameterSets: [[], [], [], [], []],
+      parameterSemantics: {
+        value: [],
+        lifecycle: [],
+        presentation: [],
+        condition: [],
+        contextMutation: [],
+        choice: [],
+        valueExpression: [],
+        buffIdentity: [],
+        unresolved: [],
+      },
+      unresolvedSemanticKeys: [],
+      buffTypes: [],
+      buffRateTargets: [],
+      buffConditionKeys: [],
+    },
+  });
+  const servant: ServantMaster = {
+    ...original,
+    skills: [{ ...skill, effects: [effect] }],
+    passives: [],
+    noblePhantasmVariantGroups: original.noblePhantasmVariantGroups.map((group) => ({
+      ...group,
+      variants: group.variants.map((variant) => ({ ...variant, effects: [] })),
+    })),
+  };
+  const resolved = servantInitialBuffCounts(servant);
+  expect(servantInitialBuffCounts(servant)).toBe(resolved);
+  const left = seedBuffInstances(resolved.inputs, { [stack.key]: 2 }, resolved.markers);
+  const right = seedBuffInstances(resolved.inputs, { [stack.key]: 1 }, resolved.markers);
+  expect(markerTraitRead(left, 'attacker', stack.quantitySource.trait)?.count).toBe(2);
+  const removed = applyBuffInstanceMutation(
+    left,
+    {
+      kind: 'buffInstanceMutation',
+      mutation: 'remove',
+      recipient: 'sourceSelf',
+      traits: ['physical-state'],
+      lifetime: 'active',
+    },
+    { origin: 'attacker' },
+    'remove-initial',
+  )!;
+  expect(markerTraitRead(removed, 'attacker', stack.quantitySource.trait)?.count).toBe(0);
+  expect(markerTraitRead(right, 'attacker', stack.quantitySource.trait)?.count).toBe(1);
+  expect(markerTraitRead(left, 'attacker', stack.quantitySource.trait)?.count).toBe(2);
+  const updated: ServantMaster = {
+    ...servant,
+    skills: [
+      {
+        ...skill,
+        effects: [
+          {
+            ...effect,
+            execution: [
+              {
+                ...grant,
+                traits: ['updated-state'],
+                marker: { ...grant.marker, buffIdentity: 'updated-state' },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const current = servantInitialBuffCounts(updated);
+  expect(current).not.toBe(resolved);
+  expect(current.inputs.find((input) => input.key === stack.key)?.instanceTraits).toEqual([
+    'counted-state',
+    'updated-state',
+  ]);
+  expect(resolved.inputs.find((input) => input.key === stack.key)?.instanceTraits).toEqual([
+    'counted-state',
+    'physical-state',
+  ]);
+  const ambiguous: ServantMaster = {
+    ...servant,
+    skills: [
+      {
+        ...skill,
+        effects: [
+          {
+            ...effect,
+            execution: [
+              grant,
+              {
+                ...grant,
+                traits: ['foreign-state'],
+                marker: { ...grant.marker, buffIdentity: 'foreign' },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  expect(() => servantInitialBuffCounts(ambiguous)).toThrow('ambiguous_initial_buff_identity');
 });

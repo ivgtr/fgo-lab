@@ -1,6 +1,7 @@
+import { mutableAuditView } from './auditTestMutation';
 import { expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
-import { isDeepStrictEqual } from 'node:util';
+import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, getNoblePhantasmVariants } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -386,7 +387,7 @@ async function save(meta: unknown, path: string, payload: unknown) {
     receipt.expectedSha256,
   ]);
   expect(
-    isDeepStrictEqual(
+    equalProductionAuditDiagnosticValues(
       decodeProductionAuditDiagnostic(
         decodeStoredProductionAuditArtifact(bytes) as ReturnType<
           typeof encodeProductionAuditDiagnostic
@@ -405,7 +406,7 @@ const positives: Spec[] = [
   { key: 'B-self', separate: true },
   { key: 'B-party', separate: true, party: true },
   { key: 'A-input', trigger: 'inputRequired' },
-  { key: 'B-input', separate: true, trigger: 'inputRequired', ranking: true },
+  { key: 'B-ranking-rejection', separate: true, trigger: 'unsupported', ranking: true },
 ];
 it(
   'connects strict give changed attempts through original native refusal and retained action prefixes',
@@ -443,10 +444,10 @@ it(
       // Native rejection precedes NP selection; declared readers are not actual reads.
       expect(r.source.canonical.readers).toEqual([]);
       expect(r.source.canonical.nps).toEqual([]);
-      const targetReads = r.source.transitions!.at(-1)!.hpActions![0]!.giveConsumptions!;
+      const targetReads = r.source.transitions!.at(-1)!.hpActions[0]!.giveConsumptions!;
       expect(targetReads.length).toBe((r.spec.party ? 2 : 1) * (r.spec.secondGain ? 2 : 1));
       expect(targetReads.every((read) => read.consumption.give.actor === 'attacker')).toBe(true);
-      const n = r.source.transitions!.at(-1)!.hpActions![0]!;
+      const n = r.source.transitions!.at(-1)!.hpActions[0]!;
       expect(n.returned).toBe(n.start);
       expect(n.attempted!.hp).not.toBe(n.returned!.hp);
       expect(n.returned!.appliedActions.length).toBe(r.spec.separate ? 2 : 1);
@@ -495,6 +496,13 @@ it(
         boundary: { kind: 'boundary', actionIndex: 1, boundary: 'nativeCommitted' },
       },
       {
+        key: 'B-input',
+        separate: true,
+        trigger: 'inputRequired',
+        ranking: true,
+        boundary: { kind: 'boundary', actionIndex: 2, boundary: 'nativeCommitted' },
+      },
+      {
         key: 'capture-absent',
         capture: false,
         boundary: { kind: 'boundary', actionIndex: 1, boundary: 'attemptBeforeNative' },
@@ -514,6 +522,16 @@ it(
       expect(r.gate.failures, r.spec.key).toEqual([]);
       expect(r.gate.isolated).toBe(0);
       expect(r.gate.boundaries.map((b) => b.reason)).toEqual([r.spec.boundary!.boundary]);
+      if (r.spec.ranking) {
+        const certificate = r.source.selection.prepared.possibilityCertificate;
+        expect(certificate.kind).toBe('enumerated');
+        if (certificate.kind !== 'enumerated') throw new TypeError('give_witness_required');
+        const choices = certificate.branches.flatMap((branch) =>
+          branch.witness.map(({ choice }) => choice),
+        );
+        expect(choices).toContainEqual({ kind: 'binary', outcome: 'success' });
+        expect(choices).toContainEqual({ kind: 'binary', outcome: 'failure' });
+      }
     }
   },
 );
@@ -523,7 +541,7 @@ it(
   async ({ task }) => {
     const entry = run({ key: 'B-negative', separate: true, party: true }),
       s = entry.source,
-      n = s.transitions!.at(-1)!.hpActions![0]!,
+      n = s.transitions!.at(-1)!.hpActions[0]!,
       t = s.transitions!.at(-1)!;
     const cases: { key: string; apply: () => () => void }[] = [];
     const replace = (key: string, object: object, field: string, v: unknown) =>
@@ -540,7 +558,7 @@ it(
       });
     const read = n.giveConsumptions![0]!,
       gain = n.giveGains![0]!,
-      write = s.transitions![1]!.hpActions![0]!.giveWrites![0]!;
+      write = s.transitions![1]!.hpActions[0]!.giveWrites![0]!;
     replace(
       'source-recipient',
       read.consumption.give,
@@ -565,7 +583,7 @@ it(
       ...n.returned!.hp!.receipts,
       ...gain.receipts,
     ]);
-    const writerAction = s.transitions![1]!.hpActions![0]!;
+    const writerAction = s.transitions![1]!.hpActions[0]!;
     replace('missing-append', writerAction, 'giveWrites', []);
     replace('duplicate-append', writerAction, 'giveWrites', [...writerAction.giveWrites!, write]);
     replace('wrong-append-cell', write, 'valueSetIndex', 42);
@@ -670,13 +688,13 @@ it(
         records.push({ key: p.key, gate });
         expect(gate.status, p.key).toBe('failed');
       }
-      const excludedAction = excluded.source.transitions!.at(-1)!.hpActions![0]!;
+      const excludedAction = excluded.source.transitions!.at(-1)!.hpActions[0]!;
       const original = excludedAction.giveExcludedConsumptions!;
       for (const [key, replacement] of [
         ['missing-excluded-read', []],
         ['duplicate-excluded-read', [...original, ...original]],
       ] as const) {
-        excludedAction.giveExcludedConsumptions = [...replacement];
+        mutableAuditView(excludedAction).giveExcludedConsumptions = [...replacement];
         try {
           const program = giveAttemptProgram(
             excluded.program.selection,
@@ -697,7 +715,7 @@ it(
             key,
           ).toBe(true);
         } finally {
-          excludedAction.giveExcludedConsumptions = original;
+          mutableAuditView(excludedAction).giveExcludedConsumptions = original;
         }
       }
       expect(spy).not.toHaveBeenCalled();

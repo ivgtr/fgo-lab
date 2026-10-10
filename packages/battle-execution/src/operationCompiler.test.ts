@@ -535,6 +535,24 @@ it('does not reuse HP execution proof across committed and uncommitted source ca
   expect(compileEffectCached({ ...hpSource, hpExecutionCommitted: true }, 0)).toEqual(committed);
 });
 
+it('reuses absent transform inventory without treating a new empty array as a new master context', () => {
+  const transform = source([
+    {
+      kind: 'transformActorForm',
+      targetFormId: { actorId: 'fixture', limitCount: 1 },
+      route: {
+        target: 'sourceSelf',
+        contributionScope: 'personal',
+        eligibility: { kind: 'anyRecipient', onMissing: 'ignore' },
+      },
+    },
+  ]);
+  const first = compileEffectCached(transform, 0, []);
+  const second = compileEffectCached(transform, 0, []);
+  expect(second).toEqual(first);
+  expect(second.projections).toBe(first.projections);
+});
+
 it('binds each execution without mutating an unbound operation or an earlier cached instance', () => {
   const input = source([
     {

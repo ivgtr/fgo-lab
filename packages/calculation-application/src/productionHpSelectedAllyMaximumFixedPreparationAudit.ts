@@ -909,7 +909,7 @@ function inspectCommitted(
       }
       continue;
     }
-    const n = t.hpActions?.find((n) => n.actionId === action.actionId);
+    const n = (t as Partial<typeof t>).hpActions?.find((n) => n.actionId === action.actionId);
     c('selectedAllyMaximumFixedTraceMissing', `${path}.native`, true, !!n);
     if (!n) continue;
     c(
@@ -1168,7 +1168,10 @@ function inspectSelected(
     'selectedAllyMaximumFixedRetainedMismatch',
     'seed.reference',
     [true, true],
-    [preparationExecutionStateFor(s.ordered)?.hp === s.transitions?.at(-1)?.result.state.hp, candidate.seed.hp === preparationExecutionStateFor(s.ordered)?.hp],
+    [
+      preparationExecutionStateFor(s.ordered)?.hp === s.transitions?.at(-1)?.result.state.hp,
+      candidate.seed.hp === preparationExecutionStateFor(s.ordered)?.hp,
+    ],
   );
   c(
     'selectedAllyMaximumFixedReaderMismatch',

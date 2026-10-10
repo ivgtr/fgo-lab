@@ -1,7 +1,7 @@
 import { ConditionReadIdentityError, type ConditionFactProof } from './conditionRead';
 import { readInputFact, writeInputFact, type InputFact } from './inputFacts';
 import { commitTraitFact, readTraitQuantity } from './traitFactLayers';
-import { isBuffCountInput, markerTraitRead } from './buffInstances';
+import { isBuffCountInput, markerTraitRead, type CountedBuffInstance } from './buffInstances';
 import type {
   CanonicalInputDefinition,
   StackInputDefinition,
@@ -206,28 +206,83 @@ export function servantStackInputs(servant: ServantMaster): StackInputDefinition
   );
 }
 
-export function servantBuffCountInputs(
+// The canonical servant object owns only static declarations and grant identities.
+// Updated master snapshots use new owners; runtime quantities and receipts never enter this cache.
+const initialBuffCounts = new WeakMap<ServantMaster, ReturnType<typeof resolveInitialBuffCounts>>();
+
+export function servantInitialBuffCounts(
   servant: ServantMaster,
   additionalSources: readonly SourceEffect[] = [],
 ) {
-  const inputs = [
-    ...servant.skills.flatMap((skill) => skill.effects),
-    ...servant.passives.flatMap((skill) => skill.effects),
-    ...servant.noblePhantasmVariantGroups.flatMap((group) =>
-      group.variants.flatMap((variant) => variant.effects),
+  const additional = additionalSources.filter((source) =>
+    source.effect.execution.some(
+      (operation) =>
+        operation.kind === 'resourceMutation' &&
+        operation.amount.kind === 'buffCount' &&
+        resolveResourceTargetPolicy(source.origin, operation.recipient) === 'attacker',
     ),
-    ...additionalSources
-      .filter((source) =>
-        source.effect.execution.some(
-          (operation) =>
-            operation.kind === 'resourceMutation' &&
-            operation.amount.kind === 'buffCount' &&
-            resolveResourceTargetPolicy(source.origin, operation.recipient) === 'attacker',
-        ),
-      )
-      .map((source) => source.effect),
-  ]
-    .flatMap((effect) => effect.inputDefinitions)
-    .filter(isBuffCountInput);
-  return mergeInputDefinitions(inputs).filter(isBuffCountInput);
+  );
+  if (additional.length) return resolveInitialBuffCounts(servant, additional);
+  let resolved = initialBuffCounts.get(servant);
+  if (!resolved) {
+    resolved = resolveInitialBuffCounts(servant, []);
+    initialBuffCounts.set(servant, resolved);
+  }
+  return resolved;
+}
+
+function resolveInitialBuffCounts(
+  servant: ServantMaster,
+  additionalSources: readonly SourceEffect[],
+) {
+  const effects = [
+    ...[
+      ...servant.skills.flatMap((skill) => skill.effects),
+      ...servant.passives.flatMap((skill) => skill.effects),
+      ...servant.noblePhantasmVariantGroups.flatMap((group) =>
+        group.variants.flatMap((variant) => variant.effects),
+      ),
+    ].map((effect) => ({ effect, origin: 'attacker' as const })),
+    ...additionalSources,
+  ];
+  const inputs = effects.flatMap(({ effect }) => effect.inputDefinitions).filter(isBuffCountInput);
+  const markers = new Map<string, CountedBuffInstance['marker']>();
+  // A stack declaration and a physical grant must share an explicit canonical trait.
+  // Keep its complete instance identity; numeric presence alone cannot own removal.
+  for (const input of servantStackInputs(servant)) {
+    if (input.instanceTraits || input.owner === 'field') continue;
+    const identities = new Map(
+      effects.flatMap(({ effect, origin }) =>
+        effect.execution.flatMap((operation) => {
+          if (
+            operation.kind !== 'buffInstanceMutation' ||
+            operation.mutation !== 'grant' ||
+            operation.lifetime !== 'active' ||
+            resolveResourceTargetPolicy(origin, operation.recipient) !== input.owner ||
+            (!operation.traits.includes(input.quantitySource.trait) &&
+              operation.marker?.actorTrait !== input.quantitySource.trait)
+          )
+            return [];
+          const traits = [
+            ...new Set([
+              ...operation.traits,
+              ...(operation.marker ? [operation.marker.actorTrait] : []),
+            ]),
+          ].sort();
+          return [
+            [
+              JSON.stringify([traits, operation.marker]),
+              { traits, marker: operation.marker },
+            ] as const,
+          ];
+        }),
+      ),
+    );
+    if (identities.size > 1) throw new TypeError(`ambiguous_initial_buff_identity:${input.key}`);
+    const identity = identities.values().next().value;
+    if (!identity) continue;
+    inputs.push({ ...input, instanceTraits: identity.traits });
+    if (identity.marker) markers.set(input.key, identity.marker);
+  }
+  return { inputs: mergeInputDefinitions(inputs).filter(isBuffCountInput), markers };
 }

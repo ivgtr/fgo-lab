@@ -38,7 +38,8 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'fe57f61c4fdee6091cdf95496df72c45f3055afad9703121f294429bd157aaf8',
+          // TSK-15.1: approved canonical initial-buff corrections; full record attribution.
+          digest: '1aaa271af18ee2fec436d594422c25164e33ffdd2c7f9c66b1c140bd7bd0d1e7',
           inventory: {
             attackServants: 422,
             attackProfiles: 433,

@@ -10,6 +10,7 @@ import { applyCanonicalInputCommand, type CanonicalInputCommand } from './canoni
 import { hpRequirementLeaves, type HpProofDeclaration } from './productionHpProofCoverage';
 import {
   directScenarioOwnerIndex,
+  hpCandidatePreflightFailureMatches,
   type HpPublishedDependencyRequest,
 } from './productionHpPublishedDependencyCoverage';
 import { scalarQuantitySnapshot } from './productionScalarQuantityAudit';
@@ -244,7 +245,7 @@ export function reconcileHpOperationEvidence(
     if (transport && transport !== battlePointPreparationRejectionObservationFor(calculation))
       fail('requestOwnerMismatch', `requests.${requestIndex}.preparationOwner`, true, false);
     for (const [actionIndex, transition] of (transport?.transitions ?? []).entries()) {
-      const actions = preparationHpActionsFor(transition.result) ?? [];
+      const actions = preparationHpActionsFor(transition.result);
       for (const action of actions) {
         const attempt = transition.attempts?.find((item) => item.actionId === action.actionId);
         if (!attempt || attempt.sources !== action.sources) {
@@ -743,7 +744,7 @@ export function reconcileHpOperationEvidence(
       );
     if (
       aborted &&
-      (!preflight.issues.some((issue) => issue.kind === 'invalidActivationContext') ||
+      (!hpCandidatePreflightFailureMatches(preflight, prepared.orderedScenario) ||
         candidate ||
         (target?.selection === 'selected' &&
           (target.operationEvents.length !== 0 ||

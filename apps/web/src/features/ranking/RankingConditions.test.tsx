@@ -15,13 +15,14 @@ import { RankingConditions } from './RankingConditions';
 afterEach(cleanup);
 
 describe('ranking condition commands', () => {
-  it('exposes exactly seven accessible canonical controls and dispatches the full policy', () => {
+  it('exposes eight accessible canonical controls including growth basis and dispatches the full policy', () => {
     const onChange = vi.fn();
     const { getAllByRole, getByLabelText, queryByLabelText } = render(
       <RankingConditions conditions={DEFAULT_RANKING_POLICY_CONDITIONS} onChange={onChange} />,
     );
     // E2E-A010-POLICY
-    expect(getAllByRole('combobox')).toHaveLength(7);
+    expect(getAllByRole('combobox')).toHaveLength(8);
+    expect((getByLabelText('育成基準') as HTMLSelectElement).value).toBe('common');
     expect(queryByLabelText('特攻')).toBeNull();
     expect(queryByLabelText('フィールド')).toBeNull();
     fireEvent.change(getByLabelText('条件効果'), { target: { value: 'satisfied' } });

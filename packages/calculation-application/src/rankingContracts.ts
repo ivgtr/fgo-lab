@@ -205,6 +205,14 @@ export type RankingPolicyCalculation = RankingCalculationData &
     | { status: 'calculated' }
     | { status: 'invalid'; reason: 'rankingSelectionInvalid'; detail: string }
   );
+export type RankingPolicySummary = Pick<
+  RankingPolicyCalculation,
+  'rows' | 'exclusions' | 'damageCache' | 'candidateInventory'
+> &
+  (
+    | { status: 'calculated' }
+    | { status: 'invalid'; reason: 'rankingSelectionInvalid'; detail: string }
+  );
 interface RankingCalculationData {
   rows: RankingRowSummary[];
   profileResults: Record<string, RankingProfileResult>;

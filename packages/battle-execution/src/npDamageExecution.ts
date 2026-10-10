@@ -29,6 +29,7 @@ export function applyNoblePhantasmDamage(
   observe?: (consumption: ScalarNpDamageConsumption) => void,
   observeHp?: (evaluation: HpNpEvaluation) => void,
   observeDependency?: (read: ConditionRead) => void,
+  scalarBattlePointSubject?: string,
 ): DamageResolutionInput {
   const binding = operation.runtimeBinding?.source;
   const readState = {
@@ -82,7 +83,9 @@ export function applyNoblePhantasmDamage(
       support: [...intrinsic.support, ...applied.support],
     };
   };
-  let dependencyRead = evaluateCondition(operation.specialAttackDependency, readState);
+  const dependencyState =
+    scalarBattlePointSubject === undefined ? readState : { ...readState, scalarBattlePointSubject };
+  let dependencyRead = evaluateCondition(operation.specialAttackDependency, dependencyState);
   let unknownQuantity = false;
   if (operation.damage.kind === 'traitCount' && operation.damage.quantity.kind === 'stacks') {
     const parameters = operation.damage.parametersByOvercharge[operation.overcharge - 1];
@@ -117,7 +120,7 @@ export function applyNoblePhantasmDamage(
         ? dependencyRead
         : evaluateCondition(
             noblePhantasmDamageDependency(operation.damage, operation.overcharge, npLevel),
-            readState,
+            dependencyState,
           );
     const read = {
       dependency,

@@ -1,3 +1,5 @@
+import type { RankingCandidateEvent } from './rankingCandidateBatch';
+import { evaluateRankingCandidateBatch } from './rankingCandidateBatch';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -158,28 +160,35 @@ describe('reachable control profile', () => {
       master,
       { servantBuilds: {} },
       { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
-      versions,
-      true,
     );
-    const index = plan.rankingScenarios.findIndex(
-      (scenario) =>
-        scenario.preNoblePhantasmPlan.some(
-          (command) =>
-            command.kind === 'useSkillSlot' &&
-            command.slot === 2 &&
-            command.choice?.candidateKey === '0',
-        ) &&
-        scenario.preNoblePhantasmPlan.some(
-          (command) => command.kind === 'useSkillSlot' && command.slot === 3,
-        ),
+    const batchEvents: RankingCandidateEvent[] = [];
+    evaluateRankingCandidateBatch(plan, master, versions, undefined, true, (event) =>
+      batchEvents.push(event),
     );
+    const index = Array.from(plan.candidateDescriptors)
+      .map((candidate) => candidate.scenario)
+      .findIndex(
+        (scenario) =>
+          scenario.preNoblePhantasmPlan.some(
+            (command) =>
+              command.kind === 'useSkillSlot' &&
+              command.slot === 2 &&
+              command.choice?.candidateKey === '0',
+          ) &&
+          scenario.preNoblePhantasmPlan.some(
+            (command) => command.kind === 'useSkillSlot' && command.slot === 3,
+          ),
+      );
     expect(index).toBeGreaterThanOrEqual(0);
     const ranking = requireExecutableCalculation(
-      evaluatePreparedCalculationScenario(plan.preparedRankingScenarios[index]!, versions),
+      evaluatePreparedCalculationScenario(
+        batchEvents.map(({ prepared }) => prepared)[index]!,
+        versions,
+      ),
     );
     expect(ranking.result.status).toBe('calculated');
     expect(ranking.noblePhantasmVariant?.canonicalId).toBe(moon.noblePhantasmVariant?.canonicalId);
-    expect(attackProfileKey(plan.attackProfiles[index]!)).toBe(
+    expect(attackProfileKey(Array.from(plan.candidateDescriptors)[index]!.attackProfile)).toBe(
       moon.profileContinuity?.kind === 'matched' ? moon.profileContinuity.intendedProfileKey : null,
     );
     for (const occurrenceId of occurrenceIds)

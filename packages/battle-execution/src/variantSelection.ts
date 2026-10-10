@@ -1,4 +1,5 @@
 import { readOperationCondition } from './condition';
+import { operationTransactionKey } from './executionBinding';
 import { conditionWriteProof, procIsGuaranteed } from './conditionRead';
 import {
   actorFormEquals,
@@ -39,13 +40,6 @@ export function needsMutationValidation(operation: BattleOperation): boolean {
   return constraintValidatedOperationKinds.has(operation.kind);
 }
 
-function transactionKey(operation: BattleOperation): string {
-  return (
-    operation.source.transactionGroupId ??
-    `${operation.source.skillId}:${operation.source.effectOccurrenceId}`
-  );
-}
-
 export function resolveActiveVariantTransactions(
   operations: readonly BattleOperation[],
   activations: ReadonlyMap<string, OperationActivation>,
@@ -66,20 +60,12 @@ export function resolveActiveVariantTransactions(
     );
   });
   const finalSelection = selections.at(-1);
-  const finalTransactionKey = finalSelection ? transactionKey(finalSelection) : null;
+  const finalTransactionKey = finalSelection ? operationTransactionKey(finalSelection) : null;
   const preappliedOperationIds = new Set(
     finalTransactionKey
       ? operations
-          .filter((operation) => transactionKey(operation) === finalTransactionKey)
-          .filter((operation) =>
-            [
-              'selectNoblePhantasmVariant',
-              'transformActorForm',
-              'addTrait',
-              'removeTrait',
-              'suppressInitialTrait',
-            ].includes(operation.kind),
-          )
+          .filter((operation) => operationTransactionKey(operation) === finalTransactionKey)
+          .filter(needsMutationValidation)
           .map(({ operationId }) => operationId)
       : [],
   );
@@ -89,7 +75,7 @@ export function resolveActiveVariantTransactions(
     supersededTransactionKeys: new Set(
       selections
         .filter(({ operationId }) => operationId !== finalSelection?.operationId)
-        .map(transactionKey),
+        .map(operationTransactionKey),
     ),
   };
 }

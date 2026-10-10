@@ -121,7 +121,7 @@ function firstValueDifference(
   const rememberEqual = () => {
     let actuals = equalPairs.get(expected);
     if (!actuals) {
-      actuals = new WeakSet<object>();
+      actuals = new WeakSet();
       equalPairs.set(expected, actuals);
     }
     actuals.add(actual);
@@ -158,6 +158,16 @@ function firstValueDifference(
   return null;
 }
 
+/** Reuse proven equal descendants within one synchronous audit's owned projections.
+ * The owner creates a fresh comparison for each invocation and does not supply live
+ * mutable inputs. Unequal pairs are never treated as equal or reused across paths.
+ */
+export function createCanonicalAuditValueComparison() {
+  const equalPairs = new WeakMap<object, WeakSet<object>>();
+  return (expected: CanonicalAuditValue | undefined, actual: CanonicalAuditValue | undefined) =>
+    firstValueDifference(expected, actual, '', equalPairs);
+}
+
 export function firstCanonicalAuditDifference(
   expected: readonly CanonicalAuditRecord[],
   actual: readonly CanonicalAuditRecord[],
@@ -169,14 +179,9 @@ export function firstCanonicalAuditDifference(
   const identities = [
     ...new Set([...expectedByIdentity.keys(), ...actualByIdentity.keys()]),
   ].sort();
-  const equalPairs = new WeakMap<object, WeakSet<object>>();
+  const compare = createCanonicalAuditValueComparison();
   for (const identity of identities) {
-    const difference = firstValueDifference(
-      expectedByIdentity.get(identity),
-      actualByIdentity.get(identity),
-      '',
-      equalPairs,
-    );
+    const difference = compare(expectedByIdentity.get(identity), actualByIdentity.get(identity));
     if (difference) return { identity, ...difference };
   }
   return null;

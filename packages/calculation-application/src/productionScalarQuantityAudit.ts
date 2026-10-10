@@ -17,7 +17,7 @@ const record = (value: unknown): value is Record<string, unknown> =>
 /** A call owns its converted graph; shared native data is converted once, without dropping fields. */
 export function createScalarQuantitySnapshotter() {
   const converted = new WeakMap<object, CanonicalAuditValue>();
-  const ancestors = new WeakSet<object>();
+  const ancestors = new WeakSet();
   const visit = (item: unknown): CanonicalAuditValue => {
     if (item === undefined) return { kind: 'absent' };
     if (item === null || typeof item !== 'object') return item as CanonicalAuditValue;
@@ -35,6 +35,8 @@ export function createScalarQuantitySnapshotter() {
               ? item.map(visit)
               : Object.fromEntries(Object.entries(item).map(([key, child]) => [key, visit(child)]));
       converted.set(item, result);
+      // Re-reading this call's owned projection must not clone the same DAG again.
+      converted.set(result, result);
       return result;
     } finally {
       ancestors.delete(item);

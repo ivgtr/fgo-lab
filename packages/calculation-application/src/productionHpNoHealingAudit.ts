@@ -105,7 +105,7 @@ export function noHealingDiagnostic(source: NoHealingSource) {
         command: transition.command,
         status: transition.result.status,
         actions:
-          transition.hpActions?.map((action) => ({
+          (transition as Partial<typeof transition>).hpActions?.map((action) => ({
             actionId: action.actionId,
             nativeStatus: action.native?.status ?? null,
             attemptedHp: action.attempted?.hp ?? null,
@@ -252,7 +252,9 @@ export function auditNoHealing(input: {
       );
       check('foreignIdentity', `programs.${index}.declaration`, 1, declaration.length);
       const transition = observation.transitions?.[writer.actionIndex];
-      const action = transition?.hpActions?.find((item) => item.actionId === writer.actionId);
+      const action = (
+        transition as Partial<NonNullable<typeof transition>> | undefined
+      )?.hpActions?.find((item) => item.actionId === writer.actionId);
       check('nativeMissing', `observations.${index}.action`, true, !!action);
       if (!action) continue;
       nativeAttempts++;

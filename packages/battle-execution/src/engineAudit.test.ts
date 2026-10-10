@@ -18,7 +18,7 @@ import type { BattleOperation } from './contracts';
 import type { PreparedOrderedScenario, ResolvedCanonicalInputSet } from './executionTypes';
 import type { TargetCandidate } from './targetContext';
 import { executeOrderedScenario, executeOrderedScenarioWithAuditObservation } from './index';
-import { executeOrderedScenarioCandidatesWithAudit } from './candidateExecution';
+import { executeOrderedScenarioCandidatesWithAudit } from './orderedCandidates';
 import { assembleComparedAuditObservation } from './executionAuditObservation';
 import { compareCandidateResults } from './candidateComparison';
 import { prepareCandidateExecution } from './candidatePreparation';

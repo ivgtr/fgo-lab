@@ -1,4 +1,5 @@
 import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
+import { taggedAuditValue } from './taggedAuditValue';
 import {
   getSkillsForActorForm,
   type MasterEffect,
@@ -229,23 +230,6 @@ export function maximumFixedDiagnostic(source: Partial<MaximumFixedSource>) {
     uses: source.uses,
   };
 }
-/** Tag every container/primitive; a user object cannot impersonate absent owner evidence. */
-function canonicalValue(v: unknown): CanonicalAuditValue {
-  if (v === undefined) return { type: 'undefined' };
-  if (v instanceof Set) return { type: 'set', values: [...v].map(canonicalValue) };
-  if (v instanceof Map)
-    return {
-      type: 'map',
-      values: [...v].map(([k, item]) => [canonicalValue(k), canonicalValue(item)]),
-    };
-  if (Array.isArray(v)) return { type: 'array', values: v.map(canonicalValue) };
-  if (record(v))
-    return {
-      type: 'object',
-      fields: Object.fromEntries(Object.entries(v).map(([k, item]) => [k, canonicalValue(item)])),
-    };
-  return { type: typeof v, value: v as CanonicalAuditValue };
-}
 function anchors(s: Partial<MaximumFixedSource>) {
   const a: Record<string, unknown> = {};
   for (const key of [
@@ -418,7 +402,7 @@ type Checker = (
   path: string,
   expected: unknown,
   actual: unknown,
-) => void;
+) => boolean;
 function reasonFor(path: string): MaximumFixedReason {
   if (path.startsWith('canonical') || path.startsWith('master') || path.startsWith('scenario'))
     return 'maximumFixedCanonicalMismatch';
@@ -437,21 +421,43 @@ function reasonFor(path: string): MaximumFixedReason {
     return 'maximumFixedRetainedMismatch';
   return 'maximumFixedIdentityMismatch';
 }
-/** Inspect each semantic field, including missing containers, without duplicating descendant failures. */
-function inspectProof(expected: unknown, actual: unknown, path: string, c: Checker) {
+/** Equal pairs can be reused; differences must still report every logical owner path. */
+function inspectProof(
+  expected: unknown,
+  actual: unknown,
+  path: string,
+  c: Checker,
+  inspectedPairs: WeakMap<object, WeakMap<object, boolean>>,
+): boolean {
+  if (expected && actual && typeof expected === 'object' && typeof actual === 'object') {
+    const previous = inspectedPairs.get(expected)?.get(actual);
+    if (previous === true) return true;
+  }
+  let equal: boolean;
   if (Array.isArray(expected) && Array.isArray(actual)) {
-    c(reasonFor(path), `${path}.length`, expected.length, actual.length);
-    expected.forEach((v, i) => inspectProof(v, actual[i], `${path}.${i}`, c));
+    equal = c(reasonFor(path), `${path}.length`, expected.length, actual.length);
+    expected.forEach((v, i) => {
+      if (!inspectProof(v, actual[i], `${path}.${i}`, c, inspectedPairs)) equal = false;
+    });
   } else if (record(expected) && record(actual)) {
-    c(reasonFor(path), `${path}.keys`, Object.keys(expected), Object.keys(actual));
+    equal = c(reasonFor(path), `${path}.keys`, Object.keys(expected), Object.keys(actual));
     for (const k of new Set([...Object.keys(expected), ...Object.keys(actual)]))
-      inspectProof(expected[k], actual[k], path ? `${path}.${k}` : k, c);
-  } else c(reasonFor(path), path, expected, actual);
+      if (!inspectProof(expected[k], actual[k], path ? `${path}.${k}` : k, c, inspectedPairs))
+        equal = false;
+  } else equal = c(reasonFor(path), path, expected, actual);
+  if (expected && actual && typeof expected === 'object' && typeof actual === 'object') {
+    const peers = inspectedPairs.get(expected) ?? new WeakMap<object, boolean>();
+    peers.set(actual, equal);
+    inspectedPairs.set(expected, peers);
+  }
+  return equal;
 }
 export function auditMaximumFixed(input: {
   expected: readonly MaximumFixedProgram[];
   observations: readonly MaximumFixedSource[];
 }) {
+  const copies = new WeakMap<object, CanonicalAuditValue>();
+  const canonicalValue = (value: unknown) => taggedAuditValue(value, copies);
   const checks: Check[] = [],
     failures: Failure[] = [];
   const check = (
@@ -477,6 +483,7 @@ export function auditMaximumFixed(input: {
           path: difference.path ? `${checkPath}.${difference.path}` : checkPath,
         },
       });
+    return difference === null;
   };
   check(
     'hpMaximumFixed:population',
@@ -498,6 +505,9 @@ export function auditMaximumFixed(input: {
     nps = 0;
   const boundaries: { identity: string; reason: string }[] = [];
   for (const program of input.expected) {
+    // Reuse equal owner pairs only. A rejection under transport cannot suppress the
+    // same field's transitions/ordered path or its path-dependent failure category.
+    const inspectedPairs = new WeakMap<object, WeakMap<object, boolean>>();
     const identity = program.selection.identity,
       c: Checker = (reason, path, e, a) => check(identity, reason, path, e, a);
     const authority = authorities.get(program),
@@ -527,7 +537,7 @@ export function auditMaximumFixed(input: {
           [{ identity, value: canonicalValue(a) }],
         )
       )
-        inspectProof(e, a, key, c);
+        inspectProof(e, a, key, c, inspectedPairs);
       else c(reasonFor(key), `${key}.owner`, e, a);
     }
     const refs = anchors(source);
@@ -614,7 +624,7 @@ function inspectCommitted(s: MaximumFixedSource, c: Checker, boundary: (reason: 
       }
       continue;
     }
-    const n = t.hpActions?.find((n) => n.actionId === action.actionId);
+    const n = t.hpActions.find((n) => n.actionId === action.actionId);
     c('maximumFixedTraceMissing', `${path}.native`, true, !!n);
     if (!n) continue;
     c(
@@ -869,7 +879,10 @@ function inspectSelected(s: MaximumFixedSource, c: Checker, boundary: (reason: s
     'maximumFixedRetainedMismatch',
     'seed.reference',
     [true, true],
-    [preparationExecutionStateFor(s.ordered)?.hp === s.transitions?.at(-1)?.result.state.hp, candidate.seed.hp === preparationExecutionStateFor(s.ordered)?.hp],
+    [
+      preparationExecutionStateFor(s.ordered)?.hp === s.transitions?.at(-1)?.result.state.hp,
+      candidate.seed.hp === preparationExecutionStateFor(s.ordered)?.hp,
+    ],
   );
   c(
     'maximumFixedReaderMismatch',
@@ -1015,8 +1028,8 @@ export function auditPublishedMaximumFixed(
     ],
   ] as const) {
     const identity = 'hpMaximumFixed:published',
-      e = canonicalValue(wanted),
-      a = canonicalValue(actual);
+      e = taggedAuditValue(wanted),
+      a = taggedAuditValue(actual);
     const check = {
       identity,
       reason: 'maximumFixedPopulationMismatch' as const,

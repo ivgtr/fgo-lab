@@ -1715,6 +1715,98 @@ it(
     });
     expect(observation.excluded.effectiveContributions[0]?.resolvedValue).toBeNull();
     expect(passing.firstDifference).toBeNull();
+    const abortCapture = executionObservation([]);
+    if (abortCapture.targetExecution?.selection !== 'selected')
+      throw new TypeError('fixture_selected_capture_missing');
+    abortCapture.targetExecution.candidateState = {
+      preflight: {
+        status: 'aborted',
+        failure: 'constraintConflict',
+        issues: [
+          {
+            kind: 'constraintConflict',
+            sourceKeys: [modifierIdentity.projectionKey],
+            conflicts: [
+              {
+                kind: 'exclusiveTrait',
+                scope: 'attacker',
+                group: 'npCardForm',
+                traits: ['form-a', 'form-b'],
+              },
+            ],
+          },
+        ],
+      },
+      preGroupContextResolution: null,
+      executionGroups: [],
+      inputQuantityReads: [],
+      battlePointPhaseReads: [],
+      scalarNpConsumptions: [],
+    };
+    const conflictObservation: ProductionUserControlObservation = {
+      ...normalNonApplication,
+      preparationSelection: {
+        kind: 'reachableAlternate',
+        plan: [{ kind: 'executeAttackNoblePhantasm' }],
+      },
+      conflictCounterexample: {
+        plan: [{ kind: 'executeAttackNoblePhantasm' }],
+        profileKey: 'conflicting-profile',
+        issues: ['constraintConflict:selected-form:fixture:exclusiveTrait:form-a,form-b'],
+        enabled: {
+          ...normalNonApplication.excluded,
+          executionObservation: abortCapture,
+          operationEvents: [],
+          effectiveContributions: [],
+          inputBinding: { kind: 'bound', address: 'attackBuff', value: 0 },
+          damageResult: { status: 'unsupported', rows: [] },
+        },
+        excluded: structuredClone(normalNonApplication.excluded),
+      },
+    };
+    const auditConflict = (value: ProductionUserControlObservation) =>
+      auditProductionUserControlObservations({
+        expectedProjectionCount: 1,
+        expectedIdentities: [modifierIdentity],
+        observations: [value],
+      });
+    expect(auditConflict(conflictObservation)).toMatchObject({ status: 'passed', failures: [] });
+    const effectiveConflict = structuredClone(conflictObservation);
+    effectiveConflict.conflictCounterexample!.excluded.effectiveContributions = [
+      { ...normalNonApplication.excluded.effectiveContributions[0]!, effective: true },
+    ];
+    expect(auditConflict(effectiveConflict)).toMatchObject({
+      status: 'failed',
+      failures: [{ reason: 'userControlConflictCounterexampleInvalid' }],
+    });
+    const wrongBinding = structuredClone(conflictObservation);
+    wrongBinding.conflictCounterexample!.enabled.inputBinding = {
+      kind: 'bound',
+      address: 'npDamageBuff',
+      value: 0,
+    };
+    expect(auditConflict(wrongBinding)).toMatchObject({
+      status: 'failed',
+      failures: [{ reason: 'userControlConflictCounterexampleInvalid' }],
+    });
+    const fabricatedConflict = structuredClone(conflictObservation);
+    fabricatedConflict.conflictCounterexample!.enabled.operationEvents = [nonAppliedEvent];
+    expect(auditConflict(fabricatedConflict)).toMatchObject({
+      status: 'failed',
+      failures: [{ reason: 'userControlConflictCounterexampleInvalid' }],
+    });
+    const wrongPreflight = structuredClone(conflictObservation);
+    if (
+      wrongPreflight.conflictCounterexample!.enabled.executionObservation.targetExecution
+        ?.selection !== 'selected'
+    )
+      throw new TypeError('fixture_selected_capture_missing');
+    wrongPreflight.conflictCounterexample!.enabled.executionObservation.targetExecution.candidateState!.preflight =
+      { status: 'ready' };
+    expect(auditConflict(wrongPreflight)).toMatchObject({
+      status: 'failed',
+      failures: [{ reason: 'userControlConflictCounterexampleInvalid' }],
+    });
     expect(
       auditProductionUserControlObservations({
         expectedProjectionCount: 1,

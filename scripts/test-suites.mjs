@@ -42,6 +42,7 @@ export const PRODUCTION_TEST_INCLUDES = [
   'packages/calculation-application/src/productionAudit.test.ts',
   'packages/calculation-application/src/productionBattlePointControlWitness.test.ts',
   'packages/calculation-application/src/productionBattlePointPaths.test.ts',
+  'packages/calculation-application/src/productionCurrentRecord.test.ts',
   'packages/calculation-application/src/productionExecutionParity.test.ts',
   'packages/calculation-application/src/productionHpControlWitness.test.ts',
   'packages/calculation-application/src/productionHpPaths.test.ts',

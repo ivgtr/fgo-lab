@@ -5,6 +5,7 @@ import type { Page } from './observedTest';
 
 async function expectNoSeriousViolations(page: Page) {
   const results = await new AxeBuilder({ page })
+    .options({ resultTypes: ['violations', 'incomplete'] })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
   const violations = results.violations.filter(

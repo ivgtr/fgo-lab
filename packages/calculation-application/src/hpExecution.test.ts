@@ -1,3 +1,5 @@
+import { resolveScenarioPreparationOutcome } from './scenarioPreparation';
+import { mutableAuditView } from './auditTestMutation';
 import { applyCanonicalInputCommand, type CanonicalInputCommand } from './canonicalInputs';
 import { hpCoverageSources } from './productionHpCoverage';
 import { hpProofCoverageInventory } from './productionHpProofCoverage';
@@ -26,7 +28,6 @@ import {
 import fixture from '../../test-fixtures/master/fixture.json';
 import {
   createDefaultResolvedScenario,
-  resolveScenarioPreparationOutcome,
   calculateScenario,
   prepareCalculationScenarioWithPolicy,
   evaluatePreparedCalculationScenario,
@@ -200,31 +201,31 @@ describe('HP initial intent through common preparation and recovery', () => {
     const action = transition && preparationHpActionsFor(transition.result)[0];
     if (!action) throw new TypeError('hp_fixture_capture_missing');
     const original = action.operations[0]!;
-    action.operations[0] = { ...original, step: original.step + 1 };
+    mutableAuditView(action.operations)[0] = { ...original, step: original.step + 1 };
     expect(
       reconcileHpOperationEvidence(declarations, [{ prepared, calculation }]).gate.failures.map(
         (failure) => failure.reason,
       ),
     ).toContain('operationOrderMismatch');
-    action.operations[0] = original;
-    action.operations.splice(0, 1);
+    mutableAuditView(action.operations)[0] = original;
+    mutableAuditView(action.operations).splice(0, 1);
     expect(
       reconcileHpOperationEvidence(declarations, [{ prepared, calculation }]).gate.failures.map(
         (failure) => failure.reason,
       ),
     ).toContain('stepDecisionMismatch');
-    action.operations.unshift(original);
+    mutableAuditView(action.operations).unshift(original);
     const firstRead = action.modifierReads[0]!;
     const secondRead = action.modifierReads[1]!;
-    action.modifierReads[0] = secondRead;
-    action.modifierReads[1] = firstRead;
+    mutableAuditView(action.modifierReads)[0] = secondRead;
+    mutableAuditView(action.modifierReads)[1] = firstRead;
     expect(
       reconcileHpOperationEvidence(declarations, [{ prepared, calculation }]).gate.failures.map(
         (failure) => failure.reason,
       ),
     ).toContain('modifierReadOrderMismatch');
-    action.modifierReads[0] = firstRead;
-    action.modifierReads[1] = secondRead;
+    mutableAuditView(action.modifierReads)[0] = firstRead;
+    mutableAuditView(action.modifierReads)[1] = secondRead;
   });
 
   it('links a retained HP modifier to the later physical gain read by instance', () => {
@@ -1089,7 +1090,7 @@ describe('HP initial intent through common preparation and recovery', () => {
 });
 
 it('preserves the exhaustive legal optimum after a heal shifts an HP condition boundary', async () => {
-  const { calculateRankingPolicyDetail } = await import('./rankingPolicyCalculation');
+  const { calculateRankingPolicyDetail } = await import('./rankingProfileCalculation');
   const { DEFAULT_RANKING_POLICY_CONDITIONS } = await import('./rankingContracts');
   const conditional = effect('boundary-buff', [
     {
@@ -1165,7 +1166,7 @@ it('preserves the exhaustive legal optimum after a heal shifts an HP condition b
   expect(ranking.detail.scenario.attackerHpPermille).toBe(best);
 });
 it('retains HP-conditioned NP updates in structural search and validates OC through execution', async () => {
-  const { calculateRankingPolicyDetail } = await import('./rankingPolicyCalculation');
+  const { calculateRankingPolicyDetail } = await import('./rankingProfileCalculation');
   const { DEFAULT_RANKING_POLICY_CONDITIONS } = await import('./rankingContracts');
   const conditional = effect('hp-np', [npGain]);
   conditional.requirement.expression = {
@@ -1210,7 +1211,7 @@ it('retains HP-conditioned NP updates in structural search and validates OC thro
     expect(ranking.detail.result.rows).toEqual(oracle.result.rows);
 });
 it('keeps an interior maximum when increasing HP power competes with an inverse HP NP ratio', async () => {
-  const { calculateRankingPolicyDetail } = await import('./rankingPolicyCalculation');
+  const { calculateRankingPolicyDetail } = await import('./rankingProfileCalculation');
   const { DEFAULT_RANKING_POLICY_CONDITIONS } = await import('./rankingContracts');
   const modifier = effect('hp-power', [
     {
@@ -1427,7 +1428,7 @@ it('repairs lowest-HP selection from an initial maximum instead of comparing rou
 it.each([false, true])(
   'admits HP damage dependency independently of capped NP gain (%s)',
   async (withNpGain) => {
-    const { calculateRankingPolicyDetail } = await import('./rankingPolicyCalculation');
+    const { calculateRankingPolicyDetail } = await import('./rankingProfileCalculation');
     const { DEFAULT_RANKING_POLICY_CONDITIONS } = await import('./rankingContracts');
     const { master, scenario, versions } = setup([
       effect('hp-loss-only', [...(withNpGain ? [npGain] : []), loss(1000)]),
@@ -1481,7 +1482,7 @@ it.each([false, true])(
 );
 
 it('retains a separate HP-conditioned damage skill after an ordered writer under baseline policy', async () => {
-  const { calculateRankingPolicyDetail } = await import('./rankingPolicyCalculation');
+  const { calculateRankingPolicyDetail } = await import('./rankingProfileCalculation');
   const { DEFAULT_RANKING_POLICY_CONDITIONS } = await import('./rankingContracts');
   const { master, scenario, versions } = setup([effect('loss', [loss(2000)])]);
   const conditional = effect('hp-condition', [
@@ -1544,7 +1545,7 @@ it('retains a separate HP-conditioned damage skill after an ordered writer under
 });
 
 it('keeps a maximum-HP prerequisite for a terminal normal loss even without an HP damage coefficient', async () => {
-  const { calculateRankingPolicyDetail } = await import('./rankingPolicyCalculation');
+  const { calculateRankingPolicyDetail } = await import('./rankingProfileCalculation');
   const { DEFAULT_RANKING_POLICY_CONDITIONS } = await import('./rankingContracts');
   const { master, scenario, versions } = setup([
     effect('maximum', [

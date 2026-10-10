@@ -1,4 +1,9 @@
 import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
+import {
+  servantAttribute,
+  targetAttributeCandidates,
+  targetClassCandidates,
+} from '@fgo-lab/calc-core';
 import { commonPreparationSkillLevels } from './rankingBasis';
 import {
   selectedAllyMaximumFixedMaySelect,
@@ -139,6 +144,8 @@ import {
   canonicalExclusiveTraits,
   hpPermille,
   readBattlePoint,
+  servantStackInputs,
+  traitConditionReadScopes,
   type ConditionExpression,
   type EffectProjection,
   type TraitScope,
@@ -148,6 +155,7 @@ import {
   ENGINE_VERSION,
   SCHEMA_VERSION,
   type CalculationScenario,
+  type TargetPredicate,
   type VersionContext,
 } from '@fgo-lab/schema';
 import { describe, expect, it, vi } from 'vitest';
@@ -201,8 +209,225 @@ const root = resolve(import.meta.dirname, '../../..');
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
+// Positive control observations use one explicit world, so unrelated unresolved
+// target predicates cannot turn an on/off observation into a target-choice test.
+// The canonical domain and the requested relation own the fixture's choices.
+function controlFixtureScenario(
+  scenario: ResolvedScenario,
+  servant: ReturnType<typeof masterSnapshotSchema.parse>['servants'][number],
+  master: ReturnType<typeof masterSnapshotSchema.parse>,
+  excludedPredicates: readonly TargetPredicate[] = [],
+): ResolvedScenario {
+  const domain = master.targetSemantics.execution;
+  const classId = targetClassCandidates(servant.classId, scenario.targetContext.class).find(
+    (candidate) =>
+      domain.classIdentities.includes(candidate) &&
+      !excludedPredicates.some(
+        (predicate) => predicate.kind === 'classIdentity' && predicate.classId === candidate,
+      ),
+  );
+  const attribute = targetAttributeCandidates(
+    servantAttribute(servant.traits),
+    scenario.targetContext.attribute,
+  ).find(
+    (candidate) =>
+      domain.attributeIdentities.includes(candidate) &&
+      !excludedPredicates.some(
+        (predicate) => predicate.kind === 'attributeIdentity' && predicate.attribute === candidate,
+      ),
+  );
+  if (classId === undefined || attribute === undefined)
+    throw new TypeError('production_control_fixture_target_missing');
+  const worldFactAssertions = [...scenario.worldFactAssertions];
+  const fieldTraits = new Set(
+    [
+      ...servant.skills.flatMap((skill) => skill.effects),
+      ...servant.passives.flatMap((skill) => skill.effects),
+      ...getNoblePhantasmVariants(servant).flatMap((variant) => variant.effects),
+    ]
+      .filter((effect) =>
+        effect.execution.some(
+          (operation) =>
+            operation.kind === 'resourceMutation' && operation.resource === 'criticalStars',
+        ),
+      )
+      .flatMap((effect) =>
+        canonicalRequirementLeaves(effect.requirement.expression).flatMap((leaf) =>
+          leaf.kind === 'trait' && leaf.scope === 'field' ? [leaf.trait] : [],
+        ),
+      ),
+  );
+  for (const trait of fieldTraits)
+    if (
+      !worldFactAssertions.some(
+        ({ fact }) => fact.kind === 'trait' && fact.scope === 'field' && fact.trait === trait,
+      )
+    ) {
+      const fact = { kind: 'trait' as const, scope: 'field' as const, trait, present: false };
+      worldFactAssertions.push({ decisionKey: `audit:world:${JSON.stringify(fact)}`, fact });
+    }
+  for (const variant of getNoblePhantasmVariants(servant)) {
+    if (variant.kind !== 'attack') continue;
+    for (const damage of variant.damage) {
+      if (damage.kind !== 'traitCount' || damage.quantity.kind !== 'finiteTraits') continue;
+      const stateTraits = new Set(damage.stateTraitNames);
+      for (const parameter of damage.parametersByOvercharge.flat()) {
+        if (parameter.targetId !== 1) continue;
+        for (const trait of parameter.targetTraits ?? []) {
+          if (trait.kind !== 'trait') continue;
+          const scope: 'targetState' | 'target' = stateTraits.has(trait.name)
+            ? 'targetState'
+            : 'target';
+          if (
+            servantStackInputs(servant).some(
+              (input) =>
+                input.quantitySource.trait === trait.name &&
+                traitConditionReadScopes(scope).includes(input.quantitySource.scope) &&
+                (scenario.canonicalInputValues[input.key]?.value ?? 0) > 0,
+            )
+          )
+            continue;
+          if (
+            worldFactAssertions.some(
+              ({ fact }) =>
+                fact.kind === 'trait' && fact.scope === scope && fact.trait === trait.name,
+            )
+          )
+            continue;
+          const fact = { kind: 'trait' as const, scope, trait: trait.name, present: false };
+          worldFactAssertions.push({ decisionKey: `audit:world:${JSON.stringify(fact)}`, fact });
+        }
+      }
+    }
+  }
+  return {
+    ...scenario,
+    worldFactAssertions,
+    targetContext: {
+      class: { kind: 'concrete', classId },
+      attribute: { kind: 'concrete', attribute },
+      families: scenario.targetContext.families,
+      absentFamilies: domain.families
+        .filter(
+          ({ familyId }) =>
+            !scenario.targetContext.families.some((item) => item.familyId === familyId),
+        )
+        .map(({ familyId }) => ({ familyId })),
+    },
+  };
+}
+
 function intendedProfileKey(continuity: AttackProfileContinuity | undefined): string | null {
   return continuity && continuity.kind !== 'unresolved' ? continuity.intendedProfileKey : null;
+}
+
+function singlePositiveTargetTrait(condition: ConditionExpression | null): string | null {
+  if (!condition) return null;
+  if (condition.kind === 'all') {
+    const meaningful = condition.expressions.filter(
+      (expression) => expression.kind !== 'noblePhantasmVariant',
+    );
+    return meaningful.length === 1 ? singlePositiveTargetTrait(meaningful[0]!) : null;
+  }
+  if (condition.kind === 'any' && condition.expressions.length === 1)
+    return singlePositiveTargetTrait(condition.expressions[0]!);
+  return condition.kind === 'trait' && condition.scope === 'target' && condition.present
+    ? condition.trait
+    : null;
+}
+
+function hasCardCondition(condition: ConditionExpression | null): boolean {
+  if (!condition) return false;
+  if (condition.kind === 'card') return true;
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some(hasCardCondition);
+  return condition.kind === 'not' && hasCardCondition(condition.expression);
+}
+
+function sameProfileControlWitness(
+  initial: ResolvedScenario,
+  projection: EffectProjection,
+  servant: ReturnType<typeof masterSnapshotSchema.parse>['servants'][number],
+  master: ReturnType<typeof masterSnapshotSchema.parse>,
+  versions: VersionContext,
+): ResolvedScenario {
+  // Only these axes can be affected by the plan before the controlled damage read.
+  if (
+    !hasCardCondition(projection.explanation.condition) &&
+    !(
+      projection.modifier === 'npSpecial' &&
+      projection.requiredInputs.some((input) => input.kind === 'effectStackCount')
+    )
+  )
+    return initial;
+  const original = calculateScenario(initial, master, versions);
+  const profileKey = intendedProfileKey(original.profileContinuity);
+  if (!profileKey) return initial;
+  const isPositiveWitness = (
+    scenario: ResolvedScenario,
+    on = calculateScenario(scenario, master, versions),
+  ) => {
+    const member = on.effects.find(
+      ({ projectionKey }) => projectionKey === projection.projectionKey,
+    );
+    if (
+      on.result.status !== 'calculated' ||
+      member?.outcome !== 'applied' ||
+      on.profileContinuity?.kind !== 'matched' ||
+      on.profileContinuity.actualProfileKey !== profileKey
+    )
+      return false;
+    const control = on.effectControls.find(({ key }) => key === projection.projectionKey);
+    if (!control) return false;
+    const off = calculateScenario(
+      applyEffectControlPresentationDecision(
+        scenario,
+        control,
+        false,
+        on.activationRequirements,
+        on.effects,
+        on.effectInputs,
+      ),
+      master,
+      versions,
+    );
+    return (
+      off.result.status === 'calculated' &&
+      off.profileContinuity?.kind === 'matched' &&
+      off.profileContinuity.actualProfileKey === profileKey &&
+      (projection.modifier === 'npSpecial'
+        ? !isDeepStrictEqual(on.input.npSpecialMultipliers, off.input.npSpecialMultipliers)
+        : !isDeepStrictEqual(on.result, off.result))
+    );
+  };
+  if (isPositiveWitness(initial, original)) return initial;
+  const planned = planPreNoblePhantasmCandidates(
+    servant,
+    master.npResourceSemantics,
+    commonPreparationSkillLevels(servant),
+    1,
+    1,
+  );
+  for (const candidate of planned.candidates) {
+    const scenario = materializePreNoblePhantasmPlan(initial, candidate);
+    const base = calculateScenario(scenario, master, versions);
+    const control = base.effectControls.find(
+      ({ key, projection: member }) => key === projection.projectionKey && member.sourceActive,
+    );
+    if (!control) continue;
+    const selected = applyEffectControlPresentationDecision(
+      scenario,
+      control,
+      true,
+      base.activationRequirements,
+      base.effects,
+      base.effectInputs,
+    );
+    if (isPositiveWitness(selected, isDeepStrictEqual(scenario, selected) ? base : undefined))
+      return selected;
+  }
+  // Keep the failed input visible to the mandatory gate if no legal witness exists.
+  return initial;
 }
 
 function assumeProjectedCondition(
@@ -689,7 +914,11 @@ describe('production master inventory ratchet', () => {
       const scalarInventory = scalarQuantityCanonicalInventory(master);
       const calculations = master.servants.flatMap((servant) => {
         try {
-          const scenario = createDefaultResolvedScenario(master, undefined, servant);
+          const scenario = controlFixtureScenario(
+            createDefaultResolvedScenario(master, undefined, servant),
+            servant,
+            master,
+          );
           return [
             {
               servant,
@@ -878,17 +1107,74 @@ describe('production master inventory ratchet', () => {
             effect.requiredQuantityOwner === 'attacker'
               ? hpControlInitialCandidates(hpCondition)
               : [];
-          const decisionScenario =
+          let decisionScenario =
             hpInitialCandidates.length > 0
               ? { ...scenario, attackerHpPermille: hpInitialCandidates[0]! }
               : scenario;
-          let selectedScenario = applyEffectControlPresentationDecision(
-            decisionScenario,
-            control,
-            true,
-            calculation.activationRequirements,
-            userEffects,
-            calculation.effectInputs,
+          const targetTrait = singlePositiveTargetTrait(effect.explanation.condition);
+          if (
+            targetTrait !== null &&
+            effect.decision.state !== 'none' &&
+            effect.decision.kind === 'effect' &&
+            effect.decision.plan.condition === 'userMayAssume'
+          ) {
+            const fact = {
+              kind: 'trait' as const,
+              scope: 'target' as const,
+              trait: targetTrait,
+              present: true,
+            };
+            decisionScenario = {
+              ...decisionScenario,
+              worldFactAssertions: [
+                ...decisionScenario.worldFactAssertions.filter(
+                  ({ fact: current }) =>
+                    !(
+                      current.kind === 'trait' &&
+                      current.trait === targetTrait &&
+                      traitConditionReadScopes('target').includes(current.scope)
+                    ),
+                ),
+                { decisionKey: `audit:world:${JSON.stringify(fact)}`, fact },
+              ],
+            };
+          }
+          // This case selects an external world. The calculator's default closed world is
+          // a different input, not an independent condition that can also stay false.
+          if (effect.decision.state !== 'none' && effect.decision.kind === 'worldFact') {
+            const fact = effect.decision.fact;
+            decisionScenario = {
+              ...decisionScenario,
+              worldFactAssertions: decisionScenario.worldFactAssertions.filter(
+                (assertion) =>
+                  !(
+                    assertion.fact.kind === 'trait' &&
+                    fact.kind === 'trait' &&
+                    assertion.fact.scope === fact.scope &&
+                    assertion.fact.trait === fact.trait &&
+                    assertion.fact.present !== fact.present
+                  ),
+              ),
+            };
+          }
+          let selectedScenario = controlFixtureScenario(
+            applyEffectControlPresentationDecision(
+              decisionScenario,
+              control,
+              true,
+              calculation.activationRequirements,
+              userEffects,
+              calculation.effectInputs,
+            ),
+            servant,
+            master,
+          );
+          selectedScenario = sameProfileControlWitness(
+            selectedScenario,
+            effect,
+            servant,
+            master,
+            versions,
           );
           let { calculation: active, observation: activeObservation } =
             evaluateWithOrderedOperationEvents(selectedScenario, master, versions);
@@ -1064,7 +1350,8 @@ describe('production master inventory ratchet', () => {
                 master,
                 versions,
               );
-              const liveHp = preparationExecutionStateFor(candidate.prepared.orderedScenario)?.hp?.actors.attacker;
+              const liveHp = preparationExecutionStateFor(candidate.prepared.orderedScenario)?.hp
+                ?.actors.attacker;
               const livePermille = hpPermille(liveHp);
               const candidateEffect = candidate.calculation.effects.find(
                 (projection) =>
@@ -1094,7 +1381,8 @@ describe('production master inventory ratchet', () => {
                 candidate.calculation.effectInputs,
               );
               const off = evaluateWithOrderedOperationEvents(offScenario, master, versions);
-              const offLiveHp = preparationExecutionStateFor(off.prepared.orderedScenario)?.hp?.actors.attacker;
+              const offLiveHp = preparationExecutionStateFor(off.prepared.orderedScenario)?.hp
+                ?.actors.attacker;
               const onSide = userControlSideObservation(
                 candidateEffect,
                 candidate.calculation,
@@ -1185,12 +1473,9 @@ describe('production master inventory ratchet', () => {
                 initialPoint
               )
                 continue;
-              const on = evaluateWithOrderedOperationEvents(
-                candidateScenario,
-                master,
-                versions,
-                selectedPreparation,
-              );
+              // Same immutable request, policy, witness and capture. Reuse its native owner;
+              // a second execution adds no independent control or recovery evidence.
+              const on = candidate;
               const preparedValue = readBattlePoint(
                 preparationExecutionStateFor(on.prepared.orderedScenario)?.battlePoints,
                 'attacker',
@@ -1318,13 +1603,24 @@ describe('production master inventory ratchet', () => {
           const activeControl = active.effectControls.find(
             (candidate) => candidate.key === effect.projectionKey,
           );
-          const excludedScenario = applyEffectControlPresentationDecision(
-            selectedScenario,
-            activeControl ?? control,
-            false,
-            active.activationRequirements,
-            active.effects,
-            active.effectInputs,
+          const excludedScenario = controlFixtureScenario(
+            applyEffectControlPresentationDecision(
+              selectedScenario,
+              activeControl ?? control,
+              false,
+              active.activationRequirements,
+              active.effects,
+              active.effectInputs,
+            ),
+            servant,
+            master,
+            active.effects.flatMap((candidate) =>
+              candidate.contributionId === effect.contributionId &&
+              candidate.decision.state !== 'none' &&
+              candidate.decision.kind === 'targetPredicate'
+                ? [candidate.decision.target]
+                : [],
+            ),
           );
           const { calculation: excluded, observation: excludedObservation } =
             evaluateWithOrderedOperationEvents(
@@ -1374,10 +1670,20 @@ describe('production master inventory ratchet', () => {
                   }
                 : {}),
               identity: selectedProfileControlIdentity(servant.id, member, profileKey),
-              enabled: userControlSideObservation(member, active, activeObservation),
-              excluded: userControlSideObservation(member, excluded, excludedObservation),
+              enabled: userControlSideObservation(
+                member,
+                active,
+                activeObservation,
+                activePrepared,
+              ),
+              excluded: userControlSideObservation(
+                member,
+                excluded,
+                excludedObservation,
+                excludedPrepared,
+              ),
               preparationSelection: {
-                kind: conflictCounterexample ? 'reachableAlternate' : 'default',
+                kind: conflictCounterexample ? 'reachableAlternate' : 'selectedProfile',
                 plan: selectedScenario.preNoblePhantasmPlan,
               },
               ...(hpWitness ? { hpWitness } : {}),
@@ -1688,7 +1994,6 @@ describe('production master inventory ratchet', () => {
       ).toBe(true);
       expect(hpDependencyCoverage.gate.failures).toEqual([]);
       expect(hpDependencyCoverage.productClosure).toBe(false);
-      expect(originalControlRequestCount).toBe(3182);
       expect(hpDependencyCoverage.requestCount).toBe(originalControlRequestCount + 4);
       expect(
         hpDependencyCoverage.requests
@@ -2188,8 +2493,8 @@ describe('production master inventory ratchet', () => {
         hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
       }).toEqual({
         automaticVisible: 0,
-        hidden: 5960,
-        user: 1590,
+        hidden: 5962,
+        user: 1588,
       });
       expect(
         allProjections.filter(
@@ -2291,6 +2596,8 @@ describe('production master inventory ratchet', () => {
           explanation: { code: 'unresolved' },
         },
       );
+      // Preserve the strict population gate after acquiring every declared diagnostic receipt.
+      expect(originalControlRequestCount).toBe(3208);
     },
   );
 
@@ -2761,12 +3068,12 @@ describe('production master inventory ratchet', () => {
       );
       expect(
         supportSelections.filter(
-          (selection) => selection.disposition === 'selectedCellNoNativeStep',
+          (selection) => selection.disposition === 'selectedCellReadInPreparation',
         ),
       ).toHaveLength(supportHpRequests.length);
       expect(
         supportSelections
-          .filter((selection) => selection.disposition === 'selectedCellNoNativeStep')
+          .filter((selection) => selection.disposition === 'selectedCellReadInPreparation')
           .every(
             (selection) =>
               'actualRead' in selection &&
@@ -2781,7 +3088,7 @@ describe('production master inventory ratchet', () => {
         supportHpCoverage.bindings.filter((binding) => binding.stage === 'selectedPreparationCell'),
       ).toHaveLength(supportHpRequests.length);
       const valueReads = supportHpCoverage.bindings.filter(
-        (binding) => binding.stage === 'actualValueRead',
+        (binding) => binding.stage === 'preparedValueConsumption',
       );
       expect(valueReads).toHaveLength(supportHpRequests.length);
       expect(
@@ -2823,6 +3130,7 @@ describe('production master inventory ratchet', () => {
             modifierAppended: true,
             transaction: 'committed',
             consumed: true,
+            readOwner: 'nativePreparation',
           },
         })),
       );
@@ -2831,11 +3139,23 @@ describe('production master inventory ratchet', () => {
           .filter((binding) => binding.stage === 'selectedPreparationCell')
           .every((binding) => {
             const detail = binding.detail as {
-              steps: readonly unknown[];
+              steps: readonly {
+                index: number;
+                reached: readonly {
+                  index: number;
+                  step: { kind: string; outcome: string };
+                }[];
+              }[];
               native: { status: string; outcomes: readonly { outcome: string }[] };
             };
             return (
-              detail.steps.length === 0 &&
+              detail.steps.every(
+                ({ index, reached }) =>
+                  reached.length === 1 &&
+                  reached[0]?.index === index &&
+                  reached[0].step.kind === 'skip' &&
+                  reached[0].step.outcome === 'notApplicable',
+              ) &&
               detail.native.status === 'committed' &&
               detail.native.outcomes.every((outcome) => outcome.outcome === 'notApplicable')
             );
@@ -2876,7 +3196,7 @@ describe('production master inventory ratchet', () => {
           ),
         ).not.toEqual([]);
       const selectedRead = supportHpBindings.bindings.find(
-        (binding) => binding.stage === 'actualValueRead',
+        (binding) => binding.stage === 'preparedValueConsumption',
       )!;
       expect(reasons(supportHpBindings.bindings.filter((b) => b !== selectedRead))).toContain(
         'missingBinding',
@@ -2941,11 +3261,11 @@ describe('production master inventory ratchet', () => {
         });
       const first = noHealingObservations[0]!;
       const transition = first.transitions![0]!;
-      const action = transition.hpActions![0]!;
+      const action = transition.hpActions[0]!;
       const withAction = (changed: typeof action) => ({
         ...first,
         transitions: [
-          { ...transition, hpActions: [changed, ...transition.hpActions!.slice(1)] },
+          { ...transition, hpActions: [changed, ...transition.hpActions.slice(1)] },
           ...first.transitions!.slice(1),
         ],
       });
@@ -3081,7 +3401,7 @@ describe('production master inventory ratchet', () => {
         gate.nativeAttempts,
         gate.nativeCommitted,
         gate.committedModifiers,
-      ]).toEqual([3186, 3176, 10, 10, 10, 10, 30]);
+      ]).toEqual([3212, 3202, 10, 10, 10, 10, 30]);
       for (const [reason, negative] of negativeChecks) {
         expect(negative.failures.some((failure) => failure.reason === reason)).toBe(true);
         expect(negative.firstDifference).not.toBeNull();
@@ -3109,7 +3429,7 @@ describe('production master inventory ratchet', () => {
       ]);
       expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(bytes), evidence)).toBe(true);
       expect(evidence.gate.failures).toEqual([]);
-      expect(evidence.requestCount).toBe(3186);
+      expect(evidence.requestCount).toBe(3212);
       expect(evidence.rows.some((row) => row.attempted && row.transaction === 'committed')).toBe(
         true,
       );

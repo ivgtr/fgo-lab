@@ -26,7 +26,7 @@ import {
   applyEffectPresentationDecision,
 } from './effectDecision';
 import { createCanonicalInputValueDomains } from './rankingCanonicalInputs';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import {
   createRankingPortableRequest,

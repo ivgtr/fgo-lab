@@ -15,22 +15,40 @@ import {
 } from './productionHpPreparationAudit';
 import type { PreparedCalculationScenario, CalculationExecution } from './scenario';
 
-/** Preserve container and absence distinctions in audit comparisons. */
-function snapshot(value: unknown): CanonicalAuditValue {
-  if (value === undefined) return { type: 'undefined' };
-  if (value instanceof Map)
-    return {
-      type: 'map',
-      entries: [...value].map(([key, item]) => [snapshot(key), snapshot(item)]),
-    };
-  if (value instanceof Set) return { type: 'set', values: [...value].map(snapshot) };
-  if (Array.isArray(value)) return { type: 'array', values: value.map(snapshot) };
-  if (value !== null && typeof value === 'object')
-    return {
-      type: 'object',
-      fields: Object.fromEntries(Object.entries(value).map(([key, item]) => [key, snapshot(item)])),
-    };
-  return { type: typeof value, value: value as CanonicalAuditValue };
+/** A synchronous audit owns this projection DAG. Completed nodes are reused only
+ * within this call; returned diagnostics cannot observe later caller mutations.
+ */
+export function createGiveAuditSnapshotter() {
+  const copies = new WeakMap<object, CanonicalAuditValue>();
+  const active = new WeakSet();
+  const snapshot = (value: unknown): CanonicalAuditValue => {
+    if (value === undefined) return { type: 'undefined' };
+    if (value === null || typeof value !== 'object')
+      return { type: typeof value, value: value as CanonicalAuditValue };
+    const cached = copies.get(value);
+    if (cached !== undefined) return cached;
+    if (active.has(value)) throw new TypeError('cyclic_give_audit_value');
+    active.add(value);
+    let result: CanonicalAuditValue;
+    if (value instanceof Map)
+      result = {
+        type: 'map',
+        entries: [...value].map(([key, item]) => [snapshot(key), snapshot(item)]),
+      };
+    else if (value instanceof Set) result = { type: 'set', values: [...value].map(snapshot) };
+    else if (Array.isArray(value)) result = { type: 'array', values: value.map(snapshot) };
+    else
+      result = {
+        type: 'object',
+        fields: Object.fromEntries(
+          Object.entries(value).map(([key, item]) => [key, snapshot(item)]),
+        ),
+      };
+    copies.set(value, result);
+    active.delete(value);
+    return result;
+  };
+  return snapshot;
 }
 
 type Give = Extract<MasterEffect['execution'][number], { kind: 'hpModifier' }>;
@@ -144,7 +162,7 @@ export function giveDiagnostic(source: GiveSource): Record<string, unknown> {
       before: transition.before.hp,
       status: transition.result.status,
       returned: transition.result.state.hp,
-      actions: transition.hpActions?.map((action) => ({
+      actions: (transition as Partial<typeof transition>).hpActions?.map((action) => ({
         actionId: action.actionId,
         start: action.start.hp,
         sourceOrder: action.sources.map((s) => [
@@ -196,7 +214,7 @@ function anchors(source: GiveSource): unknown[] {
     ...(source.transitions?.flatMap((t) => [
       t.before,
       t.result,
-      ...(t.hpActions?.flatMap((a) => [
+      ...((t as Partial<typeof t>).hpActions?.flatMap((a) => [
         a.start,
         a.native,
         a.returned,
@@ -258,12 +276,13 @@ export function auditGive(input: {
   expected: readonly GiveProgram[];
   observations: readonly GiveSource[];
 }) {
+  const snapshot = createGiveAuditSnapshotter();
   const checks: {
     identity: string;
     reason: GiveReason;
     path: string;
-    expected: ReturnType<typeof snapshot>;
-    actual: ReturnType<typeof snapshot>;
+    expected: CanonicalAuditValue;
+    actual: CanonicalAuditValue;
   }[] = [];
   const failures: ((typeof checks)[number] & {
     firstDifference: NonNullable<ReturnType<typeof firstCanonicalAuditDifference>>;
@@ -380,9 +399,12 @@ export function auditGive(input: {
       'giveTraceMissing',
       'actionCapture',
       true,
-      source.transitions?.every((t) => t.hpActions !== undefined),
+      source.transitions?.every((t) => (t as Partial<typeof t>).hpActions !== undefined),
     );
-    const actions = source.transitions?.flatMap((transition) => transition.hpActions ?? []) ?? [];
+    const actions =
+      source.transitions?.flatMap(
+        (transition) => (transition as Partial<typeof transition>).hpActions ?? [],
+      ) ?? [];
     c(
       'giveIdentityMismatch',
       'actionCommands',
@@ -689,12 +711,18 @@ export function auditGive(input: {
       'giveRetainedMismatch',
       'selected.finalHp',
       true,
-      preparationExecutionStateFor(source.ordered)?.hp === source.transitions?.at(-1)?.result.state.hp,
+      preparationExecutionStateFor(source.ordered)?.hp ===
+        source.transitions?.at(-1)?.result.state.hp,
     );
     c('giveTraceMissing', 'selected.candidate', true, !!source.candidate);
     const candidate = source.candidate;
     if (!candidate) continue;
-    c('giveRetainedMismatch', 'selected.seed', true, candidate.seed.hp === preparationExecutionStateFor(source.ordered)?.hp);
+    c(
+      'giveRetainedMismatch',
+      'selected.seed',
+      true,
+      candidate.seed.hp === preparationExecutionStateFor(source.ordered)?.hp,
+    );
     c(
       'giveReaderMismatch',
       'reader.population',

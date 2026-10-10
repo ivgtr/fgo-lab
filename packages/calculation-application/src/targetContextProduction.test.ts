@@ -20,7 +20,7 @@ import {
 const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
   requireExecutableCalculation(calculateScenarioOutcome(...args));
 import { applyEffectProjectionDecision } from './effectDecision';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { getAttackReachableInitialActorForms } from './actorFormGraph';
 import { createStaticAttackProfiles } from './attackProfile';

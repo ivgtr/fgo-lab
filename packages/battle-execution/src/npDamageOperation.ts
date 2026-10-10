@@ -303,8 +303,9 @@ function evaluateNpDamageOperationInternal(
   return resolved(
     baseMultipliers,
     parameters.map((parameter, index) => {
-      const count = quantities[index]!;
-      if (count === null) throw new TypeError('validated_trait_quantity_required');
+      const count = quantities[index];
+      if (count === null || count === undefined)
+        throw new TypeError('validated_trait_quantity_required');
       if (count === 0) return 1;
       const capped =
         parameter.maximumTargetCount && parameter.maximumTargetCount > 0
@@ -363,7 +364,26 @@ function captureNpDamageOperation(
   );
   const output = npDamageInput(input, damage, result);
   if (scalar) observe?.({ ...scalar, input: output });
-  if (hp) observeHp?.({ ...hp, context, input: output });
+  if (hp)
+    observeHp?.({
+      ...hp,
+      context: {
+        overcharge: context.overcharge,
+        selectedNpLevel: context.selectedNpLevel,
+        targetTraits: context.targetTraits,
+        targetStateTraits: context.targetStateTraits,
+        targetPredicateValues: context.targetPredicateValues,
+        attackerHpRatio: context.attackerHpRatio,
+        targetRarity: context.targetRarity,
+        ...(context.effectLocalConditionSatisfied === undefined
+          ? {}
+          : { effectLocalConditionSatisfied: context.effectLocalConditionSatisfied }),
+        ...(context.includeSpecialContribution === undefined
+          ? {}
+          : { includeSpecialContribution: context.includeSpecialContribution }),
+      },
+      input: output,
+    });
   return output;
 }
 

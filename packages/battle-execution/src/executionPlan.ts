@@ -7,12 +7,7 @@ import {
   type MasterDataSnapshot,
 } from '@fgo-lab/master-data';
 import { servantAttribute } from '@fgo-lab/calc-core';
-import {
-  activationFactKey,
-  analyzeActivationFactSet,
-  type DamageResolutionInput,
-} from '@fgo-lab/schema';
-import { analyzeActivationCondition } from './activationCondition';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { planOperationActivations } from './activation';
 import type {
   BattleOperation,
@@ -21,20 +16,14 @@ import type {
   ExecutionPhase,
 } from './contracts';
 import type { PreparedOrderedScenario, ResolvedScenario } from './executionTypes';
-import {
-  compileEffectCached,
-  compileEffectCondition,
-  runtimeInputDefinitionsForSource,
-} from './operationCompiler';
+import { compileEffectCached, runtimeInputDefinitionsForSource } from './operationCompiler';
 import {
   collectOperationSources,
   collectDiagnosticOperationSources,
+  completedPreparationStateFor,
   type ResolvedAttackerFormExecution,
 } from './sourceCollection';
-import {
-  activationRequirementOwnerSelected,
-  collectActivationRequirementOwners,
-} from './activationContext';
+import { executionPlanActivation } from './executionPlanActivation';
 import { resolveTargetCandidates } from './targetContext';
 import { compileNoblePhantasmDamageOperation } from './npDamageCompilation';
 import { effectChangesPreparation } from './preparationTransaction';
@@ -61,7 +50,7 @@ function preparedPreparationExecution(
     if (!continuation) throw new TypeError('diagnostic_preparation_continuation_required');
     return { kind: 'diagnostic', state: formExecution.state, initialFacts, continuation };
   }
-  return { kind: 'available', state: formExecution.state, initialFacts };
+  return { kind: 'available', state: completedPreparationStateFor(formExecution), initialFacts };
 }
 
 export function compileExecutionPlan(
@@ -172,108 +161,12 @@ function compileExecutionPlanForPurpose(
       (left, right) => phaseOrder[left.phase] - phaseOrder[right.phase] || left.order - right.order,
     )
     .map((operation, order) => ({ ...operation, order }));
-  const activationRequirements = collectActivationRequirementOwners(operations);
-  const requiredFactKeys = new Set(
-    activationRequirements.flatMap(({ facts }) => facts.map(activationFactKey)),
+  const { executionScenario, staleAttackerFactIssues } = executionPlanActivation(
+    scenario,
+    operations,
+    collected.sources,
+    collected.formExecution,
   );
-  // A committed preparation choice may select an effect on the source actor only.
-  // Validate its original family before removing facts with no damage-phase reader.
-  const committedChoiceFamilies = new Set(
-    collected.sources.flatMap((source) =>
-      source.hpExecutionCommitted && source.effect.selection?.kind === 'playerChoice'
-        ? [
-            JSON.stringify([
-              source.origin,
-              source.sourceInstanceId,
-              source.skillId,
-              source.effect.selection.group.key,
-            ]),
-          ]
-        : [],
-    ),
-  );
-  const preparationChoiceKeys = new Set(
-    collected.sources.flatMap((source) => {
-      const selection = source.effect.selection;
-      if (
-        selection?.kind !== 'playerChoice' ||
-        !committedChoiceFamilies.has(
-          JSON.stringify([
-            source.origin,
-            source.sourceInstanceId,
-            source.skillId,
-            selection.group.key,
-          ]),
-        )
-      )
-        return [];
-      const analysis = analyzeActivationCondition(
-        compileEffectCondition(
-          source.effect,
-          source.origin,
-          source.sourceId,
-          source.sourceInstanceId,
-          source.skillId,
-        ),
-      );
-      return analysis.status === 'supported'
-        ? analysis.atoms.filter((fact) => fact.kind === 'choice').map(activationFactKey)
-        : [];
-    }),
-  );
-  const validPreparationChoices =
-    analyzeActivationFactSet(scenario.activationFacts).status === 'valid';
-  const preparationFacts =
-    collected.formExecution?.actions.flatMap(({ activationFacts }) =>
-      activationFacts.filter((fact) => requiredFactKeys.has(activationFactKey(fact))),
-    ) ?? [];
-  const decisions = new Map(
-    scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
-  );
-  const intrinsicFacts = activationRequirements.flatMap((owner) =>
-    activationRequirementOwnerSelected(owner, decisions)
-      ? owner.facts.filter(
-          (fact) =>
-            fact.kind === 'operationTrigger' &&
-            !preparationFacts.some(
-              (candidate) => activationFactKey(candidate) === activationFactKey(fact),
-            ),
-        )
-      : [],
-  );
-  const derivedFacts = new Map(
-    [...preparationFacts, ...intrinsicFacts].map((fact) => [activationFactKey(fact), fact]),
-  );
-  const staleAttackerFactIssues = scenario.activationFacts.flatMap((fact) =>
-    fact.source.origin === 'attacker'
-      ? [
-          {
-            kind: 'invalidActivationContext' as const,
-            detail: 'orphanFact' as const,
-            factKey: activationFactKey(fact),
-          },
-        ]
-      : [],
-  );
-  const executionScenario: ResolvedScenario = {
-    ...scenario,
-    activationFacts: [
-      ...new Map(
-        [
-          ...scenario.activationFacts.filter(
-            (fact) =>
-              fact.source.origin !== 'attacker' &&
-              !(
-                validPreparationChoices &&
-                preparationChoiceKeys.has(activationFactKey(fact)) &&
-                !requiredFactKeys.has(activationFactKey(fact))
-              ),
-          ),
-          ...derivedFacts.values(),
-        ].map((fact) => [activationFactKey(fact), fact]),
-      ).values(),
-    ].sort((left, right) => activationFactKey(left).localeCompare(activationFactKey(right))),
-  };
   const conditionByDecisionKey = new Map(
     operations.flatMap((operation) =>
       operation.decisionKey ? [[operation.decisionKey, operation.condition] as const] : [],

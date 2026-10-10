@@ -11,7 +11,8 @@ import fixture from '../../test-fixtures/master/fixture.json';
 import { applyRankingSelectionCommand, compileRankingSelection } from './rankingBasis';
 import { DEFAULT_RANKING_POLICY_CONDITIONS as defaults } from './rankingContracts';
 import { rankingBasisFixture } from './rankingBasisFixture';
-import { calculateRankingPolicy, calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicy } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import {
   createRankingPortableRequest,
   currentCalculationVersionContext,

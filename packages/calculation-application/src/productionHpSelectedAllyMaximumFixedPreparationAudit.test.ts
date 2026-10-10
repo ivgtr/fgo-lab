@@ -956,7 +956,7 @@ it(
     expect(execute).not.toHaveBeenCalled();
     expect(change).not.toHaveBeenCalled();
     const write =
-      e.positive.source.transitions![0]!.hpActions![0]!.selectedAllyMaximumFixedWrites![0]!;
+      e.positive.source.transitions![0]!.hpActions[0]!.selectedAllyMaximumFixedWrites![0]!;
     expect(write.receipts[0]!.actual).toBe(0);
     expect(gate.changed).toBe(1);
     expect(e.normal.source.transitions).toBeUndefined();
@@ -971,7 +971,7 @@ it(
   async ({ task }) => {
     const p = entry(specs[4]!).positive;
     const alien = run(fixtureMaster(specs[4]!), specs[4]!);
-    const write = p.source.transitions![1]!.hpActions![0]!.selectedAllyMaximumFixedWrites![0]!;
+    const write = p.source.transitions![1]!.hpActions[0]!.selectedAllyMaximumFixedWrites![0]!;
     const after = write.after.actors.attacker!;
     if (after.kind !== 'absolute') throw new Error('fixture needs absolute HP');
     // All related HP/receipt cells agree with one another; they still differ from the original owner.
@@ -1308,7 +1308,7 @@ it(
       'values',
       0,
     ];
-    const native = p.source.transitions![0]!.hpActions![0]!;
+    const native = p.source.transitions![0]!.hpActions[0]!;
     const rawEffect = at(values.selectedAllyActions, [...rawSourcePath, 'fields', 'effect']);
     const viewedEffect = at(values.transitions, [...viewedSourcePath, 'fields', 'effect']);
     const sharing = at(values.facade, ['fields', 'calculationInput']) === values.input;

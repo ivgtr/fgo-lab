@@ -36,7 +36,9 @@ export interface StaticRankingSemantics {
   stackWitnesses: ReadonlyMap<string, readonly number[]>;
 }
 
-function populationReadConditions(sources: readonly SourceEffect[]): readonly ConditionExpression[] {
+function populationReadConditions(
+  sources: readonly SourceEffect[],
+): readonly ConditionExpression[] {
   const reads = new Map<string, ConditionExpression>();
   for (const source of sources)
     for (const operation of source.effect.execution) {

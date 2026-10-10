@@ -1,8 +1,9 @@
+import { resolveScenarioPreparationOutcome } from './scenarioPreparation';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { resolveInitialMaximumHp } from './initialHp';
-import { createDefaultResolvedScenario, resolveScenarioPreparationOutcome } from './scenario';
+import { createDefaultResolvedScenario } from './scenario';
 import {
   createCalculatorPortableRequest,
   executePortableCalculation,

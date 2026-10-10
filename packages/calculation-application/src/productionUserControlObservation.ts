@@ -1,8 +1,10 @@
+import type { RankingCandidateEvent } from './rankingCandidateBatch';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import type {
   CalculationExecution,
   CalculationExecutionObservation,
   RejectedCalculationDiagnostic,
+  PreparedCalculationScenario,
 } from './scenario';
 import type {
   RankingCandidateCalculation,
@@ -84,10 +86,26 @@ export function userControlSideObservation(
   projection: EffectProjection,
   calculation: Extract<CalculationExecution, { status: 'executable' }>,
   executionObservation: CalculationExecutionObservation,
+  prepared?: PreparedCalculationScenario,
 ): ProductionUserControlSideObservation {
   if (calculation.executionObservation !== executionObservation)
     throw new TypeError('production_control_execution_observation_identity_mismatch');
-  return controlSideObservation(projection, calculation, executionObservation);
+  const side = controlSideObservation(projection, calculation, executionObservation);
+  const operation = prepared?.orderedScenario?.operations.find(
+    (candidate) => candidate.operationId === projection.operationId,
+  );
+  const binding = operation?.runtimeBinding?.source;
+  if (binding?.activation.kind !== 'read' || binding.activation.read.kind !== 'inputRequired')
+    return side;
+  const receipt = prepared?.preparationExecution?.actionExecutions
+    ?.flatMap((action) => action.sources)
+    .find((source) => source.binding === binding);
+  const decision = prepared?.orderedScenario?.scenario.effectDecisions.find(
+    (candidate) => candidate.decisionKey === operation?.decisionKey,
+  );
+  if (operation && receipt && decision)
+    side.unresolvedCardSource = { operation, receipt, decision };
+  return side;
 }
 
 export function diagnosticUserControlSideObservation(
@@ -143,6 +161,7 @@ function controlSideObservation(
       contributionId: candidate.contributionId,
       outcome: candidate.outcome,
       valuePermille: candidate.valuePermille,
+      explanationCode: candidate.explanation.code,
     }));
   const effectiveContributions: ProductionUserControlEffectiveContribution[] =
     projection.contributionId === null
@@ -209,6 +228,7 @@ export function rankingWithoutAreaControlObservation(
   candidateSet: RankingCandidateCalculation,
   detail: RankingPolicyDetail,
   projection: EffectProjection,
+  candidateEvents: readonly RankingCandidateEvent[],
 ): ProductionUserControlObservation {
   const area = detail.areaContribution;
   if (!area) throw new TypeError('production_ranking_area_contribution_missing');
@@ -250,13 +270,11 @@ export function rankingWithoutAreaControlObservation(
     rankingSource: {
       detail,
       trace,
-      plannedCandidates: candidateSet.plan.candidateKeys.flatMap((key, index) => {
-        const profile = candidateSet.plan.attackProfiles[index];
-        const execution = candidateSet.executions[index];
-        return profile && execution
-          ? [{ key, profileKey: attackProfileKey(profile), execution }]
-          : [];
-      }),
+      plannedCandidates: candidateEvents.map(({ descriptor, execution }) => ({
+        key: descriptor.key,
+        profileKey: attackProfileKey(descriptor.attackProfile),
+        execution,
+      })),
     },
   };
 }
@@ -370,8 +388,6 @@ export function rankingUserControlChecks(
       trace !== null &&
       trace !== undefined &&
       trace.selected === selected.executionObservation &&
-      trace.selectedInput === selected.input &&
-      trace.selectedEffectiveContributions === selected.effectiveContributions &&
       detail.input === selected.input &&
       detail.result === selected.result &&
       detail.effects === selected.effects &&
@@ -384,8 +400,6 @@ export function rankingUserControlChecks(
       trace !== null &&
       trace !== undefined &&
       trace.withoutAreaAlternate === alternate.executionObservation &&
-      trace.withoutAreaInput === alternate.input &&
-      trace.withoutAreaEffectiveContributions === alternate.effectiveContributions &&
       area.withoutAreaInput === alternate.input &&
       area.withoutAreaResult === alternate.result &&
       area.withoutAreaEffects === alternate.effects &&

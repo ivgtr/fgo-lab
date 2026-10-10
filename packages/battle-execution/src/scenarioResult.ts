@@ -1,6 +1,6 @@
 import type { BattleExecutionState } from './contracts';
 import type { OrderedScenarioExecution, PreparedOrderedScenario } from './executionTypes';
-import { summarizeExcludedExternalTargetContributions } from './candidateComparison';
+import { summarizeExcludedExternalTargetContributions } from './excludedTargetContributions';
 
 function redactRelativeTargetWitnesses<T extends BattleExecutionState>(
   prepared: PreparedOrderedScenario,

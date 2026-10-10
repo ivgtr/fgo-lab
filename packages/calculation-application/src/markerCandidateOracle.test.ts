@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { masterEffectSchema, masterSnapshotSchema } from '@fgo-lab/master-data';
 import { SCHEMA_VERSION, APP_VERSION } from '@fgo-lab/schema';
 import { createStackMaster, stackEffectTemplate } from './stackQuantityFixture';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { calculateScenarioWithPolicy } from './scenario';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { compileRankingContributionPolicy } from './contributionPolicy';

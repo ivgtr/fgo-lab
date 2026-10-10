@@ -24,17 +24,40 @@ export function includedRankingServants(
   });
 }
 
+export type RankingRowSource = Pick<
+  RankingPolicyDetail,
+  | 'entryId'
+  | 'attackProfile'
+  | 'noblePhantasmVariant'
+  | 'noblePhantasmName'
+  | 'npCard'
+  | 'npTarget'
+  | 'scenario'
+  | 'result'
+  | 'effectiveContributions'
+>;
+
 export function createRankingRow(
   servant: ServantMaster,
-  detail: RankingPolicyDetail,
+  detail: RankingRowSource,
   profile: RankingProfileInput,
 ): RankingRowSummary {
   const selected = detail.result.rows[detail.scenario.attacker.npLevel - 1];
   if (!selected) throw new RangeError(`ranking_np_row_missing:${servant.id}`);
-  const applied = detail.effectiveContributions.contributions.filter(
-    (contribution) => contribution.effective && contribution.presentationCounted,
-  );
-  const supportEffects = applied.filter((contribution) => contribution.source.origin === 'support');
+  const groups = new Set<string>();
+  const supportGroups = new Set<string>();
+  const supportSources = new Set<string>();
+  let specialDamageApplied = false;
+  for (const effect of detail.effectiveContributions.contributions) {
+    if (!effect.effective || !effect.presentationCounted) continue;
+    groups.add(effect.presentationGroupId);
+    if (effect.source.origin === 'support') {
+      supportGroups.add(effect.presentationGroupId);
+      supportSources.add(effect.source.sourceInstanceId);
+    }
+    if (effect.modifier === 'powerMod' || effect.modifier === 'npSpecial')
+      specialDamageApplied = true;
+  }
   return {
     entryId: detail.entryId,
     servantId: servant.id,
@@ -51,13 +74,10 @@ export function createRankingRow(
     average: selected.average,
     maximum: selected.maximum,
     precision: detail.result.precision,
-    appliedEffectCount: new Set(applied.map((effect) => effect.presentationGroupId)).size,
-    supportEffectCount: new Set(supportEffects.map((effect) => effect.presentationGroupId)).size,
-    supportSourceCount: new Set(supportEffects.map((effect) => effect.source.sourceInstanceId))
-      .size,
-    specialDamageApplied: applied.some(
-      (effect) => effect.modifier === 'powerMod' || effect.modifier === 'npSpecial',
-    ),
+    appliedEffectCount: groups.size,
+    supportEffectCount: supportGroups.size,
+    supportSourceCount: supportSources.size,
+    specialDamageApplied,
     level: detail.scenario.attacker.level,
     npLevel: detail.scenario.attacker.npLevel,
     owned: isOwned(profile.servantBuilds[servant.id]),
@@ -76,8 +96,8 @@ export function createRankingPolicyExclusion(
         ? result.reason === 'rankingBuildIncomplete'
           ? { kind: 'editSavedBuild' }
           : result.reason === 'rankingSelectionInvalid'
-          ? { kind: 'resetRankingConditions' }
-          : { kind: 'reload' }
+            ? { kind: 'resetRankingConditions' }
+            : { kind: 'reload' }
         : { kind: 'none' };
   return {
     entryId,

@@ -10,7 +10,7 @@ import {
 import { describe, expect, it } from 'vitest';
 import { createActorFormProfiles } from './attackProfile';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 

@@ -4,28 +4,36 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import type { CalculationScenario, VersionContext } from '@fgo-lab/schema';
-import { attackProfileKey, type AttackProfile } from './attackProfile';
+import { attackProfileKey } from './attackProfile';
 import type {
   RankingPolicyDetail,
   RankingPolicyConditions,
   RankingProfileInput,
+  RankingProfileResult,
 } from './rankingContracts';
-import { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
+import {
+  evaluateRankingCandidateBatch,
+  type EvaluatedRankingCandidate,
+  type RankingCandidateObserver,
+} from './rankingCandidateBatch';
+import {
+  createRankingRow,
+  createRankingPolicyExclusion,
+  type RankingRowSource,
+} from './rankingRows';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
 import type { DamageResolutionValue } from './damageResolution';
 import { rankingPolicyKey } from './rankingComparisonPolicy';
-import type {
-  CalculationExecution,
-  CalculationExecutionObservation,
-  PreparedCalculationScenario,
-} from './scenario';
+import type { CalculationExecution, CalculationExecutionObservation } from './scenario';
 import type { RankingExecutionPlan } from './rankingPolicyScenario';
-import { reapplyPreparedCalculationPolicy } from './scenario';
+import { reapplyPreparedCalculationPolicy, evaluatePreparedCalculationScenario } from './scenario';
 
 export interface RankingCandidateCalculation {
   plan: RankingExecutionPlan;
-  executions: readonly CalculationExecution[];
+  candidateInventory: ReturnType<typeof evaluateRankingCandidateBatch>['candidateInventory'];
+  preparationInventory: ReturnType<typeof evaluateRankingCandidateBatch>['preparationInventory'];
+  profileResults: ReadonlyMap<string, RankingProfileResult>;
   details: ReadonlyMap<string, RankingPolicyDetail>;
   executionObservations?: ReadonlyMap<
     string,
@@ -34,11 +42,7 @@ export interface RankingCandidateCalculation {
       selectedExecution: Extract<CalculationExecution, { status: 'executable' }>;
       withoutAreaExecution: Extract<CalculationExecution, { status: 'executable' }> | null;
       selected: CalculationExecutionObservation;
-      selectedInput: Extract<CalculationExecution, { status: 'executable' }>['input'];
-      selectedEffectiveContributions: CalculationExecution['effectiveContributions'];
       withoutAreaAlternate: CalculationExecutionObservation | null;
-      withoutAreaInput: Extract<CalculationExecution, { status: 'executable' }>['input'] | null;
-      withoutAreaEffectiveContributions: CalculationExecution['effectiveContributions'] | null;
     }
   >;
 }
@@ -51,30 +55,6 @@ export type RankingExecutionObservation =
     ? Observation
     : never;
 
-function withoutExecutionObservation(execution: CalculationExecution): CalculationExecution {
-  const visibleExecution = { ...execution };
-  delete visibleExecution.executionObservation;
-  return visibleExecution;
-}
-
-function withoutPreparedExecutionObservation(
-  prepared: PreparedCalculationScenario,
-): PreparedCalculationScenario {
-  if (prepared.status !== 'executable') return prepared;
-  const visiblePrepared = { ...prepared };
-  delete visiblePrepared.executionObservation;
-  return visiblePrepared;
-}
-
-function isTypedUnreachableCandidate(candidate: CalculationExecution): boolean {
-  return (
-    candidate.result.status === 'unavailable' ||
-    (candidate.result.status === 'unsupported' &&
-      candidate.result.missingEvidence.length === 1 &&
-      candidate.result.missingEvidence[0] === 'preparation:attackNoblePhantasmUnavailable')
-  );
-}
-
 export function calculateRankingCandidateSet(
   servant: ServantMaster,
   master: MasterDataSnapshot,
@@ -84,204 +64,199 @@ export function calculateRankingCandidateSet(
   includeAreaSupport: boolean,
   damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
   captureExecutionObservation = false,
+  observeCandidate?: RankingCandidateObserver,
+  requestedProfileKey?: string,
 ): RankingCandidateCalculation {
-  const plan = compileRankingExecutionPlan(
-    servant,
-    master,
-    profile,
-    conditions,
-    versions,
-    captureExecutionObservation,
-    damageCache,
-  );
-  const candidates = executeRankingScenarios(
-    plan.preparedRankingScenarios,
-    master,
-    versions,
-    plan.contributionPolicies,
-    damageCache,
-  );
-  const selected = selectRankingExecutionIndexes(
-    candidates,
-    plan.attackProfiles,
-    plan.basis.npLevel,
+  const plan = compileRankingExecutionPlan(servant, master, profile, conditions);
+  const batch = evaluateRankingCandidateBatch(
     plan,
+    master,
+    versions,
+    damageCache,
+    captureExecutionObservation,
+    observeCandidate,
   );
   const executionObservations = captureExecutionObservation
     ? new Map<string, RankingExecutionObservation>()
     : null;
-  const details = new Map(
-    [...selected].flatMap(([profileKey, selectedIndex]) => {
-      const blocking = candidates.some((candidate, index) => {
-        if (attackProfileKey(plan.attackProfiles[index]!) !== profileKey) return false;
-        if (isTypedUnreachableCandidate(candidate)) return false;
-        return candidate.result.status !== 'calculated';
+  const details = new Map<string, RankingPolicyDetail>();
+  for (const [profileKey, winner] of batch.selected) {
+    if (
+      (requestedProfileKey !== undefined && requestedProfileKey !== profileKey) ||
+      batch.accumulators.get(profileKey)!.blocking
+    )
+      continue;
+    assertCalculatedRankingCandidate(servant, winner);
+    const { descriptor, execution } = winner;
+    const attackProfile = descriptor.attackProfile;
+    const withoutAreaPolicy = descriptor.withoutAreaContributionPolicy;
+    const withoutAreaPrepared =
+      includeAreaSupport && withoutAreaPolicy
+        ? reapplyPreparedCalculationPolicy(winner.prepared, withoutAreaPolicy, damageCache)
+        : null;
+    const withoutAreaExecution =
+      withoutAreaPrepared && withoutAreaPolicy
+        ? evaluatePreparedCalculationScenario(withoutAreaPrepared, versions)
+        : null;
+    if (executionObservations) {
+      if (!execution.executionObservation)
+        throw new TypeError(
+          `ranking_selected_execution_observation_missing:${servant.id}:${profileKey}`,
+        );
+      const withoutAreaObservation =
+        withoutAreaExecution?.status === 'executable'
+          ? withoutAreaExecution.executionObservation
+          : null;
+      if (withoutAreaExecution?.status === 'executable' && !withoutAreaObservation)
+        throw new TypeError(`ranking_without_area_observation_missing:${servant.id}:${profileKey}`);
+      executionObservations.set(profileKey, {
+        candidateKey: descriptor.key,
+        selectedExecution: execution,
+        withoutAreaExecution:
+          withoutAreaExecution?.status === 'executable' ? withoutAreaExecution : null,
+        selected: execution.executionObservation,
+        withoutAreaAlternate: withoutAreaObservation ?? null,
       });
-      if (blocking) return [];
-      const execution = candidates[selectedIndex]!;
-      const variant = execution.noblePhantasmVariant;
-      const attackProfile = plan.attackProfiles[selectedIndex]!;
-      if (
-        variant?.kind !== 'attack' ||
-        noblePhantasmVariantKey(variant.ref) !==
-          noblePhantasmVariantKey(attackProfile.noblePhantasmVariant)
-      )
-        throw new TypeError(`ranking_attack_profile_mismatch:${servant.id}:${profileKey}`);
-      const withoutAreaPolicy = plan.withoutAreaContributionPolicies[selectedIndex];
-      const withoutAreaPrepared =
-        includeAreaSupport && withoutAreaPolicy
-          ? reapplyPreparedCalculationPolicy(
-              plan.preparedRankingScenarios[selectedIndex]!,
-              withoutAreaPolicy,
-              damageCache,
-            )
-          : null;
-      const withoutAreaExecution =
-        withoutAreaPrepared && withoutAreaPolicy
-          ? executeRankingScenarios(
-              [withoutAreaPrepared],
-              master,
-              versions,
-              [withoutAreaPolicy],
-              damageCache,
-            )[0]!
-          : null;
-      if (execution.status !== 'executable' || execution.result.status !== 'calculated')
-        throw new TypeError(`ranking_candidate_rejected:${servant.id}:${profileKey}`);
-      if (captureExecutionObservation) {
-        if (!executionObservations)
-          throw new TypeError('ranking_execution_observation_map_missing');
-        if (!execution.executionObservation)
-          throw new TypeError(
-            `ranking_selected_execution_observation_missing:${servant.id}:${profileKey}`,
-          );
-        const withoutAreaObservation =
-          withoutAreaExecution?.status === 'executable'
-            ? withoutAreaExecution.executionObservation
-            : null;
-        if (withoutAreaExecution?.status === 'executable' && !withoutAreaObservation)
-          throw new TypeError(
-            `ranking_without_area_observation_missing:${servant.id}:${profileKey}`,
-          );
-        executionObservations.set(profileKey, {
-          candidateKey: plan.candidateKeys[selectedIndex]!,
-          selectedExecution: execution,
-          withoutAreaExecution:
-            withoutAreaExecution?.status === 'executable' ? withoutAreaExecution : null,
-          selected: execution.executionObservation,
-          selectedInput: execution.input,
-          selectedEffectiveContributions: execution.effectiveContributions,
-          withoutAreaAlternate: withoutAreaObservation ?? null,
-          withoutAreaInput:
-            withoutAreaExecution?.status === 'executable' ? withoutAreaExecution.input : null,
-          withoutAreaEffectiveContributions:
-            withoutAreaExecution?.status === 'executable'
-              ? withoutAreaExecution.effectiveContributions
-              : null,
-        });
-      }
-      const areaContribution =
-        withoutAreaExecution?.status === 'executable' && withoutAreaPolicy
-          ? {
-              withoutAreaScenario: withoutAreaExecution.scenario as Extract<
-                CalculationScenario,
-                { mode: 'resolved' }
-              >,
-              withoutAreaInput: withoutAreaExecution.input,
-              withoutAreaResult: withoutAreaExecution.result,
-              withoutAreaEffects: withoutAreaExecution.effects,
-              contributionPolicy: withoutAreaPolicy,
-              effectiveContributions: withoutAreaExecution.effectiveContributions,
-              warnings: withoutAreaExecution.effectWarnings,
-            }
-          : null;
-      const detail: RankingPolicyDetail = {
-        entryId: profileKey,
-        servantId: servant.id,
-        attackProfile,
-        noblePhantasmVariant: variant.ref,
-        noblePhantasmName: variant.name,
-        npCard: variant.card,
-        npTarget: variant.targetScope,
-        scenario: execution.scenario as Extract<CalculationScenario, { mode: 'resolved' }>,
-        input: execution.input,
-        result: execution.result,
-        effects: execution.effects,
-        effectInputs: execution.effectInputs,
-        warnings: execution.effectWarnings,
-        appliedPreparationActions: execution.appliedPreparationActions,
-        possibilityCertificate: execution.possibilityCertificate,
-        contributionPolicy: plan.contributionPolicies[selectedIndex]!,
-        effectiveContributions: execution.effectiveContributions,
-        rankingPolicy: conditions,
-        basis: plan.basis,
-        areaContribution,
-        executionMetrics: {
-          worldCandidateCount: plan.worldCandidateCount,
-          scenarioCalculationCount: 1 + candidates.length + (withoutAreaExecution ? 1 : 0),
-        },
-        candidateEvidence: {
-          policyKey: rankingPolicyKey(conditions.selfBuffs, conditions.conditionalEffects),
-          candidateKey: plan.candidateKeys[selectedIndex]!,
-          preparationPlanKey: plan.preparationPlanKeys[selectedIndex]!,
-          startNpGauge: plan.startNpGauges[selectedIndex]!,
-          baselineInputDeviation: plan.baselineInputDeviations[selectedIndex]!,
-          attackProfileKey: plan.candidateEvidence[selectedIndex]!.attackProfileKey,
-          canonicalInputValues: plan.candidateEvidence[selectedIndex]!.canonicalInputValues,
-          targetCandidateKey: plan.candidateEvidence[selectedIndex]!.targetCandidateKey,
-          fieldCandidateKey: plan.candidateEvidence[selectedIndex]!.fieldCandidateKey,
-          quantityCandidateKey: plan.candidateEvidence[selectedIndex]!.quantityCandidateKey,
-        },
-      };
-      return [[attackProfileKey(attackProfile), detail] as const];
-    }),
-  );
-  const publicPlan = captureExecutionObservation
-    ? {
-        ...plan,
-        preparedRankingScenarios: plan.preparedRankingScenarios.map(
-          withoutPreparedExecutionObservation,
-        ),
-      }
-    : plan;
+    }
+    const areaContribution =
+      withoutAreaExecution?.status === 'executable' && withoutAreaPolicy
+        ? {
+            withoutAreaScenario: withoutAreaExecution.scenario as Extract<
+              CalculationScenario,
+              { mode: 'resolved' }
+            >,
+            withoutAreaInput: withoutAreaExecution.input,
+            withoutAreaResult: withoutAreaExecution.result,
+            withoutAreaEffects: withoutAreaExecution.effects,
+            contributionPolicy: withoutAreaPolicy,
+            effectiveContributions: withoutAreaExecution.effectiveContributions,
+            warnings: withoutAreaExecution.effectWarnings,
+          }
+        : null;
+    const detail: RankingPolicyDetail = {
+      ...rankingCandidateRowSource(winner),
+      servantId: servant.id,
+      input: execution.input,
+      effects: execution.effects,
+      effectInputs: execution.effectInputs,
+      warnings: execution.effectWarnings,
+      appliedPreparationActions: execution.appliedPreparationActions,
+      possibilityCertificate: execution.possibilityCertificate,
+      contributionPolicy: descriptor.contributionPolicy,
+      rankingPolicy: conditions,
+      basis: plan.basis,
+      areaContribution,
+      executionMetrics: {
+        worldCandidateCount: plan.worldCandidateCount,
+        scenarioCalculationCount: 1 + plan.worldCandidateCount + (withoutAreaExecution ? 1 : 0),
+      },
+      candidateEvidence: {
+        policyKey: rankingPolicyKey(conditions.selfBuffs, conditions.conditionalEffects),
+        candidateKey: descriptor.key,
+        preparationPlanKey: descriptor.evidence.preparationPlanKey,
+        startNpGauge: descriptor.evidence.startNpGauge,
+        baselineInputDeviation: descriptor.baselineInputDeviation,
+        attackProfileKey: descriptor.evidence.attackProfileKey,
+        canonicalInputValues: descriptor.evidence.canonicalInputValues,
+        targetCandidateKey: descriptor.evidence.targetCandidateKey,
+        fieldCandidateKey: descriptor.evidence.fieldCandidateKey,
+        quantityCandidateKey: descriptor.evidence.quantityCandidateKey,
+      },
+    };
+    details.set(attackProfileKey(attackProfile), detail);
+  }
   return {
-    plan: publicPlan,
-    executions: captureExecutionObservation
-      ? candidates.map(withoutExecutionObservation)
-      : candidates,
+    plan,
+    candidateInventory: batch.candidateInventory,
+    preparationInventory: batch.preparationInventory,
+    profileResults: new Map(
+      [...batch.accumulators]
+        .filter(([key]) => requestedProfileKey === undefined || key === requestedProfileKey)
+        .map(([key, accumulator]) => [key, accumulator.result(details.get(key))]),
+    ),
     details,
     ...(executionObservations ? { executionObservations } : {}),
   };
 }
 
-export function calculateRankingCandidates(
+/** Summary borrows only the winning values after every candidate, including losers, has folded. */
+export function calculateRankingCandidateSummary(
   servant: ServantMaster,
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
   conditions: RankingPolicyConditions,
   versions: VersionContext,
-  includeAreaSupport: boolean,
-  damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
-): ReadonlyMap<string, RankingPolicyDetail> {
-  return calculateRankingCandidateSet(
-    servant,
-    master,
-    profile,
-    conditions,
-    versions,
-    includeAreaSupport,
-    damageCache,
-  ).details;
+  damageCache: PreparedDamageMatrixCache<DamageResolutionValue>,
+) {
+  const plan = compileRankingExecutionPlan(servant, master, profile, conditions);
+  const batch = evaluateRankingCandidateBatch(plan, master, versions, damageCache);
+  const rows = [] as ReturnType<typeof createRankingRow>[];
+  const exclusions = [] as ReturnType<typeof createRankingPolicyExclusion>[];
+  for (const [key, accumulator] of batch.accumulators) {
+    const winner = batch.selected.get(key);
+    if (winner && !accumulator.blocking) {
+      assertCalculatedRankingCandidate(servant, winner);
+      rows.push(createRankingRow(servant, rankingCandidateRowSource(winner), profile));
+    } else {
+      const result = accumulator.result();
+      if (result.status === 'calculated') throw new TypeError('ranking_summary_failure_required');
+      exclusions.push(createRankingPolicyExclusion(servant, key, result));
+    }
+  }
+  return {
+    plan,
+    rows,
+    exclusions,
+    candidateInventory: batch.candidateInventory,
+    preparationInventory: batch.preparationInventory,
+  };
 }
 
-export function selectRankingDetail(
-  details: ReadonlyMap<string, RankingPolicyDetail>,
+function rankingCandidateRowSource(winner: CalculatedRankingCandidate): RankingRowSource {
+  const { execution } = winner;
+  const variant = execution.noblePhantasmVariant;
+  return {
+    entryId: attackProfileKey(winner.descriptor.attackProfile),
+    attackProfile: winner.descriptor.attackProfile,
+    noblePhantasmVariant: variant.ref,
+    noblePhantasmName: variant.name,
+    npCard: variant.card,
+    npTarget: variant.targetScope,
+    scenario: execution.scenario,
+    result: execution.result,
+    effectiveContributions: execution.effectiveContributions,
+  };
+}
+
+type CalculatedRankingCandidate = EvaluatedRankingCandidate & {
+  execution: Extract<CalculationExecution, { status: 'executable' }> & {
+    scenario: Extract<CalculationScenario, { mode: 'resolved' }>;
+    result: Extract<CalculationExecution['result'], { status: 'calculated' }>;
+    noblePhantasmVariant: Extract<
+      NonNullable<CalculationExecution['noblePhantasmVariant']>,
+      { kind: 'attack' }
+    >;
+  };
+};
+
+/** Summary and detail accept the same resolved, calculated winner. */
+function assertCalculatedRankingCandidate(
   servant: ServantMaster,
-  attackProfile?: AttackProfile,
-): RankingPolicyDetail {
-  const detail = attackProfile
-    ? details.get(attackProfileKey(attackProfile))
-    : details.values().next().value;
-  if (!detail) throw new TypeError(`ranking_attack_profile_candidate_missing:${servant.id}`);
-  return detail;
+  winner: EvaluatedRankingCandidate,
+): asserts winner is CalculatedRankingCandidate {
+  const { descriptor, execution } = winner;
+  const variant = execution.noblePhantasmVariant;
+  const key = attackProfileKey(descriptor.attackProfile);
+  if (
+    variant?.kind !== 'attack' ||
+    noblePhantasmVariantKey(variant.ref) !==
+      noblePhantasmVariantKey(descriptor.attackProfile.noblePhantasmVariant)
+  )
+    throw new TypeError(`ranking_attack_profile_mismatch:${servant.id}:${key}`);
+  if (
+    execution.status !== 'executable' ||
+    execution.result.status !== 'calculated' ||
+    execution.scenario.mode !== 'resolved'
+  )
+    throw new TypeError(`ranking_candidate_rejected:${servant.id}:${key}`);
 }

@@ -36,7 +36,7 @@ export function createRankingFieldFactCandidates(
     MAX_RANKING_FIELD_CANDIDATES + 1,
     'ranking_field_candidate_limit',
   );
-  return product.candidates
+  return Array.from(product.candidates)
     .map((candidate) => ({
       facts: relevantTraits.map((trait) => ({ trait, present: candidate[trait] ?? false })),
     }))

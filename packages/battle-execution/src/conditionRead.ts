@@ -1,3 +1,4 @@
+import type { InputFact } from './inputFacts';
 import type { ExecutionIssue } from './contracts';
 import type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 import type { ActorFormId, EffectProc } from '@fgo-lab/master-data';
@@ -40,7 +41,7 @@ export interface ConditionReadEvidence {
   expression: ConditionExpression;
   value: boolean | number | null;
   proof: ConditionFactProof | null;
-  quantityFact?: import('./inputFacts').InputFact;
+  quantityFact?: InputFact;
 }
 
 export type ConditionRead = {
@@ -176,4 +177,16 @@ export function contributionOperandRead(
         certainty: support.every(proofIsGuaranteed) ? 'guaranteed' : 'possible',
       }
     : { ...operand, support, evidence };
+}
+
+export function sourceActivationOutcome(
+  activation: SourceActivationReceipt,
+): ResolvedStochasticOutcome | undefined {
+  if (activation.kind === 'read') {
+    const proc = activation.proc;
+    if (proc.kind === 'resolved') return { status: proc.outcome };
+    if (proc.kind === 'inputRequired') return { status: 'inputRequired', inputKey: proc.inputKey };
+    if (proc.kind === 'invalid') return { status: 'invalid', issue: proc.issue };
+  }
+  return undefined;
 }

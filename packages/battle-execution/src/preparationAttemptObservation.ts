@@ -1,7 +1,11 @@
 import { beginPreparationHpCapture, takePreparationHpCapture } from './hpExecutionObservation';
 export { preparationHpActionsFor, hpCandidateObservationFor } from './hpExecutionObservation';
 export { compiledSourcesFor, compiledOperationSourceFor } from './executionSourceObservation';
-export type { PreparationHpAction, HpCandidateObservation } from './hpExecutionObservation';
+export type {
+  PreparationHpAction,
+  PreparationHpActionSnapshot,
+  HpCandidateObservation,
+} from './hpExecutionObservation';
 import type { SourceEffect } from './sourceCollection';
 import type { PreparationSourceExecution, PreparationSourceDraft } from './preparationExecution';
 import type { BattlePointState } from './battlePointResource';
@@ -19,6 +23,8 @@ import type {
   PreparationExecutionContext,
   PreparationCompletedTransitionResult,
   PreNoblePhantasmState,
+  PreparationSnapshot,
+  PreparationStateSnapshot,
 } from './preparationContracts';
 
 /** Native observations owned by the completed execution result. */
@@ -42,6 +48,9 @@ export interface PreparationOcAttempt {
   native?: OcActionResult;
   attempted?: BattlePointState;
   returned?: PreNoblePhantasmState;
+}
+export interface PreparationOcAttemptSnapshot extends PreparationSnapshot<PreparationOcAttempt> {
+  readonly start: PreparationStateSnapshot;
 }
 const scopes = new WeakMap<PreparationExecutionContext, PreparationOcAttempt[]>();
 
@@ -70,7 +79,9 @@ export function publishPreparationSources(
   sourceDrafts.delete(attempt);
 }
 
-export function preparationSourcesFor(attempt: PreparationOcAttempt) {
+export function preparationSourcesFor(
+  attempt: PreparationSnapshot<PreparationOcAttempt>,
+): readonly PreparationSourceExecution[] {
   return attempt.sourceExecutions;
 }
 
@@ -85,7 +96,9 @@ export function capturePreparationOcRates(attempt: PreparationOcAttempt) {
   attempt.rates = observation;
   return observation;
 }
-export function preparationOcRatesFor(attempt: PreparationOcAttempt) {
+export function preparationOcRatesFor(
+  attempt: PreparationSnapshot<PreparationOcAttempt>,
+): PreparationSnapshot<PreparationOcRateObservation> {
   return attempt.rates;
 }
 export function beginPreparationAttemptCapture(context: PreparationExecutionContext): void {
@@ -104,7 +117,9 @@ export function takePreparationAttemptCapture(context: PreparationExecutionConte
   battlePointScopes.delete(context);
   return { ocAttempts, battlePointSteps, hpActions };
 }
-export function preparationOcAttemptsFor(result: PreparationCompletedTransitionResult) {
+export function preparationOcAttemptsFor(
+  result: PreparationCompletedTransitionResult,
+): PreparationCompletedTransitionResult['observations']['ocAttempts'] {
   return result.observations.ocAttempts;
 }
 
@@ -126,6 +141,8 @@ const battlePointScopes = new WeakMap<PreparationExecutionContext, PreparationBa
 export function preparationBattlePointScope(context: PreparationExecutionContext) {
   return battlePointScopes.get(context);
 }
-export function preparationBattlePointStepsFor(result: PreparationCompletedTransitionResult) {
+export function preparationBattlePointStepsFor(
+  result: PreparationCompletedTransitionResult,
+): PreparationCompletedTransitionResult['observations']['battlePointSteps'] {
   return result.observations.battlePointSteps;
 }

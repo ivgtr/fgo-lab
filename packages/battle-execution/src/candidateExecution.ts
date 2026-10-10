@@ -2,11 +2,10 @@ import {
   conditionWriteProof,
   contributionOperandRead,
   procIsGuaranteed,
-  type ConditionFactProof,
   type ConditionRead,
 } from './conditionRead';
 import { physicalInputCommitFor, type SourceExecutionBinding } from './executionBinding';
-import { exactInputFactValue } from './inputFacts';
+import { contributionIsIncluded as isIncluded } from './effectiveContributions';
 import { applyCommittedPreparationTransition } from './preparationPhysicalTransition';
 import {
   applyObservedNpDamage,
@@ -16,25 +15,9 @@ import {
   resolveObservedModifierValue,
   type CandidateSourceRead,
 } from './hpExecutionObservation';
-import type {
-  ExecutionIssue,
-  OperationResult,
-  BattleOperation,
-  ExecutableBattleState,
-} from './contracts';
+import type { ExecutionIssue, OperationResult } from './contracts';
 import { markerOperationDisposition, applyOrderedMarkerMutation } from './markerExecution';
-import {
-  fixedConstraintFactsFromState,
-  validateConstraintSet,
-  type SatisfiableConditionConstraint,
-} from './constraints';
-import {
-  applyInitialTraitSuppression,
-  applyTraitAddition,
-  applyTraitRemoval,
-  cloneBattleState,
-  appendModifier,
-} from './state';
+import { cloneBattleState, appendModifier } from './state';
 import type { TargetCandidate } from './targetContext';
 import type {
   OrderedScenarioExecution,
@@ -45,331 +28,36 @@ import type {
 import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
 import { assembleInvalidActivationResult } from './candidateFailure';
+import { markOperationGroupInputRequired } from './candidateRollback';
+import { applyRuntimeNoblePhantasmVariantSelection } from './variantSelection';
 import {
-  markOperationGroupInputRequired,
-  markOperationGroupUnsupported,
-} from './candidateRollback';
-import { contributionIsIncluded } from './effectiveContributions';
-import {
-  applyOrderedCriticalStarsMutation,
-  applyOrderedQuantityMutation,
-} from './resourceSemantics';
-import {
-  applyRuntimeNoblePhantasmVariantSelection,
-  needsMutationValidation,
-} from './variantSelection';
-import {
-  includedByPolicy,
   modifierValue,
   operationEnabled,
   userConditionMet,
   applyOrderedActorFormTransition,
   effectOperationGroups,
   resolveOperationDisposition,
+  scalarBattlePointSubjectFor,
 } from './candidateOperationContext';
 import { createOperationResult } from './operationResult';
 import {
-  createMutableCandidateStateAudit,
-  mutationAuditAddress,
-  auditValuesEqual,
-  battleStateRestoredToGroupStart,
-  collectAppliedOperationIds,
-  appendExecutionGroupAudit,
   recordPreGroupContextResolution,
   recordCandidatePreflight,
   type MutableCandidateStateAudit,
   type PendingMutationAuditEvent,
-  type CandidateExecutionWithAudit,
 } from './candidateStateAudit';
+import {
+  groupHasMissingActiveInput,
+  recordMissingInputRollback,
+  rollbackUnsupportedGroup,
+  recordPreparationPhysicalInput,
+  validateCandidateMutation,
+  applyOrderedTraitWrite,
+  applyAuditedQuantityMutation,
+  recordCommittedGroup,
+} from './candidateTransaction';
 
-function requireNormalPreparation(prepared: PreparedOrderedScenario): void {
-  if (prepared.preparationExecution.kind === 'diagnostic')
-    throw new TypeError('diagnostic_preparation_is_not_normal_execution');
-}
-
-function groupHasMissingActiveInput(
-  results: readonly OperationResult[],
-  issues: readonly ExecutionIssue[],
-  missingDefinitions: ResolvedCanonicalInputSet['missingDefinitions'],
-  activations: ReadonlyMap<string, { enabled: boolean }>,
-  policy: ContributionApplicationPolicy,
-): boolean {
-  if (
-    issues.some(
-      (issue) =>
-        issue.kind !== 'unsupportedOperation' || issue.detail !== 'modifier_value_quantity_missing',
-    )
-  )
-    return false;
-  return missingDefinitions.some((definition) =>
-    results.some(
-      (result) =>
-        result.operation.inputDefinitions.some((input) => input.key === definition.key) &&
-        activations.get(result.operation.operationId)?.enabled === true &&
-        result.conditionRead.truth !== false &&
-        contributionIsIncluded(result.operation, result.conditionRead, policy) &&
-        (result.outcome === 'applied' ||
-          (result.valueDependencyRead?.kind === 'inputRequired' &&
-            result.valueDependencyRead.evidence.some(
-              ({ expression }) =>
-                expression.kind === 'inputQuantity' && expression.inputKey === definition.key,
-            ))),
-    ),
-  );
-}
-
-function recordMissingInputRollback(args: {
-  audit: MutableCandidateStateAudit | undefined;
-  pendingMutationEvents: PendingMutationAuditEvent[] | null;
-  results: readonly OperationResult[];
-  initialGroupResultIndex: number;
-  groupIndex: number;
-  operationGroup: readonly BattleOperation[];
-  initialGroupState: ExecutableBattleState;
-  initialGroupInput: PreparedOrderedScenario['baseInput'];
-  state: ExecutableBattleState;
-  input: PreparedOrderedScenario['baseInput'];
-}): void {
-  const {
-    audit,
-    pendingMutationEvents,
-    results,
-    initialGroupResultIndex,
-    groupIndex,
-    operationGroup,
-    initialGroupState,
-    initialGroupInput,
-    state,
-    input,
-  } = args;
-  if (!audit || !pendingMutationEvents) return;
-  appendExecutionGroupAudit({
-    audit,
-    groupIndex,
-    operationGroup,
-    operationIdsApplied: collectAppliedOperationIds(results, initialGroupResultIndex),
-    outcome: 'rolledBack',
-    issues: [],
-    pendingMutationEvents,
-    restoredState: initialGroupState,
-    rollbackProof: {
-      battleStateRestored: battleStateRestoredToGroupStart(initialGroupState, state),
-      damageInputRestored: auditValuesEqual(initialGroupInput, input),
-    },
-  });
-}
-
-function rollbackUnsupportedGroup(args: {
-  audit: MutableCandidateStateAudit | undefined;
-  pendingMutationEvents: PendingMutationAuditEvent[] | null;
-  results: OperationResult[];
-  initialGroupResultIndex: number;
-  groupIndex: number;
-  operationGroup: readonly BattleOperation[];
-  initialGroupState: ExecutableBattleState;
-  initialGroupInput: PreparedOrderedScenario['baseInput'];
-  issues: readonly ExecutionIssue[];
-}): ExecutableBattleState {
-  const attemptedAppliedOperationIds = args.audit
-    ? collectAppliedOperationIds(args.results, args.initialGroupResultIndex)
-    : null;
-  const state = {
-    ...args.initialGroupState,
-    unresolved: [...args.initialGroupState.unresolved, ...args.issues],
-  };
-  markOperationGroupUnsupported(args.results, args.initialGroupResultIndex, state, args.issues);
-  if (args.audit && args.pendingMutationEvents && attemptedAppliedOperationIds)
-    appendExecutionGroupAudit({
-      audit: args.audit,
-      groupIndex: args.groupIndex,
-      operationGroup: args.operationGroup,
-      operationIdsApplied: attemptedAppliedOperationIds,
-      outcome: 'rolledBack',
-      issues: [...args.issues],
-      pendingMutationEvents: args.pendingMutationEvents,
-      restoredState: args.initialGroupState,
-      rollbackProof: {
-        battleStateRestored: battleStateRestoredToGroupStart(args.initialGroupState, state),
-        damageInputRestored: auditValuesEqual(args.initialGroupInput, args.initialGroupInput),
-      },
-    });
-  return state;
-}
-
-function recordPreparationPhysicalInput(
-  operation: BattleOperation,
-  operationSequence: number,
-  pending: PendingMutationAuditEvent[] | null,
-): boolean {
-  const physicalInput = physicalInputCommitFor(operation);
-  if (!physicalInput) return false;
-  if (operation.kind !== 'resourceMutation' || operation.resource !== 'criticalStars')
-    throw new TypeError('physical_input_commit_operation_mismatch');
-  pending?.push({
-    operationSequence,
-    operationId: operation.operationId,
-    operationKind: operation.kind,
-    stateAddress: physicalInput.inputKey,
-    before: exactInputFactValue(physicalInput.before) ?? null,
-    attemptedAfter: exactInputFactValue(physicalInput.after) ?? null,
-  });
-  return true;
-}
-
-function validateCandidateMutation(
-  operation: BattleOperation,
-  state: ExecutableBattleState,
-  conditions: readonly SatisfiableConditionConstraint[],
-  mutations: readonly SatisfiableConditionConstraint[],
-  invalidDecisionKeys: ReadonlySet<string>,
-) {
-  return needsMutationValidation(operation)
-    ? validateConstraintSet({
-        fixedFacts: fixedConstraintFactsFromState(state, operation.operationId),
-        expressions: conditions
-          .filter((constraint) => !invalidDecisionKeys.has(constraint.sourceKey))
-          .concat(mutations),
-      })
-    : { status: 'satisfied' as const, alternativeCount: 1 };
-}
-
-function applyOrderedTraitWrite(
-  operation: Extract<
-    BattleOperation,
-    { kind: 'addTrait' | 'removeTrait' | 'suppressInitialTrait' }
-  >,
-  state: ExecutableBattleState,
-  proof: ConditionFactProof,
-): void {
-  let changed: ExecutableBattleState;
-  switch (operation.kind) {
-    case 'addTrait':
-      changed = applyTraitAddition(state, operation.scope, operation.trait, proof);
-      break;
-    case 'removeTrait':
-      changed = applyTraitRemoval(state, operation.scope, operation.trait, proof);
-      break;
-    case 'suppressInitialTrait':
-      changed = applyInitialTraitSuppression(state, operation.scope, operation.trait, proof);
-      break;
-  }
-  state.traitFactLayers = changed.traitFactLayers;
-  state.conditionFactProofs = changed.conditionFactProofs;
-  state.initialTraitSuppressions = changed.initialTraitSuppressions;
-}
-
-function applyAuditedQuantityMutation(
-  operation: Extract<BattleOperation, { kind: 'resourceMutation' | 'addQuantity' }>,
-  before: ExecutableBattleState,
-  after: ExecutableBattleState,
-  proof: ConditionFactProof,
-  operationSequence: number,
-  pending: PendingMutationAuditEvent[] | null,
-): ExecutionIssue | null {
-  const mutationBefore = pending ? mutationAuditAddress(operation, before) : null;
-  const issue =
-    operation.kind === 'resourceMutation'
-      ? applyOrderedCriticalStarsMutation(operation, after, proof)
-      : applyOrderedQuantityMutation(operation, after);
-  if (pending && mutationBefore)
-    pending.push({
-      operationSequence,
-      operationId: operation.operationId,
-      operationKind: operation.kind,
-      stateAddress: mutationBefore.stateAddress,
-      before: mutationBefore.value,
-      attemptedAfter: mutationAuditAddress(operation, after)?.value ?? null,
-    });
-  return issue;
-}
-
-export function executeOrderedScenarioCandidates(
-  prepared: PreparedOrderedScenario,
-  resolvedInputs: ResolvedCanonicalInputSet,
-  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
-): readonly OrderedScenarioExecution[] {
-  requireNormalPreparation(prepared);
-  return prepared.targetResolution.kind === 'candidates'
-    ? prepared.targetResolution.candidates.map((candidate) =>
-        executeOrderedScenarioCandidate(prepared, resolvedInputs, candidate, contributionPolicy),
-      )
-    : [];
-}
-
-export function executeOrderedScenarioCandidatesWithAudit(
-  prepared: PreparedOrderedScenario,
-  resolvedInputs: ResolvedCanonicalInputSet,
-  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
-): readonly CandidateExecutionWithAudit[] {
-  requireNormalPreparation(prepared);
-  return prepared.targetResolution.kind === 'candidates'
-    ? prepared.targetResolution.candidates.map((candidate) =>
-        executeOrderedScenarioCandidateWithAudit(
-          prepared,
-          resolvedInputs,
-          candidate,
-          contributionPolicy,
-        ),
-      )
-    : [];
-}
-
-export function executeOrderedScenarioCandidateWithAudit(
-  prepared: PreparedOrderedScenario,
-  resolvedInputs: ResolvedCanonicalInputSet,
-  targetCandidate: TargetCandidate | null,
-  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
-): CandidateExecutionWithAudit {
-  requireNormalPreparation(prepared);
-  const mutableAudit = createMutableCandidateStateAudit();
-  const execution = executeOrderedScenarioCandidateInternal(
-    prepared,
-    resolvedInputs,
-    targetCandidate,
-    contributionPolicy,
-    mutableAudit,
-  );
-  return { execution, candidateState: mutableAudit };
-}
-
-export function executeOrderedScenarioCandidate(
-  prepared: PreparedOrderedScenario,
-  resolvedInputs: ResolvedCanonicalInputSet,
-  targetCandidate: TargetCandidate | null,
-  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
-): OrderedScenarioExecution {
-  requireNormalPreparation(prepared);
-  return executeOrderedScenarioCandidateInternal(
-    prepared,
-    resolvedInputs,
-    targetCandidate,
-    contributionPolicy,
-  );
-}
-
-export function executeDiagnosticScenarioCandidatesWithAudit(
-  prepared: PreparedOrderedScenario,
-  resolvedInputs: ResolvedCanonicalInputSet,
-  contributionPolicy: ContributionApplicationPolicy,
-): readonly CandidateExecutionWithAudit[] {
-  if (prepared.preparationExecution.kind !== 'diagnostic')
-    throw new TypeError('diagnostic_preparation_required');
-  const targets =
-    prepared.targetResolution.kind === 'candidates' ? prepared.targetResolution.candidates : [null];
-  return targets.map((target) => {
-    const candidateState = createMutableCandidateStateAudit();
-    const execution = executeOrderedScenarioCandidateInternal(
-      prepared,
-      resolvedInputs,
-      target,
-      contributionPolicy,
-      candidateState,
-    );
-    return { execution, candidateState };
-  });
-}
-
-function executeOrderedScenarioCandidateInternal(
+export function executeOrderedCandidate(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
   targetCandidate: TargetCandidate | null,
@@ -392,6 +80,8 @@ function executeOrderedScenarioCandidateInternal(
   let { state } = candidate;
   const results: OperationResult[] = [];
   const sourceReads = new Map<SourceExecutionBinding, CandidateSourceRead>();
+  // A declared scalar writer binds the later NP read even when its transaction rolls back.
+  let scalarBattlePointSubject: string | undefined;
   let input = candidateInput;
   recordPreGroupContextResolution(audit, candidate);
   const hpCapture = audit && beginHpCandidateCapture(audit, candidate.state);
@@ -403,6 +93,9 @@ function executeOrderedScenarioCandidateInternal(
     const groupIssues: ExecutionIssue[] = [];
     const pendingMutationEvents: PendingMutationAuditEvent[] | null = audit ? [] : null;
     for (const operation of operationGroup) {
+      scalarBattlePointSubject =
+        scalarBattlePointSubjectFor(operation, candidateInput.attackerId) ??
+        scalarBattlePointSubject;
       const operationSequence = results.length;
       const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
       const activation = candidate.activations.get(operation.operationId)!;
@@ -427,7 +120,7 @@ function executeOrderedScenarioCandidateInternal(
       const resolvedModifierValue = resolved.value;
       const valueDependencyRead = resolved.dependency;
       const applicationRead = contributionOperandRead(conditionRead, valueDependencyRead);
-      const contributionIncluded = includedByPolicy(operation, contributionPolicy, applicationRead);
+      const contributionIncluded = isIncluded(operation, applicationRead, contributionPolicy);
       const enabled = operationEnabled(
         activation,
         operation,
@@ -529,9 +222,8 @@ function executeOrderedScenarioCandidateInternal(
               hpCapture,
               operationSequence,
               groupIndex,
-              (read) => {
-                damageDependencyRead = read;
-              },
+              (read) => (damageDependencyRead = read),
+              scalarBattlePointSubject,
             );
         }
         const mutationValidation = validateCandidateMutation(
@@ -610,16 +302,13 @@ function executeOrderedScenarioCandidateInternal(
     }
     if (groupIssues.length === 0) {
       if (audit && pendingMutationEvents)
-        appendExecutionGroupAudit({
+        recordCommittedGroup({
           audit,
           groupIndex,
           operationGroup,
-          operationIdsApplied: collectAppliedOperationIds(results, initialGroupResultIndex),
-          outcome: 'committed',
-          issues: [],
+          results,
+          initialGroupResultIndex,
           pendingMutationEvents,
-          restoredState: null,
-          rollbackProof: null,
         });
       continue;
     }

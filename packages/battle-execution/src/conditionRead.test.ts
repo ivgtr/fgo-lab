@@ -87,6 +87,64 @@ function selfWrite(state: ExecutableBattleState): ConditionFactProof {
 }
 
 describe('condition value, proof and read clock', () => {
+  it('keeps an explicitly bound scalar NP read separate from domain reads and missing values', () => {
+    const state = initial();
+    const subjectId = form.actorId;
+    state.quantities.battlePointPhase = 5;
+    state.battlePoints = {
+      actors: {
+        attacker: {
+          actorId: subjectId,
+          domains: {
+            [subjectId]: { kind: 'present', point: 2, capacity: 10, capacityModifiers: [] },
+          },
+        },
+      },
+      receipts: [],
+      executedEffects: [],
+    };
+    state.battlePointDomains = [
+      {
+        id: subjectId,
+        phaseScale: 'point',
+        phases: Array.from({ length: 11 }, (_, phase) => ({ phase, threshold: phase })),
+        eligibility: [],
+        capacity: { default: 10, maximum: 10, traitOverrides: [] },
+      },
+    ];
+    state.conditionFactProofs.quantities = new Map([
+      ...state.conditionFactProofs.quantities,
+      [`battlePoint:attacker:${subjectId}`, selfWrite(state)],
+    ]);
+    const expression = {
+      kind: 'quantity',
+      quantity: 'battlePointPhase',
+      subjectId,
+      comparison: 'atLeast',
+      value: 0,
+    } as const;
+    const domain = evaluateCondition(expression, state);
+    expect(domain.evidence[0]!.value).toBe(2);
+    expect(domain.certainty).toBe('guaranteed');
+    const scalarFrame = { ...state, scalarBattlePointSubject: subjectId };
+    const observations: unknown[] = [];
+    const scalar = evaluateCondition(expression, scalarFrame, (read) => observations.push(read));
+    expect(scalar.evidence[0]!.expression).toBe(expression);
+    expect(scalar.evidence[0]!.value).toBe(5);
+    expect(scalar.certainty).toBe('possible');
+    expect(scalar.support).toEqual([state.conditionFactProofs.quantities.get('battlePointPhase')]);
+    expect(observations).toEqual([]);
+    expect(
+      evaluateCondition({ ...expression, subjectId: 'missing-domain' }, scalarFrame).kind,
+    ).toBe('inputRequired');
+    expect(
+      evaluateCondition(expression, {
+        ...scalarFrame,
+        quantities: { ...state.quantities, battlePointPhase: null },
+      }).kind,
+    ).toBe('inputRequired');
+    expect(evaluateCondition(expression, state).evidence[0]!.value).toBe(2);
+  });
   it('reads a guaranteed predicate over both physical star outcomes and retains the causal read', () => {
     const state = initial();
     const beforeProof: ConditionFactProof = {

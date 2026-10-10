@@ -52,31 +52,33 @@ function traitFactCandidates(
     dimension.facts.push(fact);
     byDimension.set(key, dimension);
   }
-  return finiteSemanticProduct(
-    [...byDimension.values()].map(({ key, kind, facts }) => {
-      const unique = [
-        ...new Map(facts.map((fact) => [`${fact.scope}:${fact.trait}`, fact])).values(),
-      ];
-      if (kind === 'independent')
-        return { key, values: [false, true].map((present) => [{ ...unique[0]!, present }]) };
-      const traitsInGroup = [...new Set(unique.map(({ trait }) => trait))];
-      const absent = unique.map((fact) => ({ ...fact, present: false }));
-      const choices = traitsInGroup.flatMap((selectedTrait) => {
-        const selectedFacts = unique.filter(({ trait }) => trait === selectedTrait);
-        return Array.from({ length: 2 ** selectedFacts.length - 1 }, (_, index) => index + 1).map(
-          (mask) =>
-            unique.map((fact) => ({
-              ...fact,
-              present:
-                fact.trait === selectedTrait && (mask & (1 << selectedFacts.indexOf(fact))) !== 0,
-            })),
-        );
-      });
-      return { key, values: [absent, ...choices] };
-    }),
-    MAX_RANKING_WORLD_PHYSICAL_STATES,
-    'ranking_world_physical_state_limit',
-  ).candidates.map((candidate) => Object.values(candidate).flat());
+  return Array.from(
+    finiteSemanticProduct(
+      [...byDimension.values()].map(({ key, kind, facts }) => {
+        const unique = [
+          ...new Map(facts.map((fact) => [`${fact.scope}:${fact.trait}`, fact])).values(),
+        ];
+        if (kind === 'independent')
+          return { key, values: [false, true].map((present) => [{ ...unique[0]!, present }]) };
+        const traitsInGroup = [...new Set(unique.map(({ trait }) => trait))];
+        const absent = unique.map((fact) => ({ ...fact, present: false }));
+        const choices = traitsInGroup.flatMap((selectedTrait) => {
+          const selectedFacts = unique.filter(({ trait }) => trait === selectedTrait);
+          return Array.from({ length: 2 ** selectedFacts.length - 1 }, (_, index) => index + 1).map(
+            (mask) =>
+              unique.map((fact) => ({
+                ...fact,
+                present:
+                  fact.trait === selectedTrait && (mask & (1 << selectedFacts.indexOf(fact))) !== 0,
+              })),
+          );
+        });
+        return { key, values: [absent, ...choices] };
+      }),
+      MAX_RANKING_WORLD_PHYSICAL_STATES,
+      'ranking_world_physical_state_limit',
+    ).candidates,
+  ).map((candidate) => Object.values(candidate).flat());
 }
 
 function collectPredicateReferences(
@@ -216,11 +218,13 @@ export function enumerateRankingWorldDomain(input: {
     attributes: referencedAttributes,
     familyIds: referencedFamilyIds,
   } = collectPredicateReferences(witnessSpaces);
-  const familyCandidates = finiteSemanticProduct(
-    referencedFamilyIds.map((familyId) => ({ key: familyId, values: [false, true] })),
-    MAX_RANKING_WORLD_CANDIDATES,
-    'ranking_world_candidate_limit',
-  ).candidates.map((candidate) => referencedFamilyIds.filter((familyId) => candidate[familyId]));
+  const familyCandidates = Array.from(
+    finiteSemanticProduct(
+      referencedFamilyIds.map((familyId) => ({ key: familyId, values: [false, true] })),
+      MAX_RANKING_WORLD_CANDIDATES,
+      'ranking_world_candidate_limit',
+    ).candidates,
+  ).map((candidate) => referencedFamilyIds.filter((familyId) => candidate[familyId]));
   const ownedTraitFacts = input.ownedTraitFacts ?? new Set<string>();
   const explicitTargetStateTraits = collectExplicitTargetStateTraits(conditions);
   const targetTraits = collectTargetTraitFacts(

@@ -1,4 +1,4 @@
-import type { SourceExecutionBinding } from './executionBinding';
+import type { SourceExecutionBinding, ModifierValueRead } from './executionBinding';
 import type { ConditionRead } from './conditionRead';
 import type { ConditionReadAudit } from './condition';
 import { appendConditionReadAudit, observeScalarNp } from './candidateStateAudit';
@@ -17,6 +17,8 @@ import type {
   PreNoblePhantasmState,
   PreparationExecutionContext,
   PreparationCompletedTransitionResult,
+  PreparationSnapshot,
+  PreparationStateSnapshot,
 } from './preparationContracts';
 import type { OcActionResult } from './ocState';
 import type { ExecutableBattleState, OperationResult } from './contracts';
@@ -256,19 +258,29 @@ export function takePreparationHpCapture(context: PreparationExecutionContext) {
   scopes.delete(context);
   return actions;
 }
-export function preparationHpActionsFor(result: PreparationCompletedTransitionResult) {
+export function preparationHpActionsFor(
+  result: PreparationCompletedTransitionResult,
+): PreparationCompletedTransitionResult['observations']['hpActions'] {
   return result.observations.hpActions;
+}
+
+export interface PreparationHpActionSnapshot extends PreparationSnapshot<PreparationHpAction> {
+  readonly start: PreparationStateSnapshot;
 }
 
 export interface HpNpEvaluation {
   ratio: number | null;
   disposition: 'consumed' | 'excluded' | 'missing' | 'invalid';
-  context: NpDamageOperationContext;
+  /** HP NP reads the direct ratio; trait/BP query capabilities are never consumed by this family. */
+  context: Omit<NpDamageOperationContext, 'traitQuantity' | 'battlePointPhase'>;
   evaluation: NpDamageOperationResult;
   input: DamageResolutionInput;
 }
 export interface HpCandidateObservation {
-  seed: { hp: HpState | undefined; permille: number | null };
+  seed: {
+    hp: HpState | undefined;
+    permille: number | null;
+  };
   valueReads: {
     operation: Extract<BattleOperation, { kind: 'addModifier' }>;
     result: OperationResult;
@@ -279,7 +291,9 @@ export interface HpCandidateObservation {
     value: number | null;
     contributionIncluded: boolean;
     modifierAppended: boolean;
+    nativePreparationRead: ModifierValueRead | null;
   }[];
+  preparedValueConsumptions: HpCandidateObservation['valueReads'];
   reads: {
     operationId: string;
     operationSequence: number;
@@ -306,6 +320,7 @@ export function beginHpCandidateCapture(owner: object, state: ExecutableBattleSt
   const observation: HpCandidateObservation = {
     seed: { hp: state.hp, permille: state.quantities.attackerHpPermille },
     valueReads: [],
+    preparedValueConsumptions: [],
     reads: [],
     nps: [],
   };
@@ -327,7 +342,20 @@ export function resolveObservedModifierValue(
     state,
     observation ? (event) => (read = event) : undefined,
   );
-  return { ...resolved, read, state, modifierCountBefore: state.modifiers.length };
+  const nativePreparationRead =
+    operation.kind === 'addModifier' &&
+    operation.gameActivation !== 'constant' &&
+    operation.runtimeBinding?.source.modifierReadOwner === 'nativePreparation'
+      ? (operation.runtimeBinding.modifierValueRead ?? null)
+      : null;
+  if (nativePreparationRead?.hpRead) read = nativePreparationRead.hpRead;
+  return {
+    ...resolved,
+    read,
+    nativePreparationRead,
+    state,
+    modifierCountBefore: state.modifiers.length,
+  };
 }
 
 export function captureHpValueRead(
@@ -342,13 +370,17 @@ export function captureHpValueRead(
 ) {
   if (!observation || !observed?.read || operation.kind !== 'addModifier') return;
   const { read, state, modifierCountBefore } = observed;
-  observation.valueReads.push({
+  const values = observed.nativePreparationRead
+    ? observation.preparedValueConsumptions
+    : observation.valueReads;
+  values.push({
     operation,
     result,
     operationSequence: sequence,
     operationGroupIndex: group,
     state,
     ...read,
+    nativePreparationRead: observed.nativePreparationRead,
     contributionIncluded,
     modifierAppended:
       result.outcome === 'applied' &&
@@ -432,6 +464,7 @@ export function applyObservedNpDamage(
   sequence: number,
   group: number,
   observeDependency: (read: ConditionRead) => void,
+  scalarBattlePointSubject?: string,
 ): DamageResolutionInput {
   return applyNoblePhantasmDamage(
     input,
@@ -442,6 +475,7 @@ export function applyObservedNpDamage(
     audit && observeScalarNp(audit, operation, sequence, group),
     hp ? observeHpNp(hp, state, operation.operationId, sequence, group) : undefined,
     observeDependency,
+    scalarBattlePointSubject,
   );
 }
 

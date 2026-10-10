@@ -1,3 +1,4 @@
+import { taggedAuditValue as value } from './taggedAuditValue';
 import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import {
   getSkillsForActorForm,
@@ -20,7 +21,10 @@ import type {
   PreparedCalculationScenario,
   CalculationExecution,
   CalculationApplicationResult,
+  CalculationExecutionObservation,
 } from './scenario';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
+import type { PreparationHpActionSnapshot } from '@fgo-lab/battle-execution/preparation-audit';
 
 export type Receive = Extract<MasterEffect['execution'][number], { kind: 'hpModifier' }>;
 export function isReceiveSelf(operation: MasterEffect['execution'][number]): operation is Receive {
@@ -140,7 +144,38 @@ export interface ReceiveRequest {
 }
 
 /** Reuses only the scoped HP diagnostic formatter; maximumFixed selection/gates are not used. */
-export function receiveDiagnostic(source: ReceiveSource) {
+export interface ReceiveDiagnostic extends Record<string, unknown> {
+  directResult: CalculationApplicationResult;
+  facade: {
+    preparedStatus: PreparedCalculationScenario['status'];
+    calculationStatus: CalculationExecution['status'];
+    calculation: {
+      input: DamageResolutionInput | undefined;
+      effects: CalculationExecution['effects'];
+      contributions: CalculationExecution['effectiveContributions'];
+      result: CalculationExecution['result'];
+      observation: CalculationExecutionObservation | undefined;
+    };
+    resolved: {
+      input: DamageResolutionInput | undefined;
+      effects: PreparedCalculationScenario['resolved']['effects'];
+    };
+    directTransport: boolean;
+    calculationTransport: boolean;
+  };
+  receiveActions:
+    | (
+        | {
+            actionId: string;
+            commitStartHp: PreparationHpActionSnapshot['commitStartHp'];
+            writes: PreparationHpActionSnapshot['receiveWrites'];
+            consumptions: PreparationHpActionSnapshot['receiveConsumptions'];
+          }[]
+        | undefined
+      )[]
+    | undefined;
+}
+export function receiveDiagnostic(source: ReceiveSource): ReceiveDiagnostic {
   return {
     ...maximumFixedDiagnostic(source),
     directResult: source.directResult,
@@ -170,7 +205,7 @@ export function receiveDiagnostic(source: ReceiveSource) {
         battlePointPreparationRejectionObservationFor(source.calculation) === source.transport,
     },
     receiveActions: source.transitions?.map((t) =>
-      t.hpActions?.map((a) => ({
+      t.hpActions.map((a) => ({
         actionId: a.actionId,
         commitStartHp: a.commitStartHp,
         writes: a.receiveWrites,
@@ -180,19 +215,6 @@ export function receiveDiagnostic(source: ReceiveSource) {
   };
 }
 // Tag containers and absence explicitly so malformed evidence cannot impersonate undefined.
-function value(v: unknown): CanonicalAuditValue {
-  if (v === undefined) return { type: 'undefined' };
-  if (v instanceof Set) return { type: 'set', values: [...v].map(value) };
-  if (v instanceof Map)
-    return { type: 'map', values: [...v].map(([k, x]) => [value(k), value(x)]) };
-  if (Array.isArray(v)) return { type: 'array', values: v.map(value) };
-  if (v !== null && typeof v === 'object')
-    return {
-      type: 'object',
-      fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, value(x)])),
-    };
-  return { type: typeof v, value: v as CanonicalAuditValue };
-}
 function refs(s: ReceiveSource) {
   const references: Record<string, unknown> = {};
   // Full master and application wrappers are anchors, not recursively copied master inventories.
@@ -277,7 +299,7 @@ function refs(s: ReceiveSource) {
         references[`${path}.applied.${j}.${key}`] = action[key];
     });
     references[`${path}.hpActions`] = t.hpActions;
-    t.hpActions?.forEach((n, j) => {
+    t.hpActions.forEach((n, j) => {
       const q = `${path}.native.${j}`;
       references[q] = n;
       for (const key of [
@@ -454,6 +476,7 @@ export function auditReceive(input: {
   const checks: Check[] = [],
     failures: Failure[] = [],
     boundaries: { identity: string; reason: string }[] = [];
+  const auditValues = new WeakMap<object, CanonicalAuditValue>();
   const check = (
     identity: string,
     reason: ReceiveReason,
@@ -461,8 +484,8 @@ export function auditReceive(input: {
     expected: unknown,
     actual: unknown,
   ) => {
-    const e = value(expected),
-      a = value(actual),
+    const e = value(expected, auditValues),
+      a = value(actual, auditValues),
       item = { identity, reason, checkPath, expected: e, actual: a };
     checks.push(item);
     const difference = firstCanonicalAuditDifference(
@@ -587,7 +610,7 @@ export function auditReceive(input: {
           t.before === s.transitions?.[action.index - 1]?.result.state,
         );
       if (!writers.length) continue;
-      const n = t.hpActions?.find((n) => n.actionId === action.actionId);
+      const n = t.hpActions.find((n) => n.actionId === action.actionId);
       if (!n || n.native?.status !== 'committed' || t.result.status !== 'applied') {
         boundary('outsideCommittedReceive');
         continue;
@@ -929,7 +952,12 @@ export function auditReceive(input: {
         s.transitions?.at(-1)?.result.state.hp,
         preparationExecutionStateFor(s.ordered)?.hp,
       );
-      c('receiveRetainedMismatch', 'selected.seed', preparationExecutionStateFor(s.ordered)?.hp, s.candidate?.seed.hp);
+      c(
+        'receiveRetainedMismatch',
+        'selected.seed',
+        preparationExecutionStateFor(s.ordered)?.hp,
+        s.candidate?.seed.hp,
+      );
       c(
         'receiveIdentityMismatch',
         'selected.candidate',

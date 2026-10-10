@@ -17,7 +17,7 @@ describe('ranking row canonical contribution derivation', () => {
     };
     const decision = { kind: 'included' as const };
     const contribution = (component: 'modifier' | 'modifierRate') => ({
-      contributionId: `operation:${component}`,
+      contributionId: `operation:${component}` as const,
       presentationGroupId: 'logical-effect',
       operationId: 'operation',
       component,
@@ -62,6 +62,54 @@ describe('ranking row canonical contribution derivation', () => {
     });
     expect(row.appliedEffectCount).toBe(1);
     expect(row.specialDamageApplied).toBe(true);
+    const support = (instance: string) => ({
+      ...contribution('modifier'),
+      presentationGroupId: 'shared-support-group',
+      source: { ...source, origin: 'support' as const, sourceInstanceId: instance },
+    });
+    const supported = createRankingRow(
+      servant,
+      {
+        ...detail,
+        effectiveContributions: {
+          ...detail.effectiveContributions,
+          contributions: [
+            ...detail.effectiveContributions.contributions,
+            support('support-a'),
+            support('support-a'),
+            support('support-b'),
+            { ...support('excluded-support'), effective: false },
+          ],
+        },
+      },
+      { servantBuilds: {} },
+    );
+    expect(supported).toMatchObject({
+      appliedEffectCount: 2,
+      supportEffectCount: 1,
+      supportSourceCount: 2,
+      specialDamageApplied: true,
+    });
+    const excluded = createRankingRow(
+      servant,
+      {
+        ...detail,
+        effectiveContributions: {
+          ...detail.effectiveContributions,
+          contributions: [
+            { ...support('excluded'), effective: false },
+            { ...support('np-base'), presentationCounted: false },
+          ],
+        },
+      },
+      { servantBuilds: {} },
+    );
+    expect(excluded).toMatchObject({
+      appliedEffectCount: 0,
+      supportEffectCount: 0,
+      supportSourceCount: 0,
+      specialDamageApplied: false,
+    });
   });
 
   it('keeps typed exclusion recovery and the exact AttackProfile out of numeric rows', () => {

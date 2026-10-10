@@ -1,5 +1,5 @@
 import {
-  calculateRankingPolicy,
+  calculateRankingPolicySummary,
   calculateRankingPolicyDetail,
   type RankingPolicyConditions,
   type RankingProfileInput,
@@ -15,7 +15,7 @@ import {
 class RankingWorkerInvalid extends Error {}
 
 interface RankingWorkerCalculators {
-  calculate: typeof calculateRankingPolicy;
+  calculate: typeof calculateRankingPolicySummary;
   detail: typeof calculateRankingPolicyDetail;
 }
 
@@ -28,13 +28,13 @@ interface RankingWorkerContext {
 
 interface RankingWorkerSummary {
   fingerprint: string;
-  rows: ReturnType<typeof calculateRankingPolicy>['rows'];
-  exclusions: ReturnType<typeof calculateRankingPolicy>['exclusions'];
+  rows: ReturnType<typeof calculateRankingPolicySummary>['rows'];
+  exclusions: ReturnType<typeof calculateRankingPolicySummary>['exclusions'];
 }
 
 export function createRankingWorkerRuntime(
   calculators: RankingWorkerCalculators = {
-    calculate: calculateRankingPolicy,
+    calculate: calculateRankingPolicySummary,
     detail: calculateRankingPolicyDetail,
   },
 ) {

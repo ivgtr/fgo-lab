@@ -54,6 +54,7 @@ export interface ReadyCandidateExecution extends PreparedCandidateBase {
 
 export interface InvalidActivationCandidateExecution extends PreparedCandidateBase {
   status: 'invalidActivationContext';
+  failure: 'preparationUnavailable' | 'activationContext' | 'constraintConflict';
   issues: readonly ExecutionIssue[];
   resolvedCompileProjections: readonly EffectProjection[];
 }
@@ -177,6 +178,15 @@ function prepareExecutableCandidate(
   if (validated.constraintIssues.length === 0) {
     executionState.hp = preparationState.hp;
     executionState.battlePoints = preparationState.battlePoints;
+    const quantityProofs = new Map(executionState.conditionFactProofs.quantities);
+    for (const [actor, { domains }] of Object.entries(preparationState.battlePoints.actors))
+      for (const subject of Object.keys(domains)) {
+        const key = `battlePoint:${actor}:${subject}`;
+        const proof = preparationState.conditionFactProofs.quantities.get(key);
+        if (!proof) throw new TypeError(`preparation_battle_point_proof_required:${key}`);
+        quantityProofs.set(key, proof);
+      }
+    executionState.conditionFactProofs.quantities = quantityProofs;
     executionState.quantities.attackerHpPermille = hpPermille(preparationState.hp?.actors.attacker);
   }
   return {
@@ -207,6 +217,7 @@ export function prepareCandidateExecution(
     return {
       ...base,
       status: 'invalidActivationContext',
+      failure: 'preparationUnavailable',
       issues: prepared.preparationExecution.issues,
       resolvedCompileProjections: [],
     };
@@ -220,6 +231,7 @@ export function prepareCandidateExecution(
     return {
       ...base,
       status: 'invalidActivationContext',
+      failure: 'activationContext',
       issues: activation.issues,
       resolvedCompileProjections: resolveCompileProjections(
         prepared.compileProjections,
@@ -232,6 +244,7 @@ export function prepareCandidateExecution(
     return {
       ...base,
       status: 'invalidActivationContext',
+      failure: 'constraintConflict',
       issues: candidate.constraintIssues,
       resolvedCompileProjections: candidate.resolvedCompileProjections,
     };

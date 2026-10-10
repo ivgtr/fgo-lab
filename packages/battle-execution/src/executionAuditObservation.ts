@@ -1,3 +1,5 @@
+import { compareCandidateResults } from './candidateComparison';
+import { executeOrderedScenarioCandidateWithAudit } from './orderedCandidates';
 import type { CandidateComparison } from './candidateComparison';
 import type { CandidateExecutionWithAudit } from './candidateStateAudit';
 import type {
@@ -5,6 +7,8 @@ import type {
   OrderedScenarioExecution,
   OrderedScenarioExecutionWithAuditObservation,
   PreparedOrderedScenario,
+  ResolvedCanonicalInputSet,
+  ContributionApplicationPolicy,
 } from './executionTypes';
 import { assembleAmbiguousTargetResult, assembleEquivalentTargetResult } from './scenarioResult';
 
@@ -82,4 +86,27 @@ export function assembleComparedAuditObservation(
     execution: assembleAmbiguousTargetResult(prepared, comparison.executions),
     observation: { selection: 'ambiguous', candidates },
   };
+}
+
+export function assembleAuditedScenario(
+  prepared: PreparedOrderedScenario,
+  resolvedInputs: ResolvedCanonicalInputSet,
+  contributionPolicy: ContributionApplicationPolicy,
+  auditedExecutions: readonly CandidateExecutionWithAudit[],
+): OrderedScenarioExecutionWithAuditObservation {
+  if (auditedExecutions.length === 0) {
+    if (prepared.targetResolution.kind === 'candidates')
+      throw new TypeError('target_candidate_execution_missing');
+    return assembleUnresolvedAuditObservation(
+      prepared,
+      executeOrderedScenarioCandidateWithAudit(prepared, resolvedInputs, null, contributionPolicy),
+    );
+  }
+  const executions = auditedExecutions.map(({ execution }) => execution);
+  return assembleComparedAuditObservation(
+    prepared,
+    auditedExecutions,
+    executions,
+    compareCandidateResults(executions),
+  );
 }

@@ -31,6 +31,7 @@ export function isBuffCountInput(input: CanonicalInputDefinition): input is Buff
 export function seedBuffInstances(
   inputs: readonly BuffCountInput[],
   values: Readonly<Record<string, number>>,
+  markers: ReadonlyMap<string, CountedBuffInstance['marker']> = new Map(),
 ): readonly CountedBuffInstance[] {
   const instances = new Map<string, CountedBuffInstance>();
   for (const input of inputs) {
@@ -64,6 +65,7 @@ export function seedBuffInstances(
       traits,
       lifetime: 'active',
       count,
+      ...(markers.get(input.key) ? { marker: markers.get(input.key) } : {}),
     });
   }
   return [...instances.values()];

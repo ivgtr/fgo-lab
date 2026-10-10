@@ -19,9 +19,9 @@ import {
   readOperationCondition,
   type ConditionReadAudit,
 } from './condition';
-import { contributionIsIncluded } from './effectiveContributions';
 import { resolveModifierValue, type ResolvedModifierValue } from './projection';
 import type { ConditionRead } from './conditionRead';
+import { operationTransactionKey } from './executionBinding';
 
 export function operationEnabled(
   activation: OperationActivation,
@@ -34,14 +34,6 @@ export function operationEnabled(
     (activation.enabled ||
       (policy.kind === 'ranking' && operation.sourceEnabled && contributionIncluded))
   );
-}
-
-export function includedByPolicy(
-  operation: BattleOperation,
-  policy: ContributionApplicationPolicy,
-  read: ConditionRead,
-): boolean {
-  return contributionIsIncluded(operation, read, policy);
 }
 
 export function modifierValue(
@@ -70,11 +62,7 @@ export function userConditionMet(
 
 function effectTransactionKey(operation: BattleOperation): string {
   const { source } = operation;
-  return [
-    source.origin,
-    source.sourceInstanceId,
-    source.transactionGroupId ?? `${source.skillId}:${source.effectOccurrenceId}`,
-  ].join(':');
+  return [source.origin, source.sourceInstanceId, operationTransactionKey(operation)].join(':');
 }
 
 export function applyOrderedActorFormTransition(
@@ -121,6 +109,15 @@ export function evaluateConditionAgainstKnownFacts(
   };
 }
 
+export function scalarBattlePointSubjectFor(
+  operation: BattleOperation,
+  attackerId: string,
+): string | undefined {
+  return operation.kind === 'addQuantity' && operation.subjectId === attackerId
+    ? operation.subjectId
+    : undefined;
+}
+
 function quantityOperationIsNotRelevant(
   operation: BattleOperation,
   candidateInput: DamageResolutionInput,
@@ -137,13 +134,6 @@ function quantityOperationIsNotRelevant(
     operation.subjectId !== candidateInput.attackerId ||
     damage?.kind !== 'battlePointPhase' ||
     String(targetId) !== operation.subjectId
-  );
-}
-
-function operationTransactionKey(operation: BattleOperation): string {
-  return (
-    operation.source.transactionGroupId ??
-    `${operation.source.skillId}:${operation.source.effectOccurrenceId}`
   );
 }
 

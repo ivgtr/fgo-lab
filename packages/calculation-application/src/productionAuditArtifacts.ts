@@ -3,6 +3,7 @@ import { lstat, link, mkdir, readFile, unlink, writeFile } from 'node:fs/promise
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import type { TestOptions } from 'vitest';
+import { types } from 'node:util';
 
 export const PRODUCTION_AUDIT_ARTIFACT_META_KEY = 'fgoProductionAuditArtifacts';
 export const PRODUCTION_AUDIT_ARTIFACT_CONTRACT_VERSION = 2;
@@ -32,6 +33,7 @@ export interface ProductionAuditTestOptions {
 }
 
 const OMIT = Symbol('omit-undefined-property');
+const completedDiagnostics = new WeakSet();
 type ArtifactPath = (string | number)[];
 interface ArtifactContainer {
   path: ArtifactPath;
@@ -53,6 +55,7 @@ function encodeLossless(
   undefinedPaths: (string | number)[][],
   ancestors: Set<object>,
   containers: ArtifactContainer[],
+  plainValues: WeakMap<object, unknown>,
 ): unknown {
   if (value === undefined) {
     undefinedPaths.push([...path]);
@@ -65,7 +68,19 @@ function encodeLossless(
     return value;
   }
   if (typeof value !== 'object') throw new TypeError(`unsupported_artifact_value:${typeof value}`);
+  if (completedDiagnostics.has(value)) return value;
+  if (types.isProxy(value)) throw new TypeError('artifact_proxy');
   if (ancestors.has(value)) throw new TypeError('artifact_cycle');
+  if (plainValues.has(value)) return plainValues.get(value);
+  const undefinedStart = undefinedPaths.length;
+  const containerStart = containers.length;
+  // Only completed subtrees without path-dependent restoration metadata can be reused.
+  // Encoding is synchronous, rejects accessors, and owns this cache for one call only.
+  const complete = (encoded: unknown): unknown => {
+    if (undefinedPaths.length === undefinedStart && containers.length === containerStart)
+      plainValues.set(value, encoded);
+    return encoded;
+  };
   ancestors.add(value);
   try {
     const prototype: unknown = Object.getPrototypeOf(value);
@@ -76,56 +91,71 @@ function encodeLossless(
       containers.push({ path: [...path], kind });
       const members =
         kind === 'set' ? [...(value as Set<unknown>)] : [...(value as Map<unknown, unknown>)];
-      return encodeLossless(members, path, undefinedPaths, ancestors, containers);
+      return encodeLossless(members, path, undefinedPaths, ancestors, containers, plainValues);
     }
     if (Array.isArray(value)) {
+      if (prototype !== Array.prototype) throw new TypeError('artifact_non_plain_array');
       const values: unknown[] = value;
       const keys = Reflect.ownKeys(value);
       if (keys.some((key) => typeof key === 'symbol'))
         throw new TypeError('artifact_array_symbol_property');
-      const ownIndices = new Set(
-        keys.filter((key): key is string => typeof key === 'string' && key !== 'length'),
-      );
-      if (ownIndices.size !== value.length) throw new TypeError('artifact_sparse_array');
-      for (const key of ownIndices) {
-        if (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= value.length)
+      if (keys.length !== value.length + 1) throw new TypeError('artifact_sparse_array');
+      for (const key of keys) {
+        if (key === 'length') continue;
+        if (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key) || Number(key) >= value.length)
           throw new TypeError('artifact_array_extra_property');
         const descriptor = Object.getOwnPropertyDescriptor(value, key);
         if (!descriptor?.enumerable || !('value' in descriptor))
           throw new TypeError('artifact_array_accessor_or_hidden_property');
       }
-      return Array.from({ length: value.length }, (_, index) => {
-        const encoded = encodeLossless(
-          values[index],
-          [...path, index],
-          undefinedPaths,
-          ancestors,
-          containers,
-        );
-        return encoded === OMIT ? null : encoded;
-      });
+      const output: unknown[] = [];
+      for (let index = 0; index < value.length; index++) {
+        path.push(index);
+        try {
+          const encoded = encodeLossless(
+            values[index],
+            path,
+            undefinedPaths,
+            ancestors,
+            containers,
+            plainValues,
+          );
+          output.push(encoded === OMIT ? null : encoded);
+        } finally {
+          path.pop();
+        }
+      }
+      return complete(output);
     }
+
     if (prototype === null) containers.push({ path: [...path], kind: 'nullObject' });
     if (prototype !== Object.prototype && prototype !== null)
       throw new TypeError('artifact_non_plain_object');
     const keys = Reflect.ownKeys(value);
     if (keys.some((key) => typeof key === 'symbol'))
       throw new TypeError('artifact_symbol_property');
-    const output: Record<string, unknown> = {};
+    // Raw caller values are projected into owned data; only factory-completed graphs bypass this.
+    const output = Object.create(null) as Record<string, unknown>;
     for (const key of keys as string[]) {
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
       if (!descriptor?.enumerable || !('value' in descriptor))
         throw new TypeError('artifact_accessor_or_hidden_property');
-      const encoded = encodeLossless(
-        descriptor.value,
-        [...path, key],
-        undefinedPaths,
-        ancestors,
-        containers,
-      );
-      if (encoded !== OMIT) defineValue(output, key, encoded);
+      path.push(key);
+      try {
+        const encoded = encodeLossless(
+          descriptor.value,
+          path,
+          undefinedPaths,
+          ancestors,
+          containers,
+          plainValues,
+        );
+        if (encoded !== OMIT) output[key] = encoded;
+      } finally {
+        path.pop();
+      }
     }
-    return output;
+    return complete(output);
   } catch (cause) {
     if (cause instanceof Error && !cause.message.includes(' at artifact '))
       cause.message += ` at artifact ${JSON.stringify(path)}`;
@@ -138,7 +168,9 @@ function encodeLossless(
 export function serializeProductionAuditArtifact(value: unknown): Buffer {
   const undefinedPaths: (string | number)[][] = [];
   const containers: ArtifactContainer[] = [];
-  const encoded = encodeLossless(value, [], undefinedPaths, new Set(), containers);
+  const encoded = encodeLossless(value, [], undefinedPaths, new Set(), containers, new WeakMap());
+  if (Object.hasOwn(Object.prototype, 'toJSON') || Object.hasOwn(Array.prototype, 'toJSON'))
+    throw new TypeError('artifact_inherited_toJSON');
   return Buffer.from(
     `${JSON.stringify({
       artifactVersion: 2,
@@ -260,7 +292,12 @@ export function decodeProductionAuditArtifact(bytes: Uint8Array): unknown {
           throw new TypeError('duplicate_production_audit_artifact_set_member');
         restored = set;
       } else {
-        if (value.some((entry: unknown) => !Array.isArray(entry) || entry.length !== 2))
+        if (
+          value.some(
+            (entry: unknown) =>
+              !Array.isArray(entry) || entry.length !== 2 || Reflect.ownKeys(entry).length !== 3,
+          )
+        )
           throw new TypeError('invalid_production_audit_artifact_map_entry');
         const entries = value as [unknown, unknown][];
         const map = new Map(entries);
@@ -466,37 +503,137 @@ export async function writeProductionAuditArtifact(
   return receipt;
 }
 
-type DiagnosticValue =
-  | { kind: 'literal'; value: string | number | boolean | null | undefined }
-  | { kind: 'reference'; index: number };
+// Version 4: nonnegative integers address nodes; negative integers address strings (-index - 1).
+// Numeric literals stay tagged, so values and references cannot be confused.
+type DiagnosticValue = number | boolean | null | { kind: 'literal'; value: number };
 type DiagnosticNode =
+  | { kind: 'undefined' }
   | { kind: 'object' | 'nullObject'; entries: [string, DiagnosticValue][] }
   | { kind: 'array'; items: DiagnosticValue[] }
   | { kind: 'set'; items: DiagnosticValue[] }
   | { kind: 'map'; entries: [DiagnosticValue, DiagnosticValue][] };
 /** Complete test diagnostic values, interned without changing gate/assertion/runner contracts. */
 export function encodeProductionAuditDiagnostic(payload: unknown) {
-  const nodes: DiagnosticNode[] = [];
-  const identities = new WeakMap<object, number>();
-  const contents = new Map<string, number>();
-  const ancestors = new Set<object>();
-  const visit = (value: unknown): DiagnosticValue => {
+  if (Object.hasOwn(Object.prototype, 'toJSON') || Object.hasOwn(Array.prototype, 'toJSON'))
+    throw new TypeError('unsupported_diagnostic_inherited_toJSON');
+  const identityMembers = new WeakSet();
+  const validated = new WeakSet();
+  const validating = new WeakSet();
+  const validate = (value: unknown): void => {
     if (
-      value === null ||
       value === undefined ||
+      value === null ||
       typeof value === 'string' ||
       typeof value === 'boolean'
     )
-      return { kind: 'literal', value };
+      return;
     if (typeof value === 'number') {
       if (!Number.isFinite(value) || Object.is(value, -0))
         throw new TypeError('invalid_diagnostic_number');
-      return { kind: 'literal', value };
+      return;
+    }
+    if (typeof value !== 'object') throw new TypeError('unsupported_diagnostic_value');
+    if (types.isProxy(value)) throw new TypeError('unsupported_diagnostic_proxy');
+    if (validating.has(value)) throw new TypeError('diagnostic_cycle');
+    if (validated.has(value)) return;
+    validating.add(value);
+    const prototype: unknown = Object.getPrototypeOf(value);
+    if (prototype === Set.prototype || prototype === Map.prototype) {
+      if (Reflect.ownKeys(value).length !== 0)
+        throw new TypeError('unsupported_diagnostic_property');
+      if (prototype === Set.prototype) {
+        for (const item of value as Set<unknown>) {
+          if (item !== null && typeof item === 'object') identityMembers.add(item);
+          validate(item);
+        }
+      } else {
+        for (const [key, item] of value as Map<unknown, unknown>) {
+          if (key !== null && typeof key === 'object') identityMembers.add(key);
+          validate(key);
+          validate(item);
+        }
+      }
+    } else if (Array.isArray(value)) {
+      if (prototype !== Array.prototype || Reflect.ownKeys(value).length !== value.length + 1)
+        throw new TypeError('invalid_diagnostic_array');
+      for (let index = 0; index < value.length; index++) {
+        const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+        if (!descriptor?.enumerable || !('value' in descriptor))
+          throw new TypeError('invalid_diagnostic_array');
+        validate(descriptor.value);
+      }
+    } else {
+      if (prototype !== Object.prototype && prototype !== null)
+        throw new TypeError('unsupported_diagnostic_prototype');
+      for (const key of Reflect.ownKeys(value)) {
+        if (typeof key !== 'string') throw new TypeError('unsupported_diagnostic_key');
+        const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+        if (!descriptor.enumerable || !('value' in descriptor))
+          throw new TypeError('unsupported_diagnostic_property');
+        validate(descriptor.value);
+      }
+    }
+    validating.delete(value);
+    validated.add(value);
+  };
+  validate(payload);
+  const nodes: DiagnosticNode[] = [];
+  const strings: { prefix: number; suffix: string }[] = [];
+  const stringParts = new Map<string, number>();
+  const stringIndices = new Map<string, number>();
+  const identities = new WeakMap<object, number>();
+  const contents = new Map<string, number>();
+  const ancestors = new Set<object>();
+  let undefinedIndex: number | undefined;
+  const literals = new Map<number, DiagnosticValue>();
+  const literal = (value: number): DiagnosticValue => {
+    let encoded = literals.get(value);
+    if (encoded === undefined) {
+      encoded = Object.freeze({ kind: 'literal' as const, value });
+      literals.set(value, encoded);
+    }
+    return encoded;
+  };
+  const visit = (value: unknown): DiagnosticValue => {
+    if (value === null || typeof value === 'boolean') return value;
+    if (value === undefined) {
+      if (undefinedIndex === undefined) {
+        undefinedIndex = nodes.length;
+        nodes.push({ kind: 'undefined' });
+      }
+      return undefinedIndex;
+    }
+    if (typeof value === 'string') {
+      let index = stringIndices.get(value);
+      if (index === undefined) {
+        let prefix = -1;
+        // Fixed UTF-16 slices preserve even lone surrogates; this is byte/value compression,
+        // independent of the meanings or spelling of diagnostic paths.
+        for (let offset = 0; offset < value.length || offset === 0; offset += 128) {
+          const suffix = value.slice(offset, offset + 128);
+          const key = JSON.stringify([prefix, suffix]);
+          let part = stringParts.get(key);
+          if (part === undefined) {
+            part = strings.length;
+            strings.push({ prefix, suffix });
+            stringParts.set(key, part);
+          }
+          prefix = part;
+        }
+        index = prefix;
+        stringIndices.set(value, index);
+      }
+      return -index - 1;
+    }
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value) || Object.is(value, -0))
+        throw new TypeError('invalid_diagnostic_number');
+      return literal(value);
     }
     if (typeof value !== 'object') throw new TypeError('unsupported_diagnostic_value');
     if (ancestors.has(value)) throw new TypeError('diagnostic_cycle');
     const prior = identities.get(value);
-    if (prior !== undefined) return { kind: 'reference', index: prior };
+    if (prior !== undefined) return prior;
     ancestors.add(value);
     let node: DiagnosticNode;
     const prototype: unknown = Object.getPrototypeOf(value);
@@ -527,46 +664,199 @@ export function encodeProductionAuditDiagnostic(payload: unknown) {
       node = { kind: prototype === null ? 'nullObject' : 'object', entries };
     }
     ancestors.delete(value);
-    const key = JSON.stringify(node);
-    let index = contents.get(key);
+    const key = identityMembers.has(value) ? undefined : JSON.stringify(node);
+    let index = key === undefined ? undefined : contents.get(key);
     if (index === undefined) {
       index = nodes.length;
       nodes.push(node);
-      contents.set(key, index);
+      if (key !== undefined) contents.set(key, index);
     }
     identities.set(value, index);
-    return { kind: 'reference', index };
+    return index;
   };
   const root = visit(payload);
-  return { version: 1 as const, root, nodes };
+  for (const node of nodes) {
+    if ('entries' in node) {
+      for (const entry of node.entries) Object.freeze(entry);
+      Object.freeze(node.entries);
+    } else if ('items' in node) Object.freeze(node.items);
+    Object.freeze(node);
+  }
+  for (const part of strings) Object.freeze(part);
+  const completed = Object.freeze({
+    version: 4 as const,
+    root,
+    nodes: Object.freeze(nodes),
+    strings: Object.freeze(strings),
+  });
+  completedDiagnostics.add(completed);
+  return completed;
 }
-export function decodeProductionAuditDiagnostic(
-  encoded: ReturnType<typeof encodeProductionAuditDiagnostic>,
-): unknown {
+function diagnosticRecord(
+  value: unknown,
+  ownedPlainData: boolean,
+): value is Record<string, unknown> {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    (!ownedPlainData && types.isProxy(value))
+  )
+    return false;
+  const prototype: unknown = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return false;
+  if (ownedPlainData) return true;
+  return Reflect.ownKeys(value).every((key) => {
+    if (typeof key !== 'string') return false;
+    const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+    return descriptor.enumerable && 'value' in descriptor;
+  });
+}
+function diagnosticArray(value: unknown, ownedPlainData: boolean): value is unknown[] {
+  if (ownedPlainData) return Array.isArray(value);
+  if (
+    !Array.isArray(value) ||
+    types.isProxy(value) ||
+    Object.getPrototypeOf(value) !== Array.prototype ||
+    Reflect.ownKeys(value).length !== value.length + 1
+  )
+    return false;
+  for (let index = 0; index < value.length; index++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+    if (!descriptor?.enumerable || !('value' in descriptor)) return false;
+  }
+  return true;
+}
+function decodeDiagnosticValue(encoded: unknown, ownedPlainData: boolean): unknown {
+  const record = (value: unknown): value is Record<string, unknown> =>
+    diagnosticRecord(value, ownedPlainData);
+  const array = (value: unknown): value is unknown[] => diagnosticArray(value, ownedPlainData);
+  if (
+    !record(encoded) ||
+    Object.keys(encoded).length !== 4 ||
+    !Object.hasOwn(encoded, 'root') ||
+    !Object.hasOwn(encoded, 'version') ||
+    !Object.hasOwn(encoded, 'nodes') ||
+    !Object.hasOwn(encoded, 'strings') ||
+    encoded['version'] !== 4 ||
+    !array(encoded['nodes']) ||
+    !array(encoded['strings'])
+  )
+    throw new TypeError('invalid_diagnostic_version_or_envelope');
+  const strings: string[] = [];
+  for (const part of encoded['strings']) {
+    if (
+      !record(part) ||
+      Object.keys(part).length !== 2 ||
+      !Object.hasOwn(part, 'prefix') ||
+      !Object.hasOwn(part, 'suffix') ||
+      typeof part['prefix'] !== 'number' ||
+      !Number.isSafeInteger(part['prefix']) ||
+      Object.is(part['prefix'], -0) ||
+      part['prefix'] < -1 ||
+      part['prefix'] >= strings.length ||
+      typeof part['suffix'] !== 'string' ||
+      part['suffix'].length > 128 ||
+      (part['prefix'] >= 0 && part['suffix'].length === 0)
+    )
+      throw new TypeError('invalid_diagnostic_string_part');
+    strings.push((part['prefix'] < 0 ? '' : strings[part['prefix']]!) + part['suffix']);
+  }
   const values: unknown[] = [];
-  const read = (value: DiagnosticValue): unknown => {
-    if (value.kind === 'literal') return value.value;
-    if (!Number.isSafeInteger(value.index) || value.index < 0 || value.index >= values.length)
+  const read = (value: unknown): unknown => {
+    if (value === null || typeof value === 'boolean') return value;
+    if (typeof value !== 'number') {
+      if (
+        !record(value) ||
+        Object.keys(value).length !== 2 ||
+        value['kind'] !== 'literal' ||
+        !Object.hasOwn(value, 'kind') ||
+        !Object.hasOwn(value, 'value') ||
+        typeof value['value'] !== 'number' ||
+        !Number.isFinite(value['value']) ||
+        Object.is(value['value'], -0)
+      )
+        throw new TypeError('invalid_diagnostic_literal');
+      return value['value'];
+    }
+    if (!Number.isSafeInteger(value) || Object.is(value, -0))
       throw new TypeError('invalid_diagnostic_reference');
-    return values[value.index];
+    if (value < 0) {
+      const index = -value - 1;
+      if (index >= strings.length) throw new TypeError('invalid_diagnostic_string_reference');
+      return strings[index];
+    }
+    if (value >= values.length) throw new TypeError('invalid_diagnostic_reference');
+    return values[value];
   };
-  for (const node of encoded.nodes) {
-    if (node.kind === 'array') values.push(node.items.map(read));
-    else if (node.kind === 'set') values.push(new Set(node.items.map(read)));
-    else if (node.kind === 'map')
-      values.push(new Map(node.entries.map(([key, item]) => [read(key), read(item)])));
-    else {
-      const value =
-        node.kind === 'nullObject' ? (Object.create(null) as Record<string, unknown>) : {};
-      for (const [key, item] of node.entries)
-        Object.defineProperty(value, key, {
-          value: read(item),
+  for (const node of encoded['nodes']) {
+    if (!record(node) || !Object.hasOwn(node, 'kind'))
+      throw new TypeError('invalid_diagnostic_node');
+    const kind = node['kind'];
+    if (kind === 'undefined') {
+      if (Object.keys(node).length !== 1) throw new TypeError('invalid_diagnostic_node');
+      values.push(undefined);
+      continue;
+    }
+    const field =
+      kind === 'array' || kind === 'set'
+        ? 'items'
+        : kind === 'map' || kind === 'object' || kind === 'nullObject'
+          ? 'entries'
+          : null;
+    if (
+      !field ||
+      Object.keys(node).length !== 2 ||
+      !Object.hasOwn(node, field) ||
+      !array(node[field])
+    )
+      throw new TypeError('invalid_diagnostic_node');
+    const cells = node[field];
+    if (kind === 'array') values.push(cells.map(read));
+    else if (kind === 'set') {
+      const value = new Set(cells.map(read));
+      if (value.size !== cells.length) throw new TypeError('invalid_diagnostic_set');
+      values.push(value);
+    } else if (kind === 'map') {
+      const entries = cells.map((entry) => {
+        if (!array(entry) || entry.length !== 2) throw new TypeError('invalid_diagnostic_entry');
+        return [read(entry[0]), read(entry[1])] as const;
+      });
+      const value = new Map(entries);
+      if (value.size !== entries.length) throw new TypeError('invalid_diagnostic_map');
+      values.push(value);
+    } else {
+      const value: Record<string, unknown> =
+        kind === 'nullObject' ? (Object.create(null) as Record<string, unknown>) : {};
+      for (const entry of cells) {
+        if (
+          !array(entry) ||
+          entry.length !== 2 ||
+          typeof entry[0] !== 'string' ||
+          Object.hasOwn(value, entry[0])
+        )
+          throw new TypeError('invalid_diagnostic_entry');
+        Object.defineProperty(value, entry[0], {
+          value: read(entry[1]),
           enumerable: true,
           writable: true,
           configurable: true,
         });
+      }
       values.push(value);
     }
   }
-  return read(encoded.root);
+  return read(encoded['root']);
+}
+
+/** JS input is inspected unless it is the factory's actually frozen, privately completed graph. */
+export function decodeProductionAuditDiagnostic(encoded: unknown): unknown {
+  return decodeDiagnosticValue(
+    encoded,
+    encoded !== null && typeof encoded === 'object' && completedDiagnostics.has(encoded),
+  );
+}
+/** The parsed values remain private until schema validation ends; JSON cannot create accessors/proxies. */
+export function decodeStoredProductionAuditDiagnostic(bytes: Uint8Array): unknown {
+  return decodeDiagnosticValue(decodeStoredProductionAuditArtifact(bytes), true);
 }

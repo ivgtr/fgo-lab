@@ -149,6 +149,7 @@ export {
 } from './npDamageOperation';
 export {
   resolveAttackerFormExecution,
+  completedPreparationStateFor,
   type ResolvedAttackerFormExecution,
   type ResolvedAttackerSkillUse,
   type SourceEffect,
@@ -175,6 +176,11 @@ export {
   type PreparationTransitionResult,
   type SkillSlotRef,
 } from './preNoblePhantasm';
+
+export type {
+  PreparationStateSnapshot,
+  PreparationTransitionObservation,
+} from './preparationContracts';
 
 export {
   mergeInputDefinitions,
@@ -239,6 +245,12 @@ export {
 export { stochasticWitnessKey } from './stochasticPossibilities';
 export type { OcRateInstance, OcActionStep, OcApplicationRead } from './ocState';
 
-export { projectBattleTraitPresence, readTraitPresence, readTraitQuantity } from './traitFactLayers';
+export {
+  projectBattleTraitPresence,
+  readTraitPresence,
+  readTraitQuantity,
+} from './traitFactLayers';
 
 export { liveTraitQuantityRead } from './stackQuantities';
+
+export { PreparationExecutionSession } from './preparationSession';

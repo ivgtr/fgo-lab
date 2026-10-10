@@ -18,7 +18,7 @@ import {
 import {
   preparationHpActionsFor,
   hpCandidateObservationFor,
-  type PreparationHpAction,
+  type PreparationHpActionSnapshot,
 } from '@fgo-lab/battle-execution/preparation-audit';
 import {
   firstCanonicalAuditDifference,
@@ -26,6 +26,7 @@ import {
 } from '@fgo-lab/master-data/production-audit';
 import { scalarQuantitySnapshot as snapshot } from './productionScalarQuantityAudit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
+import { hpCandidatePreflightFailureMatches } from './productionHpPublishedDependencyCoverage';
 import type { PreparedCalculationScenario, CalculationExecution } from './scenario';
 
 type Writer = Extract<MasterEffect['execution'][number], { resource: 'hp' }>;
@@ -381,10 +382,23 @@ function hpSourceStructure(source: unknown): boolean {
 }
 function hpReferenceAnchors(source: HpPreparationSource): Record<string, unknown> {
   const anchors: Record<string, unknown> = {};
+  const target = source.observation?.targetExecution;
+  if (target?.selection === 'selected' && target.candidateState?.preflight?.status === 'aborted') {
+    const candidate = target.candidateState;
+    anchors['preflight.target'] = target;
+    anchors['preflight.candidate'] = candidate;
+    anchors['preflight.receipt'] = candidate.preflight;
+    anchors['preflight.issues'] = target.candidateState.preflight.issues;
+    anchors['preflight.events'] = target.operationEvents;
+    anchors['preflight.groups'] = candidate.executionGroups;
+    anchors['preflight.inputReads'] = candidate.inputQuantityReads;
+    anchors['preflight.battlePointReads'] = candidate.battlePointPhaseReads;
+    anchors['preflight.scalarReads'] = candidate.scalarNpConsumptions;
+  }
   for (const [i, transition] of (source.transitions ?? []).entries()) {
     anchors[`action.${i}.before`] = transition.before;
     anchors[`action.${i}.result`] = transition.result;
-    for (const [j, action] of (transition.hpActions ?? []).entries()) {
+    for (const [j, action] of transition.hpActions.entries()) {
       anchors[`action.${i}.native.${j}.start`] = action.start;
       anchors[`action.${i}.native.${j}.result`] = action.native;
       anchors[`action.${i}.native.${j}.returned`] = action.returned;
@@ -440,7 +454,7 @@ function preparationStateDiagnostic(state: PreNoblePhantasmState) {
     currentFormId: state.currentFormId,
   };
 }
-function hpSourceDiagnostic(source: PreparationHpAction['sources'][number]) {
+function hpSourceDiagnostic(source: PreparationHpActionSnapshot['sources'][number]) {
   return {
     origin: source.origin,
     sourceInstanceId: source.sourceInstanceId,
@@ -461,10 +475,10 @@ function hpSourceDiagnostic(source: PreparationHpAction['sources'][number]) {
     },
   };
 }
-function hpWriteDiagnostic(write: PreparationHpAction['writes'][number]) {
+function hpWriteDiagnostic(write: PreparationHpActionSnapshot['writes'][number]) {
   return { ...write, source: hpSourceDiagnostic(write.source) };
 }
-function hpActionDiagnostic(action: PreparationHpAction) {
+function hpActionDiagnostic(action: PreparationHpActionSnapshot) {
   if (!auditRecord(action.start) || !Array.isArray(action.sources) || !Array.isArray(action.writes))
     return action;
   return {
@@ -474,6 +488,31 @@ function hpActionDiagnostic(action: PreparationHpAction) {
     writes: action.writes.map(hpWriteDiagnostic),
     native: action.native,
     returned: action.returned ? preparationStateDiagnostic(action.returned) : undefined,
+  };
+}
+function hpTransitionDiagnostic(
+  transition: NonNullable<HpPreparationSource['transitions']>[number],
+) {
+  // Rejection diagnostics retain malformed input instead of running valid-state projections on it.
+  if (
+    !auditRecord(transition) ||
+    !auditRecord(transition.before) ||
+    !auditRecord(transition.result) ||
+    !auditRecord(transition.result.state) ||
+    !Array.isArray(transition.result.state.appliedActions) ||
+    !Array.isArray(transition.hpActions)
+  )
+    return transition;
+  return {
+    before: preparationStateDiagnostic(transition.before),
+    command: transition.command,
+    result: {
+      status: transition.result.status,
+      hp: transition.result.state.hp,
+      appliedActions: transition.result.state.appliedActions.map(actionDiagnostic),
+      currentFormId: transition.result.state.currentFormId,
+    },
+    hpActions: transition.hpActions.map(hpActionDiagnostic),
   };
 }
 function battleStateDiagnostic(state: ExecutableBattleState) {
@@ -547,6 +586,16 @@ export function hpDiagnosticSource(source: HpPreparationSource): Record<string, 
     observation: source.observation
       ? {
           selection: source.observation.targetExecution?.selection,
+          ...(source.observation.targetExecution?.selection === 'selected' &&
+          source.observation.targetExecution.candidateState?.preflight?.status === 'aborted'
+            ? {
+                preflight: {
+                  candidateIndex: source.observation.targetExecution.candidateIndex,
+                  targetCandidate: source.observation.targetExecution.targetCandidate,
+                  candidateState: source.observation.targetExecution.candidateState,
+                },
+              }
+            : {}),
           events:
             source.observation.targetExecution?.selection === 'selected'
               ? source.observation.targetExecution.operationEvents
@@ -554,17 +603,7 @@ export function hpDiagnosticSource(source: HpPreparationSource): Record<string, 
         }
       : undefined,
     canonical: canonicalDiagnostic(source.canonical),
-    transitions: source.transitions?.map(({ before, command, result, hpActions }) => ({
-      before: preparationStateDiagnostic(before),
-      command,
-      result: {
-        status: result.status,
-        hp: result.state.hp,
-        appliedActions: result.state.appliedActions.map(actionDiagnostic),
-        currentFormId: result.state.currentFormId,
-      },
-      hpActions: hpActions?.map(hpActionDiagnostic),
-    })),
+    transitions: source.transitions?.map(hpTransitionDiagnostic),
     ordered: source.ordered
       ? {
           hp: preparationExecutionStateFor(source.ordered)?.hp,
@@ -785,7 +824,7 @@ export function auditHpPreparation(input: {
       );
       const writers = canonical.writers.filter(({ actionIndex }) => actionIndex === action.index);
       if (!writers.length) continue;
-      const native = transition.hpActions?.find(({ actionId }) => actionId === action.actionId);
+      const native = transition.hpActions.find(({ actionId }) => actionId === action.actionId);
       c('hpTraceMissing', `action.${action.index}.native`, true, !!native);
       if (!native) continue;
       c(
@@ -795,7 +834,7 @@ export function auditHpPreparation(input: {
         native.start.hp === transition.before.hp &&
           native.start.appliedActions === transition.before.appliedActions,
       );
-      const nativeIndex = transition.hpActions?.indexOf(native) ?? -1;
+      const nativeIndex = transition.hpActions.indexOf(native);
       const nativePath = ['transitions', action.index, 'hpActions', nativeIndex] as const;
       c(
         'hpCommitMismatch',
@@ -945,11 +984,52 @@ export function auditHpPreparation(input: {
       continue;
     }
     const final = source.transitions?.at(-1)?.result.state.hp;
-    c('hpRetainedMismatch', 'retained.preparedReference', true, preparationExecutionStateFor(source.ordered)?.hp === final);
+    c(
+      'hpRetainedMismatch',
+      'retained.preparedReference',
+      true,
+      preparationExecutionStateFor(source.ordered)?.hp === final,
+    );
+    const target = source.observation?.targetExecution;
+    const preflight =
+      target?.selection === 'selected' ? target.candidateState?.preflight : undefined;
+    if (target?.selection === 'selected' && preflight?.status === 'aborted') {
+      c(
+        'hpIdentityMismatch',
+        'preflight.nativeAbort',
+        true,
+        hpCandidatePreflightFailureMatches(preflight, source.ordered),
+      );
+      const state = target.candidateState!;
+      c(
+        'hpCommitMismatch',
+        'preflight.noExecution',
+        [false, null, 0, 0, 0, 0, 0, 'unsupported', 0, 0],
+        [
+          source.candidate !== undefined,
+          state.preGroupContextResolution,
+          state.executionGroups.length,
+          state.inputQuantityReads.length,
+          state.battlePointPhaseReads.length,
+          state.scalarNpConsumptions.length,
+          target.operationEvents.length,
+          source.result.status,
+          'rows' in source.result ? source.result.rows.length : null,
+          source.contributions.contributions.length,
+        ],
+      );
+      boundaries.push({ identity, reason: `beforeOrderedExecution:${preflight.failure}` });
+      continue;
+    }
     const candidate = source.candidate;
     c('hpTraceMissing', 'seed.candidate', true, !!candidate);
     if (!candidate) continue;
-    c('hpRetainedMismatch', 'seed.hpReference', true, candidate.seed.hp === preparationExecutionStateFor(source.ordered)?.hp);
+    c(
+      'hpRetainedMismatch',
+      'seed.hpReference',
+      true,
+      candidate.seed.hp === preparationExecutionStateFor(source.ordered)?.hp,
+    );
     c(
       'hpReaderMismatch',
       'reader.population',

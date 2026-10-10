@@ -26,7 +26,7 @@ import {
 } from '@fgo-lab/schema';
 import { master, servant, source, stackEffectTemplate } from './stackQuantityFixture';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import {
   createCalculatorPortableRequest,
@@ -112,13 +112,17 @@ function fixture(scope: StackSource['scope'], mutation: 'addTrait' | 'removeTrai
       },
     ],
   });
+  return { data, input };
+}
+
+function scenarioFor(data: ReturnType<typeof fixture>['data']) {
   const scenario = createDefaultResolvedScenario(data, undefined, data.servants[0]);
   scenario.preNoblePhantasmPlan = [
     { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
     { kind: 'useSkillSlot', slot: 2, skillLevel: 1, choice: null },
     { kind: 'executeAttackNoblePhantasm' },
   ];
-  return { data, scenario, input };
+  return scenario;
 }
 const versions = {
   schemaVersion: SCHEMA_VERSION,
@@ -131,7 +135,7 @@ const versions = {
 
 describe('live preparation stack reads', () => {
   it('uses the native modifier value before a later stack write in calculator execution', () => {
-    const { data, scenario, input } = fixture('attackerState', 'addTrait');
+    const { data, input } = fixture('attackerState', 'addTrait');
     const actor = data.servants[0]!;
     const change = actor.skills[0]!.effects[0]!;
     change.inputDefinitions = [input];
@@ -149,8 +153,8 @@ describe('live preparation stack reads', () => {
       values: [Array.from({ length: 10 }, () => 100), [], [], [], []],
       valueExpressions: [
         Array.from({ length: 10 }, () => ({
-          kind: 'inputLinear' as const,
-          inputKey: input.key,
+          kind: 'stackLinear' as const,
+          sources: [input],
           basePermille: 100,
           perUnitPermille: 100,
           maximumUnits: 4,
@@ -164,7 +168,8 @@ describe('live preparation stack reads', () => {
     };
     const mutation = change.execution[0]!;
     const value = () => {
-      const execution = calculateScenario(scenario, data, versions);
+      const current = masterSnapshotSchema.parse(data);
+      const execution = calculateScenario(scenarioFor(current), current, versions);
       expect(execution.result.status).toBe('calculated');
       return execution.effectiveContributions.contributions.find(
         (contribution) =>
@@ -519,7 +524,8 @@ describe('live preparation stack reads', () => {
         }
   });
   it('reads the recipient instance count for party support and excludes support sourceSelf', () => {
-    const { data, scenario, input } = fixture('attackerState', 'addTrait');
+    const { data, input } = fixture('attackerState', 'addTrait');
+    const scenario = scenarioFor(data);
     const actor = data.servants[0]!;
     const gain = actor.skills[1]!.effects[0]!;
     gain.inputDefinitions = [{ ...input, instanceTraits: ['fixture-stack'] }];
@@ -763,7 +769,8 @@ describe('live preparation stack reads', () => {
   });
 
   it('executes calculator/ranking and portable edits from the same initial stack intent', () => {
-    const { data, scenario, input } = fixture('attackerState', 'addTrait');
+    const { data, input } = fixture('attackerState', 'addTrait');
+    const scenario = scenarioFor(data);
     scenario.canonicalInputValues[input.key] = { kind: 'integer', value: 0 };
     const result = calculateScenario(scenario, data, versions);
     expect(result.result.status).toBe('calculated');

@@ -330,6 +330,100 @@ const shared = new Map<
   }
 >();
 
+it('retains native preflight rejection without inventing an HP seed and rejects foreign receipts', () => {
+  const spec: Spec = { name: 'preflight-rejection', initial: 500, writes: [[800]], final: 5805 };
+  const master = fixtureMaster(spec);
+  const scenario = {
+    ...createDefaultResolvedScenario(master, undefined),
+    attackerHpPermille: spec.initial,
+    explicitOverrides: {},
+    preNoblePhantasmPlan: [
+      { kind: 'useSkillSlot' as const, slot: 1 as const, skillLevel: 4, choice: null },
+      { kind: 'executeAttackNoblePhantasm' as const },
+    ],
+    worldFactAssertions: ['fieldHeaven', 'fieldHell'].map((trait) => ({
+      decisionKey: `hp-audit:world:${trait}`,
+      fact: { kind: 'trait' as const, scope: 'field' as const, trait, present: true },
+    })),
+  };
+  const prepared = prepareCalculationScenarioWithPolicy(
+    scenario,
+    master,
+    { kind: 'calculator' },
+    {},
+    true,
+  );
+  const calculation = evaluatePreparedCalculationScenario(prepared, {
+    ...versions,
+    masterDataVersion: master.version,
+  });
+  const selection = hpPreparationSelection(prepared, calculation);
+  if (!selection) throw new Error('missing_preflight_hp_selection');
+  const program = hpPreparationProgram(selection);
+  const source = hpPreparationSource(selection);
+  const target = source.observation?.targetExecution;
+  if (target?.selection !== 'selected' || target.candidateState?.preflight?.status !== 'aborted')
+    throw new Error('missing_native_preflight_rejection');
+  const state = target.candidateState;
+  const receipt = state.preflight;
+  if (receipt?.status !== 'aborted') throw new Error('missing_abort_receipt');
+  expect(state.preflight).toMatchObject({ status: 'aborted', failure: 'constraintConflict' });
+  expect(calculation.result.status).toBe('unsupported');
+  expect(source.candidate).toBeUndefined();
+  expect(auditHpPreparation({ expected: [program], observations: [source] })).toMatchObject({
+    status: 'passed',
+    failures: [],
+    boundaries: [{ reason: 'beforeOrderedExecution:constraintConflict' }],
+  });
+  const altered = (
+    candidate: typeof state,
+    events = target.operationEvents,
+    result = source.result,
+  ) =>
+    auditHpPreparation({
+      expected: [program],
+      observations: [
+        {
+          ...source,
+          result,
+          observation: {
+            ...source.observation!,
+            targetExecution: {
+              ...target,
+              candidateState: candidate,
+              operationEvents: events,
+            },
+          },
+        },
+      ],
+    });
+  const rejectedAt = (result: ReturnType<typeof altered>, checkPath: string) => {
+    expect(result.status).toBe('failed');
+    expect(result.failures.some((failure) => failure.checkPath === checkPath)).toBe(true);
+  };
+  rejectedAt(altered({ ...state, preflight: { ...receipt } }), 'reference.preflight.receipt');
+  rejectedAt(altered(state, [...target.operationEvents]), 'reference.preflight.events');
+  rejectedAt(altered({ ...state, preflight: { status: 'ready' } }), 'seed.candidate');
+  for (const invalid of [
+    { ...receipt, issues: [] },
+    { ...receipt, failure: 'activationContext' as const },
+  ])
+    rejectedAt(altered({ ...state, preflight: invalid }), 'preflight.nativeAbort');
+  const misclassified = {
+    ...source.result,
+    status: 'unavailable',
+  } as unknown as typeof source.result;
+  rejectedAt(altered(state, target.operationEvents, misclassified), 'preflight.noExecution');
+  const normal = evaluatePreparedCalculationScenario(
+    prepareCalculationScenarioWithPolicy(scenario, master, { kind: 'calculator' }, {}, false),
+    { ...versions, masterDataVersion: master.version },
+  );
+  expect(normal.result).toEqual(calculation.result);
+  const recovered = run(master, spec);
+  expect(recovered.calculation.result.status).toBe('calculated');
+  expect(recovered.gate).toMatchObject({ status: 'passed', failures: [] });
+});
+
 it(
   'maps equal NP reader leaves in the fixedSelf proof by compiled identity',
   productionAuditTestOptions(['hp-fixed-equal-leaf-identity.json']),
@@ -530,7 +624,7 @@ for (const spec of specs)
           const npIndex = source.candidate?.nps.findIndex((np) => np === object);
           let receiptReferencePath = '';
           for (const [i, transition] of (source.transitions ?? []).entries())
-            for (const [j, action] of (transition.hpActions ?? []).entries())
+            for (const [j, action] of transition.hpActions.entries())
               for (const [k, write] of action.writes.entries())
                 if (write === object)
                   receiptReferencePath = `reference.action.${i}.native.${j}.write.${k}.receipt.0`;
@@ -617,7 +711,7 @@ for (const spec of specs)
             change(`missing:${key}`, source, key, undefined);
           for (const transition of source.transitions ?? []) {
             change('missing:hp-actions', transition, 'hpActions', undefined);
-            for (const action of transition.hpActions ?? []) {
+            for (const action of transition.hpActions) {
               change('missing:native', action, 'native', undefined);
               change('missing:action-start', action, 'start', undefined);
               for (const write of action.writes) {
@@ -641,7 +735,7 @@ for (const spec of specs)
           ])
             change(`canonical-missing:${key}`, source.canonical, key, undefined);
           for (const transition of source.transitions ?? [])
-            for (const action of transition.hpActions ?? []) {
+            for (const action of transition.hpActions) {
               change('missing:writes', action, 'writes', undefined);
               change('missing:sources', action, 'sources', undefined);
             }
@@ -667,7 +761,7 @@ for (const spec of specs)
           }
           for (const transition of source.transitions ?? []) {
             change('identity:command', transition, 'command', { kind: 'foreign' });
-            for (const action of transition.hpActions ?? []) {
+            for (const action of transition.hpActions) {
               change('identity:action', action, 'actionId', 'foreign');
               change('identity:action-form', action.start, 'currentFormId', {
                 ...action.start.currentFormId,
@@ -680,7 +774,7 @@ for (const spec of specs)
         }
         if (group === 'identity' || group === 'values') {
           for (const transition of source.transitions ?? [])
-            for (const action of transition.hpActions ?? [])
+            for (const action of transition.hpActions)
               for (const write of action.writes) {
                 if (group === 'identity') {
                   for (const key of ['operationIndex']) change(`identity:${key}`, write, key, 99);
@@ -743,7 +837,7 @@ for (const spec of specs)
             ...(source.transitions ?? []).slice(0, 1),
           ]);
           for (const transition of source.transitions ?? [])
-            for (const action of transition.hpActions ?? []) {
+            for (const action of transition.hpActions) {
               if (action.writes.length > 1)
                 change('reverse:writes', action, 'writes', [...action.writes].reverse());
               change('duplicate:writes', action, 'writes', [
@@ -767,7 +861,7 @@ for (const spec of specs)
             change('start:initial', transition.before, 'hp', source.transitions?.[0]?.before.hp);
             change('commit:result', transition.result, 'status', 'rejected');
             change('prefix:missing', transition.result.state, 'appliedActions', []);
-            for (const action of transition.hpActions ?? []) {
+            for (const action of transition.hpActions) {
               change('commit:native', action.native, 'status', 'unsupported');
               change(
                 'retained:intermediate',
@@ -997,11 +1091,9 @@ for (const spec of specs)
           }
         }
 
-        const retainedHp = preparationExecutionStateFor(positive.prepared.orderedScenario)?.hp?.actors.attacker;
-        if (
-          positive.prepared.status === 'executable' &&
-          retainedHp?.kind === 'absolute'
-        )
+        const retainedHp = preparationExecutionStateFor(positive.prepared.orderedScenario)?.hp
+          ?.actors.attacker;
+        if (positive.prepared.status === 'executable' && retainedHp?.kind === 'absolute')
           expect(retainedHp.current).toBe(spec.final);
       },
     );

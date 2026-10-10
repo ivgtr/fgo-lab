@@ -49,7 +49,7 @@ import {
   createRankingPortableRequest,
   executePortableCalculation,
 } from './portableCalculation';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { createStaticAttackProfiles } from './attackProfile';
 import {

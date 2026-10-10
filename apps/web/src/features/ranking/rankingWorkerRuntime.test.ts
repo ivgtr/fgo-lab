@@ -9,7 +9,7 @@ import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
-  calculateRankingPolicy,
+  calculateRankingPolicySummary,
   calculateRankingPolicyDetail,
   calculateScenarioWithPolicy,
   DEFAULT_RANKING_POLICY_CONDITIONS,
@@ -68,7 +68,7 @@ describe('ranking worker canonical runtime', () => {
   });
 
   it('shares one seven-condition cache identity and returns calculator-parity detail evidence', () => {
-    const calculate = vi.fn(calculateRankingPolicy);
+    const calculate = vi.fn(calculateRankingPolicySummary);
     const detail = vi.fn(calculateRankingPolicyDetail);
     const runtime = createRankingWorkerRuntime({ calculate, detail });
     // E2E-A013-DETAIL
@@ -185,7 +185,7 @@ describe('ranking worker canonical runtime', () => {
 
 describe('ranking worker trust and identity boundaries', () => {
   it('rejects contradictory detail identity before either cached or uncached lookup', () => {
-    const calculate = vi.fn(calculateRankingPolicy);
+    const calculate = vi.fn(calculateRankingPolicySummary);
     const detail = vi.fn(calculateRankingPolicyDetail);
     const runtime = createRankingWorkerRuntime({ calculate, detail });
     runtime.handle({
@@ -241,7 +241,7 @@ describe('ranking worker trust and identity boundaries', () => {
   });
 
   it('reuses record validation and never calculates under a failed replacement context', () => {
-    const calculate = vi.fn(calculateRankingPolicy);
+    const calculate = vi.fn(calculateRankingPolicySummary);
     const runtime = createRankingWorkerRuntime({ calculate, detail: calculateRankingPolicyDetail });
     const initialize = {
       kind: 'initialize',

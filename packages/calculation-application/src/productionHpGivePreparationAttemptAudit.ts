@@ -3,6 +3,7 @@ import {
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
 import {
+  createGiveAuditSnapshotter,
   giveCanonical,
   giveDiagnostic,
   giveSource,
@@ -49,26 +50,16 @@ export function giveAttemptSource(
 ): GiveAttemptSource {
   return { ...giveSource(selection), directResult };
 }
-function value(v: unknown): CanonicalAuditValue {
-  if (v === undefined) return { type: 'undefined' };
-  if (v instanceof Map)
-    return { type: 'map', entries: [...v].map(([k, x]) => [value(k), value(x)]) };
-  if (v instanceof Set) return { type: 'set', values: [...v].map(value) };
-  if (Array.isArray(v)) return { type: 'array', values: v.map(value) };
-  if (v !== null && typeof v === 'object')
-    return {
-      type: 'object',
-      fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, value(x)])),
-    };
-  return { type: typeof v, value: v as CanonicalAuditValue };
-}
+
 /** Full original values, including rejection steps omitted by the committed-forward contract. */
 export function giveAttemptDiagnostic(s: GiveAttemptSource) {
   return {
     forward: giveDiagnostic(s),
     attempts: s.transitions?.map((t) => t.attempts),
     reducers: s.transitions?.map((t) => ({ before: t.before, result: t.result })),
-    excludedReads: s.transitions?.map((t) => t.hpActions?.map((a) => a.giveExcludedConsumptions)),
+    excludedReads: s.transitions?.map((t) =>
+      (t as Partial<typeof t>).hpActions?.map((a) => a.giveExcludedConsumptions),
+    ),
     directResult: s.directResult,
   };
 }
@@ -104,7 +95,7 @@ function references(s: GiveAttemptSource): unknown[] {
         ...a.stepOrigins.flatMap((o) => [o.source]),
         ...a.reached.map((r) => r.step),
       ]) ?? []),
-      ...(t.hpActions?.flatMap((a) => [
+      ...((t as Partial<typeof t>).hpActions?.flatMap((a) => [
         a.start,
         a.start.hp,
         a.attempted,
@@ -170,6 +161,7 @@ export function auditGiveAttemptIsolation(input: {
   expected: readonly GiveAttemptProgram[];
   observations: readonly GiveAttemptSource[];
 }) {
+  const value = createGiveAuditSnapshotter();
   const checks: {
     identity: string;
     reason: GiveAttemptReason;
@@ -265,7 +257,9 @@ export function auditGiveAttemptIsolation(input: {
     const ai = program.expectation.actionIndex,
       action = s.canonical.actions[ai],
       t = s.transitions?.[ai],
-      n = t?.hpActions?.find((a) => a.actionId === action?.actionId),
+      n = (t as Partial<NonNullable<typeof t>> | undefined)?.hpActions?.find(
+        (a) => a.actionId === action?.actionId,
+      ),
       attempt = t?.attempts?.find((a) => a.actionId === action?.actionId);
     c('giveAttemptIdentityMismatch', 'action', true, !!action);
     if (!action) continue;
@@ -283,7 +277,8 @@ export function auditGiveAttemptIsolation(input: {
       c('giveAttemptIdentityMismatch', 'action.command', action.command, t.command);
       c('giveAttemptIdentityMismatch', 'action.form', action.form, t.before.currentFormId);
     }
-    const allActions = s.transitions?.flatMap((t) => t.hpActions ?? []) ?? [];
+    const allActions =
+      s.transitions?.flatMap((t) => (t as Partial<typeof t>).hpActions ?? []) ?? [];
     const writes = allActions.flatMap((a) =>
       (a.giveWrites ?? []).map((w) => ({ action: a, write: w })),
     );

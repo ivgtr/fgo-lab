@@ -1,4 +1,5 @@
 import { isHpOperation } from './preparationHp';
+import { sourceFamily } from './sourceRecipe';
 import { effectExecutesInNpProgram, npProgramEffects } from './npProgramScope';
 import type { MasterEffect, OcExecutionOperation } from '@fgo-lab/master-data';
 import type { ConditionExpression } from './contracts';
@@ -38,18 +39,10 @@ export function hasOcConditionReader(effect: MasterEffect): boolean {
   );
 }
 type StaticOcProgram = Omit<OcSourceProgram, 'source'>;
-const staticPrograms = new WeakMap<MasterEffect, Map<string, StaticOcProgram>>();
 /** Compilation keeps every OC cell. Selection belongs to the individual NP-use receipt. */
 export function compileOcSourceProgram(source: SourceEffect): OcSourceProgram {
-  const key = JSON.stringify([
-    source.origin,
-    source.sourceId,
-    source.sourceInstanceId,
-    source.skillId,
-  ]);
-  const programs = staticPrograms.get(source.effect) ?? new Map<string, StaticOcProgram>();
-  const cached = programs.get(key);
-  if (cached) return { source, ...cached };
+  const recipe = sourceFamily(source.effect, source);
+  if (recipe.oc) return { source, ...recipe.oc };
   const sourceCondition =
     (source.origin === 'support' || source.origin === 'mysticCode') &&
     source.effect.requirement.recipient === 'sourceSelf';
@@ -75,8 +68,7 @@ export function compileOcSourceProgram(source: SourceEffect): OcSourceProgram {
         operation.kind === 'ocStateNonIntersection',
     ),
   };
-  programs.set(key, program);
-  staticPrograms.set(source.effect, programs);
+  recipe.oc = program;
   return { source, ...program };
 }
 export function evaluateOcSourceCondition(

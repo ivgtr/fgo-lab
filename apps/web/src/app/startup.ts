@@ -49,7 +49,7 @@ export interface ReadyStartupResult extends StartupBase {
 interface SetupRequiredResult extends StartupBase {
   state: 'setup-required';
   master: undefined;
-  profiles: undefined;
+  profiles: ProfileCollection | undefined;
   invalidStoredProfiles: boolean;
 }
 
@@ -135,7 +135,7 @@ export async function bootstrapApplication(
         warning = `更新に失敗したため互換性確認済みの ${active.manifest.masterDataVersion} を使用中: ${errorMessage(cause)}`;
       }
     }
-    if (!active || !profiles) return emptyResult(warning, offline);
+    if (!active || !profiles) return { ...emptyResult(warning, offline), profiles };
 
     let shared: ReturnType<typeof readShareFragment> = null;
     try {
@@ -223,7 +223,7 @@ function emptyResult(
   warning: string,
   offline: boolean,
   invalidStoredProfiles = false,
-): StartupResult {
+): SetupRequiredResult {
   return {
     state: 'setup-required',
     master: undefined,

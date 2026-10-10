@@ -1,10 +1,11 @@
+import { mutableAuditView } from './auditTestMutation';
 import { preparationEffectSource } from '../../battle-execution/src/preparationOc';
 import { compileOcSourceProgram } from '../../battle-execution/src/ocSourceProgram';
 import { ocSourceOperationKey } from '../../battle-execution/src/ocSourceBinding';
-import type { PreNoblePhantasmState } from '@fgo-lab/battle-execution';
+import type { PreNoblePhantasmState, StochasticSelection } from '@fgo-lab/battle-execution';
 import { it, expect, vi } from 'vitest';
 import * as hpOwner from '../../battle-execution/src/preparationHp';
-import { isDeepStrictEqual } from 'node:util';
+import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { firstCanonicalAuditDifference } from '@fgo-lab/master-data/production-audit';
 import {
@@ -26,8 +27,7 @@ import {
   productionAuditTestOptions,
   writeProductionAuditArtifact,
   encodeProductionAuditDiagnostic,
-  decodeProductionAuditDiagnostic,
-  decodeStoredProductionAuditArtifact,
+  decodeStoredProductionAuditDiagnostic,
   readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
 import {
@@ -115,6 +115,7 @@ function run(
   spec: Spec,
   capture = true,
   ranking = false,
+  stochasticSelection?: StochasticSelection,
 ) {
   const scenario = {
     ...createDefaultResolvedScenario(master, undefined),
@@ -162,7 +163,7 @@ function run(
           areaView: 'included',
         }
       : { kind: 'calculator' },
-    {},
+    stochasticSelection ? { stochasticSelection } : {},
     capture,
   );
   const calculation = evaluatePreparedCalculationScenario(prepared, {
@@ -181,15 +182,13 @@ function run(
   return { prepared, calculation, selection, program, source, gate };
 }
 async function save(meta: unknown, path: string, payload: unknown) {
-  const receipt = await writeProductionAuditArtifact(
-    meta,
-    path,
-    encodeProductionAuditDiagnostic(payload),
-  );
-  const saved = decodeStoredProductionAuditArtifact(
+  const encoded = encodeProductionAuditDiagnostic(payload);
+  const receipt = await writeProductionAuditArtifact(meta, path, encoded);
+  const saved = decodeStoredProductionAuditDiagnostic(
     await readStoredProductionAuditArtifact(path),
-  ) as ReturnType<typeof encodeProductionAuditDiagnostic>;
-  expect(isDeepStrictEqual(decodeProductionAuditDiagnostic(saved), payload)).toBe(true);
+  );
+  // Compare original values independently of the codec and its alias topology.
+  expect(equalProductionAuditDiagnosticValues(payload, saved)).toBe(true);
   return receipt;
 }
 const parsedMasters = new Map(specs.map((spec) => [spec, fixtureMaster(spec)]));
@@ -200,6 +199,13 @@ for (const spec of specs) {
       result = run(master, spec);
     const normal = run(master, spec, false),
       ranking = run(master, spec, true, true);
+    const rankingReplay = run(
+      master,
+      spec,
+      false,
+      false,
+      ranking.prepared.preparation.stochasticSelection,
+    );
     const direct = evaluatePreparedCalculationResult(result.prepared, {
       ...versions,
       masterDataVersion: master.version,
@@ -219,6 +225,7 @@ for (const spec of specs) {
       gate: result.gate,
       normal: normal.calculation,
       ranking: ranking.calculation,
+      rankingReplay: rankingReplay.calculation,
       direct,
     });
     expect(result.gate.status, JSON.stringify(result.gate.firstDifference)).toBe('passed');
@@ -228,7 +235,9 @@ for (const spec of specs) {
       ...result.calculation,
       executionObservation: undefined,
     });
-    expect(ranking.calculation.result).toEqual(result.calculation.result);
+    expect(ranking.calculation.result).toEqual(rankingReplay.calculation.result);
+    if (spec.failure === 'inputRequired')
+      expect(result.calculation.result.status).toBe('inputRequired');
     expect(direct).toEqual(result.calculation.result);
     expect(battlePointPreparationRejectionObservationFor(direct)).toBe(result.source.transport);
     if (spec.outside) {
@@ -241,7 +250,7 @@ for (const spec of specs) {
     }
     const transition = result.source.transitions!.at(-1)!;
     expect(transition.result.state).toBe(transition.before);
-    const hp = transition.hpActions![0]!;
+    const hp = transition.hpActions[0]!;
     expect(hp.native!.status).not.toBe('committed');
     if (spec.reset) {
       expect(hp.attempted!.hp).toBe(hp.start.hp);
@@ -336,12 +345,35 @@ const groups = [
 const negativeSpec = specs[5]!;
 const negativeMaster = parsedMasters.get(negativeSpec)!;
 const negativeResult = run(negativeMaster, negativeSpec);
+it('HP attempt owns diagnostics across caller mutations and repairs', () => {
+  const source = cloneSource(negativeResult);
+  const input = {
+    selections: [negativeResult.selection],
+    expected: [negativeResult.program],
+    observations: [source],
+  };
+  const baseline = auditHpPreparationAttempts(input);
+  const receipt = source.hpActions![1]![0]!.writes[0]!.receipts[0]!;
+  const original = receipt.actual!;
+  const checkPath = 'owner.hpActions.1.0.writes.0.receipts.0.actual';
+  Reflect.set(receipt, 'actual', original + 1);
+  const first = auditHpPreparationAttempts(input);
+  Reflect.set(receipt, 'actual', original + 2);
+  const second = auditHpPreparationAttempts(input);
+  expect(first.failures.find((f) => f.checkPath === checkPath)?.actual).toBe(original + 1);
+  expect(second.failures.find((f) => f.checkPath === checkPath)?.actual).toBe(original + 2);
+  Reflect.set(receipt, 'actual', original);
+  expect(equalProductionAuditDiagnosticValues(auditHpPreparationAttempts(input), baseline)).toBe(
+    true,
+  );
+  expect(first.failures.find((f) => f.checkPath === checkPath)?.actual).toBe(original + 1);
+});
 for (const group of groups) {
   const candidates = paths(negativeResult.source[group]).filter(
     (p) => !p.includes('atlasEvidence') && !p.includes('master'),
   );
   const cases = [[], ...candidates];
-  for (let offset = 0; offset < cases.length; offset += 20) {
+  for (let offset = 0; offset < cases.length; offset += 1) {
     const path = `hp-attempt-negative-${group}-${offset}.json`;
     it(
       `HP noncommit rejects missing and altered ${group} ${offset}`,
@@ -350,7 +382,7 @@ for (const group of groups) {
         const result = negativeResult;
         const negatives = [];
         // Group roots and every nested field/cell are independently denied; no success filters.
-        for (const p of cases.slice(offset, offset + 20)) {
+        for (const p of cases.slice(offset, offset + 1)) {
           const source = cloneSource(result);
           const full = [group, ...p];
           const container = parent(source, full),
@@ -371,17 +403,23 @@ for (const group of groups) {
         });
         for (const negative of negatives) {
           expect(negative.gate.status).toBe('failed');
+          const invalidDiagnostics: { checkPath: string; reason: string }[] = [];
           for (const failure of negative.gate.failures) {
             const diff = firstCanonicalAuditDifference(
               [{ identity: failure.identity, value: failure.expected }],
               [{ identity: failure.identity, value: failure.actual }],
             )!;
-            expect(failure.firstDifference).toEqual({
+            const expectedDifference = {
               ...diff,
               path: diff.path ? `${failure.checkPath}.${diff.path}` : failure.checkPath,
-            });
-            expect(failure.reason).toMatch(/^hpAttempt/);
+            };
+            if (
+              !equalProductionAuditDiagnosticValues(failure.firstDifference, expectedDifference) ||
+              !/^hpAttempt/.test(failure.reason)
+            )
+              invalidDiagnostics.push({ checkPath: failure.checkPath, reason: failure.reason });
           }
+          expect(invalidDiagnostics).toEqual([]);
           expect(negative.gate.failures.some((f) => f.checkPath.startsWith(`owner.${group}`))).toBe(
             true,
           );
@@ -452,7 +490,7 @@ it(
       );
     for (const field of ['operationIndex'] as const)
       add(field, 'hpAttemptIdentityMismatch', `owner.hpActions.1.0.writes.0.${field}`, (s) => {
-        s.hpActions![1]![0]!.writes[0]!.operationIndex = 999;
+        mutableAuditView(s.hpActions![1]![0]!.writes[0]!).operationIndex = 999;
       });
     for (const field of [
       'sourceId',
@@ -482,10 +520,10 @@ it(
       if (op.amount.kind === 'fixed') op.amount.values[0][3] = 9999;
     });
     add('initial-as-start', 'hpAttemptStateMismatch', 'owner.hpActions.1.0.start.hp', (s) => {
-      s.hpActions![1]![0]!.start.hp = s.hpActions![0]![0]!.start.hp;
+      mutableAuditView(s.hpActions![1]![0]!.start).hp = s.hpActions![0]![0]!.start.hp;
     });
     add('attempt-as-retained', 'hpAttemptStateMismatch', 'owner.hpActions.1.0.returned.hp', (s) => {
-      s.hpActions![1]![0]!.returned!.hp = s.hpActions![1]![0]!.attempted!.hp;
+      mutableAuditView(s.hpActions![1]![0]!.returned!).hp = s.hpActions![1]![0]!.attempted!.hp;
     });
     add('maximum-as-current', 'hpAttemptStateMismatch', 'owner.hpActions', (s) => {
       Reflect.set(s.hpActions![1]![0]!.start.hp!.actors.attacker!, 'current', 10010);
@@ -514,7 +552,7 @@ it(
       'hpAttemptStateMismatch',
       'owner.hpActions.1.0.returned.hp.receipts',
       (s) => {
-        s.hpActions![1]![0]!.returned!.hp = {
+        mutableAuditView(s.hpActions![1]![0]!.returned!).hp = {
           ...s.hpActions![1]![0]!.returned!.hp!,
           receipts: s.hpActions![1]![0]!.attempted!.hp!.receipts,
         };
@@ -525,7 +563,7 @@ it(
       'hpAttemptStateMismatch',
       'owner.hpActions.1.0.returned.hp.executedEffects',
       (s) => {
-        s.hpActions![1]![0]!.returned!.hp = {
+        mutableAuditView(s.hpActions![1]![0]!.returned!).hp = {
           ...s.hpActions![1]![0]!.returned!.hp!,
           executedEffects: ['failed-action'],
         };
@@ -547,18 +585,18 @@ it(
       'hpAttemptIdentityMismatch',
       'owner.hpActions.1.0.writes.0.operationIndex',
       (s) => {
-        s.hpActions![1]![0]!.writes.reverse();
+        mutableAuditView(s.hpActions![1]![0]!.writes).reverse();
       },
     );
     add('duplicate-write', 'hpAttemptStateMismatch', 'owner.hpActions', (s) => {
-      s.hpActions![1]![0]!.writes.push(s.hpActions![1]![0]!.writes[0]!);
+      mutableAuditView(s.hpActions![1]![0]!.writes).push(s.hpActions![1]![0]!.writes[0]!);
     });
     add('coherent-receipt-state', 'hpAttemptStateMismatch', 'owner.hpActions', (s) => {
       const w = s.hpActions![1]![0]!.writes[0]!;
       const r = w.receipts[0]!;
       Reflect.set(r.after, 'current', 8000);
-      w.after = { ...w.after, actors: { ...w.after.actors, attacker: r.after } };
-      s.hpActions![1]![0]!.attempted!.hp = w.after;
+      mutableAuditView(w).after = { ...w.after, actors: { ...w.after.actors, attacker: r.after } };
+      mutableAuditView(s.hpActions![1]![0]!.attempted!).hp = w.after;
     });
     add(
       'coherent-refusal',

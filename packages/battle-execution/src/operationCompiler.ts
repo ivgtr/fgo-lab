@@ -1,3 +1,4 @@
+import { sourceRecipe, sourceFamily } from './sourceRecipe';
 import type { ResourceMutationIdentity } from './contracts';
 import { operationSourceFor, retainOperationSource } from './executionSourceObservation';
 import { markerIntersects } from './markerDependency';
@@ -186,6 +187,26 @@ export function compileEffectCondition(
   sourceInstanceId: string,
   skillId: string,
   sourceActorIsCurrent = false,
+): ConditionExpression {
+  const family = sourceFamily(effect, { origin, sourceId, sourceInstanceId, skillId });
+  const field = sourceActorIsCurrent ? 'sourceCondition' : 'attackerCondition';
+  return (family[field] ??= compileSourceCondition(
+    effect,
+    origin,
+    sourceId,
+    sourceInstanceId,
+    skillId,
+    sourceActorIsCurrent,
+  ));
+}
+
+function compileSourceCondition(
+  effect: MasterEffect,
+  origin: Origin,
+  sourceId: string,
+  sourceInstanceId: string,
+  skillId: string,
+  sourceActorIsCurrent: boolean,
 ): ConditionExpression {
   const activationSource = {
     origin,
@@ -519,59 +540,13 @@ export interface CompiledOperations {
   projections: EffectProjection[];
 }
 
-const compiledEffectCache = new WeakMap<MasterEffect, Map<string, CompiledOperations>>();
-
-function compilationCacheKey(
-  source: SourceEffect,
-  actorForms: ServantMaster['actorFormGraph']['forms'],
-): string {
-  const needsActorForms = source.effect.execution.some(({ kind }) => kind === 'transformActorForm');
-  return JSON.stringify({
-    phase: source.phase,
-    origin: source.origin,
-    ocExecutionCommitted: source.ocExecutionCommitted,
-    hpExecutionCommitted: source.hpExecutionCommitted,
-    battlePointExecutionCommitted: source.battlePointExecutionCommitted,
-    markerProgram: source.markerProgram,
-    markerReaders: source.effect.execution.some(
-      (operation) => operation.kind === 'buffInstanceMutation' && operation.marker,
-    )
-      ? source.markerReaders
-        ? [...source.markerReaders].sort()
-        : null
-      : undefined,
-    compilationPurpose: source.compilationPurpose,
-    sourceInstanceId: source.sourceInstanceId,
-    sourceId: source.sourceId,
-    sourceName: source.sourceName,
-    sourceTraits: [...source.sourceTraits].sort(),
-    skillId: source.skillId,
-    skillName: source.skillName,
-    valueSetIndex: source.valueSetIndex,
-    valueIndex: source.valueIndex,
-    limitBreak: source.limitBreak,
-    sourceEnabled: source.sourceEnabled,
-    enabledByDefault: source.enabledByDefault,
-    noblePhantasmVariant: source.noblePhantasmVariant,
-    actorForms: needsActorForms
-      ? actorForms.map(({ id, traits }) => ({ id, traits: [...traits].sort() }))
-      : [],
-  });
-}
-
 export function compileEffectCached(
   source: SourceEffect,
   startOrder: number,
   actorForms: ServantMaster['actorFormGraph']['forms'] = [],
 ): CompiledOperations {
-  const byKey = compiledEffectCache.get(source.effect) ?? new Map<string, CompiledOperations>();
-  if (!compiledEffectCache.has(source.effect)) compiledEffectCache.set(source.effect, byKey);
-  const key = compilationCacheKey(source, actorForms);
-  let compiled = byKey.get(key);
-  if (!compiled) {
-    compiled = compileEffect({ ...source, sourceActivation: { kind: 'unread' } }, 0, actorForms);
-    byKey.set(key, compiled);
-  }
+  const recipe = sourceRecipe(source, actorForms);
+  const compiled = (recipe.damage ??= compileEffect(recipe.source, 0, actorForms));
   return {
     operations: compiled.operations.map((operation) => {
       const runtime = {

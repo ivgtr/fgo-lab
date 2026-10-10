@@ -25,20 +25,34 @@ const equal = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.s
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-function physicalValue(value: unknown): CanonicalAuditValue {
+function physicalValue(
+  value: unknown,
+  copies = new WeakMap<object, CanonicalAuditValue>(),
+): CanonicalAuditValue {
   if (value === undefined) return { kind: 'absent' };
+  if (value === null || typeof value !== 'object') return value as CanonicalAuditValue;
+  const cached = copies.get(value);
+  if (cached !== undefined) return cached;
+  // One lossless transport may reach the same immutable receipt through many paths.
+  // The map belongs to this call; a later corrupted live observation gets a fresh view.
+  let result: CanonicalAuditValue;
   if (value instanceof Map)
-    return {
+    result = {
       kind: 'map',
-      entries: [...value].map(([key, item]) => [physicalValue(key), physicalValue(item)]),
+      entries: [...value].map(([key, item]) => [
+        physicalValue(key, copies),
+        physicalValue(item, copies),
+      ]),
     };
-  if (value instanceof Set) return { kind: 'set', values: [...value].map(physicalValue) };
-  if (Array.isArray(value)) return value.map(physicalValue);
-  if (value !== null && typeof value === 'object')
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, physicalValue(item)]),
+  else if (value instanceof Set)
+    result = { kind: 'set', values: [...value].map((item) => physicalValue(item, copies)) };
+  else if (Array.isArray(value)) result = value.map((item) => physicalValue(item, copies));
+  else
+    result = Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, physicalValue(item, copies)]),
     );
-  return value as CanonicalAuditValue;
+  copies.set(value, result);
+  return result;
 }
 
 /** Compare the lossless physical view without allocating every unchanged subtree. */
@@ -46,12 +60,24 @@ function physicalDifference(
   left: unknown,
   right: unknown,
   path = '$',
+  equalPairs = new WeakMap<object, WeakSet<object>>(),
 ): {
   path: string;
   expected: CanonicalAuditValue;
   actual: CanonicalAuditValue;
 } | null {
   if (left === right) return null;
+  const pair =
+    left !== null && typeof left === 'object' && right !== null && typeof right === 'object';
+  if (pair && equalPairs.get(left)?.has(right)) return null;
+  const complete = () => {
+    if (pair) {
+      const rights = equalPairs.get(left) ?? new WeakSet();
+      rights.add(right);
+      equalPairs.set(left, rights);
+    }
+    return null;
+  };
   const view = (value: unknown): unknown => {
     if (value === undefined) return { kind: 'absent' };
     if (value instanceof Map) return { kind: 'map', entries: [...value] };
@@ -68,19 +94,29 @@ function physicalDifference(
   if (Array.isArray(wanted) && Array.isArray(observed)) {
     if (wanted.length !== observed.length) return mismatch(wanted.length, observed.length);
     for (let index = 0; index < wanted.length; index++) {
-      const difference = physicalDifference(wanted[index], observed[index], `${path}[${index}]`);
+      const difference = physicalDifference(
+        wanted[index],
+        observed[index],
+        `${path}[${index}]`,
+        equalPairs,
+      );
       if (difference) return difference;
     }
-    return null;
+    return complete();
   }
   if (record(wanted) && record(observed)) {
     const keys = Object.keys(wanted);
     if (!equal(keys, Object.keys(observed))) return mismatch(keys, Object.keys(observed));
     for (const key of keys) {
-      const difference = physicalDifference(wanted[key], observed[key], `${path}.${key}`);
+      const difference = physicalDifference(
+        wanted[key],
+        observed[key],
+        `${path}.${key}`,
+        equalPairs,
+      );
       if (difference) return difference;
     }
-    return null;
+    return complete();
   }
   return mismatch(wanted, observed);
 }

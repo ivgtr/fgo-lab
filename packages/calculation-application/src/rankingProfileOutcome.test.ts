@@ -1,10 +1,11 @@
+import type { RankingCandidateEvent } from './rankingCandidateBatch';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { attackProfileKey, createStaticAttackProfiles } from './attackProfile';
 import type { RankingCandidateCalculation } from './rankingPolicyCandidates';
-import { unresolvedProfileResult } from './rankingProfileOutcome';
+import { RankingProfileAccumulator } from './rankingProfileOutcome';
 
 const master = masterSnapshotSchema.parse(fixture);
 const attackProfile = createStaticAttackProfiles(master.servants[0]!)[0]!;
@@ -76,7 +77,11 @@ function mixedCandidateSet(
   };
   return {
     details: new Map(),
-    executions: order.map((kind) => structuredClone(byKind[kind])),
+    candidateEvents: order.map((kind, index) => ({
+      index,
+      descriptor: { attackProfile, key: `candidate:${kind}` },
+      execution: structuredClone(byKind[kind]),
+    })),
     plan: {
       candidateSpaces: [
         {
@@ -92,15 +97,24 @@ function mixedCandidateSet(
           },
         },
       ],
-      attackProfiles: order.map(() => attackProfile),
-      candidateKeys: order.map((kind) => `candidate:${kind}`),
-      preparedRankingScenarios: order.map((kind) => ({
-        resolved: {
-          preparationRejection: kind === 'unavailable' ? { code: 'insufficientNpGauge' } : null,
-        },
-      })),
+      candidateDescriptors: order.map((kind) => ({ attackProfile, key: `candidate:${kind}` })),
     },
-  } as unknown as RankingCandidateCalculation;
+  } as unknown as RankingCandidateCalculation & { candidateEvents: RankingCandidateEvent[] };
+}
+
+function unresolvedProfileResult(
+  candidateSet: RankingCandidateCalculation & { candidateEvents: RankingCandidateEvent[] },
+  profile: typeof attackProfile,
+) {
+  const accumulator = new RankingProfileAccumulator(
+    profile,
+    candidateSet.plan.candidateSpaces.find(
+      (space) => attackProfileKey(space.attackProfile) === attackProfileKey(profile),
+    ),
+  );
+  for (const { descriptor, execution } of candidateSet.candidateEvents)
+    accumulator.observe(descriptor.key, execution.result);
+  return accumulator.result(candidateSet.details.get(attackProfileKey(profile)));
 }
 
 describe('ranking profile blocker aggregation', () => {
@@ -174,7 +188,6 @@ describe('ranking profile blocker aggregation', () => {
 
 it('preserves a common unavailable result without reading a preparation diagnostic', () => {
   const candidates = mixedCandidateSet(['unavailable']);
-  candidates.plan = { ...candidates.plan, preparedRankingScenarios: [] };
   expect(unresolvedProfileResult(candidates, attackProfile)).toMatchObject({
     status: 'unavailableUnderPolicy',
     reason: 'insufficientNpGauge',
@@ -183,7 +196,7 @@ it('preserves a common unavailable result without reading a preparation diagnost
 
 it('does not reinterpret an unsupported result from a coincident preparation diagnostic', () => {
   const candidates = mixedCandidateSet(['unavailable']);
-  candidates.executions[0]!.result = {
+  candidates.candidateEvents[0]!.execution.result = {
     ...resultBase,
     rows: [],
     status: 'unsupported',
@@ -196,7 +209,7 @@ it('does not reinterpret an unsupported result from a coincident preparation dia
 
 it('preserves mixed unavailability reasons rather than asserting NP shortage', () => {
   const candidates = mixedCandidateSet(['unavailable', 'unavailable']);
-  candidates.executions[1]!.result = {
+  candidates.candidateEvents[1]!.execution.result = {
     ...resultBase,
     rows: [],
     status: 'unavailable',

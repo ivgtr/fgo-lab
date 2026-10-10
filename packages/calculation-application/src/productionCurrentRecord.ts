@@ -13,7 +13,7 @@ import { attackProfileKey, createStaticAttackProfiles, type AttackProfile } from
 import { compileRankingContributionPolicy } from './contributionPolicy';
 import { rankingPolicyKey } from './rankingComparisonPolicy';
 import { calculateScenarioWithPolicy } from './scenario';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { recordFailure, type ProductionRecordFailure } from './productionClosureRecordIntegrity';
 import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
 

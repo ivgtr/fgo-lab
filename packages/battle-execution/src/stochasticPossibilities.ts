@@ -18,8 +18,9 @@ export interface IllegalExecutionWitness {
   readonly key: string;
 }
 export function stochasticWitnessKey(entries: readonly StochasticWitnessEntry[]): string {
-  return JSON.stringify([...entries].sort((left, right) =>
-    left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
+  return JSON.stringify(
+    [...entries].sort((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0)),
+  );
 }
 export type ExecutionPossibilityCertificate =
   | { kind: 'declared' }
@@ -54,7 +55,7 @@ export function stochasticWitnessEntries(
 ): StochasticWitnessEntry[] {
   return [...selection.choices]
     .map(([key, choice]) => ({ key, choice }))
-    .sort((left, right) => left.key < right.key ? -1 : left.key > right.key ? 1 : 0);
+    .sort((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
 }
 
 /** A suspended concrete execution has not committed or published a result. */

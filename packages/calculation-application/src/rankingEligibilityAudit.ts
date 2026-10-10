@@ -1,4 +1,6 @@
+import type { RankingCandidateEvent } from './rankingCandidateBatch';
 import { createHash } from 'node:crypto';
+import { stableValueKey } from '@fgo-lab/schema';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import {
   compileCandidateLocalActionAdmissionDispositions,
@@ -83,18 +85,9 @@ interface StaticProgramRecord {
   sourceEffects: number;
 }
 
-function stableJson(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
-  return `{${Object.entries(value as Record<string, unknown>)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
-    .join(',')}}`;
-}
-
 function digestRecords(records: readonly unknown[]): string {
   const hash = createHash('sha256');
-  for (const record of records) hash.update(stableJson(record)).update('\n');
+  for (const record of records) hash.update(stableValueKey(record)).update('\n');
   return hash.digest('hex');
 }
 
@@ -332,6 +325,7 @@ export class RankingEligibilityAuditAccumulator {
     conditions: RankingPolicyConditions,
     candidateSet: RankingCandidateCalculation,
     digestPartition: number,
+    candidateEvents: readonly RankingCandidateEvent[],
   ): void {
     if (
       !Number.isSafeInteger(digestPartition) ||
@@ -358,16 +352,12 @@ export class RankingEligibilityAuditAccumulator {
     this.conditionKeys.add(this.conditionKey(conditions));
     this.candidate.observations += 1;
     const policy = policyKey(conditions);
-    const planKeys = new Set(candidateSet.plan.candidateKeys);
+    const planKeys = new Set(candidateEvents.map(({ descriptor }) => descriptor.key));
     this.candidate.candidatePlans += 1;
-    this.candidate.generated += candidateSet.plan.candidateKeys.length;
+    this.candidate.generated += candidateEvents.length;
     this.candidate.deduplicated += planKeys.size;
     this.candidate.upperBound += candidateSet.plan.candidateUpperBound;
-    increment(
-      this.candidate.byPolicy,
-      `${policy}:generated`,
-      candidateSet.plan.candidateKeys.length,
-    );
+    increment(this.candidate.byPolicy, `${policy}:generated`, candidateEvents.length);
     increment(
       this.candidate.byPolicy,
       `${policy}:upperBound`,
@@ -380,19 +370,20 @@ export class RankingEligibilityAuditAccumulator {
           this.candidate.maximumSingleProfileUpperBound,
           space.upperBound,
         );
-        const generated = candidateSet.plan.attackProfiles.filter(
-          (attackProfile) =>
-            attackProfileKey(attackProfile) === attackProfileKey(space.attackProfile),
-        ).length;
+        const generated = candidateEvents
+          .map(({ descriptor }) => descriptor.attackProfile)
+          .filter(
+            (attackProfile) =>
+              attackProfileKey(attackProfile) === attackProfileKey(space.attackProfile),
+          ).length;
         this.candidate.maximumSingleProfileGenerated = Math.max(
           this.candidate.maximumSingleProfileGenerated,
           generated,
         );
       }
     }
-    for (const [index, candidateKey] of candidateSet.plan.candidateKeys.entries()) {
-      const execution = candidateSet.executions[index];
-      if (!execution) throw new TypeError(`ranking_eligibility_execution_missing:${candidateKey}`);
+    for (const { descriptor, execution } of candidateEvents) {
+      const candidateKey = descriptor.key;
       const status = statusOf(execution);
       this.candidate.byStatus[status] += 1;
       increment(this.candidate.byPolicy, `${policy}:${status}`);
@@ -408,11 +399,11 @@ export class RankingEligibilityAuditAccumulator {
         .update('\0')
         .update(candidateKey)
         .update('\0')
-        .update(candidateSet.plan.candidateEvidence[index]?.attackProfileKey ?? '')
+        .update(descriptor.evidence.attackProfileKey)
         .update('\0')
-        .update(candidateSet.plan.preparationPlanKeys[index] ?? '')
+        .update(descriptor.evidence.preparationPlanKey)
         .update('\0')
-        .update(String(candidateSet.plan.startNpGauges[index] ?? ''))
+        .update(String(descriptor.evidence.startNpGauge))
         .update('\0')
         .update(status)
         .update('\n');

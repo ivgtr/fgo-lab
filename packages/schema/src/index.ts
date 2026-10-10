@@ -5,6 +5,7 @@ import {
 } from './rankingSelection';
 export * from './rankingSelection';
 import { z } from 'zod';
+export { stableValueKey } from './stableValueKey';
 import { analyzeActivationFactSet } from './activationFactSet';
 import { quantityFactValueSchema, worldFactQuantitySchema } from './quantityFacts';
 

@@ -34,7 +34,7 @@ export function recordCandidatePreflight(
   if (!audit) return;
   audit.preflight =
     candidate.status === 'invalidActivationContext'
-      ? { status: 'aborted', issues: candidate.issues }
+      ? { status: 'aborted', failure: candidate.failure, issues: candidate.issues }
       : { status: 'ready' };
 }
 
@@ -222,6 +222,7 @@ export function recordPreGroupContextResolution(
 ): void {
   if (!audit) return;
   audit.preGroupContextResolution = {
+    constraintIssues: candidate.constraintIssues,
     appliedOperationIds: [...candidate.preappliedOperationIds],
     before: contextSnapshot(candidate.selectionBaseState),
     resolved: contextSnapshot(candidate.state),

@@ -29,11 +29,11 @@ export type InputFacts = ReadonlyMap<string, InputFact>;
 
 // Owned fact data is immutable. A new writer copies mutable incoming data once,
 // and retains previously owned dependencies rather than cloning their histories.
-const ownedFactData = new WeakSet<object>();
+const ownedFactData = new WeakSet();
 
 function ownFactData<T>(value: T): T {
   const copies = new WeakMap<object, object>();
-  const visiting = new WeakSet<object>();
+  const visiting = new WeakSet();
   const copy = (item: unknown): unknown => {
     if (item === null || typeof item !== 'object') return item;
     if (ownedFactData.has(item)) return item;

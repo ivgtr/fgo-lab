@@ -168,6 +168,13 @@ export function applyCommittedPreparationTransition(
 ): boolean {
   const binding = operation.runtimeBinding;
   if (!binding?.sourcePhysicalCommitted) return false;
+  // Completion alone does not establish a native critical-star write (including a no-op).
+  if (
+    operation.kind === 'resourceMutation' &&
+    operation.resource === 'criticalStars' &&
+    !binding.physicalInput
+  )
+    return false;
   if (
     operation.kind !== 'resourceMutation' &&
     operation.kind !== 'addTrait' &&

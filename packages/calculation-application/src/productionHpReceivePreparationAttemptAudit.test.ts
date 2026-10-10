@@ -351,6 +351,7 @@ describe('receive changed-attempt native noncommit isolation', () => {
         parity = cases.map((c) => ({
           normal: execute(c.scenario, master, false),
           ranking: execute(c.scenario, master, true, true),
+          rankingNormal: execute(c.scenario, master, false, true),
         }));
       await save(task, 'tsk-08-receive-attempt-changed.json', {
         cases: cases.map((c) => ({
@@ -361,6 +362,7 @@ describe('receive changed-attempt native noncommit isolation', () => {
         parity: parity.map((x) => ({
           normal: x.normal.calculation,
           ranking: x.ranking.calculation,
+          rankingNormal: x.rankingNormal.calculation,
         })),
       });
       for (const [i, c] of cases.entries()) {
@@ -371,7 +373,11 @@ describe('receive changed-attempt native noncommit isolation', () => {
         expect(c.source.transitions![1]!.result.status).toBe('rejected');
         expect(c.source.transitions![1]!.result.state).toBe(c.source.transitions![0]!.result.state);
         expect(parity[i]!.normal.calculation.result).toEqual(c.run.calculation.result);
-        expect(parity[i]!.ranking.calculation.result).toEqual(c.run.calculation.result);
+        expect(parity[i]!.normal.direct).toEqual(c.run.direct);
+        expect(parity[i]!.ranking.calculation.result).toEqual(
+          parity[i]!.rankingNormal.calculation.result,
+        );
+        expect(parity[i]!.ranking.direct).toEqual(parity[i]!.rankingNormal.direct);
         expect(
           c.source.canonical.consumers.every(
             (x) => !c.source.canonical.writers.some((w) => w.effect === x.effect),
@@ -549,7 +555,7 @@ function mutations(
 ): Mutation[] {
   const s = item.source,
     t = s.transitions![1]!,
-    n = t.hpActions![0]!,
+    n = t.hpActions[0]!,
     w = n.receiveWrites![0]!,
     read = n.receiveConsumptions![0]!,
     h = read.consumption,
@@ -763,8 +769,23 @@ function mutations(
   add(
     'wrong actor traits',
     n.start,
-    'stateTraits',
-    { attackerState: new Set(['foreign']), targetState: new Set() },
+    'traitFactLayers',
+    {
+      ...n.start.traitFactLayers,
+      externalInitial: {
+        ...n.start.traitFactLayers.externalInitial,
+        attackerState: new Map([
+          [
+            'foreign',
+            {
+              kind: 'present',
+              proof: { kind: 'externalAssumption', clock: n.start.conditionReadClock },
+              quantity: { kind: 'unknown' },
+            },
+          ],
+        ]),
+      },
+    },
     retained,
     'proof.retained',
   );
@@ -838,7 +859,7 @@ function mutations(
     'proof.downstream',
   );
   const ir = inputRequired.source,
-    inn = ir.transitions![1]!.hpActions![0]!,
+    inn = ir.transitions![1]!.hpActions[0]!,
     irt = ir.transitions![1]!;
   // These mutations are audited against their own original request/execution below.
   for (const [name, obj, key, v] of [

@@ -28,6 +28,7 @@ describe('resolved scenario commands', () => {
       class: { kind: 'relative', relation: 'advantage15' },
       attribute: selected.targetContext.attribute,
       families: selected.targetContext.families,
+      absentFamilies: selected.targetContext.absentFamilies,
     });
     expect(resetTargetClassContextForAttacker(selected, 'shielder').targetContext.class).toEqual({
       kind: 'relative',

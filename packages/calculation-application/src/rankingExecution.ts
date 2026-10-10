@@ -1,24 +1,6 @@
-import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
-import {
-  actorFormKey,
-  noblePhantasmVariantKey,
-  type ActorFormId,
-  type MasterDataSnapshot,
-} from '@fgo-lab/master-data';
-import type { VersionContext } from '@fgo-lab/schema';
+import { actorFormKey, noblePhantasmVariantKey, type ActorFormId } from '@fgo-lab/master-data';
 import type { AttackProfile } from './attackProfile';
-import type { DamageResolutionValue } from './damageResolution';
-import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
-import {
-  evaluatePreparedCalculationScenario,
-  prepareCalculationScenario,
-  reapplyPreparedCalculationPolicy,
-  type CalculationExecution,
-  type PreparedCalculationScenario,
-} from './scenario';
-import type { ResolvedScenario } from './rankingPolicy';
-import { selectRankingCandidateIndexes } from './rankingCandidateSelection';
-export { selectRankingCandidateIndexes } from './rankingCandidateSelection';
+import type { CalculationExecution } from './scenario';
 
 function selectedAverage(
   execution: CalculationExecution,
@@ -57,57 +39,27 @@ const activationFactCount = (execution: CalculationExecution): number =>
 const transitionCount = (execution: CalculationExecution): number =>
   execution.appliedPreparationActions.filter(({ transition }) => transition !== null).length;
 
-export function executeRankingScenarios(
-  scenarios: readonly (ResolvedScenario | PreparedCalculationScenario)[],
-  master: MasterDataSnapshot,
-  versions: VersionContext,
-  contributionPolicies?: readonly ContributionApplicationPolicy[],
-  damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
-): CalculationExecution[] {
-  const prepared = scenarios.map((scenario) =>
-    'resolved' in scenario ? scenario : prepareCalculationScenario(scenario, master, {}, damageCache),
-  );
-  if (contributionPolicies && contributionPolicies.length !== prepared.length)
-    throw new TypeError('ranking_contribution_policy_alignment_mismatch');
-  const projected = prepared.map((candidate, index) => {
-    const policy = contributionPolicies?.[index];
-    return policy ? reapplyPreparedCalculationPolicy(candidate, policy, damageCache) : candidate;
-  });
-  return projected.map((candidate) => evaluatePreparedCalculationScenario(candidate, versions));
-}
-
-export function selectRankingExecutionIndexes(
-  executions: readonly CalculationExecution[],
-  attackProfiles: readonly AttackProfile[],
+export function rankingExecutionSelection(
+  execution: CalculationExecution,
+  attackProfile: AttackProfile,
+  expectedTerminalFormId: ActorFormId | undefined,
   npLevel: 1 | 2 | 3 | 4 | 5,
-  evidence?: {
-    candidateKeys: readonly string[];
-    baselineInputDeviations: readonly number[];
-    expectedTerminalFormIds?: readonly ActorFormId[];
-  },
-): ReadonlyMap<string, number> {
-  if (executions.length !== attackProfiles.length)
-    throw new TypeError('ranking_attack_profile_alignment_mismatch');
-  return selectRankingCandidateIndexes(
-    executions.map((execution, index) => ({
-      attackProfile: attackProfiles[index]!,
-      index,
-      average: selectedAverage(
-        execution,
-        attackProfiles[index]!,
-        evidence?.expectedTerminalFormIds?.[index],
-        npLevel,
-      ),
-      externalFactCount: externalFactCount(execution),
-      activationFactCount: activationFactCount(execution),
-      transitionCount: transitionCount(execution),
-      noblePhantasmVariantKey:
-        execution.noblePhantasmVariant?.kind === 'attack'
-          ? noblePhantasmVariantKey(execution.noblePhantasmVariant.ref)
-          : '',
-      baselineInputDeviation: evidence?.baselineInputDeviations[index] ?? 0,
-      preparationActionCount: execution.appliedPreparationActions.length,
-      candidateKey: evidence?.candidateKeys[index] ?? String(index).padStart(8, '0'),
-    })),
-  );
+  candidateKey: string,
+  baselineInputDeviation: number,
+) {
+  const average = selectedAverage(execution, attackProfile, expectedTerminalFormId, npLevel);
+  if (average === null) return null;
+  return {
+    average,
+    externalFactCount: externalFactCount(execution),
+    activationFactCount: activationFactCount(execution),
+    transitionCount: transitionCount(execution),
+    noblePhantasmVariantKey:
+      execution.noblePhantasmVariant?.kind === 'attack'
+        ? noblePhantasmVariantKey(execution.noblePhantasmVariant.ref)
+        : '',
+    baselineInputDeviation,
+    preparationActionCount: execution.appliedPreparationActions.length,
+    candidateKey,
+  };
 }

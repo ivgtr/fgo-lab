@@ -1,9 +1,11 @@
-import type { PreparationOcAttempt } from '@fgo-lab/battle-execution/preparation-audit';
+import type { PreparationOcAttemptSnapshot } from '@fgo-lab/battle-execution/preparation-audit';
 import { getSkillsForActorForm, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { npProgramEffects, resolveResourceTargetPolicy } from '@fgo-lab/battle-execution';
 import {
   canonicalAuditDigest,
   firstCanonicalAuditDifference,
+  createCanonicalAuditValueComparison,
+  assertCanonicalAuditRecords,
   type CanonicalAuditDifference,
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
@@ -11,10 +13,7 @@ import {
   battlePointPreparationRejectionObservationFor,
   type BattlePointPreparationRejectionObservation,
 } from './battlePointPreparationObservation';
-import {
-  scalarQuantitySnapshot as snapshot,
-  createScalarQuantitySnapshotter,
-} from './productionScalarQuantityAudit';
+import { createScalarQuantitySnapshotter } from './productionScalarQuantityAudit';
 import { battlePointPreparationCanonicalInventory } from './productionBattlePointPreparationAudit';
 import type { CalculationExecution, PreparedCalculationScenario } from './scenario';
 
@@ -165,6 +164,7 @@ function createAttemptProgram(
   evaluationIndex: number,
   capacity: boolean,
 ): BattlePointPreparationAttemptProgram | null {
+  const snapshot = createScalarQuantitySnapshotter();
   const expected = canonical(prepared, capacity);
   if (!expected?.writers.length) return null;
   const program: BattlePointPreparationAttemptProgram = {
@@ -220,7 +220,7 @@ export interface BattlePointPreparationAttemptFailure {
   firstDifference: CanonicalAuditDifference;
 }
 type TransitionProof = Omit<Partial<Transition>, 'attempts'> & {
-  attempts?: readonly Partial<PreparationOcAttempt>[] | undefined;
+  attempts?: readonly Partial<PreparationOcAttemptSnapshot>[] | undefined;
 };
 type CaptureProof = Omit<Partial<BattlePointPreparationRejectionObservation>, 'transitions'> & {
   transitions?: readonly TransitionProof[];
@@ -242,6 +242,7 @@ export function auditBattlePointPreparationAttemptObservations(input: {
 }) {
   const snapshot = createScalarQuantitySnapshotter();
   const failures: BattlePointPreparationAttemptFailure[] = [];
+  const compare = createCanonicalAuditValueComparison();
   const boundaries: {
     canonicalIdentity: string;
     kind: 'changedNonCommit' | 'unchangedNonCommit' | 'beforeAttempt' | 'committed';
@@ -256,10 +257,9 @@ export function auditBattlePointPreparationAttemptObservations(input: {
   ) => {
     const wanted = snapshot(expected),
       observed = snapshot(actual);
-    const difference = firstCanonicalAuditDifference(
-      [{ identity, value: wanted }],
-      [{ identity, value: observed }],
-    );
+    assertCanonicalAuditRecords([{ identity, value: wanted }], 'expected');
+    const relative = compare(wanted, observed);
+    const difference = relative ? { identity, ...relative } : null;
     if (difference)
       failures.push({
         reason,
@@ -587,7 +587,8 @@ export function auditBattlePointPreparationAttemptObservations(input: {
     const savedActionStartPoints = savedActionStart?.battlePoints as
       Record<string, CanonicalAuditValue> | undefined;
     const savedReducerStart = savedTransitionsForStart(savedCapture, rejectionIndex);
-    const native: Partial<NonNullable<PreparationOcAttempt['native']>> | undefined = attempt.native;
+    const native: Partial<NonNullable<PreparationOcAttemptSnapshot['native']>> | undefined =
+      attempt.native;
     if (native) {
       c('attemptTransportMissing', 'native.ocStateObject', true, native.state !== undefined);
       if (!native.state) continue;
@@ -636,9 +637,13 @@ export function auditBattlePointPreparationAttemptObservations(input: {
     );
     let previous = attempt.start.battlePoints;
     for (const [index, nativeWrite] of writes.entries()) {
-      const write: Omit<PreparationOcAttempt['writes'][number], 'before' | 'after' | 'receipts'> &
-        Partial<Pick<PreparationOcAttempt['writes'][number], 'before' | 'after' | 'receipts'>> =
-        nativeWrite;
+      const write: Omit<
+        PreparationOcAttemptSnapshot['writes'][number],
+        'before' | 'after' | 'receipts'
+      > &
+        Partial<
+          Pick<PreparationOcAttemptSnapshot['writes'][number], 'before' | 'after' | 'receipts'>
+        > = nativeWrite;
       if (authority.capacity) {
         const sourceProof: Partial<typeof write> = write;
         c('attemptTransportMissing', `writer.${index}.source`, true, !!sourceProof.source);
@@ -933,6 +938,7 @@ export function auditPublishedBattlePointPreparationAttempts(
   programs: readonly BattlePointPreparationAttemptProgram[],
   observations: readonly BattlePointPreparationAttemptSource[],
 ) {
+  const snapshot = createScalarQuantitySnapshotter();
   const inventory = battlePointPreparationCanonicalInventory(master);
   const gate = auditBattlePointPreparationAttemptObservations({ expected: programs, observations });
   const selectedWriters = programs.flatMap((p) =>

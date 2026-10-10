@@ -81,18 +81,31 @@ export interface PlannedPreNoblePhantasmCandidates {
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
-function canonicalEffectKey(effect: PreNoblePhantasmState['activeEffects'][number]): string {
-  return JSON.stringify({
+type AppliedEffect = PreNoblePhantasmState['activeEffects'][number];
+const effectSemantics = new WeakMap<AppliedEffect['effect'], string>();
+
+function canonicalEffectKey(effect: AppliedEffect): string {
+  let semantics = effectSemantics.get(effect.effect);
+  if (semantics === undefined) {
+    semantics = JSON.stringify({
+      execution: effect.effect.execution,
+      selection: effect.effect.selection,
+      requirement: effect.effect.requirement,
+      proc: effect.effect.proc,
+    }).slice(1, -1);
+    effectSemantics.set(effect.effect, semantics);
+  }
+  // Keep the original complete key bytes. Only canonical static IR is reused;
+  // actor/form identity and the actual activation receipt are encoded on every call.
+  return `${JSON.stringify({
     sourceKind: effect.sourceKind,
     sourceId: effect.sourceId,
     actorFormId: actorFormKey(effect.actorFormId),
     occurrenceId: effect.occurrenceId,
-    execution: effect.effect.execution,
-    selection: effect.effect.selection,
-    requirement: effect.effect.requirement,
-    proc: effect.effect.proc,
-    sourceActivation: effect.sourceActivation,
-  });
+  }).slice(
+    0,
+    -1,
+  )},${semantics},${JSON.stringify({ sourceActivation: effect.sourceActivation }).slice(1)}`;
 }
 
 export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): string {
@@ -107,7 +120,17 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
     activeEffects: state.activeEffects.map(canonicalEffectKey).sort(),
     battlePoints: state.battlePoints.actors,
     ...(state.buffInstances.length ? { buffInstances: state.buffInstances } : {}),
-    traitFacts: Object.fromEntries((['intrinsic', 'externalInitial', 'writes'] as const).map(layer => [layer, Object.fromEntries(Object.entries(state.traitFactLayers[layer]).map(([scope, facts]) => [scope, [...facts].sort(([a], [b]) => a.localeCompare(b))]))])),
+    traitFacts: Object.fromEntries(
+      (['intrinsic', 'externalInitial', 'writes'] as const).map((layer) => [
+        layer,
+        Object.fromEntries(
+          Object.entries(state.traitFactLayers[layer]).map(([scope, facts]) => [
+            scope,
+            [...facts].sort(([a], [b]) => a.localeCompare(b)),
+          ]),
+        ),
+      ]),
+    ),
     closedTraitScopes: state.traitFactLayers.closedScopes,
     npResource: state.npResource,
     baseOvercharge: state.baseOvercharge,
@@ -210,6 +233,17 @@ export function planPreNoblePhantasmCandidates(
     }
   }
   const visited = new Map<string, readonly PreNoblePhantasmCommand[]>();
+  // These command arrays belong to this synchronous search and are never mutated.
+  // Cache ordering bytes only; no native state or receipt is treated as equivalent.
+  const commandKeys = new WeakMap<readonly PreNoblePhantasmCommand[], string>();
+  const orderedPlanKey = (commands: readonly PreNoblePhantasmCommand[]): string => {
+    let key = commandKeys.get(commands);
+    if (key === undefined) {
+      key = planKey(commands);
+      commandKeys.set(commands, key);
+    }
+    return key;
+  };
   const candidates: PreNoblePhantasmPlanCandidate[] = [];
   let generatedStateCount = 0;
   let exactDuplicateCount = 0;
@@ -223,7 +257,7 @@ export function planPreNoblePhantasmCandidates(
     const existing = visited.get(stateKey);
     if (existing) {
       exactDuplicateCount += 1;
-      if (planKey(existing).localeCompare(planKey(item.commands)) <= 0) continue;
+      if (orderedPlanKey(existing).localeCompare(orderedPlanKey(item.commands)) <= 0) continue;
     }
     visited.set(stateKey, item.commands);
     maximumPreparationActionCount = Math.max(maximumPreparationActionCount, item.commands.length);
@@ -260,7 +294,9 @@ export function planPreNoblePhantasmCandidates(
   const stableCandidates = [
     ...new Map(
       candidates
-        .sort((left, right) => planKey(left.commands).localeCompare(planKey(right.commands)))
+        .sort((left, right) =>
+          orderedPlanKey(left.commands).localeCompare(orderedPlanKey(right.commands)),
+        )
         .map((candidate) => [candidate.semanticStateKey, candidate]),
     ).values(),
   ];

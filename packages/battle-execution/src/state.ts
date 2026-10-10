@@ -12,16 +12,35 @@ import type {
 } from './contracts';
 import { createConditionState } from './conditionState';
 import { cloneConditionFactProofs, type ConditionFactProof } from './conditionRead';
-import { liveInputQuantity } from './stackQuantities';
 import { cloneInputFacts } from './inputFacts';
+import type { ConditionEvaluationState } from './condition';
+import { liveInputQuantity } from './stackQuantities';
 import {
-  cloneTraitFactLayers,
   projectBattleTraitPresence,
   assertExternalInitialTrait,
   commitTraitFact,
   addTraitFact,
   replaceIntrinsicTraitFacts,
 } from './traitFactLayers';
+
+/** Copies writable condition containers; immutable trait roots and owned facts remain shared. */
+export function forkConditionState<T extends ConditionEvaluationState>(state: T): T {
+  return {
+    ...state,
+    conditionFactProofs: cloneConditionFactProofs(state.conditionFactProofs),
+    inputFacts: cloneInputFacts(state.inputFacts),
+    actorPredicates: {
+      attacker: new Map(state.actorPredicates.attacker),
+      target: new Map(state.actorPredicates.target),
+    },
+    stackQuantitySources: { ...state.stackQuantitySources },
+    initialTraitSuppressions: {
+      attacker: new Set(state.initialTraitSuppressions.attacker),
+      target: new Set(state.initialTraitSuppressions.target),
+    },
+    quantities: { ...state.quantities },
+  };
+}
 
 export function appendModifier(
   state: ExecutableBattleState,
@@ -43,21 +62,7 @@ export function appendModifier(
 
 export function cloneBattleState(state: ExecutableBattleState): ExecutableBattleState {
   return {
-    ...state,
-    conditionFactProofs: cloneConditionFactProofs(state.conditionFactProofs),
-    traitFactLayers: cloneTraitFactLayers(state.traitFactLayers),
-    actorPredicates: {
-      attacker: new Map(state.actorPredicates.attacker),
-      target: new Map(state.actorPredicates.target),
-    },
-    stackQuantitySources: { ...state.stackQuantitySources },
-    initialTraitSuppressions: {
-      attacker: new Set(state.initialTraitSuppressions.attacker),
-      target: new Set(state.initialTraitSuppressions.target),
-    },
-    quantities: { ...state.quantities },
-    activationContext: state.activationContext,
-    inputFacts: cloneInputFacts(state.inputFacts),
+    ...forkConditionState(state),
     modifiers: [...state.modifiers],
     modifierRates: { ...state.modifierRates },
     evidence: [...state.evidence],

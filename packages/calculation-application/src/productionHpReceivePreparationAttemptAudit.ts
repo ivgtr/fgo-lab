@@ -1,5 +1,21 @@
+import { taggedAuditValue as value } from './taggedAuditValue';
 import { projectBattleTraitPresence, type PreNoblePhantasmState } from '@fgo-lab/battle-execution';
-function nativePresence(state: PreNoblePhantasmState | undefined) { return state === undefined ? undefined : { attackerState: new Set([...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) => present ? [trait] : [])), targetState: new Set([...projectBattleTraitPresence(state, 'targetState')].flatMap(([trait, present]) => present ? [trait] : [])) }; }
+function nativePresence(state: PreNoblePhantasmState | undefined) {
+  return state === undefined
+    ? undefined
+    : {
+        attackerState: new Set(
+          [...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) =>
+            present ? [trait] : [],
+          ),
+        ),
+        targetState: new Set(
+          [...projectBattleTraitPresence(state, 'targetState')].flatMap(([trait, present]) =>
+            present ? [trait] : [],
+          ),
+        ),
+      };
+}
 import {
   firstCanonicalAuditDifference,
   type CanonicalAuditValue,
@@ -45,20 +61,6 @@ export interface ReceiveAttemptProgram {
   expectation: ReceiveAttemptExpectation;
 }
 
-function value(v: unknown): CanonicalAuditValue {
-  if (v === undefined) return { type: 'undefined' };
-  if (v instanceof Set) return { type: 'set', values: [...v].map(value) };
-  if (v instanceof Map)
-    return { type: 'map', values: [...v].map(([k, x]) => [value(k), value(x)]) };
-  if (Array.isArray(v)) return { type: 'array', values: v.map(value) };
-  if (v !== null && typeof v === 'object')
-    return {
-      type: 'object',
-      fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, value(x)])),
-    };
-  return { type: typeof v, value: v as CanonicalAuditValue };
-}
-
 function canonicalObservation(prepared: ReceiveRequest['prepared']) {
   try {
     return receiveCanonical(prepared);
@@ -90,9 +92,9 @@ export function receiveAttemptDiagnostic(
       master: { data: d.master, traits: servant?.traits },
       scenario: d.scenario,
     },
-    append: s.transitions?.map((t) => t.hpActions?.map((n) => n.receiveWrites)),
+    append: s.transitions?.map((t) => t.hpActions.map((n) => n.receiveWrites)),
     consumption: s.transitions?.map((t) =>
-      t.hpActions?.map((n) => ({ reads: n.receiveConsumptions, gains: n.writes })),
+      t.hpActions.map((n) => ({ reads: n.receiveConsumptions, gains: n.writes })),
     ),
     retained: {
       transitions: d.transitions,
@@ -101,7 +103,7 @@ export function receiveAttemptDiagnostic(
       actorEnvironment: s.transitions?.map((t) => ({
         before: nativePresence(t.before),
         after: nativePresence(t.result.state),
-        hp: t.hpActions?.map((n) => ({
+        hp: t.hpActions.map((n) => ({
           start: nativePresence(n.start),
           attempted: nativePresence(n.attempted),
           returned: nativePresence(n.returned),
@@ -134,7 +136,7 @@ export function receiveAttemptDiagnostic(
         attempted: a.attempted,
         returned: a.returned?.ocState,
       })),
-      hp: t.hpActions?.map((n) => ({
+      hp: t.hpActions.map((n) => ({
         native: n.native,
         rejectionInput: n.rejectionInput,
         sourceEnds: n.sourceEnds.map((e) => ({
@@ -252,7 +254,7 @@ function anchors(s: ReceiveAttemptSource) {
       });
       a.reached.forEach((r, k) => add(`${q}.reached.${k}`, r));
     });
-    t.hpActions?.forEach((n, j) => {
+    t.hpActions.forEach((n, j) => {
       const q = `${p}.hp.${j}`;
       add(q, n);
       for (const k of [
@@ -363,7 +365,7 @@ function inspectConsumption(s: ReceiveAttemptSource, actionIndex: number, c: Che
   const ai = actionIndex,
     action = s.canonical.actions[ai],
     t = s.transitions?.[ai],
-    n = t?.hpActions?.find((n) => n.actionId === action?.actionId),
+    n = t?.hpActions.find((n) => n.actionId === action?.actionId),
     attempt = t?.attempts?.find((a) => a.actionId === action?.actionId);
   const writers = s.canonical.writers.filter((w) => w.actionIndex === ai);
   const reject = [...(attempt?.reached ?? [])].reverse().find((r) => r.step.kind === 'reject');
@@ -682,7 +684,7 @@ function inspectRefusal(s: ReceiveAttemptSource, actionIndex: number, c: Checker
   const ai = actionIndex,
     action = s.canonical.actions[ai],
     t = s.transitions?.[ai],
-    n = t?.hpActions?.find((n) => n.actionId === action?.actionId),
+    n = t?.hpActions.find((n) => n.actionId === action?.actionId),
     attempt = t?.attempts?.find((a) => a.actionId === action?.actionId);
   const native = n?.native;
   const reject = [...(attempt?.reached ?? [])].reverse().find((r) => r.step.kind === 'reject');
@@ -830,6 +832,7 @@ export function auditReceiveAttemptIsolation(input: {
     consumed = 0,
     changed = 0,
     isolated = 0;
+  const auditValues = new WeakMap<object, CanonicalAuditValue>();
   const check = (
     identity: string,
     reason: ReceiveAttemptReason,
@@ -837,7 +840,13 @@ export function auditReceiveAttemptIsolation(input: {
     expected: unknown,
     actual: unknown,
   ) => {
-    const item = { identity, reason, checkPath, expected: value(expected), actual: value(actual) };
+    const item = {
+      identity,
+      reason,
+      checkPath,
+      expected: value(expected, auditValues),
+      actual: value(actual, auditValues),
+    };
     checks.push(item);
     const diff = firstCanonicalAuditDifference(
       [{ identity, value: item.expected }],
@@ -931,7 +940,7 @@ export function auditReceiveAttemptIsolation(input: {
     const ai = p.expectation.actionIndex,
       action = s.canonical.actions[ai],
       t = s.transitions?.[ai],
-      n = t?.hpActions?.find((n) => n.actionId === action?.actionId),
+      n = t?.hpActions.find((n) => n.actionId === action?.actionId),
       attempt = t?.attempts?.find((a) => a.actionId === action?.actionId);
     const writers = s.canonical.writers.filter((w) => w.actionIndex === ai);
     c('receiveAttemptCanonicalMismatch', 'target.action', true, !!action);

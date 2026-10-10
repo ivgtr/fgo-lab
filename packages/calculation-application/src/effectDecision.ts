@@ -2,6 +2,7 @@ import {
   conditionAllowsEffectLocalDecision,
   conditionHasNonActivationDecision,
   mergeInputDefinitions,
+  traitConditionReadScopes,
   type ActivationRequirementOwner,
   type ConditionExpression,
   type EffectProjection,
@@ -260,23 +261,32 @@ function applyStackOwnedWorldFactPresentationDecision(
   const matches = projection.requiredInputs.filter(
     (input) =>
       input.kind === 'effectStackCount' &&
-      input.quantitySource.scope === fact.scope &&
+      traitConditionReadScopes(fact.scope).includes(input.quantitySource.scope) &&
       input.quantitySource.trait === fact.trait,
   );
   if (matches.length === 0) return null;
   if (matches.length !== 1)
     throw new TypeError(`ambiguous_stack_presence_input:${projection.projectionKey}`);
   const input = matches[0]!;
+  if (input.kind !== 'effectStackCount') throw new TypeError('expected_stack_presence_input');
   const positive = Math.max(
     1,
     input.minimum + Math.ceil((1 - input.minimum) / input.step) * input.step,
   );
-  if (input.minimum > 0 || input.maximum < positive)
+  if (input.maximum < positive)
     throw new TypeError(`unrepresentable_stack_presence_input:${input.key}`);
-  const existing = scenario.canonicalInputValues[input.key]?.value ?? input.defaultValue;
+  const explicit = scenario.canonicalInputValues[input.key];
+  if (
+    explicit &&
+    (!Number.isInteger(explicit.value) ||
+      explicit.value < input.minimum ||
+      explicit.value > input.maximum ||
+      (explicit.value - input.minimum) % input.step !== 0)
+  )
+    throw new TypeError(`invalid_stack_presence_input:${input.key}`);
+  const existing = explicit?.value ?? input.defaultValue;
   const value =
     enabled &&
-    existing !== null &&
     existing >= positive &&
     existing <= input.maximum &&
     (existing - input.minimum) % input.step === 0
@@ -288,7 +298,13 @@ function applyStackOwnedWorldFactPresentationDecision(
     {
       ...scenario,
       worldFactAssertions: scenario.worldFactAssertions.filter(
-        (assertion) => assertion.decisionKey !== decision.decisionKey,
+        (assertion) =>
+          assertion.decisionKey !== decision.decisionKey &&
+          !(
+            assertion.fact.kind === 'trait' &&
+            assertion.fact.trait === fact.trait &&
+            traitConditionReadScopes(assertion.fact.scope).includes(input.quantitySource.scope)
+          ),
       ),
     },
     { kind: 'setCanonicalIntegerInput', key: input.key, value },

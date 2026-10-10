@@ -12,7 +12,7 @@ import {
 import { inspectProductionConditionRecords } from './productionClosureRecordIntegrity';
 import { verifyCurrentProductionRecord } from './productionCurrentRecord';
 import { attackProfileKey, createStaticAttackProfiles } from './attackProfile';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 
 const root = resolve(import.meta.dirname, '../../..');
 const master = masterSnapshotSchema.parse(

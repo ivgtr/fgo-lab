@@ -12,6 +12,7 @@ import {
   evaluatePreparedCalculationScenario,
 } from './scenario';
 import {
+  createGiveAuditSnapshotter,
   giveSelection,
   giveSource,
   giveProgram,
@@ -26,6 +27,24 @@ import {
   decodeStoredProductionAuditArtifact,
   readStoredProductionAuditArtifact,
 } from './productionAuditArtifacts';
+
+it('owns completed give projections across caller mutations and repairs', () => {
+  const leaf = { quantity: 3 };
+  const source = { one: leaf, two: leaf };
+  const before = createGiveAuditSnapshotter()(source);
+  const fields = (before as { fields: Record<string, unknown> }).fields;
+  expect(fields.one).toBe(fields.two);
+  leaf.quantity = 9;
+  expect(before).toMatchObject({ fields: { one: { fields: { quantity: { value: 3 } } } } });
+  expect(createGiveAuditSnapshotter()(source)).toMatchObject({
+    fields: { one: { fields: { quantity: { value: 9 } } } },
+  });
+  leaf.quantity = 3;
+  expect(createGiveAuditSnapshotter()(source)).toEqual(before);
+  const cycle: unknown[] = [];
+  cycle.push(cycle);
+  expect(() => createGiveAuditSnapshotter()(cycle)).toThrow('cyclic_give_audit_value');
+});
 
 const base = masterSnapshotSchema.parse(fixture);
 const route = {
@@ -379,7 +398,7 @@ it(
     }
     const actualFactors = cases.map(({ item }) =>
       item.source.transitions
-        ?.flatMap((t) => t.hpActions ?? [])
+        ?.flatMap((t) => (t as Partial<typeof t>).hpActions ?? [])
         .flatMap((a) => a.giveConsumptions ?? [])
         .map((r) => r.consumption.give.value),
     );
@@ -403,7 +422,9 @@ it(
   productionAuditTestOptions(['tsk-08-give-negatives.json']),
   async ({ task }) => {
     const item = run(specs[0]!);
-    const actions = item.source.transitions!.flatMap((t) => t.hpActions ?? []);
+    const actions = item.source.transitions!.flatMap(
+      (t) => (t as Partial<typeof t>).hpActions ?? [],
+    );
     const write = actions[0]!.giveWrites![0]!,
       read = actions[1]!.giveConsumptions![0]!;
     const negatives: { key: string; object: object; field: string; value: unknown }[] = [
@@ -530,7 +551,7 @@ it(
   productionAuditTestOptions(['tsk-08-give-actor-counterexample.json']),
   async ({ task }) => {
     const item = run(specs[0]!),
-      actions = item.source.transitions!.flatMap((t) => t.hpActions ?? []);
+      actions = item.source.transitions!.flatMap((t) => (t as Partial<typeof t>).hpActions ?? []);
     const writer = actions[0]!.giveWrites![0]!,
       gain = actions[1]!.giveGains![0]!;
     const give = {

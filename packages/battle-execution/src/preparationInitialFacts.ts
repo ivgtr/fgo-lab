@@ -1,15 +1,15 @@
-import type { PreNoblePhantasmState } from './preparationContracts';
+import type { PreparationStateSnapshot } from './preparationContracts';
 
 /** The candidate needs initial physical facts, not the preparation action history. */
 export type InitialPreparationFacts = Pick<
-  PreNoblePhantasmState,
+  PreparationStateSnapshot,
   'hp' | 'inputFacts' | 'battlePoints' | 'buffInstances'
 > & {
-  readonly quantityProofs: PreNoblePhantasmState['conditionFactProofs']['quantities'];
+  readonly quantityProofs: PreparationStateSnapshot['conditionFactProofs']['quantities'];
 };
 
 export function captureInitialPreparationFacts(
-  state: PreNoblePhantasmState,
+  state: PreparationStateSnapshot,
 ): InitialPreparationFacts {
   return {
     hp: state.hp,

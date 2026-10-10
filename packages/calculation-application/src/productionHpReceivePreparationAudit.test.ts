@@ -377,7 +377,9 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
         expect(rechecked[i]!.status).toBe('passed');
         expect(parity[i]!.normal.calculation.result).toEqual(item.source.calculation.result);
         expect(parity[i]!.ranking.calculation.result).toEqual(item.source.calculation.result);
-        expect(preparationExecutionStateFor(parity[i]!.normal.prepared.orderedScenario)?.hp).toEqual(preparationExecutionStateFor(item.source.ordered)?.hp);
+        expect(
+          preparationExecutionStateFor(parity[i]!.normal.prepared.orderedScenario)?.hp,
+        ).toEqual(preparationExecutionStateFor(item.source.ordered)?.hp);
         expect(
           item.source.canonical.consumers.every(
             (c) => !item.source.canonical.writers.some((w) => w.effect === c.effect),
@@ -404,12 +406,12 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
       }
       for (const key of ['receive-upper-bound', 'receive-above-bound'])
         expect(
-          cases.find((c) => c.spec.key === key)!.source.transitions![0]!.hpActions![0]!
+          cases.find((c) => c.spec.key === key)!.source.transitions![0]!.hpActions[0]!
             .receiveConsumptions![0]!.consumption.receive.value,
         ).toBe(50000);
       expect(
         cases.find((c) => c.spec.key === 'negative-cell-lower-bound')!.source.transitions![0]!
-          .hpActions![0]!.receiveConsumptions![0]!.consumption.receive.value,
+          .hpActions[0]!.receiveConsumptions![0]!.consumption.receive.value,
       ).toBe(0);
       expect(cases.find((c) => c.spec.key === 'gain-zero')!.gate.boundaries).toContainEqual(
         expect.objectContaining({ reason: 'consumerActualZero' }),
@@ -424,7 +426,7 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
       ).toContainEqual(
         expect.objectContaining({ reason: 'outsideScope:otherHpWriterOutsideConsumer' }),
       );
-      const changed = cases[0]!.source.transitions![0]!.hpActions![0]!;
+      const changed = cases[0]!.source.transitions![0]!.hpActions[0]!;
       expect(changed.receiveWrites![0]!.modifiers[0]!.value).toBe(290);
       expect(changed.receiveConsumptions![0]!.consumption.result).toMatchObject({
         status: 'applied',
@@ -441,7 +443,7 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
       const item = entry(legalFixture, '800101', specs[1]!, 200),
         other = entry(legalFixture, '800100', specs[0]!, 201);
       const source = item.source,
-        action = source.transitions![0]!.hpActions![0]!,
+        action = source.transitions![0]!.hpActions[0]!,
         write = action.receiveWrites![0]!,
         gain = action.writes[0]!,
         read = action.receiveConsumptions![0]!;

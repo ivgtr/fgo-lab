@@ -8,15 +8,14 @@ import {
   type RankingPolicyConditions,
   type RankingProfileInput,
 } from './rankingContracts';
-import { calculateRankingPolicy } from './rankingPolicyCalculation';
+import { calculateRankingPolicy, calculateRankingPolicySummary } from './rankingPolicyCalculation';
 import {
   calculateRankingPolicyMatrix,
   type RankingPolicyMatrixConditions,
 } from './rankingPolicyMatrix';
 import { calculateScenarioWithPolicy } from './scenario';
-import { selectRankingCandidateIndexes } from './rankingCandidateSelection';
+import { compareRankingCandidates } from './rankingCandidateSelection';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
-import { attackProfileKey } from './attackProfile';
 
 const master = masterSnapshotSchema.parse(fixture);
 const profile: RankingProfileInput = {
@@ -32,6 +31,22 @@ const versions = {
 };
 
 describe('ranking comparison policy', () => {
+  it('projects identical summary rows, failures and inventory after each complete policy fold', () => {
+    for (const selfBuffs of ['included', 'excluded'] as const)
+      for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
+        const conditions = { ...DEFAULT_RANKING_POLICY_CONDITIONS, selfBuffs, conditionalEffects };
+        const complete = calculateRankingPolicy(master, profile, conditions, versions);
+        const summary = calculateRankingPolicySummary(master, profile, conditions, versions);
+        expect(summary).toEqual({
+          status: complete.status,
+          rows: complete.rows,
+          exclusions: complete.exclusions,
+          candidateInventory: complete.candidateInventory,
+          damageCache: complete.damageCache,
+        });
+      }
+  });
+
   it('compiles the four orthogonal source and condition combinations', () => {
     const policies = (['included', 'excluded'] as const).flatMap((selfBuffs) =>
       (['baseline', 'satisfied'] as const).map((conditionalEffects) =>
@@ -131,20 +146,22 @@ describe('ranking comparison policy', () => {
       conditionalEffects: 'satisfied',
     };
     const servant = master.servants[0]!;
-    const plan = compileRankingExecutionPlan(servant, master, profile, conditions, versions);
-    expect(plan.startNpGauges).toContain(master.npResourceSemantics.noblePhantasmUse.requirement);
+    const plan = compileRankingExecutionPlan(servant, master, profile, conditions);
     expect(
-      plan.candidateKeys.some(
-        (key) =>
-          key.includes('target:baseline') &&
-          key.includes('field:none') &&
-          key.includes('quantity:baseline'),
-      ),
+      Array.from(plan.candidateDescriptors).map((candidate) => candidate.evidence.startNpGauge),
+    ).toContain(master.npResourceSemantics.noblePhantasmUse.requirement);
+    expect(
+      Array.from(plan.candidateDescriptors)
+        .map((candidate) => candidate.key)
+        .some(
+          (key) =>
+            key.includes('target:baseline') &&
+            key.includes('field:none') &&
+            key.includes('quantity:baseline'),
+        ),
     ).toBe(true);
 
-    const attackProfile = plan.attackProfiles[0]!;
     const base = {
-      attackProfile,
       average: 100,
       externalFactCount: 0,
       activationFactCount: 0,
@@ -152,12 +169,22 @@ describe('ranking comparison policy', () => {
       noblePhantasmVariantKey: 'np',
       preparationActionCount: 1,
     };
-    const selected = selectRankingCandidateIndexes([
-      { ...base, index: 2, baselineInputDeviation: 1, candidateKey: 'a' },
-      { ...base, index: 1, baselineInputDeviation: 0, candidateKey: 'b' },
-      { ...base, index: 0, baselineInputDeviation: 0, candidateKey: 'a' },
-    ]);
-    expect(selected.get(attackProfileKey(attackProfile))).toBe(0);
+    const winner = { ...base, baselineInputDeviation: 0, candidateKey: 'a' };
+    expect(
+      compareRankingCandidates(winner, {
+        ...base,
+        baselineInputDeviation: 1,
+        candidateKey: 'a',
+      }),
+    ).toBeLessThan(0);
+    expect(
+      compareRankingCandidates(winner, {
+        ...base,
+        baselineInputDeviation: 0,
+        candidateKey: 'b',
+      }),
+    ).toBeLessThan(0);
+    expect(compareRankingCandidates(winner, { ...winner })).toBe(0);
   });
 
   it('uses five complete policy executions as the canonical NP matrix oracle', () => {

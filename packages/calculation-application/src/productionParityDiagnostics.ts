@@ -27,7 +27,13 @@ import {
   type EffectiveContribution,
   type OrderedExecutionAuditEvent,
 } from '@fgo-lab/battle-execution';
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type {
+  EffectProjection,
+  BattleOperation,
+  EffectDecision,
+  PreparationSourceExecution,
+} from '@fgo-lab/battle-execution';
+import { isDeepStrictEqual } from 'node:util';
 import type {
   CalculationScenario,
   DamageResolutionInput,
@@ -390,6 +396,7 @@ export interface ProductionUserControlProjectionObservation {
   contributionId: string | null;
   outcome: EffectProjection['outcome'];
   valuePermille: EffectProjection['valuePermille'];
+  explanationCode?: EffectProjection['explanation']['code'];
 }
 
 export type ProductionUserControlEffectiveContribution = Pick<
@@ -437,6 +444,11 @@ export type ProductionUserControlInputBinding =
   | { kind: 'unbound'; reason: 'projection_has_no_damage_input_binding' };
 
 export interface ProductionUserControlSideObservation {
+  unresolvedCardSource?: {
+    operation: BattleOperation;
+    receipt: PreparationSourceExecution;
+    decision: EffectDecision;
+  };
   executionObservation: CalculationExecutionObservation;
   operationEvents: readonly ProductionUserControlOperationEvent[];
   projections: readonly ProductionUserControlProjectionObservation[];
@@ -461,7 +473,7 @@ export interface ProductionUserControlObservation {
   enabled: ProductionUserControlSideObservation;
   excluded: ProductionUserControlSideObservation;
   preparationSelection?: {
-    kind: 'default' | 'reachableAlternate';
+    kind: 'selectedProfile' | 'reachableAlternate';
     plan: readonly PreNoblePhantasmCommand[];
   };
   hpWitness?: {
@@ -687,6 +699,106 @@ function hasExecutionObservation(value: unknown): value is CalculationExecutionO
   );
 }
 
+/** A missing source-use card remains missing; disabling it changes the refusal reason. */
+function nativeUnresolvedCardControl(
+  identity: ProductionUserControlIdentity,
+  enabled: ProductionUserControlSideObservation,
+  excluded: ProductionUserControlSideObservation,
+): boolean {
+  if (identity.modifier !== 'cardBuff' || identity.contributionControl !== 'operation')
+    return false;
+  for (const [side, selected] of [
+    [enabled, true],
+    [excluded, false],
+  ] as const) {
+    const proof = side.unresolvedCardSource;
+    if (!proof) return false;
+    const { operation, receipt, decision } = proof;
+    const binding = operation.runtimeBinding?.source;
+    // Diagnostic faults can corrupt these values beyond the declared union.
+    const truth: unknown =
+      binding?.activation.kind === 'read' ? binding.activation.read.truth : undefined;
+    const certainty: unknown =
+      binding?.activation.kind === 'read' ? binding.activation.read.certainty : undefined;
+    if (
+      operation.kind !== 'addModifier' ||
+      operation.modifier !== 'cardBuff' ||
+      operation.operationId !== identity.operationId ||
+      operation.decisionKey !== decision.decisionKey ||
+      decision.operationEnabled !== selected ||
+      decision.conditionSatisfaction !== 'evaluate' ||
+      receipt.status !== 'completed' ||
+      receipt.transaction.kind !== 'committed' ||
+      receipt.transaction.before.card !== null ||
+      receipt.transaction.before.noblePhantasmVariant?.kind !== 'nonAttack' ||
+      !binding ||
+      binding !== receipt.binding ||
+      binding.modifierReadOwner !== 'nativePreparation' ||
+      binding.activation.kind !== 'read' ||
+      binding.activation.read.kind !== 'inputRequired' ||
+      truth !== null ||
+      certainty !== null ||
+      binding.activation.read.clock.phase !== 'sourceUse' ||
+      binding.activation.read.clock.actionId !== receipt.actionId ||
+      binding.activation.read.support.length !== 0 ||
+      binding.activation.read.evidence.length !== 1 ||
+      binding.activation.read.evidence[0]!.expression.kind !== 'card' ||
+      binding.activation.read.evidence[0]!.expression.card !== operation.card ||
+      binding.activation.read.evidence[0]!.value !== null ||
+      binding.activation.read.evidence[0]!.proof !== null ||
+      binding.physicalInputs.length !== 0 ||
+      binding.physicalTransitions.length !== 0 ||
+      binding.committedPhysicalOperationIndexes.length !== 0 ||
+      receipt.operations.length !== 1 ||
+      receipt.operations[0]!.operation.kind !== 'damageModifier' ||
+      receipt.operations[0]!.operation.modifier !== operation.modifier ||
+      receipt.operations[0]!.operation.card !== operation.card ||
+      receipt.operations[0]!.steps.length !== 1 ||
+      receipt.operations[0]!.steps[0]!.step.kind !== 'skip' ||
+      receipt.operations[0]!.steps[0]!.step.outcome !== 'notApplicable' ||
+      receipt.operations[0]!.steps[0]!.native.rejection !== null ||
+      !isDeepStrictEqual(
+        receipt.operations[0]!.steps[0]!.native.before,
+        receipt.operations[0]!.steps[0]!.native.after,
+      ) ||
+      side.profileContinuity?.kind !== 'matched' ||
+      side.profileContinuity.actualProfileKey !== identity.profileKey ||
+      side.damageResult.status !== 'calculated'
+    )
+      return false;
+    const { sourceBindings: beforeBindings, ...before } = receipt.transaction.before;
+    const { sourceBindings: afterBindings, ...after } = receipt.transaction.after;
+    if (
+      !isDeepStrictEqual(before, after) ||
+      afterBindings.length !== beforeBindings.length + 1 ||
+      !isDeepStrictEqual(beforeBindings, afterBindings.slice(0, -1)) ||
+      !isDeepStrictEqual(afterBindings.at(-1), binding)
+    )
+      return false;
+    const projection = side.projections.find(
+      (member) => member.projectionKey === identity.projectionKey,
+    );
+    const event = side.operationEvents.find((member) => eventMatchesUserControl(identity, member));
+    const nativeEvent =
+      side.executionObservation.targetExecution?.selection === 'selected'
+        ? side.executionObservation.targetExecution.operationEvents.find(
+            (member) => member.operationId === identity.operationId,
+          )
+        : undefined;
+    if (
+      projection?.outcome !== 'notApplied' ||
+      projection.explanationCode !== (selected ? 'unresolved' : 'disabled') ||
+      event?.kind !== 'addModifier' ||
+      event.operationOutcome !== 'notApplied' ||
+      event.projectionOutcome !== 'notApplied' ||
+      nativeEvent?.condition !== 'unresolved' ||
+      !side.effectiveContributions.every((member) => (member.effective as unknown) === false)
+    )
+      return false;
+  }
+  return true;
+}
+
 function eventMatchesUserControl(
   identity: ProductionUserControlIdentity,
   event: ProductionUserControlOperationEvent,
@@ -776,7 +888,10 @@ export function auditProductionUserControlObservations(
     userControlAuditValue(identity),
   );
   const sortedIdentities = (identities: CanonicalAuditValue[]) =>
-    identities.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+    identities
+      .map((identity) => ({ identity, key: JSON.stringify(identity) }))
+      .sort((left, right) => left.key.localeCompare(right.key))
+      .map(({ identity }) => identity);
   const identitySetFailure = productionUserControlFailure(
     'userControlInventoryCoverageMismatch',
     canonicalIdentity,
@@ -791,14 +906,32 @@ export function auditProductionUserControlObservations(
     { projectionCount: input.observations.length },
   );
   if (inventoryCountFailure) failures.push(inventoryCountFailure);
-  for (const contract of input.expectedCriticalStarsForward ?? []) {
+  // Index this call's full population, retaining duplicate contracts in their input order.
+  // A later call reads current identities again, including altered fault observations.
+  const forwardContracts = input.expectedCriticalStarsForward ?? [];
+  const forwardByIdentity = new Map<string, (typeof forwardContracts)[number][]>();
+  const expectedCounts = new Map<string, number>();
+  const observedCounts = new Map<string, number>();
+  if (forwardContracts.length) {
+    for (const identity of input.expectedIdentities) {
+      const key = productionUserControlIdentity(identity);
+      expectedCounts.set(key, (expectedCounts.get(key) ?? 0) + 1);
+    }
+    for (const { identity } of input.observations) {
+      const key = productionUserControlIdentity(identity);
+      observedCounts.set(key, (observedCounts.get(key) ?? 0) + 1);
+    }
+    for (const contract of forwardContracts) {
+      const key = productionUserControlIdentity(contract.identity);
+      const contracts = forwardByIdentity.get(key) ?? [];
+      contracts.push(contract);
+      forwardByIdentity.set(key, contracts);
+    }
+  }
+  for (const contract of forwardContracts) {
     const key = productionUserControlIdentity(contract.identity);
-    const expectedCount = input.expectedIdentities.filter(
-      (identity) => productionUserControlIdentity(identity) === key,
-    ).length;
-    const observedCount = input.observations.filter(
-      ({ identity }) => productionUserControlIdentity(identity) === key,
-    ).length;
+    const expectedCount = expectedCounts.get(key) ?? 0;
+    const observedCount = observedCounts.get(key) ?? 0;
     const failure = productionUserControlFailure(
       'userControlCriticalStarsForwardMismatch',
       `${key}:critical-stars:population`,
@@ -872,10 +1005,7 @@ export function auditProductionUserControlObservations(
       continue;
     }
     const profileIdentity = productionUserControlIdentity(identity);
-    const starContracts =
-      input.expectedCriticalStarsForward?.filter(
-        (expected) => productionUserControlIdentity(expected.identity) === profileIdentity,
-      ) ?? [];
+    const starContracts = forwardByIdentity.get(profileIdentity) ?? [];
     if (starContracts.length > 0 || observation.criticalStarsSource) {
       const coverageFailure = productionUserControlFailure(
         'userControlCriticalStarsForwardMismatch',
@@ -1082,7 +1212,27 @@ export function auditProductionUserControlObservations(
     }
     if (observation.conflictCounterexample) {
       const counterexample = observation.conflictCounterexample;
+      const target = hasExecutionObservation(counterexample.enabled.executionObservation)
+        ? counterexample.enabled.executionObservation.targetExecution
+        : null;
+      const aborted = target?.selection === 'selected' ? target.candidateState : null;
+      const preflight = aborted?.preflight;
       const valid =
+        target?.selection === 'selected' &&
+        target.operationEvents.length === 0 &&
+        preflight?.status === 'aborted' &&
+        preflight.failure === 'constraintConflict' &&
+        preflight.issues.some(
+          (issue) =>
+            issue.kind === 'constraintConflict' &&
+            issue.sourceKeys.includes(identity.projectionKey) &&
+            issue.conflicts.some((conflict) => conflict.kind === 'exclusiveTrait'),
+        ) &&
+        aborted?.preGroupContextResolution === null &&
+        aborted.executionGroups.length === 0 &&
+        aborted.inputQuantityReads.length === 0 &&
+        aborted.battlePointPhaseReads.length === 0 &&
+        aborted.scalarNpConsumptions.length === 0 &&
         counterexample.enabled.damageResult.status === 'unsupported' &&
         counterexample.excluded.damageResult.status === 'calculated' &&
         Array.isArray(counterexample.enabled.damageResult.rows) &&
@@ -1095,7 +1245,7 @@ export function auditProductionUserControlObservations(
         ) &&
         counterexample.enabled.projections.length > 0 &&
         counterexample.excluded.projections.length > 0 &&
-        counterexample.enabled.operationEvents.length > 0 &&
+        counterexample.enabled.operationEvents.length === 0 &&
         counterexample.excluded.operationEvents.length > 0 &&
         counterexample.enabled.projections.every(
           (projection) => projection.outcome === 'notApplied',
@@ -1109,8 +1259,28 @@ export function auditProductionUserControlObservations(
         counterexample.excluded.operationEvents.every(
           (event) => event.operationOutcome === 'notApplied',
         ) &&
-        JSON.stringify(userControlAuditValue(counterexample.enabled.inputBinding)) ===
-          JSON.stringify(userControlAuditValue(counterexample.excluded.inputBinding)) &&
+        // Preflight aborts before other modifiers can write the aggregate input.
+        // Prove this contribution did not execute using its native receipt instead.
+        counterexample.enabled.effectiveContributions.length === 0 &&
+        counterexample.excluded.effectiveContributions.length > 0 &&
+        counterexample.excluded.effectiveContributions.every((contribution) => {
+          const effective: unknown = contribution.effective;
+          return (
+            contribution.operationId === identity.operationId &&
+            contribution.contributionId === identity.contributionId &&
+            contribution.modifier === identity.modifier &&
+            contribution.executionOutcome === 'notApplied' &&
+            effective === false
+          );
+        }) &&
+        counterexample.enabled.inputBinding.kind === 'bound' &&
+        counterexample.excluded.inputBinding.kind === 'bound' &&
+        counterexample.enabled.inputBinding.address ===
+          userControlBindingAddress(identity.modifier) &&
+        counterexample.excluded.inputBinding.address ===
+          userControlBindingAddress(identity.modifier) &&
+        isValidUserControlBindingValue(counterexample.enabled.inputBinding) &&
+        isValidUserControlBindingValue(counterexample.excluded.inputBinding) &&
         counterexample.profileKey !== null &&
         counterexample.profileKey !== identity.profileKey &&
         counterexample.plan.some((command) => command.kind === 'executeAttackNoblePhantasm');
@@ -1617,7 +1787,8 @@ export function auditProductionUserControlObservations(
       !inputDifference &&
       !operationOutcomeDifference &&
       !eventProjectionOutcomeDifference &&
-      !resultDifference
+      !resultDifference &&
+      !nativeUnresolvedCardControl(identity, enabled, excluded)
     ) {
       const inertFailure = productionUserControlFailure(
         'userControlDidNotReachOperationOrDamage',

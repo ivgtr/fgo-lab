@@ -6,21 +6,20 @@ import type {
 } from './preparationExecution';
 import type { PreparationInitializationExecution } from './preparationExecution';
 import { pendingNoblePhantasmSourceBinding, type SourceExecutionBinding } from './executionBinding';
-import type { StochasticSelection } from './stochasticPossibilities';
+import { initializePreparationRoot, type PreparationExecutionSession } from './preparationSession';
+import { forkPreparationState } from './preparationState';
+import type { PreparationContextOptions, PreparationStateSnapshot } from './preparationContracts';
 import { hpEffectKey } from './preparationHp';
 import { markerEffectReads, terminalMarkerReads, markerHasOpaqueReads } from './markerDependency';
 import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
-import { actorFormKey, resolveInitialMaximumHp } from '@fgo-lab/master-data';
-import { preparationTargetFacts } from './preparationTargetFacts';
+import { actorFormKey } from '@fgo-lab/master-data';
 import { compileOcSourceProgram } from './ocSourceProgram';
 import { ocSourceOperationKey } from './ocSourceBinding';
 import { collectAuxiliarySources } from './auxiliarySources';
-import { servantStackInputs } from './stackQuantities';
 import {
   getBaseNoblePhantasmGroup,
   getSkillsForActorForm,
   findActorForm,
-  canonicalRequirementLeaves,
   noblePhantasmVariantKey,
   type NoblePhantasmVariantRef,
   type ActorFormId,
@@ -29,23 +28,15 @@ import {
   type CanonicalInputDefinition,
   type CanonicalNpResourceSemantics,
 } from '@fgo-lab/master-data';
-import { battlePointPhaseCandidates } from './battlePointResource';
 import { battlePointEffectKey } from './battlePointResource';
-import type {
-  CalculationScenario,
-  DamageResolutionInput,
-  PreNoblePhantasmCommand,
-} from '@fgo-lab/schema';
+import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
 import type { ExecutionIssue, ExecutionPhase } from './contracts';
 import type { Origin } from './effectRouting';
 import {
-  createPreNoblePhantasmState,
   reducePreNoblePhantasmAction,
   type AppliedPreparationAction,
   type PreNoblePhantasmState,
-  type PreparationExecutionContext,
   type PreparationFailureCode,
-  type PreparationTransitionResult,
 } from './preNoblePhantasm';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -103,6 +94,15 @@ export interface ResolvedAttackerFormExecution {
   initializationExecution?: PreparationInitializationExecution;
 }
 
+/** A normal completed execution borrows its final native receipt, never its writable checkout. */
+export function completedPreparationStateFor(
+  execution: ResolvedAttackerFormExecution,
+): PreparationStateSnapshot {
+  const native = execution.actionExecutions?.at(-1) ?? execution.initializationExecution;
+  if (!native) throw new TypeError('missing_completed_preparation_execution');
+  return native.state;
+}
+
 /** Runtime demand metadata never changes the canonical declaration. */
 export interface PreparationRequiredInput {
   definition: CanonicalInputDefinition;
@@ -115,141 +115,38 @@ export function resolveAttackerFormExecution(
   resourceSemantics: CanonicalNpResourceSemantics,
   initialGauge: number = scenario.initialOvercharge *
     resourceSemantics.noblePhantasmUse.baseOvercharge.gaugePerStage,
-  options: {
-    stochasticSelection?: StochasticSelection;
-    master?: MasterDataSnapshot;
-    initialMaximumHp?: number;
-    initialOvercharge?: 1 | 2 | 3 | 4 | 5;
-    policy?: PreparationExecutionContext['policy'];
-    initialBattlePointPoints?: Readonly<Record<string, number>>;
+  options: PreparationContextOptions & {
+    executionSession?: PreparationExecutionSession;
     diagnoseRejectedActions?: boolean;
     observePreparationTransition?: (
-      before: PreNoblePhantasmState,
-      command: PreNoblePhantasmCommand,
-      result: PreparationTransitionResult,
+      before: PreparationStateSnapshot,
+      command: PreparationActionExecution['command'],
+      result: PreparationActionExecution,
     ) => void;
   } = {},
 ): ResolvedAttackerFormExecution {
-  const auxiliary = options.master
-    ? collectAuxiliarySources(scenario, options.master, scenario.attacker.initialActorFormId)
-    : null;
-  const battlePointDomainIds = new Set(attacker.battlePointDomains?.map(({ id }) => id) ?? []);
-  for (const source of auxiliary?.sources ?? []) {
-    for (const leaf of canonicalRequirementLeaves(source.effect.requirement.expression))
-      if (
-        (leaf.kind === 'quantity' && leaf.quantity === 'battlePointPhase') ||
-        leaf.kind === 'sourceQuantity'
-      )
-        if (leaf.subjectId !== undefined) battlePointDomainIds.add(leaf.subjectId);
-    for (const operation of source.effect.execution)
-      if (
-        operation.kind === 'battlePointCapacityModifier' ||
-        (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
-      )
-        if (operation.subjectId !== null) battlePointDomainIds.add(operation.subjectId);
-  }
-  const battlePointDomains =
-    options.master?.battlePointDomains.filter(({ id }) => battlePointDomainIds.has(id)) ?? [];
-  const resolvedHp =
-    options.master && options.initialMaximumHp === undefined
-      ? resolveInitialMaximumHp(scenario, options.master)
-      : null;
-  const maximum =
-    options.initialMaximumHp ??
-    (resolvedHp?.status === 'resolved' ? resolvedHp.maximum : undefined);
-  const context: PreparationExecutionContext = {
-    stochasticSelection: options.stochasticSelection ?? { kind: 'declared' },
-    ...(maximum === undefined ? {} : { initialMaximumHp: maximum }),
-    ...(options.master
-      ? {
-          maximumHpByForm: new Map(
-            attacker.actorFormGraph.forms.flatMap((form) => {
-              const initialForm = findActorForm(attacker, scenario.attacker.initialActorFormId);
-              if (
-                maximum !== undefined &&
-                (actorFormKey(form.id) === actorFormKey(scenario.attacker.initialActorFormId) ||
-                  (form.baseHp.kind === 'lineage' && initialForm?.baseHp.kind === 'lineage'))
-              )
-                return [[actorFormKey(form.id), maximum] as const];
-              const hp = resolveInitialMaximumHp(
-                { ...scenario, attacker: { ...scenario.attacker, initialActorFormId: form.id } },
-                options.master!,
-              );
-              return hp.status === 'resolved' ? [[actorFormKey(form.id), hp.maximum] as const] : [];
-            }),
-          ),
-        }
-      : {}),
-    attackerPredicates:
-      options.master?.targetSemantics.execution.classIdentities.map((classId) => ({
-        sourceKey: 'initial:attackerClass',
-        predicate: { kind: 'classIdentity' as const, classId },
-        present: attacker.predicates.some(
-          (predicate) => predicate.kind === 'classIdentity' && predicate.classId === classId,
-        ),
-      })) ?? [],
-    worldFacts: scenario.worldFactAssertions,
-    targetPredicates: options.master
-      ? preparationTargetFacts(
-          attacker,
-          scenario.targetContext,
-          options.master.targetSemantics.execution,
-        )
-      : [],
-    activationFacts: scenario.activationFacts,
-    ...(options.policy ? { policy: options.policy } : {}),
-    initialSources:
-      auxiliary?.sources.filter(
-        (source) =>
-          source.origin === 'craftEssence' ||
-          (source.origin === 'support' && source.effect.gameActivation === 'constant'),
-      ) ?? [],
-    terminalSources:
-      auxiliary?.sources.filter(
-        (source) =>
-          (source.origin === 'support' && source.effect.gameActivation !== 'constant') ||
-          source.origin === 'mysticCode',
-      ) ?? [],
-    stackInputs: servantStackInputs(attacker),
-    resourceSemantics,
-    npLevel: scenario.attacker.npLevel as PreparationExecutionContext['npLevel'],
-    initialGauge,
-    overcharge: options.initialOvercharge ?? scenario.initialOvercharge,
-    canonicalInputValues: Object.fromEntries(
-      Object.entries(scenario.canonicalInputValues).map(([key, value]) => [key, value.value]),
-    ),
-    ...(scenario.attackerHpPermille === null
-      ? {}
-      : { attackerHpPermille: scenario.attackerHpPermille }),
-    battlePointPhase: scenario.battleState.battlePointPhase,
-    battlePointDomains,
-    initialBattlePointPoints:
-      options.initialBattlePointPoints ??
-      Object.fromEntries(
-        battlePointDomains.flatMap((domain) => {
-          const phase = scenario.battleState.battlePointPhase;
-          if (phase === null) return [];
-          if (phase === 0) return [[domain.id, -1] as const];
-          const traits = new Set(
-            findActorForm(attacker, scenario.attacker.initialActorFormId)?.traits ?? [],
-          );
-          const capacity =
-            domain.capacity.traitOverrides.find((entry) =>
-              entry.all.every((trait) => traits.has(trait)),
-            )?.value ?? domain.capacity.default;
-          const candidates = battlePointPhaseCandidates(domain, phase, capacity);
-          return candidates.length ? [[domain.id, candidates.at(-1)!] as const] : [];
-        }),
-      ),
-  };
-  const created = createPreNoblePhantasmState(
+  const identity = {
+    scenario,
     attacker,
-    scenario.attacker.initialActorFormId,
-    context,
-  );
+    resourceSemantics,
+    initialGauge,
+    options,
+    diagnoseRejectedActions: options.diagnoseRejectedActions ?? false,
+    observed: options.observePreparationTransition !== undefined,
+  };
+  const root = options.executionSession?.root(identity);
+  const initialized = root
+    ? { context: root.context, execution: root.prefix.execution }
+    : initializePreparationRoot(identity);
+  const context = { ...initialized.context };
+  const created = initialized.execution;
+  let prefix: Parameters<PreparationExecutionSession['step']>[0] | undefined = root?.prefix;
   if (created.status === 'rejected')
     return {
-      state: created.state,
+      state:
+        root && options.executionSession
+          ? options.executionSession.checkout(root.prefix)
+          : forkPreparationState(created.state),
       actions: [],
       skillUses: [],
       preparationNoblePhantasms: [],
@@ -269,7 +166,7 @@ export function resolveAttackerFormExecution(
       issues: [{ kind: 'unsupportedOperation', operationId: 'preparation', detail: created.code }],
       initializationExecution: created,
     };
-  let state = created.state;
+  let state: PreparationStateSnapshot = created.state;
   const initializationExecution = created;
   const skillUses: ResolvedAttackerSkillUse[] = [];
   const preparationNoblePhantasms: Array<{
@@ -285,9 +182,16 @@ export function resolveAttackerFormExecution(
   for (const [commandIndex, command] of scenario.preNoblePhantasmPlan.entries()) {
     const actorFormId = state.currentFormId;
     const variantBeforeAction = state.selectedNoblePhantasmVariant;
-    const result = reducePreNoblePhantasmAction(attacker, state, command, context);
+    const next =
+      prefix && options.executionSession
+        ? options.executionSession.step(prefix, command)
+        : undefined;
+    const result = next
+      ? next.execution
+      : reducePreNoblePhantasmAction(attacker, state, command, context);
+    if (next) prefix = next;
     actionExecutions.push(result);
-    options.observePreparationTransition?.(state, command, result);
+    options.observePreparationTransition?.(result.before, result.command, result);
     if (result.status === 'rejected') {
       recoveryInputDefinitions = result.recoveryInputDefinitions ?? [];
       if (
@@ -335,7 +239,10 @@ export function resolveAttackerFormExecution(
       operationId: `preparation:${attacker.id}:terminal`,
     };
   return {
-    state,
+    state:
+      prefix && options.executionSession
+        ? options.executionSession.checkout(prefix)
+        : forkPreparationState(state),
     actions: state.appliedActions,
     skillUses,
     preparationNoblePhantasms,

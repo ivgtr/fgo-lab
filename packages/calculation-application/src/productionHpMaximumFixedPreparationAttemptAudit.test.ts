@@ -324,7 +324,8 @@ function buildAttempt(
   if (parity) {
     const normal = execute(scenario, master, false);
     const ranking = execute(scenario, master, true, 'ranking');
-    Object.assign(result, { normal, ranking });
+    const rankingNormal = execute(scenario, master, false, 'ranking');
+    Object.assign(result, { normal, ranking, rankingNormal });
   }
   return result;
 }
@@ -531,6 +532,9 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
           capture: item.request.calculation,
           ranking: (item as AttemptEntry & { ranking: { calculation: CalculationExecution } })
             .ranking.calculation,
+          rankingNormal: (
+            item as AttemptEntry & { rankingNormal: { calculation: CalculationExecution } }
+          ).rankingNormal.calculation,
         },
       }));
       await saveArtifact(task, 'tsk-08-maximum-fixed-attempt-changed-noncommit.json', {
@@ -541,7 +545,7 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
 
       for (const item of cases) {
         const targetTransition = item.source.forwardSource.transitions?.[1];
-        const action = targetTransition?.hpActions?.[0];
+        const action = targetTransition?.hpActions![0];
         const writes = action?.modifierWrites ?? [];
         expect(item.gate.status, JSON.stringify(item.gate.firstDifference)).toBe('passed');
         expect(item.gate.isolated).toEqual([item.program.identity]);
@@ -580,15 +584,28 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
         expect(normal.status).toBe('rejected');
         expect(ranking.status).toBe('rejected');
         expect(normal.result).toEqual(item.request.calculation.result);
-        expect(ranking.result).toEqual(item.request.calculation.result);
+        const rankingNormal = (
+          item as AttemptEntry & {
+            rankingNormal: { calculation: CalculationExecution };
+          }
+        ).rankingNormal.calculation;
+        expect(ranking.result).toEqual(rankingNormal.result);
         expect(item.directResult).toEqual(item.request.calculation.result);
       }
 
       const reset = cases.find((item) => item.spec.key === 'source-local-stochastic-reset')!;
-      const resetAction = reset.source.forwardSource.transitions![1]!.hpActions![0]!;
+      const resetAction = reset.source.forwardSource.transitions![1]!.hpActions[0]!;
       const resetEnd = resetAction.sourceEnds.find((end) => end.stochasticFailureSteps?.length)!;
       expect(resetEnd.sourceStart).toBeDefined();
-      expect(resetEnd.after).toBe(resetEnd.sourceStart);
+      expect(resetEnd.after.hp).toBe(resetEnd.sourceStart!.hp);
+      expect({ ...resetEnd.after, sourceBindings: [] }).toEqual({
+        ...resetEnd.sourceStart,
+        sourceBindings: [],
+      });
+      const nativeResetSource = reset.source.forwardSource.transitions![1]!.result.sources.find(
+        (source) => source.source === resetEnd.source,
+      )!;
+      expect(resetEnd.after.sourceBindings.at(-1)).toBe(nativeResetSource.binding);
       expect(resetEnd.stochasticFailureSteps?.length).toBeGreaterThan(0);
       expect(resetAction.attempted?.hp).toBe(resetEnd.after.hp);
 
@@ -607,16 +624,16 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
         ),
       ).toBe(false);
       const invalid = cases.find((item) => item.spec.key === 'native-invalid-after-first-write')!;
-      expect(invalid.source.forwardSource.transitions![1]!.hpActions![0]!.native).toMatchObject({
+      expect(invalid.source.forwardSource.transitions![1]!.hpActions[0]!.native).toMatchObject({
         status: 'invalid',
         reason: 'hpMutation',
       });
       const inputRequired = cases.find(
         (item) => item.spec.key === 'native-input-required-after-first-write',
       )!;
-      expect(
-        inputRequired.source.forwardSource.transitions![1]!.hpActions![0]!.native?.status,
-      ).toBe('inputRequired');
+      expect(inputRequired.source.forwardSource.transitions![1]!.hpActions[0]!.native?.status).toBe(
+        'inputRequired',
+      );
     },
   );
 
@@ -646,7 +663,7 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
       }
       const noOp = cases.find((item) => item.spec.key === 'no-op-receipt-zero')!;
       const noOpWrite =
-        noOp.source.forwardSource.transitions![1]!.hpActions![0]!.modifierWrites![0]!;
+        noOp.source.forwardSource.transitions![1]!.hpActions[0]!.modifierWrites![0]!;
       expect(noOpWrite.modifiers).toHaveLength(1);
       expect(noOpWrite.receipts[0]).toMatchObject({ attempted: 0, actual: 0 });
       expect(noOpWrite.before.actors.attacker).toEqual(noOpWrite.after.actors.attacker);
@@ -668,9 +685,9 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
         201,
         false,
       );
-      const mutable = multiple.source.forwardSource.transitions![1]!.hpActions![0]!;
+      const mutable = multiple.source.forwardSource.transitions![1]!.hpActions[0]!;
       const firstWrite = mutable.modifierWrites![0]!;
-      const resetMutable = reset.source.forwardSource.transitions![1]!.hpActions![0]!;
+      const resetMutable = reset.source.forwardSource.transitions![1]!.hpActions[0]!;
       const resetWrite = resetMutable.modifierWrites![0]!;
       const resetEnd = resetMutable.sourceEnds.find((end) => end.stochasticFailureSteps?.length)!;
       const inputRequired = entry(
@@ -678,8 +695,7 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
         202,
         false,
       );
-      const inputRequiredAction =
-        inputRequired.source.forwardSource.transitions![1]!.hpActions![0]!;
+      const inputRequiredAction = inputRequired.source.forwardSource.transitions![1]!.hpActions[0]!;
       const rejection = multiple.source.forwardSource.transport!.rejection!;
       const targetTransition = multiple.source.forwardSource.transitions![1]!;
       const transport = multiple.source.forwardSource.transport!;

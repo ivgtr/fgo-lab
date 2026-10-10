@@ -6,6 +6,7 @@ import {
   ENGINE_VERSION,
   SCHEMA_VERSION,
   portableCalculationRequestSchema,
+  stableValueKey,
   servantBuildSchema,
   type CalculationResult,
   type CalculationScenario,
@@ -510,15 +511,6 @@ export function attemptPortableCalculationVersionUpgrade(
   };
 }
 
-function canonical(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  return `{${Object.entries(value as Record<string, unknown>)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, item]) => `${JSON.stringify(key)}:${canonical(item)}`)
-    .join(',')}}`;
-}
-
 function comparableResult(result: CalculationResult) {
   return {
     ...result,
@@ -547,7 +539,8 @@ export function recoverPortableCalculation(
   const outcome = executePortableCalculation(request, master);
   if (
     (outcome.status === 'executed' || outcome.status === 'unsupported') &&
-    canonical(comparableResult(outcome.execution.result)) !== canonical(comparableResult(result))
+    stableValueKey(comparableResult(outcome.execution.result)) !==
+      stableValueKey(comparableResult(result))
   )
     return { status: 'invalid', request, reason: 'storedResultMismatch' };
   return outcome;

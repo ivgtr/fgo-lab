@@ -2,6 +2,7 @@ import {
   firstCanonicalAuditDifference,
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
+import { taggedAuditValue } from './taggedAuditValue';
 import {
   auditMaximumFixed,
   maximumFixedCanonical,
@@ -117,25 +118,6 @@ function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function canonicalValue(value: unknown): CanonicalAuditValue {
-  if (value === undefined) return { type: 'undefined' };
-  if (value instanceof Set) return { type: 'set', values: [...value].map(canonicalValue) };
-  if (value instanceof Map)
-    return {
-      type: 'map',
-      values: [...value].map(([key, item]) => [canonicalValue(key), canonicalValue(item)]),
-    };
-  if (Array.isArray(value)) return { type: 'array', values: value.map(canonicalValue) };
-  if (record(value))
-    return {
-      type: 'object',
-      fields: Object.fromEntries(
-        Object.entries(value).map(([key, item]) => [key, canonicalValue(item)]),
-      ),
-    };
-  return { type: typeof value, value: value as CanonicalAuditValue };
-}
-
 function sourceIdentity(source: {
   origin: string;
   sourceInstanceId: string;
@@ -185,7 +167,7 @@ function attemptDiagnostic(source: MaximumFixedAttemptSource) {
         attempted: attempt.attempted,
         returned: attempt.returned,
       })),
-      hpActions: core.transitions?.[index]?.hpActions?.map((action) => ({
+      hpActions: core.transitions?.[index]?.hpActions!.map((action) => ({
         actionId: action.actionId,
         start: action.start,
         sources: action.sources.map(sourceIdentity),
@@ -253,7 +235,7 @@ function attemptAnchors(source: MaximumFixedAttemptSource): AttemptAnchor[] {
     });
   });
   core.transitions?.forEach((transition, index) =>
-    transition.hpActions?.forEach((action, actionIndex) => {
+    transition.hpActions.forEach((action, actionIndex) => {
       const path = `hp.${index}.${actionIndex}`;
       anchors.push(
         { path, value: action },
@@ -335,7 +317,7 @@ function classifyBoundary(args: {
 }): MaximumFixedAttemptBoundary | null {
   const transition = args.source.forwardSource.transitions?.[args.actionIndex];
   const action = args.source.forwardSource.canonical.actions[args.actionIndex];
-  const hpAction = transition?.hpActions?.find((item) => item.actionId === action?.actionId);
+  const hpAction = transition?.hpActions!.find((item) => item.actionId === action?.actionId);
   if (!transition) return 'attemptBeforeNative';
   if (transition.result.status === 'applied')
     return args.capturedWriteCount ? 'nativeCommitted' : 'writerUnreached';
@@ -357,7 +339,7 @@ function classifyBoundary(args: {
 function actionFor(source: MaximumFixedAttemptSource, index: number) {
   const action = source.forwardSource.canonical.actions[index];
   const transition = source.forwardSource.transitions?.[index];
-  const hpAction = transition?.hpActions?.find((item) => item.actionId === action?.actionId);
+  const hpAction = transition?.hpActions!.find((item) => item.actionId === action?.actionId);
   return { action, transition, hpAction };
 }
 
@@ -366,6 +348,8 @@ export function auditMaximumFixedAttemptIsolation(input: {
   expected: readonly MaximumFixedAttemptProgram[];
   observations: readonly MaximumFixedAttemptSource[];
 }) {
+  const copies = new WeakMap<object, CanonicalAuditValue>();
+  const canonicalValue = (value: unknown) => taggedAuditValue(value, copies);
   const checks: AttemptCheck[] = [];
   const failures: AttemptFailure[] = [];
   const boundaries: { identity: string; reason: MaximumFixedAttemptBoundary }[] = [];
@@ -1049,7 +1033,28 @@ export function auditMaximumFixedAttemptIsolation(input: {
           'maximumFixedAttemptResetMismatch',
           `${path}.resetOwnerState`,
           [true, true],
-          [end.after === end.sourceStart, end.after.hp === end.sourceStart?.hp],
+          [
+            !!end.sourceStart &&
+              Reflect.ownKeys(end.sourceStart).every(
+                (key) =>
+                  key === 'sourceBindings' ||
+                  Reflect.get(end.after, key) === Reflect.get(end.sourceStart!, key),
+              ),
+            end.after.hp === end.sourceStart?.hp,
+          ],
+        );
+        const nativeSource = transition.result.sources.find((entry) => entry.source === end.source);
+        c(
+          'maximumFixedAttemptResetMismatch',
+          `${path}.resetBinding`,
+          [true, true, true],
+          [
+            !!end.sourceStart &&
+              end.after.sourceBindings.length === end.sourceStart.sourceBindings.length + 1,
+            end.after.sourceBindings.at(-1) === nativeSource?.binding,
+            (nativeSource?.status === 'completed' || nativeSource?.status === 'rolledBack') &&
+              nativeSource.transaction.kind === 'stochasticFailure',
+          ],
         );
       }
     }

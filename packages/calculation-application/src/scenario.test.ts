@@ -1,3 +1,5 @@
+import { resolveScenarioPreparationOutcome } from './scenarioPreparation';
+import type { RankingCandidateEvent } from './rankingCandidateBatch';
 import {
   attemptPortableCalculationScenarioChange,
   createCalculatorPortableRequest,
@@ -20,6 +22,7 @@ import {
   calculationResultSchema,
   calculationShareSnapshotSchema,
   calculationScenarioSchema,
+  portableCalculationRequestSchema,
   ENGINE_VERSION,
   SCHEMA_VERSION,
   type CalculationScenario,
@@ -41,7 +44,6 @@ import {
   rematerializePreparedCalculationInputs,
   requireExecutableCalculation,
   calculateScenarioWithPolicy,
-  resolveScenarioPreparationOutcome,
 } from './scenario';
 import {
   criticalStarsForwardProgram,
@@ -61,7 +63,7 @@ import {
 } from './productionCriticalStarsRecoveryAudit';
 import { materializeRankingQuantity } from './rankingQuantityWorld';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
 import {
   productionAuditTestOptions,
@@ -81,7 +83,7 @@ import {
   calculateRankingCandidateSet,
   type RankingExecutionObservation,
 } from './rankingPolicyCandidates';
-import { executeRankingScenarios } from './rankingExecution';
+import { evaluateRankingCandidateBatch } from './rankingCandidateBatch';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { rankingEffectContributes } from './rankingContribution';
 import { createRankingRow } from './rankingRows';
@@ -1047,6 +1049,7 @@ describe('scenario calculation facade', () => {
           },
         ],
       });
+      const candidateEvents: RankingCandidateEvent[] = [];
       const candidateSet = calculateRankingCandidateSet(
         scopedMaster.servants[0]!,
         scopedMaster,
@@ -1056,6 +1059,7 @@ describe('scenario calculation facade', () => {
         true,
         undefined,
         true,
+        (event) => candidateEvents.push(event),
       );
       const detail = candidateSet.details.values().next().value;
       if (!detail) throw new Error('calculated area detail required');
@@ -1074,13 +1078,15 @@ describe('scenario calculation facade', () => {
         throw new Error('selected target execution required on both area paths');
       const selectedTargetExecution = profileObservation.selected.targetExecution;
       const withoutAreaTargetExecution = profileObservation.withoutAreaAlternate.targetExecution;
-      if (profileObservation.selectedInput !== detail.input)
+      if (profileObservation.selectedExecution.input !== detail.input)
         throw new Error('selected observation must belong to the detail input');
-      if (profileObservation.withoutAreaInput !== withoutArea.withoutAreaInput)
+      if (profileObservation.withoutAreaExecution?.input !== withoutArea.withoutAreaInput)
         throw new Error('without-area observation must belong to the alternate input');
       if (
-        profileObservation.selectedEffectiveContributions !== detail.effectiveContributions ||
-        profileObservation.withoutAreaEffectiveContributions !== withoutArea.effectiveContributions
+        profileObservation.selectedExecution.effectiveContributions !==
+          detail.effectiveContributions ||
+        profileObservation.withoutAreaExecution.effectiveContributions !==
+          withoutArea.effectiveContributions
       )
         throw new Error('effective contributions must belong to the observed executions');
       const selectedPartyWide = detail.effects.find(
@@ -1095,6 +1101,7 @@ describe('scenario calculation facade', () => {
         candidateSet,
         detail,
         selectedPartyWide,
+        candidateEvents,
       );
       // Expected fixture population comes from canonical projections/profile, not observations.
       const expectedIdentities = detail.effects
@@ -1128,6 +1135,7 @@ describe('scenario calculation facade', () => {
           },
           detail,
           selectedPartyWide,
+          candidateEvents,
         );
       const wrongSource = (
         alternate: NonNullable<RankingExecutionObservation['withoutAreaExecution']>,
@@ -1148,17 +1156,16 @@ describe('scenario calculation facade', () => {
                 {
                   ...profileObservation,
                   withoutAreaExecution: alternate,
-                  withoutAreaEffectiveContributions: alternate.effectiveContributions,
                 },
               ],
             ]),
           },
           alteredDetail,
           selectedPartyWide,
+          candidateEvents,
         );
       };
       const alternate = profileObservation.withoutAreaExecution;
-      if (!alternate) throw new Error('actual alternate execution required');
       const alteredContribution = (
         change: (
           contribution: NonNullable<
@@ -1199,24 +1206,33 @@ describe('scenario calculation facade', () => {
           ...profileObservation,
           withoutAreaAlternate: profileObservation.selected,
           withoutAreaExecution: profileObservation.selectedExecution,
-          withoutAreaInput: profileObservation.selectedInput,
-          withoutAreaEffectiveContributions: profileObservation.selectedEffectiveContributions,
         }),
         selectedInputCopy: withTrace({
           ...profileObservation,
-          selectedInput: { ...profileObservation.selectedInput },
+          selectedExecution: {
+            ...profileObservation.selectedExecution,
+            input: { ...profileObservation.selectedExecution.input },
+          },
         }),
         alternateInputCopy: withTrace({
           ...profileObservation,
-          withoutAreaInput: { ...withoutArea.withoutAreaInput },
+          withoutAreaExecution: { ...alternate, input: { ...withoutArea.withoutAreaInput } },
         }),
         selectedContributionsCopy: withTrace({
           ...profileObservation,
-          selectedEffectiveContributions: { ...profileObservation.selectedEffectiveContributions },
+          selectedExecution: {
+            ...profileObservation.selectedExecution,
+            effectiveContributions: {
+              ...profileObservation.selectedExecution.effectiveContributions,
+            },
+          },
         }),
         alternateContributionsCopy: withTrace({
           ...profileObservation,
-          withoutAreaEffectiveContributions: { ...withoutArea.effectiveContributions },
+          withoutAreaExecution: {
+            ...alternate,
+            effectiveContributions: { ...withoutArea.effectiveContributions },
+          },
         }),
         wrongProfile: {
           ...observation,
@@ -1338,20 +1354,19 @@ describe('scenario calculation facade', () => {
         withoutAreaAlternate: { ...profileObservation.withoutAreaAlternate, targetExecution: null },
       });
       failureCases.planCandidateMismatch = rankingWithoutAreaControlObservation(
-        {
-          ...candidateSet,
-          plan: {
-            ...candidateSet.plan,
-            candidateKeys: candidateSet.plan.candidateKeys.map(() => 'wrong-planned-candidate'),
-          },
-        },
+        candidateSet,
         detail,
         selectedPartyWide,
+        candidateEvents.map((event) => ({
+          ...event,
+          descriptor: { ...event.descriptor, key: 'wrong-planned-candidate' },
+        })),
       );
       failureCases.detailInputCopy = rankingWithoutAreaControlObservation(
         candidateSet,
         { ...detail, input: { ...detail.input } },
         selectedPartyWide,
+        candidateEvents,
       );
       failureCases.alternateResultCopy = rankingWithoutAreaControlObservation(
         candidateSet,
@@ -1363,6 +1378,7 @@ describe('scenario calculation facade', () => {
           },
         },
         selectedPartyWide,
+        candidateEvents,
       );
       failureCases.alternateEffectsCopy = rankingWithoutAreaControlObservation(
         candidateSet,
@@ -1374,6 +1390,7 @@ describe('scenario calculation facade', () => {
           },
         },
         selectedPartyWide,
+        candidateEvents,
       );
       failureCases.policyMismatch = rankingWithoutAreaControlObservation(
         candidateSet,
@@ -1385,6 +1402,7 @@ describe('scenario calculation facade', () => {
           },
         },
         selectedPartyWide,
+        candidateEvents,
       );
       for (const status of ['invalid', 'unsupported', 'inputRequired', 'unavailable'] as const) {
         failureCases[`alternateOutcome:${status}`] = {
@@ -1449,14 +1467,14 @@ describe('scenario calculation facade', () => {
           ).toBe(true);
         }
       }
+      expect(candidateSet).not.toHaveProperty('preparedCandidates');
+      expect(candidateSet).not.toHaveProperty('executions');
       expect(
-        candidateSet.plan.preparedRankingScenarios.some(
-          (candidate) => 'executionObservation' in candidate,
+        candidateEvents.every(
+          ({ prepared, execution }) =>
+            'executionObservation' in prepared && 'executionObservation' in execution,
         ),
-      ).toBe(false);
-      expect(candidateSet.executions.some((execution) => 'executionObservation' in execution)).toBe(
-        false,
-      );
+      ).toBe(true);
       const exactEvent = (
         events: typeof selectedTargetExecution.operationEvents,
         projection: NonNullable<typeof selectedPartyWide>,
@@ -1481,8 +1499,8 @@ describe('scenario calculation facade', () => {
 
       expect(detail.input.attackBuff).toBe(0.3);
       expect(withoutArea.withoutAreaInput.attackBuff).toBe(0.1);
-      expect(profileObservation.selectedInput).toBe(detail.input);
-      expect(profileObservation.withoutAreaInput).toBe(withoutArea.withoutAreaInput);
+      expect(profileObservation.selectedExecution.input).toBe(detail.input);
+      expect(profileObservation.withoutAreaExecution.input).toBe(withoutArea.withoutAreaInput);
       expect(withoutAreaPartyWide).toMatchObject({
         projectionKey: selectedPartyWide.projectionKey,
         operationId: selectedPartyWide.operationId,
@@ -2963,7 +2981,7 @@ describe('scenario calculation facade', () => {
     });
     corrupt(() => {
       const before = nativeWrite.after;
-      nativeWrite.after = {
+      (nativeWrite as Mutable<typeof nativeWrite>).after = {
         ...before,
         inputFacts: new Map([
           [
@@ -2977,7 +2995,7 @@ describe('scenario calculation facade', () => {
         ]),
       };
       return () => {
-        nativeWrite.after = before;
+        (nativeWrite as Mutable<typeof nativeWrite>).after = before;
       };
     });
     const finalSource = diagnostic.preparation.transitions[0]!.sources.at(-1)!;
@@ -4292,6 +4310,13 @@ describe('scenario calculation facade', () => {
           trait: burn.name,
           damageRelevant: false,
         },
+        {
+          kind: 'buffInstanceMutation' as const,
+          mutation: 'grant' as const,
+          recipient: 'enemy' as const,
+          traits: [burn.name],
+          lifetime: 'active' as const,
+        },
       ],
       timing: 'beforeDamage' as const,
     });
@@ -4352,6 +4377,29 @@ describe('scenario calculation facade', () => {
     expect(calculation.input.targetStateTraits).toEqual(['buffBurn']);
     expect(calculation.input.stackStateCounts?.targetState['buffBurn']).toBe(2);
     expect(calculation.input.npSpecialMultipliers).toEqual([1.4, 1.4, 1.4, 1.4, 1.4]);
+    const initialStackScenario = {
+      ...createDefaultResolvedScenario(stackedMaster, undefined),
+      canonicalInputValues: {
+        'stack:targetState:buffBurn': { kind: 'integer' as const, value: 1 },
+      },
+    };
+    const initialStacks = calculateScenario(initialStackScenario, stackedMaster, versions);
+    expect(initialStacks.input.stackStateCounts?.targetState['buffBurn']).toBe(3);
+    expect(initialStacks.input.npSpecialMultipliers).toEqual([1.6, 1.6, 1.6, 1.6, 1.6]);
+    const observedStacks = requireExecutableCalculation(
+      evaluatePreparedCalculationScenario(
+        prepareCalculationScenarioWithPolicy(
+          initialStackScenario,
+          stackedMaster,
+          { kind: 'calculator' },
+          {},
+          true,
+        ),
+        versions,
+      ),
+    );
+    expect(observedStacks.result).toEqual(initialStacks.result);
+    expect(observedStacks.input).toEqual(initialStacks.input);
     const traitProjections = calculation.effects.filter(
       (effect) =>
         effect.modifier === 'npSpecial' && effect.contributionControl === 'worldAssumption',
@@ -4384,11 +4432,11 @@ describe('scenario calculation facade', () => {
         })),
       })),
     });
-    const withoutStacks = calculateScenario(
-      createDefaultResolvedScenario(withoutStacksMaster, undefined),
-      withoutStacksMaster,
-      { ...versions, masterDataVersion: withoutStacksMaster.version },
-    );
+    const withoutStacksScenario = createDefaultResolvedScenario(withoutStacksMaster, undefined);
+    const withoutStacks = calculateScenario(withoutStacksScenario, withoutStacksMaster, {
+      ...versions,
+      masterDataVersion: withoutStacksMaster.version,
+    });
     expect(withoutStacks.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
     expect(
       withoutStacks.effects
@@ -4405,6 +4453,83 @@ describe('scenario calculation facade', () => {
         }),
       ]),
     );
+    const control = withoutStacks.effectControls.find(
+      ({ projection }) =>
+        projection.explanation.condition?.kind === 'trait' &&
+        projection.explanation.condition.trait === poison.name,
+    )!;
+    expect(control.projection.decision).toMatchObject({
+      kind: 'worldFact',
+      fact: { scope: 'target', trait: poison.name },
+    });
+    for (const value of [-1, 1.5, 11, Number.NaN])
+      for (const enabled of [true, false])
+        expect(() =>
+          applyEffectControlPresentationDecision(
+            {
+              ...withoutStacksScenario,
+              canonicalInputValues: {
+                'stack:targetState:buffPoison': { kind: 'integer', value },
+              },
+            },
+            control,
+            enabled,
+            withoutStacks.activationRequirements,
+            withoutStacks.effects,
+            withoutStacks.effectInputs,
+          ),
+        ).toThrow('invalid_stack_presence_input:stack:targetState:buffPoison');
+    const selectedScenario = applyEffectControlPresentationDecision(
+      withoutStacksScenario,
+      control,
+      true,
+      withoutStacks.activationRequirements,
+      withoutStacks.effects,
+      withoutStacks.effectInputs,
+    );
+    expect(selectedScenario.canonicalInputValues['stack:targetState:buffPoison']?.value).toBe(1);
+    const selected = calculateScenario(selectedScenario, withoutStacksMaster, versions);
+    const observed = requireExecutableCalculation(
+      evaluatePreparedCalculationScenario(
+        prepareCalculationScenarioWithPolicy(
+          selectedScenario,
+          withoutStacksMaster,
+          { kind: 'calculator' },
+          {},
+          true,
+        ),
+        versions,
+      ),
+    );
+    expect(selected.input.npSpecialMultipliers).toEqual([1.2, 1.2, 1.2, 1.2, 1.2]);
+    expect(observed.result).toEqual(selected.result);
+    const excludedScenario = applyEffectControlPresentationDecision(
+      selectedScenario,
+      selected.effectControls.find(({ key }) => key === control.key)!,
+      false,
+      selected.activationRequirements,
+      selected.effects,
+      selected.effectInputs,
+    );
+    const excluded = calculateScenario(excludedScenario, withoutStacksMaster, versions);
+    expect(excluded.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(excludedScenario.canonicalInputValues['stack:targetState:buffPoison']?.value).toBe(0);
+    for (const [scenario, expected] of [
+      [selectedScenario, selected],
+      [excludedScenario, excluded],
+    ] as const) {
+      const request = createCalculatorPortableRequest(
+        scenario,
+        currentCalculationVersionContext(withoutStacksMaster),
+      );
+      const restored = executePortableCalculation(
+        portableCalculationRequestSchema.parse(JSON.parse(JSON.stringify(request))),
+        withoutStacksMaster,
+      );
+      expect(restored.status).toBe('executed');
+      if (restored.status !== 'executed') throw new TypeError('fixture_portable_execution_missing');
+      expect(restored.execution.result).toEqual(expected.result);
+    }
   });
 
   it('applies NP-before target state and explicit removal without leaking NP-after state', () => {
@@ -4897,17 +5022,33 @@ describe('scenario calculation facade', () => {
         npLevelBasis: { kind: 'specified', npLevel: 2 },
         conditionalEffects: 'satisfied',
       },
-      { ...versions, masterDataVersion: rankingMaster.version },
     );
-    const rankingSkillIndex = rankingPlan.rankingScenarios.findIndex(
-      (candidate) =>
-        candidate.canonicalInputValues['preparation:value']?.value === 1 &&
-        candidate.preNoblePhantasmPlan.some(({ kind }) => kind === 'useSkillSlot'),
+    const rankingPlanBatchEvents: RankingCandidateEvent[] = [];
+    evaluateRankingCandidateBatch(
+      rankingPlan,
+      rankingMaster,
+      {
+        ...versions,
+        masterDataVersion: rankingMaster.version,
+      },
+      undefined,
+      false,
+      (event) => rankingPlanBatchEvents.push(event),
     );
-    const rankingSkillCandidate = rankingPlan.rankingScenarios[rankingSkillIndex];
-    const rankingSkillPrepared = rankingPlan.preparedRankingScenarios[rankingSkillIndex];
+    const rankingSkillIndex = Array.from(rankingPlan.candidateDescriptors)
+      .map((candidate) => candidate.scenario)
+      .findIndex(
+        (candidate) =>
+          candidate.canonicalInputValues['preparation:value']?.value === 1 &&
+          candidate.preNoblePhantasmPlan.some(({ kind }) => kind === 'useSkillSlot'),
+      );
+    const rankingSkillCandidate = Array.from(rankingPlan.candidateDescriptors)[rankingSkillIndex]!
+      .scenario;
+    const rankingSkillPrepared = rankingPlanBatchEvents.map(({ prepared }) => prepared)[
+      rankingSkillIndex
+    ];
 
-    expect(rankingSkillCandidate?.canonicalInputValues['preparation:value']).toEqual({
+    expect(rankingSkillCandidate.canonicalInputValues['preparation:value']).toEqual({
       kind: 'integer',
       value: 1,
     });
@@ -4926,16 +5067,29 @@ describe('scenario calculation facade', () => {
         npLevelBasis: { kind: 'specified', npLevel: 2 },
         conditionalEffects: 'satisfied',
       },
-      { ...versions, masterDataVersion: preparationMaster.version },
     );
-    const repairedPolicyIndex = policyPlan.rankingScenarios.findIndex(
-      (candidate, index) =>
-        candidate.canonicalInputValues['preparation:value']?.value === 1 &&
-        candidate.preNoblePhantasmPlan.some(({ kind }) => kind === 'useSkillSlot') &&
-        policyPlan.preparedRankingScenarios[index]?.status === 'executable',
+    const policyPlanBatchEvents: RankingCandidateEvent[] = [];
+    evaluateRankingCandidateBatch(
+      policyPlan,
+      preparationMaster,
+      {
+        ...versions,
+        masterDataVersion: preparationMaster.version,
+      },
+      undefined,
+      false,
+      (event) => policyPlanBatchEvents.push(event),
     );
+    const repairedPolicyIndex = Array.from(policyPlan.candidateDescriptors)
+      .map((candidate) => candidate.scenario)
+      .findIndex(
+        (candidate, index) =>
+          candidate.canonicalInputValues['preparation:value']?.value === 1 &&
+          candidate.preNoblePhantasmPlan.some(({ kind }) => kind === 'useSkillSlot') &&
+          policyPlanBatchEvents.map(({ prepared }) => prepared)[index]?.status === 'executable',
+      );
     expect(
-      policyPlan.preparedRankingScenarios[repairedPolicyIndex]?.resolved
+      policyPlanBatchEvents.map(({ prepared }) => prepared)[repairedPolicyIndex]?.resolved
         .appliedPreparationActions[0],
     ).toMatchObject({ resourceBefore: { gauge: 10_000 }, resourceAfter: { gauge: 12_000 } });
 
@@ -5138,10 +5292,12 @@ describe('scenario calculation facade', () => {
     expect('input' in initial).toBe(false);
     expect('scenarioInput' in initial).toBe(false);
     expect(
-      executeRankingScenarios([prepared], structuralMaster, {
-        ...versions,
-        masterDataVersion: structuralMaster.version,
-      })[0]?.result.status,
+      [
+        evaluatePreparedCalculationScenario(prepared, {
+          ...versions,
+          masterDataVersion: structuralMaster.version,
+        }),
+      ][0]?.result.status,
     ).toBe('inputRequired');
 
     const nonAttackOnlyServant = structuralMaster.servants[0]!;
@@ -5223,10 +5379,12 @@ describe('scenario calculation facade', () => {
       transition: { id: 'input-transition' },
     });
     expect(
-      executeRankingScenarios([repaired], structuralMaster, {
-        ...versions,
-        masterDataVersion: structuralMaster.version,
-      })[0]?.result.status,
+      [
+        evaluatePreparedCalculationScenario(repaired, {
+          ...versions,
+          masterDataVersion: structuralMaster.version,
+        }),
+      ][0]?.result.status,
     ).toBe('calculated');
 
     const policyPlan = compileRankingExecutionPlan(
@@ -5237,21 +5395,36 @@ describe('scenario calculation facade', () => {
         ...DEFAULT_RANKING_POLICY_CONDITIONS,
         conditionalEffects: 'satisfied',
       },
-      { ...versions, masterDataVersion: structuralMaster.version },
+    );
+    const policyPlanBatchEvents: RankingCandidateEvent[] = [];
+    evaluateRankingCandidateBatch(
+      policyPlan,
+      structuralMaster,
+      {
+        ...versions,
+        masterDataVersion: structuralMaster.version,
+      },
+      undefined,
+      false,
+      (event) => policyPlanBatchEvents.push(event),
     );
     expect(
-      policyPlan.rankingScenarios.some(
-        (candidate, index) =>
-          candidate.canonicalInputValues['preparation:transition']?.value === 2 &&
-          policyPlan.attackProfiles[index]?.noblePhantasmVariant.noblePhantasmId ===
-            attackNpRef.noblePhantasmId &&
-          policyPlan.preparedRankingScenarios[index]?.status === 'executable',
-      ),
+      Array.from(policyPlan.candidateDescriptors)
+        .map((candidate) => candidate.scenario)
+        .some(
+          (candidate, index) =>
+            candidate.canonicalInputValues['preparation:transition']?.value === 2 &&
+            Array.from(policyPlan.candidateDescriptors)[index]!.attackProfile.noblePhantasmVariant
+              .noblePhantasmId === attackNpRef.noblePhantasmId &&
+            policyPlanBatchEvents.map(({ prepared }) => prepared)[index]?.status === 'executable',
+        ),
     ).toBe(true);
-    const transitionedProfile = policyPlan.attackProfiles.find(
-      ({ noblePhantasmVariant }) =>
-        noblePhantasmVariant.noblePhantasmId === attackNpRef.noblePhantasmId,
-    )!;
+    const transitionedProfile = Array.from(policyPlan.candidateDescriptors)
+      .map((candidate) => candidate.attackProfile)
+      .find(
+        ({ noblePhantasmVariant }) =>
+          noblePhantasmVariant.noblePhantasmId === attackNpRef.noblePhantasmId,
+      )!;
     expect(
       calculateRankingPolicyDetail(
         structuralMaster.servants[0]!,
@@ -5479,7 +5652,10 @@ describe('scenario calculation facade', () => {
       reason: 'selectedAttackProfileChanged',
     });
     expect(
-      executeRankingScenarios([secondOff], structuralMaster, structuralVersions)[0]?.result,
+      evaluatePreparedCalculationScenario(
+        prepareCalculationScenario(secondOff, structuralMaster),
+        structuralVersions,
+      ).result,
     ).toMatchObject({
       status: 'unavailable',
       reason: 'selectedAttackProfileChanged',
@@ -5508,6 +5684,161 @@ describe('scenario calculation facade', () => {
       structuralMaster,
     );
     expect(recovery).toMatchObject({ status: 'committed', result: { status: 'calculated' } });
+
+    const cardEffect = {
+      ...modifierEffect('non-attack-card', 'upCommandall', 300, ['arts'], 'ptAll'),
+      requirement: {
+        recipient: 'partyMember' as const,
+        expression: {
+          kind: 'any' as const,
+          requirements: [{ kind: 'card' as const, card: 'arts' as const, present: true }],
+        },
+      },
+    };
+    const cardMaster = parseTestMaster({
+      ...structuralMaster,
+      servants: structuralMaster.servants.map((servant) => ({
+        ...servant,
+        noblePhantasmVariantGroups: servant.noblePhantasmVariantGroups.map((group) => ({
+          ...group,
+          variants: group.variants.map((variant) =>
+            variant.kind === 'attack' ? { ...variant, card: 'arts' as const } : variant,
+          ),
+        })),
+        skills: [
+          ...servant.skills,
+          { ...servant.skills[0]!, id: 'card-skill', slot: 3, effects: [cardEffect] },
+        ],
+      })),
+    });
+    const cardScenario: ResolvedScenario = {
+      ...base,
+      preNoblePhantasmPlan: [{ ...command(1), slot: 3 }, command(1), attackCommand],
+      effectDecisions: [
+        {
+          decisionKey: `attacker:attacker:${source.id}:card-skill:non-attack-card:0`,
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate',
+        },
+      ],
+    };
+    const cardPrepared = prepareCalculationScenarioWithPolicy(
+      cardScenario,
+      cardMaster,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    const cardOn = requireExecutableCalculation(
+      evaluatePreparedCalculationScenario(cardPrepared, structuralVersions),
+    );
+    const cardProjection = cardOn.effects.find((effect) => effect.source.skillId === 'card-skill')!;
+    expect({
+      outcome: cardProjection.outcome,
+      explanation: cardProjection.explanation,
+    }).toMatchObject({
+      outcome: 'notApplied',
+      explanation: { code: 'unresolved' },
+    });
+    const cardOffScenario = applyEffectControlPresentationDecision(
+      cardScenario,
+      cardOn.effectControls.find(({ key }) => key === cardProjection.projectionKey)!,
+      false,
+      cardOn.activationRequirements,
+      cardOn.effects,
+      cardOn.effectInputs,
+    );
+    const cardOffPrepared = prepareCalculationScenarioWithPolicy(
+      cardOffScenario,
+      cardMaster,
+      { kind: 'calculator' },
+      {},
+      true,
+    );
+    const cardOff = requireExecutableCalculation(
+      evaluatePreparedCalculationScenario(cardOffPrepared, structuralVersions),
+    );
+    expect(
+      cardOff.effects.find((effect) => effect.projectionKey === cardProjection.projectionKey),
+    ).toMatchObject({ outcome: 'notApplied', explanation: { code: 'disabled' } });
+    expect(cardOff.result.rows).toEqual(cardOn.result.rows);
+    expect(calculateScenario(cardScenario, cardMaster, structuralVersions).result).toEqual(
+      cardOn.result,
+    );
+    expect(calculateScenario(cardOffScenario, cardMaster, structuralVersions).result).toEqual(
+      cardOff.result,
+    );
+    const cardContinuity = cardOn.profileContinuity;
+    if (!cardContinuity || cardContinuity.kind !== 'matched')
+      throw new TypeError('card_control_profile_missing');
+    const identity = selectedProfileControlIdentity(
+      source.id,
+      cardProjection,
+      cardContinuity.intendedProfileKey,
+    );
+    const observation: ProductionUserControlObservation = {
+      identity,
+      enabled: userControlSideObservation(
+        cardProjection,
+        cardOn,
+        cardOn.executionObservation!,
+        cardPrepared,
+      ),
+      excluded: userControlSideObservation(
+        cardProjection,
+        cardOff,
+        cardOff.executionObservation!,
+        cardOffPrepared,
+      ),
+    };
+    const gate = (candidate: ProductionUserControlObservation) =>
+      auditProductionUserControlObservations({
+        expectedProjectionCount: 1,
+        expectedIdentities: [identity],
+        observations: [candidate],
+      });
+    expect(gate(observation).status).toBe('passed');
+    for (const change of [
+      'missing',
+      'knownCard',
+      'write',
+      'wrongDecision',
+      'foreignBinding',
+      'wrongReason',
+    ] as const) {
+      const corrupt = structuredClone(observation);
+      const proof = corrupt.enabled.unresolvedCardSource!;
+      if (change === 'missing') delete corrupt.enabled.unresolvedCardSource;
+      else if (change === 'knownCard' || change === 'write') {
+        const receipt = proof.receipt;
+        if (receipt.status !== 'completed') throw new TypeError('completed_card_receipt_required');
+        proof.receipt = {
+          ...receipt,
+          transaction: {
+            ...receipt.transaction,
+            ...(change === 'knownCard'
+              ? { before: { ...receipt.transaction.before, card: 'arts' as const } }
+              : {
+                  after: {
+                    ...receipt.transaction.after,
+                    inputFacts: new Map([
+                      ...receipt.transaction.after.inputFacts,
+                      ['forged-write', { kind: 'known' as const, value: 1, support: [] }],
+                    ]),
+                  },
+                }),
+          },
+        };
+      } else if (change === 'wrongDecision') proof.decision.operationEnabled = false;
+      else if (change === 'foreignBinding')
+        proof.receipt = { ...proof.receipt, binding: structuredClone(proof.receipt.binding) };
+      else
+        corrupt.enabled.projections = corrupt.enabled.projections.map((projection) => ({
+          ...projection,
+          explanationCode: 'disabled' as const,
+        }));
+      expect(gate(corrupt).status, change).toBe('failed');
+    }
   });
 
   it('keeps ordinary stochastic ownership in the executor for a mixed preparation skill', () => {

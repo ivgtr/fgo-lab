@@ -1,9 +1,10 @@
+import type { RankingCandidateEvent } from './rankingCandidateBatch';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { createStaticAttackProfiles } from './attackProfile';
 import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
@@ -295,6 +296,7 @@ describe('production battle-point paths', () => {
           masterDataLocale: 'ja-JP' as const,
           masterDataVersion: master.version,
         };
+        const candidateEvents: RankingCandidateEvent[] = [];
         const candidateSet = calculateRankingCandidateSet(
           servant,
           master,
@@ -302,6 +304,9 @@ describe('production battle-point paths', () => {
           conditions,
           versions,
           false,
+          undefined,
+          false,
+          (event) => candidateEvents.push(event),
         );
         const attackProfile = createStaticAttackProfiles(servant)[0]!;
         const result = unresolvedProfileResult(candidateSet, attackProfile);
@@ -315,7 +320,7 @@ describe('production battle-point paths', () => {
               : null,
           plan: result.status === 'calculated' ? result.detail.scenario.preNoblePhantasmPlan : [],
           candidateUpperBound: candidateSet.plan.candidateUpperBound,
-          candidateCount: candidateSet.plan.candidateKeys.length,
+          candidateCount: candidateSet.candidateInventory.generated,
         };
         await artifact(task.meta, artifactPath, record);
         expect(result.status).toBe('calculated');
@@ -327,7 +332,7 @@ describe('production battle-point paths', () => {
         }
         expect(record.maximum).toBe(
           Math.max(
-            ...candidateSet.executions.flatMap((execution) =>
+            ...candidateEvents.flatMap(({ execution }) =>
               execution.result.status === 'calculated'
                 ? execution.result.rows
                     .filter(({ npLevel }) => npLevel === 2)

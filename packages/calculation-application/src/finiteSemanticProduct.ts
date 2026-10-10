@@ -4,7 +4,7 @@ export interface FiniteSemanticDimension<T> {
 }
 
 export interface FiniteSemanticProduct<T> {
-  candidates: readonly Readonly<Record<string, T>>[];
+  candidates: Iterable<Readonly<Record<string, T>>>;
   upperBound: number;
 }
 
@@ -35,10 +35,22 @@ export function finiteSemanticProduct<T>(
   if (bound.status === 'limitExceeded')
     throw new RangeError(`${limitCode}:${String(bound.upperBound)}`);
   const { upperBound } = bound;
-  let candidates: Readonly<Record<string, T>>[] = [{}];
-  for (const dimension of dimensions)
-    candidates = candidates.flatMap((candidate) =>
-      dimension.values.map((value) => ({ ...candidate, [dimension.key]: value })),
-    );
+  const candidates = {
+    *[Symbol.iterator]() {
+      function* visit(
+        index: number,
+        candidate: Readonly<Record<string, T>>,
+      ): Generator<Readonly<Record<string, T>>> {
+        const dimension = dimensions[index];
+        if (!dimension) {
+          yield candidate;
+          return;
+        }
+        for (const value of dimension.values)
+          yield* visit(index + 1, { ...candidate, [dimension.key]: value });
+      }
+      yield* visit(0, {});
+    },
+  };
   return { candidates, upperBound };
 }

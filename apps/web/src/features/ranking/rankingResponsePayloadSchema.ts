@@ -276,9 +276,16 @@ const possibilityCertificateSchema: z.ZodType<RankingPolicyDetail['possibilityCe
         selectedWitness: stochasticWitnessSchema,
         attemptedExecutionCount: z.number().int().positive(),
         illegalWitnessCount: z.number().int().nonnegative(),
-        illegalWitnesses: z.array(z.object({
-          witness: stochasticWitnessSchema, key: z.string().min(1),
-        }).strict()).max(4096),
+        illegalWitnesses: z
+          .array(
+            z
+              .object({
+                witness: stochasticWitnessSchema,
+                key: z.string().min(1),
+              })
+              .strict(),
+          )
+          .max(4096),
         branching: z.array(
           z
             .object({

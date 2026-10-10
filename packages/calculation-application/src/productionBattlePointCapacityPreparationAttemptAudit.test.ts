@@ -618,6 +618,7 @@ const preparations = new Map<
     positive: ReturnType<typeof run>;
     normal: ReturnType<typeof run>;
     ranking: ReturnType<typeof run>;
+    rankingNormal: ReturnType<typeof run>;
   }
 >();
 function prepared(spec: Spec) {
@@ -628,6 +629,7 @@ function prepared(spec: Spec) {
       positive: run(master, spec),
       normal: run(master, spec, false),
       ranking: run(master, spec, true, true),
+      rankingNormal: run(master, spec, false, true),
     };
     preparations.set(spec, saved);
   }
@@ -689,20 +691,17 @@ const groups = [
   'state-modifier-identity',
   'state-modifier-values',
   'state-retained',
-  'commit-downstream',
+  'commit-downstream-native',
+  'commit-downstream-fabricated',
   'result',
 ] as const;
 for (const spec of specs)
-  for (const group of groups.flatMap((group) =>
-    spec.name === 'prior-capacity-fixed-commit' && group === 'commit-downstream'
-      ? ([group, 'commit-downstream-fabricated'] as const)
-      : [group],
-  ))
+  for (const group of groups)
     it(
       `isolates capacity attempt ${spec.name} ${group}`,
       productionAuditTestOptions([`tsk-08-bp-capacity-attempt-${spec.name}-${group}.json`]),
       async ({ task }) => {
-        const { positive, normal, ranking } = prepared(spec);
+        const { positive, normal, ranking, rankingNormal } = prepared(spec);
         const family = group.startsWith('missing-')
           ? 'missing'
           : group.startsWith('identity-')
@@ -711,7 +710,7 @@ for (const spec of specs)
               ? 'state'
               : group;
         const accepts = (name: string) => {
-          if (spec.name === 'prior-capacity-fixed-commit' && group.startsWith('commit-downstream'))
+          if (group.startsWith('commit-downstream'))
             return group === 'commit-downstream-fabricated'
               ? name.startsWith('fabricated-')
               : !name.startsWith('fabricated-');
@@ -1402,6 +1401,7 @@ for (const spec of specs)
           },
           normal: { result: normal.result, calculation: normal.calculation },
           ranking: { gate: ranking.gate, result: ranking.result },
+          rankingNormal: { result: rankingNormal.result, calculation: rankingNormal.calculation },
           negatives: negatives.map(({ proof, envelope, ...negative }) => ({
             ...negative,
             proof:
@@ -1411,16 +1411,12 @@ for (const spec of specs)
           })),
         };
         const diagnostic = encodeProductionAuditDiagnostic(payload);
-        const roundTrip = equalProductionAuditDiagnosticValues(
-          decodeProductionAuditDiagnostic(diagnostic),
-          payload,
-        );
+        const memory = decodeProductionAuditDiagnostic(diagnostic);
+        const roundTrip = equalProductionAuditDiagnosticValues(memory, payload);
         const encoded = serializeProductionAuditArtifact(diagnostic);
         const savedRoundTrip = equalProductionAuditDiagnosticValues(
-          decodeProductionAuditDiagnostic(
-            decodeProductionAuditArtifact(encoded) as typeof diagnostic,
-          ),
-          payload,
+          decodeProductionAuditDiagnostic(decodeProductionAuditArtifact(encoded)),
+          memory,
         );
         const file = `tsk-08-bp-capacity-attempt-${spec.name}-${group}.json`;
         await writeProductionAuditArtifact(task.meta, file, {
@@ -1437,7 +1433,7 @@ for (const spec of specs)
             (decodeStoredProductionAuditArtifact(savedBytes) as { encoded: typeof diagnostic })
               .encoded,
           ),
-          payload,
+          memory,
         );
         expect(roundTrip).toBe(true);
         expect(savedRoundTrip).toBe(true);
@@ -1466,7 +1462,8 @@ for (const spec of specs)
         expect(ranking.gate.failures).toEqual([]);
         expect(positive.gate.boundaries[0]?.kind).toBe(spec.kind);
         expect(positive.result).toEqual(normal.result);
-        expect(positive.result).toEqual(ranking.result);
+        expect(ranking.result).toEqual(rankingNormal.result);
+        expect(ranking.result).toEqual(ranking.calculation.result);
         expect(positive.result).toEqual(positive.calculation.result);
         const observed = a.writes.flatMap((w) =>
           w.receipts.map((r) =>
@@ -1717,12 +1714,26 @@ it('preserves distinct equal capacity attempt Set members and Map keys and rejec
   const proof = battlePointCapacityAttemptValueProof(original.source);
   const restored = materializeBattlePointCapacityValue(proof);
   expect(equalProductionAuditDiagnosticValues(restored, expected)).toBe(true);
-  expect(
-    equalProductionAuditDiagnosticValues(
-      decodeProductionAuditDiagnostic(encodeProductionAuditDiagnostic(restored)),
-      expected,
-    ),
-  ).toBe(false);
+  const roundTrip = decodeProductionAuditDiagnostic(encodeProductionAuditDiagnostic(restored));
+  expect(equalProductionAuditDiagnosticValues(roundTrip, expected)).toBe(true);
+  const containers = Reflect.get(
+    Reflect.get(roundTrip as object, 'prepared'),
+    'forbiddenContainers',
+  ) as { set: Set<unknown>; map: Map<unknown, unknown> };
+  expect(containers.set.size).toBe(2);
+  expect(containers.map.size).toBe(2);
+  const firstMember = containers.set.values().next().value;
+  containers.set.delete(firstMember);
+  expect(equalProductionAuditDiagnosticValues(roundTrip, expected)).toBe(false);
+  const mapRoundTrip = decodeProductionAuditDiagnostic(encodeProductionAuditDiagnostic(restored));
+  const mapContainers = Reflect.get(
+    Reflect.get(mapRoundTrip as object, 'prepared'),
+    'forbiddenContainers',
+  ) as { set: Set<unknown>; map: Map<unknown, unknown> };
+  expect(equalProductionAuditDiagnosticValues(mapRoundTrip, expected)).toBe(true);
+  const firstKey = mapContainers.map.keys().next().value;
+  mapContainers.map.delete(firstKey);
+  expect(equalProductionAuditDiagnosticValues(mapRoundTrip, expected)).toBe(false);
   const input = {
     selections: [original.selection],
     expected: [original.program],

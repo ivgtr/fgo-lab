@@ -308,7 +308,9 @@ export function reconcilePreparationBattlePoints(
       actorId: servant.id,
       traits: [
         ...(findActorForm(servant, state.currentFormId)?.traits ?? []),
-        ...[...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) => present ? [trait] : []),
+        ...[...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) =>
+          present ? [trait] : [],
+        ),
       ],
     },
     ...sources.map((source) => ({

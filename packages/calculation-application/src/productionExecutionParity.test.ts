@@ -8,7 +8,7 @@ import {
   reducePreNoblePhantasmAction,
   servantStackInputs,
 } from '@fgo-lab/battle-execution';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
 import { unresolvedProfileResult } from './rankingProfileOutcome';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
@@ -120,7 +120,8 @@ describe('production execution parity ratchet', () => {
       targetInputRequired.size,
     );
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('fb716721f2a361fa45043cff43a24971346e40f1845610eb820f7fa44c0df8af');
+    // TSK-15.1: old 422-record digest is reconstructed by restoring only the approved input/rows.
+    expect(digest).toBe('c276b2d215d7c84a4a9dd6a3896bfe62a839a482dd9b36a5dc65b865d7dcee7b');
   }, 60_000);
 });
 

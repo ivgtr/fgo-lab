@@ -47,7 +47,7 @@ it('captures complete typed values without exposing mutable live containers', ()
   expect(equal(materialize(proof), saved)).toBe(false);
 });
 
-it('preserves ordered distinct equal Set members and Map keys and exposes codec loss', () => {
+it('preserves ordered distinct equal Set members and Map keys and rejects independent losses', () => {
   const a = { value: 1 },
     b = { value: 1 };
   const raw = {
@@ -65,9 +65,17 @@ it('preserves ordered distinct equal Set members and Map keys and exposes codec 
   expect([...restored.map.keys()]).toEqual([...restored.set]);
   expect([...restored.map.keys()][0]).toBe([...restored.set][0]);
   expect(equal(raw, restored)).toBe(true);
-  expect(
-    equal(raw, decodeProductionAuditDiagnostic(encodeProductionAuditDiagnostic(restored))),
-  ).toBe(false);
+  const encoded = encodeProductionAuditDiagnostic(restored);
+  const decoded = decodeProductionAuditDiagnostic(encoded) as typeof raw;
+  expect(equal(raw, decoded)).toBe(true);
+  expect(decoded.set.size).toBe(2);
+  expect(decoded.map.size).toBe(2);
+  const missingSetMember = decodeProductionAuditDiagnostic(encoded) as typeof raw;
+  missingSetMember.set.delete([...missingSetMember.set][0]!);
+  expect(equal(raw, missingSetMember)).toBe(false);
+  const missingMapKey = decodeProductionAuditDiagnostic(encoded) as typeof raw;
+  missingMapKey.map.delete([...missingMapKey.map.keys()][0]!);
+  expect(equal(raw, missingMapKey)).toBe(false);
 });
 
 it('rejects invalid or unknown value forms without invoking accessors or dropping properties', () => {

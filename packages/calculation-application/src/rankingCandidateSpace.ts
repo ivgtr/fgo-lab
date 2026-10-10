@@ -131,11 +131,13 @@ function buildPopulationCandidateInputs(input: {
   const { canonicalInputs, populationDefinitions, inputDefinitions, definitionsByKey, sources } =
     input;
   const populationInputKeys = new Set(populationDefinitions.map((definition) => definition.key));
-  const legalPopulationInputs = finiteSemanticProduct(
-    canonicalInputs.filter((candidate) => populationInputKeys.has(candidate.key)),
-    MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
-    'population_input_product_limit',
-  ).candidates.filter((values) => !populationInputIssue(inputDefinitions, values));
+  const legalPopulationInputs = Array.from(
+    finiteSemanticProduct(
+      canonicalInputs.filter((candidate) => populationInputKeys.has(candidate.key)),
+      MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
+      'population_input_product_limit',
+    ).candidates,
+  ).filter((values) => !populationInputIssue(inputDefinitions, values));
   const transferDonorDefinitions = populationDefinitions.filter(
     (definition): definition is Extract<PopulationInputDefinition, { kind: 'transferDonor' }> =>
       definition.kind === 'transferDonor',
@@ -554,7 +556,7 @@ export function compileRankingCandidateSpaces(
   });
 }
 
-function materializeProgramCandidates(input: {
+function* iterateProgramCandidates(input: {
   conditions: Pick<
     RankingPolicyConditions,
     'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
@@ -562,7 +564,7 @@ function materializeProgramCandidates(input: {
   policyKey: string;
   attackProfile: AttackProfile;
   domain: ProgramCandidateDomain;
-}): RankingCandidate[] {
+}): Generator<RankingCandidate> {
   const { conditions, policyKey, attackProfile, domain } = input;
   const product = finiteSemanticProduct(
     programDimensions(domain),
@@ -574,7 +576,7 @@ function materializeProgramCandidates(input: {
   const hasAreaContribution = domain.semantics.operations.some(
     (operation) => isAttackerDamageContribution(operation) && isAreaDamageContribution(operation),
   );
-  return product.candidates.map((indexes) => {
+  for (const indexes of product.candidates) {
     const startNpGauge = domain.initialNpGauge;
     const canonicalInputValues = Object.fromEntries(
       domain.canonicalInputs.map(({ key, values }) => [
@@ -634,7 +636,7 @@ function materializeProgramCandidates(input: {
       fieldCandidateKey: field.key,
       quantityCandidateKey: quantity.key,
     };
-    return {
+    yield {
       key: JSON.stringify(evidence),
       attackProfile: domain.program.attackProfile,
       expectedTerminalFormId: domain.program.expectedTerminalFormId,
@@ -643,24 +645,26 @@ function materializeProgramCandidates(input: {
       withoutAreaContributionPolicy: hasAreaContribution ? withoutAreaContributionPolicy : null,
       evidence,
     };
-  });
+  }
 }
 
-export function materializeRankingCandidateSpace(input: {
+export function* iterateRankingCandidateSpace(input: {
   conditions: Pick<
     RankingPolicyConditions,
     'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
   >;
   space: Extract<RankingCandidateSpace, { status: 'ready' }>;
-}): readonly RankingCandidate[] {
-  const candidates = input.space.programs.flatMap((domain) =>
-    materializeProgramCandidates({
+}): Generator<RankingCandidate> {
+  let count = 0;
+  for (const domain of input.space.programs)
+    for (const candidate of iterateProgramCandidates({
       conditions: input.conditions,
       domain,
       policyKey: input.space.policyKey,
       attackProfile: input.space.attackProfile,
-    }),
-  );
-  assertRankingCandidateMaterialization(candidates.length, input.space.certificate);
-  return candidates;
+    })) {
+      count += 1;
+      yield candidate;
+    }
+  assertRankingCandidateMaterialization(count, input.space.certificate);
 }

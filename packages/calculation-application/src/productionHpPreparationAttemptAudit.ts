@@ -1,8 +1,24 @@
 import { projectBattleTraitPresence, type PreNoblePhantasmState } from '@fgo-lab/battle-execution';
-function nativePresence(state: PreNoblePhantasmState | undefined) { return state === undefined ? undefined : { attackerState: new Set([...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) => present ? [trait] : [])), targetState: new Set([...projectBattleTraitPresence(state, 'targetState')].flatMap(([trait, present]) => present ? [trait] : [])) }; }
+function nativePresence(state: PreNoblePhantasmState | undefined) {
+  return state === undefined
+    ? undefined
+    : {
+        attackerState: new Set(
+          [...projectBattleTraitPresence(state, 'attackerState')].flatMap(([trait, present]) =>
+            present ? [trait] : [],
+          ),
+        ),
+        targetState: new Set(
+          [...projectBattleTraitPresence(state, 'targetState')].flatMap(([trait, present]) =>
+            present ? [trait] : [],
+          ),
+        ),
+      };
+}
 import { preparationHpActionsFor } from '@fgo-lab/battle-execution/preparation-audit';
 import {
   firstCanonicalAuditDifference,
+  createCanonicalAuditValueComparison,
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
@@ -15,7 +31,10 @@ import {
   type HpPreparationSelection,
 } from './productionHpPreparationAudit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
-import { scalarQuantitySnapshot as snapshot } from './productionScalarQuantityAudit';
+import {
+  createScalarQuantitySnapshotter,
+  scalarQuantitySnapshot as snapshot,
+} from './productionScalarQuantityAudit';
 import type { CalculationExecution, PreparedCalculationScenario } from './scenario';
 
 type Selection = HpPreparationSelection;
@@ -98,7 +117,7 @@ function anchors(source: HpPreparationAttemptSource): Record<string, unknown> {
   source.transitions?.forEach((t, i) => {
     result[`transition.${i}.before`] = t.before;
     result[`transition.${i}.result`] = t.result;
-    t.hpActions?.forEach((a, j) => {
+    (t as Partial<typeof t>).hpActions?.forEach((a, j) => {
       const path = `action.${i}.${j}`;
       result[path] = a;
       result[`${path}.writes`] = a.writes;
@@ -184,7 +203,7 @@ function inspectAction(source: HpPreparationAttemptSource, index: number, c: Che
       true,
       source.transitions![index - 1]!.result.state === transition.before,
     );
-  const hp = transition.hpActions?.[0];
+  const hp = (transition as Partial<typeof transition>).hpActions?.[0];
   const attempt = source.attempts?.[index]?.[0];
   if (!hp) return { changed: 0, nativeNonCommit: false };
   c(
@@ -550,53 +569,133 @@ function sealedReason(path: string): HpAttemptReason {
               ? 'hpAttemptStateMismatch'
               : 'hpAttemptIdentityMismatch';
 }
-function inspectSealed(
+type AuditDifference = ReturnType<typeof firstCanonicalAuditDifference>;
+type AuditComparison = (
   expected: CanonicalAuditValue,
   actual: CanonicalAuditValue,
-  path: string,
-  c: Checker,
-): void {
-  if (equal(expected, actual)) return;
-  const reason = sealedReason(path);
-  const absent = (value: CanonicalAuditValue) =>
-    value !== null &&
-    typeof value === 'object' &&
-    !Array.isArray(value) &&
-    Object.keys(value).length === 1 &&
-    Reflect.get(value, 'kind') === 'absent';
-  if (absent(expected) || absent(actual)) {
-    c(reason, path, expected, actual);
-    return;
-  }
-  if (
-    expected &&
-    actual &&
-    typeof expected === 'object' &&
-    typeof actual === 'object' &&
-    Array.isArray(expected) === Array.isArray(actual)
-  ) {
-    for (const key of new Set([...Object.keys(expected), ...Object.keys(actual)])) {
-      if (Object.hasOwn(expected, key) !== Object.hasOwn(actual, key))
-        c(
-          sealedReason(`${path}.${key}`),
-          `${path}.${key}.present`,
-          Object.hasOwn(expected, key),
-          Object.hasOwn(actual, key),
-        );
-      inspectSealed(
-        snapshot(Reflect.get(expected, key)),
-        snapshot(Reflect.get(actual, key)),
-        `${path}.${key}`,
-        c,
-      );
+) => AuditDifference;
+function createAuditComparison(): AuditComparison {
+  const compare = createCanonicalAuditValueComparison();
+  const pairs = new WeakMap<object, WeakMap<object, AuditDifference>>();
+  return (expected, actual) => {
+    const objects =
+      expected !== null &&
+      actual !== null &&
+      typeof expected === 'object' &&
+      typeof actual === 'object';
+    if (objects && pairs.get(expected)?.has(actual)) return pairs.get(expected)!.get(actual)!;
+    const relative = compare(expected, actual);
+    const difference = relative ? { identity: 'hp', ...relative } : null;
+    if (objects) {
+      let actuals = pairs.get(expected);
+      if (!actuals) {
+        actuals = new WeakMap();
+        pairs.set(expected, actuals);
+      }
+      actuals.set(actual, difference);
     }
-  } else c(reason, path, expected, actual);
+    return difference;
+  };
 }
+
+type SealedCheck = { kind: 'check'; expected: CanonicalAuditValue; actual: CanonicalAuditValue };
+type SealedEdge = {
+  kind: 'edge';
+  key: string;
+  presence: SealedCheck | undefined;
+  child: SealedNode;
+};
+type SealedNode = readonly (SealedCheck | SealedEdge)[];
+/** Only the synchronous audit below supplies its private, owned projections.
+ * Complete nodes contain local edges, never duplicated descendant path lists. Their
+ * draft, edge records and arrays cannot escape before sealing. This invocation ends
+ * before checks return to callers, so later input mutations get a fresh comparison/DAG.
+ */
+function createSealedInspector(compare: AuditComparison) {
+  const completed = new WeakMap<object, WeakMap<object, SealedNode>>();
+  const absentValue = Object.freeze({ kind: 'absent' });
+  const empty = Object.freeze([]) as SealedNode;
+  const absent = (v: CanonicalAuditValue) =>
+    v !== null &&
+    typeof v === 'object' &&
+    !Array.isArray(v) &&
+    Object.keys(v).length === 1 &&
+    Reflect.get(v, 'kind') === 'absent';
+  const compile = (expected: CanonicalAuditValue, actual: CanonicalAuditValue): SealedNode => {
+    const objects =
+      expected !== null &&
+      actual !== null &&
+      typeof expected === 'object' &&
+      typeof actual === 'object';
+    if (objects) {
+      const prior = completed.get(expected)?.get(actual);
+      if (prior) return prior;
+    }
+    if (compare(expected, actual) === null) return empty;
+    const draft: (SealedCheck | SealedEdge)[] = [];
+    if (
+      !absent(expected) &&
+      !absent(actual) &&
+      objects &&
+      Array.isArray(expected) === Array.isArray(actual)
+    ) {
+      for (const key of new Set([...Object.keys(expected), ...Object.keys(actual)])) {
+        const e = Object.hasOwn(expected, key),
+          a = Object.hasOwn(actual, key);
+        const child = compile(
+          Reflect.get(expected, key) === undefined
+            ? absentValue
+            : (Reflect.get(expected, key) as CanonicalAuditValue),
+          Reflect.get(actual, key) === undefined
+            ? absentValue
+            : (Reflect.get(actual, key) as CanonicalAuditValue),
+        );
+        const presence =
+          e === a ? undefined : Object.freeze({ kind: 'check' as const, expected: e, actual: a });
+        if (presence || child.length)
+          draft.push(Object.freeze({ kind: 'edge', key, presence, child }));
+      }
+    } else draft.push(Object.freeze({ kind: 'check', expected, actual }));
+    const sealed = Object.freeze(draft);
+    if (objects) {
+      let actuals = completed.get(expected);
+      if (!actuals) {
+        actuals = new WeakMap();
+        completed.set(expected, actuals);
+      }
+      actuals.set(actual, sealed);
+    }
+    return sealed;
+  };
+  const emit = (node: SealedNode, path: string, c: Checker): void => {
+    for (const entry of node) {
+      if (entry.kind === 'check') c(sealedReason(path), path, entry.expected, entry.actual);
+      else {
+        const childPath = `${path}.${entry.key}`;
+        if (entry.presence)
+          c(
+            sealedReason(childPath),
+            `${childPath}.present`,
+            entry.presence.expected,
+            entry.presence.actual,
+          );
+        emit(entry.child, childPath, c);
+      }
+    }
+  };
+  return (expected: CanonicalAuditValue, actual: CanonicalAuditValue, path: string, c: Checker) =>
+    emit(compile(expected, actual), path, c);
+}
+
 export function auditHpPreparationAttempts(input: {
   selections: readonly Selection[];
   expected: readonly HpPreparationAttemptProgram[];
   observations: readonly HpPreparationAttemptSource[];
 }) {
+  // One audit call owns its projection; caller mutations between calls cannot reuse it.
+  const project = createScalarQuantitySnapshotter();
+  const compare = createAuditComparison();
+  const inspect = createSealedInspector(compare);
   const checks: Check[] = [],
     failures: Failure[] = [];
   const check = (
@@ -610,19 +709,17 @@ export function auditHpPreparationAttempts(input: {
       identity,
       reason,
       checkPath,
-      expected: snapshot(expected),
-      actual: snapshot(actual),
+      expected: project(expected),
+      actual: project(actual),
     };
     checks.push(entry);
-    const difference = firstCanonicalAuditDifference(
-      [{ identity, value: entry.expected }],
-      [{ identity, value: entry.actual }],
-    );
+    const difference = compare(entry.expected, entry.actual);
     if (difference)
       failures.push({
         ...entry,
         firstDifference: {
           ...difference,
+          identity,
           path: difference.path ? `${checkPath}.${difference.path}` : checkPath,
         },
       });
@@ -682,9 +779,9 @@ export function auditHpPreparationAttempts(input: {
       authority.contract,
       contractDiagnostic(source),
     );
-    const observed = snapshot(hpPreparationAttemptDiagnostic(source));
-    inspectSealed(authority.owner, observed, 'owner', c);
-    if (!equal(authority.owner, observed)) continue;
+    const observed = project(hpPreparationAttemptDiagnostic(source));
+    inspect(project(authority.owner), observed, 'owner', c);
+    if (compare(project(authority.owner), observed) !== null) continue;
     c(
       'hpAttemptIdentityMismatch',
       'transport.master',
@@ -718,7 +815,9 @@ export function auditHpPreparationAttempts(input: {
     if (!source.transitions || !source.transport) continue;
     if (source.prepared.status === 'executable') {
       for (const [i, transition] of source.transitions.entries()) {
-        for (const [j, action] of (transition.hpActions ?? []).entries())
+        for (const [j, action] of (
+          (transition as Partial<typeof transition>).hpActions ?? []
+        ).entries())
           c(
             'hpAttemptNativeMismatch',
             `boundary.committed.${i}.${j}.native`,
@@ -751,7 +850,9 @@ export function auditHpPreparationAttempts(input: {
       boundaries.push({ identity, kind: 'outsideActorTraits', changed: 0 });
       continue;
     }
-    const capturedActions = source.transitions.flatMap((t) => t.hpActions ?? []);
+    const capturedActions = source.transitions.flatMap(
+      (t) => (t as Partial<typeof t>).hpActions ?? [],
+    );
     if (
       capturedActions.some(
         (action) =>
@@ -791,13 +892,15 @@ export function auditHpPreparationAttempts(input: {
           changed: inspected.changed,
           ...(inspected.changed === 0 && inspected.nativeNonCommit
             ? {
-                unchangedReason: t.hpActions?.[0]?.writes.some((w) =>
+                unchangedReason: (t as Partial<typeof t>).hpActions?.[0]?.writes.some((w) =>
                   w.receipts.some((r) => r.before.kind === 'absolute' && r.before.current === 0),
                 )
                   ? 'dead'
-                  : t.hpActions?.[0]?.writes.some((w) => w.receipts.length > 0)
+                  : (t as Partial<typeof t>).hpActions?.[0]?.writes.some(
+                        (w) => w.receipts.length > 0,
+                      )
                     ? 'noOp'
-                    : t.hpActions?.[0]?.writes.length
+                    : (t as Partial<typeof t>).hpActions?.[0]?.writes.length
                       ? 'notApplicable'
                       : 'writerNotReached',
               }

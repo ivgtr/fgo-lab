@@ -58,7 +58,7 @@ import { populationInputIssue } from './populationCounts';
 import { operationRecipient, resolveResourceTargetPolicy } from './effectRouting';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import { applyBuffInstanceMutation } from './buffInstances';
-import { servantBuffCountInputs } from './stackQuantities';
+import { servantInitialBuffCounts } from './stackQuantities';
 import { requiredOcConditionInput, providedSourceConditionInputs } from './ocConditionInputs';
 import {
   closePreparationConditionReads,
@@ -167,8 +167,11 @@ export function executePreparationOc(args: {
   activateFormKey?: string;
   terminalNp?: boolean;
 }) {
+  // Source selection is an action-owned draft until the native transaction seals it.
+  // Every observer and step points at this owner, including the OC cell selected at NP use.
+  const executionSources = args.sources.map((source) => ({ ...source }));
   const buffInputs = [
-    ...servantBuffCountInputs(args.servant),
+    ...servantInitialBuffCounts(args.servant).inputs,
     ...[
       ...(args.context.initialSources ?? []),
       ...(args.context.terminalSources ?? []),
@@ -204,7 +207,7 @@ export function executePreparationOc(args: {
         actionId: args.actionId,
         sourceExecutions: [],
         rates: { selections: [], queries: [], reads: [] },
-        sources: args.sources,
+        sources: executionSources,
         start: args.state,
         stepOrigins: [],
         reached: [],
@@ -219,7 +222,7 @@ export function executePreparationOc(args: {
     ? {
         actionId: args.actionId,
         start: args.state,
-        sources: args.sources,
+        sources: executionSources,
         steps: [],
         operations: [],
         modifierReads: [],
@@ -319,7 +322,7 @@ export function executePreparationOc(args: {
       .filter(([key]) => key.startsWith('oc:proc:'))
       .map(([key, value]) => [key.slice('oc:proc:'.length), value]),
   );
-  const sources = args.sources.filter(({ effect }) => effectExecutesInNpProgram(effect));
+  const sources = executionSources.filter(({ effect }) => effectExecutesInNpProgram(effect));
   const hasOcTransaction = sources.some((source) =>
     source.effect.execution.some(
       (operation) =>
@@ -329,7 +332,7 @@ export function executePreparationOc(args: {
     ),
   );
   for (const initialSource of sources) {
-    let source = initialSource;
+    const source = initialSource;
     const sourceFirstStep = steps.length;
     const origins = [{ index: sourceFirstStep, source, operationIndex: null as number | null }];
     let program = compileOcSourceProgram(source);
@@ -452,7 +455,7 @@ export function executePreparationOc(args: {
         : undefined;
       if (args.npUse && !npReceipt) throw new TypeError('missing_source_np_use_receipt');
       if (npReceipt) {
-        source = { ...source, valueSetIndex: npReceipt.effectiveOc - 1 };
+        source.valueSetIndex = npReceipt.effectiveOc - 1;
         program = { ...program, source };
       }
       sourceState = current;
@@ -691,26 +694,33 @@ export function executePreparationOc(args: {
           if (compiled.length > 1) throw new TypeError('duplicate_preparation_modifier_operation');
           const candidate = compiled[0];
           if (candidate?.kind === 'addModifier' && candidate.valueExpression) {
-            const result = resolveModifierValue(candidate, {
-              ...current,
-              actorFormId: current.currentFormId,
-              conditionReadClock: {
-                phase: 'operation',
+            let hpRead: ModifierValueRead['hpRead'];
+            const result = resolveModifierValue(
+              candidate,
+              {
+                ...current,
                 actorFormId: current.currentFormId,
-                actor: program.conditionActor === 'source' ? source.sourceInstanceId : 'attacker',
-                actionId: args.actionId,
-                operationId: candidate.operationId,
-                sourceInstanceId: source.sourceInstanceId,
-                occurrenceId: source.effect.occurrenceId,
-                valueSetIndex: source.valueSetIndex,
-                valueIndex: source.valueIndex,
+                conditionReadClock: {
+                  phase: 'operation',
+                  actorFormId: current.currentFormId,
+                  actor: program.conditionActor === 'source' ? source.sourceInstanceId : 'attacker',
+                  actionId: args.actionId,
+                  operationId: candidate.operationId,
+                  sourceInstanceId: source.sourceInstanceId,
+                  occurrenceId: source.effect.occurrenceId,
+                  valueSetIndex: source.valueSetIndex,
+                  valueIndex: source.valueIndex,
+                },
+                quantities: {
+                  ...current.quantities,
+                  attackerHpPermille: hpPermille(current.hp?.actors.attacker),
+                },
               },
-              quantities: {
-                ...current.quantities,
-                attackerHpPermille: hpPermille(current.hp?.actors.attacker),
+              (read) => {
+                hpRead = read;
               },
-            });
-            modifierValueReads.push({ operationIndex, result });
+            );
+            modifierValueReads.push({ operationIndex, result, ...(hpRead ? { hpRead } : {}) });
           }
           return { kind: 'skip', outcome: 'notApplicable' };
         });
@@ -854,7 +864,11 @@ export function executePreparationOc(args: {
         });
         continue;
       }
-      if (operation.kind === 'resourceMutation' && operation.resource === 'criticalStars') {
+      if (
+        operation.kind === 'resourceMutation' &&
+        operation.resource === 'criticalStars' &&
+        operation.unit === 'fixed'
+      ) {
         steps.push(() => {
           if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
           const activationRead = requiredPreparationConditionRead(source.effect, activation);

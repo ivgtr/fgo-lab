@@ -1,17 +1,29 @@
 import {
+  resolveScenarioPreparationOutcome,
+  prepareRejectedCalculationDiagnostic,
+  battlePointWitnesses,
+} from './scenarioPreparation';
+import {
+  resolvePreparedOrderedScenario,
+  resolvedCalculationResult,
+  resolveAttackProfileContinuity,
+  manualResolvedInput,
+  rejectedPreparationResolvedInput,
+  invalidResolvedInput,
+} from './calculationExecutionProjection';
+import {
   preparationExecutionStateFor,
   populationLocalActors,
-  projectBattleTraitPresence,
   traitConditionReadScopes,
 } from '@fgo-lab/battle-execution';
 import { calculatorPreparationSkillLevels } from './rankingBasis';
 import type {
   ExecutionPossibilityCertificate,
   StochasticSelection,
+  PreparationExecutionSession,
   RejectedPreparationDiagnostic,
   PreparationActionExecution,
 } from '@fgo-lab/battle-execution';
-import { preparationOcAttemptsFor } from '@fgo-lab/battle-execution/preparation-audit';
 import {
   attachBattlePointPreparationObservation,
   carryBattlePointPreparationObservation,
@@ -19,23 +31,15 @@ import {
   battlePointPreparationRejectionObservationFor,
   type BattlePointPreparationObservation,
 } from './battlePointPreparationObservation';
-import { resolveInitialMaximumHp, type InitialHpUnavailableIssue } from './initialHp';
+import type { InitialHpUnavailableIssue } from './initialHp';
 import {
   executeStochasticPossibilities,
   stochasticWitnessEntries,
   stochasticWitnessKey,
-  collectActivationRequirementOwners,
   executeOrderedScenario,
   executeOrderedScenarioWithAuditObservation,
-  prepareDiagnosticOrderedScenario,
-  executeDiagnosticOrderedScenarioWithAuditObservation,
   prepareOrderedScenario,
-  resolveAttackerFormExecution,
-  battlePointPhase,
-  battlePointPhaseCandidates,
   validateInitialBattlePointPoints,
-  readBattlePoint,
-  type BattlePointState,
   type ActivationRequirementOwner,
   type AppliedPreparationAction,
   type ContributionApplicationPolicy,
@@ -47,24 +51,12 @@ import {
   type PreparationFailureCode,
   type ResolvedAttackerFormExecution,
   type ResolvedCanonicalInputSet,
-  type PreNoblePhantasmState,
-  type PreparationTransitionResult,
 } from '@fgo-lab/battle-execution';
-import {
-  classAttackRate,
-  resolveAttributeAffinity,
-  resolveClassAffinity,
-  servantAttribute,
-} from '@fgo-lab/calc-core';
 import { createDefaultTargetContext } from './targetContext';
 import {
-  deriveCraftEssenceAtk,
-  deriveNpMultipliers,
-  canonicalRequirementLeaves,
   findActorForm,
   findNoblePhantasmVariant,
   getNoblePhantasmVariants,
-  noblePhantasmVariantKey,
   naturalServantLevel,
   type MasterDataSnapshot,
   type ServantMaster,
@@ -78,16 +70,9 @@ import {
   type DamageResolutionInput,
   type ServantBuild,
   type VersionContext,
-  type PreNoblePhantasmCommand,
 } from '@fgo-lab/schema';
-import { calculateDamageResolutionValue, type DamageResolutionValue } from './damageResolution';
+import type { DamageResolutionValue } from './damageResolution';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
-import {
-  attackProfileForSelection,
-  attackProfileKey,
-  createStaticActorFormProfiles,
-} from './attackProfile';
-import { evaluateCalculationEvidence } from './evidence';
 import {
   createEffectInputViewModels,
   resolveCanonicalInputValues,
@@ -464,550 +449,6 @@ export interface CalculationPreparationOptions {
   initialBattlePointPoints?: Readonly<Record<string, number>>;
 }
 
-function damageResolutionInputForNoblePhantasm(
-  scenario: ResolvedCalculationScenario,
-  servant: ServantMaster,
-  noblePhantasm: Extract<NoblePhantasmVariant, { kind: 'attack' }>,
-  master: MasterDataSnapshot,
-  attackerAtk: number,
-  effectiveOvercharge: number,
-  battlePoints?: BattlePointState,
-  observation?: BattlePointPreparationObservation,
-): DamageResolutionInput {
-  const damage = noblePhantasm.damage[0];
-  if (!damage) throw new TypeError(`attack_np_damage_missing:${servant.id}`);
-  const craftEssence = scenario.craftEssence
-    ? master.craftEssences.find(
-        (candidate) => candidate.id === scenario.craftEssence?.craftEssenceId,
-      )
-    : undefined;
-  const parameter =
-    damage.kind === 'battlePointPhase' && battlePoints
-      ? damage.parametersByOvercharge[effectiveOvercharge - 1]?.[scenario.attacker.npLevel - 1]
-      : undefined;
-  const domain =
-    damage.kind === 'battlePointPhase' && battlePoints
-      ? master.battlePointDomains.find((candidate) => candidate.id === String(parameter?.targetId))
-      : undefined;
-  const value =
-    domain && battlePoints ? readBattlePoint(battlePoints, 'attacker', domain.id) : undefined;
-  const phase =
-    damage.kind === 'battlePointPhase' && battlePoints
-      ? domain
-        ? battlePointPhase(domain, value)
-        : null
-      : scenario.battleState.battlePointPhase;
-  const input: DamageResolutionInput = {
-    attackerId: servant.id,
-    attackerLevel: scenario.attacker.level,
-    attackerAtk,
-    fouAtk: scenario.explicitOverrides.fouAtk ?? scenario.attacker.fouAtk,
-    craftEssenceId: scenario.craftEssence?.craftEssenceId ?? null,
-    craftEssenceAtk:
-      scenario.explicitOverrides.craftEssenceAtk ??
-      (craftEssence && scenario.craftEssence
-        ? deriveCraftEssenceAtk(
-            craftEssence,
-            scenario.craftEssence.level,
-            scenario.craftEssence.limitBreak,
-          )
-        : 0),
-    npLevel: scenario.attacker.npLevel,
-    overcharge: effectiveOvercharge,
-    npMultipliers: deriveNpMultipliers(damage, effectiveOvercharge),
-    damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
-    cardType: noblePhantasm.card,
-    classAttackRate: scenario.explicitOverrides.classAttackRate ?? classAttackRate(servant.classId),
-    classAffinity: resolveClassAffinity(servant.classId, scenario.targetContext.class),
-    attributeAffinity: resolveAttributeAffinity(
-      servantAttribute(servant.traits),
-      scenario.targetContext.attribute,
-    ),
-    attackBuff: 0,
-    defenseBuff: scenario.enemyDefenseBuff,
-    cardBuff: 0,
-    cardResistance: 0,
-    npDamageBuff: 0,
-    npResistance: 0,
-    powerMod: 0,
-    eventDamageBuff: 0,
-    npSpecialMultipliers: [1, 1, 1, 1, 1],
-    specialDamageBuff: 0,
-    specialResistance: 0,
-    flatDamage: 0,
-    damageCut: 0,
-    ignoreDamageCut: false,
-    fieldTraits: [],
-    attackerStateTraits: [],
-    attackerHpPermille: scenario.attackerHpPermille,
-    targetRarity: null,
-    targetStateTraits: [],
-    battlePointPhase: phase,
-    target: {
-      classId:
-        scenario.targetContext.class.kind === 'concrete'
-          ? scenario.targetContext.class.classId
-          : null,
-      attribute:
-        scenario.targetContext.attribute.kind === 'concrete'
-          ? scenario.targetContext.attribute.attribute
-          : 'unknown',
-      traits: [],
-    },
-  };
-  if (observation) {
-    const capture = battlePointPreparationRejectionObservationFor(observation);
-    if (capture) capture.damageInputGenerated = input;
-  }
-  if (observation && damage.kind === 'battlePointPhase' && battlePoints && parameter)
-    observation.conversion = { state: battlePoints, domain, value, phase, input, parameter };
-  return input;
-}
-
-export function resolveScenarioPreparationOutcome(
-  scenario: ResolvedCalculationScenario,
-  master: MasterDataSnapshot,
-  preparation: CalculationPreparationOptions = {},
-  policy: ContributionApplicationPolicy = { kind: 'calculator' },
-): ScenarioPreparationOutcome {
-  return resolveScenarioPreparationOutcomeObserved(scenario, master, preparation, policy);
-}
-
-function resolveScenarioPreparationOutcomeObserved(
-  scenario: ResolvedCalculationScenario,
-  master: MasterDataSnapshot,
-  preparation: CalculationPreparationOptions,
-  policy: ContributionApplicationPolicy,
-  observation?: BattlePointPreparationObservation,
-): ScenarioPreparationOutcome {
-  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
-  if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
-  const canonicalAttackerAtk = servant.atkByLevel[String(scenario.attacker.level)];
-  if (canonicalAttackerAtk === undefined)
-    return {
-      status: 'invalid',
-      issue: {
-        kind: 'attackerLevelStatUnavailable',
-        servantId: servant.id,
-        level: scenario.attacker.level,
-      },
-    };
-  const assertedHp = scenario.worldFactAssertions.flatMap(({ fact }) =>
-    fact.kind === 'quantity' && fact.quantity === 'attackerHpPermille' ? [fact.value] : [],
-  );
-  const initialIntents = [
-    ...new Set([
-      ...(scenario.attackerHpPermille === null ? [] : [scenario.attackerHpPermille]),
-      ...assertedHp,
-    ]),
-  ];
-  if (initialIntents.length > 1)
-    return {
-      status: 'invalid',
-      issue: {
-        kind: 'initialHpUnavailable',
-        servantId: servant.id,
-        level: scenario.attacker.level,
-        source: 'servant',
-        reason: 'conflictingInitialIntent',
-      },
-    };
-  if (scenario.attackerHpPermille === null && initialIntents.length === 1)
-    scenario = { ...scenario, attackerHpPermille: initialIntents[0]! };
-  const initialHp = resolveInitialMaximumHp(scenario, master);
-  if (initialHp.status === 'invalid') return initialHp;
-  const attackerAtk = scenario.explicitOverrides.attackerAtk ?? canonicalAttackerAtk;
-  const formExecution = resolveAttackerFormExecution(
-    scenario,
-    servant,
-    master.npResourceSemantics,
-    preparation.initialNpGauge,
-    {
-      master,
-      policy,
-      diagnoseRejectedActions: true,
-      ...(preparation.stochasticSelection
-        ? { stochasticSelection: preparation.stochasticSelection }
-        : {}),
-      ...(observation
-        ? {
-            observePreparationTransition: (
-              before: PreNoblePhantasmState,
-              command: PreNoblePhantasmCommand,
-              result: PreparationTransitionResult,
-            ) => {
-              battlePointPreparationRejectionObservationFor(observation)?.transitions.push({
-                before,
-                command,
-                result,
-                attempts: preparationOcAttemptsFor(result),
-              });
-              observation.transitions = [
-                ...observation.transitions,
-                {
-                  before: {
-                    battlePoints: before.battlePoints,
-                    appliedActionCount: before.appliedActions.length,
-                  },
-                  command,
-                  result: {
-                    status: result.status,
-                    state: {
-                      battlePoints: result.state.battlePoints,
-                      appliedActions: result.state.appliedActions,
-                    },
-                  },
-                },
-              ];
-            },
-          }
-        : {}),
-      ...(preparation.initialOvercharge === undefined
-        ? {}
-        : { initialOvercharge: preparation.initialOvercharge }),
-      initialMaximumHp: initialHp.maximum,
-      ...(preparation.initialBattlePointPoints
-        ? { initialBattlePointPoints: preparation.initialBattlePointPoints }
-        : {}),
-    },
-  );
-  const selected = formExecution.state.selectedNoblePhantasmVariant
-    ? findNoblePhantasmVariant(servant, formExecution.state.selectedNoblePhantasmVariant)
-    : undefined;
-  if (formExecution.rejection || formExecution.issues.length > 0) {
-    const rejection = formExecution.rejection ?? {
-      code: 'invalidPreparationActivation' as const,
-      operationId: 'preparation:source-collection',
-    };
-    return {
-      status: 'rejected',
-      rejection,
-      requiredInputs: formExecution.requiredInputs.map(({ definition, effectOccurrenceIds }) => ({
-        ...definition,
-        effectOccurrenceIds,
-      })),
-      ...(formExecution.recoveryInputDefinitions
-        ? { recoveryInputDefinitions: formExecution.recoveryInputDefinitions }
-        : {}),
-      appliedPreparationActions: formExecution.actions,
-      ...(formExecution.diagnostic ? { diagnostic: formExecution.diagnostic } : {}),
-      formExecution,
-    };
-  }
-  if (selected?.kind !== 'attack')
-    return {
-      status: 'rejected',
-      rejection: {
-        code: 'attackNoblePhantasmUnavailable',
-        operationId: `preparation:${servant.id}:terminal`,
-      },
-      requiredInputs: [],
-      appliedPreparationActions: formExecution.actions,
-      formExecution,
-    };
-  return {
-    status: 'executable',
-    initialMaximumHp: initialHp.maximum,
-    input: damageResolutionInputForNoblePhantasm(
-      scenario,
-      servant,
-      selected,
-      master,
-      attackerAtk,
-      formExecution.state.ocState.receipts.at(-1)!.effectiveOc,
-      formExecution.state.battlePoints,
-      observation,
-    ),
-    formExecution,
-  };
-}
-
-function resolveAttackProfileContinuity(
-  servant: ServantMaster,
-  formExecution: ResolvedAttackerFormExecution,
-  scenario: ResolvedCalculationScenario,
-  prepared: PreparedOrderedScenario,
-  execution: OrderedScenarioExecution,
-): AttackProfileContinuity {
-  const intendedVariant = formExecution.state.selectedNoblePhantasmVariant;
-  if (!intendedVariant) return { kind: 'unresolved', reason: 'intendedAttackVariantMissing' };
-  const profiles = createStaticActorFormProfiles(servant);
-  let intendedProfileKey: string;
-  try {
-    intendedProfileKey = attackProfileKey(
-      attackProfileForSelection(
-        servant,
-        profiles,
-        formExecution.state.currentFormId,
-        intendedVariant,
-      ),
-    );
-  } catch {
-    return { kind: 'unresolved', reason: 'intendedAttackProfileUnresolved' };
-  }
-  const actualVariant = execution.state.noblePhantasmVariant;
-  let actualProfileKey: string | null = null;
-  if (actualVariant.kind === 'attack') {
-    try {
-      actualProfileKey = attackProfileKey(
-        attackProfileForSelection(
-          servant,
-          profiles,
-          execution.state.actorFormId,
-          actualVariant.ref,
-        ),
-      );
-    } catch {
-      return { kind: 'unresolved', reason: 'actualAttackProfileUnresolved' };
-    }
-  }
-  if (actualProfileKey === intendedProfileKey)
-    return { kind: 'matched', intendedProfileKey, actualProfileKey };
-  const disabledSelection = prepared.operations.find(
-    (operation) =>
-      operation.kind === 'selectNoblePhantasmVariant' &&
-      noblePhantasmVariantKey(operation.variant) === noblePhantasmVariantKey(intendedVariant) &&
-      scenario.effectDecisions.some(
-        (decision) => decision.decisionKey === operation.decisionKey && !decision.operationEnabled,
-      ),
-  );
-  if (!disabledSelection)
-    return { kind: 'unresolved', reason: 'selectionChangedWithoutDisabledStructuralControl' };
-  if (actualVariant.kind === 'nonAttack') {
-    if (
-      execution.requiredInputs.length > 0 ||
-      prepared.preparationRequiredInputs.length > 0 ||
-      execution.issues.length !== 1 ||
-      execution.issues[0]?.kind !== 'invalidNoblePhantasmVariant' ||
-      execution.issues[0].detail !== 'nonAttackDamage'
-    )
-      return { kind: 'unresolved', reason: 'nonAttackSelectionHasAdditionalIssues' };
-    return {
-      kind: 'unavailableNoAttack',
-      intendedProfileKey,
-      actualProfileKey: null,
-      disabledSelectionOperationId: disabledSelection.operationId,
-    };
-  }
-  if (execution.precision !== 'exact' || prepared.preparationRequiredInputs.length > 0)
-    return { kind: 'unresolved', reason: 'changedSelectionHasAdditionalIssues' };
-  if (actualProfileKey === null)
-    return { kind: 'unresolved', reason: 'changedAttackProfileMissing' };
-  return {
-    kind: 'unavailableDifferentAttack',
-    intendedProfileKey,
-    actualProfileKey,
-    disabledSelectionOperationId: disabledSelection.operationId,
-  };
-}
-
-function resolvePreparedOrderedScenario(
-  scenario: ResolvedCalculationScenario,
-  prepared: PreparedOrderedScenario,
-  canonicalInputs: ResolvedCanonicalInputSet,
-  execution: OrderedScenarioExecution,
-  terminalActorFormId: ActorFormId,
-  profileContinuity: AttackProfileContinuity,
-): Extract<ResolvedCalculationInput, { status: 'executable' }> {
-  const projections = [...execution.projections, ...execution.retainedProjections];
-  const damageState = execution.operations.find(
-    ({ operation, outcome }) => operation.kind === 'executeNpDamage' && outcome === 'applied',
-  )?.state;
-  const warnings = execution.issues.map((issue) => {
-    if (issue.kind === 'invalidTargetContext')
-      return `${issue.kind}:${issue.detail}:${issue.sourceKeys.join(',')}`;
-    if (issue.kind === 'invalidCanonicalInput')
-      return `${issue.kind}:${issue.inputKey}:${issue.detail}`;
-    if (issue.kind === 'constraintValidationUnsupported')
-      return `${issue.kind}:${issue.sourceKeys.join(',')}:${issue.reason}`;
-    if (issue.kind === 'constraintConflict')
-      return `${issue.kind}:${issue.sourceKeys.join(',')}:${issue.conflicts
-        .map((conflict) => {
-          if (conflict.kind === 'exclusiveTrait')
-            return `${conflict.kind}:${conflict.scope}:${conflict.group}:${conflict.traits.join(',')}`;
-          if (conflict.kind === 'traitPolarity')
-            return `${conflict.kind}:${conflict.scope}:${conflict.trait}`;
-          if (conflict.kind === 'quantityEquality')
-            return `${conflict.kind}:${conflict.quantity}:${conflict.values.join(',')}`;
-          if (conflict.kind === 'quantityRange')
-            return `${conflict.kind}:${conflict.quantity}:${conflict.ranges
-              .map((range) => `${String(range.min)}-${String(range.max)}`)
-              .join(',')}`;
-          if (conflict.kind === 'cardMismatch')
-            return `${conflict.kind}:${conflict.cards.join(',')}`;
-          return conflict.kind;
-        })
-        .join('|')}`;
-    if (issue.kind === 'unsupportedParameter')
-      return `${issue.kind}:${issue.operationId}:${issue.parameter}`;
-    if (issue.kind === 'invalidActivationContext')
-      return `${issue.kind}:${issue.factKey ?? 'missing'}:${issue.detail}`;
-    return `${issue.kind}:${issue.operationId}:${issue.detail}`;
-  });
-  const decisionTrace = scenario.effectDecisions.map((decision) => ({
-    step: 'user-decision',
-    detail: `${decision.decisionKey}:operation:${String(decision.operationEnabled)}:condition:${decision.conditionSatisfaction}`,
-  }));
-  const worldFactTrace = scenario.worldFactAssertions.map((assertion) => ({
-    step: 'world-fact',
-    detail:
-      assertion.fact.kind === 'trait'
-        ? `${assertion.decisionKey}:trait:${assertion.fact.scope}:${assertion.fact.trait}:${String(assertion.fact.present)}`
-        : `${assertion.decisionKey}:quantity:${assertion.fact.quantity}:${String(assertion.fact.value)}`,
-  }));
-  const activationTrace = scenario.activationFacts.map((fact) => ({
-    step: 'activation-fact',
-    detail:
-      fact.kind === 'choice'
-        ? `${fact.source.sourceInstanceId}:choice:${fact.family}:${fact.candidate}`
-        : fact.kind === 'operationTrigger'
-          ? `${fact.source.sourceInstanceId}:operation-trigger:${String(fact.position)}`
-          : `${fact.source.sourceInstanceId}:source-quantity:${fact.quantity}:${fact.subjectId}:${fact.comparison}:${String(fact.value)}`,
-  }));
-  const canonicalInputTrace = Object.entries(canonicalInputs.values).map(([key, value]) => ({
-    step: 'canonical-input',
-    detail: `${key}:${String(value)}:${scenario.canonicalInputValues[key] ? 'explicit' : 'default'}`,
-  }));
-  return {
-    status: 'executable',
-    noblePhantasmVariant: execution.state.noblePhantasmVariant,
-    terminalActorFormId,
-    profileContinuity,
-    input: execution.input,
-    precision:
-      prepared.preparationRequiredInputs.length > 0 ? 'inputRequired' : execution.precision,
-    evidenceKeys: [
-      'master:normalized-v7',
-      ...projections.flatMap((projection) =>
-        projection.outcome === 'applied' &&
-        projection.modifier &&
-        projection.modifier !== 'npSpecial'
-          ? [`effect-operation:${projection.modifier}`]
-          : [],
-      ),
-    ],
-    warnings,
-    effects: projections,
-    effectiveContributions: execution.effectiveContributions,
-    requiredInputs: [
-      ...new Map(
-        [
-          ...prepared.preparationRequiredInputs.map(({ definition, effectOccurrenceIds }) => ({
-            ...definition,
-            effectOccurrenceIds,
-          })),
-          ...execution.requiredInputs,
-        ].map((definition) => [definition.key, definition]),
-      ).values(),
-    ],
-    inputDefinitions: [...execution.inputDefinitions],
-    activationRequirements: collectActivationRequirementOwners(prepared.operations),
-    appliedPreparationActions: prepared.appliedPreparationActions,
-    targetStateTraitsAtDamage: damageState
-      ? [...projectBattleTraitPresence(damageState, 'targetState').entries()].flatMap(
-          ([trait, present]) => (present ? [trait] : []),
-        )
-      : [],
-    preparationRejection: null,
-    trace: [
-      ...decisionTrace,
-      ...activationTrace,
-      ...worldFactTrace,
-      ...canonicalInputTrace,
-      ...execution.operations.map((operation) => ({
-        step: `${operation.operation.phase}:${operation.operation.kind}`,
-        detail: `${operation.operation.order}:${operation.operation.operationId}:${operation.outcome}`,
-      })),
-    ],
-  };
-}
-
-function manualResolvedInput(
-  scenario: Extract<CalculationScenario, { mode: 'manual' }>,
-): Extract<ResolvedCalculationInput, { status: 'executable' }> {
-  return {
-    status: 'executable',
-    input: scenario.manual,
-    precision: 'exact',
-    evidenceKeys: ['input:manual-final-modifiers'],
-    warnings: [],
-    trace: [{ step: 'input-mode', detail: 'manual_final_values' }],
-    effects: [],
-    effectiveContributions: { contributions: [], effectivePresentationGroupIds: new Set() },
-    requiredInputs: [],
-    inputDefinitions: [],
-    activationRequirements: [],
-    appliedPreparationActions: [],
-    targetStateTraitsAtDamage: scenario.manual.targetStateTraits,
-    noblePhantasmVariant: null,
-    terminalActorFormId: null,
-    preparationRejection: null,
-  };
-}
-
-function rejectedPreparationResolvedInput(
-  outcome: Extract<ScenarioPreparationOutcome, { status: 'rejected' }>,
-): Extract<ResolvedCalculationInput, { status: 'rejected' }> {
-  return {
-    status: 'rejected',
-    noblePhantasmVariant: null,
-    terminalActorFormId: null,
-    precision:
-      outcome.rejection.code === 'preparationInputRequired' ? 'inputRequired' : 'unsupported',
-    evidenceKeys: ['master:normalized-v7'],
-    warnings: [],
-    trace: [
-      {
-        step: 'preparation-rejection',
-        detail: `${outcome.rejection.operationId}:${outcome.rejection.code}`,
-      },
-    ],
-    effects: [],
-    effectiveContributions: { contributions: [], effectivePresentationGroupIds: new Set() },
-    requiredInputs: [...outcome.requiredInputs],
-    inputDefinitions: [
-      ...new Map(
-        [...(outcome.recoveryInputDefinitions ?? []), ...outcome.requiredInputs].map((input) => [
-          input.key,
-          input,
-        ]),
-      ).values(),
-    ],
-    activationRequirements: [],
-    appliedPreparationActions: outcome.appliedPreparationActions,
-    targetStateTraitsAtDamage: [],
-    preparationRejection: outcome.rejection,
-  };
-}
-
-function invalidResolvedInput(
-  outcome: Extract<ScenarioPreparationOutcome, { status: 'invalid' }>,
-): Extract<ResolvedCalculationInput, { status: 'invalid' }> {
-  return {
-    status: 'invalid',
-    issue: outcome.issue,
-    noblePhantasmVariant: null,
-    terminalActorFormId: null,
-    precision: 'invalid',
-    evidenceKeys: ['master:normalized-v7'],
-    warnings: [],
-    trace: [
-      {
-        step: 'scenario-invalid',
-        detail: `${outcome.issue.kind}:${outcome.issue.servantId}:${String(outcome.issue.level)}`,
-      },
-    ],
-    effects: [],
-    effectiveContributions: { contributions: [], effectivePresentationGroupIds: new Set() },
-    requiredInputs: [],
-    inputDefinitions: [],
-    activationRequirements: [],
-    appliedPreparationActions: [],
-    targetStateTraitsAtDamage: [],
-    preparationRejection: null,
-  };
-}
-
 export function resolveScenario(
   scenario: CalculationScenario,
   master: MasterDataSnapshot,
@@ -1015,166 +456,6 @@ export function resolveScenario(
 ): ResolvedCalculationInput {
   return prepareCalculationScenarioWithPolicy(scenario, master, { kind: 'calculator' }, preparation)
     .resolved;
-}
-
-function requiredInputsForResult(inputs: ResolvedCalculationInputCommon['requiredInputs']) {
-  return inputs.map(
-    ({ key, owner, label, description, minimum, maximum, step, effectOccurrenceIds }) => ({
-      key,
-      owner,
-      label,
-      description,
-      minimum,
-      maximum,
-      step,
-      effectOccurrenceIds,
-    }),
-  );
-}
-
-function resolvedCalculationResult(
-  resolved: ResolvedCalculationInput,
-  damageCache: DamageMatrixCache,
-): CalculationApplicationOutcome {
-  if (resolved.status === 'invalid')
-    return {
-      status: 'invalid',
-      issue: resolved.issue,
-      issues: [
-        {
-          code: resolved.issue.kind,
-          detail: `${resolved.issue.servantId}:${String(resolved.issue.level)}`,
-        },
-      ],
-    };
-  if (resolved.status === 'rejected') {
-    const evidence = evaluateCalculationEvidence(resolved.evidenceKeys);
-    const issue = {
-      code: `preparation:${resolved.preparationRejection.code}`,
-      detail: resolved.preparationRejection.operationId,
-    };
-    const common = {
-      rows: [] as [],
-      effects: [],
-      assumptions: [],
-      issues: [issue],
-      trace: resolved.trace,
-      evidence: evidence.evidence,
-    };
-    const rejection = resolved.preparationRejection.code;
-    if (
-      rejection === 'attackerDead' ||
-      rejection === 'insufficientNpGauge' ||
-      rejection === 'resourceRequirementExceedsCapacity'
-    )
-      return {
-        ...common,
-        status: 'unavailable',
-        reason:
-          rejection === 'attackerDead'
-            ? 'attackerDead'
-            : rejection === 'insufficientNpGauge'
-              ? 'insufficientNpGauge'
-              : 'npCapacityExceeded',
-      };
-    return resolved.preparationRejection.code === 'preparationInputRequired'
-      ? {
-          ...common,
-          status: 'inputRequired',
-          requiredInputs: requiredInputsForResult(resolved.requiredInputs),
-        }
-      : {
-          ...common,
-          status: 'unsupported',
-          missingEvidence: [`preparation:${resolved.preparationRejection.code}`],
-        };
-  }
-  if (
-    resolved.profileContinuity &&
-    resolved.precision !== 'inputRequired' &&
-    resolved.profileContinuity.kind !== 'matched'
-  ) {
-    const continuity = resolved.profileContinuity;
-    const evidence = evaluateCalculationEvidence(resolved.evidenceKeys);
-    const common = {
-      rows: [] as [],
-      effects: resolved.effects.map((effect) => ({
-        projectionKey: effect.projectionKey,
-        outcome: effect.outcome,
-        explanationCode: effect.explanation.code,
-      })),
-      assumptions: [],
-      issues: resolved.warnings.map((warning) => ({ code: warning, detail: warning })),
-      trace: resolved.trace,
-      evidence: evidence.evidence,
-    };
-    return continuity.kind === 'unresolved'
-      ? {
-          ...common,
-          status: 'unsupported',
-          missingEvidence: [`attackProfileContinuity:${continuity.reason}`],
-        }
-      : {
-          ...common,
-          status: 'unavailable',
-          reason:
-            continuity.kind === 'unavailableNoAttack'
-              ? 'selectedAttackProfileHasNoAttack'
-              : 'selectedAttackProfileChanged',
-        };
-  }
-  const calculation = resolved.noblePhantasmVariant
-    ? damageCache.getOrCreate(
-        { noblePhantasmVariant: resolved.noblePhantasmVariant.ref, input: resolved.input },
-        () => calculateDamageResolutionValue(resolved.input),
-      )
-    : calculateDamageResolutionValue(resolved.input);
-  const evidence = evaluateCalculationEvidence([
-    ...calculation.evidence.map((entry) => entry.key),
-    ...resolved.evidenceKeys,
-  ]);
-  const effects = resolved.effects.map((effect) => ({
-    projectionKey: effect.projectionKey,
-    outcome: effect.outcome,
-    explanationCode: effect.explanation.code,
-  }));
-  const resolutionIssues = resolved.warnings.map((warning) => ({ code: warning, detail: warning }));
-  return resolved.precision === 'inputRequired'
-    ? {
-        status: 'inputRequired',
-        rows: [],
-        requiredInputs: requiredInputsForResult(resolved.requiredInputs),
-        effects,
-        assumptions: calculation.assumptions,
-        issues: [...calculation.issues, ...resolutionIssues],
-        trace: [...calculation.trace, ...resolved.trace],
-        evidence: evidence.evidence,
-      }
-    : calculation.status === 'unsupported' ||
-        resolved.precision === 'unsupported' ||
-        evidence.status === 'unsupported'
-      ? {
-          status: 'unsupported',
-          rows: [],
-          effects,
-          assumptions: calculation.assumptions,
-          issues: [...calculation.issues, ...resolutionIssues],
-          trace: [...calculation.trace, ...resolved.trace],
-          missingEvidence: [
-            ...(calculation.status === 'unsupported' ? calculation.missingEvidence : []),
-            ...resolved.warnings,
-            ...(evidence.status === 'unsupported' ? evidence.missingEvidence : []),
-          ],
-          evidence: evidence.evidence,
-        }
-      : {
-          ...calculation,
-          effects,
-          precision: evidence.precision,
-          evidence: evidence.evidence,
-          issues: [...calculation.issues, ...resolutionIssues],
-          trace: [...calculation.trace, ...resolved.trace],
-        };
 }
 
 function evaluateResolvedCalculation(
@@ -1343,6 +624,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
   preparation: CalculationPreparationOptions,
   captureExecutionObservation: boolean,
   damageCache: DamageMatrixCache,
+  executionSession?: PreparationExecutionSession,
 ): PreparedCalculationScenario {
   return completePreparedCalculationScenario(
     buildConcreteCalculationScenarioWithPolicy(
@@ -1351,6 +633,7 @@ function prepareConcreteCalculationScenarioWithPolicy(
       contributionPolicy,
       preparation,
       captureExecutionObservation,
+      executionSession,
     ),
     damageCache,
   );
@@ -1362,6 +645,7 @@ function buildConcreteCalculationScenarioWithPolicy(
   contributionPolicy: ContributionApplicationPolicy,
   preparation: CalculationPreparationOptions = {},
   captureExecutionObservation = false,
+  executionSession?: PreparationExecutionSession,
 ): PreparedCalculationScenarioDraft {
   if (scenario.mode === 'manual')
     return {
@@ -1382,12 +666,13 @@ function buildConcreteCalculationScenarioWithPolicy(
     captureExecutionObservation ? { transitions: [] } : undefined;
   if (battlePointPreparation)
     attachBattlePointPreparationRejectionObservation(battlePointPreparation, { transitions: [] });
-  const base = resolveScenarioPreparationOutcomeObserved(
+  const base = resolveScenarioPreparationOutcome(
     scenario,
     master,
     preparation,
     contributionPolicy,
     battlePointPreparation,
+    executionSession,
   );
   if (base.status === 'invalid') {
     return {
@@ -1514,142 +799,6 @@ function buildConcreteCalculationScenarioWithPolicy(
   return prepared;
 }
 
-function prepareRejectedCalculationDiagnostic(
-  scenario: ResolvedCalculationScenario,
-  master: MasterDataSnapshot,
-  formExecution: ResolvedAttackerFormExecution,
-  policy: ContributionApplicationPolicy,
-  options: CalculationPreparationOptions,
-): RejectedCalculationDiagnostic | undefined {
-  const preparation = formExecution.diagnostic;
-  if (!preparation || !preparation.state.terminated) return undefined;
-  if (!formExecution.actionExecutions)
-    throw new TypeError('diagnostic_normal_action_receipts_missing');
-  const servant = master.servants.find(({ id }) => id === scenario.attacker.servantId);
-  if (!servant) throw new TypeError('diagnostic_servant_missing');
-  const ref = preparation.state.selectedNoblePhantasmVariant;
-  const variant = ref && findNoblePhantasmVariant(servant, ref);
-  const receipt = preparation.state.ocState.receipts.at(-1);
-  if (!variant || variant.kind !== 'attack' || !receipt)
-    throw new TypeError('diagnostic_terminal_np_receipt_missing');
-  const atk =
-    scenario.explicitOverrides.attackerAtk ?? servant.atkByLevel[String(scenario.attacker.level)];
-  if (atk === undefined) throw new TypeError('diagnostic_attacker_stat_missing');
-  const input = damageResolutionInputForNoblePhantasm(
-    scenario,
-    servant,
-    variant,
-    master,
-    atk,
-    receipt.effectiveOc,
-    preparation.state.battlePoints,
-  );
-  const orderedScenario = prepareDiagnosticOrderedScenario(input, scenario, master, formExecution);
-  const canonicalInputs = resolveCanonicalInputValues(
-    orderedScenario.inputDefinitions,
-    scenario.canonicalInputValues,
-  );
-  const observed = executeDiagnosticOrderedScenarioWithAuditObservation(
-    orderedScenario,
-    canonicalInputs,
-    policy,
-  );
-  return {
-    kind: 'rejectedCalculationDiagnostic',
-    preparation,
-    normalActions: formExecution.actionExecutions,
-    orderedScenario,
-    canonicalInputs,
-    execution: observed.execution,
-    executionObservation: {
-      battlePointWitness: options.initialBattlePointPoints ?? null,
-      targetExecution: observed.observation,
-    },
-  };
-}
-
-function battlePointWitnesses(
-  scenario: ResolvedCalculationScenario,
-  master: MasterDataSnapshot,
-):
-  | { status: 'ready'; witnesses: Readonly<Record<string, number>>[] }
-  | {
-      status: 'invalid';
-      issue: BattlePointIntentIssue;
-    } {
-  const phase = scenario.battleState.battlePointPhase;
-  if (phase === null) return { status: 'ready', witnesses: [{}] };
-  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
-  if (!servant || !(servant.battlePointDomains?.length ?? 0))
-    return { status: 'ready', witnesses: [{}] };
-  const invalid = (detail: BattlePointIntentIssue['detail']) => ({
-    status: 'invalid' as const,
-    issue: {
-      kind: 'invalidBattlePointIntent' as const,
-      servantId: scenario.attacker.servantId,
-      level: scenario.attacker.level,
-      detail,
-    },
-  });
-  const referenced = new Set<string>();
-  const collectRequirementDomains = (
-    effect: MasterDataSnapshot['servants'][number]['skills'][number]['effects'][number],
-  ) => {
-    for (const leaf of canonicalRequirementLeaves(effect.requirement.expression))
-      if (
-        (leaf.kind === 'quantity' && leaf.quantity === 'battlePointPhase') ||
-        leaf.kind === 'sourceQuantity'
-      )
-        if (leaf.subjectId !== undefined) referenced.add(leaf.subjectId);
-  };
-  for (const variant of servant.noblePhantasmVariantGroups.flatMap((group) => group.variants)) {
-    if (variant.kind === 'attack')
-      for (const damage of variant.damage)
-        if (damage.kind === 'battlePointPhase')
-          for (const row of damage.parametersByOvercharge)
-            for (const cell of row)
-              if (cell.targetId !== undefined) referenced.add(String(cell.targetId));
-    for (const effect of variant.effects) {
-      collectRequirementDomains(effect);
-      for (const operation of effect.execution)
-        if (
-          operation.kind === 'battlePointCapacityModifier' ||
-          (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
-        )
-          if (operation.subjectId !== null) referenced.add(operation.subjectId);
-    }
-  }
-  for (const effect of [...servant.skills, ...servant.passives].flatMap((skill) => skill.effects)) {
-    collectRequirementDomains(effect);
-    for (const operation of effect.execution)
-      if (
-        operation.kind === 'battlePointCapacityModifier' ||
-        (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
-      )
-        if (operation.subjectId !== null) referenced.add(operation.subjectId);
-  }
-  if (referenced.size > 1) return invalid('ambiguousDomain');
-  if ([...referenced].some((id) => !master.battlePointDomains.some((domain) => domain.id === id)))
-    return invalid('unresolvedDomain');
-  const traits = new Set(
-    findActorForm(servant, scenario.attacker.initialActorFormId)?.traits ?? servant.traits,
-  );
-  let witnesses: Readonly<Record<string, number>>[] = [{}];
-  for (const domain of master.battlePointDomains.filter((candidate) =>
-    referenced.has(candidate.id),
-  )) {
-    const capacity =
-      domain.capacity.traitOverrides.find((entry) => entry.all.every((trait) => traits.has(trait)))
-        ?.value ?? domain.capacity.default;
-    const points = phase === 0 ? [-1] : battlePointPhaseCandidates(domain, phase, capacity);
-    if (!points.length) return invalid('unreachablePhase');
-    witnesses = witnesses.flatMap((prior) =>
-      points.map((point) => ({ ...prior, [domain.id]: point })),
-    );
-  }
-  return { status: 'ready', witnesses };
-}
-
 function invalidBattlePointPreparation(
   scenario: ResolvedCalculationScenario,
   master: MasterDataSnapshot,
@@ -1689,6 +838,7 @@ export function prepareCalculationScenarioWithPolicy(
   preparation: CalculationPreparationOptions = {},
   captureExecutionObservation = false,
   damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
+  executionSession?: PreparationExecutionSession,
 ): PreparedCalculationScenario {
   if (scenario.mode === 'manual' || contributionPolicy.kind === 'calculator')
     return prepareCalculationScenarioWithBattlePointWitness(
@@ -1698,6 +848,7 @@ export function prepareCalculationScenarioWithPolicy(
       preparation,
       captureExecutionObservation,
       damageCache,
+      executionSession,
     );
   const possibilities = executeStochasticPossibilities((stochasticSelection) =>
     prepareCalculationScenarioWithBattlePointWitness(
@@ -1707,6 +858,7 @@ export function prepareCalculationScenarioWithPolicy(
       { ...preparation, stochasticSelection },
       captureExecutionObservation,
       damageCache,
+      executionSession,
     ),
   );
   const candidates = possibilities.executions.map(({ value }) => value);
@@ -1798,6 +950,7 @@ function prepareCalculationScenarioWithBattlePointWitness(
   preparation: CalculationPreparationOptions = {},
   captureExecutionObservation = false,
   damageCache = new PreparedDamageMatrixCache<DamageResolutionValue>(),
+  executionSession?: PreparationExecutionSession,
 ): PreparedCalculationScenario {
   const scenarioPoints =
     scenario.mode === 'resolved' ? scenario.initialBattlePointPoints : undefined;
@@ -1853,6 +1006,7 @@ function prepareCalculationScenarioWithBattlePointWitness(
       effectivePreparation,
       captureExecutionObservation,
       damageCache,
+      executionSession,
     );
   const witnessResult = battlePointWitnesses(scenario, master);
   if (witnessResult.status === 'invalid')
@@ -1876,6 +1030,7 @@ function prepareCalculationScenarioWithBattlePointWitness(
       },
       captureExecutionObservation,
       damageCache,
+      executionSession,
     );
   const candidates = witnesses.map((initialBattlePointPoints) =>
     prepareConcreteCalculationScenarioWithPolicy(
@@ -1888,6 +1043,7 @@ function prepareCalculationScenarioWithBattlePointWitness(
       },
       captureExecutionObservation,
       damageCache,
+      executionSession,
     ),
   );
   const executable = candidates.filter(

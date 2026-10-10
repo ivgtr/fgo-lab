@@ -93,6 +93,8 @@ export type ConditionEvaluationState = Pick<
   battlePoints?: BattlePointState;
   battlePointDomains?: readonly BattlePointDomain[];
   resourceActor?: string;
+  /** NP read frame bound by a preceding canonical scalar writer, never a missing-domain fallback. */
+  scalarBattlePointSubject?: string;
 };
 
 export type ConditionReadAudit =
@@ -319,10 +321,15 @@ export function evaluateCondition(
     }
     case 'quantity': {
       const actor = state.resourceActor ?? 'attacker';
-      const actual =
+      const scalar =
         condition.quantity === 'battlePointPhase' &&
         condition.subjectId !== undefined &&
-        state.battlePoints
+        condition.subjectId === state.scalarBattlePointSubject;
+      const actual = scalar
+        ? state.quantities.battlePointPhase
+        : condition.quantity === 'battlePointPhase' &&
+            condition.subjectId !== undefined &&
+            state.battlePoints
           ? (() => {
               const domain = state.battlePointDomains?.find(
                 (candidate) => candidate.id === condition.subjectId,
@@ -359,7 +366,11 @@ export function evaluateCondition(
           condition.value,
           evaluated,
         );
-      if (condition.quantity === 'battlePointPhase' && condition.subjectId !== undefined) {
+      if (
+        !scalar &&
+        condition.quantity === 'battlePointPhase' &&
+        condition.subjectId !== undefined
+      ) {
         const value = readBattlePoint(state.battlePoints, actor, condition.subjectId);
         onConditionRead?.({
           kind: 'battlePointPhase',
@@ -373,7 +384,7 @@ export function evaluateCondition(
         });
       }
       const key =
-        condition.subjectId === undefined
+        scalar || condition.subjectId === undefined
           ? condition.quantity
           : `battlePoint:${actor}:${condition.subjectId}`;
       return leaf(

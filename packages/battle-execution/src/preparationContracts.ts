@@ -6,6 +6,7 @@ import type { HpState } from './hpResource';
 import type { NpTransferReceipt } from './npTransfer';
 import type {
   ActorFormId,
+  MasterDataSnapshot,
   StackInputDefinition,
   ActorFormTransition,
   CanonicalNpResourceSemantics,
@@ -13,12 +14,18 @@ import type {
   BattlePointDomain,
   MasterEffect,
   NoblePhantasmVariantRef,
+  NoblePhantasmVariant,
+  OcExecutionOperation,
 } from '@fgo-lab/master-data';
 import type { ActivationFact, PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { NpResourceState } from './npResource';
 import type { OcState, NpOcUseReceipt, OcActionOutcome } from './ocState';
 import type { ContributionApplicationPolicy } from './executionTypes';
-import type { WorldFactAssertion, TargetPredicateAssertion } from './contracts';
+import type {
+  WorldFactAssertion,
+  TargetPredicateAssertion,
+  ConditionExpression,
+} from './contracts';
 import type { SourceEffect } from './sourceCollection';
 import type { CountedBuffInstance } from './buffInstances';
 import type { PopulationEvent } from './populationCounts';
@@ -27,10 +34,10 @@ import type { InputFacts } from './inputFacts';
 import type { SourceExecutionBinding } from './executionBinding';
 import type { PreparationSourceExecution } from './preparationExecution';
 import type {
-  PreparationOcAttempt,
+  PreparationOcAttemptSnapshot,
   PreparationBattlePointStep,
 } from './preparationAttemptObservation';
-import type { PreparationHpAction } from './hpExecutionObservation';
+import type { PreparationHpActionSnapshot } from './hpExecutionObservation';
 
 export interface PreparationExecutionContext {
   stochasticSelection: StochasticSelection;
@@ -104,7 +111,7 @@ export interface PreNoblePhantasmState extends ConditionEvaluationState {
     readonly worldFacts: readonly WorldFactAssertion[];
   };
   inputFacts: InputFacts;
-  sourceBindings: readonly SourceExecutionBinding[];
+  sourceBindings: readonly PreparationSnapshot<SourceExecutionBinding>[];
   npQuantityWrites: readonly PreparationNpQuantityWrite[];
   battlePoints: BattlePointState;
   hp?: HpState | undefined;
@@ -118,7 +125,7 @@ export interface PreNoblePhantasmState extends ConditionEvaluationState {
   selectedNoblePhantasmVariant: NoblePhantasmVariantRef | null;
   usedSkillSlots: ReadonlySet<1 | 2 | 3>;
   transformNoblePhantasmUsed: boolean;
-  activeEffects: readonly AppliedPreparationEffect[];
+  activeEffects: readonly PreparationSnapshot<AppliedPreparationEffect>[];
   initialTraitSuppressions: { attacker: ReadonlySet<string>; target: ReadonlySet<string> };
   npResource: NpResourceState;
   ocState: OcState;
@@ -129,7 +136,7 @@ export interface PreNoblePhantasmState extends ConditionEvaluationState {
     actor?: string;
   }[];
   baseOvercharge: number | null;
-  appliedActions: readonly AppliedPreparationAction[];
+  appliedActions: readonly PreparationSnapshot<AppliedPreparationAction>[];
   terminated: boolean;
 }
 
@@ -174,16 +181,57 @@ export type PreparationTransitionResult =
       state: PreNoblePhantasmState;
     };
 
-/** The completed result itself is the native action receipt. */
-export type PreparationCompletedTransitionResult = Readonly<PreparationTransitionResult> & {
-  readonly before: PreNoblePhantasmState;
-  readonly command: PreNoblePhantasmCommand | null;
+/** Canonical declarations remain owned by master; physical snapshots expose no writable state. */
+export type PreparationSnapshot<T> = T extends PreNoblePhantasmState
+  ? PreparationStateSnapshot
+  : T extends
+        | MasterEffect
+        | CanonicalNpResourceSemantics
+        | MasterEffect['execution'][number]
+        | CanonicalInputDefinition
+        | NoblePhantasmVariant
+        | ActorFormTransition
+        | ActivationFact
+        | BattlePointDomain
+        | Extract<
+            OcExecutionOperation,
+            { kind: 'grantOcBoost' | 'grantOcApplicationRate' }
+          >['cells'][number][number]
+        | Extract<
+            OcExecutionOperation,
+            { kind: 'grantOcApplicationRate' }
+          >['cells'][number][number]['amount']
+        | ConditionExpression
+    ? Readonly<T>
+    : T extends ReadonlyMap<infer K, infer V>
+      ? ReadonlyMap<K, PreparationSnapshot<V>>
+      : T extends ReadonlySet<infer V>
+        ? ReadonlySet<PreparationSnapshot<V>>
+        : T extends readonly unknown[]
+          ? { readonly [K in keyof T]: PreparationSnapshot<T[K]> }
+          : T extends object
+            ? { readonly [K in keyof T]: PreparationSnapshot<T[K]> }
+            : T;
+
+type SnapshotFields<T> = { readonly [K in keyof T]: PreparationSnapshot<T[K]> };
+export interface PreparationStateSnapshot extends SnapshotFields<PreNoblePhantasmState> {
+  readonly npResource: PreparationSnapshot<PreNoblePhantasmState['npResource']>;
+}
+export interface PreparationContextSnapshot extends SnapshotFields<PreparationExecutionContext> {
+  readonly resourceSemantics: Readonly<CanonicalNpResourceSemantics>;
+}
+export type PreparationTransitionObservation = PreparationSnapshot<PreparationTransitionResult>;
+
+/** The completed result itself is the native action receipt, never a mutable reducer draft. */
+export type PreparationCompletedTransitionResult = PreparationTransitionObservation & {
+  readonly before: PreparationStateSnapshot;
+  readonly command: PreparationSnapshot<PreNoblePhantasmCommand> | null;
   readonly sources: readonly PreparationSourceExecution[];
   readonly committedSources: readonly PreparationSourceExecution[];
   readonly observations: {
-    readonly ocAttempts: readonly PreparationOcAttempt[];
-    readonly battlePointSteps: readonly PreparationBattlePointStep[];
-    readonly hpActions: readonly PreparationHpAction[];
+    readonly ocAttempts: readonly PreparationOcAttemptSnapshot[];
+    readonly battlePointSteps: readonly PreparationSnapshot<PreparationBattlePointStep>[];
+    readonly hpActions: readonly PreparationHpActionSnapshot[];
   };
 };
 
@@ -201,3 +249,12 @@ export const rejectPreparation = (
   ...(recoveryInputDefinitions.length ? { recoveryInputDefinitions } : {}),
   state,
 });
+
+export interface PreparationContextOptions {
+  stochasticSelection?: StochasticSelection;
+  master?: MasterDataSnapshot;
+  initialMaximumHp?: number;
+  initialOvercharge?: 1 | 2 | 3 | 4 | 5;
+  policy?: PreparationExecutionContext['policy'];
+  initialBattlePointPoints?: Readonly<Record<string, number>>;
+}

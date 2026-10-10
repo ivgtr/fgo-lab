@@ -1,3 +1,4 @@
+import { mutableAuditView } from './auditTestMutation';
 import { expect, it, vi } from 'vitest';
 import * as preparationOwner from '../../battle-execution/src/preNoblePhantasm';
 import * as hpOwner from '../../battle-execution/src/hpResource';
@@ -434,24 +435,24 @@ it(
       .flatMap((transition) => preparationHpActionsFor(transition.result))
       .find((item) => item.conditionReads.length > 0)!;
     const source = action.conditionReads.find((item) => item.kind === 'source')!;
-    source.reads[1]!.expectedValue = 499;
+    mutableAuditView(source.reads[1]!).expectedValue = 499;
     const negative = reconcileHpOperationEvidence(f.declarations, f.requests).gate;
     expect(
       negative.failures.some((item) => item.reason === 'preparationConditionReadMismatch'),
     ).toBe(true);
     expect(negative.firstDifference).not.toBeNull();
-    source.reads[1]!.expectedValue = 500;
-    const removed = source.reads.pop()!;
+    mutableAuditView(source.reads[1]!).expectedValue = 500;
+    const removed = mutableAuditView(source.reads).pop()!;
     const missing = reconcileHpOperationEvidence(f.declarations, f.requests).gate;
     expect(missing.failures.some((item) => item.path.endsWith('.count'))).toBe(true);
-    source.reads.push(removed);
-    const omitted = action.conditionReads.shift()!;
+    mutableAuditView(source.reads).push(removed);
+    const omitted = mutableAuditView(action.conditionReads).shift()!;
     const missingEvaluation = reconcileHpOperationEvidence(f.declarations, f.requests).gate;
     expect(missingEvaluation.failures.some((item) => item.path.endsWith('.conditionCount'))).toBe(
       true,
     );
     expect(missingEvaluation.firstDifference).not.toBeNull();
-    action.conditionReads.unshift(omitted);
+    mutableAuditView(action.conditionReads).unshift(omitted);
     const complete = {
       originalRequest: f.prepared.scenario,
       orderedPlan: f.prepared.orderedScenario,
@@ -529,9 +530,29 @@ it(
       ),
     ).toBe(true);
     expect(reconcileHpOperationEvidence(f.declarations, f.requests).gate.failures).toEqual([]);
-    await writeProductionAuditArtifact(task.meta, 'hp-published-dependency-fixture.json', ledger);
+    const target = f.calculation.executionObservation?.targetExecution;
+    if (target?.selection !== 'selected') throw new Error('selected_target');
+    const capture = hpCandidateObservationFor(target.candidateState)!;
+    const native = capture.preparedValueConsumptions[0]!;
+    expect(native.nativePreparationRead).toBe(native.operation.runtimeBinding?.modifierValueRead);
+    const removed = capture.preparedValueConsumptions.splice(0, 1)[0]!;
+    const missingNative = f.reconcile().gate;
+    expect(missingNative.failures.some((failure) => failure.reason === 'valueReadMismatch')).toBe(
+      true,
+    );
+    capture.preparedValueConsumptions.unshift(removed);
+    const originalRead = native.nativePreparationRead!;
+    native.nativePreparationRead = { ...originalRead };
+    const foreignNative = f.reconcile().gate;
+    expect(foreignNative.failures.some((failure) => failure.reason === 'valueReadMismatch')).toBe(
+      true,
+    );
+    native.nativePreparationRead = originalRead;
+    expect(f.reconcile().gate.failures).toEqual([]);
+    const complete = { ...ledger, nativeValueNegativeChecks: { missingNative, foreignNative } };
+    await writeProductionAuditArtifact(task.meta, 'hp-published-dependency-fixture.json', complete);
     const disk = await readStoredProductionAuditArtifact('hp-published-dependency-fixture.json');
-    expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(disk), ledger)).toBe(true);
+    expect(isDeepStrictEqual(decodeStoredProductionAuditArtifact(disk), complete)).toBe(true);
   },
 );
 
@@ -1675,18 +1696,18 @@ it(
       .transitions.flatMap((transition) => transition.attempts ?? [])
       .find((entry) => preparationOcRatesFor(entry).reads.length === 2)!;
     const capture = preparationOcRatesFor(attempt);
-    const second = capture.reads.pop()!;
+    const second = mutableAuditView(capture.reads).pop()!;
     const absent = live.reconcile();
-    capture.reads.push(second);
+    mutableAuditView(capture.reads).push(second);
     const hp = second.hp;
-    second.hp = capture.reads[0]!.hp;
+    mutableAuditView(second).hp = capture.reads[0]!.hp;
     const stale = live.reconcile();
-    second.hp = hp;
-    const queries = capture.queries.splice(0);
-    const reads = capture.reads.splice(0);
+    mutableAuditView(second).hp = hp;
+    const queries = mutableAuditView(capture.queries).splice(0);
+    const reads = mutableAuditView(capture.reads).splice(0);
     const missingQueries = live.reconcile();
-    capture.queries.push(...queries);
-    capture.reads.push(...reads);
+    mutableAuditView(capture.queries).push(...queries);
+    mutableAuditView(capture.reads).push(...reads);
     const decision = queries[0]!.rate.decision;
     Object.assign(queries[0]!.rate, {
       decision: {
@@ -1698,34 +1719,34 @@ it(
         },
       },
     });
-    capture.reads.splice(0);
+    mutableAuditView(capture.reads).splice(0);
     const forgedExclusion = live.reconcile();
     Object.assign(queries[0]!.rate, { decision });
-    capture.reads.push(...reads);
+    mutableAuditView(capture.reads).push(...reads);
     const afterRate = attempt.native!.state.rates.find(
       (entry) => entry.instanceId === queries[0]!.rate.instanceId,
     )!;
     const uses = afterRate.uses;
-    afterRate.uses = { kind: 'finite', remaining: 0 };
+    mutableAuditView(afterRate).uses = { kind: 'finite', remaining: 0 };
     const overconsumed = live.reconcile();
-    afterRate.uses = uses;
+    mutableAuditView(afterRate).uses = uses;
     const rejectedAttempt = battlePointPreparationRejectionObservationFor(
       rejected.request.prepared,
     )!
       .transitions.flatMap((transition) => transition.attempts ?? [])
       .find((entry) => preparationOcRatesFor(entry).reads.length)!;
     const returned = rejectedAttempt.returned!;
-    rejectedAttempt.returned = { ...returned };
+    mutableAuditView(rejectedAttempt).returned = { ...returned };
     const leaked = rejected.reconcile();
-    rejectedAttempt.returned = returned;
+    mutableAuditView(rejectedAttempt).returned = returned;
     const rejectedCapture = preparationOcRatesFor(rejectedAttempt);
-    const rejectedSelections = rejectedCapture.selections.splice(0);
-    const rejectedQueries = rejectedCapture.queries.splice(0);
-    const rejectedReads = rejectedCapture.reads.splice(0);
+    const rejectedSelections = mutableAuditView(rejectedCapture.selections).splice(0);
+    const rejectedQueries = mutableAuditView(rejectedCapture.queries).splice(0);
+    const rejectedReads = mutableAuditView(rejectedCapture.reads).splice(0);
     const erasedRejection = rejected.reconcile();
-    rejectedCapture.selections.push(...rejectedSelections);
-    rejectedCapture.queries.push(...rejectedQueries);
-    rejectedCapture.reads.push(...rejectedReads);
+    mutableAuditView(rejectedCapture.selections).push(...rejectedSelections);
+    mutableAuditView(rejectedCapture.queries).push(...rejectedQueries);
+    mutableAuditView(rejectedCapture.reads).push(...rejectedReads);
     const payload = {
       population: 'schemaLegalOriginalRequests',
       originalTiming: timing,

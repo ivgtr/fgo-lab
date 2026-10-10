@@ -104,7 +104,7 @@ test('[E2E-017] setup to calculator package journey @desktop @journey', async ({
     .click();
   await expect(
     page.getByText(
-      '対象によってダメージが変わります。クラス相性・属性相性の欄で対象クラス・属性を指定してください。',
+      '対象によってダメージが変わります。クラス相性・属性相性の欄で対象クラス・属性を指定し、必要なら対象特性の該当・非該当も選択してください。',
     ),
   ).toBeVisible();
   await page.getByRole('combobox', { name: '属性相性の状況' }).selectOption('attribute:earth');

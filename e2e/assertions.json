@@ -24,7 +24,7 @@
     "oldAssertion": "five accessible ranking policy controls dispatch canonical state",
     "disposition": "transferred",
     "replacementFile": "apps/web/src/features/ranking/RankingConditions.test.tsx",
-    "replacementTest": "exposes exactly seven accessible canonical controls and dispatches the full policy"
+    "replacementTest": "exposes eight accessible canonical controls including growth basis and dispatches the full policy"
   },
   {
     "id": "E2E-A013-DETAIL",

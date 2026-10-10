@@ -294,8 +294,15 @@ async function auditProductionClosurePlans(
       profile,
       conditions,
       versions,
-      ({ servant, candidateSet }) =>
-        eligibility.observe(master, servant, conditions, candidateSet, digestPartition),
+      ({ servant, candidateSet, candidateEvents }) =>
+        eligibility.observe(
+          master,
+          servant,
+          conditions,
+          candidateSet,
+          digestPartition,
+          candidateEvents,
+        ),
     );
     const elapsedMs = performance.now() - startedAt;
     const entries = Object.entries(result.profileResults);

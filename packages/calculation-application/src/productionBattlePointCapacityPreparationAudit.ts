@@ -8,6 +8,8 @@ import { type MasterDataSnapshot, type MasterEffect } from '@fgo-lab/master-data
 import {
   canonicalAuditDigest,
   firstCanonicalAuditDifference,
+  createCanonicalAuditValueComparison,
+  assertCanonicalAuditRecords,
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
 import {
@@ -273,6 +275,7 @@ export function auditBattlePointCapacityPreparation(input: {
       : input.observations.map(diagnosticValue),
   );
   const snapshot = battlePointCapacityCanonicalSnapshotter();
+  const compare = createCanonicalAuditValueComparison();
   const failures: BattlePointCapacityFailure[] = [];
   const check = (
     identity: string,
@@ -283,10 +286,9 @@ export function auditBattlePointCapacityPreparation(input: {
   ) => {
     const wanted = snapshot(expected),
       observed = snapshot(actual);
-    const difference = firstCanonicalAuditDifference(
-      [{ identity, value: wanted }],
-      [{ identity, value: observed }],
-    );
+    assertCanonicalAuditRecords([{ identity, value: wanted }], 'expected');
+    const relative = compare(wanted, observed);
+    const difference = relative ? { identity, ...relative } : null;
     if (difference)
       failures.push({
         canonicalIdentity: identity,
@@ -421,7 +423,7 @@ export function auditBattlePointCapacityPreparation(input: {
       'capacityTransportMissing',
       'transport.ordered',
       true,
-      proofFields(ordered, ['battlePoints']) &&
+      proofFields(preparationExecutionStateFor(ordered), ['battlePoints']) &&
         capture?.orderedScenario === ordered &&
         proofFields(capture, ['orderedExecution']),
     );

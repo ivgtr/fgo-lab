@@ -82,13 +82,12 @@ it('compares ordered Set and Map cardinality, keys and values', () => {
     [{ key: 1 }, 'first'],
     [{ key: 1 }, 'second'],
   ]);
-  // Content interning can collapse distinct equal object members/keys. Detect the loss,
-  // rather than treating a matching re-encode or shared reference as restoration proof.
+  // Equal object members/keys retain their distinct identity and collection cardinality.
   expect(equal(set, decodeProductionAuditDiagnostic(encodeProductionAuditDiagnostic(set)))).toBe(
-    false,
+    true,
   );
   expect(equal(map, decodeProductionAuditDiagnostic(encodeProductionAuditDiagnostic(map)))).toBe(
-    false,
+    true,
   );
 });
 

@@ -4,6 +4,7 @@ import {
   connectProductionAuditBoundary,
   connectProductionAuditMatrix,
   createTsk065ProductionAuditSource,
+  createCanonicalAuditValueComparison,
   firstCanonicalAuditDifference,
   formatCanonicalAuditMismatch,
   measureProductionAuditLifecycle,
@@ -17,6 +18,36 @@ const baseline: CanonicalAuditRecord[] = [
 ];
 
 describe('canonical production audit records', () => {
+  it('shares only equal owned descendants and preserves each unequal field path', () => {
+    const left = Object.freeze({ value: 3 });
+    const equal = Object.freeze({ value: 3 });
+    const unequal = Object.freeze({ value: 4 });
+    const compare = createCanonicalAuditValueComparison();
+    expect(
+      compare({ first: [left, left], second: left }, { first: [equal, equal], second: equal }),
+    ).toBeNull();
+    expect(compare({ first: equal, second: left }, { first: equal, second: unequal })).toEqual({
+      path: 'second.value',
+      expected: 3,
+      actual: 4,
+    });
+    expect(compare({ renamed: left }, { renamed: unequal })).toEqual({
+      path: 'renamed.value',
+      expected: 3,
+      actual: 4,
+    });
+    expect(compare({ left: { '[0]': 1 } }, { left: { '[0]': 2 } })).toEqual({
+      path: 'left.[0]',
+      expected: 1,
+      actual: 2,
+    });
+    expect(compare({ '': { value: 1 } }, { '': { value: 2 } })).toEqual({
+      path: 'value',
+      expected: 1,
+      actual: 2,
+    });
+  });
+
   it('keeps digest order independent and object-key stable', () => {
     expect(canonicalAuditDigest([...baseline].reverse())).toBe(canonicalAuditDigest(baseline));
     expect(

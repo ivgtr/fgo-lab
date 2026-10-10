@@ -1,3 +1,4 @@
+import { mutableAuditView } from './auditTestMutation';
 import { expect, it, vi } from 'vitest';
 import * as hpOwner from '../../battle-execution/src/preparationHp';
 import * as modifierOwner from '../../battle-execution/src/hpResource';
@@ -618,7 +619,7 @@ for (const group of groups)
           for (const key of Object.keys(source.canonical))
             missing(source.canonical, key, `canonical.${key}`, 'maximumFixedCanonicalMismatch');
           for (const [i, t] of source.transitions!.entries())
-            for (const [j, a] of t.hpActions!.entries()) {
+            for (const [j, a] of t.hpActions.entries()) {
               const path = `transitions.${i}.hpActions.${j}`;
               for (const key of [
                 'start',
@@ -673,7 +674,7 @@ for (const group of groups)
         }
         if (group === 'identity' || group === 'modifier') {
           for (const [i, t] of source.transitions!.entries())
-            for (const [j, a] of t.hpActions!.entries())
+            for (const [j, a] of t.hpActions.entries())
               for (const [k, w] of (a.modifierWrites ?? []).entries()) {
                 const q = `transitions.${i}.hpActions.${j}.modifierWrites.${k}`;
                 if (group === 'identity') {
@@ -846,7 +847,7 @@ for (const group of groups)
               `${q}.result.state.appliedActions.length`,
               'maximumFixedRetainedMismatch',
             );
-            for (const [j, a] of t.hpActions!.entries()) {
+            for (const [j, a] of t.hpActions.entries()) {
               change(
                 'native:fake',
                 a.native,
@@ -923,7 +924,7 @@ for (const group of groups)
             'maximumFixedIdentityMismatch',
           );
           for (const [i, t] of source.transitions!.entries())
-            for (const [j, a] of t.hpActions!.entries())
+            for (const [j, a] of t.hpActions.entries())
               if (a.modifierWrites?.length) {
                 const q = `transitions.${i}.hpActions.${j}.modifierWrites`;
                 change(
@@ -1119,7 +1120,7 @@ for (const group of groups)
               key === 'candidate' ? 'maximumFixedRetainedMismatch' : 'maximumFixedUseMismatch',
             );
           const t = source.transitions![0]!,
-            a = t.hpActions![0]!,
+            a = t.hpActions[0]!,
             w = a.modifierWrites![0]!;
           inspect(
             'coherent:modifier-receipt-value',
@@ -1130,10 +1131,10 @@ for (const group of groups)
                 oldValue = w.modifiers[0]!.value;
               if (oldCell === undefined) throw new Error('missing actual selected cell');
               w.operation.values[0][3] = 999;
-              w.modifiers[0]!.value = 999;
+              mutableAuditView(w.modifiers[0]!).value = 999;
               return () => {
                 w.operation.values[0][3] = oldCell;
-                w.modifiers[0]!.value = oldValue;
+                mutableAuditView(w.modifiers[0]!).value = oldValue;
               };
             },
           );
@@ -1281,7 +1282,7 @@ for (const name of ['prior-commit-prefix', 'fixed-gain-clamp', 'fixed-loss-floor
       }
       if (name === 'prior-commit-prefix') {
         const t = p.source.transitions![1]!,
-          n = t.hpActions![0]!;
+          n = t.hpActions[0]!;
         change(
           t.before,
           'hp',
@@ -1318,7 +1319,7 @@ for (const name of ['prior-commit-prefix', 'fixed-gain-clamp', 'fixed-loss-floor
           'maximumFixedIdentityMismatch',
         );
       } else {
-        const w = p.source.transitions![0]!.hpActions![0]!.writes[0]!;
+        const w = p.source.transitions![0]!.hpActions[0]!.writes[0]!;
         const actor = w.before.actors.attacker!;
         change(
           actor,
@@ -1637,7 +1638,7 @@ it(
     operation.values[0][3] = null;
     const master = masterSnapshotSchema.parse(raw),
       refused = run(master, spec);
-    const n = refused.source.transitions![0]!.hpActions![0]!;
+    const n = refused.source.transitions![0]!.hpActions[0]!;
     const oldStatus = n.native!.status;
     Reflect.set(n.native!, 'status', 'committed');
     const forged = auditMaximumFixed({

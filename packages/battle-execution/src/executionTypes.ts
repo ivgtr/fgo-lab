@@ -1,5 +1,6 @@
 import type { ScalarNpDamageConsumption } from './npDamageOperation';
-import type { PreNoblePhantasmState } from './preparationContracts';
+import type { InvalidActivationCandidateExecution } from './candidatePreparation';
+import type { PreparationStateSnapshot } from './preparationContracts';
 import type { RejectedPreparationDiagnostic } from './preparationExecution';
 import type { PreparationRequiredInput } from './sourceCollection';
 import type {
@@ -97,8 +98,16 @@ export interface OrderedExecutionGroupAuditEvent {
 }
 
 export interface OrderedCandidateStateAudit {
-  preflight: { status: 'ready' } | { status: 'aborted'; issues: readonly ExecutionIssue[] } | null;
+  preflight:
+    | { status: 'ready' }
+    | {
+        status: 'aborted';
+        failure: InvalidActivationCandidateExecution['failure'];
+        issues: readonly ExecutionIssue[];
+      }
+    | null;
   preGroupContextResolution: {
+    constraintIssues: readonly ExecutionIssue[];
     appliedOperationIds: readonly string[];
     before: {
       actorFormId: ActorFormId;
@@ -153,15 +162,15 @@ export interface OrderedScenarioExecutionWithAuditObservation {
 export interface PreparedOrderedScenario {
   preparationExecution:
     | {
-        kind: 'available';
-        state: PreNoblePhantasmState;
-        initialFacts: InitialPreparationFacts;
+        readonly kind: 'available';
+        readonly state: PreparationStateSnapshot;
+        readonly initialFacts: InitialPreparationFacts;
       }
     | {
-        kind: 'diagnostic';
-        state: PreNoblePhantasmState;
-        initialFacts: InitialPreparationFacts;
-        continuation: RejectedPreparationDiagnostic;
+        readonly kind: 'diagnostic';
+        readonly state: PreparationStateSnapshot;
+        readonly initialFacts: InitialPreparationFacts;
+        readonly continuation: RejectedPreparationDiagnostic;
       }
     | { kind: 'unavailable'; issues: readonly ExecutionIssue[] };
   battlePointDomains: readonly BattlePointDomain[];
@@ -193,7 +202,9 @@ export interface ResolvedCanonicalInputSet {
 }
 
 /** Expose the retained physical snapshot without reconstructing or copying its identity. */
-export function preparationExecutionStateFor(prepared: PreparedOrderedScenario | null | undefined) {
+export function preparationExecutionStateFor(
+  prepared: PreparedOrderedScenario | null | undefined,
+): PreparationStateSnapshot | undefined {
   return prepared && prepared.preparationExecution.kind !== 'unavailable'
     ? prepared.preparationExecution.state
     : undefined;

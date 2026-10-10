@@ -1,16 +1,11 @@
-import {
-  assembleUnresolvedAuditObservation,
-  assembleComparedAuditObservation,
-} from './executionAuditObservation';
+import { assembleAuditedScenario } from './executionAuditObservation';
 import { compareCandidateResults } from './candidateComparison';
-import type { CandidateExecutionWithAudit } from './candidateStateAudit';
 import {
   executeOrderedScenarioCandidate,
   executeOrderedScenarioCandidates,
-  executeOrderedScenarioCandidateWithAudit,
   executeOrderedScenarioCandidatesWithAudit,
   executeDiagnosticScenarioCandidatesWithAudit,
-} from './candidateExecution';
+} from './orderedCandidates';
 import type {
   OrderedScenarioExecution,
   OrderedScenarioExecutionWithAuditObservation,
@@ -38,7 +33,7 @@ export type {
 } from './executionTypes';
 export { compileExecutionPlan as prepareOrderedScenario } from './executionPlan';
 export { compileDiagnosticExecutionPlan as prepareDiagnosticOrderedScenario } from './executionPlan';
-export { executeOrderedScenarioCandidates } from './candidateExecution';
+export { executeOrderedScenarioCandidates } from './orderedCandidates';
 
 export function executeOrderedScenario(
   prepared: PreparedOrderedScenario,
@@ -78,27 +73,4 @@ export function executeDiagnosticOrderedScenarioWithAuditObservation(
     contributionPolicy,
   );
   return assembleAuditedScenario(prepared, resolvedInputs, contributionPolicy, executions);
-}
-
-function assembleAuditedScenario(
-  prepared: PreparedOrderedScenario,
-  resolvedInputs: ResolvedCanonicalInputSet,
-  contributionPolicy: ContributionApplicationPolicy,
-  auditedExecutions: readonly CandidateExecutionWithAudit[],
-): OrderedScenarioExecutionWithAuditObservation {
-  if (auditedExecutions.length === 0) {
-    if (prepared.targetResolution.kind === 'candidates')
-      throw new TypeError('target_candidate_execution_missing');
-    return assembleUnresolvedAuditObservation(
-      prepared,
-      executeOrderedScenarioCandidateWithAudit(prepared, resolvedInputs, null, contributionPolicy),
-    );
-  }
-  const executions = auditedExecutions.map(({ execution }) => execution);
-  return assembleComparedAuditObservation(
-    prepared,
-    auditedExecutions,
-    executions,
-    compareCandidateResults(executions),
-  );
 }

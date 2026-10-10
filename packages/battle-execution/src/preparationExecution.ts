@@ -12,6 +12,8 @@ import type {
   PreparationTransitionResult,
   PreparationCompletedTransitionResult,
   PreNoblePhantasmState,
+  PreparationStateSnapshot,
+  PreparationSnapshot,
 } from './preparationContracts';
 import type { SourceEffect } from './sourceCollection';
 
@@ -50,25 +52,27 @@ export type RejectedSourceTransaction = {
 };
 
 /** Public results contain only sealed transactions, never an in-flight draft. */
-export type PreparationSourceExecution = PreparationSourceIdentity &
-  (
-    | { readonly status: 'unreached'; readonly transaction?: never; readonly restored?: never }
-    | {
-        readonly status: 'completed';
-        readonly transaction: CompletedSourceTransaction;
-        readonly restored?: never;
-      }
-    | {
-        readonly status: 'rejected';
-        readonly transaction: RejectedSourceTransaction;
-        readonly restored: PreNoblePhantasmState;
-      }
-    | {
-        readonly status: 'rolledBack';
-        readonly transaction: CompletedSourceTransaction;
-        readonly restored: PreNoblePhantasmState;
-      }
-  );
+export type PreparationSourceExecution = PreparationSnapshot<
+  PreparationSourceIdentity &
+    (
+      | { readonly status: 'unreached'; readonly transaction?: never; readonly restored?: never }
+      | {
+          readonly status: 'completed';
+          readonly transaction: CompletedSourceTransaction;
+          readonly restored?: never;
+        }
+      | {
+          readonly status: 'rejected';
+          readonly transaction: RejectedSourceTransaction;
+          readonly restored: PreNoblePhantasmState;
+        }
+      | {
+          readonly status: 'rolledBack';
+          readonly transaction: CompletedSourceTransaction;
+          readonly restored: PreNoblePhantasmState;
+        }
+    )
+>;
 
 /** Private reducer draft. It cannot be returned in an action result or diagnostic. */
 export interface PreparationSourceDraft {
@@ -88,7 +92,7 @@ export interface PreparationSourceDraft {
 }
 
 export type PreparationActionExecution = PreparationCompletedTransitionResult & {
-  readonly command: PreNoblePhantasmCommand;
+  readonly command: PreparationSnapshot<PreNoblePhantasmCommand>;
 };
 
 export type PreparationInitializationExecution = PreparationCompletedTransitionResult & {
@@ -136,16 +140,17 @@ function sealSource(
   const identity = {
     actionId: draft.actionId,
     source: draft.source,
-    binding: applied
-      ? draft.binding
-      : {
-          ...draft.binding,
-          physicalInputs: [],
-          modifierValueReads: [],
-          committedPhysicalOperationIndexes: [],
-          sourcePhysicalCommitted: false,
-          physicalTransitions: [],
-        },
+    binding:
+      applied || draft.completion === 'stochasticFailure'
+        ? draft.binding
+        : {
+            ...draft.binding,
+            physicalInputs: [],
+            modifierValueReads: [],
+            committedPhysicalOperationIndexes: [],
+            sourcePhysicalCommitted: false,
+            physicalTransitions: [],
+          },
     operations: draft.operations.map((operation) => ({
       ...operation,
       steps: [...operation.steps],
@@ -237,10 +242,10 @@ export function finishPreparationExecution(
 export interface RejectedPreparationDiagnostic {
   readonly kind: 'rejectedPreparationDiagnostic';
   readonly rejection: Extract<PreparationCompletedTransitionResult, { status: 'rejected' }>;
-  readonly restored: PreNoblePhantasmState;
+  readonly restored: PreparationStateSnapshot;
   readonly commands: readonly PreNoblePhantasmCommand[];
   readonly transitions: readonly PreparationActionExecution[];
-  readonly state: PreNoblePhantasmState;
+  readonly state: PreparationStateSnapshot;
 }
 
 export function abandonPreparationExecution(context: PreparationExecutionContext): void {

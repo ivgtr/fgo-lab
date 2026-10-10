@@ -4,7 +4,7 @@ import type { SourceEffect } from '@fgo-lab/battle-execution';
 import {
   preparationHpActionsFor,
   hpCandidateObservationFor,
-  type PreparationHpAction,
+  type PreparationHpActionSnapshot,
 } from '@fgo-lab/battle-execution/preparation-audit';
 import { battlePointPreparationRejectionObservationFor } from './battlePointPreparationObservation';
 import { hpPreparationCanonicalFor } from './productionHpPreparationAudit';
@@ -13,7 +13,7 @@ import type { HpCoverageSource } from './productionHpCoverage';
 
 type Operation = MasterEffect['execution'][number];
 type Transfer = Extract<Operation, { resource: 'hp' }>;
-type Entry = NonNullable<PreparationHpAction['transferOperations']>[number];
+type Entry = NonNullable<PreparationHpActionSnapshot['transferOperations']>[number];
 export function isSelfHpTransfer(operation: Operation): operation is Transfer {
   return (
     operation.kind === 'resourceMutation' &&
@@ -32,7 +32,7 @@ export interface HpTransferRequest {
 export interface HpTransferObservation {
   requestIndex: number;
   actionIndex: number;
-  action: PreparationHpAction;
+  action: PreparationHpActionSnapshot;
   entry: Entry;
   source: SourceEffect;
   operation: Operation;
@@ -49,7 +49,7 @@ export function hpTransferObservations(requests: readonly HpTransferRequest[]) {
   return requests.flatMap(({ prepared }, requestIndex) =>
     (battlePointPreparationRejectionObservationFor(prepared)?.transitions ?? []).flatMap(
       (transition, actionIndex) =>
-        (preparationHpActionsFor(transition.result) ?? []).flatMap((action) =>
+        preparationHpActionsFor(transition.result).flatMap((action) =>
           (action.transferOperations ?? []).map((entry): HpTransferObservation => ({
             requestIndex,
             actionIndex,
@@ -107,15 +107,15 @@ export interface HpTransferEvidence {
     result: Entry['result'];
     receipts: Entry['receipts'];
     donorReceipts: Entry['donorReceipts'];
-    native: PreparationHpAction['native'];
-    returnedHp: PreparationHpAction['start']['hp'];
+    native: PreparationHpActionSnapshot['native'];
+    returnedHp: PreparationHpActionSnapshot['start']['hp'];
     qualification: string;
   }[];
   consumers: {
     requestIndex: number;
     result: CalculationExecution['result'];
     hpObservation: ReturnType<typeof hpCandidateObservationFor>;
-    retainedHp: PreparationHpAction['start']['hp'];
+    retainedHp: PreparationHpActionSnapshot['start']['hp'];
     qualification: string;
   }[];
   unobserved: string[];

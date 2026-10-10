@@ -74,7 +74,12 @@ it('reads a known absent battle-point rate from preparation state for a party re
       ]),
     },
     battlePoints: {
-      actors: { attacker: { actorId: 'actor', domains: { actor: { kind: 'absent' as const, eligible: true } } } },
+      actors: {
+        attacker: {
+          actorId: 'actor',
+          domains: { actor: { kind: 'absent' as const, eligible: true } },
+        },
+      },
       receipts: [],
       executedEffects: [],
     },
@@ -2812,10 +2817,7 @@ it('keeps an unknown population NP gain inert only at full gauge and respects lo
     valueSetIndex: 0,
     valueIndex: 0,
   });
-  const apply = (
-    gauge: number,
-    selected: MasterEffect['execution'][number] = operation,
-  ) =>
+  const apply = (gauge: number, selected: MasterEffect['execution'][number] = operation) =>
     applyPreparationNpOperation({
       semantics,
       initial: { ...initial.state.npResource, gauge },
@@ -2837,7 +2839,10 @@ it('keeps an unknown population NP gain inert only at full gauge and respects lo
     apply(20_000, {
       ...operation,
       direction: 'loss',
-      amount: { ...operation.amount, selector: { ...operation.amount.selector, basis: 'inBattle' } },
+      amount: {
+        ...operation.amount,
+        selector: { ...operation.amount.selector, basis: 'inBattle' },
+      },
     }),
   ).toMatchObject({ status: 'applied', state: { gauge: 19_000 } });
 });

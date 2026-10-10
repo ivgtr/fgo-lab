@@ -6,6 +6,8 @@ import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   canonicalAuditDigest,
   firstCanonicalAuditDifference,
+  createCanonicalAuditValueComparison,
+  assertCanonicalAuditRecords,
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
 import {
@@ -177,6 +179,7 @@ export function auditBattlePointCapacityPreparationAttemptsWithProof(
 
 function inspectCapacityAttempts(input: CapacityAttemptInput) {
   const snapshot = battlePointCapacityCanonicalSnapshotter();
+  const compare = createCanonicalAuditValueComparison();
   const failures: Failure[] = [];
   const boundaries: {
     canonicalIdentity: string;
@@ -193,10 +196,9 @@ function inspectCapacityAttempts(input: CapacityAttemptInput) {
   ) => {
     const wanted = snapshot(expected),
       observed = snapshot(actual);
-    const diff = firstCanonicalAuditDifference(
-      [{ identity, value: wanted }],
-      [{ identity, value: observed }],
-    );
+    assertCanonicalAuditRecords([{ identity, value: wanted }], 'expected');
+    const relative = compare(wanted, observed);
+    const diff = relative ? { identity, ...relative } : null;
     if (diff)
       failures.push({
         reason,

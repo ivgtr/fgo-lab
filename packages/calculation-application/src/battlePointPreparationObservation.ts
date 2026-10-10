@@ -1,4 +1,4 @@
-import type { PreparationOcAttempt } from '@fgo-lab/battle-execution/preparation-audit';
+import type { PreparationOcAttemptSnapshot } from '@fgo-lab/battle-execution/preparation-audit';
 import type {
   BattlePointState,
   PreparationTransitionResult,
@@ -63,7 +63,7 @@ export interface BattlePointPreparationRejectionObservation {
     before: PreNoblePhantasmState;
     command: PreNoblePhantasmCommand;
     result: PreparationTransitionResult;
-    attempts: readonly PreparationOcAttempt[] | undefined;
+    attempts: readonly PreparationOcAttemptSnapshot[] | undefined;
   }[];
   rejection?: Extract<ScenarioPreparationOutcome, { status: 'rejected' }>;
 }

@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProfileCollection, type ProfileRepository } from '@fgo-lab/profile-domain';
 import type { MasterManifest } from '@fgo-lab/master-data';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
-import { stageAndActivate } from '../adapters/repository';
+import { loadActiveMaster, stageAndActivate } from '../adapters/repository';
+import { openDB } from 'idb';
 import { bootstrapApplication } from './startup';
 
 const now = new Date('2026-09-05T00:00:00.000Z');
@@ -63,6 +64,51 @@ describe('startup master delivery', () => {
     expect(result.state).toBe('ready');
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith('/master/manifest.json', { cache: 'no-store' });
+  });
+
+  it('keeps validated profiles when incompatible master recovery cannot download the replacement', async () => {
+    const db = await openDB('fgo-lab', 1);
+    const active: unknown = await db.get('master', 'active');
+    if (active === null || typeof active !== 'object') throw new Error('fixture_master_missing');
+    const snapshot = {
+      ...fixture,
+      servants: [{ ...fixture.servants[0]!, rarity: 99 }, ...fixture.servants.slice(1)],
+    };
+    await db.put(
+      'master',
+      {
+        ...active,
+        snapshotBytes: new TextEncoder().encode(JSON.stringify(snapshot)).buffer,
+      },
+      'active',
+    );
+    db.close();
+    const repository = {
+      ...profilesRepository,
+      clear: vi.fn(() => Promise.resolve()),
+      replace: vi.fn(() => Promise.resolve({ status: 'committed' as const })),
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Promise.reject(new Error('offline'))),
+    );
+    const result = await bootstrapApplication(repository, {
+      baseUrl: '/',
+      development: true,
+      fragment: '',
+      now,
+    });
+    expect(result).toMatchObject({
+      state: 'setup-required',
+      master: undefined,
+      profiles,
+      invalidStoredProfiles: false,
+      warning: '互換性のない旧マスターデータを削除しました。再セットアップが必要です: offline',
+    });
+    expect(result.profiles).toBe(profiles);
+    expect(await loadActiveMaster()).toEqual({ state: 'empty' });
+    expect(repository.clear).not.toHaveBeenCalled();
+    expect(repository.replace).not.toHaveBeenCalled();
   });
 
   it('retains the validated IndexedDB version when the manifest update check fails', async () => {

@@ -1,4 +1,6 @@
 import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
+import { mutableAuditView } from './auditTestMutation';
+import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -20,6 +22,8 @@ import {
 } from './productionBattlePointPreparationAudit';
 import {
   productionAuditTestOptions,
+  encodeProductionAuditDiagnostic,
+  decodeProductionAuditDiagnostic,
   writeProductionAuditArtifact,
 } from './productionAuditArtifacts';
 
@@ -378,8 +382,8 @@ describe('committed preparation domain battle point shared audit', () => {
           gate: rankingGate,
           rankingParity,
         });
-        const value =
-          preparationExecutionStateFor(program.prepared.orderedScenario!)!.battlePoints!.actors.attacker!.domains['810000'];
+        const value = preparationExecutionStateFor(program.prepared.orderedScenario)!.battlePoints
+          .actors.attacker!.domains['810000'];
         const target = source.observation!.targetExecution!;
         const consumed =
           target.selection === 'selected'
@@ -634,7 +638,10 @@ describe('committed preparation domain battle point shared audit', () => {
           },
         );
         add('missing', 'canonical-state', 'domainTraceMissing', 'preparation.state', (s) => {
-          Reflect.deleteProperty(preparationExecutionStateFor(s.program.prepared.orderedScenario!)!, 'battlePoints');
+          Reflect.deleteProperty(
+            preparationExecutionStateFor(s.program.prepared.orderedScenario)!,
+            'battlePoints',
+          );
         });
         add('identity-order', 'source-action', 'domainSourceMismatch', 'action.0.source', (s) => {
           capture(s).transitions[0]!.result.state.appliedActions[0]!.sourceId = 'wrong';
@@ -904,12 +911,16 @@ describe('committed preparation domain battle point shared audit', () => {
           'domainIdentityMismatch',
           'preparation.actor',
           (s) => {
-            preparationExecutionStateFor(s.program.prepared.orderedScenario!)!.battlePoints = {
-              ...preparationExecutionStateFor(s.program.prepared.orderedScenario!)!.battlePoints!,
+            mutableAuditView(
+              preparationExecutionStateFor(s.program.prepared.orderedScenario)!,
+            ).battlePoints = {
+              ...preparationExecutionStateFor(s.program.prepared.orderedScenario)!.battlePoints,
               actors: {
-                ...preparationExecutionStateFor(s.program.prepared.orderedScenario!)!.battlePoints!.actors,
+                ...preparationExecutionStateFor(s.program.prepared.orderedScenario)!.battlePoints
+                  .actors,
                 attacker: {
-                  ...preparationExecutionStateFor(s.program.prepared.orderedScenario!)!.battlePoints!.actors.attacker!,
+                  ...preparationExecutionStateFor(s.program.prepared.orderedScenario)!.battlePoints
+                    .actors.attacker!,
                   actorId: 'wrong',
                 },
               },
@@ -960,6 +971,9 @@ describe('committed preparation domain battle point shared audit', () => {
         for (const negative of cases) {
           // Clone transport and mutable owner inputs, while retaining canonical snapshots and
           // original reference baselines. Each mutation is independent of all other cases.
+          const originalPreparation = program.prepared.orderedScenario!.preparationExecution;
+          if (originalPreparation.kind === 'unavailable')
+            throw new TypeError('battle_point_fixture_preparation_missing');
           const changed = {
             ...structuredClone({ ...source, program: undefined, calculation: undefined }),
             calculation: source.calculation,
@@ -968,7 +982,13 @@ describe('committed preparation domain battle point shared audit', () => {
               expected: structuredClone(program.expected),
               prepared: {
                 ...program.prepared,
-                orderedScenario: { ...program.prepared.orderedScenario! },
+                orderedScenario: {
+                  ...program.prepared.orderedScenario!,
+                  preparationExecution: {
+                    ...originalPreparation,
+                    state: { ...originalPreparation.state },
+                  },
+                },
               },
             },
           } as unknown as Source;
@@ -1062,15 +1082,28 @@ describe('committed preparation domain battle point shared audit', () => {
           },
           transport: missingPublished,
         });
+        const payload = {
+          canonicalIdentity: 'tsk-08:preparation-battle-point',
+          positives,
+          negatives,
+        };
+        const encoded = encodeProductionAuditDiagnostic(payload);
+        const roundTrip = equalProductionAuditDiagnosticValues(
+          payload,
+          decodeProductionAuditDiagnostic(encoded),
+        );
         await writeProductionAuditArtifact(
           task.meta,
           `tsk-08-preparation-battle-point-${spec.name}.json`,
           {
-            canonicalIdentity: 'tsk-08:preparation-battle-point',
-            positives,
-            negatives,
+            diagnosticVersion: 1,
+            encoding: 'lossless-interned-values',
+            canonicalIdentity: payload.canonicalIdentity,
+            roundTrip,
+            encoded,
           },
         );
+        expect(roundTrip).toBe(true);
         for (const status of inventoryStatuses) expect(status).toBe('passed');
         for (const result of results) {
           expect(

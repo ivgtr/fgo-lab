@@ -28,6 +28,7 @@ export interface PhysicalInputCommit {
 export interface ModifierValueRead {
   readonly operationIndex: number;
   readonly result: ResolvedModifierValue;
+  readonly hpRead?: { readonly permille: number | null; readonly value: number | null };
 }
 
 export interface PhysicalOperationTransition {
@@ -36,7 +37,7 @@ export interface PhysicalOperationTransition {
   readonly traitWrites?: ScopedMapDelta<TraitFact>;
   readonly externalTraits?: ScopedMapDelta<TraitFact>;
   readonly intrinsicAttacker?: PreNoblePhantasmState['traitFactLayers']['intrinsic']['attacker'];
-  readonly closedScopes?: readonly [TraitScope, ConditionFactProof | null][];
+  readonly closedScopes?: readonly (readonly [TraitScope, ConditionFactProof | null])[];
   readonly traitProofs?: ScopedMapDelta<ConditionFactProof>;
   readonly suppressionProofs?: Partial<Record<'attacker' | 'target', MapDelta<ConditionFactProof>>>;
   readonly quantityProofs?: MapDelta<ConditionFactProof>;
@@ -136,6 +137,14 @@ export function bindExecutionOperation<TOperation extends BattleOperation>(
 
 export function executionBindingFor(operation: BattleOperation) {
   return operation.runtimeBinding?.source;
+}
+
+/** The local transaction identity; callers add their source/context scope. */
+export function operationTransactionKey(operation: BattleOperation): string {
+  return (
+    operation.source.transactionGroupId ??
+    `${operation.source.skillId}:${operation.source.effectOccurrenceId}`
+  );
 }
 
 export function physicalInputCommitFor(operation: BattleOperation) {

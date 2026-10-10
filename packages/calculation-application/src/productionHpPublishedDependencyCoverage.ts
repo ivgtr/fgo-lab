@@ -1,8 +1,14 @@
-import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { isDeepStrictEqual } from 'node:util';
-import type { BattleOperation, ConditionExpression, SourceEffect } from '@fgo-lab/battle-execution';
+import type {
+  BattleOperation,
+  ConditionExpression,
+  SourceEffect,
+  OrderedCandidateStateAudit,
+  PreparedOrderedScenario,
+} from '@fgo-lab/battle-execution';
 import {
   compiledSourcesFor,
+  hpPermille,
   compiledOperationSourceFor,
   hpCandidateObservationFor,
 } from '@fgo-lab/battle-execution/preparation-audit';
@@ -20,6 +26,27 @@ import {
 } from './productionHpProofCoverage';
 import type { PreparedCalculationScenario, CalculationExecution } from './scenario';
 
+/** Typed native aborts never acquire a physical HP capture or an ordered event. */
+export function hpCandidatePreflightFailureMatches(
+  preflight: OrderedCandidateStateAudit['preflight'],
+  ordered: PreparedOrderedScenario | null,
+): boolean {
+  if (preflight?.status !== 'aborted' || !preflight.issues.length || !ordered) return false;
+  switch (preflight.failure) {
+    case 'preparationUnavailable':
+      return (
+        ordered.preparationExecution.kind === 'unavailable' &&
+        preflight.issues === ordered.preparationExecution.issues
+      );
+    case 'activationContext':
+      return preflight.issues.some((issue) => issue.kind === 'invalidActivationContext');
+    case 'constraintConflict':
+      return preflight.issues.some((issue) => issue.kind === 'constraintConflict');
+    default:
+      return false;
+  }
+}
+
 /** The original producer retains every request before its family selectors. */
 export interface HpPublishedDependencyRequest {
   prepared: PreparedCalculationScenario;
@@ -34,6 +61,7 @@ type Stage =
   | 'selectedPreparationCell'
   | 'actualConditionRead'
   | 'actualValueRead'
+  | 'preparedValueConsumption'
   | 'npEvaluation';
 export interface HpPublishedDependencyBinding {
   family: 'publishedDependency';
@@ -447,7 +475,7 @@ export function hpPublishedDependencyBindings(
       const aborted = preflight?.status === 'aborted';
       if (aborted) {
         if (
-          !preflight.issues.some((issue) => issue.kind === 'invalidActivationContext') ||
+          !hpCandidatePreflightFailureMatches(preflight, ordered) ||
           candidate ||
           captured.candidateState?.executionGroups.length !== 0 ||
           ('operationEvents' in captured && captured.operationEvents.length !== 0)
@@ -457,7 +485,19 @@ export function hpPublishedDependencyBindings(
         fail('candidatePreflightMismatch', candidatePath);
       if (!candidate && !aborted && target?.selection !== 'unresolved')
         fail('missingCapture', candidatePath);
-      if (candidate && candidate.seed.hp !== preparationExecutionStateFor(ordered)?.hp)
+      const contextResolution = captured.candidateState?.preGroupContextResolution;
+      const preparation = ordered?.preparationExecution;
+      if (
+        candidate &&
+        (!contextResolution ||
+          !preparation ||
+          preparation.kind === 'unavailable' ||
+          candidate.seed.hp !==
+            (contextResolution.constraintIssues.length
+              ? preparation.initialFacts.hp
+              : preparation.state.hp) ||
+          candidate.seed.permille !== hpPermille(candidate.seed.hp?.actors.attacker))
+      )
         fail('requestOwnerMismatch', `${candidatePath}.seed`);
       if (target?.selection === 'selected' && preflight?.status === 'ready' && candidate) {
         const actualReads = candidate.reads;
@@ -800,96 +840,108 @@ export function hpPublishedDependencyBindings(
     }
     candidates.forEach((captured) => {
       const candidate = hpCandidateObservationFor(captured.candidateState);
-      candidate?.valueReads.forEach((read, position) => {
-        const compiledCell = compiledNpCell(read.operation);
-        if (
-          !dependencies.some(
-            (declaration) =>
-              declaration.identity.kind === 'valueExpression' &&
+      [...(candidate?.valueReads ?? []), ...(candidate?.preparedValueConsumptions ?? [])].forEach(
+        (read, position) => {
+          const compiledCell = compiledNpCell(read.operation);
+          if (
+            !dependencies.some(
+              (declaration) =>
+                declaration.identity.kind === 'valueExpression' &&
+                sourceMatches(
+                  declaration,
+                  read.operation.source,
+                  read.operation.source.origin === 'np' ? ref : null,
+                ),
+            ) &&
+            !compiledCell
+          )
+            return;
+          const operation = ordered?.operations[read.operationSequence];
+          const group = captured.candidateState?.executionGroups[read.operationGroupIndex];
+          const event =
+            'operationEvents' in captured
+              ? captured.operationEvents[read.operationSequence]
+              : undefined;
+          const selected = bindings.filter(
+            (binding) =>
+              binding.requestIndex === requestIndex &&
+              binding.stage === 'selectedPreparationCell' &&
+              binding.sourceInstanceId === read.operation.source.sourceInstanceId &&
+              binding.declaration.identity.kind === 'valueExpression' &&
+              (read.operation.source.origin !== 'np' ||
+                binding.declaration.operation ===
+                  compiledOperationSourceFor(ordered!, read.operation)) &&
               sourceMatches(
-                declaration,
+                binding.declaration,
                 read.operation.source,
                 read.operation.source.origin === 'np' ? ref : null,
               ),
-          ) &&
-          !compiledCell
-        )
-          return;
-        const operation = ordered?.operations[read.operationSequence];
-        const group = captured.candidateState?.executionGroups[read.operationGroupIndex];
-        const event =
-          'operationEvents' in captured
-            ? captured.operationEvents[read.operationSequence]
-            : undefined;
-        const selected = bindings.filter(
-          (binding) =>
-            binding.requestIndex === requestIndex &&
-            binding.stage === 'selectedPreparationCell' &&
-            binding.sourceInstanceId === read.operation.source.sourceInstanceId &&
-            binding.declaration.identity.kind === 'valueExpression' &&
-            (read.operation.source.origin !== 'np' ||
-              binding.declaration.operation ===
-                compiledOperationSourceFor(ordered!, read.operation)) &&
-            sourceMatches(
-              binding.declaration,
-              read.operation.source,
-              read.operation.source.origin === 'np' ? ref : null,
-            ),
-        );
-        if (
-          !operation ||
-          operation !== read.operation ||
-          read.result.operation !== operation ||
-          event?.operationId !== operation.operationId ||
-          event.operationOutcome !==
-            (group?.outcome === 'rolledBack' ? 'unsupported' : read.result.outcome) ||
-          !group?.operationIds.includes(operation.operationId) ||
-          (selected.length !== 1 &&
-            !(
-              selected.length === 0 &&
-              compiledCell &&
-              read.result.outcome === 'notApplied' &&
-              !read.modifierAppended
-            ))
-        ) {
-          fail('valueReadMismatch', `requests.${requestIndex}.valueReads.${position}`);
-          return;
-        }
-        const declaration = selected[0]?.declaration ?? compiledCell!;
-        const committed = group.outcome === 'committed';
-        const consumed =
-          committed &&
-          read.result.outcome === 'applied' &&
-          read.contributionIncluded &&
-          read.modifierAppended &&
-          group.appliedOperationIds.includes(operation.operationId);
-        push(
-          declaration,
-          {
-            stage: 'actualValueRead',
-            position,
-            operation,
-            sequence: read.operationSequence,
-            group: read.operationGroupIndex,
-            sourceInstanceId: operation.source.sourceInstanceId,
-            actor: 'attacker',
-            actionId: null,
-            actionIndex: null,
-            reference: read,
-            detail: {
-              selectedCellPath: declaration.identity.path,
-              permille: read.permille,
-              resolvedValue: read.value,
-              operationOutcome: read.result.outcome,
-              contributionIncluded: read.contributionIncluded,
-              modifierAppended: read.modifierAppended,
-              transaction: group.outcome,
-              consumed,
+          );
+          if (
+            !operation ||
+            operation !== read.operation ||
+            read.result.operation !== operation ||
+            read.nativePreparationRead !==
+              (operation.gameActivation !== 'constant' &&
+              operation.runtimeBinding?.source.modifierReadOwner === 'nativePreparation'
+                ? (operation.runtimeBinding.modifierValueRead ?? null)
+                : null) ||
+            (read.nativePreparationRead !== null &&
+              (read.nativePreparationRead.hpRead?.permille !== read.permille ||
+                read.nativePreparationRead.hpRead.value !== read.value ||
+                read.nativePreparationRead.result.value !== read.value)) ||
+            event?.operationId !== operation.operationId ||
+            event.operationOutcome !==
+              (group?.outcome === 'rolledBack' ? 'unsupported' : read.result.outcome) ||
+            !group?.operationIds.includes(operation.operationId) ||
+            (selected.length !== 1 &&
+              !(
+                selected.length === 0 &&
+                compiledCell &&
+                read.result.outcome === 'notApplied' &&
+                !read.modifierAppended
+              ))
+          ) {
+            fail('valueReadMismatch', `requests.${requestIndex}.valueReads.${position}`);
+            return;
+          }
+          const declaration = selected[0]?.declaration ?? compiledCell!;
+          const committed = group.outcome === 'committed';
+          const consumed =
+            committed &&
+            read.result.outcome === 'applied' &&
+            read.contributionIncluded &&
+            read.modifierAppended &&
+            group.appliedOperationIds.includes(operation.operationId);
+          push(
+            declaration,
+            {
+              stage: read.nativePreparationRead ? 'preparedValueConsumption' : 'actualValueRead',
+              position,
+              operation,
+              sequence: read.operationSequence,
+              group: read.operationGroupIndex,
+              sourceInstanceId: operation.source.sourceInstanceId,
+              actor: 'attacker',
+              actionId: null,
+              actionIndex: null,
+              reference: read,
+              detail: {
+                selectedCellPath: declaration.identity.path,
+                permille: read.permille,
+                resolvedValue: read.value,
+                operationOutcome: read.result.outcome,
+                contributionIncluded: read.contributionIncluded,
+                modifierAppended: read.modifierAppended,
+                transaction: group.outcome,
+                consumed,
+                readOwner: read.nativePreparationRead ? 'nativePreparation' : 'orderedExecution',
+              },
             },
-          },
-          captured.candidateIndex,
-        );
-      });
+            captured.candidateIndex,
+          );
+        },
+      );
     });
   });
   requests.forEach(({ prepared }, requestIndex) => {
@@ -926,8 +978,19 @@ export function hpPublishedDependencyBindings(
         operation.runtimeBinding?.source.modifierReadOwner === 'nativePreparation' &&
         operation.gameActivation !== 'constant'
       ) {
-        if (!operation.runtimeBinding.modifierValueRead)
+        if (!operation.runtimeBinding.modifierValueRead?.hpRead)
           fail('missingCapture', `requests.${requestIndex}.operations.${sequence}.nativeValueRead`);
+        const consumptions = candidate.preparedValueConsumptions.filter(
+          (read) =>
+            read.operation === operation &&
+            read.operationSequence === sequence &&
+            read.nativePreparationRead === operation.runtimeBinding?.modifierValueRead,
+        );
+        if (target.operationEvents[sequence] && consumptions.length !== 1)
+          fail(
+            'valueReadMismatch',
+            `requests.${requestIndex}.operations.${sequence}.nativeConsumption`,
+          );
         return;
       }
       const event = target.operationEvents[sequence];
@@ -1106,6 +1169,7 @@ export function reconcileHpPublishedDependencyCoverage(
     'selectedPreparationCell',
     'actualConditionRead',
     'actualValueRead',
+    'preparedValueConsumption',
     'npEvaluation',
   ];
   const bindingsByRequest = requests.map(() => [] as HpPublishedDependencyBinding[]);
@@ -1138,6 +1202,7 @@ export function reconcileHpPublishedDependencyCoverage(
           candidate.operation === binding.operation &&
           (candidate.stage === 'actualConditionRead' ||
             candidate.stage === 'actualValueRead' ||
+            candidate.stage === 'preparedValueConsumption' ||
             candidate.stage === 'npEvaluation'),
       );
       const event =
@@ -1184,10 +1249,10 @@ export function reconcileHpPublishedDependencyCoverage(
         stage: binding.stage,
         disposition: !selectedCell
           ? ('cellNotSelected' as const)
-          : reads.length
-            ? ('physicalRead' as const)
-            : nativePreparationRead
-              ? ('nativePreparationRead' as const)
+          : nativePreparationRead
+            ? ('nativePreparationRead' as const)
+            : reads.length
+              ? ('physicalRead' as const)
               : target?.selection !== 'selected'
                 ? ('consumerSelectionUnresolved' as const)
                 : event
@@ -1417,14 +1482,13 @@ export function reconcileHpPublishedDependencyCoverage(
       appendedActions: readonly unknown[];
     };
     const reached = detail.steps.some((step) => step.reached.length > 0);
-    const noNativeStep =
-      detail.steps.length === 0 &&
+    const onlyNativeSkips =
       detail.native.status === 'committed' &&
       detail.native.outcomes.length > 0 &&
       detail.native.outcomes.every((outcome) => outcome.outcome === 'notApplicable');
     const reads = observed.flatMap((candidate, readIndex) =>
       candidate.requestIndex === requestIndex &&
-      candidate.stage === 'actualValueRead' &&
+      candidate.stage === 'preparedValueConsumption' &&
       candidate.declaration === declaration
         ? [{ candidate, readIndex }]
         : [],
@@ -1433,11 +1497,14 @@ export function reconcileHpPublishedDependencyCoverage(
     const read = reads.length === 1 ? reads[0]! : null;
     return {
       requestIndex,
-      disposition: noNativeStep
-        ? ('selectedCellNoNativeStep' as const)
-        : reached
-          ? ('selectedCellReached' as const)
-          : ('selectedCellUnobserved' as const),
+      disposition:
+        onlyNativeSkips &&
+        (read?.candidate.detail as { readOwner?: string } | undefined)?.readOwner ===
+          'nativePreparation'
+          ? ('selectedCellReadInPreparation' as const)
+          : reached
+            ? ('selectedCellReached' as const)
+            : ('selectedCellUnobserved' as const),
       selectedBinding: index,
       reached,
       nativeStatus: detail.native.status,

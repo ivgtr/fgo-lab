@@ -1,9 +1,7 @@
+import { summarizeExcludedExternalTargetContributions } from './excludedTargetContributions';
 import { describe, expect, it } from 'vitest';
 import type { OrderedScenarioExecution } from './executionTypes';
-import {
-  compareCandidateResults,
-  summarizeExcludedExternalTargetContributions,
-} from './candidateComparison';
+import { compareCandidateResults } from './candidateComparison';
 
 function execution(
   targetClass: 'saber' | 'lancer',

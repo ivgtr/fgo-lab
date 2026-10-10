@@ -1,23 +1,19 @@
+import { RankingBasisFailure } from './rankingBasis';
+import { stableValueKey } from '@fgo-lab/schema';
 import type { PolicyUnavailabilityReason } from './rankingContracts';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
 import type { RankingCandidateCalculation } from './rankingPolicyCandidates';
+import type { RankingCandidateSpace } from './rankingCandidateSpace';
+import type { CalculationExecution } from './scenario';
+import type { RankingPolicyDetail } from './rankingContracts';
 import type { RankingProfileResult } from './rankingContracts';
 import type { RankingBlockerClass, RankingBlockerDiagnostics } from './rankingContracts';
 
 const MAX_BLOCKER_REPRESENTATIVES_PER_CLASS = 3;
 
-function stableString(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(stableString).join(',')}]`;
-  return `{${Object.entries(value as Record<string, unknown>)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, item]) => `${JSON.stringify(key)}:${stableString(item)}`)
-    .join(',')}}`;
-}
-
 function stableDigest(value: unknown): string {
   let hash = 0x811c9dc5;
-  for (const character of stableString(value)) {
+  for (const character of stableValueKey(value)) {
     hash ^= character.charCodeAt(0);
     hash = Math.imul(hash, 0x01000193);
   }
@@ -56,166 +52,190 @@ type BlockerRecords = Record<
   unavailableUnderPolicy: { candidateKey: string; reason: PolicyUnavailabilityReason }[];
 };
 
-function emptyRecords(): BlockerRecords {
-  return {
+export class RankingProfileAccumulator {
+  private readonly records: BlockerRecords = {
     unavailableUnderPolicy: [],
     inputRequired: [],
     invalid: [],
     unsupported: [],
   };
+  private firstInvalid: Extract<CalculationExecution['result'], { status: 'invalid' }> | undefined;
+  private firstUnsupported:
+    Extract<CalculationExecution['result'], { status: 'unsupported' }> | undefined;
+  private firstInputRequired:
+    Extract<CalculationExecution['result'], { status: 'inputRequired' }> | undefined;
+  constructor(
+    readonly attackProfile: AttackProfile,
+    readonly space: RankingCandidateSpace | undefined,
+  ) {}
+  get blocking(): boolean {
+    return (
+      this.records.invalid.length > 0 ||
+      this.records.unsupported.length > 0 ||
+      this.records.inputRequired.length > 0
+    );
+  }
+  observe(candidateKey: string, result: CalculationExecution['result']): void {
+    const records = this.records;
+    if (result.status === 'invalid') this.firstInvalid ??= result;
+    if (result.status === 'unsupported') this.firstUnsupported ??= result;
+    if (result.status === 'inputRequired') this.firstInputRequired ??= result;
+    if (result.status === 'unavailable') {
+      records.unavailableUnderPolicy.push({ candidateKey, reason: result.reason });
+    } else if (
+      result.status === 'unsupported' &&
+      result.missingEvidence.length === 1 &&
+      result.missingEvidence[0] === 'preparation:attackNoblePhantasmUnavailable'
+    ) {
+      records.unavailableUnderPolicy.push({ candidateKey, reason: 'attackProfileNotReachable' });
+    } else if (result.status === 'invalid') {
+      records.invalid.push({
+        candidateKey,
+        reason: `${result.issue.kind}:${result.issue.servantId}:${String(result.issue.level)}`,
+      });
+    } else if (result.status === 'inputRequired') {
+      records.inputRequired.push({
+        candidateKey,
+        reason: result.requiredInputs
+          .map(({ key }) => key)
+          .sort()
+          .join(','),
+      });
+    } else if (result.status === 'unsupported') {
+      records.unsupported.push({
+        candidateKey,
+        reason: [...result.missingEvidence].sort().join(','),
+      });
+    }
+  }
+
+  result(detail?: RankingPolicyDetail): RankingProfileResult {
+    const records = this.records;
+    const { space, attackProfile } = this;
+    const profileKey = attackProfileKey(attackProfile);
+    if (space?.status === 'invalid') {
+      records.invalid.push({
+        candidateKey: `space:${profileKey}`,
+        reason: stableValueKey(space.issue),
+      });
+      return {
+        status: 'invalid',
+        attackProfile,
+        issues: [],
+        reason: space.issue.kind,
+        candidateSpaceIssue: space.issue,
+        diagnostics: diagnosticsFor(records),
+      };
+    }
+    if (space?.status === 'unsupported') {
+      records.unsupported.push({
+        candidateKey: `space:${profileKey}`,
+        reason: stableValueKey(space.issue),
+      });
+      return {
+        status: 'unsupported',
+        attackProfile,
+        issues: [],
+        reason: space.issue.kind,
+        detail:
+          space.issue.kind === 'unsupportedFiniteDomain'
+            ? `${space.issue.upperBound}>${space.issue.supportedMaximum}`
+            : space.issue.kind === 'unsupportedActionAdmission'
+              ? space.issue.attackProfileKey
+              : space.issue.projectionKeys.join(','),
+        diagnostics: diagnosticsFor(records),
+      };
+    }
+    if (!space || space.programs.length === 0) {
+      records.unavailableUnderPolicy.push({
+        candidateKey: `space:${profileKey}`,
+        reason: 'attackProfileNotReachable',
+      });
+      return {
+        status: 'unavailableUnderPolicy',
+        attackProfile,
+        reason: 'attackProfileNotReachable',
+        diagnostics: diagnosticsFor(records),
+      };
+    }
+    const diagnostics = diagnosticsFor(records);
+    if (records.invalid.length > 0) {
+      const invalid = this.firstInvalid;
+      return {
+        status: 'invalid',
+        attackProfile,
+        issues: invalid?.issues ?? [],
+        reason: invalid?.issues[0]?.code ?? 'invalidCalculation',
+        diagnostics,
+      };
+    }
+    if (records.unsupported.length > 0) {
+      const unsupported = this.firstUnsupported;
+      return {
+        status: 'unsupported',
+        attackProfile,
+        issues: unsupported?.issues ?? [],
+        reason: 'candidateExecutionUnsupported',
+        ...(unsupported?.status === 'unsupported'
+          ? { detail: unsupported.missingEvidence.join(',') }
+          : {}),
+        diagnostics,
+      };
+    }
+    const inputRequired = this.firstInputRequired;
+    if (inputRequired?.status === 'inputRequired')
+      return {
+        status: 'inputRequired',
+        attackProfile,
+        inputs: inputRequired.requiredInputs,
+        issues: inputRequired.issues,
+        diagnostics,
+      };
+    if (detail) return { status: 'calculated', detail };
+    if (records.unavailableUnderPolicy.length > 0)
+      return {
+        status: 'unavailableUnderPolicy',
+        attackProfile,
+        reason: records.unavailableUnderPolicy.every(
+          (record) => record.reason === records.unavailableUnderPolicy[0]!.reason,
+        )
+          ? records.unavailableUnderPolicy[0]!.reason
+          : 'noSatisfiableCandidate',
+        diagnostics,
+      };
+    records.unavailableUnderPolicy.push({
+      candidateKey: `profile:${profileKey}`,
+      reason: 'noSatisfiableCandidate',
+    });
+    return {
+      status: 'unavailableUnderPolicy',
+      attackProfile,
+      reason: 'noSatisfiableCandidate',
+      diagnostics: diagnosticsFor(records),
+    };
+  }
 }
 
 export function unresolvedProfileResult(
   candidateSet: RankingCandidateCalculation,
   attackProfile: AttackProfile,
 ): RankingProfileResult {
-  const profileKey = attackProfileKey(attackProfile);
-  const space = candidateSet.plan.candidateSpaces.find(
-    (candidate) => attackProfileKey(candidate.attackProfile) === profileKey,
-  );
-  const records = emptyRecords();
-  if (space?.status === 'invalid') {
-    records.invalid.push({
-      candidateKey: `space:${profileKey}`,
-      reason: stableString(space.issue),
-    });
-    return {
-      status: 'invalid',
-      attackProfile,
-      issues: [],
-      reason: space.issue.kind,
-      candidateSpaceIssue: space.issue,
-      diagnostics: diagnosticsFor(records),
-    };
-  }
-  if (space?.status === 'unsupported') {
-    records.unsupported.push({
-      candidateKey: `space:${profileKey}`,
-      reason: stableString(space.issue),
-    });
-    return {
-      status: 'unsupported',
-      attackProfile,
-      issues: [],
-      reason: space.issue.kind,
-      detail:
-        space.issue.kind === 'unsupportedFiniteDomain'
-          ? `${space.issue.upperBound}>${space.issue.supportedMaximum}`
-          : space.issue.kind === 'unsupportedActionAdmission'
-            ? space.issue.attackProfileKey
-            : space.issue.projectionKeys.join(','),
-      diagnostics: diagnosticsFor(records),
-    };
-  }
-  if (!space || space.programs.length === 0) {
-    records.unavailableUnderPolicy.push({
-      candidateKey: `space:${profileKey}`,
-      reason: 'attackProfileNotReachable',
-    });
-    return {
-      status: 'unavailableUnderPolicy',
-      attackProfile,
-      reason: 'attackProfileNotReachable',
-      diagnostics: diagnosticsFor(records),
-    };
-  }
-  const matchingIndexes = candidateSet.plan.attackProfiles.flatMap((candidate, index) =>
-    attackProfileKey(candidate) === profileKey ? [index] : [],
-  );
-  const matchingExecutions = matchingIndexes.map((index) => ({
-    index,
-    execution: candidateSet.executions[index]!,
-  }));
-  for (const { index, execution } of matchingExecutions) {
-    const candidateKey = candidateSet.plan.candidateKeys[index] ?? `candidate:${String(index)}`;
-    if (execution.result.status === 'unavailable') {
-      records.unavailableUnderPolicy.push({ candidateKey, reason: execution.result.reason });
-    } else if (
-      execution.result.status === 'unsupported' &&
-      execution.result.missingEvidence.length === 1 &&
-      execution.result.missingEvidence[0] === 'preparation:attackNoblePhantasmUnavailable'
-    ) {
-      records.unavailableUnderPolicy.push({ candidateKey, reason: 'attackProfileNotReachable' });
-    } else if (execution.result.status === 'invalid') {
-      records.invalid.push({
-        candidateKey,
-        reason: `${execution.result.issue.kind}:${execution.result.issue.servantId}:${String(execution.result.issue.level)}`,
-      });
-    } else if (execution.result.status === 'inputRequired') {
-      records.inputRequired.push({
-        candidateKey,
-        reason: execution.result.requiredInputs
-          .map(({ key }) => key)
-          .sort()
-          .join(','),
-      });
-    } else if (execution.result.status === 'unsupported') {
-      records.unsupported.push({
-        candidateKey,
-        reason: [...execution.result.missingEvidence].sort().join(','),
-      });
-    }
-  }
-  const diagnostics = diagnosticsFor(records);
-  if (records.invalid.length > 0) {
-    const invalid = matchingExecutions.find(
-      ({ execution }) => execution.result.status === 'invalid',
-    )?.execution.result;
-    return {
-      status: 'invalid',
-      attackProfile,
-      issues: invalid?.issues ?? [],
-      reason: invalid?.issues[0]?.code ?? 'invalidCalculation',
-      diagnostics,
-    };
-  }
-  if (records.unsupported.length > 0) {
-    const unsupported = matchingExecutions.find(
-      ({ execution }) => execution.result.status === 'unsupported',
-    )?.execution;
-    return {
-      status: 'unsupported',
-      attackProfile,
-      issues: unsupported?.result.issues ?? [],
-      reason: 'candidateExecutionUnsupported',
-      ...(unsupported?.result.status === 'unsupported'
-        ? { detail: unsupported.result.missingEvidence.join(',') }
-        : {}),
-      diagnostics,
-    };
-  }
-  const inputRequired = matchingExecutions.find(
-    ({ execution }) => execution.result.status === 'inputRequired',
-  )?.execution;
-  if (inputRequired?.result.status === 'inputRequired')
-    return {
-      status: 'inputRequired',
-      attackProfile,
-      inputs: inputRequired.result.requiredInputs,
-      issues: inputRequired.result.issues,
-      diagnostics,
-    };
-  const detail = candidateSet.details.get(profileKey);
-  if (detail) return { status: 'calculated', detail };
-  if (records.unavailableUnderPolicy.length > 0)
-    return {
-      status: 'unavailableUnderPolicy',
-      attackProfile,
-      reason: records.unavailableUnderPolicy.every(
-        (record) => record.reason === records.unavailableUnderPolicy[0]!.reason,
-      )
-        ? records.unavailableUnderPolicy[0]!.reason
-        : 'noSatisfiableCandidate',
-      diagnostics,
-    };
-  records.unavailableUnderPolicy.push({
-    candidateKey: `profile:${profileKey}`,
-    reason: 'noSatisfiableCandidate',
-  });
+  const result = candidateSet.profileResults.get(attackProfileKey(attackProfile));
+  if (!result) throw new TypeError('ranking_profile_outcome_missing');
+  return result;
+}
+
+/** Application exceptions keep their typed basis failure and exact diagnostic payload. */
+export function rankingFailureResult(
+  error: unknown,
+  attackProfile: AttackProfile | null,
+): Extract<RankingProfileResult, { status: 'invalid' }> {
+  const basisFailure = error instanceof RankingBasisFailure;
   return {
-    status: 'unavailableUnderPolicy',
+    status: 'invalid',
     attackProfile,
-    reason: 'noSatisfiableCandidate',
-    diagnostics: diagnosticsFor(records),
+    issues: [],
+    reason: basisFailure ? error.reason : 'unexpectedRankingFailure',
+    detail: basisFailure ? error.detail : error instanceof Error ? error.message : String(error),
   };
 }

@@ -1,3 +1,15 @@
+import { collectAuxiliarySources } from './auxiliarySources';
+import { preparationTargetFacts } from './preparationTargetFacts';
+import { battlePointPhaseCandidates } from './battlePointResource';
+import { servantStackInputs } from './stackQuantities';
+import {
+  canonicalRequirementLeaves,
+  resolveInitialMaximumHp,
+  type CanonicalNpResourceSemantics,
+} from '@fgo-lab/master-data';
+import type { CalculationScenario } from '@fgo-lab/schema';
+import type { PreparationContextOptions } from './preparationContracts';
+import { forkConditionState } from './state';
 import { analyzeActivationFactSet } from '@fgo-lab/schema';
 import { createConditionState } from './conditionState';
 import {
@@ -32,6 +44,7 @@ import type {
   PreparationExecutionContext,
   PreparationFailureCode,
   PreparationTransitionResult,
+  PreparationStateSnapshot,
 } from './preparationContracts';
 import { emptyBattlePointState, reconcilePreparationBattlePoints } from './battlePointResource';
 import { rejectPreparation } from './preparationContracts';
@@ -39,7 +52,7 @@ import { resolveTargetPolicy, type Origin } from './effectRouting';
 
 import { createOcState } from './ocState';
 import { seedBuffInstances, bindBuffCountSources, isBuffCountInput } from './buffInstances';
-import { servantBuffCountInputs, mergeInputDefinitions } from './stackQuantities';
+import { servantInitialBuffCounts, mergeInputDefinitions } from './stackQuantities';
 import type { PreparationEffectActivation } from './preparationTransaction';
 
 type CanonicalOperation = MasterEffect['execution'][number];
@@ -438,12 +451,13 @@ export function createPreparationState(
   if (!Number.isInteger(context.initialGauge) || context.initialGauge < 0)
     return rejectPreparation(placeholder, 'invalidResourceState');
   try {
+    const initialBuffCounts = servantInitialBuffCounts(servant, [
+      ...(context.initialSources ?? []),
+      ...(context.terminalSources ?? []),
+    ]);
     const inputs = mergeInputDefinitions([
       ...(context.stackInputs ?? []),
-      ...servantBuffCountInputs(servant, [
-        ...(context.initialSources ?? []),
-        ...(context.terminalSources ?? []),
-      ]),
+      ...initialBuffCounts.inputs,
     ]);
     const invalid = inputs.find((definition) => {
       const count = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
@@ -480,7 +494,11 @@ export function createPreparationState(
       ]);
     }
     const buffInputs = inputs.filter(isBuffCountInput);
-    placeholder.buffInstances = seedBuffInstances(buffInputs, context.canonicalInputValues ?? {});
+    placeholder.buffInstances = seedBuffInstances(
+      buffInputs,
+      context.canonicalInputValues ?? {},
+      initialBuffCounts.markers,
+    );
     Object.assign(placeholder, bindBuffCountSources(placeholder, buffInputs));
     for (const instance of placeholder.buffInstances)
       (placeholder.conditionFactProofs.markers as Map<string, ConditionFactProof>).set(
@@ -502,4 +520,191 @@ export function createPreparationState(
 
 function validSourceMaximum(value: number | undefined): number | undefined {
   return value !== undefined && Number.isSafeInteger(value) && value > 0 ? value : undefined;
+}
+
+/** Canonical IR and completed receipts are immutable; live containers belong to the branch. */
+export function forkPreparationState(state: PreparationStateSnapshot): PreNoblePhantasmState {
+  return {
+    ...forkConditionState(state),
+    conditionReadClock: { ...state.conditionReadClock },
+    externalBinding: {
+      inputs: { ...state.externalBinding.inputs },
+      worldFacts: [...state.externalBinding.worldFacts],
+    },
+    usedSkillSlots: new Set(state.usedSkillSlots),
+    sourceBindings: [...state.sourceBindings],
+    npQuantityWrites: [...state.npQuantityWrites],
+    populationEvents: [...state.populationEvents],
+    buffInstances: state.buffInstances.map((instance) => ({ ...instance })),
+    activeEffects: [...state.activeEffects],
+    appliedActions: [...state.appliedActions],
+    uncertainContextWrites: [...state.uncertainContextWrites],
+    npResource: { ...state.npResource },
+    ocState: {
+      ...state.ocState,
+      boosts: state.ocState.boosts.map((instance) => ({ ...instance })),
+      rates: state.ocState.rates.map((instance) => ({ ...instance })),
+      uncertainRates: [...state.ocState.uncertainRates],
+      removalResistance: [...state.ocState.removalResistance],
+      constantSources: new Set(state.ocState.constantSources),
+      executedSources: new Set(state.ocState.executedSources),
+      sourceOutcomes: new Map(state.ocState.sourceOutcomes),
+      committedActions: new Set(state.ocState.committedActions),
+      receipts: [...state.ocState.receipts],
+    },
+    ...(state.hp
+      ? {
+          hp: {
+            ...state.hp,
+            actors: Object.fromEntries(
+              Object.entries(state.hp.actors).map(([actor, hp]) => [actor, { ...hp }]),
+            ),
+            receipts: [...state.hp.receipts],
+          },
+        }
+      : {}),
+    battlePoints: {
+      ...state.battlePoints,
+      actors: Object.fromEntries(
+        Object.entries(state.battlePoints.actors).map(([actor, points]) => [
+          actor,
+          {
+            ...points,
+            domains: Object.fromEntries(
+              Object.entries(points.domains).map(([domain, value]) => [
+                domain,
+                value.kind === 'present'
+                  ? { ...value, capacityModifiers: [...value.capacityModifiers] }
+                  : { ...value },
+              ]),
+            ),
+          },
+        ]),
+      ),
+      receipts: [...state.battlePoints.receipts],
+      executedEffects: [...state.battlePoints.executedEffects],
+    },
+  };
+}
+
+/** Canonical source/resource intent is resolved once for a request root. */
+export function createAttackerPreparationContext(
+  scenario: Extract<CalculationScenario, { mode: 'resolved' }>,
+  attacker: ServantMaster,
+  resourceSemantics: CanonicalNpResourceSemantics,
+  initialGauge: number,
+  options: PreparationContextOptions,
+): PreparationExecutionContext {
+  const auxiliary = options.master
+    ? collectAuxiliarySources(scenario, options.master, scenario.attacker.initialActorFormId)
+    : null;
+  const battlePointDomainIds = new Set(attacker.battlePointDomains?.map(({ id }) => id) ?? []);
+  for (const source of auxiliary?.sources ?? []) {
+    for (const leaf of canonicalRequirementLeaves(source.effect.requirement.expression))
+      if (
+        (leaf.kind === 'quantity' && leaf.quantity === 'battlePointPhase') ||
+        leaf.kind === 'sourceQuantity'
+      )
+        if (leaf.subjectId !== undefined) battlePointDomainIds.add(leaf.subjectId);
+    for (const operation of source.effect.execution)
+      if (
+        operation.kind === 'battlePointCapacityModifier' ||
+        (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
+      )
+        if (operation.subjectId !== null) battlePointDomainIds.add(operation.subjectId);
+  }
+  const battlePointDomains =
+    options.master?.battlePointDomains.filter(({ id }) => battlePointDomainIds.has(id)) ?? [];
+  const resolvedHp =
+    options.master && options.initialMaximumHp === undefined
+      ? resolveInitialMaximumHp(scenario, options.master)
+      : null;
+  const maximum =
+    options.initialMaximumHp ??
+    (resolvedHp?.status === 'resolved' ? resolvedHp.maximum : undefined);
+  return {
+    stochasticSelection: options.stochasticSelection ?? { kind: 'declared' },
+    ...(maximum === undefined ? {} : { initialMaximumHp: maximum }),
+    ...(options.master
+      ? {
+          maximumHpByForm: new Map(
+            attacker.actorFormGraph.forms.flatMap((form) => {
+              const initialForm = findActorForm(attacker, scenario.attacker.initialActorFormId);
+              if (
+                maximum !== undefined &&
+                (actorFormKey(form.id) === actorFormKey(scenario.attacker.initialActorFormId) ||
+                  (form.baseHp.kind === 'lineage' && initialForm?.baseHp.kind === 'lineage'))
+              )
+                return [[actorFormKey(form.id), maximum] as const];
+              const hp = resolveInitialMaximumHp(
+                { ...scenario, attacker: { ...scenario.attacker, initialActorFormId: form.id } },
+                options.master!,
+              );
+              return hp.status === 'resolved' ? [[actorFormKey(form.id), hp.maximum] as const] : [];
+            }),
+          ),
+        }
+      : {}),
+    attackerPredicates:
+      options.master?.targetSemantics.execution.classIdentities.map((classId) => ({
+        sourceKey: 'initial:attackerClass',
+        predicate: { kind: 'classIdentity' as const, classId },
+        present: attacker.predicates.some(
+          (predicate) => predicate.kind === 'classIdentity' && predicate.classId === classId,
+        ),
+      })) ?? [],
+    worldFacts: scenario.worldFactAssertions,
+    targetPredicates: options.master
+      ? preparationTargetFacts(
+          attacker,
+          scenario.targetContext,
+          options.master.targetSemantics.execution,
+        )
+      : [],
+    activationFacts: scenario.activationFacts,
+    ...(options.policy ? { policy: options.policy } : {}),
+    initialSources:
+      auxiliary?.sources.filter(
+        (source) =>
+          source.origin === 'craftEssence' ||
+          (source.origin === 'support' && source.effect.gameActivation === 'constant'),
+      ) ?? [],
+    terminalSources:
+      auxiliary?.sources.filter(
+        (source) =>
+          (source.origin === 'support' && source.effect.gameActivation !== 'constant') ||
+          source.origin === 'mysticCode',
+      ) ?? [],
+    stackInputs: servantStackInputs(attacker),
+    resourceSemantics,
+    npLevel: scenario.attacker.npLevel as PreparationExecutionContext['npLevel'],
+    initialGauge,
+    overcharge: options.initialOvercharge ?? scenario.initialOvercharge,
+    canonicalInputValues: Object.fromEntries(
+      Object.entries(scenario.canonicalInputValues).map(([key, value]) => [key, value.value]),
+    ),
+    ...(scenario.attackerHpPermille === null
+      ? {}
+      : { attackerHpPermille: scenario.attackerHpPermille }),
+    battlePointPhase: scenario.battleState.battlePointPhase,
+    battlePointDomains,
+    initialBattlePointPoints:
+      options.initialBattlePointPoints ??
+      Object.fromEntries(
+        battlePointDomains.flatMap((domain) => {
+          const phase = scenario.battleState.battlePointPhase;
+          if (phase === null) return [];
+          if (phase === 0) return [[domain.id, -1] as const];
+          const traits = new Set(
+            findActorForm(attacker, scenario.attacker.initialActorFormId)?.traits ?? [],
+          );
+          const capacity =
+            domain.capacity.traitOverrides.find((entry) =>
+              entry.all.every((trait) => traits.has(trait)),
+            )?.value ?? domain.capacity.default;
+          const candidates = battlePointPhaseCandidates(domain, phase, capacity);
+          return candidates.length ? [[domain.id, candidates.at(-1)!] as const] : [];
+        }),
+      ),
+  };
 }

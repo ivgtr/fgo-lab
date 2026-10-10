@@ -40,7 +40,7 @@ async function saveCapacityContract(
   const encoded = encodeProductionAuditDiagnostic(payload);
   const memory = decodeProductionAuditDiagnostic(encoded);
   const serialized = decodeProductionAuditDiagnostic(
-    decodeProductionAuditArtifact(serializeProductionAuditArtifact(encoded)) as typeof encoded,
+    decodeProductionAuditArtifact(serializeProductionAuditArtifact(encoded)),
   );
   await writeProductionAuditArtifact(meta, name, { encoded });
   const bytes = await readStoredProductionAuditArtifact(name);
@@ -48,8 +48,8 @@ async function saveCapacityContract(
     (decodeStoredProductionAuditArtifact(bytes) as { encoded: typeof encoded }).encoded,
   );
   expect(equalProductionAuditDiagnosticValues(memory, payload)).toBe(true);
-  expect(equalProductionAuditDiagnosticValues(serialized, payload)).toBe(true);
-  expect(equalProductionAuditDiagnosticValues(disk, payload)).toBe(true);
+  expect(equalProductionAuditDiagnosticValues(serialized, memory)).toBe(true);
+  expect(equalProductionAuditDiagnosticValues(disk, memory)).toBe(true);
 }
 
 type Entry =
@@ -1526,16 +1526,12 @@ for (const spec of specs)
           missingPublished,
         };
         const diagnostic = encodeProductionAuditDiagnostic(payload);
-        const roundTrip = equalProductionAuditDiagnosticValues(
-          decodeProductionAuditDiagnostic(diagnostic),
-          payload,
-        );
+        const memory = decodeProductionAuditDiagnostic(diagnostic);
+        const roundTrip = equalProductionAuditDiagnosticValues(memory, payload);
         const encoded = serializeProductionAuditArtifact(diagnostic);
         const savedRoundTrip = equalProductionAuditDiagnosticValues(
-          decodeProductionAuditDiagnostic(
-            decodeProductionAuditArtifact(encoded) as typeof diagnostic,
-          ),
-          payload,
+          decodeProductionAuditDiagnostic(decodeProductionAuditArtifact(encoded)),
+          memory,
         );
         await writeProductionAuditArtifact(
           task.meta,
@@ -1557,7 +1553,7 @@ for (const spec of specs)
             (decodeStoredProductionAuditArtifact(savedBytes) as { encoded: typeof diagnostic })
               .encoded,
           ),
-          payload,
+          memory,
         );
         expect(diskRoundTrip).toBe(true);
         expect(roundTrip).toBe(true);
@@ -1658,9 +1654,9 @@ for (const spec of specs)
           expect(start?.kind === 'present' ? start.point : null).toBe(40);
         }
 
-        const value =
-          preparationExecutionStateFor(positive.program.downstream.prepared.orderedScenario!)!.battlePoints!.actors.attacker!
-            .domains['810000'];
+        const value = preparationExecutionStateFor(
+          positive.program.downstream.prepared.orderedScenario,
+        )!.battlePoints.actors.attacker!.domains['810000'];
         expect(value?.kind === 'present' ? [value.point, value.capacity] : [0, null]).toEqual([
           spec.point,
           spec.retainedCapacity,

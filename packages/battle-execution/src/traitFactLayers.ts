@@ -290,10 +290,16 @@ export function incrementTraitFact(
 }
 
 /** Both preparation and ordinary writes use the same exclusion and quantity semantics. */
-export function addTraitFact(layers: TraitFactLayers, scope: TraitScope, trait: string, proof: ConditionFactProof): TraitFactLayers {
+export function addTraitFact(
+  layers: TraitFactLayers,
+  scope: TraitScope,
+  trait: string,
+  proof: ConditionFactProof,
+): TraitFactLayers {
   const group = canonicalExclusiveGroup(scope, trait);
-  if (group) for (const other of canonicalExclusiveTraits(scope, group)) {
-    if (other !== trait) layers = commitTraitFact(layers, scope, other, false, 0, proof, [proof]);
-  }
+  if (group)
+    for (const other of canonicalExclusiveTraits(scope, group)) {
+      if (other !== trait) layers = commitTraitFact(layers, scope, other, false, 0, proof, [proof]);
+    }
   return incrementTraitFact(layers, scope, trait, proof, group !== null);
 }

@@ -96,15 +96,38 @@ function grant(
     valueIndex: 0,
     limitBreak: false,
     binding: {
-      activation: { kind: 'read', read: {
-          kind: 'known', truth: true, certainty: 'guaranteed', evidence: [], support: [],
-          clock: { phase: 'sourceUse', actorFormId: { actorId: actor, limitCount: 0 },
-            actor, actionId: sourceKey, operationId: null, sourceInstanceId: actor,
-            occurrenceId: sourceKey, valueSetIndex: 0, valueIndex: 0 },
+      activation: {
+        kind: 'read',
+        read: {
+          kind: 'known',
+          truth: true,
+          certainty: 'guaranteed',
+          evidence: [],
+          support: [],
+          clock: {
+            phase: 'sourceUse',
+            actorFormId: { actorId: actor, limitCount: 0 },
+            actor,
+            actionId: sourceKey,
+            operationId: null,
+            sourceInstanceId: actor,
+            occurrenceId: sourceKey,
+            valueSetIndex: 0,
+            valueIndex: 0,
+          },
         },
-        proc: { kind: 'resolved', outcome: 'success', certainty: 'guaranteed', ratePermille: 1000, selection: 'declared' } },
-      policy: { kind: 'calculator' }, executionIntent: 'declared',
-      gameActivation: 'skillUse', contributionScope: 'personal',
+        proc: {
+          kind: 'resolved',
+          outcome: 'success',
+          certainty: 'guaranteed',
+          ratePermille: 1000,
+          selection: 'declared',
+        },
+      },
+      policy: { kind: 'calculator' },
+      executionIntent: 'declared',
+      gameActivation: 'skillUse',
+      contributionScope: 'personal',
     },
     condition: true,
   };
@@ -313,8 +336,15 @@ describe('OC action transactions', () => {
   });
   it('consumes policy-excluded physical rate instances without reading excluded HP values', () => {
     const excluded = grant(rate());
-    excluded.binding = { ...excluded.binding,
-      policy: { kind: 'ranking', selfBuffs: 'excluded', conditionalEffects: 'baseline', areaView: 'included' } };
+    excluded.binding = {
+      ...excluded.binding,
+      policy: {
+        kind: 'ranking',
+        selfBuffs: 'excluded',
+        conditionalEffects: 'baseline',
+        areaView: 'included',
+      },
+    };
     const prior = committed([excluded]);
     const result = executeOcAction(prior, 'query', [grant(boost(), 'oc')], {});
     expect(result).toMatchObject({

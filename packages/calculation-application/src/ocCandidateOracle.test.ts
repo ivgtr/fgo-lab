@@ -3,7 +3,7 @@ import { masterSnapshotSchema, masterEffectSchema, type MasterEffect } from '@fg
 import { createStackMaster, source as stack, stackEffectTemplate } from './stackQuantityFixture';
 import { calculateScenarioWithPolicy } from './scenario';
 import { applyCanonicalInputCommand } from './canonicalInputs';
-import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { compileRankingContributionPolicy } from './contributionPolicy';
 import {

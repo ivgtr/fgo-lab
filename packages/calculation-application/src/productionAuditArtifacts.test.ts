@@ -12,7 +12,133 @@ import {
   serializeProductionAuditArtifact,
   writeProductionAuditArtifact,
   readStoredProductionAuditArtifact,
+  encodeProductionAuditDiagnostic,
+  decodeProductionAuditDiagnostic,
+  decodeStoredProductionAuditDiagnostic,
 } from './productionAuditArtifacts';
+
+it('restores every diagnostic string and rejects an alien version or missing string entry', () => {
+  const path = 'owner.canonical.state.'.repeat(40);
+  const source = {
+    path,
+    failure: { path, own: undefined },
+    values: [path, '', '\ud800', `${'a'.repeat(127)}😀`],
+  };
+  const encoded = encodeProductionAuditDiagnostic(source);
+  expect(serializeProductionAuditArtifact(encoded).length).toBeLessThan(path.length * 2);
+  expect(decodeProductionAuditDiagnostic(encoded)).toEqual(source);
+  expect(() => decodeProductionAuditDiagnostic({ ...encoded, version: 1 })).toThrow(
+    'invalid_diagnostic_version',
+  );
+  expect(() => decodeProductionAuditDiagnostic({ ...encoded, strings: [] })).toThrow(
+    'invalid_diagnostic_string_reference',
+  );
+  expect(
+    decodeProductionAuditDiagnostic(encodeProductionAuditDiagnostic(undefined)),
+  ).toBeUndefined();
+});
+
+it('owns completed diagnostic values and does not trust copies or later input mutations', () => {
+  const key = { value: 1 };
+  const source = {
+    key,
+    set: new Set([key, { value: 1 }]),
+    map: new Map([
+      [key, undefined],
+      [{ value: 1 }, null],
+    ]),
+  };
+  const completed = encodeProductionAuditDiagnostic(source);
+  const before = serializeProductionAuditArtifact(completed);
+  expect(Object.isFrozen(completed)).toBe(true);
+  expect(Object.isFrozen(completed.nodes)).toBe(true);
+  for (const node of completed.nodes) {
+    expect(Object.isFrozen(node)).toBe(true);
+    if ('entries' in node) {
+      expect(Object.isFrozen(node.entries)).toBe(true);
+      for (const entry of node.entries) expect(Object.isFrozen(entry)).toBe(true);
+    }
+  }
+  expect(Reflect.set(completed.nodes[0]!, 'kind', 'alien')).toBe(false);
+  expect(Reflect.set(completed, 'version', 99)).toBe(false);
+  key.value = 2;
+  expect(serializeProductionAuditArtifact(completed)).toEqual(before);
+  expect(serializeProductionAuditArtifact(encodeProductionAuditDiagnostic(source))).not.toEqual(
+    before,
+  );
+  const restored = decodeProductionAuditDiagnostic(completed) as typeof source;
+  expect(restored.key.value).toBe(1);
+  expect(restored.set.size).toBe(2);
+  expect(restored.map.size).toBe(2);
+  expect(restored.set.has(restored.key)).toBe(true);
+  expect(decodeStoredProductionAuditDiagnostic(gzipSync(before, { level: 1 }))).toEqual(restored);
+  expect(serializeProductionAuditArtifact({ ...completed })).toEqual(before);
+});
+
+it('rejects unsafe diagnostic sources without executing getters or proxy traps', () => {
+  let calls = 0;
+  const array = Object.defineProperty([], '0', { enumerable: true, get: () => ++calls });
+  const proxy = new Proxy(
+    {},
+    {
+      ownKeys: () => {
+        calls++;
+        return [];
+      },
+    },
+  );
+  for (const value of [
+    array,
+    proxy,
+    Object.assign(new Set([1]), { extra: true }),
+    Object.assign(new Map(), { extra: true }),
+  ])
+    expect(() => encodeProductionAuditDiagnostic(value)).toThrow(TypeError);
+  expect(() => serializeProductionAuditArtifact(proxy)).toThrow('artifact_proxy');
+  expect(calls).toBe(0);
+});
+
+it('rejects alien diagnostic fields, nodes, references and collection entries', () => {
+  const encoded = encodeProductionAuditDiagnostic({ value: undefined });
+  const invalid = [
+    { ...encoded, future: true },
+    { ...encoded, nodes: encoded.nodes.map((node) => ({ ...node, future: true })) },
+    { ...encoded, root: -100 },
+    { ...encoded, root: { kind: 'literal', value: -0 } },
+    { ...encoded, strings: [{ prefix: 0, suffix: 'forward' }] },
+    { ...encoded, root: 1, nodes: [{ kind: 'undefined' }, { kind: 'set', items: [0, 0] }] },
+    {
+      ...encoded,
+      root: 1,
+      nodes: [
+        { kind: 'undefined' },
+        {
+          kind: 'map',
+          entries: [
+            [0, 0],
+            [0, 0],
+          ],
+        },
+      ],
+    },
+  ];
+  for (const value of invalid)
+    expect(() => decodeProductionAuditDiagnostic(value as unknown as typeof encoded)).toThrow(
+      TypeError,
+    );
+  for (const value of invalid)
+    expect(() =>
+      decodeStoredProductionAuditDiagnostic(
+        gzipSync(serializeProductionAuditArtifact(value), { level: 1 }),
+      ),
+    ).toThrow(TypeError);
+  const negativeZeroBytes = Buffer.from(
+    '{"artifactVersion":2,"payload":{"version":4,"root":{"kind":"literal","value":-0},"nodes":[],"strings":[]},"undefinedPaths":[],"containers":[]}',
+  );
+  expect(() =>
+    decodeStoredProductionAuditDiagnostic(gzipSync(negativeZeroBytes, { level: 1 })),
+  ).toThrow('invalid_diagnostic_literal');
+});
 
 it('round trips omitted undefined properties, array undefined, null, and absent properties', () => {
   const source = {

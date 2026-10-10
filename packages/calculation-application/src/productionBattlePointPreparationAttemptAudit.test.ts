@@ -1,3 +1,5 @@
+import { mutableAuditView } from './auditTestMutation';
+import { preparationExecutionStateFor } from '@fgo-lab/battle-execution';
 import { isDeepStrictEqual } from 'node:util';
 import { equalProductionAuditDiagnosticValues } from './productionAuditDiagnosticEquality';
 import { attachBattlePointPreparationRejectionObservation } from './battlePointPreparationObservation';
@@ -480,6 +482,29 @@ type Mutable<T> = T extends
         : T;
 type Source = Mutable<BattlePointPreparationAttemptSource>;
 
+it('rejects empty audit identities before comparing owned BP projections and permits repair', () => {
+  const spec = specs[1]!;
+  const entry = run(fixtureMaster(spec), spec);
+  const identity = entry.program.canonicalIdentity;
+  entry.program.canonicalIdentity = '';
+  try {
+    expect(() =>
+      auditBattlePointPreparationAttemptObservations({
+        expected: [entry.program],
+        observations: [entry.source],
+      }),
+    ).toThrow('empty_canonical_audit_identity:expected');
+  } finally {
+    entry.program.canonicalIdentity = identity;
+  }
+  expect(
+    auditBattlePointPreparationAttemptObservations({
+      expected: [entry.program],
+      observations: [entry.source],
+    }).status,
+  ).toBe('passed');
+});
+
 it('compares a complete native rejection and rejects changed rollback, commit, quantity, and proof clocks', () => {
   const spec = specs[1]!;
   const source = run(fixtureMaster(spec), spec).source;
@@ -506,7 +531,7 @@ it('compares a complete native rejection and rejects changed rollback, commit, q
     value.committedSources = [value.sources[0]!];
   });
   changed((value) => {
-    value.state.npResource.gauge++;
+    mutableAuditView(value.state.npResource).gauge++;
   });
   changed((value) => {
     const sourceExecution = value.sources.find(({ binding }) => binding.activation.kind === 'read');
@@ -1268,9 +1293,9 @@ for (const spec of specs)
           'writer.0.beforeReference',
           () => {
             const prior = write.before;
-            write.before = structuredClone(prior);
+            mutableAuditView(write).before = structuredClone(prior);
             return () => {
-              write.before = prior;
+              mutableAuditView(write).before = prior;
             };
           },
         );
@@ -1280,9 +1305,9 @@ for (const spec of specs)
             'writer.0.receiptReferences',
             () => {
               const prior = write.receipts;
-              write.receipts = structuredClone(prior);
+              mutableAuditView(write).receipts = structuredClone(prior);
               return () => {
-                write.receipts = prior;
+                mutableAuditView(write).receipts = prior;
               };
             },
           );
@@ -1445,6 +1470,19 @@ for (const spec of specs)
           const execution = source.prepared.orderedExecution;
           expect(execution).not.toBeNull();
           if (!execution) throw new TypeError('fixture_native_execution_required');
+          const nativePreparation = preparationExecutionStateFor(source.prepared.orderedScenario);
+          const nativeProof = nativePreparation?.conditionFactProofs.quantities.get(
+            'battlePoint:attacker:810000',
+          );
+          if (!nativePreparation || !nativeProof)
+            throw new TypeError('fixture_native_battle_point_proof_required');
+          const committedWriter = nativePreparation.battlePoints.receipts.some(
+            ({ actor, domainId }) => actor === 'attacker' && domainId === '810000',
+          );
+          expect(nativeProof).toMatchObject({
+            kind: committedWriter ? 'guaranteedWrite' : 'selectedInitialResource',
+            clock: { phase: committedWriter ? 'sourceUse' : 'initial' },
+          });
           const input = execution.input;
           const np = execution.operations.find(
             ({ operation }) => operation.kind === 'executeNpDamage',
@@ -1460,11 +1498,7 @@ for (const spec of specs)
               },
             ],
           });
-          expect(
-            np!.damageDependencyRead!.support.some(
-              ({ kind, clock }) => kind === 'guaranteedWrite' && clock.phase === 'sourceUse',
-            ),
-          ).toBe(true);
+          expect(np!.damageDependencyRead!.support).toEqual([nativeProof]);
           const expectedCell =
             source.prepared.master.servants[0]!.noblePhantasmVariantGroups[0]!.variants[0]!.effects.find(
               ({ occurrenceId }) => occurrenceId === 'domain-terminal-reader:0',
@@ -1487,11 +1521,7 @@ for (const spec of specs)
             clock: { phase: 'sourceUse' },
             truth: input.battlePointPhase! >= 5,
           });
-          expect(
-            reader.conditionRead.support.some(
-              ({ kind, clock }) => kind === 'guaranteedWrite' && clock.phase === 'sourceUse',
-            ),
-          ).toBe(true);
+          expect(reader.conditionRead.support).toContainEqual(nativeProof);
           expect(contributions).toHaveLength(1);
           expect(contributions[0]).toMatchObject({
             conditionDecision: { kind: 'included' },
