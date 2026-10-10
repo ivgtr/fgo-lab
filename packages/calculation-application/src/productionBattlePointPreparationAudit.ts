@@ -370,7 +370,7 @@ export function battlePointPreparationProgramFromCanonical<Writer extends Battle
   expected: CanonicalProgram<Writer>,
 ): BattlePointPreparationProgram<Writer> {
   const snapshot = createScalarQuantitySnapshotter();
-  const canonicalIdentity = `tsk-08:preparation-battle-point:${JSON.stringify(expected.writers.map(({ identity }) => identity))}`;
+  const canonicalIdentity = `production-audit:preparation-battle-point:${JSON.stringify(expected.writers.map(({ identity }) => identity))}`;
   const program: BattlePointPreparationProgram<Writer> = {
     canonicalIdentity,
     prepared,
@@ -451,14 +451,14 @@ export function auditBattlePointPreparationObservations(input: {
   const expectedIds = input.expected.map(({ canonicalIdentity }) => canonicalIdentity);
   const actualIds = input.observations.map(({ program }) => program.canonicalIdentity);
   check(
-    'tsk-08:preparation-battle-point',
+    'production-audit:preparation-battle-point',
     'domainPopulationMismatch',
     'population',
     expectedIds,
     actualIds,
   );
   check(
-    'tsk-08:preparation-battle-point',
+    'production-audit:preparation-battle-point',
     'domainPopulationMismatch',
     'population.unique',
     expectedIds.length,
@@ -744,7 +744,7 @@ export function auditBattlePointPreparationObservations(input: {
     npConsumptions += auditBattlePointPreparationUse(program, source, c);
   }
   return {
-    canonicalIdentity: 'tsk-08:preparation-battle-point',
+    canonicalIdentity: 'production-audit:preparation-battle-point',
     status: failures.length ? ('failed' as const) : ('passed' as const),
     expected: expectedIds,
     actual: actualIds,
@@ -1130,8 +1130,8 @@ export function auditPublishedBattlePointPreparationObservations(
     ),
   ].sort();
   const difference = firstCanonicalAuditDifference(
-    [{ identity: 'tsk-08:published-preparation-battle-point', value: expected }],
-    [{ identity: 'tsk-08:published-preparation-battle-point', value: actual }],
+    [{ identity: 'production-audit:published-preparation-battle-point', value: expected }],
+    [{ identity: 'production-audit:published-preparation-battle-point', value: actual }],
   );
   const failures: readonly BattlePointPreparationFailure[] = difference
     ? [
@@ -1152,7 +1152,7 @@ export function auditPublishedBattlePointPreparationObservations(
       ]
     : gate.failures;
   return {
-    canonicalIdentity: 'tsk-08:published-preparation-battle-point',
+    canonicalIdentity: 'production-audit:published-preparation-battle-point',
     population: 'published-master',
     inventory,
     expected,

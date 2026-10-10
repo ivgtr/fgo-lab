@@ -268,7 +268,7 @@ describe('committed preparation domain battle point shared audit', () => {
   for (const spec of specs)
     it(
       `connects ${spec.name} with grouped fail-closed diagnostics`,
-      productionAuditTestOptions([`tsk-08-preparation-battle-point-${spec.name}.json`]),
+      productionAuditTestOptions([`audit-preparation-battle-point-${spec.name}.json`]),
       async ({ task }) => {
         const positives: unknown[] = [];
         const negatives: {
@@ -1083,7 +1083,7 @@ describe('committed preparation domain battle point shared audit', () => {
           transport: missingPublished,
         });
         const payload = {
-          canonicalIdentity: 'tsk-08:preparation-battle-point',
+          canonicalIdentity: 'production-audit:preparation-battle-point',
           positives,
           negatives,
         };
@@ -1094,7 +1094,7 @@ describe('committed preparation domain battle point shared audit', () => {
         );
         await writeProductionAuditArtifact(
           task.meta,
-          `tsk-08-preparation-battle-point-${spec.name}.json`,
+          `audit-preparation-battle-point-${spec.name}.json`,
           {
             diagnosticVersion: 1,
             encoding: 'lossless-interned-values',

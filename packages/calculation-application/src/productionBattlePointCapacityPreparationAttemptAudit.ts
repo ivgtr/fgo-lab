@@ -65,7 +65,7 @@ export function battlePointCapacityAttemptSelection(
   );
   if (!expected || !writers?.length) return null;
   return {
-    canonicalIdentity: `tsk-08:preparation-bp-capacity-attempt:${canonicalAuditDigest([{ identity: 'selection', value: scalarQuantitySnapshot([expected, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
+    canonicalIdentity: `production-audit:preparation-bp-capacity-attempt:${canonicalAuditDigest([{ identity: 'selection', value: scalarQuantitySnapshot([expected, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
     writers: scalarQuantitySnapshot(writers),
   };
 }
@@ -209,7 +209,7 @@ function inspectCapacityAttempts(input: CapacityAttemptInput) {
         firstDifference: { ...diff, path: diff.path ? `${checkPath}.${diff.path}` : checkPath },
       });
   };
-  const root = 'tsk-08:preparation-bp-capacity-attempt';
+  const root = 'production-audit:preparation-bp-capacity-attempt';
   check(
     root,
     'attemptPopulationMismatch',

@@ -168,7 +168,7 @@ function createAttemptProgram(
   const expected = canonical(prepared, capacity);
   if (!expected?.writers.length) return null;
   const program: BattlePointPreparationAttemptProgram = {
-    canonicalIdentity: `tsk-08:preparation-bp-${capacity ? 'capacity-attempt' : 'attempt'}:${canonicalAuditDigest([{ identity: 'selected-scenario', value: snapshot([expected.scenario, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
+    canonicalIdentity: `production-audit:preparation-bp-${capacity ? 'capacity-attempt' : 'attempt'}:${canonicalAuditDigest([{ identity: 'selected-scenario', value: snapshot([expected.scenario, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
     prepared,
     calculation,
     expected,
@@ -273,7 +273,7 @@ export function auditBattlePointPreparationAttemptObservations(input: {
         },
       });
   };
-  const root = 'tsk-08:preparation-bp-attempt';
+  const root = 'production-audit:preparation-bp-attempt';
   check(
     root,
     'attemptPopulationMismatch',
@@ -963,7 +963,7 @@ export function auditPublishedBattlePointPreparationAttempts(
   );
   const failures: BattlePointPreparationAttemptFailure[] = [...gate.failures];
   for (const writer of missing) {
-    const identity = `tsk-08:published-preparation-bp-attempt:${JSON.stringify([writer.ownerId, writer.skillId, writer.occurrenceId, writer.operationIndex])}`;
+    const identity = `production-audit:published-preparation-bp-attempt:${JSON.stringify([writer.ownerId, writer.skillId, writer.occurrenceId, writer.operationIndex])}`;
     const expected = snapshot(writer),
       actual = snapshot(undefined);
     const difference = firstCanonicalAuditDifference(

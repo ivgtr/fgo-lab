@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { gzipSync } from 'node:zlib';
 import { expect, it } from 'vitest';
-import evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
-import { createTsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import evidence from '../baselines/production-v1/source.json';
+import { createProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import {
   readProductionBaselineManifest,
   readProductionBaselineCondition,
@@ -15,9 +15,9 @@ import { inspectProductionConditionRecords } from './productionClosureRecordInte
 import { productionClosureRecordDigest } from './productionClosureAudit';
 
 const root = resolve(import.meta.dirname, '../../..');
-const source = createTsk065ProductionAuditSource(evidence, {
+const source = createProductionAuditSource(evidence, {
   masterDataVersion: evidence.productionMatrix.canonicalRecords.identity.masterDataVersion,
-  artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+  artifact: 'packages/calculation-application/baselines/production-v1/source.json',
 });
 const reference = source.matrix.canonicalRecords;
 const original = JSON.parse(
@@ -198,7 +198,7 @@ it('rejects old-only and mixed source declarations instead of dropping keys', ()
     worktree: '',
   });
   expect(() =>
-    createTsk065ProductionAuditSource(invalid, {
+    createProductionAuditSource(invalid, {
       masterDataVersion: evidence.productionMatrix.canonicalRecords.identity.masterDataVersion,
       artifact: 'fixture',
     }),
@@ -209,9 +209,35 @@ it('rejects old-only and mixed source declarations instead of dropping keys', ()
     >
   ).format;
   expect(() =>
-    createTsk065ProductionAuditSource(invalid, {
+    createProductionAuditSource(invalid, {
       masterDataVersion: evidence.productionMatrix.canonicalRecords.identity.masterDataVersion,
       artifact: 'fixture',
     }),
   ).toThrow('invalid_keys');
+});
+
+it.each([
+  ['unknown root', (value: typeof evidence) => Object.assign(value, { task: 'obsolete' })],
+  [
+    'unknown digest field',
+    (value: typeof evidence) => Object.assign(value.staticSemantics, { extra: 0 }),
+  ],
+  [
+    'unknown matrix field',
+    (value: typeof evidence) => Object.assign(value.productionMatrix, { extra: 0 }),
+  ],
+  [
+    'unknown outcome',
+    (value: typeof evidence) => Object.assign(value.productionMatrix.outcomes, { extra: 0 }),
+  ],
+  ['old format', (value: typeof evidence) => Object.assign(value, { format: 'obsolete' })],
+])('rejects %s in a fixed production source', (_, mutate) => {
+  const value = structuredClone(evidence);
+  mutate(value);
+  expect(() =>
+    createProductionAuditSource(value, {
+      masterDataVersion: evidence.productionMatrix.canonicalRecords.identity.masterDataVersion,
+      artifact: 'fixture',
+    }),
+  ).toThrow(/invalid_keys|format_mismatch/);
 });

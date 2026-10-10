@@ -5,7 +5,7 @@ import * as scenarioOwner from './scenario';
 import * as rankingOwner from './rankingPolicyCalculation';
 import { inspectProductionAuditValue } from './productionAuditValue';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
-import { createTsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import { createProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import type {
   ProductionPreparationTransactionAction,
   ProductionPreparationTransactionObservation,
@@ -13,7 +13,7 @@ import type {
 } from './productionParityDiagnostics';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import fixture from '../../test-fixtures/master/fixture.json';
-import tsk065Evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
+import productionAuditSource from '../baselines/production-v1/source.json';
 import {
   auditProductionClosure,
   type ProductionClosureAudit,
@@ -244,7 +244,7 @@ it(
       expect(gate, name).toMatchObject({
         status: 'failed',
         reason: unknown ? 'shardAuditUnknownField' : 'shardAuditShapeInvalid',
-        canonicalIdentity: 'tsk-08:shard:1',
+        canonicalIdentity: 'production-audit:shard:1',
         firstDifference: { path: `audit.${path}${unknown ? '' : '.type'}` },
       });
       return { name, actual, comparison, gate };
@@ -328,9 +328,9 @@ it(
       },
       digest: 'matrix-sha',
     };
-    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+    const source = createProductionAuditSource(productionAuditSource, {
       masterDataVersion: 'fixture-master',
-      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+      artifact: 'packages/calculation-application/baselines/production-v1/source.json',
     });
     const audit = {
       conditionCount: source.matrix.conditionCount,
@@ -454,7 +454,7 @@ it(
       expect(gate, name).toMatchObject({
         status: 'failed',
         reason: 'canonicalAggregateMismatch',
-        firstDifference: { identity: 'tsk-06.5:production-matrix', path },
+        firstDifference: { identity: 'production-regression:production-matrix', path },
       });
       expect(gate.failures, name).toHaveLength(1);
       return { name, actual, gate };
@@ -560,9 +560,9 @@ it(
       expected: { scenario: { phase: 'same' } },
       actual: { scenario: { phase: 'same' } },
     });
-    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+    const source = createProductionAuditSource(productionAuditSource, {
       masterDataVersion: 'fixture-master',
-      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+      artifact: 'packages/calculation-application/baselines/production-v1/source.json',
     });
     const matrixInput = {
       conditionCount: source.matrix.conditionCount,
@@ -750,15 +750,15 @@ it(
     expect(matchingParity).toBeNull();
     expect(passingParityGate).toMatchObject({
       status: 'passed',
-      canonicalIdentity: 'tsk-06.5:production-matrix',
+      canonicalIdentity: 'production-regression:production-matrix',
       firstDifference: null,
     });
     expect(parityGate).toMatchObject({
       status: 'failed',
       reason: 'parityFailure',
-      canonicalIdentity: 'tsk-06.5:production-matrix',
+      canonicalIdentity: 'production-regression:production-matrix',
       firstDifference: {
-        identity: 'tsk-06.5:production-matrix',
+        identity: 'production-regression:production-matrix',
         path: 'parityFailures',
         expected: 0,
         actual: 1,
@@ -769,7 +769,7 @@ it(
       status: 'failed',
       reason: 'canonicalRecordsMissing',
       firstDifference: {
-        identity: 'tsk-06.5:production-matrix',
+        identity: 'production-regression:production-matrix',
         path: 'canonicalRecords',
         expected: 'verified',
         actual: 'missing',
@@ -780,7 +780,7 @@ it(
       status: 'failed',
       reason: 'matrixMismatch',
       firstDifference: {
-        identity: 'tsk-06.5:production-matrix',
+        identity: 'production-regression:production-matrix',
         path: 'outcomeCount',
         expected: matrixInput.outcomeCount,
         actual: matrixInput.outcomeCount + 1,
@@ -853,15 +853,15 @@ it(
     }
     expect(passing).toMatchObject({
       status: 'passed',
-      canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
+      canonicalIdentity: 'production-regression:final-profile-outcomes',
       firstDifference: null,
       failures: [],
     });
     expect(failed).toMatchObject({
       status: 'failed',
-      canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
+      canonicalIdentity: 'production-regression:final-profile-outcomes',
       firstDifference: {
-        identity: 'tsk-06.5:final-profile-outcomes',
+        identity: 'production-regression:final-profile-outcomes',
         path: 'inputRequired',
         expected: 0,
         actual: 1,
@@ -902,7 +902,7 @@ it(
       failures: [
         {
           reason: 'finalProfileOutcomeIdentityMismatch',
-          canonicalIdentity: 'tsk-06.5:final-profile-outcomes',
+          canonicalIdentity: 'production-regression:final-profile-outcomes',
         },
       ],
     });
@@ -1060,7 +1060,7 @@ it(
       schemaVersion: 1,
       boundary: 'calculation-application-production-preparation-transaction',
       source: 'productionClosureAudit.test.ts',
-      canonicalIdentity: 'tsk-08:preparation-transactions',
+      canonicalIdentity: 'production-audit:preparation-transactions',
       observations: [
         observation,
         partialCommitObservation,
@@ -1093,7 +1093,7 @@ it(
     });
     expect(passing).toMatchObject({
       status: 'passed',
-      canonicalIdentity: 'tsk-08:preparation-transactions',
+      canonicalIdentity: 'production-audit:preparation-transactions',
       summary: {
         calculatedProfiles: 1,
         commandCount: 2,
@@ -1122,7 +1122,7 @@ it(
     expect(missingProfile).toMatchObject({
       status: 'failed',
       firstDifference: {
-        identity: 'tsk-08:preparation-transactions',
+        identity: 'production-audit:preparation-transactions',
         path: 'calculatedProfiles',
         expected: 2,
         actual: 1,
@@ -1130,7 +1130,7 @@ it(
       failures: [
         {
           reason: 'preparationProfileCoverageMismatch',
-          canonicalIdentity: 'tsk-08:preparation-transactions',
+          canonicalIdentity: 'production-audit:preparation-transactions',
         },
       ],
     });
@@ -1993,9 +1993,9 @@ it(
       profileCount: 1,
     });
     expect(internallyConsistent.failures).toEqual([]);
-    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+    const source = createProductionAuditSource(productionAuditSource, {
       masterDataVersion: 'fixture-master',
-      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+      artifact: 'packages/calculation-application/baselines/production-v1/source.json',
     });
     const gate = evaluateProductionParityGate(
       source,
@@ -2347,7 +2347,7 @@ it.each([
     expect(result.comparison.failures).toContainEqual(
       expect.objectContaining({
         reason,
-        canonicalIdentity: 'tsk-08:shard:0',
+        canonicalIdentity: 'production-audit:shard:0',
         firstDifference: expect.objectContaining({ path: expectedPath }) as unknown,
       }),
     );
@@ -2466,7 +2466,7 @@ it('joins both failed gate unions to original body identities and retains real f
     compareProductionShardGateBodies(summaryForgery, 7, transaction, []).failures[0],
   ).toMatchObject({
     reason: 'shardGateBodyMismatch',
-    canonicalIdentity: 'tsk-08:shard:7',
+    canonicalIdentity: 'production-audit:shard:7',
     firstDifference: { path: 'executionRatchets.preparationTransactions.summary.commandCount' },
   });
   record.appliedPreparationActions[0]!.resourceTransaction.afterConsumption = {
@@ -2552,7 +2552,7 @@ it.each([
   expect(observed.preparation).toEqual([]);
   expect(observed.failures).toContainEqual(
     expect.objectContaining({
-      canonicalIdentity: 'tsk-08:shard:0',
+      canonicalIdentity: 'production-audit:shard:0',
       firstDifference: expect.objectContaining({
         path: `conditions.fixture-condition.records[0].${path.replace('.0', '[0]')}`,
       }) as unknown,
@@ -2634,7 +2634,7 @@ it('accepts every shard shape before cross-shard joins and rejects missing or du
   expect(shape.shards).toBeNull();
   expect(shape.comparison.failures[0]).toMatchObject({
     reason: 'shardAuditShapeInvalid',
-    canonicalIdentity: 'tsk-08:shard:0',
+    canonicalIdentity: 'production-audit:shard:0',
     firstDifference: { path: 'audit.eligibility.staticSemantics.type' },
   });
   const duplicate = structuredClone(valid);
@@ -2659,7 +2659,7 @@ it('accepts every shard shape before cross-shard joins and rejects missing or du
       .comparison.failures[0],
   ).toMatchObject({
     reason: 'shardGateContractMismatch',
-    canonicalIdentity: 'tsk-08:shard:1',
+    canonicalIdentity: 'production-audit:shard:1',
     firstDifference: { path: 'audit.eligibility.staticSemantics.sourcePrograms' },
   });
 });

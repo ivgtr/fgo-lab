@@ -205,7 +205,7 @@ export function battlePointCapacitySelection(
   const expected = battlePointPreparationCanonical(prepared, capacityWriter);
   if (!expected?.writers.length) return null;
   return {
-    canonicalIdentity: `tsk-08:preparation-bp-capacity:${canonicalAuditDigest([{ identity: 'selected-execution', value: snapshot([expected.scenario, expected.domains, expected.actions, expected.writers, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
+    canonicalIdentity: `production-audit:preparation-bp-capacity:${canonicalAuditDigest([{ identity: 'selected-execution', value: snapshot([expected.scenario, expected.domains, expected.actions, expected.writers, prepared.contributionPolicy, prepared.preparation, evaluationIndex]) }])}`,
     writers: expected.writers.map((w) =>
       JSON.stringify([w.sourceId, w.skillId, w.effect.occurrenceId, w.operationIndex]),
     ),
@@ -302,7 +302,7 @@ export function auditBattlePointCapacityPreparation(input: {
         },
       });
   };
-  const identity = 'tsk-08:preparation-bp-capacity';
+  const identity = 'production-audit:preparation-bp-capacity';
   const expectedIds = input.expected.map((p) => p.canonicalIdentity),
     actualIds = input.observations.map(
       (s) => (s as Partial<BattlePointCapacitySource>).program?.canonicalIdentity,
@@ -1161,13 +1161,13 @@ export function auditPublishedBattlePointCapacityPreparation(
   const populationDifference = firstCanonicalAuditDifference(
     [
       {
-        identity: 'tsk-08:published-bp-capacity',
+        identity: 'production-audit:published-bp-capacity',
         value: expectedSelections.map((s) => [s.canonicalIdentity, s.writers]),
       },
     ],
     [
       {
-        identity: 'tsk-08:published-bp-capacity',
+        identity: 'production-audit:published-bp-capacity',
         value: programs.map((p) => [
           p.canonicalIdentity,
           p.downstream.expected.writers.map((w) =>
@@ -1183,13 +1183,18 @@ export function auditPublishedBattlePointCapacityPreparation(
     ],
   );
   const difference = firstCanonicalAuditDifference(
-    [{ identity: 'tsk-08:published-bp-capacity', value: [] }],
-    [{ identity: 'tsk-08:published-bp-capacity', value: selected.filter((x) => !declared.has(x)) }],
+    [{ identity: 'production-audit:published-bp-capacity', value: [] }],
+    [
+      {
+        identity: 'production-audit:published-bp-capacity',
+        value: selected.filter((x) => !declared.has(x)),
+      },
+    ],
   );
   const failures: BattlePointCapacityFailure[] = [...gate.failures];
   if (populationDifference)
     failures.push({
-      canonicalIdentity: 'tsk-08:published-bp-capacity',
+      canonicalIdentity: 'production-audit:published-bp-capacity',
       reason: 'capacityPopulationMismatch',
       checkPath: 'published.selected',
       expected: snapshot(expectedSelections.map((s) => [s.canonicalIdentity, s.writers])),
@@ -1201,7 +1206,7 @@ export function auditPublishedBattlePointCapacityPreparation(
     });
   if (difference)
     failures.push({
-      canonicalIdentity: 'tsk-08:published-bp-capacity',
+      canonicalIdentity: 'production-audit:published-bp-capacity',
       reason: 'capacityPopulationMismatch',
       checkPath: 'published.population',
       expected: [],
@@ -1209,7 +1214,7 @@ export function auditPublishedBattlePointCapacityPreparation(
       firstDifference: { ...difference, path: 'published.population' },
     });
   return {
-    canonicalIdentity: 'tsk-08:published-bp-capacity',
+    canonicalIdentity: 'production-audit:published-bp-capacity',
     inventory,
     expectedSelections,
     selected,

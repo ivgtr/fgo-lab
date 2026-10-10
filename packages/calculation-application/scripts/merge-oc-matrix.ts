@@ -11,7 +11,7 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { verifyArtifactFiles } from '../../../scripts/test-observation-lib.mjs';
 import {
-  createTsk065ProductionAuditSource,
+  createProductionAuditSource,
   firstCanonicalAuditDifference,
 } from '@fgo-lab/master-data/production-audit';
 import {
@@ -35,7 +35,7 @@ import {
 } from '../src/productionParityDiagnostics';
 
 const root = resolve(import.meta.dirname, '../../..');
-const output = resolve(root, process.argv[2] ?? '.test-results/tsk-06-45-production-closure');
+const output = resolve(root, process.argv[2] ?? '.test-results/production-matrix');
 let failureArtifact: Record<string, unknown> = { output, stage: 'read-shards' };
 let inputEvidence: Record<string, unknown> = {};
 
@@ -154,13 +154,13 @@ async function merge(): Promise<void> {
     ? firstCanonicalAuditDifference(
         [
           {
-            identity: 'tsk-08:production-condition-artifacts',
+            identity: 'production-audit:production-condition-artifacts',
             value: expectedConditionKeysByShard,
           },
         ],
         [
           {
-            identity: 'tsk-08:production-condition-artifacts',
+            identity: 'production-audit:production-condition-artifacts',
             value: { conditionArtifacts, errors: artifactErrors },
           },
         ],
@@ -316,8 +316,9 @@ async function merge(): Promise<void> {
     ...result,
     digest: productionClosureMatrixDigest(result),
   };
-  const sourcePath = process.argv[3] ?? 'docs/evidence/tsk-06-5-production-closure.json';
-  const source = createTsk065ProductionAuditSource(
+  const sourcePath =
+    process.argv[3] ?? 'packages/calculation-application/baselines/production-v1/source.json';
+  const source = createProductionAuditSource(
     JSON.parse(await readFile(resolve(root, sourcePath), 'utf8')),
     {
       masterDataVersion: master.version,
@@ -345,7 +346,7 @@ async function merge(): Promise<void> {
   });
   const receiptFailure = recordFailure(
     'recordArtifactUnavailable',
-    'tsk-08:production-condition-artifacts',
+    'production-audit:production-condition-artifacts',
     { errors: [] },
     { errors: artifactVerification.errors },
   );

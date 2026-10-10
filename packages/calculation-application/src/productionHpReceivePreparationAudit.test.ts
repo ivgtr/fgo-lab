@@ -334,10 +334,10 @@ function set(object: object, key: string, v: unknown) {
   };
 }
 
-describe('TSK-08 committed receive and original later fixed HP consumer', () => {
+describe('production audit committed receive and original later fixed HP consumer', () => {
   it(
     'connects generated changed representatives and explicit boundaries without audit-side writer replay',
-    productionAuditTestOptions(['tsk-08-receive-representatives.json']),
+    productionAuditTestOptions(['audit-receive-representatives.json']),
     async ({ task }) => {
       const cases = specs.map((spec, index) =>
         entry(legalFixture, String(800100 + index), spec, index, spec.prefix ? 2 : 1),
@@ -358,7 +358,7 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
       );
       const calls = spy.mock.calls.length;
       spy.mockRestore();
-      await save(task, 'tsk-08-receive-representatives.json', {
+      await save(task, 'audit-receive-representatives.json', {
         cases: cases.map((item, i) => ({
           key: item.spec.key,
           gate: rechecked[i],
@@ -438,7 +438,7 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
 
   it(
     'rejects canonical, original consumption, retained, selected and population corruption with typed first differences',
-    productionAuditTestOptions(['tsk-08-receive-negatives.json']),
+    productionAuditTestOptions(['audit-receive-negatives.json']),
     async ({ task }) => {
       const item = entry(legalFixture, '800101', specs[1]!, 200),
         other = entry(legalFixture, '800100', specs[0]!, 201);
@@ -932,7 +932,7 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
           observations: [source],
         },
       ].map((p) => ({ key: p.key, gate: auditReceive(p) }));
-      await save(task, 'tsk-08-receive-negatives.json', { reports, population });
+      await save(task, 'audit-receive-negatives.json', { reports, population });
       for (const report of reports) {
         expect(report.gate.status, report.key).toBe('failed');
         const failure = report.gate.failures.find(
@@ -984,7 +984,7 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
 
   it(
     'derives published declarations and later same-skill gain from parsed master without fixed counts',
-    productionAuditTestOptions(['tsk-08-receive-published.json']),
+    productionAuditTestOptions(['audit-receive-published.json']),
     async ({ task }) => {
       const bytes = await readFile(
         resolve(import.meta.dirname, '../../../apps/web/public/master/master.json'),
@@ -1021,7 +1021,7 @@ describe('TSK-08 committed receive and original later fixed HP consumer', () => 
           slot,
         );
       });
-      await save(task, 'tsk-08-receive-published.json', {
+      await save(task, 'audit-receive-published.json', {
         master: {
           version: master.version,
           bytes: bytes.length,

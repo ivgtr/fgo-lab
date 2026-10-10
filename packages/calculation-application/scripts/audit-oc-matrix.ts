@@ -21,7 +21,7 @@ import {
 import { RANKING_ELIGIBILITY_DIGEST_PARTITION_COUNT } from '../src/rankingEligibilityAudit';
 
 const root = resolve(import.meta.dirname, '../../..');
-const output = resolve(root, process.argv[2] ?? '.test-results/tsk-06-45-production-closure');
+const output = resolve(root, process.argv[2] ?? '.test-results/production-matrix');
 let manifestName = 'manifest.json';
 let failureArtifact: Record<string, unknown> = { output, stage: 'read-master' };
 const conditionArtifacts: Array<{
@@ -165,13 +165,13 @@ async function audit(): Promise<void> {
     ? firstCanonicalAuditDifference(
         [
           {
-            identity: 'tsk-08:production-condition-artifacts',
+            identity: 'production-audit:production-condition-artifacts',
             value: conditionArtifacts,
           },
         ],
         [
           {
-            identity: 'tsk-08:production-condition-artifacts',
+            identity: 'production-audit:production-condition-artifacts',
             value: artifactVerificationResult,
           },
         ],

@@ -3,14 +3,14 @@ import {
   canonicalAuditDigest,
   connectProductionAuditBoundary,
   connectProductionAuditMatrix,
-  createTsk065ProductionAuditSource,
+  createProductionAuditSource,
   createCanonicalAuditValueComparison,
   firstCanonicalAuditDifference,
   formatCanonicalAuditMismatch,
   measureProductionAuditLifecycle,
   type CanonicalAuditRecord,
 } from './productionAudit';
-import tsk065Evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
+import productionAuditSource from '../../calculation-application/baselines/production-v1/source.json';
 
 const baseline: CanonicalAuditRecord[] = [
   { identity: 'actor:1', value: { rows: [10, 20], status: 'calculated' } },
@@ -159,10 +159,10 @@ describe('canonical production audit records', () => {
     });
   });
 
-  it('connects boundary audits to the approved TSK-06.5 source without deriving a digest', () => {
-    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+  it('connects boundary audits to the fixed production source without deriving a digest', () => {
+    const source = createProductionAuditSource(productionAuditSource, {
       masterDataVersion: 'fixture-master',
-      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+      artifact: 'packages/calculation-application/baselines/production-v1/source.json',
     });
     const connected = connectProductionAuditBoundary(
       source,
@@ -178,8 +178,8 @@ describe('canonical production audit records', () => {
       'fixture-data-pipeline-audit',
     );
     expect(connected.source).toMatchObject({
-      task: 'TSK-06.5',
-      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+      format: 'production-audit-source-v1',
+      artifact: 'packages/calculation-application/baselines/production-v1/source.json',
       masterDataVersion: 'fixture-master',
       matrix: { conditionCount: 80, outcomeCount: 34_640, parityCount: 34_600 },
     });
@@ -195,10 +195,10 @@ describe('canonical production audit records', () => {
     });
   });
 
-  it('keeps the complete matrix fail-closed when the TSK-06.5 source differs', () => {
-    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+  it('keeps the complete matrix fail-closed when the production source differs', () => {
+    const source = createProductionAuditSource(productionAuditSource, {
       masterDataVersion: 'fixture-master',
-      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+      artifact: 'packages/calculation-application/baselines/production-v1/source.json',
     });
     expect(() =>
       connectProductionAuditMatrix(source, {
@@ -211,7 +211,9 @@ describe('canonical production audit records', () => {
         digest: source.matrix.mergedDigest,
         eligibility: { candidates: { digest: source.matrix.eligibilityDigest } },
       }),
-    ).toThrow('shared_production_audit_matrix_mismatch:tsk-06.5:production-matrix:conditionCount');
+    ).toThrow(
+      'shared_production_audit_matrix_mismatch:production-regression:production-matrix:conditionCount',
+    );
     expect(
       connectProductionAuditMatrix(source, {
         conditionCount: 80,

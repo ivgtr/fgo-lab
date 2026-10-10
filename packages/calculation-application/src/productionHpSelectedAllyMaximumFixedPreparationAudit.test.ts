@@ -459,7 +459,7 @@ async function save(task: { meta: unknown }, path: string, payload: unknown) {
 for (const spec of specs)
   it(
     `selectedAllyMaximumFixed forward or boundary ${spec.name}`,
-    productionAuditTestOptions([`tsk-08-selected-ally-maximum-fixed-${spec.name}.json`]),
+    productionAuditTestOptions([`audit-selected-ally-maximum-fixed-${spec.name}.json`]),
     async ({ task }) => {
       const { master, positive: p, normal, ranking } = entry(spec);
       const published = auditPublishedSelectedAllyMaximumFixed(
@@ -470,7 +470,7 @@ for (const spec of specs)
         [p.source],
         [p.prepared],
       );
-      await save(task, `tsk-08-selected-ally-maximum-fixed-${spec.name}.json`, {
+      await save(task, `audit-selected-ally-maximum-fixed-${spec.name}.json`, {
         spec,
         gate: p.gate,
         proof: selectedAllyMaximumFixedDiagnostic(p.source),
@@ -681,7 +681,7 @@ function verifyDifferences(gate: ReturnType<typeof auditSelectedAllyMaximumFixed
 // Batched complete evidence bounds storage without removing any negative cell.
 for (const group of negativeGroups)
   for (let shard = 0; shard < 3; shard++) {
-    const artifact = `tsk-08-selected-ally-negative-${group.name}-${shard}.json`;
+    const artifact = `audit-selected-ally-negative-${group.name}-${shard}.json`;
     it(
       `selectedAlly responsibility ${group.name} ${shard}`,
       productionAuditTestOptions([artifact]),
@@ -736,7 +736,7 @@ for (const group of negativeGroups)
 
 it(
   'selectedAlly denies missing duplicate reversed writes and same-valued replaced owner references',
-  productionAuditTestOptions(['tsk-08-selected-ally-order-reference.json']),
+  productionAuditTestOptions(['audit-selected-ally-order-reference.json']),
   async ({ task }) => {
     const p = entry(specs[3]!).positive;
     const writes = at(p.source, [...nativePath, 'selectedAllyMaximumFixedWrites']) as unknown[];
@@ -801,7 +801,7 @@ it(
         observations: [replace(p.source, c.path, c.value) as SelectedAllyMaximumFixedSource],
       }),
     }));
-    await save(task, 'tsk-08-selected-ally-order-reference.json', results);
+    await save(task, 'audit-selected-ally-order-reference.json', results);
     for (const r of results) {
       verifyDifferences(r.gate);
       expect(
@@ -814,7 +814,7 @@ it(
 
 it(
   'selectedAlly population retains no-change no-reader no-NP nonapplication and native refusal',
-  productionAuditTestOptions(['tsk-08-selected-ally-population.json']),
+  productionAuditTestOptions(['audit-selected-ally-population.json']),
   async ({ task }) => {
     const entries = specs.map(entry);
     const all = entries.map((e) => e.positive);
@@ -877,7 +877,7 @@ it(
         ) as SelectedAllyMaximumFixedSource,
       ],
     });
-    await save(task, 'tsk-08-selected-ally-population.json', {
+    await save(task, 'audit-selected-ally-population.json', {
       boundaries: all.map((v) => ({ canonical: v.selection.canonical, gate: v.gate })),
       filtered,
       filteredRequests,
@@ -934,7 +934,7 @@ it(
 
 it(
   'selectedAlly captures original owners without replay and generates equal ordinary canonical contracts',
-  productionAuditTestOptions(['tsk-08-selected-ally-owner.json']),
+  productionAuditTestOptions(['audit-selected-ally-owner.json']),
   async ({ task }) => {
     const e = entry(specs[0]!);
     const execute = vi.spyOn(hpOwner, 'executeHpOperation');
@@ -944,7 +944,7 @@ it(
       observations: [e.positive.source],
     });
     const normalCanonical = selectedAllyMaximumFixedCanonical(e.normal.prepared);
-    await save(task, 'tsk-08-selected-ally-owner.json', {
+    await save(task, 'audit-selected-ally-owner.json', {
       normalCanonical,
       capturedCanonical: e.positive.selection.canonical,
       gate,
@@ -967,7 +967,7 @@ it(
 
 it(
   'selectedAlly denies coherent HP forgeries stale execution intermediate state and missing downstream owners',
-  productionAuditTestOptions(['tsk-08-selected-ally-coherent-stale.json']),
+  productionAuditTestOptions(['audit-selected-ally-coherent-stale.json']),
   async ({ task }) => {
     const p = entry(specs[4]!).positive;
     const alien = run(fixtureMaster(specs[4]!), specs[4]!);
@@ -1081,7 +1081,7 @@ it(
         observations: [c.source as SelectedAllyMaximumFixedSource],
       }),
     }));
-    await save(task, 'tsk-08-selected-ally-coherent-stale.json', results);
+    await save(task, 'audit-selected-ally-coherent-stale.json', results);
     for (const r of results) {
       verifyDifferences(r.gate);
       expect(
@@ -1094,7 +1094,7 @@ it(
 
 it(
   'selectedAlly missing owner containers keep typed diagnostic paths',
-  productionAuditTestOptions(['tsk-08-selected-ally-missing-owners.json']),
+  productionAuditTestOptions(['audit-selected-ally-missing-owners.json']),
   async ({ task }) => {
     const p = entry(specs[0]!).positive;
     const cases = [
@@ -1128,7 +1128,7 @@ it(
         observations: [replace(p.source, c.path, undefined) as SelectedAllyMaximumFixedSource],
       }),
     }));
-    await save(task, 'tsk-08-selected-ally-missing-owners.json', results);
+    await save(task, 'audit-selected-ally-missing-owners.json', results);
     for (const r of results) {
       verifyDifferences(r.gate);
       expect(
@@ -1141,7 +1141,7 @@ it(
 
 it(
   'selectedAlly declaration preflight retains every legal representative before activation and native outcome',
-  productionAuditTestOptions(['tsk-08-selected-ally-preflight.json']),
+  productionAuditTestOptions(['audit-selected-ally-preflight.json']),
   async ({ task }) => {
     const rows = specs.map((spec) => {
       const e = entry(spec);
@@ -1161,7 +1161,7 @@ it(
       preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
     };
     const none = selectedAllyMaximumFixedMaySelect(p.master, unselected);
-    await save(task, 'tsk-08-selected-ally-preflight.json', { rows, none });
+    await save(task, 'audit-selected-ally-preflight.json', { rows, none });
     expect(rows.every((r) => r.possible && r.canonical)).toBe(true);
     expect(none).toBe(false);
   },
@@ -1169,7 +1169,7 @@ it(
 
 it(
   'rejects same-valued copies of the original reader and NP context HP owner',
-  productionAuditTestOptions(['tsk-08-selected-ally-context-hp-owner.json']),
+  productionAuditTestOptions(['audit-selected-ally-context-hp-owner.json']),
   async ({ task }) => {
     const p = entry(specs[0]!).positive;
     const results = ['reader', 'np'].map((kind) => {
@@ -1195,7 +1195,7 @@ it(
         Reflect.set(state, 'hp', original);
       }
     });
-    await save(task, 'tsk-08-selected-ally-context-hp-owner.json', results);
+    await save(task, 'audit-selected-ally-context-hp-owner.json', results);
     for (const r of results) {
       expect(r.actualHp).toEqual(r.expectedHp);
       expect(r.originalReference).toBe(false);
@@ -1213,7 +1213,7 @@ it(
 
 it(
   'captures immutable complete values before restore without sharing snapshots across gate calls',
-  productionAuditTestOptions(['tsk-08-selected-ally-proof-lifetime.json']),
+  productionAuditTestOptions(['audit-selected-ally-proof-lifetime.json']),
   async ({ task }) => {
     const p = entry(specs[0]!).positive;
     const state = p.source.candidate!.reads[0]!.state;
@@ -1255,7 +1255,7 @@ it(
       for (const child of Object.values(value)) inspectFrozen(child);
     };
     inspectFrozen(duringValues);
-    await save(task, 'tsk-08-selected-ally-proof-lifetime.json', {
+    await save(task, 'audit-selected-ally-proof-lifetime.json', {
       gateDuring,
       gateAfter,
       absent,
@@ -1280,7 +1280,7 @@ it(
 
 it(
   'keeps shared values separate from different semantic views and restores tagged values losslessly',
-  productionAuditTestOptions(['tsk-08-selected-ally-proof-views.json']),
+  productionAuditTestOptions(['audit-selected-ally-proof-views.json']),
   async ({ task }) => {
     const p = entry(specs[0]!).positive;
     const values = p.program.valueProof;
@@ -1325,7 +1325,7 @@ it(
       expected: [p.program],
       observations: [replace(p.source, ['input'], special) as SelectedAllyMaximumFixedSource],
     });
-    await save(task, 'tsk-08-selected-ally-proof-views.json', {
+    await save(task, 'audit-selected-ally-proof-views.json', {
       values,
       sharing,
       rawEffect,
@@ -1361,7 +1361,7 @@ it(
 
 it(
   'rejects in-place selection identity index and canonical replacement before boundary accounting',
-  productionAuditTestOptions(['tsk-08-selected-ally-selection-authority.json']),
+  productionAuditTestOptions(['audit-selected-ally-selection-authority.json']),
   async ({ task }) => {
     const p = entry(specs[0]!).positive;
     const cases = [
@@ -1412,7 +1412,7 @@ it(
     } finally {
       Reflect.set(operation, 'sign', sign);
     }
-    await save(task, 'tsk-08-selected-ally-selection-authority.json', {
+    await save(task, 'audit-selected-ally-selection-authority.json', {
       results,
       restored,
       publishedBefore,

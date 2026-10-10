@@ -345,7 +345,7 @@ async function save(task: { meta: unknown }, path: string, payload: unknown) {
 describe('receive changed-attempt native noncommit isolation', () => {
   it(
     'connects original changed gains, later native refusal, retained prefix and the same selected facades',
-    { timeout: 60000, ...productionAuditTestOptions(['tsk-08-receive-attempt-changed.json']) },
+    { timeout: 60000, ...productionAuditTestOptions(['audit-receive-attempt-changed.json']) },
     async ({ task }) => {
       const cases = specs.flatMap((s, i) => (s.boundary ? [] : [entry(s, i)])),
         parity = cases.map((c) => ({
@@ -353,7 +353,7 @@ describe('receive changed-attempt native noncommit isolation', () => {
           ranking: execute(c.scenario, master, true, true),
           rankingNormal: execute(c.scenario, master, false, true),
         }));
-      await save(task, 'tsk-08-receive-attempt-changed.json', {
+      await save(task, 'audit-receive-attempt-changed.json', {
         cases: cases.map((c) => ({
           key: c.spec.key,
           gate: c.gate,
@@ -388,14 +388,14 @@ describe('receive changed-attempt native noncommit isolation', () => {
   );
   it(
     'keeps actual-zero, unreached, nonapplication, pre-native and committed boundaries',
-    { timeout: 60000, ...productionAuditTestOptions(['tsk-08-receive-attempt-boundaries.json']) },
+    { timeout: 60000, ...productionAuditTestOptions(['audit-receive-attempt-boundaries.json']) },
     async ({ task }) => {
       const cases = specs.flatMap((s, i) => (s.boundary ? [entry(s, i)] : []));
       const parity = cases.map((c) => ({
         normal: execute(c.scenario, master, false),
         ranking: execute(c.scenario, master, true, true),
       }));
-      await save(task, 'tsk-08-receive-attempt-boundaries.json', {
+      await save(task, 'audit-receive-attempt-boundaries.json', {
         parity: parity.map((p) => ({
           normal: p.normal.calculation.result,
           ranking: p.ranking.calculation.result,
@@ -422,7 +422,7 @@ describe('receive changed-attempt native noncommit isolation', () => {
 
 it(
   'joins strict published declarations to a separately identified schema-legal noncommit derivative',
-  { timeout: 60000, ...productionAuditTestOptions(['tsk-08-receive-attempt-published.json']) },
+  { timeout: 60000, ...productionAuditTestOptions(['audit-receive-attempt-published.json']) },
   async ({ task }) => {
     const bytes = await readFile(resolve('apps/web/public/master/master.json')),
       published = masterSnapshotSchema.parse(JSON.parse(bytes.toString('utf8'))),
@@ -489,7 +489,7 @@ it(
       );
       return { declaration: d, rejected, normal, ranking, control };
     });
-    await save(task, 'tsk-08-receive-attempt-published.json', {
+    await save(task, 'audit-receive-attempt-published.json', {
       master: {
         version: published.version,
         bytes: bytes.length,
@@ -906,7 +906,7 @@ describe('receive attempt negative responsibilities', () => {
       `rejects responsibility mutations batch ${batch}`,
       {
         timeout: 60000,
-        ...productionAuditTestOptions([`tsk-08-receive-attempt-negatives-${batch}.json`]),
+        ...productionAuditTestOptions([`audit-receive-attempt-negatives-${batch}.json`]),
       },
       async ({ task }) => {
         const list = allMutations.slice(batch * 10, (batch + 1) * 10),
@@ -928,7 +928,7 @@ describe('receive attempt negative responsibilities', () => {
             undo();
           }
         }
-        await save(task, `tsk-08-receive-attempt-negatives-${batch}.json`, { reports });
+        await save(task, `audit-receive-attempt-negatives-${batch}.json`, { reports });
         for (const r of reports) {
           expect(r.gate.status, r.name).toBe('failed');
           expect(
@@ -951,7 +951,7 @@ describe('receive attempt negative responsibilities', () => {
     );
   it(
     'rejects population success filters and actual-zero changed classification',
-    { timeout: 60000, ...productionAuditTestOptions(['tsk-08-receive-attempt-population.json']) },
+    { timeout: 60000, ...productionAuditTestOptions(['audit-receive-attempt-population.json']) },
     async ({ task }) => {
       const zero = entry(specs[6]!, 6),
         good = entry(specs[0]!, 0),
@@ -1010,7 +1010,7 @@ describe('receive attempt negative responsibilities', () => {
           }),
         },
       ];
-      await save(task, 'tsk-08-receive-attempt-population.json', { cases });
+      await save(task, 'audit-receive-attempt-population.json', { cases });
       for (const c of cases) {
         expect(c.gate.status, c.name).toBe('failed');
         expect(

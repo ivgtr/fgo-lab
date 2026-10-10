@@ -9,7 +9,9 @@ const [mode, actualArgument, outputArgument] = process.argv.slice(2);
 const loader = path.resolve(root, 'packages/data-pipeline/node_modules/tsx/dist/loader.mjs');
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const source = JSON.parse(
-  fs.readFileSync(path.join(root, 'docs/evidence/tsk-06-5-production-closure.json')),
+  fs.readFileSync(
+    path.join(root, 'packages/calculation-application/baselines/production-v1/source.json'),
+  ),
 );
 const baseline = JSON.parse(
   fs.readFileSync(path.resolve(root, source.productionMatrix.canonicalRecords.manifest)),

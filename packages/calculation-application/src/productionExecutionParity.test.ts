@@ -120,7 +120,7 @@ describe('production execution parity ratchet', () => {
       targetInputRequired.size,
     );
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    // TSK-15.1: old 422-record digest is reconstructed by restoring only the approved input/rows.
+    // production audit: old 422-record digest is reconstructed by restoring only the approved input/rows.
     expect(digest).toBe('c276b2d215d7c84a4a9dd6a3896bfe62a839a482dd9b36a5dc65b865d7dcee7b');
   }, 60_000);
 });

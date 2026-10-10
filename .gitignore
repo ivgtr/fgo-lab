@@ -22,7 +22,7 @@ Thumbs.db
 .vscode/
 .idea/
 .frontend-review/report/
-.local-docs/docs/**
+/.local-docs/
 data/raw/*
 !data/raw/referenced_skills.json
 !data/raw/battle_points.json
@@ -30,6 +30,6 @@ data/cache/
 *.sqlite
 *.sqlite3
 *.db
-# Share Serena project settings; keep memories, caches and local overrides private.
-/.serena/*
-!/.serena/project.yml
+# Agent settings and working notes belong to each development environment.
+/.codex/
+/.serena/

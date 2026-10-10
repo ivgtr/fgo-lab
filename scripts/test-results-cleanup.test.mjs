@@ -23,7 +23,7 @@ test('cleanup keeps the newest completed runs, running runs, and non-run evidenc
     mkdirSync(resolve(root, name));
     writeFileSync(resolve(root, name, 'manifest.json'), `${JSON.stringify({ outcome })}\n`);
   }
-  mkdirSync(resolve(root, 'tsk-06-2'));
+  mkdirSync(resolve(root, 'manual-diagnostic'));
 
   assert.deepEqual(planTestResultsCleanup(root, 1), {
     kept: [recent],
@@ -34,7 +34,7 @@ test('cleanup keeps the newest completed runs, running runs, and non-run evidenc
   assert.equal(existsSync(resolve(root, old)), false);
   assert.equal(existsSync(resolve(root, recent)), true);
   assert.equal(existsSync(resolve(root, running)), true);
-  assert.equal(existsSync(resolve(root, 'tsk-06-2')), true);
+  assert.equal(existsSync(resolve(root, 'manual-diagnostic')), true);
 });
 
 test('cleanup rejects an invalid retention count', () => {

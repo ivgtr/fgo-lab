@@ -41,7 +41,7 @@ try {
   const pointer = `Artifacts: ${short(relative(root, runDirectory))}`;
   const header =
     outcome === 'success'
-      ? `docs integrity passed (${result.counts.markdown} Markdown, ${result.counts.machineEvidence} machine evidence, ${result.counts.references} references)`
+      ? `docs integrity passed (${result.counts.markdown} Markdown, ${result.counts.references} references)`
       : `docs integrity failed (${result.errors.length}; ${outcome})`;
   const summary =
     [

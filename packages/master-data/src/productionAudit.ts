@@ -205,9 +205,8 @@ export function formatCanonicalAuditMismatch(
 
 export type ProductionAuditBoundary = 'data-pipeline' | 'calculation-application';
 
-export interface Tsk065ProductionAuditSource {
-  task: 'TSK-06.5';
-  status: 'complete';
+export interface ProductionAuditSource {
+  format: 'production-audit-source-v1';
   artifact: string;
   masterDataVersion: string;
   staticSemanticsDigest: string;
@@ -261,7 +260,7 @@ export interface ProductionAuditMatrixModel {
   conditionCount: number;
   attackProfileCount: number;
   outcomeCount: number;
-  outcomes: Tsk065ProductionAuditSource['matrix']['outcomes'];
+  outcomes: ProductionAuditSource['matrix']['outcomes'];
   parityCount: number;
   parityFailures: number;
   digest: string;
@@ -269,45 +268,46 @@ export interface ProductionAuditMatrixModel {
 }
 
 export interface SharedProductionAuditModel<Payload> {
-  source: Tsk065ProductionAuditSource;
+  source: ProductionAuditSource;
   payload: Payload;
 }
 
 function sourceRecord(value: unknown, path: string): Record<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value))
-    throw new TypeError(`tsk06_5_source_invalid_object:${path}`);
+    throw new TypeError(`production_audit_source_invalid_object:${path}`);
   return value as Record<string, unknown>;
 }
 
 function sourceString(value: unknown, path: string): string {
   if (typeof value !== 'string' || value.length === 0)
-    throw new TypeError(`tsk06_5_source_invalid_string:${path}`);
+    throw new TypeError(`production_audit_source_invalid_string:${path}`);
   return value;
 }
 
 function sourceDigest(value: unknown, path: string): string {
   const digest = sourceString(value, path);
-  if (!/^[a-f0-9]{64}$/.test(digest)) throw new TypeError(`tsk06_5_source_invalid_digest:${path}`);
+  if (!/^[a-f0-9]{64}$/.test(digest))
+    throw new TypeError(`production_audit_source_invalid_digest:${path}`);
   return digest;
 }
 
 function sourceCount(value: unknown, path: string): number {
   if (!Number.isSafeInteger(value) || (value as number) < 0)
-    throw new TypeError(`tsk06_5_source_invalid_count:${path}`);
+    throw new TypeError(`production_audit_source_invalid_count:${path}`);
   return value as number;
 }
 
 /**
- * Reads the already-approved TSK-06.5 evidence as a source reference.
- * This validates and projects the evidence; it never derives a new inventory or digest.
+ * Reads the fixed production regression declaration as a source reference.
+ * This validates the declaration; it never derives a new inventory or digest.
  */
-export function createTsk065ProductionAuditSource(
+export function createProductionAuditSource(
   evidence: unknown,
   input: { masterDataVersion: string; artifact: string },
-): Tsk065ProductionAuditSource {
+): ProductionAuditSource {
   const root = sourceRecord(evidence, 'root');
-  if (root.task !== 'TSK-06.5') throw new TypeError('tsk06_5_source_task_mismatch');
-  if (root.status !== 'complete') throw new TypeError('tsk06_5_source_not_complete');
+  if (root.format !== 'production-audit-source-v1')
+    throw new TypeError('production_audit_source_format_mismatch');
   const masterDataVersion = sourceString(input.masterDataVersion, 'masterDataVersion');
   const artifact = sourceString(input.artifact, 'artifact');
   const staticSemantics = sourceRecord(root.staticSemantics, 'staticSemantics');
@@ -328,8 +328,37 @@ export function createTsk065ProductionAuditSource(
     path: string,
   ) => {
     if (JSON.stringify(Object.keys(record).sort()) !== JSON.stringify([...keys].sort()))
-      throw new TypeError(`tsk06_5_source_invalid_keys:${path}`);
+      throw new TypeError(`production_audit_source_invalid_keys:${path}`);
   };
+  assertSourceKeys(
+    root,
+    ['format', 'staticSemantics', 'candidateEligibility', 'productionMatrix'],
+    'root',
+  );
+  assertSourceKeys(staticSemantics, ['digest'], 'staticSemantics');
+  assertSourceKeys(candidateEligibility, ['digest'], 'candidateEligibility');
+  assertSourceKeys(
+    matrix,
+    [
+      'dimensions',
+      'conditionCount',
+      'attackProfileCount',
+      'outcomeCount',
+      'outcomes',
+      'parityCount',
+      'parityFailures',
+      'mergedDigest',
+      'eligibilityDigest',
+      'artifact',
+      'canonicalRecords',
+    ],
+    'productionMatrix',
+  );
+  assertSourceKeys(
+    outcomes,
+    ['calculated', 'unavailableUnderPolicy', 'inputRequired', 'invalid', 'unsupported'],
+    'productionMatrix.outcomes',
+  );
   assertSourceKeys(
     canonicalRecords,
     ['format', 'manifest', 'bytes', 'sha256', 'identity', 'authority'],
@@ -341,7 +370,7 @@ export function createTsk065ProductionAuditSource(
     'canonicalRecords.identity',
   );
   if (canonicalRecords.format !== 'production-regression-v1')
-    throw new TypeError('tsk06_5_source_invalid_format:canonicalRecords');
+    throw new TypeError('production_audit_source_invalid_format:canonicalRecords');
   const candidateEligibilityDigest = sourceDigest(
     candidateEligibility.digest,
     'candidateEligibility.digest',
@@ -351,10 +380,9 @@ export function createTsk065ProductionAuditSource(
     'productionMatrix.eligibilityDigest',
   );
   if (candidateEligibilityDigest !== matrixEligibilityDigest)
-    throw new TypeError('tsk06_5_source_eligibility_digest_mismatch');
+    throw new TypeError('production_audit_source_eligibility_digest_mismatch');
   return {
-    task: 'TSK-06.5',
-    status: 'complete',
+    format: 'production-audit-source-v1',
     artifact,
     masterDataVersion,
     staticSemanticsDigest: sourceDigest(staticSemantics.digest, 'staticSemantics.digest'),
@@ -410,7 +438,7 @@ function assertBoundaryDigest(digest: string, path: string): void {
 }
 
 export function connectProductionAuditBoundary<Inventory, Failure, Counters>(
-  source: Tsk065ProductionAuditSource,
+  source: ProductionAuditSource,
   audit: Omit<
     ProductionAuditBoundaryModel<Inventory, Failure, Counters>,
     'producer' | 'recordCount'
@@ -445,7 +473,7 @@ export interface ProductionAuditClosureInput {
   conditionCount: number;
   attackProfileCount: number;
   outcomeCount: number;
-  outcomes: Tsk065ProductionAuditSource['matrix']['outcomes'];
+  outcomes: ProductionAuditSource['matrix']['outcomes'];
   parityCount: number;
   parityFailures: readonly unknown[];
   digest: string;
@@ -453,7 +481,7 @@ export interface ProductionAuditClosureInput {
 }
 
 export function productionAuditMatrixRecords(
-  source: Tsk065ProductionAuditSource,
+  source: ProductionAuditSource,
   audit: ProductionAuditClosureInput,
 ): { expected: readonly CanonicalAuditRecord[]; actual: readonly CanonicalAuditRecord[] } {
   const candidates = (audit.eligibility as { candidates?: { digest?: string } }).candidates;
@@ -461,7 +489,7 @@ export function productionAuditMatrixRecords(
   return {
     expected: [
       {
-        identity: 'tsk-06.5:production-matrix',
+        identity: 'production-regression:production-matrix',
         value: {
           conditionCount: source.matrix.conditionCount,
           attackProfileCount: source.matrix.attackProfileCount,
@@ -476,7 +504,7 @@ export function productionAuditMatrixRecords(
     ],
     actual: [
       {
-        identity: 'tsk-06.5:production-matrix',
+        identity: 'production-regression:production-matrix',
         value: {
           conditionCount: audit.conditionCount,
           attackProfileCount: audit.attackProfileCount,
@@ -493,11 +521,11 @@ export function productionAuditMatrixRecords(
 }
 
 /**
- * Connects the complete TSK-06.5 matrix without recalculating its records.
+ * Connects the complete production audit matrix without recalculating its records.
  * Any mismatch remains a typed audit failure and exposes the first canonical field.
  */
 export function connectProductionAuditMatrix(
-  source: Tsk065ProductionAuditSource,
+  source: ProductionAuditSource,
   audit: ProductionAuditClosureInput,
   producer = 'auditProductionClosure',
 ): SharedProductionAuditModel<ProductionAuditMatrixModel> {

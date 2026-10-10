@@ -225,7 +225,7 @@ function inspectAuditShapes(
     return result;
   };
   for (const [index, audit] of audits.entries()) {
-    const identity = `tsk-08:shard:${index}`;
+    const identity = `production-audit:shard:${index}`;
     const issue = (path: string, rule: string, value: unknown) => {
       const actualType = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
       const failure = recordFailure(
@@ -327,7 +327,7 @@ export function compareProductionMatrixAggregates(
 ): ProductionRecordFailure[] {
   const validity = recordFailure(
     'canonicalAggregateMismatch',
-    'tsk-06.5:production-matrix',
+    'production-regression:production-matrix',
     expected,
     actual,
   );
@@ -337,7 +337,7 @@ export function compareProductionMatrixAggregates(
   for (const semantic of [true, false]) {
     const failure = recordFailure(
       'canonicalAggregateMismatch',
-      'tsk-06.5:production-matrix',
+      'production-regression:production-matrix',
       matrixComparisonValue(expectedValue, semantic),
       matrixComparisonValue(actualValue, semantic),
     );

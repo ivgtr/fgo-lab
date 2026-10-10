@@ -519,7 +519,7 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
 
   it(
     'connects pipeline-generated changed writers to the original native refusal and retained prefix',
-    productionAuditTestOptions(['tsk-08-maximum-fixed-attempt-changed-noncommit.json']),
+    productionAuditTestOptions(['audit-maximum-fixed-attempt-changed-noncommit.json']),
     async ({ task }) => {
       const cases = fixtures.positives.map((spec, index) => entry(spec, index, true));
       const proofs = cases.map((item) => ({
@@ -537,7 +537,7 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
           ).rankingNormal.calculation,
         },
       }));
-      await saveArtifact(task, 'tsk-08-maximum-fixed-attempt-changed-noncommit.json', {
+      await saveArtifact(task, 'audit-maximum-fixed-attempt-changed-noncommit.json', {
         generatedBy:
           'normalizeFunctions→masterSnapshotSchema→preparation reducer→original native owner',
         cases: proofs,
@@ -639,12 +639,12 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
 
   it(
     'reports schema-legal no-op, dead, unreached, pre-native and committed boundaries separately',
-    productionAuditTestOptions(['tsk-08-maximum-fixed-attempt-boundaries.json']),
+    productionAuditTestOptions(['audit-maximum-fixed-attempt-boundaries.json']),
     async ({ task }) => {
       const cases = fixtures.boundaries.map((spec, index) => entry(spec, 100 + index, false));
       await saveArtifact(
         task,
-        'tsk-08-maximum-fixed-attempt-boundaries.json',
+        'audit-maximum-fixed-attempt-boundaries.json',
         cases.map((item) => ({
           key: item.spec.key,
           gate: item.gate,
@@ -673,7 +673,7 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
 
   it(
     'rejects responsibility-grouped capture, reducer, transport, population and downstream mutations',
-    productionAuditTestOptions(['tsk-08-maximum-fixed-attempt-negatives.json']),
+    productionAuditTestOptions(['audit-maximum-fixed-attempt-negatives.json']),
     async ({ task }) => {
       const multiple = entry(
         fixtures.positives.find((spec) => spec.key === 'same-source-multiple-operations')!,
@@ -1093,7 +1093,7 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
           proof: maximumFixedAttemptDiagnostic(multiple.source),
         },
       ];
-      await saveArtifact(task, 'tsk-08-maximum-fixed-attempt-negatives.json', negativeReports);
+      await saveArtifact(task, 'audit-maximum-fixed-attempt-negatives.json', negativeReports);
       for (const item of negativeReports) {
         expect(item.gate.status, `${item.group}:${item.path}`).toBe('failed');
         expect(item.gate.failures.length, `${item.group}:${item.path}`).toBeGreaterThan(0);

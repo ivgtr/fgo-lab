@@ -2,7 +2,7 @@
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import assert from 'node:assert/strict';
-import { createTsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import { createProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import {
   readProductionBaselineManifest,
   readProductionBaselineCondition,
@@ -20,11 +20,14 @@ async function replay() {
   const destination = process.argv[2];
   if (!destination) throw new Error('usage: replay-production-baseline.ts <new-actual-directory>');
   const sourceValue = JSON.parse(
-    await readFile(resolve(root, 'docs/evidence/tsk-06-5-production-closure.json'), 'utf8'),
+    await readFile(
+      resolve(root, 'packages/calculation-application/baselines/production-v1/source.json'),
+      'utf8',
+    ),
   );
-  const source = createTsk065ProductionAuditSource(sourceValue, {
+  const source = createProductionAuditSource(sourceValue, {
     masterDataVersion: sourceValue.productionMatrix.canonicalRecords.identity.masterDataVersion,
-    artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+    artifact: 'packages/calculation-application/baselines/production-v1/source.json',
   });
   const baseline = await readProductionBaselineManifest(root, source.matrix.canonicalRecords);
   assert.equal(baseline.status, 'accepted');

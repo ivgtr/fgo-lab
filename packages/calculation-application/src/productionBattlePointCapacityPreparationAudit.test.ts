@@ -520,7 +520,7 @@ for (const spec of specs)
   for (const testGroup of testGroups)
     it(
       `connects committed capacity ${spec.name} ${testGroup}`,
-      productionAuditTestOptions([`tsk-08-bp-capacity-${spec.name}-${testGroup}.json`]),
+      productionAuditTestOptions([`audit-bp-capacity-${spec.name}-${testGroup}.json`]),
       async ({ task }) => {
         let shared = preparations.get(spec);
         if (!shared) {
@@ -1535,7 +1535,7 @@ for (const spec of specs)
         );
         await writeProductionAuditArtifact(
           task.meta,
-          `tsk-08-bp-capacity-${spec.name}-${testGroup}.json`,
+          `audit-bp-capacity-${spec.name}-${testGroup}.json`,
           {
             diagnosticVersion: 1,
             encoding: 'lossless-interned-values',
@@ -1546,7 +1546,7 @@ for (const spec of specs)
           },
         );
         const savedBytes = await readStoredProductionAuditArtifact(
-          `tsk-08-bp-capacity-${spec.name}-${testGroup}.json`,
+          `audit-bp-capacity-${spec.name}-${testGroup}.json`,
         );
         const diskRoundTrip = equalProductionAuditDiagnosticValues(
           decodeProductionAuditDiagnostic(
@@ -1686,7 +1686,7 @@ for (const spec of specs)
 
 it(
   'fixes observed capacity canonical mutations before restore without changing authority',
-  productionAuditTestOptions(['tsk-08-capacity-proof-lifetime.json']),
+  productionAuditTestOptions(['audit-capacity-proof-lifetime.json']),
   async ({ task }) => {
     const master = fixtureMaster(specs[0]!);
     const { program, source } = run(master, specs[0]!);
@@ -1728,7 +1728,7 @@ it(
     } finally {
       source.downstream.input = input;
     }
-    await saveCapacityContract(task.meta, 'tsk-08-capacity-proof-lifetime.json', {
+    await saveCapacityContract(task.meta, 'audit-capacity-proof-lifetime.json', {
       before: materializeBattlePointCapacityValue(before),
       mutated: { gate: mutated.gate, proof: raw },
       copy: { gate: copy.gate, proof: copyTransport },
@@ -1761,7 +1761,7 @@ it(
 
 it(
   'fixes the complete capacity population envelope including unmatched and duplicate observations',
-  productionAuditTestOptions(['tsk-08-capacity-proof-population.json']),
+  productionAuditTestOptions(['audit-capacity-proof-population.json']),
   async ({ task }) => {
     const { program, source } = run(fixtureMaster(specs[0]!), specs[0]!);
     const unmatched = {
@@ -1797,7 +1797,7 @@ it(
     const observed = materializeBattlePointCapacityValue(diagnostics.valueProof) as {
       canonicalIdentity: string;
     }[];
-    await saveCapacityContract(task.meta, 'tsk-08-capacity-proof-population.json', {
+    await saveCapacityContract(task.meta, 'audit-capacity-proof-population.json', {
       gate: inspected.gate,
       proof: restored,
       whileMutated,

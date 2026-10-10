@@ -644,7 +644,7 @@ it('requires retained Map and Set order even where the Node value comparison per
 for (const spec of specs)
   it(
     `isolates original failed BP attempt ${spec.name}`,
-    productionAuditTestOptions([`tsk-08-preparation-bp-attempt-${spec.name}.json`]),
+    productionAuditTestOptions([`audit-preparation-bp-attempt-${spec.name}.json`]),
     async ({ task }) => {
       const master = fixtureMaster(spec);
       const positive = run(master, spec),
@@ -1369,7 +1369,7 @@ for (const spec of specs)
       const roundTrip = equalProductionAuditDiagnosticValues(payload, decodeDiagnostic(encoded));
       await writeProductionAuditArtifact(
         task.meta,
-        `tsk-08-preparation-bp-attempt-${spec.name}.json`,
+        `audit-preparation-bp-attempt-${spec.name}.json`,
         {
           diagnosticVersion: 1,
           encoding: 'lossless-interned-values',

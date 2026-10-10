@@ -127,7 +127,7 @@ it('compares a shared DAG without unfolding every path', () => {
 
 it(
   'publishes complete original values before assertions and compares actual disk restoration',
-  productionAuditTestOptions(['tsk-08-restoration-comparison-contract.json']),
+  productionAuditTestOptions(['audit-restoration-comparison-contract.json']),
   async ({ task }) => {
     const leaf = { expected: undefined, actual: null };
     const payload = {
@@ -142,11 +142,11 @@ it(
       },
     };
     const diagnostic = encodeProductionAuditDiagnostic(payload);
-    await writeProductionAuditArtifact(task.meta, 'tsk-08-restoration-comparison-contract.json', {
+    await writeProductionAuditArtifact(task.meta, 'audit-restoration-comparison-contract.json', {
       encoded: diagnostic,
     });
     const bytes = await readStoredProductionAuditArtifact(
-      'tsk-08-restoration-comparison-contract.json',
+      'audit-restoration-comparison-contract.json',
     );
     const restored = decodeProductionAuditDiagnostic(
       (decodeStoredProductionAuditArtifact(bytes) as { encoded: typeof diagnostic }).encoded,

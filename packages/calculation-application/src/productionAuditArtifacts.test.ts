@@ -275,7 +275,7 @@ it('rejects values that JSON transport cannot preserve', () => {
 
 it(
   'publishes complete bytes and a receipt through test metadata before assertions',
-  productionAuditTestOptions(['tsk-08-artifact-contract.json']),
+  productionAuditTestOptions(['audit-artifact-contract.json']),
   async ({ task }) => {
     const payload = {
       canonicalIdentity: 'fixture:artifact-contract',
@@ -305,12 +305,12 @@ it(
     if (malformedField) Reflect.deleteProperty(payload.failures[0]!, malformedField);
     const receipt = await writeProductionAuditArtifact(
       task.meta,
-      'tsk-08-artifact-contract.json',
+      'audit-artifact-contract.json',
       payload,
     );
-    const bytes = await readStoredProductionAuditArtifact('tsk-08-artifact-contract.json');
+    const bytes = await readStoredProductionAuditArtifact('audit-artifact-contract.json');
     expect(decodeStoredProductionAuditArtifact(bytes)).toEqual(payload);
-    expect(receipt.path).toBe('tsk-08-artifact-contract.json.gz');
+    expect(receipt.path).toBe('audit-artifact-contract.json.gz');
     expect(receipt.expectedBytes).toBe(bytes.length);
     expect(receipt.expectedSha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     const decodedBytes = gunzipSync(bytes);

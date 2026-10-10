@@ -314,7 +314,7 @@ export function sourceActionRecoveryProgram(
     ),
   ];
   return {
-    canonicalIdentity: `tsk-08:critical-stars-recovery:${JSON.stringify([
+    canonicalIdentity: `production-audit:critical-stars-recovery:${JSON.stringify([
       failedSource.actionId,
       failedSource.source.origin,
       failedSource.source.sourceInstanceId,
@@ -399,7 +399,7 @@ export function auditSourceActionRecovery(
   };
   const finish = (): CriticalStarsRecoveryGate => {
     const common = {
-      canonicalIdentity: 'tsk-08:critical-stars-recovery' as const,
+      canonicalIdentity: 'production-audit:critical-stars-recovery' as const,
       expected: [program.canonicalIdentity],
       actual: source && record(source.program) ? [source.program.canonicalIdentity] : [],
     };
@@ -1162,7 +1162,7 @@ export interface CriticalStarsRecoveryFailure {
   firstDifference: CanonicalAuditDifference;
 }
 export type CriticalStarsRecoveryGate = {
-  canonicalIdentity: 'tsk-08:critical-stars-recovery';
+  canonicalIdentity: 'production-audit:critical-stars-recovery';
   expected: readonly string[];
   actual: readonly string[];
 } & (
@@ -1253,7 +1253,7 @@ export function auditCriticalStarsRecoveryObservations(input: {
     new Set(expected).size !== expected.length ||
     expected.length === 0
   ) {
-    const identity = 'tsk-08:critical-stars-recovery:coverage';
+    const identity = 'production-audit:critical-stars-recovery:coverage';
     const wanted = { identities: expected, contractUnique: true, contractNonempty: true };
     const observed = {
       identities: actual,
@@ -1274,7 +1274,11 @@ export function auditCriticalStarsRecoveryObservations(input: {
   }
   for (const [index, program] of input.expected.entries())
     failures.push(...auditSourceActionRecovery(program, input.observations[index]).failures);
-  const common = { canonicalIdentity: 'tsk-08:critical-stars-recovery' as const, expected, actual };
+  const common = {
+    canonicalIdentity: 'production-audit:critical-stars-recovery' as const,
+    expected,
+    actual,
+  };
   return failures.length > 0
     ? { ...common, status: 'failed', failures, firstDifference: failures[0]!.firstDifference }
     : { ...common, status: 'passed', failures: [], firstDifference: null };

@@ -42,7 +42,6 @@ for (const relative of [
   'packages/calculation-application/baselines',
   'packages/test-fixtures/master',
   'scripts',
-  'docs/evidence/tsk-06-5-production-closure.json',
   'apps/web/public/master',
   'package.json',
   'pnpm-workspace.yaml',
@@ -74,7 +73,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { readProductionBaselineManifest, readProductionBaselineCondition } from ${JSON.stringify(baselineReader)};
 const root = ${JSON.stringify(checkout)};
-const source = JSON.parse(fs.readFileSync(path.join(root, 'docs/evidence/tsk-06-5-production-closure.json'), 'utf8'));
+const source = JSON.parse(fs.readFileSync(path.join(root, 'packages/calculation-application/baselines/production-v1/source.json'), 'utf8'));
 const reference = source.productionMatrix.canonicalRecords;
 const result = await readProductionBaselineManifest(root, reference);
 if (result.status !== 'accepted') throw new Error('baseline_manifest_rejected:' + JSON.stringify(result.failures[0]));
@@ -118,7 +117,7 @@ fs.writeFileSync(
       qualification:
         'Dependencies shared with installed checkout; fixed baseline manifest and all 80 compressed bodies read without any original local run. This checks historical storage only, not current damage execution.',
       digest: reader.digest,
-      source: 'docs/evidence/tsk-06-5-production-closure.json',
+      source: 'packages/calculation-application/baselines/production-v1/source.json',
     },
     null,
     2,

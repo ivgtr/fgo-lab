@@ -3,13 +3,13 @@ import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   connectProductionAuditBoundary,
-  createTsk065ProductionAuditSource,
+  createProductionAuditSource,
   formatCanonicalAuditMismatch,
   measureProductionAuditLifecycle,
   type CanonicalAuditRecord,
 } from '@fgo-lab/master-data/production-audit';
 import { describe, expect, it } from 'vitest';
-import tsk065Evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
+import productionAuditSource from '../baselines/production-v1/source.json';
 import { compileCalculationApplicationProductionAudit } from './productionAudit';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -22,9 +22,9 @@ describe('shared calculation-application production audit', () => {
       compile: compileCalculationApplicationProductionAudit,
     });
     const { audit } = measured;
-    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+    const source = createProductionAuditSource(productionAuditSource, {
       masterDataVersion: audit.masterDataVersion,
-      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+      artifact: 'packages/calculation-application/baselines/production-v1/source.json',
     });
     const sharedAuditModel = connectProductionAuditBoundary(
       source,
@@ -38,7 +38,7 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          // TSK-15.1: approved canonical initial-buff corrections; full record attribution.
+          // production audit: approved canonical initial-buff corrections; full record attribution.
           digest: '1aaa271af18ee2fec436d594422c25164e33ffdd2c7f9c66b1c140bd7bd0d1e7',
           inventory: {
             attackServants: 422,

@@ -232,7 +232,7 @@ describe('production battle-point paths', () => {
       );
       if (prepared.status !== 'executable' || !prepared.executionObservation) {
         await artifact(task.meta, 'selected-execution-observation.json', {
-          canonicalIdentity: 'tsk-08:selected-execution:3300200:phase-1',
+          canonicalIdentity: 'production-audit:selected-execution:3300200:phase-1',
           prepared,
         });
         throw new Error('selected BP execution observation required');
@@ -248,7 +248,7 @@ describe('production battle-point paths', () => {
       const observation = prepared.executionObservation;
       const targetExecution = observation.targetExecution;
       await artifact(task.meta, 'selected-execution-observation.json', {
-        canonicalIdentity: 'tsk-08:selected-execution:3300200:phase-1',
+        canonicalIdentity: 'production-audit:selected-execution:3300200:phase-1',
         battlePointWitness: observation.battlePointWitness,
         targetExecution,
         resolvedTarget: prepared.resolved.input.target,

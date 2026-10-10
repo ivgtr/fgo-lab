@@ -1,0 +1,40 @@
+{
+  "format": "production-audit-source-v1",
+  "staticSemantics": {
+    "digest": "a1dc814fb04c5ed67ea86606590bf317fb37639ccbe77efa028b6401f3a24f2d"
+  },
+  "candidateEligibility": {
+    "digest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759"
+  },
+  "productionMatrix": {
+    "dimensions": "naturalLimit|uniformLevel90 × selfBuffs included|excluded × conditionalEffects baseline|satisfied × NP1..5 × legal initial OC",
+    "conditionCount": 80,
+    "attackProfileCount": 433,
+    "outcomeCount": 34640,
+    "outcomes": {
+      "calculated": 34600,
+      "unavailableUnderPolicy": 40,
+      "inputRequired": 0,
+      "invalid": 0,
+      "unsupported": 0
+    },
+    "parityCount": 34600,
+    "parityFailures": 0,
+    "mergedDigest": "04415e8ab05dfcb5afa58210176357fb095e0b5faeed2aa4815273b00be68fc4",
+    "eligibilityDigest": "68e41503a7663fa32607cbe1b26f670c0940f33f4f0a3d07b4268a5a5d914759",
+    "artifact": "packages/calculation-application/baselines/production-v1/manifest.json",
+    "canonicalRecords": {
+      "format": "production-regression-v1",
+      "manifest": "packages/calculation-application/baselines/production-v1/manifest.json",
+      "bytes": 376249,
+      "sha256": "50cbcb378d8743a9a678df5415eae93e269ffcc12514ed18344ee6a2e074534a",
+      "identity": {
+        "masterDataVersion": "20260920.3",
+        "masterSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+        "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts <output>",
+        "matrix": "naturalLimit|uniformLevel90 × four policies × ten legal NP/initial-OC pairs"
+      },
+      "authority": "Fixed historical production regression input. All 80 conditions, 34640 semantic records, inventories and digests are retained. Original manifest identity and source revision are in baseline.origin. Missing or corrupt input fails closed; expectations are not regenerated."
+    }
+  }
+}

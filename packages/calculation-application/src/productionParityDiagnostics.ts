@@ -14,7 +14,7 @@ import {
   type CanonicalAuditRecord,
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
-import type { Tsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import type { ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import type {
   ProductionRecordComparison,
   ProductionRecordFailure,
@@ -71,13 +71,13 @@ export function auditProductionPreparationRejections(
   const coverage = firstCanonicalAuditDifference(
     [
       {
-        identity: 'tsk-08:preparation-rejections',
+        identity: 'production-audit:preparation-rejections',
         value: { identities: expectedIdentities, nonempty: true, unique: true },
       },
     ],
     [
       {
-        identity: 'tsk-08:preparation-rejections',
+        identity: 'production-audit:preparation-rejections',
         value: {
           identities: witnesses.map((witness) => witness.canonicalIdentity),
           nonempty: expectedIdentities.length > 0,
@@ -167,7 +167,7 @@ export function auditProductionPreparationRejections(
     };
   });
   return {
-    canonicalIdentity: 'tsk-08:preparation-rejections' as const,
+    canonicalIdentity: 'production-audit:preparation-rejections' as const,
     status: failures.length ? ('failed' as const) : ('passed' as const),
     rows,
     failures,
@@ -211,7 +211,7 @@ export type ProductionParityGateInput = {
   conditionCount: number;
   attackProfileCount: number;
   outcomeCount: number;
-  outcomes: Tsk065ProductionAuditSource['matrix']['outcomes'];
+  outcomes: ProductionAuditSource['matrix']['outcomes'];
   parityCount: number;
   parityFailures: readonly ProductionParityFailure[];
   digest: string;
@@ -252,7 +252,7 @@ export type ProductionFinalOutcomeFailure =
     }
   | {
       reason: 'finalProfileOutcomeIdentityMismatch';
-      canonicalIdentity: 'tsk-06.5:final-profile-outcomes';
+      canonicalIdentity: 'production-regression:final-profile-outcomes';
       firstDifference: CanonicalAuditDifference;
     };
 
@@ -265,7 +265,7 @@ export interface ProductionFinalProfileOutcome {
 export type ProductionFinalOutcomeGate =
   | {
       status: 'passed';
-      canonicalIdentity: 'tsk-06.5:final-profile-outcomes';
+      canonicalIdentity: 'production-regression:final-profile-outcomes';
       expected: CanonicalAuditValue;
       actual: CanonicalAuditValue;
       firstDifference: null;
@@ -273,7 +273,7 @@ export type ProductionFinalOutcomeGate =
     }
   | {
       status: 'failed';
-      canonicalIdentity: 'tsk-06.5:final-profile-outcomes';
+      canonicalIdentity: 'production-regression:final-profile-outcomes';
       expected: CanonicalAuditValue;
       actual: CanonicalAuditValue;
       firstDifference: CanonicalAuditDifference;
@@ -341,7 +341,7 @@ export interface ProductionPreparationTransactionSummary {
 export type ProductionPreparationTransactionGate =
   | {
       status: 'passed';
-      canonicalIdentity: 'tsk-08:preparation-transactions';
+      canonicalIdentity: 'production-audit:preparation-transactions';
       expected: CanonicalAuditValue;
       actual: CanonicalAuditValue;
       summary: ProductionPreparationTransactionSummary;
@@ -350,7 +350,7 @@ export type ProductionPreparationTransactionGate =
     }
   | {
       status: 'failed';
-      canonicalIdentity: 'tsk-08:preparation-transactions';
+      canonicalIdentity: 'production-audit:preparation-transactions';
       expected: CanonicalAuditValue;
       actual: CanonicalAuditValue;
       summary: ProductionPreparationTransactionSummary;
@@ -546,7 +546,7 @@ export interface ProductionUserControlSummary {
 export type ProductionUserControlGate =
   | {
       status: 'passed';
-      canonicalIdentity: 'tsk-08:inert-controls';
+      canonicalIdentity: 'production-audit:inert-controls';
       expected: CanonicalAuditValue;
       actual: CanonicalAuditValue;
       summary: ProductionUserControlSummary;
@@ -555,7 +555,7 @@ export type ProductionUserControlGate =
     }
   | {
       status: 'failed';
-      canonicalIdentity: 'tsk-08:inert-controls';
+      canonicalIdentity: 'production-audit:inert-controls';
       expected: CanonicalAuditValue;
       actual: CanonicalAuditValue;
       summary: ProductionUserControlSummary;
@@ -866,7 +866,7 @@ function isValidUserControlBindingValue(
 export function auditProductionUserControlObservations(
   input: ProductionUserControlGateInput,
 ): ProductionUserControlGate {
-  const canonicalIdentity = 'tsk-08:inert-controls' as const;
+  const canonicalIdentity = 'production-audit:inert-controls' as const;
   const summary: ProductionUserControlSummary = {
     projectionCount: input.observations.length,
     selectedProfileCount: 0,
@@ -1848,7 +1848,7 @@ function identityOf(comparison: ProductionParityComparison): string {
 }
 
 function canonicalParityMatrixValue(
-  source: Tsk065ProductionAuditSource,
+  source: ProductionAuditSource,
   audit: ProductionParityGateInput,
 ): { expected: CanonicalAuditValue; actual: CanonicalAuditValue } {
   // The source fixes the historical population and numeric outcome contract.
@@ -1871,8 +1871,8 @@ function canonicalParityMatrixValue(
     parityFailures: audit.parityFailures.length,
   };
   return {
-    expected: canonicalValue(expected, 'tsk-06.5:production-matrix'),
-    actual: canonicalValue(actual, 'tsk-06.5:production-matrix'),
+    expected: canonicalValue(expected, 'production-regression:production-matrix'),
+    actual: canonicalValue(actual, 'production-regression:production-matrix'),
   };
 }
 
@@ -1896,13 +1896,13 @@ export function productionRecordComparisonFailure(
 
 /** Compare the complete production matrix and retain full typed failures for callers. */
 export function evaluateProductionParityGate(
-  source: Tsk065ProductionAuditSource,
+  source: ProductionAuditSource,
   audit: ProductionParityGateInput,
   records?: ProductionRecordComparison,
 ): ProductionParityGate {
   const recordGate = productionRecordComparisonFailure(records);
   if (recordGate) return recordGate;
-  const canonicalIdentity = 'tsk-06.5:production-matrix';
+  const canonicalIdentity = 'production-regression:production-matrix';
   if (!records || records.status !== 'passed') {
     const expected = canonicalValue({ canonicalRecords: 'verified' }, canonicalIdentity);
     const actual = canonicalValue({ canonicalRecords: 'missing' }, canonicalIdentity);
@@ -1951,7 +1951,7 @@ export function evaluateProductionParityGate(
 export function evaluateProductionFinalOutcomeGate(
   audit: ProductionFinalOutcomeGateInput,
 ): ProductionFinalOutcomeGate {
-  const canonicalIdentity = 'tsk-06.5:final-profile-outcomes' as const;
+  const canonicalIdentity = 'production-regression:final-profile-outcomes' as const;
   const expectedValue = { unsupported: 0, invalid: 0, inputRequired: 0 };
   const actualValue = {
     unsupported: audit.outcomes.unsupported,
@@ -2338,7 +2338,7 @@ export function auditProductionPreparationTransactionObservations(
 export function evaluateProductionPreparationTransactionGate(
   input: ProductionPreparationTransactionGateInput,
 ): ProductionPreparationTransactionGate {
-  const canonicalIdentity = 'tsk-08:preparation-transactions' as const;
+  const canonicalIdentity = 'production-audit:preparation-transactions' as const;
   const expectedValue = {
     calculatedProfiles: input.expectedCalculatedProfiles,
     commandActionMismatches: 0,

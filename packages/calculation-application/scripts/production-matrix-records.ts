@@ -19,7 +19,7 @@ import {
   readProductionBaselineManifest,
   readProductionBaselineCondition,
 } from '../src/productionRegressionBaseline';
-import type { Tsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import type { ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import {
   productionClosureConditions,
   productionClosureConditionKey,
@@ -43,7 +43,7 @@ export interface ConditionArtifact {
 export async function verifyProductionMatrixRecords(input: {
   root: string;
   output: string;
-  source: Tsk065ProductionAuditSource;
+  source: ProductionAuditSource;
   identity: Record<string, string>;
   shards: ProductionSerializedShard[];
   artifacts: ConditionArtifact[];
@@ -89,7 +89,7 @@ export async function verifyProductionMatrixRecords(input: {
     matrix: input.identity['matrix'],
     command: input.identity['command'],
   };
-  add('recordIdentityMismatch', 'tsk-06.5:canonical-record-source', requiredSource, {
+  add('recordIdentityMismatch', 'production-regression:canonical-record-source', requiredSource, {
     masterDataVersion: expected.identity.masterDataVersion,
     masterSha256: expected.identity.masterSha256,
     matrix: expected.identity.matrix,
@@ -97,7 +97,7 @@ export async function verifyProductionMatrixRecords(input: {
   });
   add(
     'recordSummaryMismatch',
-    'tsk-06.5:canonical-record-matrix',
+    'production-regression:canonical-record-matrix',
     {
       digest: input.source.matrix.mergedDigest,
       eligibilityDigest: input.source.matrix.eligibilityDigest,
@@ -119,11 +119,13 @@ export async function verifyProductionMatrixRecords(input: {
       parityFailures: expected.audit.parityFailures.length,
     },
   );
-  failures.push(...inspectProductionAuditAggregate(expected.audit, 'tsk-06.5:expected-matrix'));
+  failures.push(
+    ...inspectProductionAuditAggregate(expected.audit, 'production-regression:expected-matrix'),
+  );
   const { digest: expectedDigest, ...expectedAudit } = expected.audit;
   add(
     'recordDigestMismatch',
-    'tsk-06.5:expected-matrix',
+    'production-regression:expected-matrix',
     { digest: expectedDigest },
     { digest: productionClosureMatrixDigest(expectedAudit) },
   );
@@ -131,13 +133,13 @@ export async function verifyProductionMatrixRecords(input: {
   const declarations = expected.conditions;
   add(
     'recordSummaryMismatch',
-    'tsk-06.5:expected-condition-coverage',
+    'production-regression:expected-condition-coverage',
     [...keys].sort(),
     [...declarations.map((d) => d.conditionKey)].sort(),
   );
   add(
     'recordSummaryMismatch',
-    'tsk-06.5:expected-summary-coverage',
+    'production-regression:expected-summary-coverage',
     keys,
     expected.audit.conditionSummaries.map((s) => s.key),
   );
@@ -150,27 +152,34 @@ export async function verifyProductionMatrixRecords(input: {
     ),
   );
   for (const [index, shard] of input.shards.entries()) {
-    add('recordIdentityMismatch', `tsk-08:shard:${index}`, input.identity, shard.identity);
+    add(
+      'recordIdentityMismatch',
+      `production-audit:shard:${index}`,
+      input.identity,
+      shard.identity,
+    );
     const shardKeys = keys.filter(
       (_, conditionIndex) => conditionIndex % input.shards.length === index,
     );
     add(
       'shardAggregateMismatch',
-      `tsk-08:shard:${index}`,
+      `production-audit:shard:${index}`,
       shardKeys,
       shard.audit.conditionSummaries.map((summary) => summary.key),
     );
-    failures.push(...inspectProductionAuditAggregate(shard.audit, `tsk-08:shard:${index}`));
+    failures.push(
+      ...inspectProductionAuditAggregate(shard.audit, `production-audit:shard:${index}`),
+    );
     const { digest, ...audit } = shard.audit;
     add(
       'recordDigestMismatch',
-      `tsk-08:shard:${index}`,
+      `production-audit:shard:${index}`,
       { digest },
       { digest: productionClosureMatrixDigest(audit) },
     );
     add(
       'shardAggregateMismatch',
-      `tsk-08:shard:${index}`,
+      `production-audit:shard:${index}`,
       { profileCount: expected.audit.attackProfileCount },
       { profileCount: shard.audit.attackProfileCount },
     );

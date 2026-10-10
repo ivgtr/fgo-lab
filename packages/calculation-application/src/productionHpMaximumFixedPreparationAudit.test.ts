@@ -437,7 +437,7 @@ async function save(task: { meta: unknown }, path: string, payload: unknown) {
 for (const spec of specs)
   it(
     `maximumFixed committed ${spec.name}`,
-    productionAuditTestOptions([`tsk-08-maximum-fixed-${spec.name}.json`]),
+    productionAuditTestOptions([`audit-maximum-fixed-${spec.name}.json`]),
     async ({ task }) => {
       const { master, positive: p, normal, ranking } = entry(spec);
       const published = auditPublishedMaximumFixed(
@@ -447,7 +447,7 @@ for (const spec of specs)
         [p.program],
         [p.source],
       );
-      await save(task, `tsk-08-maximum-fixed-${spec.name}.json`, {
+      await save(task, `audit-maximum-fixed-${spec.name}.json`, {
         spec,
         gate: p.gate,
         proof: maximumFixedDiagnostic(p.source),
@@ -513,7 +513,7 @@ for (const group of groups)
   for (let shard = 0; shard < shardCounts[group]; shard++)
     it(
       `maximumFixed negatives ${group} ${shard}`,
-      productionAuditTestOptions([`tsk-08-maximum-fixed-negative-${group}-${shard}.json`]),
+      productionAuditTestOptions([`audit-maximum-fixed-negative-${group}-${shard}.json`]),
       async ({ task }) => {
         const {
           master,
@@ -1170,7 +1170,7 @@ for (const group of groups)
           negatives,
           publishedNegatives,
         };
-        await save(task, `tsk-08-maximum-fixed-negative-${group}-${shard}.json`, payload);
+        await save(task, `audit-maximum-fixed-negative-${group}-${shard}.json`, payload);
         for (const negative of negatives) {
           expect(negative.gate.status, negative.name).toBe('failed');
           const f = negative.gate.failures.find(
@@ -1198,7 +1198,7 @@ for (const group of groups)
 for (let shard = 0; shard < 16; shard++)
   it(
     `maximumFixed canonical nested negatives ${shard}`,
-    productionAuditTestOptions([`tsk-08-maximum-fixed-nested-${shard}.json`]),
+    productionAuditTestOptions([`audit-maximum-fixed-nested-${shard}.json`]),
     async ({ task }) => {
       const p = entry(specs.find((s) => s.name === 'same-occurrence-multiple')!).positive;
       const negatives: {
@@ -1230,7 +1230,7 @@ for (let shard = 0; shard < 16; shard++)
         }
       }
       p.source.canonical.writers.forEach((w, i) => visit(w.operation, `writer.${i}.operation`));
-      await save(task, `tsk-08-maximum-fixed-nested-${shard}.json`, {
+      await save(task, `audit-maximum-fixed-nested-${shard}.json`, {
         canonicalIdentity: p.selection.identity,
         negatives,
       });
@@ -1251,7 +1251,7 @@ for (let shard = 0; shard < 16; shard++)
 for (const name of ['prior-commit-prefix', 'fixed-gain-clamp', 'fixed-loss-floor'])
   it(
     `maximumFixed actual consumer negatives ${name}`,
-    productionAuditTestOptions([`tsk-08-maximum-fixed-consumer-${name}.json`]),
+    productionAuditTestOptions([`audit-maximum-fixed-consumer-${name}.json`]),
     async ({ task }) => {
       const p = entry(specs.find((s) => s.name === name)!).positive;
       const negatives: {
@@ -1347,7 +1347,7 @@ for (const name of ['prior-commit-prefix', 'fixed-gain-clamp', 'fixed-loss-floor
         expected: [{ ...p.program }],
         observations: [p.source],
       });
-      await save(task, `tsk-08-maximum-fixed-consumer-${name}.json`, {
+      await save(task, `audit-maximum-fixed-consumer-${name}.json`, {
         canonicalIdentity: p.selection.identity,
         negatives,
         counterfeit,
@@ -1373,7 +1373,7 @@ for (const name of ['prior-commit-prefix', 'fixed-gain-clamp', 'fixed-loss-floor
 for (const outside of ['maximumRate', 'constant', 'bounded', 'partyOther', 'npWriter'])
   it(
     `maximumFixed explicit outside boundary ${outside}`,
-    productionAuditTestOptions([`tsk-08-maximum-fixed-outside-${outside}.json`]),
+    productionAuditTestOptions([`audit-maximum-fixed-outside-${outside}.json`]),
     async ({ task }) => {
       const original = entry(specs[0]!).master;
       const servant = original.servants[0]!,
@@ -1429,7 +1429,7 @@ for (const outside of ['maximumRate', 'constant', 'bounded', 'partyOther', 'npWr
       };
       const master = masterSnapshotSchema.parse(raw),
         p = run(master, specs[0]!);
-      await save(task, `tsk-08-maximum-fixed-outside-${outside}.json`, {
+      await save(task, `audit-maximum-fixed-outside-${outside}.json`, {
         boundary: outside,
         gate: p.gate,
         proof: maximumFixedDiagnostic(p.source),
@@ -1442,7 +1442,7 @@ for (const outside of ['maximumRate', 'constant', 'bounded', 'partyOther', 'npWr
   );
 it(
   'maximumFixed complete artifact and observation-only contract',
-  productionAuditTestOptions(['tsk-08-maximum-fixed-artifact-contract.json']),
+  productionAuditTestOptions(['audit-maximum-fixed-artifact-contract.json']),
   async ({ task }) => {
     const p = entry(specs[0]!).positive,
       proof = maximumFixedDiagnostic(p.source);
@@ -1456,7 +1456,7 @@ it(
     }
     const writeErrors: string[] = [];
     for (const [metadata, path] of [
-      [undefined, 'tsk-08-maximum-fixed-artifact-contract.json'],
+      [undefined, 'audit-maximum-fixed-artifact-contract.json'],
       [task.meta, 'undeclared-maximum-fixed.json'],
     ] as const) {
       try {
@@ -1478,7 +1478,7 @@ it(
       injectedWriter: forbidden.test(`${auditCode}\nexecuteHpOperation(state)`),
       injectedArithmetic: forbidden.test(`${auditCode}\nchangeHpModifiers(state)`),
     };
-    await save(task, 'tsk-08-maximum-fixed-artifact-contract.json', {
+    await save(task, 'audit-maximum-fixed-artifact-contract.json', {
       canonicalIdentity: p.selection.identity,
       proof,
       decodeError,
@@ -1494,7 +1494,7 @@ it(
     await expect(
       writeProductionAuditArtifact(
         task.meta,
-        'tsk-08-maximum-fixed-artifact-contract.json',
+        'audit-maximum-fixed-artifact-contract.json',
         encoded,
       ),
     ).rejects.toThrow('duplicate_production_audit_artifact_receipt');
@@ -1503,7 +1503,7 @@ it(
 
 it(
   'maximumFixed audit observes original owners without replay',
-  productionAuditTestOptions(['tsk-08-maximum-fixed-no-replay.json']),
+  productionAuditTestOptions(['audit-maximum-fixed-no-replay.json']),
   async ({ task }) => {
     const writer = vi.spyOn(hpOwner, 'executeHpOperation'),
       modifiers = vi.spyOn(modifierOwner, 'changeHpModifiers');
@@ -1513,7 +1513,7 @@ it(
       const before = { writer: writer.mock.calls.length, modifiers: modifiers.mock.calls.length };
       const gate = auditMaximumFixed({ expected: [p.program], observations: [p.source] });
       const after = { writer: writer.mock.calls.length, modifiers: modifiers.mock.calls.length };
-      await save(task, 'tsk-08-maximum-fixed-no-replay.json', {
+      await save(task, 'audit-maximum-fixed-no-replay.json', {
         canonicalIdentity: p.selection.identity,
         proof: maximumFixedDiagnostic(p.source),
         gate,
@@ -1533,7 +1533,7 @@ it(
 
 it(
   'maximumFixed denies replaced application and capture facades',
-  productionAuditTestOptions(['tsk-08-maximum-fixed-transport.json']),
+  productionAuditTestOptions(['audit-maximum-fixed-transport.json']),
   async ({ task }) => {
     const p = entry(specs[0]!).positive;
     const negatives: {
@@ -1587,7 +1587,7 @@ it(
         Object.defineProperty(object, key, descriptor);
       }
     }
-    await save(task, 'tsk-08-maximum-fixed-transport.json', {
+    await save(task, 'audit-maximum-fixed-transport.json', {
       canonicalIdentity: p.selection.identity,
       negatives,
     });
@@ -1605,7 +1605,7 @@ it(
 
 it(
   'maximumFixed declaration-only and original native refusal boundaries',
-  productionAuditTestOptions(['tsk-08-maximum-fixed-declaration-refusal.json']),
+  productionAuditTestOptions(['audit-maximum-fixed-declaration-refusal.json']),
   async ({ task }) => {
     const spec = specs[0]!,
       original = entry(spec).master;
@@ -1646,7 +1646,7 @@ it(
       observations: [refused.source],
     });
     Reflect.set(n.native!, 'status', oldStatus);
-    await save(task, 'tsk-08-maximum-fixed-declaration-refusal.json', {
+    await save(task, 'audit-maximum-fixed-declaration-refusal.json', {
       declaration,
       refusal: { gate: refused.gate, proof: maximumFixedDiagnostic(refused.source) },
       forged,

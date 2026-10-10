@@ -632,7 +632,7 @@ function recoveryNegatives(name: string, source: Source): Negative[] {
 
 it(
   'connects scalar rollback, restored ordered NP consumption and use through the shared gate',
-  productionAuditTestOptions(['tsk-08-scalar-quantity-recovery.json']),
+  productionAuditTestOptions(['audit-scalar-quantity-recovery.json']),
   async ({ task }) => {
     const positives = [];
     const negatives: Negative[] = [];
@@ -713,8 +713,8 @@ it(
         state,
       });
     }
-    await writeProductionAuditArtifact(task.meta, 'tsk-08-scalar-quantity-recovery.json', {
-      canonicalIdentity: 'tsk-08:scalar-quantity-recovery',
+    await writeProductionAuditArtifact(task.meta, 'audit-scalar-quantity-recovery.json', {
+      canonicalIdentity: 'production-audit:scalar-quantity-recovery',
       population: 'schema-legal',
       positives,
       negatives,

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import { z } from 'zod';
-import type { Tsk065ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
+import type { ProductionAuditSource } from '@fgo-lab/master-data/production-audit';
 import { inspectProductionAuditValue } from './productionAuditValue';
 import {
   productionClosureMatrixDigest,
@@ -120,9 +120,9 @@ function valueFailures(value: unknown, identity: string): ProductionRecordFailur
 /** The fixed reference is the authority. No directory search or regenerated expectation. */
 export async function readProductionBaselineManifest(
   root: string,
-  reference: Tsk065ProductionAuditSource['matrix']['canonicalRecords'],
+  reference: ProductionAuditSource['matrix']['canonicalRecords'],
 ) {
-  const identity = 'tsk-06.5:canonical-record-reference';
+  const identity = 'production-regression:canonical-record-reference';
   const path = resolve(root, reference.manifest);
   const failures: ProductionRecordFailure[] = [];
   const receipt = {
@@ -228,7 +228,9 @@ export async function readProductionBaselineManifest(
       conditions[index] ?? { present: false },
       summary.conditions,
     );
-  failures.push(...inspectProductionAuditAggregate(manifest.audit, 'tsk-06.5:baseline-matrix'));
+  failures.push(
+    ...inspectProductionAuditAggregate(manifest.audit, 'production-regression:baseline-matrix'),
+  );
   const { digest, ...audit } = manifest.audit;
   add('recordDigestMismatch', 'matrix-digest', digest, productionClosureMatrixDigest(audit));
   if (failures.length) return reject();

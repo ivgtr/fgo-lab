@@ -178,7 +178,7 @@ export function scalarQuantityProgram(
       : [],
   );
   const initialValue = prepared.orderedScenario.baseInput.battlePointPhase;
-  const canonicalIdentity = `tsk-08:scalar-quantity:${JSON.stringify(operations.filter((operation) => operation.kind === 'addQuantity').map(({ operationId }) => operationId))}`;
+  const canonicalIdentity = `production-audit:scalar-quantity:${JSON.stringify(operations.filter((operation) => operation.kind === 'addQuantity').map(({ operationId }) => operationId))}`;
   return {
     contract: snapshot({
       canonicalIdentity,
@@ -270,7 +270,7 @@ export interface ScalarQuantityFailure {
   firstDifference: CanonicalAuditDifference;
 }
 export interface ScalarQuantityGate {
-  canonicalIdentity: 'tsk-08:scalar-quantity';
+  canonicalIdentity: 'production-audit:scalar-quantity';
   status: 'passed' | 'failed';
   expected: readonly string[];
   actual: readonly (string | null)[];
@@ -334,9 +334,15 @@ export function auditScalarQuantityContract(
   };
   const ids = input.expected.map(({ canonicalIdentity }) => canonicalIdentity);
   const actualIds = input.observations.map((source) => sourceIdentity(source));
-  check('tsk-08:scalar-quantity', 'scalarPopulationMismatch', 'population', ids, actualIds);
   check(
-    'tsk-08:scalar-quantity',
+    'production-audit:scalar-quantity',
+    'scalarPopulationMismatch',
+    'population',
+    ids,
+    actualIds,
+  );
+  check(
+    'production-audit:scalar-quantity',
     'scalarPopulationMismatch',
     'population.unique',
     ids.length,
@@ -963,7 +969,7 @@ export function auditScalarQuantityContract(
     }
   }
   return {
-    canonicalIdentity: 'tsk-08:scalar-quantity',
+    canonicalIdentity: 'production-audit:scalar-quantity',
     status: failures.length ? 'failed' : 'passed',
     expected: ids,
     actual: actualIds,

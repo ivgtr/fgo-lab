@@ -485,7 +485,7 @@ for (const spec of specs)
     it(
       `committed fixed HP ${spec.name} ${group}`,
       productionAuditTestOptions([
-        `tsk-08-hp-${spec.name}-${group}.json`,
+        `audit-hp-${spec.name}-${group}.json`,
         ...(spec === specs[0] && group === 'positive'
           ? ['hp-fixed-proof-correspondence.json']
           : []),
@@ -556,7 +556,7 @@ for (const spec of specs)
           expect(failedOwner.failures.some((f) => f.reason === 'ownerGateFailed')).toBe(true);
           expect(outside.failures.some((f) => f.reason === 'outsideProofScope')).toBe(true);
           const proofPayload = {
-            ownerArtifact: `tsk-08-hp-${spec.name}-${group}.json`,
+            ownerArtifact: `audit-hp-${spec.name}-${group}.json`,
             input: {
               masterVersion: master.version,
               population: 'schemaLegalFixedSelfRepresentative',
@@ -1048,7 +1048,7 @@ for (const spec of specs)
           },
         };
         const encoded = encodeProductionAuditDiagnostic(payload);
-        const path = `tsk-08-hp-${spec.name}-${group}.json`;
+        const path = `audit-hp-${spec.name}-${group}.json`;
         await writeProductionAuditArtifact(task.meta, path, encoded);
         const saved = decodeStoredProductionAuditArtifact(
           await readStoredProductionAuditArtifact(path),

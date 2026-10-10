@@ -71,7 +71,7 @@ const specs: Spec[] = [
 describe('committed scalar quantity NP shared audit', () => {
   it(
     'connects canonical writes, ordered actual consumption and use with mechanism-specific fail-closed diagnostics',
-    productionAuditTestOptions(['tsk-08-scalar-quantity-np-consumption.json']),
+    productionAuditTestOptions(['audit-scalar-quantity-np-consumption.json']),
     async ({ task }) => {
       type Mutable<T> = T extends
         ScalarQuantitySource['program'] | ScalarQuantitySource['calculation']
@@ -528,8 +528,8 @@ describe('committed scalar quantity NP shared audit', () => {
             gate: auditScalarQuantityObservations(changed),
           });
       }
-      await writeProductionAuditArtifact(task.meta, 'tsk-08-scalar-quantity-np-consumption.json', {
-        canonicalIdentity: 'tsk-08:scalar-quantity',
+      await writeProductionAuditArtifact(task.meta, 'audit-scalar-quantity-np-consumption.json', {
+        canonicalIdentity: 'production-audit:scalar-quantity',
         population: 'schema-legal',
         positives,
         negatives,

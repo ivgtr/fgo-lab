@@ -339,7 +339,7 @@ async function save(meta: unknown, path: string, payload: unknown) {
 }
 it(
   'connects strict cross-action give writes, original reads, retained HP, live conditions and continuous NP without owner replay',
-  productionAuditTestOptions(['tsk-08-give-representatives.json']),
+  productionAuditTestOptions(['audit-give-representatives.json']),
   async ({ task }) => {
     const cases = specs.map((spec, index) => ({ spec, item: run(spec, true, false, index) }));
     const parity = specs.map((spec, index) => ({
@@ -367,7 +367,7 @@ it(
         expected: cases.map((c) => c.item.program),
         observations: cases.map((c) => c.item.source),
       });
-      await save(task.meta, 'tsk-08-give-representatives.json', { records, population });
+      await save(task.meta, 'audit-give-representatives.json', { records, population });
       expect(population.failures).toEqual([]);
       expect([
         population.selected,
@@ -419,7 +419,7 @@ it(
 );
 it(
   'fails closed on missing, duplicate, foreign, stale or corrupted give evidence and preserves typed first differences',
-  productionAuditTestOptions(['tsk-08-give-negatives.json']),
+  productionAuditTestOptions(['audit-give-negatives.json']),
   async ({ task }) => {
     const item = run(specs[0]!);
     const actions = item.source.transitions!.flatMap(
@@ -538,7 +538,7 @@ it(
       results.push({ key, result });
     }
     const restored = gate(item);
-    await save(task.meta, 'tsk-08-give-negatives.json', { results, restored });
+    await save(task.meta, 'audit-give-negatives.json', { results, restored });
     expect(restored.failures).toEqual([]);
     for (const { key, result } of results) {
       expect(result.status, key).toBe('failed');
@@ -548,7 +548,7 @@ it(
 );
 it(
   'observes the actual source give and recipient receive independently on a party gain, and bypasses give for loss',
-  productionAuditTestOptions(['tsk-08-give-actor-counterexample.json']),
+  productionAuditTestOptions(['audit-give-actor-counterexample.json']),
   async ({ task }) => {
     const item = run(specs[0]!),
       actions = item.source.transitions!.flatMap((t) => (t as Partial<typeof t>).hpActions ?? []);
@@ -610,7 +610,7 @@ it(
       valueSetIndex: 0,
       observeGiveGain: (read) => bypass.push(read),
     });
-    await save(task.meta, 'tsk-08-give-actor-counterexample.json', {
+    await save(task.meta, 'audit-give-actor-counterexample.json', {
       sourceActor: source.sourceInstanceId,
       state,
       operation,

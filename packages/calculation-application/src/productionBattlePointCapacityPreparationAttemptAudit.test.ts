@@ -699,7 +699,7 @@ for (const spec of specs)
   for (const group of groups)
     it(
       `isolates capacity attempt ${spec.name} ${group}`,
-      productionAuditTestOptions([`tsk-08-bp-capacity-attempt-${spec.name}-${group}.json`]),
+      productionAuditTestOptions([`audit-bp-capacity-attempt-${spec.name}-${group}.json`]),
       async ({ task }) => {
         const { positive, normal, ranking, rankingNormal } = prepared(spec);
         const family = group.startsWith('missing-')
@@ -1418,7 +1418,7 @@ for (const spec of specs)
           decodeProductionAuditDiagnostic(decodeProductionAuditArtifact(encoded)),
           memory,
         );
-        const file = `tsk-08-bp-capacity-attempt-${spec.name}-${group}.json`;
+        const file = `audit-bp-capacity-attempt-${spec.name}-${group}.json`;
         await writeProductionAuditArtifact(task.meta, file, {
           diagnosticVersion: 1,
           encoding: 'lossless-interned-values',

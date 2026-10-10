@@ -519,7 +519,7 @@ test('the real Vitest JSON reporter carries writer receipts into the generic run
   assert.equal(result.manifest.outcome, 'test_failure');
   assert.deepEqual(result.manifest.artifactVerification.errors, []);
   const artifact = result.manifest.artifacts.find(
-    ({ path }) => path === 'tsk-08-artifact-contract.json.gz',
+    ({ path }) => path === 'audit-artifact-contract.json.gz',
   );
   assert.equal(typeof artifact?.sha256, 'string');
   const assertion = result.report.testResults
@@ -774,7 +774,7 @@ test('the real writer preserves malformed diagnostics before their producer asse
     assert.deepEqual(result.manifest.artifactVerification.errors, []);
     const saved = JSON.parse(
       gunzipSync(
-        readFileSync(resolve(result.runDirectory, 'tsk-08-artifact-contract.json.gz')),
+        readFileSync(resolve(result.runDirectory, 'audit-artifact-contract.json.gz')),
       ).toString('utf8'),
     );
     assert.equal(saved.payload.failures.length, 6);
@@ -784,7 +784,7 @@ test('the real writer preserves malformed diagnostics before their producer asse
   assert.equal(early.manifest.outcome, 'artifact_failure');
   assert.ok(
     early.manifest.artifactVerification.errors.some((value) =>
-      value.includes('receipt_missing:tsk-08-artifact-contract.json.gz'),
+      value.includes('receipt_missing:audit-artifact-contract.json.gz'),
     ),
   );
 });

@@ -2096,7 +2096,7 @@ describe('scenario calculation facade', () => {
 
   it(
     'observes the selected candidate star mutation and the later read of its capped value',
-    productionAuditTestOptions(['tsk-08-star-mutation-read.json']),
+    productionAuditTestOptions(['audit-star-mutation-read.json']),
     async ({ task }) => {
       const positives: {
         name: string;
@@ -2647,10 +2647,10 @@ describe('scenario calculation facade', () => {
         'copied-program-reference': ':source.references',
         'swapped-execution': ':source.references',
       };
-      await recordTsk08AuditArtifact(task.meta, 'tsk-08-star-mutation-read.json', {
+      await recordTsk08AuditArtifact(task.meta, 'audit-star-mutation-read.json', {
         schemaVersion: 2,
         population: 'schemaLegalFixture',
-        canonicalIdentity: 'tsk-08:committed-critical-stars-forward',
+        canonicalIdentity: 'production-audit:committed-critical-stars-forward',
         positives,
         negatives,
         mechanismPaths,
@@ -3025,7 +3025,7 @@ describe('scenario calculation facade', () => {
 
   it(
     'audits changed criticalStars rollback and ordered recovery use without changing unsupported outcome',
-    productionAuditTestOptions(['tsk-08-execution-group-rollback.json']),
+    productionAuditTestOptions(['audit-execution-group-rollback.json']),
     async ({ task }) => {
       const positives: unknown[] = [];
       const negatives: {
@@ -4052,9 +4052,9 @@ describe('scenario calculation facade', () => {
             gate: auditCriticalStarsRecoveryObservations(alteredInput),
           });
       }
-      await recordTsk08AuditArtifact(task.meta, 'tsk-08-execution-group-rollback.json', {
+      await recordTsk08AuditArtifact(task.meta, 'audit-execution-group-rollback.json', {
         schemaVersion: 2,
-        canonicalIdentity: 'tsk-08:critical-stars-recovery:schema-legal',
+        canonicalIdentity: 'production-audit:critical-stars-recovery:schema-legal',
         population: 'schemaLegalFixture',
         positives,
         negatives,
@@ -4678,7 +4678,7 @@ describe('scenario calculation facade', () => {
     expect(baselineSpecial.outcome).toBe('applied');
     expect(baselineSpecial.contributionId).toMatch(/:npSpecial$/);
     expect(baseline.detail.input.targetStateTraits).toContain(burn.name);
-    // The pre-§20 exclusions are retained in the TSK-14 flow and checkpoint 3b307e9.
+    // The pre-§20 exclusions are retained in the production audit flow and checkpoint 3b307e9.
     expect(baseline.detail.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
     expect(contribution(baseline.detail, 'npBase')).toMatchObject({ effective: true });
     expect(contribution(baseline.detail, 'npSpecial')).toMatchObject({

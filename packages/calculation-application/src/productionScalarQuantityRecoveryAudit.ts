@@ -44,7 +44,7 @@ export function scalarQuantityRecoveryProgram(
   };
   const contract = { failedGroupIndex, failedOperation, issue };
   return {
-    canonicalIdentity: `tsk-08:scalar-quantity-recovery:${JSON.stringify(scalar.groups[failedGroupIndex]!.transactionIdentity)}`,
+    canonicalIdentity: `production-audit:scalar-quantity-recovery:${JSON.stringify(scalar.groups[failedGroupIndex]!.transactionIdentity)}`,
     scalar,
     recovery: { ...contract, snapshot: scalarQuantitySnapshot(contract) },
   };
@@ -55,7 +55,7 @@ export function scalarQuantityRecoverySource(
   return { program, scalar: scalarQuantitySource(program.scalar) };
 }
 export interface ScalarQuantityRecoveryGate {
-  canonicalIdentity: 'tsk-08:scalar-quantity-recovery';
+  canonicalIdentity: 'production-audit:scalar-quantity-recovery';
   status: 'passed' | 'failed';
   expected: readonly string[];
   actual: readonly (string | null)[];
@@ -101,9 +101,9 @@ export function auditScalarQuantityRecoveryObservations(input: {
       },
     });
   };
-  check('tsk-08:scalar-quantity-recovery', 'population', expected, actual);
+  check('production-audit:scalar-quantity-recovery', 'population', expected, actual);
   check(
-    'tsk-08:scalar-quantity-recovery',
+    'production-audit:scalar-quantity-recovery',
     'population.unique',
     { nonempty: true, unique: true },
     { nonempty: expected.length > 0, unique: new Set(expected).size === expected.length },
@@ -135,7 +135,7 @@ export function auditScalarQuantityRecoveryObservations(input: {
     consumptions += gate.consumptions;
   }
   return {
-    canonicalIdentity: 'tsk-08:scalar-quantity-recovery',
+    canonicalIdentity: 'production-audit:scalar-quantity-recovery',
     status: failures.length ? 'failed' : 'passed',
     expected,
     actual,

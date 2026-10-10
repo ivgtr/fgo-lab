@@ -3,13 +3,13 @@ import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   connectProductionAuditBoundary,
-  createTsk065ProductionAuditSource,
+  createProductionAuditSource,
   formatCanonicalAuditMismatch,
   measureProductionAuditLifecycle,
   type CanonicalAuditRecord,
 } from '@fgo-lab/master-data/production-audit';
 import { describe, expect, it } from 'vitest';
-import tsk065Evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
+import productionAuditSource from '../../calculation-application/baselines/production-v1/source.json';
 import { compileDataPipelineProductionAudit } from './productionAudit';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -22,9 +22,9 @@ describe('shared data-pipeline production audit', () => {
       compile: compileDataPipelineProductionAudit,
     });
     const { audit } = measured;
-    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+    const source = createProductionAuditSource(productionAuditSource, {
       masterDataVersion: audit.masterDataVersion,
-      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+      artifact: 'packages/calculation-application/baselines/production-v1/source.json',
     });
     const sharedAuditModel = connectProductionAuditBoundary(
       source,

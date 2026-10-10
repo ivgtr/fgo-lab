@@ -21,7 +21,7 @@ export type RankingPolicyCalculationMatrix = readonly [
 ];
 
 /**
- * Correctness oracle for TSK-06. Every NP level compiles a fresh finite candidate
+ * Correctness oracle for production audit. Every NP level compiles a fresh finite candidate
  * space and traverses the same application/executor path as a single policy call.
  * Cross-level blueprint caches are intentionally deferred until their identity is
  * observable without reusing partial execution results.

@@ -93,7 +93,7 @@ const finalStatusFailureRule = fixed({
 });
 const finalIdentityFailureRule = fixed({
   reason: { choices: ['finalProfileOutcomeIdentityMismatch'] },
-  canonicalIdentity: { choices: ['tsk-06.5:final-profile-outcomes'] },
+  canonicalIdentity: { choices: ['production-regression:final-profile-outcomes'] },
   firstDifference: differenceRule,
 });
 const finalFailureRules = {
@@ -228,7 +228,7 @@ export function shardInputFailure(
   expected: unknown,
   actual: unknown,
 ): ProductionRecordFailure {
-  const canonicalIdentity = `tsk-08:shard:${index}`;
+  const canonicalIdentity = `production-audit:shard:${index}`;
   const expectedValue = expected === undefined ? { present: false } : recordValue(expected);
   const actualValue = actual === undefined ? { present: false } : recordValue(actual);
   return {
@@ -334,7 +334,7 @@ function compareAt(
   failures: ProductionRecordFailure[],
   reason: ProductionRecordFailureReason = 'shardGateContractMismatch',
 ): void {
-  const identity = `tsk-08:shard:${index}`;
+  const identity = `production-audit:shard:${index}`;
   const difference = firstCanonicalAuditDifference(
     [{ identity, value: recordValue(expected) }],
     [{ identity, value: recordValue(actual) }],
@@ -405,8 +405,11 @@ export function acceptProductionShardManifests(
     for (const failure of auditShape.failures)
       failures.push({
         ...failure,
-        canonicalIdentity: `tsk-08:shard:${index}`,
-        firstDifference: { ...failure.firstDifference, identity: `tsk-08:shard:${index}` },
+        canonicalIdentity: `production-audit:shard:${index}`,
+        firstDifference: {
+          ...failure.firstDifference,
+          identity: `production-audit:shard:${index}`,
+        },
       });
     if (isObject(audit) && Array.isArray(audit['conditionSummaries']))
       inspect(
@@ -459,7 +462,9 @@ export function acceptProductionShardManifests(
       shard.audit.conditionSummaries.map(({ key }) => key),
       failures,
     );
-    failures.push(...inspectProductionAuditAggregate(shard.audit, `tsk-08:shard:${index}`));
+    failures.push(
+      ...inspectProductionAuditAggregate(shard.audit, `production-audit:shard:${index}`),
+    );
     if (index > 0)
       compareAt(
         index,
@@ -564,7 +569,11 @@ function inspectGate(
     fixed({
       status: { choices: ['passed', 'failed'] },
       canonicalIdentity: {
-        choices: [final ? 'tsk-06.5:final-profile-outcomes' : 'tsk-08:preparation-transactions'],
+        choices: [
+          final
+            ? 'production-regression:final-profile-outcomes'
+            : 'production-audit:preparation-transactions',
+        ],
       },
       expected: fixed(final ? statusCounts : transactionCounts),
       actual: fixed(final ? statusCounts : transactionCounts),
