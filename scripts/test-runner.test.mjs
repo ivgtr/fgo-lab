@@ -940,9 +940,10 @@ test('the quality parent preserves child outcomes and gives artifact failure pre
   );
 });
 
-test('quick checks are a strict subset while full quality keeps the canonical gate', () => {
+test('CI retains every non-browser gate while quick and full profiles keep their scope', () => {
   const full = qualityRunConfiguration([]);
   const quick = qualityRunConfiguration(['--profile=quick']);
+  const ci = qualityRunConfiguration(['--profile=ci']);
   assert.deepEqual(
     full.steps.map(([id]) => id),
     [
@@ -955,6 +956,7 @@ test('quick checks are a strict subset while full quality keeps the canonical ga
       'production',
       'master',
       'build',
+      'browser-observer',
       'playwright',
     ],
   );
@@ -964,7 +966,15 @@ test('quick checks are a strict subset while full quality keeps the canonical ga
   );
   assert.equal(full.command, 'pnpm quality');
   assert.equal(quick.command, 'pnpm check');
+  assert.equal(ci.profile, 'ci');
+  assert.equal(ci.command, 'pnpm quality:ci');
+  assert.equal(ci.label, 'quality:ci');
+  assert.deepEqual(
+    ci.steps,
+    full.steps.filter(([id]) => id !== 'browser-observer' && id !== 'playwright'),
+  );
   assert.throws(() => qualityRunConfiguration(['--profile=unknown']), /usage/);
+  assert.throws(() => qualityRunConfiguration(['--profile=ci', '--profile=quick']), /usage/);
 });
 
 test('the quality parent fails closed on every process and child manifest contradiction', () => {
@@ -1471,9 +1481,10 @@ test('differently capped Vitest projects use distinct execution groups', () => {
   assert.match(auditProject, /sequence: \{ groupOrder: 3 \}/);
 });
 
-test('local, CI, and Vercel use the same canonical quality command', () => {
+test('local and CI share quality orchestration while CI requires no browser setup', () => {
   const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
   assert.equal(packageJson.scripts.quality, 'node scripts/quality-runner.mjs');
+  assert.equal(packageJson.scripts['quality:ci'], 'node scripts/quality-runner.mjs --profile=ci');
   assert.equal(packageJson.scripts.check, 'node scripts/quality-runner.mjs --profile=quick');
   assert.equal(packageJson.scripts['results:clean'], 'node scripts/clean-test-results.mjs');
   assert.equal(
@@ -1481,6 +1492,16 @@ test('local, CI, and Vercel use the same canonical quality command', () => {
     'pnpm --filter @fgo-lab/data-pipeline validate',
   );
   assert.equal(packageJson.scripts['test:e2e'], 'node scripts/playwright-runner.mjs');
+  assert.equal(
+    packageJson.scripts['test:browser-observer'],
+    'node --test scripts/browser-observer.integration.test.mjs',
+  );
+  assert.match(packageJson.scripts['test:runner'], /scripts\/browser-observer\.test\.mjs/);
+  assert.doesNotMatch(packageJson.scripts['test:runner'], /\.integration\.test\.mjs/);
+  assert.doesNotMatch(
+    readFileSync(resolve(root, 'scripts/browser-observer.test.mjs'), 'utf8'),
+    /node_modules\/\.bin\/playwright/,
+  );
   const qualityRunner = readFileSync(resolve(root, 'scripts/quality-runner-lib.mjs'), 'utf8');
   for (const [id, script] of [
     ['format', 'format:check'],
@@ -1492,6 +1513,7 @@ test('local, CI, and Vercel use the same canonical quality command', () => {
     ['production', 'test:production'],
     ['master', 'validate:master'],
     ['build', 'build'],
+    ['browser-observer', 'test:browser-observer'],
     ['playwright', 'test:e2e'],
   ])
     assert.match(qualityRunner, new RegExp(`\\['${id}', \\['${script}'\\]`));
@@ -1499,7 +1521,9 @@ test('local, CI, and Vercel use the same canonical quality command', () => {
   assert.match(playwrightConfig, /workers: 2,/);
   for (const path of ['.github/workflows/ci.yml']) {
     const workflow = readFileSync(resolve(root, path), 'utf8');
-    assert.equal(workflow.match(/run: pnpm quality/g)?.length, 1, path);
+    assert.equal(workflow.match(/run: pnpm quality:ci\s*$/gm)?.length, 1, path);
+    assert.doesNotMatch(workflow, /run: pnpm quality\s*$/m);
+    assert.doesNotMatch(workflow, /playwright|chromium|fonts-noto|apt-get/);
     assert.doesNotMatch(workflow, /run: pnpm (?:test|validate:evidence|validate:master|build)\b/);
   }
 });

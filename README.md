@@ -41,6 +41,8 @@ pnpm quality
 
 format、lint、型検査、検証基盤、unit／productionテスト、master検査、本番build、desktop／mobile E2Eを実行します。失敗時の詳細は表示されたArtifactsのmanifestとlogに保存します。変更に応じた追加監査は[テストガイド](docs/testing.md)で説明します。
 
+GitHub Actionsはpnpm quality:ciを使い、実ブラウザーを使う検証を除いた同じ検証を実行します。UI・Worker通信・保存復元を変更した場合は、ローカルで対象のE2Eも確認してください。
+
 ## データと権利
 
 構造化ゲームデータと戦闘仕様の出典はAtlas Academyです。[データ出典と画像の扱い](docs/licenses/data-sources.md)を参照してください。Fate/Grand Orderおよびゲーム内の名称・画像等の権利は各権利者に帰属します。本プロジェクトは公式サービスと関係ありません。

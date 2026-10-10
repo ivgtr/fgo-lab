@@ -12,10 +12,12 @@ const QUALITY_STEPS = [
   ['production', ['test:production'], 'production'],
   ['master', ['validate:master']],
   ['build', ['build']],
+  ['browser-observer', ['test:browser-observer']],
   ['playwright', ['test:e2e'], 'playwright'],
 ];
 
 const QUICK_STEP_IDS = new Set(['format', 'lint', 'typecheck', 'runner', 'docs', 'unit', 'build']);
+const BROWSER_STEP_IDS = new Set(['browser-observer', 'playwright']);
 
 export function qualityRunConfiguration(arguments_) {
   if (arguments_.length === 0)
@@ -27,7 +29,14 @@ export function qualityRunConfiguration(arguments_) {
       label: 'check',
       steps: QUALITY_STEPS.filter(([id]) => QUICK_STEP_IDS.has(id)),
     };
-  throw new Error('usage: pnpm quality | pnpm check');
+  if (arguments_.length === 1 && arguments_[0] === '--profile=ci')
+    return {
+      profile: 'ci',
+      command: 'pnpm quality:ci',
+      label: 'quality:ci',
+      steps: QUALITY_STEPS.filter(([id]) => !BROWSER_STEP_IDS.has(id)),
+    };
+  throw new Error('usage: pnpm quality | pnpm quality:ci | pnpm check');
 }
 
 export function verifyChildManifest(runDirectory, name) {

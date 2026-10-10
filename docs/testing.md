@@ -10,11 +10,30 @@
 | 登録された広範囲の監査 | pnpm test:audit | HP・BP・control等の全経路監査 |
 | UI・通信・保存復元 | pnpm test:e2e -- <file> | Playwrightによる実caller検証 |
 | 文書 | pnpm test:docs | Markdown・参照・公開文書の到達検査 |
+| ブラウザー観測基盤 | pnpm test:browser-observer | 実Chromiumによるconsole・popup・resource観測と添付保存 |
+| GitHub Actions | pnpm quality:ci | format・lint・型・検証基盤・unit・production・master・build |
 | 最終gate | pnpm quality | format・lint・型・検証基盤・unit・production・master・build・desktop／mobile E2E |
 
 pnpm checkはqualityの一部です。damage、master、scenario、execution、rankingの変更では、最終qualityのproductionを通します。登録auditや全matrixが変更した契約を所有する場合は追加します。文書だけの変更はtest:docsと変更参照の確認で閉じます。
 
 通常unitは最大4worker、完全状態の診断groupとproductionは1workerで実行します。分類はscripts/test-suites.mjs、順序と予算はvitest.config.tsが所有します。auditは通常qualityに含めません。
+
+GitHub ActionsのPR・mainへのpush・手動実行はquality:ciを使い、ブラウザーを起動しません。test:runnerはNodeだけの検証基盤テストで、実ブラウザーの観測fixtureはtest:browser-observerへ分離しています。unitとproductionに加えてmasterと本番buildも確認します。実ブラウザーの表示・Worker通信・保存復元はこのCIの検証範囲に含まれないため、その経路を変更した場合は対象のtest:e2e、公開前は観測fixtureとE2Eを含むqualityをローカルで実行します。CIとローカルは同じrunner・失敗分類・artifact検査を使います。
+
+## ローカルのブラウザー検証
+
+初回はChromiumとOS依存を準備してから、test:browser-observerやtest:e2eを実行します。
+
+```sh
+pnpm exec playwright install --with-deps chromium
+```
+
+Linuxの画像比較ではNoto CJKとNoto Color Emojiも準備します。Ubuntuでの準備:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y fonts-noto-cjk fonts-noto-color-emoji
+```
 
 ## 固定入力
 
