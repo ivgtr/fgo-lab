@@ -202,11 +202,13 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 
 ### Atlas APIへ確認・依頼する完成形の公開契約
 
-2026-10-12に実[OpenAPI](https://api.atlasacademy.io/openapi.json)を再取得して109 pathを確認した。`/raw/{region}/info`はregionのみ、`/raw/{region}/skill/{skill_id}`と`/raw/{region}/function/{func_id}`は個別ID・展開指定等のみで、いずれも世代指定がない。実GETでは`/info`、`/raw/JP/info`、`/raw/JP/skill/961313`、`/export/JP/info.json`にCORS `*`があり、`/raw/JP/skill/961313`は結合済みの複数表を返すが、応答は同一世代へ固定されない。`/info`と`/raw/JP/info`にETagはなく、exportのETagはbrowserへ`Access-Control-Expose-Headers`で公開されていない。これは各URLの現状確認であり、完成世代の保証ではない。版付きraw表API・完成receipt・公開後保持の契約は現行OpenAPIから確認できない。
+2026-10-12に実[OpenAPI](https://api.atlasacademy.io/openapi.json)を再取得して109 pathを確認した。`/raw/{region}/info`はregionのみ、`/raw/{region}/skill/{skill_id}`と`/raw/{region}/function/{func_id}`は個別ID・展開指定等のみで、いずれも世代指定がない。実GETでは`/info`、`/raw/JP/info`、`/raw/JP/skill/961313`、`/export/JP/info.json`にCORS `*`があり、`/raw/JP/skill/961313`は結合済みの複数表を返すが、応答は同一世代へ固定されない。固定rawの同skill 1行・skillLv 10行とこの実応答は一致したが、単一skillの一致は全入力の同一世代保証ではない。`/raw/JP/skill/961313`へ無効な`hash`・`commit`・`snapshot` queryを付けても、無指定と同じ1,575 bytes・SHA-256を返した。これは隠れた版指定として使えない。`/info`と`/raw/JP/info`にETagはなく、exportのETagはbrowserへ`Access-Control-Expose-Headers`で公開されていない。これは各URLの現状確認であり、完成世代の保証ではない。版付きraw表API・完成receipt・公開後保持の契約は現行OpenAPIから確認できない。
+
+実Chromiumを`https://example.com` originから動かすと、`/raw/JP/info`、`/raw/JP/skill/961313`、`/export/JP/info.json`と`static`の`mstClass.json`はfetch成功、exportの`ETag`はJavaScriptから読めず、Gitea `/api/v1/repos/.../branches/JP`はCORSでfetch失敗した。[現行router](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/routers/raw.py)は現在DB/Redisからraw entityを組み立てる。実稼働版と一致する公開実装には、全raw表を版付きで配るroute、完成世代のpublication、immutableな旧世代保持の仕組みがない。[API側のREADME](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/README.md)が参照する`assets.atlasacademy.io/GameData/JP/master/mstClass.json`は通常User-Agentなら`static.atlasacademy.io/JP/master/mstClass.json`へ転送され、`files.txt`と`gamedatatop.json`は404。`static`の`mstClass.json`は正しいcommit hashでも無効なhashでも無指定と同じ7,965 bytesで、`/JP/{commit}/master/mstClass.json`は404。調査用Pythonの既定User-Agentではassets側が403になるため、その403を一般のbrowser利用不能という根拠にはしない。
 
 **着手前に決める取得契約:** API pathの名称より、以下を一つの公開単位として実証する。Atlas側の返答が現在のAPIと異なるなら、この節と取得単位・費用見積を先に改める。コードを旧想定に合わせて継ぎ足さない。
 
-1. JPの抽出・検査が完了したfull raw commit/tree、抽出元/データ版と成功状態、表一覧・内容digestを、小さい`current`で識別できること。commitだけで抽出元の整合を認定しない。必要な表の全行または世代固定のID索引を同じcommitから読め、発見した追加参照も閉じること。
+1. JPの抽出・検査が完了したfull raw commit/tree、抽出元/データ版と成功状態、**source全表の一覧・内容digest**を、小さい`current`で識別できること。Actionsは対象外の新表・fieldも監視する。commitだけで抽出元の整合を認定しない。製品に必要な初期43表の全行または世代固定のID索引を同じcommitから読め、発見した追加参照も閉じること。
 2. raw表と同じ取得単位へschema/enum catalogとregion、表示言語資源を束縛すること。source外で作るcatalogには生成器版とdigestを含める。複数URLの全入力には内容digestまたは同等の不変性が要る。現在値だけの追加APIは受け入れない。
 3. browserから必要URLをCORSで読め、条件付き確認のheaderを公開すること。旧generationの保持期間、429/Retry-After、同時取得の上限、帯域・利用条件を確認する。
 4. raw sourceとcatalogの公開が完了し、全参照が読める後にだけ`current`が切り替わること。失敗・並行公開・途中停止時は旧世代を維持する。`/info`前後一致、個別ETag、取得bytesへ付けた独自hashは代用にならない。
@@ -216,6 +218,8 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 上流への確認文面は「JPの抽出成功を示す一つのpublication IDとfull source treeを返し、同IDで43 raw表全行と数値enum/trait等のcatalogをimmutableに取得できるAPI、各入力digest、原子的current、旧版保持、browser CORS、未変更確認、rate条件を提供または既存の同等契約として示せますか。抽出失敗・並行更新・公開中断時の挙動と検証用の実publicationを示してください。」とする。問い合わせの送信は本調査には含めず、公開資料・実応答から確定できない外部依存として残す。
 
 Atlas側は抽出・検査が成功したraw commitが参照するblobをimmutable API資源として公開し、その表一覧・digest・版付きcatalogの用意を完了してから`current`を切り替える。公開中は旧`current`を保持する。API pathや表の分割単位は、同一commitの証明と費用実測を満たす形で決める。FGO Labが確認する反例は、raw抽出・catalog生成中断、並行更新、参照先取得中の次世代公開、旧世代保持期間の終了である。これらで完成前の候補が見えず、旧世代または明示的な取得失敗になることを確認する。
+
+公開実装から見る変更箇所は、[data読込みと版更新](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L791)および[export生成](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L547)の前後に、抽出成功を確認できる固定source treeからのstaging生成・digest照合・immutable公開・最後のcurrent切替を置く部分と、[raw router](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/routers/raw.py)または静的配信へ世代固定資源を出す部分である。現行`gamedatatop.json`のdataVerやGit commit単体は抽出成功receiptではない。raw repositoryの公開情報から抽出器の成功判定・失敗時のcommit公開禁止・旧publication保持運用を確認できず、ここはAtlas側の仕様・実装証拠が要る。FGO Lab側だけで現行APIを繰り返し読んでも、この不足は解消しない。
 
 上流から同等の既存保証が提示されたら、URL・保持期間・CORS・混在反例をこの記録に追記して設計を再開する。保証がない場合は可変nice APIやGit取得の組合せでactivationを完成扱いしない。raw→canonicalの全変換と選択取得の費用もcheckpoint 1・2の必須証拠であり、取得失敗時の暗黙の配信元切替は設けない。
 
