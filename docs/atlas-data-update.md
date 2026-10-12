@@ -51,6 +51,7 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 - `/openapi.json`が申告するAPI版は6.0.0、serverHashは35cadc。上流GitHubで解決したcommitは35cadc444e20c78cc60e56082ad1b64607d4d2e2。現master a937bbb0f7eced10f45f57568786da10d9994027も同じ問題を持つ。
 - 上流[app/tasks.py](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L99)は各exportを既存pathへ個別に書く。[generate_exports](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L547)は定数、各export、servant/equipを順番に生成し、FGO Labが使う既定言語exportより後でinfoを更新する。ただしinfo更新後も別のexport生成が続く。公開コードからは全体のatomic publicationを確認できない。実CDNの運用までコードだけで断定しない。
 - 稼働中のserverHashに一致する同revisionの[load_and_export](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L857)では、DBとRedisの読込み後、`update_master_repo_info`が`/info`用のRedis版を**export生成前**に更新する。読込み中の例外を記録しても後段のexport生成へ進み、export生成中の例外も記録して戻る。したがって`/info`の新版は完了通知ではない。例としてraw repository更新後にDB読込みが失敗すると、新rawから作る係数と旧DBから作るservantが混在し得る。これは公開コードから導く失敗経路であり、実運用で発生したとの主張ではない。[旧/新の`/info`一致](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/main.py#L321)だけで混在を否定できない理由になる。
+- [DB import](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/db/load.py#L554)はtable groupごとのtransaction、[Redis import](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/redis/load.py#L22)はkeyごとのdelete/writeで進む。失敗時に全DB/Redisを一括rollbackする構造ではない。このため上流の完成世代を新設するなら、単に最後にmanifestを書くのでなく、読込み成功後の一貫した生成元を用い、失敗時は旧公開世代を保持する必要がある。並行更新を排除する運用・実装契約も確認する。
 - 実OpenAPIの`/nice/{region}/skill/{skill_id}`の引数はregion、skill_id、reverse、reverseData、langであり、snapshot/commit指定はない。[routerの一次資料](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/routers/nice.py)。
 - このskill routeは現在のDBから応答し、server側cacheは通常7日で、更新処理がexport前後でcacheを消す。cache消去は静的exportと一つの公開transactionではない。[skillの取得処理](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/core/nice/nice.py#L174)、[cache設定](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/main.py#L280)、[消去順](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L876)。
 - HEADで各exportにCORS `Access-Control-Allow-Origin: *`、ETag、Last-Modifiedを確認。ただしETagをbrowserへ公開するExpose-Headersは確認できなかった。ヘッダーとCORSの実利用はbrowserで改めて検証する。ETagは単一資源の再取得抑制にしか使わない。
@@ -61,6 +62,7 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 - Git HTTP経路を将来採るなら、commitが参照する全blobを必要期間取得できる保持契約と、pack再編成時にindexを取り直しても同じGit object IDで再検証できる実証が要る。現在の一commitでの成功を旧commitの長期提供保証とはしない。
 - 小さい`NiceClass.json`を`?hash={JPのfull commit}`と`?hash=definitely-invalid`でもGETした。双方とも版指定なしと同じ30,970 bytes・SHA-256・ETagを返した。このqueryは版指定として機能しない。固定入力の`referenced_skills.json`には28件あり、例の`/nice/JP/skill/961313`は取得できるが版を指定できない。実GETの応答は1,634 bytesで、本文にgeneration/版のfieldがなく、ETag・Last-Modifiedもない。HEADは405だった。
 - ローカル固定入力の28件のreferenced skill IDは、`nice_servant`・`nice_equip`・`nice_mystic_code`のfunctionを持つ埋込みskill ID集合には**一件も含まれない**。単にbulk export内を探すだけでは現在の追加参照すら閉じない。現行OpenAPI 109 pathにはsnapshot/version/manifest/exportのrouteがなく、skillの版指定入力もない。これは公開APIで必要な追加参照の取得方法を上流へ確認すべき理由であり、将来の追加参照方式も固定28件から推定しない。
+- Atlasのraw配信`https://assets.atlasacademy.io/GameData/JP/master/mstSkill.json`もGETでき、2026-10-12の確認ではCORS `*`、1,163,559 bytes、7,107行だった。`mstConstant.json`・`mstSvt.json`も読める。しかし確認したURLは可変の現在値、`Cache-Control: max-age=86400`で、同じbaseの`files.txt`・`gamedatatop.json`は404。版付きraw URLまたは完成manifestは見つからず、raw→canonicalのjoin・意味変換も追加で必要になる。Gitのpack parserを避けられるだけでは、現行nice API案をこのraw CDN経路へ変更する理由にならない。
 - Atlas APIの[現行server実装](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/main.py)は429で`Retry-After`を返し、多数の小さいAPI呼出よりexportを推奨している。追加参照の参照閉包では並列上限・重複排除・Retry-After尊重が上流負荷の条件となる。Atlasが[公表するデータライセンス](https://atlasacademy.io/about-us/)はODC-BY 1.0で、実装後も出典表示を保持する。
 
 必要入力候補:
@@ -171,7 +173,7 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 - [ ] **4. 監視と重複防止**: 実Actionsの権限・永続状態・通知の再実行、検査コード変更時の再検査、停止時の運用を確認する。
 - [ ] **5. 配信整理・全体検証・文書**: 大型masterの製品配信を撤去し、費用実測、公開文書、[最終gate](testing.md)と必要な追加auditを完了する。
 
-現在の到達点: 計画commit `ac1a6f3`と取得契約の再判断commit `bc7570e`を作成済み。2026-10-12に取得、係数、保存・計算、監視、費用のread-only調査を完了した。raw Git commitの整合性は確認したが、現行nice exportと追加参照の同一generationを証明できず、実ブラウザーのGitea APIもCORS拒否された。1の取得契約は外部依存で未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
+現在の到達点: 計画commit `ac1a6f3`と取得契約の再判断commit `bc7570e`を作成済み。2026-10-12に取得、係数、保存・計算、監視、費用のread-only調査を行い、現行Atlas APIのDB/Redis部分更新、export個別書込み、版指定なしskill、可変raw CDNを確認した。raw Git commitの整合性は確認したが、現行nice exportと追加参照の同一generationを証明できず、実ブラウザーのGitea APIもCORS拒否された。1の取得契約は外部依存で未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
 
 次の操作: Atlas APIに以下の最小保証が既に存在するか確認し、存在しなければ提供を依頼する。外部へのIssue送信は、この記録を具体的な依頼内容として用い、送信権限を得てから行う。保証を示す実API応答をbrowserとNodeで取得し、異版・欠落の拒否を再現する。これが通るまで1にチェックを付けず、製品のactivation切替と自前大型master撤去を行わない。独立に検証可能な2〜4の内部境界は、将来の実装で進められる。
 
@@ -181,6 +183,8 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 2. ゲームデータcommitに加え、API変換器・enum/schema/mappingの版とregion/localeを同じ取得単位に結び付けること。複数URLの方式なら入力ごとの内容digestまたは同等の不変性が要る。版指定なしで現在値だけを返す追加APIは、候補の一部として受け入れない。
 3. browserから必要URLをCORSで読めること。条件付き取得にETag等を使う場合はブラウザーへheaderを公開し、未変更確認が何を保証するか明確にする。旧generationを障害後の再試行に使える保持期間も確認する。
 4. 公開済みgenerationは全入力と追加参照が揃った後に見えること。`/info`の前後一致、個別ETag、取得bytesへ付けた独自hashだけでは、この保証を代替しない。
+
+上流変更としての最小の成立形は、regionごとに更新を直列化し、読込みとexport生成がすべて成功した候補だけを版付きの不変URLへ置き、必要な追加skillを同じ世代の静的集合または版指定APIで読めるようにし、最後に小さい`current`を切り替えるもの。`current`にはregion・完全なsource/変換器版と入力digest一覧を結び付ける。正確なpathやarchive形式はAtlas側に委ねる。FGO Labが確認する反例は、DB/Redis import失敗、任意export書込みでの中断、並行更新、skill取得中の次世代公開、旧世代保持期間の終了である。これらで完成前の候補が見えず、旧世代または明示的な取得失敗になることを確認する。全skillのnice一括exportは現行rawだけでも7,107件のため、転送・生成量を測らずに唯一の解決策と決めない。
 
 上流から同等の既存保証が提示されたら、URL・保持期間・CORS・混在反例をこの記録に追記して設計を再開する。保証がない場合は現行nice APIの組合せでのactivationを完成扱いしない。raw Gitは同一raw commitの証拠にはなるが、API直接取得の簡潔な主方式を自動で置き換えない。採用するならraw→canonical全変換と費用を別途実証して一つの主方式として再判断する。取得失敗時の暗黙の配信元切替は設けない。
 
