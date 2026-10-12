@@ -9,6 +9,14 @@
 
 ただし、現時点で確認した公開Atlas export/APIには、複数exportと追加参照を一つのsnapshotへ束縛する契約が見つかっていない。ここは実装前の成立条件であり、既存APIを組み合わせれば達成できるとは認定しない。取得契約を確定する前に、その契約を前提とする製品切替は実装しない。
 
+### 利用者の振る舞いから決める受入境界
+
+Atlas APIを製品の取得元とする。初回は取得・検証・保存が終わるまで計算可能なmasterを見せず、進行状況または再試行可能な失敗を示す。互換性を確認できるactiveが端末にある場合は先にそれでUIと計算を開き、更新を背景で調べる。更新候補に未知の意味、欠損、矛盾、取得世代の不明点があれば切り替えず、activeの出典と更新失敗を明示する。上流取得失敗のたびに既存masterを消したり、自前配信先から補ったりしない。新候補は全入力の受入後に一回の保存transactionで切り替え、calculatorとrankingは同じidentityへ同時に移る。切替前の計算結果・共有結果は新しいmasterで計算したものとして扱わない。
+
+この振る舞いに必要な保証を、候補内部の**意味・参照整合性**と、候補全入力の**上流世代の整合性**に分ける。前者は共通validatorで確認できる。後者は、取得したbytesへ自分でhashを付けても、`/info`の前後一致や個別ETagを照合しても証明できない。`info.json`が関連exportより後で書かれる現行実装は有用な完了の手掛かりだが、版指定できないskill API応答やCDNでの公開単位まで束縛しない。「同じ時点で読めて計算できた」ことを「同じ上流generation」と表示・保存しない。したがって、現行公開APIだけを使う初回activationを安全と認定する設計にはまだ到達していない。この不足を隠して実装を進める製品判断はしない。
+
+取得契約が整うまでにも、Atlas APIの現形式を用いた変換・参照発見・Node/Worker照合、既存activeの先行表示、保存/計算の競合試験、監視のinventoryと通知重複防止は独立に設計・検証できる。最終的な製品切替と「未変更」の軽量判定だけを上流の保証に依存させる。Git経路は現在のAPI直接取得案を自動で置き換えるものではない。
+
 2026-10-12の追加調査で、AtlasのrawゲームデータGit repositoryにはimmutableなcommit/tree/blobがあることを確認した。しかし、そのraw入力は現行nice変換入力と異なり、ブラウザーから通常のGit APIを読むとCORS設定で拒否される。Git packのRange取得を使う独自Git clientとAtlas API側のnice変換に相当するraw→canonical実装は、取得・変換に新しい大きな責務を生む。現在はnice入力を同一generationに束縛する上流契約を優先する設計判断とし、契約取得までは製品切替を実装しない。raw Git経路は技術的に不可能とは認定しておらず、上流契約が得られない場合の設計再判断対象とする。自前hash一覧、二回の同一取得、待機時間、infoの前後一致で穴を埋めない。
 
 ## 現行経路と変更境界
@@ -157,16 +165,16 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 
 現在の到達点: 計画commit `ac1a6f3`と取得契約の再判断commit `bc7570e`を作成済み。2026-10-12に取得、係数、保存・計算、監視、費用のread-only調査を完了した。raw Git commitの整合性は確認したが、現行nice exportと追加参照の同一generationを証明できず、実ブラウザーのGitea APIもCORS拒否された。1の取得契約は外部依存で未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
 
-次の操作: Atlasに以下の最小契約が既に存在するか確認し、存在しなければ提供を依頼する。外部へのIssue送信は、この記録を具体的な依頼内容として用い、送信権限を得てから行う。契約の実提供後に、実ブラウザーから小さいmanifestと一つの版指定済み追加参照を取得し、異版・欠落の拒否を再現する。これが通るまで1にチェックを付けず、2〜5の製品切替を進めない。
+次の操作: Atlas APIに以下の最小保証が既に存在するか確認し、存在しなければ提供を依頼する。外部へのIssue送信は、この記録を具体的な依頼内容として用い、送信権限を得てから行う。保証を示す実API応答をbrowserとNodeで取得し、異版・欠落の拒否を再現する。これが通るまで1にチェックを付けず、製品のactivation切替と自前大型master撤去を行わない。独立に検証可能な2〜4の内部境界は、将来の実装で進められる。
 
-### Atlasへ確認・依頼する取得契約
+### Atlas APIへ確認・依頼する最小保証
 
-1. JPの完了済みgenerationを一つのimmutable identityで公開し、generation manifestを最後に原子的に公表する。manifestにはゲームデータcommitのfull SHA、API変換器・enum/schema/mapping版、region/locale、必要なnice exportと係数・trait・catalogのURL、各bytes長とdigestを含める。manifest自体にもimmutable URLを与える。
-2. `nice_servant`、`nice_equip`、`nice_mystic_code`、`nice_item`、battle point、計算用定数・相性・カード表、全語彙を監視できるenum/schema catalogを同じgenerationから取得できるようにする。現行形式で参照先を後から発見するskill等は、同じgenerationを指定できるAPIか、そのgenerationに含まれる完全集合が必要。参照IDだけを取得できても版指定がなければ不十分。
-3. browserから全URLを読み取れる有効なCORS応答にする。現行Git APIの`Access-Control-Allow-Origin`重複も解消する。条件付き取得に必要なETag等を利用させる場合はExpose-Headersを設定する。少なくともactiveが更新を確認する間と障害後の再試行期間、旧generationのURLが保持される期間を明示する。
-4. 上流で完了前manifestを公開しないこと、個々のimmutable入力を後で書き換えないこと、manifestが指す全入力・追加参照が同じgenerationの変換結果であることを公開契約として確認する。単なる`/info`の前後一致やファイル個別のETagでは、この点を代替できない。
+1. JPの完了済みgenerationをAPIから識別でき、必要なnice export、係数、trait、enum/schema catalog、後から発見するskill等の追加参照がそのgenerationに属すると確認できること。immutableなexport URLと版指定API、完全集合を含むarchive、完成後に公開するmanifest等の形は上流に委ねる。選んだ方式の公開・完了・保持契約を確認する。
+2. ゲームデータcommitに加え、API変換器・enum/schema/mappingの版とregion/localeを同じ取得単位に結び付けること。複数URLの方式なら入力ごとの内容digestまたは同等の不変性が要る。版指定なしで現在値だけを返す追加APIは、候補の一部として受け入れない。
+3. browserから必要URLをCORSで読めること。条件付き取得にETag等を使う場合はブラウザーへheaderを公開し、未変更確認が何を保証するか明確にする。旧generationを障害後の再試行に使える保持期間も確認する。
+4. 公開済みgenerationは全入力と追加参照が揃った後に見えること。`/info`の前後一致、個別ETag、取得bytesへ付けた独自hashだけでは、この保証を代替しない。
 
-上流からこれと同等の既存契約が提示されたら、URL・保持期間・CORS・混在反例をこの記録に追記して設計を再開する。提供できない場合、現行nice APIを組み合わせる方式は成立しない。その時点で、実際に一つのraw blobを整合取得できたGit HTTP経路を唯一の主方式とする再設計を検討する。rawからcanonicalへ必要な全join・意味変換・enum/mappingの版を同じcommitへ束縛できるか、最初に小さい縦断試験で確かめる。取得失敗時にnice APIへ黙って切り替えるfallbackは設けない。
+上流から同等の既存保証が提示されたら、URL・保持期間・CORS・混在反例をこの記録に追記して設計を再開する。保証がない場合は現行nice APIの組合せでのactivationを完成扱いしない。raw Gitは同一raw commitの証拠にはなるが、API直接取得の簡潔な主方式を自動で置き換えない。採用するならraw→canonical全変換と費用を別途実証して一つの主方式として再判断する。取得失敗時の暗黙の配信元切替は設けない。
 
 ## 検証
 
