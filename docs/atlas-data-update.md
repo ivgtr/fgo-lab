@@ -77,6 +77,8 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 - Git HTTP経路を将来採るなら、commitが参照する全blobを必要期間取得できる保持契約と、pack再編成時にindexを取り直しても同じGit object IDで再検証できる実証が要る。現在の一commitでの成功を旧commitの長期提供保証とはしない。
 - 小さい`NiceClass.json`を`?hash={JPのfull commit}`と`?hash=definitely-invalid`でもGETした。双方とも版指定なしと同じ30,970 bytes・SHA-256・ETagを返した。このqueryは版指定として機能しない。固定入力の`referenced_skills.json`には28件あり、例の`/nice/JP/skill/961313`は取得できるが版を指定できない。実GETの応答は1,634 bytesで、本文にgeneration/版のfieldがなく、ETag・Last-Modifiedもない。HEADは405だった。
 - ローカル固定入力の28件のreferenced skill IDは、`nice_servant`・`nice_equip`・`nice_mystic_code`のfunctionを持つ埋込みskill ID集合には**一件も含まれない**。単にbulk export内を探すだけでは現在の追加参照すら閉じない。現行OpenAPI 109 pathにはsnapshot/version/manifest/exportのrouteがなく、skillの版指定入力もない。これは公開APIで必要な追加参照の取得方法を上流へ確認すべき理由であり、将来の追加参照方式も固定28件から推定しない。
+- この28件を固定JP raw commit `5d3cbcc79ebcea42ec99dbecd5279e6e64effa3c`で追跡した。`mstSkill`には28件すべて、同じcommitの`mstSkillLv`には対応する64行、`mstFunc`にはそこから直接参照する24 function IDがすべて存在した。Git blob SHAはそれぞれ`4e2167b4f17dc6842808306186cdd6bdd890a027`、`74dbf2e0b6e6f7e3e0d4207fc0ac665d1ec9613d`、`59a7c9687a94f6d416974023809f2cf238b0f8bc`と照合した。これは**固定fixtureの第一段の参照**が同じGit treeにあるという証拠であり、全servant/CEからの発見、function値内の再帰参照、buff等へのjoinの閉包や、製品browserのAPI取得保証ではない。
+- `mstSkillLv`は12,112,638 bytesで、Gitea blob/contents APIはメタ情報のみ返し本文を返さなかったため、調査ではJP branchのpartial cloneから同commitのblobを読んだ。可変raw CDNの同名ファイルは2,777,245 bytes・16,881行で、この28件に対応するskill IDは3件だけだった。固定Git blobは47,647行であり、可変CDNをこのcommitの欠けた表の代用にできない。Git経由の取得は調査手段であって製品経路ではない。
 - Atlasのraw配信`https://assets.atlasacademy.io/GameData/JP/master/mstSkill.json`もGETでき、2026-10-12の確認ではCORS `*`、1,163,559 bytes、7,107行だった。`mstConstant.json`・`mstSvt.json`も読める。しかし確認したURLは可変の現在値、`Cache-Control: max-age=86400`で、同じbaseの`files.txt`・`gamedatatop.json`は404。版付きraw URLまたは完成manifestは見つからず、現在のCDNを世代固定raw APIと同一視できない。
 - 同じ日に[可変raw CDNの`mstClass.json`](https://static.atlasacademy.io/JP/master/mstClass.json)を取得すると38行・7,965 bytesだったが、[JP full commitの`mstClass` blob](https://git.atlasacademy.io/api/v1/repos/atlasacademy/fgo-game-data/git/blobs/1520cbee600fd3649b6137ca5ae55759f1340c50)は84行・27,684 bytesで、CDN側にないIDが46件あった。共通IDの行にもGit側だけのfieldがある。URLが返す本文をGitの当該commitのblobと見なせない**実例**であり、原因やCDN全体の状態はこの比較だけで断定しない。`mstCard`等の小表もbytes/blob SHAが一致しなかった。固定commitの表ごとのdigest照合が必要である。
 - Atlas APIの[現行server実装](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/main.py)は429で`Retry-After`を返し、多数の小さいAPI呼出よりexportを推奨している。追加参照の参照閉包では並列上限・重複排除・Retry-After尊重が上流負荷の条件となる。Atlasが[公表するデータライセンス](https://atlasacademy.io/about-us/)はODC-BY 1.0で、実装後も出典表示を保持する。
@@ -177,9 +179,9 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 - [ ] **4. 監視と重複防止**: 実Actionsの権限・永続状態・通知の再実行、検査コード変更時の再検査、停止時の運用を確認する。
 - [ ] **5. 配信整理・全体検証・文書**: 大型masterの製品配信を撤去し、費用実測、公開文書、[最終gate](testing.md)と必要な追加auditを完了する。
 
-現在の到達点: 計画commit `ac1a6f3`からこの記録を更新してきた。2026-10-12に取得、係数、保存・計算、監視、費用のread-only調査を行い、現行Atlas APIのDB/Redis部分更新、export個別書込み、版指定なしskill、可変raw CDNを確認した。Git commitはraw bytesを固定できるが、nice exportと追加参照の同一generationや抽出元の整合は証明できず、実ブラウザーのGitea APIもCORS拒否された。既存のnice中心案をゼロベースで再評価し、唯一のraw→canonical意味経路と版付きraw APIを完成形に選んだ。現UIのfieldとbuff補助から43表・約66MBの候補を得て、画像URLの主経路はIDと規則で構成できると確認した。可変raw CDNの`mstClass`が同日のGit raw treeと内容・行数で異なる実例も得た。raw表の閉包・raw fieldと係数の完全対応・端末実測・上流API契約は未達。1の取得契約は未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
+現在の到達点: 計画commit `ac1a6f3`からこの記録を更新してきた。2026-10-12に取得、係数、保存・計算、監視、費用のread-only調査を行い、現行Atlas APIのDB/Redis部分更新、export個別書込み、版指定なしskill、可変raw CDNを確認した。Git commitはraw bytesを固定できるが、抽出元の整合は証明できず、実ブラウザーのGitea APIもCORS拒否された。既存のnice中心案をゼロベースで再評価し、唯一のraw→canonical意味経路と版付きraw APIを完成形に選んだ。現UIのfieldとbuff補助から43表・約66MBの候補を得て、固定追加skillの28 ID→64 level行→24 function IDは同じGit treeで第一段まで解決した。画像URLの主経路もIDと規則で構成できると確認した。可変raw CDNの`mstClass`と`mstSkillLv`が固定Git raw treeと異なる実例も得た。raw表の全参照閉包・raw fieldと係数の完全対応・端末実測・上流API契約は未達。1の取得契約は未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
 
-次の操作: 43表候補のjoin・参照閉包を固定raw commitの実入力で検査し、欠ける表と圧縮wire bytesを測る。次にAtlas APIに以下の保証が既に存在するか確認し、存在しなければ提供を依頼する。外部へのIssue送信は、この記録を具体的な依頼内容として用い、送信権限を得てから行う。保証を示す実API応答をbrowserとNodeで取得し、異版・欠落の拒否を再現する。これが通るまで1にチェックを付けず、製品のactivation切替と自前大型master撤去を行わない。独立に検証可能な2〜4の内部境界は、将来の実装で進められる。
+次の操作は末尾の「調査残件と作業順」に具体化した。まず固定raw commitと現UIを突き合わせて43表候補のjoin・再帰参照・係数の不足を列挙する。上流の版付き公開契約が無いことは別の未達であり、ローカルで参照を閉じてもcheckpoint 1を完了にしない。製品のactivation切替と自前大型master撤去はAPIの完成世代をbrowserで検証してから行う。
 
 ### Atlas APIへ確認・依頼する完成形の公開契約
 
@@ -220,14 +222,19 @@ GitHub public APIでivgtr/fgo-labのvisibility=public、default_branch=main、ar
 
 性能比較は同一source/master/input/build・Node・並列・gzip条件で前後各3回。Worker・共有・遅延chunkを含む配信JSを合算する。HTTP初回/未変更の計測とranking計算の計測を混ぜない。
 
-## 未確定事項、未達条件、次の操作
+## 調査残件と作業順
 
-1. 最大の未達: 抽出・検査が成功したfull raw commitと全必要表・catalog・追加参照を束縛するAtlas APIの公開契約。raw Git commitは表のimmutableな集合を示すが抽出元の整合までは示さず、通常Git APIは実ブラウザーでCORS拒否され、現行raw CDNは可変である。nice export＋版指定なしskill APIでも成立を認定できない。
-2. 現行17クラス・5属性・3カード・基礎定数の出典と値は同定済み。今後は新class/cardのscope、relative target選択、ランダム上限排他の上流仕様と、直接caller変更が保存schemaへ及ぶかを実装時に確定する。
-3. 全raw/schema/enum観測で取得可能な新概念の範囲。上流が未公開の概念に対する監視保証はできない。
-4. 43表候補の完全な閉包とjoin仕様、選択raw表のwire bytes、周期、取得上限、保存保持数、実端末memory、monitorの実Actions所要時間、請求額は未実測または未確認。repository権限設定と既存CIの時間・artifactは上記の通り確認済み。
-5. 監視完全停止中も自動で通知する保証は、外部watchdogなしでは満たせない。基本案は最終成功の可視化・既存CIでの検知・手動復旧。
+**まだ調査は足りない。** 現在確定したのは現行consumer、上流公開APIの不足、43表の候補量、固定追加skillの第一段参照までである。次の作業を、手元で進められるものと上流APIが必要なものに分ける。各行の成果をこの記録へ追記し、別の進捗資料を作らない。
 
-この調査では製品テスト・build・全データ生成は未実行。上流の版/小さい定数/HEAD/API schema/公開sourceを確認し、主要大型exportと選択raw表の全本文は取得していない。文書検証は`pnpm test:docs`で行った。
+| 順 | 次に行う作業 | 終了時にこの記録へ残す証拠・判定 | 依存 |
+| --- | --- | --- | --- |
+| A1 | 固定JP commit `5d3cbc…`の43表候補を、servant/CE/MC/BPから実UIで読むfieldとjoinする。skill/NPのlevel・function・buff・script、`SkillID`/`DependFuncId`/callbackを意味定義に沿って再帰走査し、表・row・edgeの一覧と不足IDを出す | 43表で閉じるか、追加/不要表とそのjoin条件を列挙する。固定28 skillの第一段28→64→24は確認済みだが、全入力の閉包は未確認。欠落・循環・同ID異内容を成功扱いしない | 手元の固定Git commitで調査可能。製品取得をGitへ戻す判断ではない |
+| A2 | 現nice→canonical出力の各fieldをraw field・単位・enumへ対応づけ、17クラス/5属性/3カード/基礎定数、成長、画像、relative target、ランダム上限を実例で照合する | 対応表、未定義の意味、既知だが計算未対応の範囲、必要なschema/catalogを明示する。固定回帰期待値を作り直さない | A1のjoin結果。現行niceとrawの混在を一世代の入力とは呼ばない |
+| A3 | 上流へ要求するAPIを、`current`の成功条件、immutable表/row、digest、catalog、CORS、保持期間、429、同時取得上限、利用条件と失敗・並行公開例まで具体化し、既存公開APIに同等機能があるか照合する | 実URL/応答/公開仕様で満たす項目を示し、足りない項目を上流への依頼として確定する。外部Issueの送信は別途明示された指示がある場合に行う | A1/A2で表とcatalog範囲を確定。現行`/info`、版なしskill、可変CDN、Git APIは不足と確認済み |
+| B1 | 上流が完成世代APIを提供したら、Nodeと実browserで同commitの全表・catalogを取得し、digest/CORS/保持を確認する。抽出失敗、並行公開、途中停止、異版表を試す | 同じ公開世代のbytesのみ受理し、欠落/混在を拒否する再現結果。選択表の圧縮wire bytes、URL別request数、取得時間、端末peak memoryを実測する | **上流APIの提供が必要**。現Git treeの一致だけでは抽出成功を証明できない |
+| B2 | A1/A2とB1の結果でcheckpoint 1の取得単位を決定し、表全件か世代固定ID索引か、catalog粒度、端末の保存保持数、更新頻度を定める | 参照閉包、初回/未変更の転送・処理・保存量、取得上限との照合。成立しない場合は不足条件を明記し製品切替に進まない | B1の実APIと実測 |
+| C | checkpoint 2〜5を順に実装し、Node/Worker一致、UI→calculator/ranking、原子的保存・失敗時保持、Actions重複防止、費用、`pnpm quality`まで通す | 上記チェック欄の利用経路・失敗経路の証拠を満たす。schema変更時は利用者storeを保持し、影響を記録する | 本セッションでは着手しない。B1以前も独立の内部境界は将来の実装で進められる |
 
-版付きraw APIの公開契約と選択表の閉包・費用が実証できれば2以降を進める。現行の公開APIだけでは製品の切替を完成させられない。raw→canonicalの全変換、広い語彙監視、実UI・計算・保存の証拠まで揃って初めて完了とする。
+監視で発見できるのは上流が公開するraw/schema/enumの概念までである。監視完全停止中の自動通知には独立watchdogが必要で、現案は最終成功の可視化・既存CIでの検知・手動復旧とする。6/12/24時間の周期、Actions実行時間と請求額は実workflowを測定してから決める。repository権限設定と既存CIの時間・artifactだけは確認済み。
+
+この調査では製品テスト・build・全データ生成は未実行。製品のraw取得・変換・保存・監視は未実装。現行公開APIのままでは製品の安全な切替を完成させられず、A1/A2で手元の仕様調査を閉じてもB1/B2の実証が要る。
