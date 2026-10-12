@@ -3,6 +3,8 @@
 設計確認日: 2026-10-12。対象revision: adafb00940ebc2ac4f691065c6c6545c4cd420bf。
 直接取得・自動更新・定期監視は未実装。この文書は[アーキテクチャの設計要件](architecture.md#atlas直接取得と自動更新の設計要件)を実装へ接続する取得契約・責務・達成条件を定める。チェックポイントの状態と再現可能な証拠をここで管理する。
 
+用語: **Atlas**はゲームの元データを公開する外部サービス、**raw表**はAtlasが取得したゲームデータの元の表、**catalog**は数値IDを効果・対象・属性などの意味へ結び付ける定義、**canonical master**はFGO Labの計算が読む検証済みデータを指す。**archive**は必要なraw表とcatalogを一つに束ねたAtlasの応答、**active**は端末が現在の計算に使うmaster、**receipt**はその出典・検証内容の記録である。配信先とはFGO LabのWebアプリを公開するVercelを指す。Atlas→端末の更新時転送量は今回の削減目標ではない。
+
 ## 結論と成立条件
 
 完成形は、Atlasが**抽出・検査済みの一つのsourceから作る自己完結したraw入力**を一つのAPI応答として公開し、browserが直接取得する形とする。Webのdeploy先は大型ゲームデータを配信しない。人が管理する版番号や過去世代の選択APIは設けないが、calculator/rankingと保存結果を区別するため、端末内では受信内容・変換器・規則のdigestを保持する。監査は独立した実行プロジェクトがAtlasのraw Git source・schema/enum source・公開APIを照合し、停止は独立watchdogが検出する。Webのdeploy先からmaster/manifest/監査データを配信せず、固定回帰入力は製品buildから隔離する。
@@ -16,6 +18,15 @@
 | 既知のAtlas更新へ自動追従 | アプリ再deployなしで新servant/CE・既知係数・追加参照がAtlasの完成済み入力からcalculator/rankingまで反映し、同じ入力identityを使う。未知の意味・欠損・取得失敗では旧activeを保持する |
 | 監査をWebから分離する | 独立Actions projectがraw全体・schema/enum・公開API・production buildを別々に調べ、根拠付きIssueの重複と監視停止を検出する |
 
+### 目的から選んだ取得経路
+
+| 候補 | 判断と根拠 |
+| --- | --- |
+| 現行のAtlas個別API・複数export | 現行の追加参照APIには一つのsourceを選ぶ引数がなく、exportも個別に書かれる。`/info`の前後一致では全入力の同時点性を証明できず、完成条件を満たさない |
+| ブラウザーからAtlasのraw Gitを直接読む | Git treeは元のbytesを固定できるが、実ブラウザーの通常Git APIはCORSで拒否され、pack取得は専用Git clientが必要。製品の取得経路にはしない |
+| FGO Labのproxy・mirror・変換済みmaster配信 | 大型ゲームデータを自前の配信先から送らないという主目的に反する |
+| Atlasの単一完成archive API | 一応答で元データとcatalogを固定でき、未変更はHTTP条件付き確認で本文を省ける。変更時のAtlas→端末の全量取得を許容するため採用する。ただし現行Atlas APIには存在せず、上流での実装・公開が必須 |
+
 
 Actionsは端末更新の中央承認者にしない。scheduleは遅延・停止し得るため、各端末が同じ契約で候補を検証して切り替える。Actionsは端末より広い語彙を観測し、未知・未対応・監視障害を重複なく開発者へ届ける。小さい自前manifestを後から作ってAtlas応答のhashを並べても、元の応答が一世代だった証拠にはならないため、それを上流の完了通知の代用にしない。
 
@@ -27,7 +38,7 @@ Actionsは端末更新の中央承認者にしない。scheduleは遅延・停�
 
 Atlas APIを製品の取得元とする。初回は取得・検証・保存が終わるまで計算可能なmasterを見せず、進行状況または再試行可能な失敗を示す。互換性を確認できるactiveが端末にある場合は先にそれでUIと計算を開き、更新を背景で調べる。更新候補に未知の意味、欠損、矛盾、生成元の不明点があれば切り替えず、activeの出典と更新失敗を明示する。上流取得失敗のたびに既存masterを消したり、自前配信先から補ったりしない。新候補は全入力の受入後に一回の保存transactionで切り替え、calculatorとrankingは同じidentityへ同時に移る。切替前の計算結果・共有結果は新しいmasterで計算したものとして扱わない。
 
-この振る舞いに必要な保証を、候補内部の**意味・参照整合性**と、候補全入力の**生成元の整合性**に分ける。前者は共通validatorで確認できる。後者はAtlasが成功済みsourceから全表・catalogを組み立て、完成した一つの応答へ公開pointerを原子的に切り替えることで保証する。取得後にbytesへ自分でhashを付けても、`/info`の前後一致や個別ETagを照合しても生成元の整合性は証明できない。現行公開APIの複数応答だけを使う初回activationは安全と認定しない。
+この振る舞いに必要な保証を、候補内部の**意味・参照整合性**と、候補全入力の**生成元の整合性**に分ける。前者は共通validatorで確認できる。後者はAtlasが完成済みの不変source一式へ公開pointerを原子的に切り替え、一つのGET中はそのsourceに固定した全表・catalogだけを返すことで保証する。取得後にbytesへ自分でhashを付けても、`/info`の前後一致や個別ETagを照合しても生成元の整合性は証明できない。現行公開APIの複数応答だけを使う初回activationは安全と認定しない。
 
 Atlas側の公開契約が決まる前に取得器・receiptの形を固定しない。調査用に固定したGit commitは上流APIの受入試験とNode/Worker比較の入力に使えるが、製品ブラウザーがGitから読む設計ではない。上流の単一raw応答・原子的公開・更新反例が揃ってから、FGO Labの入力・保存契約を確定する。
 
@@ -48,7 +59,7 @@ Atlas側の公開契約が決まる前に取得器・receiptの形を固定し�
 | [portableCalculation.ts](../packages/calculation-application/src/portableCalculation.ts)、[shareValidation.ts](../apps/web/src/adapters/shareValidation.ts) | master/engineが違う保存結果はhistoricalOnly。request/resultの版矛盾は拒否 | 既存の過去結果表示契約を保持。新masterの結果への無言の置換をしない |
 | [sw.js](../apps/web/public/sw.js) | 全GETを横断cacheし、失敗時にrequest cacheまたはshellを返す | 同一originの明示的なshell/assetsだけを扱う。Atlas構造化入力をcache・shell代替の対象から除外 |
 | [atlasInventory.ts](../packages/data-pipeline/src/atlasInventory.ts)、[productionAudit.ts](../packages/data-pipeline/src/productionAudit.ts) | 前者はdamageNp接頭辞だけ。後者は正規化後で、捨てられた入力・新fieldを復元できない | raw全入力・schema/enum catalogを先に観測し、正規化結果と受入不能を別途監査 |
-| [ci.yml](../.github/workflows/ci.yml) | PR/push/manualのquality:ciだけ。全.test-resultsを14日保持 | deployしない監査アプリの専用workflowを追加し、CI全qualityと独立して実行する |
+| [ci.yml](../.github/workflows/ci.yml) | PR/push/manualのquality:ciだけ。成功時も全.test-resultsを14日保持 | deployしない監査アプリの専用workflowを追加し、CI全qualityと独立して実行する。既存CIの成功artifactも実測し、不要な大型保持を撤去する |
 
 rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き状態遷移はbattle-execution、数値演算はcalc-coreのままにする。UIやWorkerへキャラクター固有解釈を移さない。
 
@@ -128,9 +139,13 @@ level配列は固定rawの`mstSkillLv` 47,647行で`funcId`と`svals`、`mstTrea
 
 ここで削減する送信は**FGO Labのdeploy先から各端末への大型master配信**である。Atlasから端末へ送る量は削減目標ではない。前案の表別descriptor/blobは部分更新の転送を減らすが、複数応答を揃えるための公開資源保持、端末cache、期限処理を増やす。ユーザーが求める一貫性と自動追従には、Atlasが必要なraw表とcatalogを一つの完成応答にまとめる方が直接的である。固定raw 43表のtar+gzip level 6は3,292,112 bytesで、変更時は全体を取り直す。この参考値を帯域上限や実HTTP応答量とは扱わない。
 
-Atlas APIには、`GET /raw/JP/current?tables=<canonical順の表名>`が**一つの自己完結したarchive**を返す契約を求める。archiveには要求表の全行と、同じ入力に必要なenum/trait/表示資源等のcatalog、region、full source commit/tree、生成器の出典・契約、抽出とarchive生成の成功証拠、各入力のpath/bytes/digestを含める。表名はdata-pipelineの既知意味registryが決める。43表は調査例であり、ID追加の上限ではない。Atlasは一つの成功済みsourceから全内容を作って検証し、完成archiveへのcurrent pointerを原子的に切り替える。抽出・生成失敗時は前の完成応答を維持する。切替と並行するGETも、応答開始時に確定した完成archiveだけを最後まで返す。
+Atlas APIには、`GET /raw/JP/current?tables=<canonical順の表名>`が**一つの自己完結したarchive**を返す契約を求める。archive形式は同じ入力から同じbytesを作るtar.gzとし、先頭のmanifestにformat/region、full raw commit/tree、catalogを作ったAPI source commit、生成器契約、要求表のpath/展開bytes/SHA-256、catalogの同情報を入れる。時刻などの変動値はarchive内容とETagへ混ぜない。続くentryは要求表の全行とenum/trait/表示資源等のcatalogだけを含め、重複path・余分なentry・symbolic link・不正な長さを拒否する。表名はdata-pipelineの既知意味registryが決める。43表は調査例であり、ID追加の上限ではない。
 
-同じURLで`ETag`と条件付きGETまたはHEADをbrowserから使えるようにする。未変更なら本文を送らず、変更時はarchive全体を返す。取得した端末はHTTP圧縮展開後のarchive全体と内部入力の長さ・digest・schemaを検証し、共通変換器へ渡す。Git treeのcommitや受信後に自分で付けたhashだけを抽出成功の証明にしない。Git treeにない必要入力やコード由来catalogも同じ応答へ含め、生成器と出典を明示する。APIはDB/Redisの可変値を別応答で後から補わない。現在の公開APIにはこの契約がないため、Atlas側の実装・公開・失敗注入がcheckpoint 0の必須成果である。
+Atlas側では現在の可変DB/Redis応答を寄せ集めず、確定したGit treeのraw全表と、そのAPI source revisionのcatalogを検査して公開可能な**source一式**にする。公開pointerはこの不変のsource一式にだけ原子的に切り替え、抽出・catalog生成失敗時は前のsourceを維持する。GET開始時にそのsourceを固定し、要求表名をmaster treeの実pathと照合し、同じsourceからarchiveを生成・検証して返す。生成物はraw tree・API source・表名一覧をkeyにcacheできる。切替と並行するGETも固定したsourceだけを最後まで返す。Git treeは同じ元bytesを保証するが、ゲーム上の意味まで保証しないため、FGO Lab側の参照・意味検証は省かない。API code側のcatalogがraw treeの新しい語彙へ追いつかない場合も候補を拒否する。
+
+Atlas実装の入口は現行[更新処理](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L860)と[HTTP公開部](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/main.py#L311)である。現行の個別nice exportやDB/Redis読込みを成功判定に流用せず、raw source一式の検証・現在pointerの公開・archive生成を独立した責務として加える。Atlasの[API説明](https://api.atlasacademy.io/openapi.json)は未提供のexportについて問い合わせを案内しているが、対応の承諾はまだ得ていない。外部APIの契約・実装・公開を合意できなければcheckpoint 0は閉じられず、FGO Labの別配信で置き換えない。
+
+同じURLで完成archiveの内容に対応する`ETag`と条件付きGETまたはHEADをbrowserから使えるようにする。未変更なら本文を送らず、変更時はarchive全体を返す。CORSは実originからのGET/HEAD、`If-None-Match`を使う場合のpreflight、`ETag`の公開、304応答まで検証する。端末は受信したarchive全体と展開した内部入力の長さ・digest・schemaを検証し、共通変換器へ渡す。Git treeのcommitや受信後に自分で付けたhashだけを抽出成功の証明にしない。APIはDB/Redisの可変値を別応答で後から補わない。現在の公開APIにはこの契約がないため、Atlas側の実装・公開・失敗注入がcheckpoint 0の必須成果である。
 
 端末は起動・online復帰・利用中に条件付き確認を行う。未変更なら大型本文・変換・active書込みを省く。変更時は全archiveをWorkerで共通変換し、新servant/CEや既知の参照先IDを表の全行から発見・解決する。新しい表種別や意味は推測せず拒否する。検証済みmaster・その受入receipt・active pointerは一つのIndexedDB transactionで確定する。保存失敗や容量不足では既存activeと利用者の保存データを保持する。archiveの永続cacheは前提にせず、再取得が必要ならAtlasの現在の完成応答からやり直す。
 
@@ -138,7 +153,7 @@ Atlas APIには、`GET /raw/JP/current?tables=<canonical順の表名>`が**一�
 
 ### 端末の受入と保存契約
 
-取得receiptにはregion、producerが提示するsource出典、archive全体と各入力のdigest、表/catalog一覧、実際にcanonicalへ入れた行・参照edge、変換器・受入契約・policyのdigest、canonical digestを記録する。master identityはcanonical生成に影響する入力と規則から決定的に作る。これは公開版の選択番号ではなく、計算・保存結果の比較に必要な端末内の識別子である。無関係な表だけが変わってcanonical入力が同じなら計算identityを保つ。canonical入力が変わり出力bytesが偶然同じでも再検証する。確認時刻はidentityに混ぜない。
+取得receiptにはregion、producerが提示するsource出典、archive全体と各入力のdigest、表/catalog一覧、実際にcanonicalへ入れた行・参照edge、変換器・受入契約・policyのdigest、canonical digestを記録する。master identityは**利用したraw行・catalogと変換契約の決定的なdigest**から作り、canonical本文内のidentity値や確認時刻をhash入力へ戻して循環させない。これは公開版の選択番号ではなく、計算・保存結果の比較に必要な端末内の識別子である。無関係な表だけが変わって利用入力が同じなら計算identityを保つ。利用入力が変わり出力bytesが偶然同じでもidentityを更新して再検証する。
 
 - browser WorkerとNodeで一つのraw validator、relational join、dependency resolver、normalizer、canonical validatorを使う。Atlas fetch・IndexedDB・Node fixtureのI/Oを分け、既存nice parserをraw parserの前に残す互換層は作らない。
 - raw fieldは構造・型を検査し、「利用する」「明示的に範囲外」「既知だが計算未対応」を分類する。必要field欠落、不正値、未知field、未知効果/条件/演算、矛盾は拒否する。除外対象もinventoryへ記録する。
@@ -146,7 +161,7 @@ Atlas APIには、`GET /raw/JP/current?tables=<canonical順の表名>`が**一�
 - 既知の意味による新servant/CE、成長値、既存係数値、既知の参照先追加はコード変更なしで対応する。新効果族、演算順、条件・対象・選択規則、未定義のカード/クラス意味はコードと検証が必要。クラス/属性相性・カード補正・基礎係数をmaster入力へ移し、calc-coreの中立補完を撤去する。
 - inventoryは正規化の最初の例外より前に作り、全skill/passive、支援宝具、礼装の通常/LB、MC、callback、形態、BP、script、parameterを観測する。ID重複、主key・level列の欠損、共有参照と循環も検証する。
 - 係数をmasterへ移すときはrelativeな相性指定のtarget候補、UI選択、scenario組立、battleの直接callerまで更新する。既存の計算量cap、timeout、ランダム上限の排他性、permille、float32境界は緩めず、新値が既存意味に収まらなければ拒否する。
-- 専用取得Workerとranking Workerは処理寿命が異なるため分け、意味変換コードは複製しない。取得量・parse時間・memory peakと保存容量は実端末で測る。
+- 専用取得Workerとranking Workerは処理寿命が異なるため分け、意味変換コードは複製しない。archiveはWorker内で逐次展開し、entry数・各entry・総展開bytesの上限、途中切断、digest不一致を検査する。上限と端末要件は固定JP入力の実測に根拠を持たせ、既存の計算cap・timeout・ratchetを緩めない。取得量・parse時間・memory peakと保存容量は実端末で測る。
 - 現masterには既知の`unsupported`が28件ある。意味を定義できる明示的な非計算結果は保持して通知・計算拒否する。意味を定義できない未知を含む候補はactiveへ切り替えない。既存に出現したという理由だけのallowlistは作らない。
 
 | 状況 | 挙動 |
@@ -160,7 +175,7 @@ Atlas APIには、`GET /raw/JP/current?tables=<canonical順の表名>`が**一�
 | 進行中の計算・複数tab | active identityの変更時にcalculator/rankingの古いreply、detail、handoff、保存を拒否する。DB transactionで期待active digestを比較し、競合した候補を破棄する。通知脱落はfocus時の再読取と次回のAtlas確認で回復する |
 | draft/history・共有URL | request/resultのmaster・engine identityを保持。同じ入力なら検証して再利用し、異なる場合はhistoricalOnlyとして表示する。自動再計算・上書きをしない |
 
-旧保存masterには新しい完成archiveの生成元証拠がないため黙って移行しない。新しいmasterを明示的に取得し、既存user store、profile、draft、history、backupを消さない。保存契約の変更で利用者データが読めなくなるなら実装前に影響を示す。`public/master`の固定baselineは開発fixtureへ移し、回帰期待値を更新のために再生成しない。
+旧保存masterには新しい完成archiveの生成元証拠がないため黙って移行しない。更新後のアプリがofflineで旧masterだけを見つけた場合、旧bytesを消さず「Atlasからの新master取得が必要」と表示して計算を止める。新しいmasterを取得しても、既存user store、profile、draft、history、backupを消さない。保存済みrequest/resultは元のmaster identityを維持し、新しいmasterの結果へ置き換えない。保存schemaを変える場合は、既存利用者データを全件読めるか固定実データ相当のfixtureで確認し、読めない記録は削除せず回復可能な状態で保持する。`public/master`の固定baselineは開発fixtureへ移し、回帰期待値を更新のために再生成しない。
 
 現行の直接callerでは、`bootstrapApplication`が候補確認・保存を待ってからUIを起動し、`loadActiveMaster`が検証失敗時にmaster storeをclearする。`stageAndActivate`は約33MBをstaging/masterへ重複保存する。rankingはmaster/context変更時のWorker再作成と旧reply拒否を備えるが、active切替起点はない。これらを保存・計算の一つの境界として変更する。Service WorkerはAtlas応答をshell代替や独自cacheの対象にしない。
 
@@ -180,18 +195,18 @@ Atlas APIには、`GET /raw/JP/current?tables=<canonical順の表名>`が**一�
 
 専用workflowはschedule/manualを持ち、concurrencyを一つ、`cancel-in-progress: false`とする。PRから通知を出さず、jobごとに`contents: read`と通知/state用`issues: write`だけを付ける。GitHubの[concurrency仕様](https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency)では全tickの実行は保証されないため、最終完全成功時刻と遅延を評価する。失敗時だけ最小再現証拠を短期間artifactに残し、raw全量やmasterをuploadしない。公開archiveが更新後に再取得できない場合に備え、Issueには出典commit、入力digest、ID/path、観測した値と拒否理由を再現可能な範囲で記録する。
 
-GitHubのscheduleは遅延・drop、public repositoryの60日無活動で停止し得る。[GitHub一次資料](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)。独立したwatchdogは完全監査と通知状態保存の後だけ成功pingを受け、予定時刻+許容遅延を過ぎたら運用者へ通知する。未起動・長時間停止と、起動後の取得/通知障害を両方失敗注入する。独立サービスのアカウント・通知先・料金は実装時に確認し、未設定なら停止監視は未達とする。6/12/24時間の周期は、実runの転送・runner時間・検知遅延から選ぶ。
+GitHubのscheduleは遅延・drop、public repositoryの60日無活動で停止し得る。[GitHub一次資料](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)。同じActions内の別jobだけでは「Actionsが起動しない」を発見できないため、外部の独立watchdogを置く。具体的な候補は[Healthchecks.ioのcron監視](https://healthchecks.io/docs/monitoring_cron_jobs/)で、完全監査と通知状態保存の後だけ成功pingを送る。予定時刻+許容遅延を過ぎたら運用者へ通知し、未起動・長時間停止と、起動後の取得/通知障害を両方失敗注入する。ping URLは秘密値としてActionsに設定し、Issue本文・logへ出さない。[公開料金](https://healthchecks.io/pricing/)は2026-10-12時点でHobbyistが月$0・20 checksだが、アカウント・通知先・実料金は設定時に確認する。未設定なら停止監視は未達とする。6/12/24時間の周期は、実runの転送・runner時間・検知遅延から選ぶ。
 
 ## 実装単位と各達成条件
 
 | 単位 | 作業 | 閉じる条件 |
 | --- | --- | --- |
-| 0. Atlas取得API | 成功済みsourceとcatalogから自己完結した単一archiveを作り、現在pointerを原子的に公開する。CORS・ETag・条件付き確認を契約化する | 実JP応答をNode/browserで取得。抽出失敗・部分生成・並行更新・GET中のpointer切替を失敗注入し、一応答の混在を受け入れない。Atlas側の実公開がなければ未達 |
+| 0. Atlas取得API | 不変のGit treeとAPI source由来catalogを公開可能なsource一式にし、選択表の自己完結archiveを同じsourceから作る。現在pointer・CORS・ETag・条件付き確認を契約化する | 実JP応答をNode/browserで取得。抽出失敗・部分生成・並行更新・GET中のpointer切替を失敗注入し、一応答の混在を受け入れない。Atlas側の実公開がなければ未達 |
 | 1. 共通raw受入 | data-pipelineに厳格schema、catalog、join、参照閉包、inventory、決定的canonical/receiptを実装しNode/Workerで共有する | 同じ固定archiveでNode/実Workerの出力bytes・digestが一致。新servant/CE・既知係数・参照追加に無コード追従し、未知/欠損/矛盾を拒否 |
 | 2. 数値規則と共通計算 | 係数・相性・card・定数をmasterへ移し、calculator/rankingが同じ規則・identityを使う | 既存17×17 class、5×5属性、3カード、0.23と固定期待値が一致。既知値だけの変更が両計算へ反映し、未知class/cardは拒否 |
 | 3. 端末の取得・保存・UI | Atlasの単一archive取得Worker、原子的active、更新coordinator、計算/保存guard、SW対象整理を実利用経路へ接続する | 初回/更新/未変更/offline/429/hash/quota/crash/複数tab/計算中/共有結果を実UIで確認。成功時だけ切替。未変更の大型本文/変換/active書込みはゼロ |
 | 4. Actions監視と独立watchdog | `apps/data-audit`でraw Git全表・API schema/enum・製品archiveを別入力として監査し、production buildの変換契約も照合する。管理Issueで重複防止し、独立watchdogを設定する | NP以外も含む新概念・未対応・取得/状態/通知障害を分類し、再実行・crashでIssue重複なし。schedule停止を別時刻基盤で検出 |
-| 5. 配信整理・全体gate | `public/master`と同一origin取得・生成CLI出力を製品経路から撤去し、fixtureと監査appをVercel buildから隔離する。公開文書を更新し、費用・性能と最終gateを実測する | 新データから実UI/計算、失敗時の保持、Node/Worker一致に加え、deploy出力と実URLにmaster/raw配信がないこと、端末/Atlas/Actionsの転送・保存費用を示し、[最終gate](testing.md)を通す |
+| 5. 配信整理・全体gate | `public/master`と同一origin取得・生成CLI出力を製品経路から撤去し、fixtureと監査appをVercel buildから隔離する。CIの成功時大型artifact保持も見直す。公開文書を更新し、費用・性能と最終gateを実測する | 新データから実UI/計算、失敗時の保持、Node/Worker一致に加え、deploy出力と実URLにmaster/raw配信がないこと、端末/Atlas/Actionsの転送・保存費用を示し、失敗時の完全診断を維持して[最終gate](testing.md)を通す |
 
 各checkpointは実経路と証拠が揃ってからチェックする。途中で参照の閉包、端末の保存・処理量、上流の抽出成功や一応答の固定が成立しないと判明したら局所的に足さず、目的・不変条件・生成/利用経路を見直してこの記録を更新する。
 
@@ -216,7 +231,7 @@ GitHubのscheduleは遅延・drop、public repositoryの60日無活動で停止�
 
 現行[OpenAPI](https://api.atlasacademy.io/openapi.json)は109 pathで、成功済みsourceへ束縛した自己完結raw応答のAPIはない。現行`/raw/JP/skill/961313`の`hash`/`commit`/`snapshot` queryは無指定と同じ応答を返す。実browserではAtlas raw APIはCORSで読めるがGit APIは拒否される。現行上流の[load_and_export](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L857)は一括成功と原子的配信の根拠にならない。
 
-上流へ求めるのは、成功済みsource treeとcatalogから作った自己完結archiveの原子的公開、生成元の成功判定とsource commit/生成器の出典、CORS/ETag/条件付き確認、429/Retry-After、公開条件である。全raw表の再配信APIは監査の前提にしない。実JP応答と維持対象の上流実装の双方で確認し、公開pointer切替中も一つのGETに異なる元の表が混入しないこと、抽出失敗中にcurrentが進まないことを失敗注入する。問い合わせの送信は本調査に含めない。Atlas側の協力・公開が得られなければ直接Atlas API取得の完成条件は未達と記録する。
+上流へ求めるのは、成功済みsource treeとcatalogから作った不変source一式の原子的公開、一応答を同じsourceから作る契約、生成元の成功判定とsource commit/生成器の出典、CORS/ETag/条件付き確認、429/Retry-After、公開条件である。全raw表の再配信APIは監査の前提にしない。実JP応答と維持対象の上流実装の双方で確認し、公開pointer切替中も一つのGETに異なる元の表が混入しないこと、抽出失敗中にcurrentが進まないことを失敗注入する。問い合わせの送信は本調査に含めない。Atlas側の協力・公開が得られなければ直接Atlas API取得の完成条件は未達と記録する。
 
 今回の再判断: ユーザーの削減対象はFGO Labのdeploy先からの大型master送信であり、Atlasから各端末への変更時の全量送信は問題ではない。前案はこの二つを混同して表別差分取得を必須とした。Webのdeploy先はHTML/JS/CSSと小さいbuild provenanceのみを配信し、ゲーム入力はbrowserがAtlasから直接取得する。監査はdeploy不要の別projectに分け、全raw語彙はAtlas raw Git、製品受入はAtlas APIで見る。変更時は自己完結した一応答を取得する。未変更時だけ条件付き確認で大型本文を省く。公開版番号・過去世代の選択APIは設けず、端末の計算identityは進行中計算・共有結果・保存済み入力の区別に残す。同じrepository revisionの意味変換をWeb/監査で共有するため、別repositoryへの分割は採用しない。
 
