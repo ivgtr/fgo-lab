@@ -198,14 +198,22 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 
 現在の到達点: 2026-10-12に現行consumer、raw入力43表、上流の公開コードと実API、保存・計算・監視・費用をread-onlyで調査した。固定JP rawでは通常servant 470件、CE 2,706件、MC 28件を起点に、既知のskill/NP/function/buffと素材・係数の結合が成立した。旧nice入力と比較した成長6,370配列、17クラス相性289組、5属性相性25組に差はない。新しいservant 1件とCE 6件、入力から発見するcallback skill 25件を実装検証の対象にできる。これらは**変換器・ブラウザー取得の成功ではない**。checkpoint 1はAtlasの完成世代APIと実転送/端末実測待ち、2〜5は未実装。製品配信・利用者データは変更していない。
 
-次の操作: 末尾の「実装着手順と外部依存」の順で、固定rawを入力とする共通変換・受入を先に作る。Atlas側の完成世代APIの仕様確認・提供は並行する外部依存であり、その実応答をbrowserで検証するまで製品activeをAtlasへ切り替えない。調査だけを目的とする本セッションでは製品コードへ着手しない。
+次の操作: **取得契約の確認を最初のgateにする。** 現行公開APIの不足は実応答・OpenAPI・公開実装で確認済みだが、Atlasが提供可能な完成世代APIの仕様と公開予定は未確認である。下記の確認事項をAtlas側と合意し、実応答と実browserで世代固定・公開順序・保持を検証する。その結果に合わせて取得単位・catalog・receiptを確定してから共通変換へ着手する。固定rawの静的調査は済んでいるため、契約が未確定の間にその形を仮定した製品実装を先行させない。調査だけを目的とする本セッションでは製品コードへ着手しない。
 
 ### Atlas APIへ確認・依頼する完成形の公開契約
+
+2026-10-12に実[OpenAPI](https://api.atlasacademy.io/openapi.json)を再取得して109 pathを確認した。`/raw/{region}/info`はregionのみ、`/raw/{region}/skill/{skill_id}`と`/raw/{region}/function/{func_id}`は個別ID・展開指定等のみで、いずれも世代指定がない。実GETでは`/info`、`/raw/JP/info`、`/raw/JP/skill/961313`、`/export/JP/info.json`にCORS `*`があり、`/raw/JP/skill/961313`は結合済みの複数表を返すが、応答は同一世代へ固定されない。`/info`と`/raw/JP/info`にETagはなく、exportのETagはbrowserへ`Access-Control-Expose-Headers`で公開されていない。これは各URLの現状確認であり、完成世代の保証ではない。版付きraw表API・完成receipt・公開後保持の契約は現行OpenAPIから確認できない。
+
+**着手前に決める取得契約:** API pathの名称より、以下を一つの公開単位として実証する。Atlas側の返答が現在のAPIと異なるなら、この節と取得単位・費用見積を先に改める。コードを旧想定に合わせて継ぎ足さない。
 
 1. JPの抽出・検査が完了したfull raw commit/tree、抽出元/データ版と成功状態、表一覧・内容digestを、小さい`current`で識別できること。commitだけで抽出元の整合を認定しない。必要な表の全行または世代固定のID索引を同じcommitから読め、発見した追加参照も閉じること。
 2. raw表と同じ取得単位へschema/enum catalogとregion、表示言語資源を束縛すること。source外で作るcatalogには生成器版とdigestを含める。複数URLの全入力には内容digestまたは同等の不変性が要る。現在値だけの追加APIは受け入れない。
 3. browserから必要URLをCORSで読め、条件付き確認のheaderを公開すること。旧generationの保持期間、429/Retry-After、同時取得の上限、帯域・利用条件を確認する。
 4. raw sourceとcatalogの公開が完了し、全参照が読める後にだけ`current`が切り替わること。失敗・並行公開・途中停止時は旧世代を維持する。`/info`前後一致、個別ETag、取得bytesへ付けた独自hashは代用にならない。
+
+確認依頼に対する受入証拠は、(a) 公開仕様または維持対象の上流実装で抽出成功・同一tree・表/catalogのdigest・原子的`current`を説明できること、(b) 実JP publicationで43表とcatalogをNodeとbrowserから取得し各digestを照合できること、(c) 取得中に次世代へ更新しても旧publicationを読み切れ、未完成・失敗した世代が`current`に出ないこと、(d) CORSの実browser確認、未変更確認の応答、旧世代の保持期限、rate/帯域条件を得ること、の4点とする。公開仕様だけ、実応答だけではgateを通さない。Atlas側の公開実装・運用が確認できるまでは(c)を仮定で埋めない。
+
+上流への確認文面は「JPの抽出成功を示す一つのpublication IDとfull source treeを返し、同IDで43 raw表全行と数値enum/trait等のcatalogをimmutableに取得できるAPI、各入力digest、原子的current、旧版保持、browser CORS、未変更確認、rate条件を提供または既存の同等契約として示せますか。抽出失敗・並行更新・公開中断時の挙動と検証用の実publicationを示してください。」とする。問い合わせの送信は本調査には含めず、公開資料・実応答から確定できない外部依存として残す。
 
 Atlas側は抽出・検査が成功したraw commitが参照するblobをimmutable API資源として公開し、その表一覧・digest・版付きcatalogの用意を完了してから`current`を切り替える。公開中は旧`current`を保持する。API pathや表の分割単位は、同一commitの証明と費用実測を満たす形で決める。FGO Labが確認する反例は、raw抽出・catalog生成中断、並行更新、参照先取得中の次世代公開、旧世代保持期間の終了である。これらで完成前の候補が見えず、旧世代または明示的な取得失敗になることを確認する。
 
@@ -241,7 +249,7 @@ GitHub public APIでivgtr/fgo-labのvisibility=public、default_branch=main、ar
 
 ## 実装着手順と外部依存
 
-**手元で実装設計へ移るための調査はここまで完了した。** 固定世代の対象・join・係数出典・追加参照・既存consumerは上に示した。正しいraw→canonical生成と保存切替は、実装してNode/Workerと実UIで証明する作業であり、調査だけで達成済みとはしない。以下の順序は上の5チェックポイントの具体的な着手単位で、成果と未達をこの記録に追記する。
+**手元で確認できる公開APIと固定世代の調査は完了したが、取得契約は未確定。** 固定世代の対象・join・係数出典・追加参照・既存consumerは上に示した。raw→canonicalの正しさと保存切替は、実装してNode/Workerと実UIで証明する。下表は契約gate通過後の着手単位で、成果と未達をこの記録に追記する。
 
 | 順序 | 変更する境界と成果物 | その段階で通す直接の証拠 |
 | --- | --- | --- |
@@ -251,7 +259,7 @@ GitHub public APIでivgtr/fgo-labのvisibility=public、default_branch=main、ar
 | 4. 監視 | raw全treeとcatalogの差分、製品対象表の全行inventory、共通producerの受入結果をNode監視へ接続。管理Issueを永続状態、problem fingerprint/markerを通知IDとし、schedule・manual復旧・既存CI heartbeatを追加する | 新表・schema/enum・宝具以外の新概念・既知未対応増加・取得/通知/状態障害を別分類で検知。同一問題の再実行と通知直後crashでIssueが重複せず、コード変更だけでも再検査。実Actionsでjob権限を確認 |
 | 5. 配信と最終gate | `public/master`の大型配信を撤去し、旧固定入力を開発fixtureへ隔離。README・architecture・calculation・testing・development・出典文書を実挙動へ更新 | Node/Worker/実UIの版一致と失敗時保持、実転送量・端末peak・Actions時間/転送/artifactを記録。6/12/24時間の費用と遅延を比較して周期を選ぶ。[最終gate](testing.md)を通す |
 
-**上流依存と停止境界:** 2026-10-12の実[OpenAPI](https://api.atlasacademy.io/openapi.json)は109 pathで、`/raw/{region}/info`、`/raw/{region}/skill/{skill_id}`、`/raw/{region}/function/{func_id}`に世代指定がない。前節で定めた抽出成功receipt・immutableな43表全行・表digest・catalog・CORS・保持期限・原子的`current`を返すAPIも確認できない。Atlasへこの契約を確認・依頼する文面は前節の4項目で特定できる。外部Issueの送信は明示的な指示がある場合に行う。提供後にNodeと実browserで同じpublicationを取得し、抽出失敗・並行公開・途中停止・異表・旧世代失効の反例、429/保持/利用条件を試す。これが通らなければcheckpoint 1と製品切替・大型master撤去を完了にしない。固定rawを用いる1・2および監視の内部境界はAPI提供前に進められる。
+**上流依存と停止境界:** 前節の契約確認を共通変換より前に置く。2026-10-12の実[OpenAPI](https://api.atlasacademy.io/openapi.json)には世代指定raw表APIがない。Atlasから同等契約と実publicationを得るまではcheckpoint 1を通さず、製品コードの取得・変換・保存・監視実装へ進まない。外部Issueの送信は明示的な指示がある場合に行う。提供後にNodeと実browserで同じpublicationを取得し、抽出失敗・並行公開・途中停止・異表・旧世代失効の反例、429/保持/利用条件を試す。結果が契約と違えば、取得単位と変換入力を再判断してから実装する。
 
 **実装時に測る事項:** 選択43表のgzip 3,260,165 bytesはローカル圧縮の参考値で、Atlasのwire量、Worker peak、IDB容量、Actions実行時間、請求額ではない。上流APIが揃ったら初回/未変更/更新/拒否ごとにrequest数・wire/展開bytes・時間・memory・保存量を同じbuildで測る。43表全件方式が端末や上流の上限を満たさない実測になった場合は、同一publicationで閉じる取得単位を再設計し、この記録と実装全体を更新する。監視で検出できるのは公開raw/schema/enumの概念までであり、完全停止中の自動通知には独立watchdogが必要になる。現案は最終成功の可視化、既存CIでの検知、手動復旧である。
 
