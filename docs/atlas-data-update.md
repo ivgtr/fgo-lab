@@ -9,7 +9,7 @@
 
 ただし、現時点で確認した公開Atlas export/APIには、複数exportと追加参照を一つのsnapshotへ束縛する契約が見つかっていない。ここは実装前の成立条件であり、既存APIを組み合わせれば達成できるとは認定しない。取得契約を確定する前に、その契約を前提とする製品切替は実装しない。
 
-2026-10-12の追加調査で、AtlasのrawゲームデータGit repositoryにはimmutableなcommit/tree/blobがあることを確認した。しかし、そのraw入力は現行nice変換入力と異なり、ブラウザーから通常のGit APIを読むとCORS設定で拒否される。Git packのRange取得を使う独自Git clientとAtlas API側のnice変換器の再実装は、取得だけで新しい複雑な責務を生む。この経路は採用しない。現行のnice入力を同一generationに束縛して直接配信する上流契約が必要であり、契約取得までは製品切替を実装しない。自前hash一覧、二回の同一取得、待機時間、infoの前後一致で穴を埋めない。
+2026-10-12の追加調査で、AtlasのrawゲームデータGit repositoryにはimmutableなcommit/tree/blobがあることを確認した。しかし、そのraw入力は現行nice変換入力と異なり、ブラウザーから通常のGit APIを読むとCORS設定で拒否される。Git packのRange取得を使う独自Git clientとAtlas API側のnice変換に相当するraw→canonical実装は、取得・変換に新しい大きな責務を生む。現在はnice入力を同一generationに束縛する上流契約を優先する設計判断とし、契約取得までは製品切替を実装しない。raw Git経路は技術的に不可能とは認定しておらず、上流契約が得られない場合の設計再判断対象とする。自前hash一覧、二回の同一取得、待機時間、infoの前後一致で穴を埋めない。
 
 ## 現行経路と変更境界
 
@@ -42,7 +42,10 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 - HEADで各exportにCORS `Access-Control-Allow-Origin: *`、ETag、Last-Modifiedを確認。ただしETagをbrowserへ公開するExpose-Headersは確認できなかった。ヘッダーとCORSの実利用はbrowserで改めて検証する。ETagは単一資源の再取得抑制にしか使わない。
 - Atlasの[rawデータGit repository](https://git.atlasacademy.io/atlasacademy/fgo-game-data)のJP HEADは`5d3cbcc79ebcea42ec99dbecd5279e6e64effa3c`で、`/info`の短いhashと一致する。このcommitからroot tree `9ef4ebf08375bfdb974ed6e60ccf2aaa691f9b5d`、master tree `379b2ca7ccfed7a9062e82b91773c0a8a9d6803c`、各raw tableのblob SHAをたどれる。個別のGit object IDはそのbytesに結び付くので、raw Git tableだけなら同一snapshotを証明できる。ただしnice export・API追加参照・API変換器版はこのtreeに含まれない。
 - 実ChromiumからGitea `/api/v1/repos/.../branches/JP`、`/git/blobs/{sha}`、`/raw/master/...?...`をfetchすると、`Access-Control-Allow-Origin: *, *`という重複値でCORS拒否される。Pythonで各応答に二つの同名headerがあることも確認した。これはbrowserのfetch設定で解消できない。
-- GiteaのGit HTTP `/objects/{sha}`と`/objects/pack/*.idx`はbrowserからCORSで読めるが、必要なblobの多くはpack内にある。`git-upload-pack`のPOSTはbrowserでpreflightが400となり、simple requestは本体が400となる。packのRange GETは206で成功する一方、現公開packの最大は32,733,824,054 bytes、index総計は7,254,320 bytes。採用にはindex・pack・delta復号、範囲取得、raw relational tableからnice相当への変換、API変換器との意味整合まで製品側で維持する必要がある。これは現在の共通変換の前段に巨大な独自基盤を加えるため、設計要件の「複雑化せず最善」に照らして見送る。pack全体の転送が必須だとは主張しない。
+- GiteaのGit HTTP `/objects/{sha}`と`/objects/pack/*.idx`はbrowserからCORSで読めるが、必要なblobの多くはpack内にある。`git-upload-pack`のPOSTはbrowserでpreflightが400となり、simple requestは本体が400となる。packのRange GETは206で成功する。`mstBattlePoint.json`の203-byte rangeから335-byte blobを復号し、Git blob SHAと一致することまで検証した。現公開packの最大は32,733,824,054 bytes、index総計は7,254,320 bytes。必要な現在blobの例`mstFunc`（6,567,712 bytes）、`mstSvtLimit`（9,184,397 bytes）、`mstSvtSkill`（1,932,755 bytes）はpack中の通常blobと確認したが、将来分も含めるにはindex・pack・delta復号、範囲取得、raw relational tableのjoinと意味変換を製品側で維持する必要がある。これは複雑さと端末への初回転送を増やすため、現時点の第一候補にはしない。pack全体の転送が必須だとは主張しない。
+- Git HTTP経路を将来採るなら、commitが参照する全blobを必要期間取得できる保持契約と、pack再編成時にindexを取り直しても同じGit object IDで再検証できる実証が要る。現在の一commitでの成功を旧commitの長期提供保証とはしない。
+- 小さい`NiceClass.json`を`?hash={JPのfull commit}`と`?hash=definitely-invalid`でもGETした。双方とも版指定なしと同じ30,970 bytes・SHA-256・ETagを返した。このqueryは版指定として機能しない。固定入力の`referenced_skills.json`には28件あり、例の`/nice/JP/skill/961313`は取得できるが版を指定できず、応答にETagもない。
+- Atlas APIの[現行server実装](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/main.py)は429で`Retry-After`を返し、多数の小さいAPI呼出よりexportを推奨している。追加参照の参照閉包では並列上限・重複排除・Retry-After尊重が上流負荷の条件となる。Atlasが[公表するデータライセンス](https://atlasacademy.io/about-us/)はODC-BY 1.0で、実装後も出典表示を保持する。
 
 必要入力候補:
 
@@ -53,6 +56,10 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 | NiceClass.json / NiceClassAttackRate.json / NiceClassRelation.json / NiceAttributeRelation.json / NiceCard.json / NiceConstant.json | クラスIDと名称・補正・相性・カード・計算定数。現在利用する数値と意味を対応づけ、出典位置と単位を記録 |
 | nice_trait.json / nice_enums.json、必要な上流schema catalog | 特性・全enumの語彙観測、型・field追加の検知。trait名だけから新意味を推定しない |
 | 入力から発見するskill等の追加参照 | SkillID、既知callbackのValue、関係するactor/形態・domain等を型付きedgeとして列挙。将来の未知参照方式は受入不能 |
+
+上記の現行JP exportはすべてGET/HEADで存在とCORS `*`を確認した。`NiceClass`は84件、`NiceClassAttackRate`は84 key、`NiceClassRelation`は75行、`NiceAttributeRelation`は5属性、`NiceConstant`は341 key、`nice_enums`は40 enum group、`nice_trait`は360 key、`nice_battle_point`は2件。これらは個別の可変URLであり、同時に取得できても一つのgenerationを証明しない。`/openapi.json`は680,520 bytesの現在schemaで、独立に変わり得る監視対象とする。
+
+現行計算で使う17クラスはすべて`NiceClassAttackRate`と`NiceClassRelation`にあり、17×17の相性値は現在の`calc-core/affinities.ts`の値と一致した。`NiceAttributeRelation`の`human`はcanonicalの`man`に対応する。`NiceCard`のArts/Buster/Quickの第1行`adjustAtk`は1000/1500/800、`NiceConstant.ATTACK_RATE`は230で現行0.23に対応する。同定したfieldと単位を共通変換の契約にし、`ATTACK_RATE_RANDOM_MIN/MAX`の900/1100は既存の200通り（上限排他）と独立に仕様照合する。新しいクラスやカード種別が現れる場合は既知の係数値だけで意味を推測せず、対応範囲を審査する。
 
 各入力は同じregion、言語、上流snapshot、必要なら上流変換器版へ束縛する。四つのnice exportだけのゲームcommit一致では、サーバー変換器・enum/trait mapping・追加APIの整合を証明できない。
 
@@ -74,6 +81,8 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 - 既存の範囲・計算量capを値更新のために緩和しない。ランダム上限の排他性、permille、float32境界等を上流仕様と照合する。新値が現在の意味・予算に収まらなければ拒否して理由を出す。
 - 現masterに`unsupported`が28件あることを確認した（operationSemantics 18、unresolvedTarget 2、partyCompositionMutation 4、contextReference 4）。全unsupportedを禁止すると現行範囲まで凍結する。既知で明示的な非計算結果として保持できる未対応と、意味を定義できない未知を区別する。前者は通知・計算拒否を保持し、後者はcandidate activationを拒否する。既存に出現したという理由だけのallowlistは作らない。
 
+現行ローカルAtlas入力の実測では`nice_servant`は485行・top-level 61 key、全skill/passive/NPに10,903 function・49 `funcType`・121 parameter keyがある。`nice_equip`は2,700行・top-level 27 key、`nice_mystic_code`は28行・10 key、`nice_item`は1,959行・18 key。現在の`atlasContract.ts`は多くをoptionalなTypeScript型で記述し、`normalizeAtlasSnapshot`は配列検査後に型assertionを使う。実装時の厳格な受入では既存の大量のfieldを「使用・既知の範囲外・明示的未対応」に先に分類し、未知fieldをparse時にstripした成功としない。元入力からのinventoryはnormalizationのthrowより先に作る。
+
 ## 更新・保存・UIの利用経路
 
 | 状況 | 計画する挙動 |
@@ -93,7 +102,11 @@ master用storeは「candidateの検証済み記録とactive pointer」をtransac
 
 master保存契約は更新する。旧保存masterにはAtlas snapshot証拠がないため、新契約へ黙って変換しない。旧masterの扱いは利用拒否と明示的再取得とし、利用者storeは触らない。profile/backup/shareの現行schemaを保持できる設計を優先するが、係数・相性の変更で契約変更が必要になれば影響を同じ記録へ追記する。読めなくなった利用者データの自動削除・変換はしない。実データ消失や共有の意味変更を伴う場合は製品判断として確認する。
 
+直接callerの確認結果: `bootstrapApplication`はactiveがあってもmanifest fetchと候補保存を待ってからUIを起動し、`loadActiveMaster`は検証失敗時に`master` storeをclearする。`stageAndActivate`は`staging`と`master`へ同じ約33MBの記録を書き、旧stagingを削除しない。`App`のonline eventは表示だけを更新する。rankingの`useRanking`はmaster/context変更でWorkerを再作成し旧返信・detailを拒否するが、切替起点はまだない。共有とdraftのrequest/resultはmaster/engine版を保持し、異版は`historicalOnly`で扱う。実装時はactive保存契約の変更と計算中のguardをまとめて接続し、`user` storeには触れない。
+
 製品のpublic/master配信を撤去する前に、現在のproductionテストが参照する同じbytesを開発専用の固定inputへ移す。source/manifestのpath更新はしても、期待値・意味digest・出自を再生成しない。新normalizerの成功を歴史baselineの再生だけで主張しない。
+
+[データ出典文書](licenses/data-sources.md)は現在「版付きmirrorとして配信」と記載している。製品配信をAtlas直接取得へ切り替える時に、データの所在と出典表示を実態へ合わせる。計算結果の共有や利用者バックアップから過去masterを勝手に再取得・再計算する仕様にはしない。
 
 ## GitHub Actions監視
 
@@ -105,18 +118,20 @@ master保存契約は更新する。旧保存masterにはAtlas snapshot証拠が
 
 Atlasが公開入力・enum・schemaへまだ表していないゲーム規則まで検知できるとは保証しない。この限界と観測対象を公開運用文書へ明記する。全ゲーム概念を含めるために別のraw catalog/changefeedが必要と分かった場合は、取得契約と一緒に上流要件として記録する。
 
+現在の`atlasInventory.ts`は宝具functionの`damageNp*`だけを数える。`productionAudit.ts`は正規化済みeffectの語彙と結果を監査するため、変換前に捨てたfield・entityや変換中に最初の例外で止まった後の新概念を列挙できない。監視の入力inventoryは、全4 exportと追加参照、係数・trait・enum、OpenAPI schemaを同一generation契約の下で別に作り、対象外の項目も種類・出現件数・例示ID・field pathを持たせる。コード変更時は元の入力が同じでも再判定する。
+
 小さい専用の管理Issueを永続状態の正本とする案を採用する。内容は現形式の機械可読状態、最後の試行/完了/受入成功時刻、上流identity、取得/変換/検査コードfingerprint、語彙集合または必要な差分基準、problem fingerprintと通知Issue ID、直近のmetrics。ArtifactとActions cacheを状態の正本にしない。容量を実測し、GitHub本文制限へ近づくなら全文inventoryは置かず必要な集合・digestへ絞る。
 
-- monitorのconcurrencyは一つ、cancel-in-progressはfalse。PRから通知・状態更新を行わない。
+- monitorのconcurrencyは一つ、cancel-in-progressはfalse。GitHubの[concurrency仕様](https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency)では既定でpendingは一つだけで、追加のpendingは古いpendingを取消し得る。全tickの実行を前提にせず、最終完了時刻と遅延を監視する。PRから通知・状態更新を行わない。
 - 上流と検査fingerprintが同じで、直前の完全な検査がacceptedまたはrejectedとして記録済みなら、小さい確認で終了できる。通信失敗や途中停止を検査完了と扱わない。
 - 正規化器・受入schema・意味registry・監視コード・関連依存変更をfingerprintに含める。文書だけの変更をfull scanの理由にしない。コード変更では上流未変更でも再検査する。
 - 問題fingerprintは分類、未知概念/field path/意味契約等で作り、更新日時や上流版を無条件に含めない。同じ未対応が新servantへ広がってもIssueを乱造しない。入力URL/版/hash、該当ID/path、再現する最小証拠、拒否理由、run URLを通知する。
 - open/closed Issueを機械markerで照合し、再実行・送信成功後のstate保存失敗でも通知を再利用する。通知本文digestが同じならcommentしない。新しい有意な証拠のみ同Issueを更新する。closed後に再発した場合は同Issueで再発を記録する。
 - APIの検索/全page取得失敗を「Issueなし」にしない。状態破損を空状態へ補完しない。Issue編集競合・手動編集も検出し、成功heartbeatを進めずworkflow失敗として露出させる。
-- 権限はjob単位の`contents: read`、通知/state更新の`issues: write`を基本にする。既存CIがmonitor履歴を照会する箇所だけ`actions: read`を使う。PAT、contents書込み、外部secretを前提にしない。実際のActions設定とtoken permissionsは実装時に通常の認証済みコマンドで確認し、secret値を表示しない。
+- 権限はjob単位の`contents: read`、通知/state更新の`issues: write`を基本にする。既存CIがmonitor履歴を照会する箇所だけ`actions: read`を使う。PAT、contents書込み、外部secretを前提にしない。2026-10-12に実repositoryのActionsはenabled、allowed_actions=all、既定`GITHUB_TOKEN`権限はread、PR承認は不可とAPIで確認した。job権限の明示と実manual runは引き続き必要。secret値は参照していない。
 - 成功・未変更時はjob summary/管理Issueの小さい記録だけ。失敗時だけ必要な診断artifactを短期間保持する案（初期候補7日）。巨大export/masterを常時uploadしない。再現入力の入手可能性もsnapshot契約で確認する。
 
-scheduleはdefault branch上でしか実行されず、遅延・drop、公的repositoryの60日無活動による停止がある。[GitHub一次資料](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)。一つのscheduleが完全停止したことを、そのschedule自身だけで通知できるとはしない。管理Issueに最終成功を残し、既存CIの起動時にもheartbeat age・workflowの有効状態を照会する。未起動期間の確認、workflow_dispatchによる復旧、権限・actor変更時の手順を文書化する。停止中の無条件な自動通知保証が必要なら、独立した外部watchdogが追加の製品/運用判断になる。
+scheduleはdefault branch上でしか実行されず、遅延・drop、公的repositoryの60日無活動による停止がある。[GitHub一次資料](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)。一つのscheduleが完全停止したことを、そのschedule自身だけで通知できるとはしない。管理Issueに最終成功を残し、既存CIの起動時にもheartbeat age・workflowの有効状態を照会する。GitHubの[workflow通知](https://docs.github.com/en/actions/concepts/workflows-and-actions/notifications-for-workflow-runs)は実行されたrunの終了を通知する設定で、runが存在しない停止の代替ではない。未起動期間の確認、workflow_dispatchによる復旧、権限・actor変更時の手順を文書化する。停止中の無条件な自動通知保証が必要なら、独立した外部watchdogが追加の製品/運用判断になる。
 
 周期は6時間を候補として比較する。毎時00分を避ける。6/12/24時間の検知遅延と費用を示し、browser側の起動確認・online復帰・利用中TTLは利用状況と上流条件から別途決める。上流契約が成立する前に周期を確定しない。
 
@@ -140,7 +155,7 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 - [ ] **4. 監視と重複防止**: 実Actionsの権限・永続状態・通知の再実行、検査コード変更時の再検査、停止時の運用を確認する。
 - [ ] **5. 配信整理・全体検証・文書**: 大型masterの製品配信を撤去し、費用実測、公開文書、[最終gate](testing.md)と必要な追加auditを完了する。
 
-現在の到達点: 計画commit `ac1a6f3`を作成済み。追加調査によりraw Git commitの整合性は確認したが、現行nice exportと追加参照の同一generationを証明できず、実ブラウザーのGitea APIもCORS拒否された。1の取得契約は外部依存で未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
+現在の到達点: 計画commit `ac1a6f3`と取得契約の再判断commit `bc7570e`を作成済み。2026-10-12に取得、係数、保存・計算、監視、費用のread-only調査を完了した。raw Git commitの整合性は確認したが、現行nice exportと追加参照の同一generationを証明できず、実ブラウザーのGitea APIもCORS拒否された。1の取得契約は外部依存で未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
 
 次の操作: Atlasに以下の最小契約が既に存在するか確認し、存在しなければ提供を依頼する。外部へのIssue送信は、この記録を具体的な依頼内容として用い、送信権限を得てから行う。契約の実提供後に、実ブラウザーから小さいmanifestと一つの版指定済み追加参照を取得し、異版・欠落の拒否を再現する。これが通るまで1にチェックを付けず、2〜5の製品切替を進めない。
 
@@ -151,7 +166,7 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 3. browserから全URLを読み取れる有効なCORS応答にする。現行Git APIの`Access-Control-Allow-Origin`重複も解消する。条件付き取得に必要なETag等を利用させる場合はExpose-Headersを設定する。少なくともactiveが更新を確認する間と障害後の再試行期間、旧generationのURLが保持される期間を明示する。
 4. 上流で完了前manifestを公開しないこと、個々のimmutable入力を後で書き換えないこと、manifestが指す全入力・追加参照が同じgenerationの変換結果であることを公開契約として確認する。単なる`/info`の前後一致やファイル個別のETagでは、この点を代替できない。
 
-上流からこれと同等の既存契約が提示されたら、URL・保持期間・CORS・混在反例をこの記録に追記して設計を再開する。提供できない場合、Atlasからブラウザーが直接取得しつつ整合snapshotだけをactivateする目的は現行公開APIでは達成できない。自前配信や黙示fallbackへ目的を変える判断はしない。
+上流からこれと同等の既存契約が提示されたら、URL・保持期間・CORS・混在反例をこの記録に追記して設計を再開する。提供できない場合、現行nice APIを組み合わせる方式は成立しない。その時点で、実際に一つのraw blobを整合取得できたGit HTTP経路を唯一の主方式とする再設計を検討する。rawからcanonicalへ必要な全join・意味変換・enum/mappingの版を同じcommitへ束縛できるか、最初に小さい縦断試験で確かめる。取得失敗時にnice APIへ黙って切り替えるfallbackは設けない。
 
 ## 検証
 
@@ -166,7 +181,7 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 
 ## 費用・性能の測り方
 
-調査時の参考値として、自前masterは32,953,998 bytes。Atlasの主要4exportはHEADのContent-Length合計92,688,305 bytesであり、これはその応答表現の宣言長であってbrowserの圧縮転送量やmemory実測ではない。初回取得が軽くなるとは現時点で主張しない。
+調査時の参考値として、自前masterは32,953,998 bytes、同じローカルbytesのgzipは2,755,994 bytes。Atlasの主要4exportはHEADのidentity表現のContent-Length合計92,688,305 bytes。手元の旧固定4export 91,887,896 bytesをgzipすると8,235,278 bytesだが、現在のAtlasの実転送量ではない。初回取得が軽くなるとは現時点で主張しない。大きい自前配信を除くと、取得負荷はAtlas側と利用端末側へ移るため、利用者の待ち時間・上流アクセス量も測る。
 
 測定条件は初回、未変更、既知更新、参照追加、拒否、network障害、保存失敗を分ける。browserとNodeでURL別request数・wire bytes・展開bytes、取得/parse/参照/変換/検証/保存の時間、Workerと主threadのmemory peak、IDBとcacheの保存量を記録する。browserのResource Timingに上流Timing-Allow-Originがなければ実ブラウザー観測/CDP等で転送量を取る。headersのサイズを実転送量へ代入しない。
 
@@ -174,18 +189,20 @@ Actionsはbootstrap/installを含むrunnerの全実行秒数とfull scan時間�
 
 30日・周期h・変更run数Cとして、R=30*24/h、月実行時間=(R-C)*軽量run時間+C*変更run時間、上流転送=(R-C)*軽量確認bytes+C*変更取得bytesを算出する。失敗/再試行を別に加算し、実runで補正する。artifactのピーク保持量とGB-hoursも示す。数値が測れてから6/12/24時間の案を比較し、未測定の金額を0円と断定しない。
 
-調査時にGitHub public APIでivgtr/fgo-labのvisibility=public、default_branch=main、archived=falseを確認した。現行[GitHub料金資料](https://docs.github.com/en/billing/concepts/product-billing/github-actions)ではPUBLICの標準GitHub-hosted runnerは無料だが、larger runnerやartifact/cacheの課金条件は別である。実装時に最新資料と実アカウント設定・既存CI利用を再確認する。請求情報が参照できなければその限界を記載する。
+GitHub public APIでivgtr/fgo-labのvisibility=public、default_branch=main、archived=false、Issues有効、CI workflow有効を確認した。直近成功CI jobは1,025秒、失敗CI jobは1,484秒で、公開artifact APIに残る2件は165,188,261 bytesと236,145,285 bytes（計401,333,546 bytes、保持14日）。これはmonitorの実行時間ではなく既存CIの実測である。現行[GitHub料金資料](https://docs.github.com/en/billing/concepts/product-billing/github-actions)ではPUBLICの標準runnerは無料だが、artifact/cacheの保持量・GB-hoursとlarger runnerは別条件。所有者の請求APIは現在の認証権限では404で利用量を取得できず、実請求額は未確認。権限追加や秘密値の参照はしていない。
+
+未変更の小さい確認でもOpenAPIを毎回観測するなら、現在のgzip応答は97,985 bytes（identity 680,520 bytes、ETagなし）、`nice_enums.json`は15,222 bytes（identity 48,310 bytes、ETagあり）。これは実GETの本文長でありHTTP全体・runner転送量ではない。6/12/24時間で月120/60/30回という呼出数だけを先に比較し、実workflowのbootstrap、API呼出、full scanと共に測る。OpenAPIを省略してserverHashだけでschema不変を断定しない。
 
 性能比較は同一source/master/input/build・Node・並列・gzip条件で前後各3回。Worker・共有・遅延chunkを含む配信JSを合算する。HTTP初回/未変更の計測とranking計算の計測を混ぜない。
 
 ## 未確定事項、未達条件、次の操作
 
 1. 最大の未達: 上流から同一snapshotとして全入力を得る証拠。nice export＋版指定なしskill APIでは成立を認定できない。raw Git commitは同一raw snapshotを示すがnice出力・追加参照との束縛を示さず、通常Git APIは実ブラウザーでCORS拒否される。
-2. 数値tableのscope、relative target選択、ランダム仕様と上流定数の対応。直接callerを変更するときに保存schemaへ及ぶかを確定する。
+2. 現行17クラス・5属性・3カード・基礎定数の出典と値は同定済み。今後は新class/cardのscope、relative target選択、ランダム上限排他の上流仕様と、直接caller変更が保存schemaへ及ぶかを実装時に確定する。
 3. 全raw/schema/enum観測で取得可能な新概念の範囲。上流が未公開の概念に対する監視保証はできない。
-4. 周期、取得上限、保存保持数、実端末memory、初回転送、Actions所要時間、実permissions/請求枠は未実測または未確認。
+4. 周期、取得上限、保存保持数、実端末memory、現在Atlasの大型export転送、monitorの実Actions所要時間、請求額は未実測または未確認。repository権限設定と既存CIの時間・artifactは上記の通り確認済み。
 5. 監視完全停止中も自動で通知する保証は、外部watchdogなしでは満たせない。基本案は最終成功の可視化・既存CIでの検知・手動復旧。
 
 計画時点ではテスト・build・全データ生成は未実行。上流の版/小さい定数/HEAD/API schema/公開sourceを確認し、主要大型exportの全本文は取得していない。
 
-取得契約が成立すれば、証明できた一方式で2以降を進める。現時点では上記の外部契約が必要。製品を不整合な入力で切り替える実装は行わない。
+取得契約が成立すれば、証明できた一方式で2以降を進める。第一候補のnice方式には上記の外部契約が必要。raw Git方式は別の主方式として実装可能性の根拠があるが、全変換と費用の成立は未検証。製品を不整合な入力で切り替える実装は行わない。
