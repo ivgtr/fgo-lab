@@ -60,7 +60,7 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 - 実応答の`Cache-Control: no-cache`は個々のURLの再検証を促すが、公開完了や全入力の同一generationを示さない。`/info`はexportより早く変わり得るため、そのhashだけで大型GET・正規化を省略すると新旧混在や未完了を見逃す。現行公開APIで要求する「小さい確認だけで安全に未変更と判定する」契約も未確認である。
 - Atlasの[rawデータGit repository](https://git.atlasacademy.io/atlasacademy/fgo-game-data)のJP HEADは`5d3cbcc79ebcea42ec99dbecd5279e6e64effa3c`で、`/info`の短いhashと一致する。このcommitからroot tree `9ef4ebf08375bfdb974ed6e60ccf2aaa691f9b5d`、master tree `379b2ca7ccfed7a9062e82b91773c0a8a9d6803c`、各raw tableのblob SHAをたどれる。Git object IDはraw bytesを同じtreeへ束縛するが、抽出元の論理整合や成功までは証明しない。nice export・API追加参照・API変換器版もこのtreeには含まれない。
 - [同master tree API](https://git.atlasacademy.io/api/v1/repos/atlasacademy/fgo-game-data/git/trees/379b2ca7ccfed7a9062e82b91773c0a8a9d6803c?recursive=true)の一覧は441 JSON blob・identity合計316,029,261 bytes。Atlasの`get_servant_entity`、skill/NP helper、魔術礼装、素材、係数候補を広めに集めると、buff補助を含め73表・identity合計165,330,506 bytesになり、ここには現製品が使わないvoice・AI等も含む。これは必要量の確定値でも圧縮wire bytesでもない。rootの`gamedatatop.json`（17,348,899 bytes）・`AssetStorage.txt`（2,117,001 bytes）も別に存在する。Atlasのraw entity組立が読む`mstSvtExtra`はこのmaster treeに見つからない。これらのサイズと存在はGit tree APIのread-only応答に基づく。
-- 現製品がcanonicalへ使うfieldを[正規化器](../packages/data-pipeline/src/snapshotNormalization.ts)から逆引きすると、servant/CEのID・名前・成長値・顔、skill/NPと効果、素材、MC、BP、クラス/属性/カード/係数が主経路である。これに対応するraw表を43候補へ絞った場合、当該treeのidentity合計は66,046,567 bytes。`mstAttriRelation`はniceの属性相性の直接入力、`mstClass`はクラス倍率、`mstCard`はカード倍率、`mstConstant`は基礎係数である。上流の[buff補助生成](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/data/buff.py#L8)は`mstClassRelationOverwrite`と`mstBuffConvert`も読む。現ローカルnice servantのbuff scriptには前者由来の`relationId`が9件、後者由来の`convert`が3件あり、raw経路ではこれらを黙って失わない。この43表は**製品閉包の証明ではなく調査用候補**で、さらに参照先・上流の変換規則・新概念監視を足した量と圧縮wire bytesは未測定。
+- 現製品がcanonicalへ使うfieldを[正規化器](../packages/data-pipeline/src/snapshotNormalization.ts)から逆引きすると、servant/CEのID・名前・成長値・顔、skill/NPと効果、素材、MC、BP、クラス/属性/カード/係数が主経路である。これに対応するraw表を43表へ絞った場合、当該treeのidentity合計は66,046,567 bytes。`mstAttriRelation`は属性相性の直接入力、`mstClass`はクラス倍率、`mstCard`はカード倍率、`mstConstant`は基礎係数である。上流の[buff補助生成](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/data/buff.py#L8)は`mstClassRelationOverwrite`と`mstBuffConvert`も読む。現ローカルnice servantのbuff scriptには前者由来の`relationId`が9件、後者由来の`convert`が3件あり、raw経路ではこれらを黙って失わない。43表にはcanonicalで直接使わない既知の監視対象も含む。新しいraw field・参照edgeが生じた場合の自動受入を保証する固定リストではない。
 
 | 候補群 | raw表（同commitのmaster tree） | identity bytes |
 | --- | --- | ---: |
@@ -71,6 +71,23 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 | 素材・BP | `mstCombineLimit`, `mstCombineSkill`, `mstCombineAppendPassiveSkill`, `mstItem`, `mstBattlePoint`, `mstBattlePointPhase`, `mstSvtBattlePoint` | 2,603,285 |
 | 係数 | `mstClass`, `mstClassRelation`, `mstAttriRelation`, `mstCard`, `mstConstant` | 209,172 |
 | buff補助 | `mstClassRelationOverwrite`, `mstBuffConvert` | 279,512 |
+
+### 固定raw commitで確認したjoinと意味の対応
+
+JP commit `5d3cbcc79ebcea42ec99dbecd5279e6e64effa3c`の43表を同じGit treeから読んだ。調査用のpartial cloneを使ったので、これはAtlas製品APIの公開成功・CORS・保持期間の証拠ではない。現行[正規化器](../packages/data-pipeline/src/snapshotNormalization.ts)が採る`collectionNo > 0`かつtypeがnormal/heroineのraw 470 servant、typeがservantEquipの2,706 CE、`mstEquip`の28 MCを起点に、上流の[skill join](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/db/helpers/skill.py#L27)・[NP join](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/db/helpers/td.py#L19)に従って調べた。手元の旧nice入力との差は通常servant ID `705400`とCE ID `9312570`, `9409490`〜`9409530`の計7件で、将来の無コード更新検証に使える。
+
+| canonical用途 | 固定rawで確認した結合・値 | 実装で保持する検査 |
+| --- | --- | --- |
+| servant/CE・成長 | `mstSvt.id`→`mstSvtLimit.svtId`、`mstSvt.expType`→`mstSvtExp.type`。最高limitのbase/maxと`curve/1000`によるHP/ATK成長は旧niceの485 servantと2,700 CE、計6,370配列と全件一致 | `(svtId,limitCount)`と`(type,lv)`の一意性、必要levelの連続性、上限・計算丸め。旧fixtureと新版rawを一世代と見なさない |
+| skill/NP/MC | servant/CEの`mstSvtSkill.skillId`、passiveの`mstSvt.classPassive`、MCの`mstEquipSkill.skillId`→`mstSkill.id`→`mstSkillLv.skillId`→同じ位置の`funcId`/`svals`→`mstFunc.id`→意味に応じた`mstBuff.id`。NPは`mstSvtTreasureDevice.treasureDeviceId`→`mstTreasureDeviceLv.treaureDeviceId`、releaseは`(svtId,num,priority)`で結合 | 位置・level・priority・releaseの保持、重複key/長さ不一致の拒否、raw数値enumと位置付き値の厳格解釈 |
+| 追加参照 | 広めのrootから直接skill 7,316 ID、既知の`SkillID`とcallback buff type 160/203の`Value`から追加25 IDを発見し、同一表内で全件解決。残りの固定28参照の3 IDはrootに既存。NPを含む738 TD、2,682 function、1,066 buff、`DependFuncId*`から10 functionも同じ43表に存在 | 値をIDと解釈する条件をregistryで一元化し、参照元・位置・levelのedgeを記録。未知の参照形、欠落、循環は拒否。これらの件数は調査用走査であり共通変換器の成功証拠ではない |
+| 素材・BP | `mstItem`のuse区分はraw fieldでなく[上流item生成](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/data/item.py#L21)が全`mstCombineLimit`/`Skill`/`AppendPassiveSkill`から導出する。旧niceの採用152素材IDと固定rawの導出集合は一致。BP 2 IDは`mstBattlePoint`/`Phase`/`mstSvtBattlePoint`で閉じる | 素材IDと個数、BP位相・資格の検査。Mashの`combineLimitId=800100`に対応する行は無いが、上流も空の昇段素材として扱う明示的な省略であり、一般的な欠損許容へ広げない |
+| 数値規則 | `mstClass.attackRate`と`mstClassRelation(atkClass,defClass)`は既存17クラスの全289組で現行値と一致。`mstAttriRelation`の5×5、`mstCard(id, num=1)`のArts/Buster/Quick 1000/1500/800、`mstConstant.ATTACK_RATE=230`も一致 | class/attribute/cardの数値ID→意味名は版付きcatalogで定義。既知classの値変更はmaster更新で追従し、新class/cardの意味は未知として拒否 |
+
+level配列は固定rawの`mstSkillLv` 47,647行で`funcId`と`svals`、`mstTreasureDeviceLv` 9,232行で`funcId`と`svals`〜`svals5`がすべて同長だった。代表的な17表の主keyにも重複は無かった。変換器はこの観測を既定値にせず、毎世代で再検査する。trait名、class名、function/buff/target/condition/cardの数値enum、`FUNC_VALS_NOT_BUFF`はraw表のfieldだけからは復元できず、上流[enum定義](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/schemas/gameenums.py)と[trait定義](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/schemas/enums.py#L1127)に相当する**版付きcatalog**が必須である。
+
+この固定世代では既知のjoinと追加参照に43表内の未解決IDは無かった。ただしraw script・位置付きparameterの**全ての未知の意味**を調査用走査で解釈したわけではない。実装の共通registry/parserで全fieldを分類し、NodeとWorkerの生成結果を照合して初めて受入閉包と認定する。新しい参照形式や表が現れた世代は拒否し、Actionsの監視へ根拠を渡す。
+
 - 画像については、現製品の`imageKey`がservant初期顔、CE顔、MC・素材・skillのアイコンURLを使う。[Atlasの画像URL生成](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/core/nice/svt/asset.py#L77)と[URL規則](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/schemas/nice.py#L111)では現在の主要画像をrawのIDと定型pathから組み立てる。現masterのservant・CE・MC・素材の各1例はAtlas staticでHEAD 200とCORS `*`を確認した。現UIが使う初期顔には`mstSvtExtra`を使わず、同表のniceでの用途はbond/Valentine情報と一部costume IDである。現UIの画像URL生成だけならrootの大型asset catalogを必須入力とする根拠は見つからない。画像URL規則と取得baseは変換器版で固定し、新画像の存在は実UIで検査する。
 - 実ChromiumからGitea `/api/v1/repos/.../branches/JP`、`/git/blobs/{sha}`、`/raw/master/...?...`をfetchすると、`Access-Control-Allow-Origin: *, *`という重複値でCORS拒否される。Pythonで各応答に二つの同名headerがあることも確認した。これはbrowserのfetch設定で解消できない。
 - GiteaのGit HTTP `/objects/{sha}`と`/objects/pack/*.idx`はbrowserからCORSで読めるが、必要なblobの多くはpack内にある。`git-upload-pack`のPOSTはbrowserでpreflightが400となり、simple requestは本体が400となる。packのRange GETは206で成功する。`mstBattlePoint.json`の203-byte rangeから335-byte blobを復号し、Git blob SHAと一致することまで検証した。現公開packの最大は32,733,824,054 bytes、index総計は7,254,320 bytes。必要な現在blobの例`mstFunc`（6,567,712 bytes）、`mstSvtLimit`（9,184,397 bytes）、`mstSvtSkill`（1,932,755 bytes）はpack中の通常blobと確認した。pack全体の転送が必須だとは主張しない。rawをAPIで版指定配信すればbrowserのGit pack解析は不要になるが、raw joinと意味変換はFGO Labが所有する。
@@ -83,13 +100,13 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 - 同じ日に[可変raw CDNの`mstClass.json`](https://static.atlasacademy.io/JP/master/mstClass.json)を取得すると38行・7,965 bytesだったが、[JP full commitの`mstClass` blob](https://git.atlasacademy.io/api/v1/repos/atlasacademy/fgo-game-data/git/blobs/1520cbee600fd3649b6137ca5ae55759f1340c50)は84行・27,684 bytesで、CDN側にないIDが46件あった。共通IDの行にもGit側だけのfieldがある。URLが返す本文をGitの当該commitのblobと見なせない**実例**であり、原因やCDN全体の状態はこの比較だけで断定しない。`mstCard`等の小表もbytes/blob SHAが一致しなかった。固定commitの表ごとのdigest照合が必要である。
 - Atlas APIの[現行server実装](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/main.py)は429で`Retry-After`を返し、多数の小さいAPI呼出よりexportを推奨している。追加参照の参照閉包では並列上限・重複排除・Retry-After尊重が上流負荷の条件となる。Atlasが[公表するデータライセンス](https://atlasacademy.io/about-us/)はODC-BY 1.0で、実装後も出典表示を保持する。
 
-必要なraw入力はnice export名から機械的に置き換えない。利用者が扱うservant/CE/魔術礼装・形態・宝具・skill/passive・battle point・素材・特性・クラス/属性/カード/定数・画像参照を起点に、Atlasの[raw entity組立](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/core/raw.py#L491)、[skill組立](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/db/helpers/skill.py#L27)、[NP組立](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/db/helpers/td.py#L19)を入力対応の調査資料にし、raw table・row・参照edgeの閉包を作る。特に[raw function値の解釈](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/core/nice/func.py#L129)は数値ID、位置、文字列内の参照で意味が変わるため、FGO Labのregistry・parser・参照解決で一元化し、未知形を拒否する。**正確な表集合・join条件・全件bytesは未確定**で、checkpoint 1で固定入力とsource treeから列挙・実測する。表を丸ごと取得するか、世代固定のID索引をAPIへ求めるかは転送量・参照閉包・証明の実測で決める。ID索引方式でも各rowが同じcommitに属する証拠を要する。
+必要なraw入力はnice export名から機械的に置き換えない。上記の43表とjoinを**実装の初期取得契約**とする。Atlasには世代固定の表全件APIを求め、Workerは取得した表をID・複合keyで索引して、入力から発見したskill/function/buff等の参照を同じ版内で解決する。固定世代の43表はidentity 66,046,567 bytes、表別gzip level 6の合計3,260,165 bytesと手元で測った。多数の版なし個別API呼出と違い、全件表なら参照先の増加で取得先を変えずに閉包を検査できる。これはHTTP実転送量・端末peak memoryの代用ではなく、実測で成立しない場合は公開APIの取得単位を設計し直す。新しい意味のfield・参照形式が必要とする表を固定43表から推測して補わない。特に[raw function値の解釈](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/core/nice/func.py#L129)は数値ID、位置、文字列内の参照で意味が変わるため、FGO Labのregistry・parser・参照解決で一元化し、未知形を拒否する。
 
 現行JP nice exportはGET/HEADで存在とCORS `*`を確認した。`NiceClass`は84件、`NiceClassAttackRate`は84 key、`NiceClassRelation`は75行、`NiceAttributeRelation`は5属性、`NiceConstant`は341 key、`nice_enums`は40 enum group、`nice_trait`は360 key、`nice_battle_point`は2件。個別の可変URLであり、同時取得しても一世代を証明しない。現行計算の17クラス相性はnice係数と一致し、Arts/Buster/Quickの`adjustAtk`は1000/1500/800、`ATTACK_RATE`は230で現行0.23に対応した。これはraw実装時の照合資料であってnice応答を製品入力とする根拠ではない。rawの出典field・単位・境界は別に同定し、固定期待値を再生成せずに照合する。
 
 Atlas APIへ求める公開契約は、(1) region別に抽出・検査が成功したraw commit/treeとその抽出根拠を指す小さい`current`、(2) commitを指定して読むimmutableなtable bytesと表一覧・digest、(3)同じ世代に束縛したschema/enum catalog、(4)完全公開後だけ`current`が切り替わり、旧世代が明記した期間読めること、(5)browser CORS・条件付き確認・取得上限・429の契約である。raw APIはsource commitが参照するblobをそのまま配信し、DB/Redisの現在値やnice変換器の実行結果を混ぜない。catalogがsource以外から生成されるなら、その生成器版と内容digestを世代に束縛する。受信側はfull commit/tree、表ごとのdigest、catalog、regionを確認する。Git object IDだけを短縮したhashや、取得後に自分で付けたhashは公開完了の代用にしない。
 
-APIの実装形はHTTP pathよりこの不変条件を優先する。表一括でも世代固定のrow検索でも、発見した参照先を同じ世代だけから解決でき、同じIDの異内容・欠落・混在を拒否できなければならない。原子的な公開pointerはAPI側の責務であり、FGO LabのActionsを中央承認者にしない。小さい`current`の後に表ごとのdigest manifestを読み、**canonical生成に入る表・参照先・使用catalog部分**とFGO Lab変換・受入契約版を照合する。full source commitだけが変わり、これらが同一なら大型取得・変換・active切替を省く。Actionsはsource全体の変更を別に監査する。
+APIのpath名はAtlasと調整できるが、必要な応答は決まっている。`current`はregion、完成済みpublication ID、full source commit/tree、抽出元のgame data版と成功receipt、catalog生成器版/digest、全raw表のpath・digestと、取得対象表ごとのimmutable URL・bytes・digest、公開時刻と旧世代の保持期限を返す。immutable URLは指定publicationの表**全行**を返し、完成前・並行公開・途中停止では`current`に新IDを見せない。原子的な公開pointerはAPI側の責務であり、FGO LabのActionsを中央承認者にしない。端末は小さい`current`の表digestを**canonical生成に入る表・使用catalog部分**とFGO Lab変換・受入契約版で照合する。full source commitだけが変わり、これらが同一なら大型取得・変換・active切替を省く。Actionsはsource全体の変更を別に監査する。
 
 取得receiptには上流公開契約の証拠、full source commit/tree、region、catalog版/digest、**実際にcanonical生成へ入れた**表・rowまたは参照閉包のpath・bytes/hash、参照edge、FGO Lab変換器/受入契約版、canonical digestを記録する。source publication identityは出典と監視の版、master identityは完全なcanonical入力集合・使用catalog/mapping・変換器/policy版から決定的に作る。無関係な上流表の変更で計算版を変えず、canonical入力が変わればcanonical bytesが同じでも別identityとして再検証する。同じidentityに異内容を保存しない。最後に確認したsource commitとその表digest照合結果は小さいmetaに別記し、meta保存失敗時に「最新版確認済み」と表示しない。確認・取得時刻はidentityに混ぜない。UI表示名の言語資源がraw source以外なら、その版付き入力も同じreceiptへ含める。
 
@@ -179,9 +196,9 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 - [ ] **4. 監視と重複防止**: 実Actionsの権限・永続状態・通知の再実行、検査コード変更時の再検査、停止時の運用を確認する。
 - [ ] **5. 配信整理・全体検証・文書**: 大型masterの製品配信を撤去し、費用実測、公開文書、[最終gate](testing.md)と必要な追加auditを完了する。
 
-現在の到達点: 計画commit `ac1a6f3`からこの記録を更新してきた。2026-10-12に取得、係数、保存・計算、監視、費用のread-only調査を行い、現行Atlas APIのDB/Redis部分更新、export個別書込み、版指定なしskill、可変raw CDNを確認した。Git commitはraw bytesを固定できるが、抽出元の整合は証明できず、実ブラウザーのGitea APIもCORS拒否された。既存のnice中心案をゼロベースで再評価し、唯一のraw→canonical意味経路と版付きraw APIを完成形に選んだ。現UIのfieldとbuff補助から43表・約66MBの候補を得て、固定追加skillの28 ID→64 level行→24 function IDは同じGit treeで第一段まで解決した。画像URLの主経路もIDと規則で構成できると確認した。可変raw CDNの`mstClass`と`mstSkillLv`が固定Git raw treeと異なる実例も得た。raw表の全参照閉包・raw fieldと係数の完全対応・端末実測・上流API契約は未達。1の取得契約は未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
+現在の到達点: 2026-10-12に現行consumer、raw入力43表、上流の公開コードと実API、保存・計算・監視・費用をread-onlyで調査した。固定JP rawでは通常servant 470件、CE 2,706件、MC 28件を起点に、既知のskill/NP/function/buffと素材・係数の結合が成立した。旧nice入力と比較した成長6,370配列、17クラス相性289組、5属性相性25組に差はない。新しいservant 1件とCE 6件、入力から発見するcallback skill 25件を実装検証の対象にできる。これらは**変換器・ブラウザー取得の成功ではない**。checkpoint 1はAtlasの完成世代APIと実転送/端末実測待ち、2〜5は未実装。製品配信・利用者データは変更していない。
 
-次の操作は末尾の「調査残件と作業順」に具体化した。まず固定raw commitと現UIを突き合わせて43表候補のjoin・再帰参照・係数の不足を列挙する。上流の版付き公開契約が無いことは別の未達であり、ローカルで参照を閉じてもcheckpoint 1を完了にしない。製品のactivation切替と自前大型master撤去はAPIの完成世代をbrowserで検証してから行う。
+次の操作: 末尾の「実装着手順と外部依存」の順で、固定rawを入力とする共通変換・受入を先に作る。Atlas側の完成世代APIの仕様確認・提供は並行する外部依存であり、その実応答をbrowserで検証するまで製品activeをAtlasへ切り替えない。調査だけを目的とする本セッションでは製品コードへ着手しない。
 
 ### Atlas APIへ確認・依頼する完成形の公開契約
 
@@ -208,7 +225,7 @@ Atlas側は抽出・検査が成功したraw commitが参照するblobをimmutab
 
 ## 費用・性能の測り方
 
-調査時の参考値として、自前masterは32,953,998 bytes、同じローカルbytesのgzipは2,755,994 bytes。Atlasの主要4つのnice exportはHEADのidentity表現のContent-Length合計92,688,305 bytes。手元の旧固定4export 91,887,896 bytesをgzipすると8,235,278 bytesだが、現在のAtlasの実転送量でも採用するraw表の総量でもない。Git raw masterは441表316,029,261 bytes、上流entity組立を広めに辿った73表候補は165,330,506 bytes、現製品fieldとbuff補助から選んだ43表候補は66,046,567 bytes（いずれもidentity表現）。候補は閉包検証前であり、圧縮wire bytes・端末peakは未実測。初回取得が軽くなるとは主張しない。大きい自前配信を除くと、取得負荷はAtlas側と利用端末側へ移るため、利用者の待ち時間・上流アクセス量も測る。
+調査時の参考値として、自前masterは32,953,998 bytes、同じローカルbytesのgzipは2,755,994 bytes。Atlasの主要4つのnice exportはHEADのidentity表現のContent-Length合計92,688,305 bytes。手元の旧固定4export 91,887,896 bytesをgzipすると8,235,278 bytesだが、現在のAtlasの実転送量でも採用するraw表の総量でもない。Git raw masterは441表316,029,261 bytes、上流entity組立を広めに辿った73表候補は165,330,506 bytes、現製品fieldとbuff補助から選んだ43表候補は66,046,567 bytes（いずれもidentity表現）。43表の表別gzip level 6合計は手元で3,260,165 bytes。これはHTTPの圧縮wire bytesではなく、端末peakも未実測。初回取得が軽くなるとは主張しない。大きい自前配信を除くと、取得負荷はAtlas側と利用端末側へ移るため、利用者の待ち時間・上流アクセス量も測る。
 
 測定条件は初回、未変更、既知更新、参照追加、拒否、network障害、保存失敗を分ける。browserとNodeでURL別request数・wire bytes・展開bytes、取得/parse/参照/変換/検証/保存の時間、Workerと主threadのmemory peak、IDBとcacheの保存量を記録する。browserのResource Timingに上流Timing-Allow-Originがなければ実ブラウザー観測/CDP等で転送量を取る。headersのサイズを実転送量へ代入しない。
 
@@ -222,19 +239,20 @@ GitHub public APIでivgtr/fgo-labのvisibility=public、default_branch=main、ar
 
 性能比較は同一source/master/input/build・Node・並列・gzip条件で前後各3回。Worker・共有・遅延chunkを含む配信JSを合算する。HTTP初回/未変更の計測とranking計算の計測を混ぜない。
 
-## 調査残件と作業順
+## 実装着手順と外部依存
 
-**まだ調査は足りない。** 現在確定したのは現行consumer、上流公開APIの不足、43表の候補量、固定追加skillの第一段参照までである。次の作業を、手元で進められるものと上流APIが必要なものに分ける。各行の成果をこの記録へ追記し、別の進捗資料を作らない。
+**手元で実装設計へ移るための調査はここまで完了した。** 固定世代の対象・join・係数出典・追加参照・既存consumerは上に示した。正しいraw→canonical生成と保存切替は、実装してNode/Workerと実UIで証明する作業であり、調査だけで達成済みとはしない。以下の順序は上の5チェックポイントの具体的な着手単位で、成果と未達をこの記録に追記する。
 
-| 順 | 次に行う作業 | 終了時にこの記録へ残す証拠・判定 | 依存 |
-| --- | --- | --- | --- |
-| A1 | 固定JP commit `5d3cbc…`の43表候補を、servant/CE/MC/BPから実UIで読むfieldとjoinする。skill/NPのlevel・function・buff・script、`SkillID`/`DependFuncId`/callbackを意味定義に沿って再帰走査し、表・row・edgeの一覧と不足IDを出す | 43表で閉じるか、追加/不要表とそのjoin条件を列挙する。固定28 skillの第一段28→64→24は確認済みだが、全入力の閉包は未確認。欠落・循環・同ID異内容を成功扱いしない | 手元の固定Git commitで調査可能。製品取得をGitへ戻す判断ではない |
-| A2 | 現nice→canonical出力の各fieldをraw field・単位・enumへ対応づけ、17クラス/5属性/3カード/基礎定数、成長、画像、relative target、ランダム上限を実例で照合する | 対応表、未定義の意味、既知だが計算未対応の範囲、必要なschema/catalogを明示する。固定回帰期待値を作り直さない | A1のjoin結果。現行niceとrawの混在を一世代の入力とは呼ばない |
-| A3 | 上流へ要求するAPIを、`current`の成功条件、immutable表/row、digest、catalog、CORS、保持期間、429、同時取得上限、利用条件と失敗・並行公開例まで具体化し、既存公開APIに同等機能があるか照合する | 実URL/応答/公開仕様で満たす項目を示し、足りない項目を上流への依頼として確定する。外部Issueの送信は別途明示された指示がある場合に行う | A1/A2で表とcatalog範囲を確定。現行`/info`、版なしskill、可変CDN、Git APIは不足と確認済み |
-| B1 | 上流が完成世代APIを提供したら、Nodeと実browserで同commitの全表・catalogを取得し、digest/CORS/保持を確認する。抽出失敗、並行公開、途中停止、異版表を試す | 同じ公開世代のbytesのみ受理し、欠落/混在を拒否する再現結果。選択表の圧縮wire bytes、URL別request数、取得時間、端末peak memoryを実測する | **上流APIの提供が必要**。現Git treeの一致だけでは抽出成功を証明できない |
-| B2 | A1/A2とB1の結果でcheckpoint 1の取得単位を決定し、表全件か世代固定ID索引か、catalog粒度、端末の保存保持数、更新頻度を定める | 参照閉包、初回/未変更の転送・処理・保存量、取得上限との照合。成立しない場合は不足条件を明記し製品切替に進まない | B1の実APIと実測 |
-| C | checkpoint 2〜5を順に実装し、Node/Worker一致、UI→calculator/ranking、原子的保存・失敗時保持、Actions重複防止、費用、`pnpm quality`まで通す | 上記チェック欄の利用経路・失敗経路の証拠を満たす。schema変更時は利用者storeを保持し、影響を記録する | 本セッションでは着手しない。B1以前も独立の内部境界は将来の実装で進められる |
+| 順序 | 変更する境界と成果物 | その段階で通す直接の証拠 |
+| --- | --- | --- |
+| 1. 共通raw受入 | `packages/data-pipeline`に43表と版付きcatalogの厳格schema、主key/複合key join、位置付き`funcId`/`svals`、数値enum、buffまたはtraitを区別する`FUNC_VALS_NOT_BUFF`、callback/`DependFuncId*`の一つのregistryと参照edgeを実装する。素材のuse区分はcombine表から導出し、buffのrelation overwrite/convertは対応するraw表から解釈する。Node専用I/Oと純粋なproducerを分け、旧nice→canonical製品経路を置き換える | 固定JP rawで対象と参照の全件検査、Nodeと実browser Workerのcanonical bytes/receipt一致。ID `705400`とCE 6件はコードを変更せず採用。未知field、参照欠落/循環、同key異内容、値配列不整合を理由付きで拒否。固定goldenは再生成しない |
+| 2. 規則と計算 | `packages/master-data`に係数・相性・card・定数を含む版付きcanonical規則を追加し、`calculation-application`がcalculator/rankingに同じ規則とmaster identityを渡す。`calc-core`の固定係数と中立補完、相性候補の固定表を除く | 現17クラス×17、5属性×5、3カードと0.23の既存期待値が一致。既知係数だけを変えた候補は無コードで両計算に反映し、未知class/card・未対応規則は拒否。浮動小数点の順序と既存capを保持 |
+| 3. 取得・保存・UI | Atlasの`current`/immutable表/catalogを読むbrowser Worker、`repository.ts`のreceipt付きactive transaction、`startup.ts`の起動・online・利用中更新、ranking Workerとcalculator保存guard、`sw.js`の対象範囲を一体で変更する。旧master保存契約は再取得を要求し、`user` storeとdraft/historyは保持する | 初回、更新、未変更、offline、429、digest不一致、quota、crash、複数tab、進行中の計算と共有結果を実UIで検証。成功時だけactiveを切替。未変更で大型GET/変換/active書込がゼロ。Atlas完成世代APIの実証まで本段階の製品切替は未達 |
+| 4. 監視 | raw全treeとcatalogの差分、製品対象表の全行inventory、共通producerの受入結果をNode監視へ接続。管理Issueを永続状態、problem fingerprint/markerを通知IDとし、schedule・manual復旧・既存CI heartbeatを追加する | 新表・schema/enum・宝具以外の新概念・既知未対応増加・取得/通知/状態障害を別分類で検知。同一問題の再実行と通知直後crashでIssueが重複せず、コード変更だけでも再検査。実Actionsでjob権限を確認 |
+| 5. 配信と最終gate | `public/master`の大型配信を撤去し、旧固定入力を開発fixtureへ隔離。README・architecture・calculation・testing・development・出典文書を実挙動へ更新 | Node/Worker/実UIの版一致と失敗時保持、実転送量・端末peak・Actions時間/転送/artifactを記録。6/12/24時間の費用と遅延を比較して周期を選ぶ。[最終gate](testing.md)を通す |
 
-監視で発見できるのは上流が公開するraw/schema/enumの概念までである。監視完全停止中の自動通知には独立watchdogが必要で、現案は最終成功の可視化・既存CIでの検知・手動復旧とする。6/12/24時間の周期、Actions実行時間と請求額は実workflowを測定してから決める。repository権限設定と既存CIの時間・artifactだけは確認済み。
+**上流依存と停止境界:** 2026-10-12の実[OpenAPI](https://api.atlasacademy.io/openapi.json)は109 pathで、`/raw/{region}/info`、`/raw/{region}/skill/{skill_id}`、`/raw/{region}/function/{func_id}`に世代指定がない。前節で定めた抽出成功receipt・immutableな43表全行・表digest・catalog・CORS・保持期限・原子的`current`を返すAPIも確認できない。Atlasへこの契約を確認・依頼する文面は前節の4項目で特定できる。外部Issueの送信は明示的な指示がある場合に行う。提供後にNodeと実browserで同じpublicationを取得し、抽出失敗・並行公開・途中停止・異表・旧世代失効の反例、429/保持/利用条件を試す。これが通らなければcheckpoint 1と製品切替・大型master撤去を完了にしない。固定rawを用いる1・2および監視の内部境界はAPI提供前に進められる。
 
-この調査では製品テスト・build・全データ生成は未実行。製品のraw取得・変換・保存・監視は未実装。現行公開APIのままでは製品の安全な切替を完成させられず、A1/A2で手元の仕様調査を閉じてもB1/B2の実証が要る。
+**実装時に測る事項:** 選択43表のgzip 3,260,165 bytesはローカル圧縮の参考値で、Atlasのwire量、Worker peak、IDB容量、Actions実行時間、請求額ではない。上流APIが揃ったら初回/未変更/更新/拒否ごとにrequest数・wire/展開bytes・時間・memory・保存量を同じbuildで測る。43表全件方式が端末や上流の上限を満たさない実測になった場合は、同一publicationで閉じる取得単位を再設計し、この記録と実装全体を更新する。監視で検出できるのは公開raw/schema/enumの概念までであり、完全停止中の自動通知には独立watchdogが必要になる。現案は最終成功の可視化、既存CIでの検知、手動復旧である。
+
+このセッションでは製品テスト・build・全データ生成は未実行。製品のraw取得・変換・保存・監視は未実装。未達条件はAtlasの公開契約、共通変換と実利用経路の成功、実費用の測定である。
