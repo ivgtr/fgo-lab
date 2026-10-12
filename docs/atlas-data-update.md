@@ -9,7 +9,7 @@
 
 ただし、現時点で確認した公開Atlas export/APIには、複数exportと追加参照を一つのsnapshotへ束縛する契約が見つかっていない。ここは実装前の成立条件であり、既存APIを組み合わせれば達成できるとは認定しない。取得契約を確定する前に、その契約を前提とする製品切替は実装しない。
 
-最初の実装段階で、Atlasが既に提供するimmutableな版指定入力、全入力を束縛するmanifest、または単一snapshot配布の有無を詰める。見つからなければ、上流側の契約整備が必要となる。自前hash一覧、二回の同一取得、待機時間、infoの前後一致で穴を埋めない。別配信先や別認証を探して失敗を補わない。外部依存の追加が必要なら、具体的な不足契約と達成不能な条件を示して設計を再判断する。
+2026-10-12の追加調査で、AtlasのrawゲームデータGit repositoryにはimmutableなcommit/tree/blobがあることを確認した。しかし、そのraw入力は現行nice変換入力と異なり、ブラウザーから通常のGit APIを読むとCORS設定で拒否される。Git packのRange取得を使う独自Git clientとAtlas API側のnice変換器の再実装は、取得だけで新しい複雑な責務を生む。この経路は採用しない。現行のnice入力を同一generationに束縛して直接配信する上流契約が必要であり、契約取得までは製品切替を実装しない。自前hash一覧、二回の同一取得、待機時間、infoの前後一致で穴を埋めない。
 
 ## 現行経路と変更境界
 
@@ -40,6 +40,9 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 - 上流[app/tasks.py](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L99)は各exportを既存pathへ個別に書く。[generate_exports](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/tasks.py#L547)は定数、各export、servant/equipを順番に生成し、infoは後段で更新する。公開コードからは全体のatomic publicationを確認できない。実CDNの運用までコードだけで断定しない。
 - 実OpenAPIの`/nice/{region}/skill/{skill_id}`の引数はregion、skill_id、reverse、reverseData、langであり、snapshot/commit指定はない。[routerの一次資料](https://github.com/atlasacademy/fgo-game-data-api/blob/35cadc444e20c78cc60e56082ad1b64607d4d2e2/app/routers/nice.py)。
 - HEADで各exportにCORS `Access-Control-Allow-Origin: *`、ETag、Last-Modifiedを確認。ただしETagをbrowserへ公開するExpose-Headersは確認できなかった。ヘッダーとCORSの実利用はbrowserで改めて検証する。ETagは単一資源の再取得抑制にしか使わない。
+- Atlasの[rawデータGit repository](https://git.atlasacademy.io/atlasacademy/fgo-game-data)のJP HEADは`5d3cbcc79ebcea42ec99dbecd5279e6e64effa3c`で、`/info`の短いhashと一致する。このcommitからroot tree `9ef4ebf08375bfdb974ed6e60ccf2aaa691f9b5d`、master tree `379b2ca7ccfed7a9062e82b91773c0a8a9d6803c`、各raw tableのblob SHAをたどれる。個別のGit object IDはそのbytesに結び付くので、raw Git tableだけなら同一snapshotを証明できる。ただしnice export・API追加参照・API変換器版はこのtreeに含まれない。
+- 実ChromiumからGitea `/api/v1/repos/.../branches/JP`、`/git/blobs/{sha}`、`/raw/master/...?...`をfetchすると、`Access-Control-Allow-Origin: *, *`という重複値でCORS拒否される。Pythonで各応答に二つの同名headerがあることも確認した。これはbrowserのfetch設定で解消できない。
+- GiteaのGit HTTP `/objects/{sha}`と`/objects/pack/*.idx`はbrowserからCORSで読めるが、必要なblobの多くはpack内にある。`git-upload-pack`のPOSTはbrowserでpreflightが400となり、simple requestは本体が400となる。packのRange GETは206で成功する一方、現公開packの最大は32,733,824,054 bytes、index総計は7,254,320 bytes。採用にはindex・pack・delta復号、範囲取得、raw relational tableからnice相当への変換、API変換器との意味整合まで製品側で維持する必要がある。これは現在の共通変換の前段に巨大な独自基盤を加えるため、設計要件の「複雑化せず最善」に照らして見送る。pack全体の転送が必須だとは主張しない。
 
 必要入力候補:
 
@@ -53,7 +56,7 @@ rawの意味はdata-pipeline、scenarioはcalculation-application、順序付き
 
 各入力は同じregion、言語、上流snapshot、必要なら上流変換器版へ束縛する。四つのnice exportだけのゲームcommit一致では、サーバー変換器・enum/trait mapping・追加APIの整合を証明できない。
 
-採用可能な証拠は、(a) 上流が完了したgenerationとして公表するmanifestが全入力のdigestと版を束縛し、追加参照もその版で取得できること、または(b) 必要入力がすべてimmutableな同一commit/treeから取得でき、変換に必要なmappingも版付きで揃うこと。単一snapshot archiveなら、その内部の生成・完了契約も確認する。どれを実装するかは成立した一方式へ絞り、複数の主配信経路や自動代替を設けない。
+採用可能な証拠は、(a) 上流が完了したgenerationとして公表するmanifestが全入力のdigestと版を束縛し、追加参照もその版で取得できること、または(b) 必要入力がすべてimmutableな同一commit/treeから取得でき、変換に必要なmappingも版付きで揃うこと。単一snapshot archiveなら、その内部の生成・完了契約も確認する。現行raw Git repositoryは(b)のraw tableだけを満たし、製品が必要とするnice入力まで満たさない。どれを実装するかは成立した一方式へ絞り、複数の主配信経路や自動代替を設けない。
 
 上流manifestのdigestがある場合はmutable URLからでもそのdigestとの一致を必須にし、不一致は更新失敗とする。自分で計算したdigestは同じsnapshotを証明せず、取得bytesの同一性を記録するだけ。短いhash単独を一意なmaster identityにしない。
 
@@ -137,8 +140,18 @@ scheduleはdefault branch上でしか実行されず、遅延・drop、公的rep
 - [ ] **4. 監視と重複防止**: 実Actionsの権限・永続状態・通知の再実行、検査コード変更時の再検査、停止時の運用を確認する。
 - [ ] **5. 配信整理・全体検証・文書**: 大型masterの製品配信を撤去し、費用実測、公開文書、[最終gate](testing.md)と必要な追加auditを完了する。
 
-現在の到達点: 設計と既存経路の根拠を整理済み。1の取得契約は未確定、2〜5は未着手。
-次の操作: 公開Atlasの実仕様と配信・参照経路を確認し、1の成立可否を決定する。
+現在の到達点: 計画commit `ac1a6f3`を作成済み。追加調査によりraw Git commitの整合性は確認したが、現行nice exportと追加参照の同一generationを証明できず、実ブラウザーのGitea APIもCORS拒否された。1の取得契約は外部依存で未達、2〜5は未着手。製品実装・既存master配信の撤去は行っていない。
+
+次の操作: Atlasに以下の最小契約が既に存在するか確認し、存在しなければ提供を依頼する。外部へのIssue送信は、この記録を具体的な依頼内容として用い、送信権限を得てから行う。契約の実提供後に、実ブラウザーから小さいmanifestと一つの版指定済み追加参照を取得し、異版・欠落の拒否を再現する。これが通るまで1にチェックを付けず、2〜5の製品切替を進めない。
+
+### Atlasへ確認・依頼する取得契約
+
+1. JPの完了済みgenerationを一つのimmutable identityで公開し、generation manifestを最後に原子的に公表する。manifestにはゲームデータcommitのfull SHA、API変換器・enum/schema/mapping版、region/locale、必要なnice exportと係数・trait・catalogのURL、各bytes長とdigestを含める。manifest自体にもimmutable URLを与える。
+2. `nice_servant`、`nice_equip`、`nice_mystic_code`、`nice_item`、battle point、計算用定数・相性・カード表、全語彙を監視できるenum/schema catalogを同じgenerationから取得できるようにする。現行形式で参照先を後から発見するskill等は、同じgenerationを指定できるAPIか、そのgenerationに含まれる完全集合が必要。参照IDだけを取得できても版指定がなければ不十分。
+3. browserから全URLを読み取れる有効なCORS応答にする。現行Git APIの`Access-Control-Allow-Origin`重複も解消する。条件付き取得に必要なETag等を利用させる場合はExpose-Headersを設定する。少なくともactiveが更新を確認する間と障害後の再試行期間、旧generationのURLが保持される期間を明示する。
+4. 上流で完了前manifestを公開しないこと、個々のimmutable入力を後で書き換えないこと、manifestが指す全入力・追加参照が同じgenerationの変換結果であることを公開契約として確認する。単なる`/info`の前後一致やファイル個別のETagでは、この点を代替できない。
+
+上流からこれと同等の既存契約が提示されたら、URL・保持期間・CORS・混在反例をこの記録に追記して設計を再開する。提供できない場合、Atlasからブラウザーが直接取得しつつ整合snapshotだけをactivateする目的は現行公開APIでは達成できない。自前配信や黙示fallbackへ目的を変える判断はしない。
 
 ## 検証
 
@@ -167,7 +180,7 @@ Actionsはbootstrap/installを含むrunnerの全実行秒数とfull scan時間�
 
 ## 未確定事項、未達条件、次の操作
 
-1. 最大の未達: 上流から同一snapshotとして全入力を得る証拠。今回確認したnice export＋版指定なしskill APIでは成立を認定できない。
+1. 最大の未達: 上流から同一snapshotとして全入力を得る証拠。nice export＋版指定なしskill APIでは成立を認定できない。raw Git commitは同一raw snapshotを示すがnice出力・追加参照との束縛を示さず、通常Git APIは実ブラウザーでCORS拒否される。
 2. 数値tableのscope、relative target選択、ランダム仕様と上流定数の対応。直接callerを変更するときに保存schemaへ及ぶかを確定する。
 3. 全raw/schema/enum観測で取得可能な新概念の範囲。上流が未公開の概念に対する監視保証はできない。
 4. 周期、取得上限、保存保持数、実端末memory、初回転送、Actions所要時間、実permissions/請求枠は未実測または未確認。
@@ -175,4 +188,4 @@ Actionsはbootstrap/installを含むrunnerの全実行秒数とfull scan時間�
 
 計画時点ではテスト・build・全データ生成は未実行。上流の版/小さい定数/HEAD/API schema/公開sourceを確認し、主要大型exportの全本文は取得していない。
 
-取得契約が成立すれば、証明できた一方式で2以降を進める。契約が得られなければ、不足する上流契約と達成不能な条件をこの文書へ反映し、取得方式と外部依存を再判断する。
+取得契約が成立すれば、証明できた一方式で2以降を進める。現時点では上記の外部契約が必要。製品を不整合な入力で切り替える実装は行わない。
