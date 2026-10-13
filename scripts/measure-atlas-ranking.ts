@@ -45,6 +45,8 @@ try {
       milliseconds: performance.now() - began,
       rows: result.rows.length,
       exclusions: result.exclusions.length,
+      candidateInventory: result.candidateInventory,
+      damageCache: result.damageCache,
       digest: createHash('sha256').update(JSON.stringify(result.rows)).digest('hex'),
     });
   }

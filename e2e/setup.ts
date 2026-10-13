@@ -18,17 +18,28 @@ export async function openTestHome(page: Page): Promise<void> {
 export async function installRankingFixtureWorker(page: Page): Promise<void> {
   await page.addInitScript(
     ({ fixtureResponse }) => {
+      let fixtureShardAnchor: string | null = null;
       class RankingFixtureWorker {
         onmessage: ((event: MessageEvent) => void) | null = null;
+        ownsFixtureRows = false;
         postMessage(request: {
           kind: string;
           requestId: string;
           contextId: string;
+          master?: { servants: Array<{ id: string }> };
           conditions?: Record<string, unknown>;
           fingerprint?: string;
           entryId?: string;
         }) {
           if (request.kind === 'initialize') {
+            if (!request.master) throw new TypeError('fixture_master_required');
+            const firstServantId = request.master.servants[0]?.id;
+            if (!firstServantId) throw new TypeError('fixture_shard_empty');
+            // Visual rows use a synthetic ID; bind them to the first canonical shard.
+            fixtureShardAnchor ??= firstServantId;
+            this.ownsFixtureRows = request.master.servants.some(
+              ({ id }) => id === fixtureShardAnchor,
+            );
             queueMicrotask(() =>
               this.onmessage?.({
                 data: { kind: 'ready', requestId: request.requestId, contextId: request.contextId },
@@ -44,6 +55,7 @@ export async function installRankingFixtureWorker(page: Page): Promise<void> {
                     ...fixtureResponse,
                     requestId: request.requestId,
                     contextId: request.contextId,
+                    rows: this.ownsFixtureRows ? fixtureResponse.rows : [],
                   },
                 } as MessageEvent),
               0,

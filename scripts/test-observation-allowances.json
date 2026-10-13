@@ -768,9 +768,9 @@
     "runner": "playwright",
     "testId": "smoke.spec.ts > [E2E-023] offline reopen through service worker @desktop @journey",
     "kind": "browser.resource_failure",
-    "message": "fetch https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/fa3211bcffd9d4ab2c0d9e1c7e03ae261108830cb64c02eba97eee86cb7dfe42.json: net::ERR_INTERNET_DISCONNECTED",
+    "message": "fetch https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/a4b0fed73e5bc7b5af7d01e404a8ef80c11705ee56c1b8bf5493267c8cc8c421.json: net::ERR_INTERNET_DISCONNECTED",
     "detail": {
-      "url": "https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/fa3211bcffd9d4ab2c0d9e1c7e03ae261108830cb64c02eba97eee86cb7dfe42.json",
+      "url": "https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/a4b0fed73e5bc7b5af7d01e404a8ef80c11705ee56c1b8bf5493267c8cc8c421.json",
       "resourceType": "fetch",
       "failureText": "net::ERR_INTERNET_DISCONNECTED",
       "pageId": "page-1"

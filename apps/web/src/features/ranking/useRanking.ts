@@ -15,6 +15,11 @@ import {
   type RankingWorkerRequest,
   type RankingWorkerResponse,
 } from './rankingWorkerProtocol';
+import {
+  createRankingWorkerTransport,
+  rankingWorkerCount,
+  type RankingWorkerTransport,
+} from './rankingWorkerPool';
 
 interface RankingState {
   rows: RankingRowSummary[];
@@ -58,7 +63,7 @@ export function useRanking({
     [versionsFingerprint],
   );
   const contextFingerprint = `${master.version}:${profileFingerprint}:${versionsFingerprint}`;
-  const workerRef = useRef<Worker | undefined>(undefined);
+  const workerRef = useRef<RankingWorkerTransport | undefined>(undefined);
   const activeRequestRef = useRef('');
   const activeFingerprintRef = useRef('');
   const detailRequestRef = useRef<{ entryId: string; requestId: string } | null>(null);
@@ -79,7 +84,18 @@ export function useRanking({
   const enabled = !!conditions;
   useEffect(() => {
     if (!enabled) return;
-    const worker = new Worker(new URL('./ranking.worker.ts', import.meta.url), { type: 'module' });
+    const deviceMemoryGb = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+    const count = rankingWorkerCount(
+      master.servants.length,
+      navigator.hardwareConcurrency,
+      deviceMemoryGb,
+    );
+    const worker = createRankingWorkerTransport(
+      Array.from(
+        { length: count },
+        () => new Worker(new URL('./ranking.worker.ts', import.meta.url), { type: 'module' }),
+      ),
+    );
     workerRef.current = worker;
     const initializeRequestId = crypto.randomUUID();
     worker.onmessage = (event: MessageEvent<RankingWorkerResponse>) => {
