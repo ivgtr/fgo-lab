@@ -1,33 +1,28 @@
 // @vitest-environment node
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createProfileCollection, type ProfileRepository } from '@fgo-lab/profile-domain';
-import type { MasterManifest } from '@fgo-lab/master-data';
-import fixture from '../../../../packages/test-fixtures/master/fixture.json';
-import { loadActiveMaster, stageAndActivate } from '../adapters/repository';
+import { createHash } from 'node:crypto';
 import { openDB } from 'idb';
-import { bootstrapApplication } from './startup';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createProfileCollection, type ProfileRepository } from '@fgo-lab/profile-domain';
+import { ATLAS_EXPORT_KEYS, sourceCertificateSchema } from '@fgo-lab/master-data';
+import { certifiedSourceVersion, normalizeAtlasSnapshot } from '@fgo-lab/data-pipeline/browser';
+import { ATLAS_CONTRACT_SHA256 } from '../adapters/atlasContractFingerprint';
+import { activateAtlasMaster } from '../adapters/atlasRepository';
+import { LAB_DATABASE_VERSION } from '../adapters/labDatabase';
+import { fetchSourceCertificate } from '../adapters/atlasSource';
+import { generateAtlasMaster } from '../adapters/atlasMasterClient';
+import { bootstrapApplication, setupApplication } from './startup';
+import type * as AtlasSourceModule from '../adapters/atlasSource';
+import { neutralCombatRules } from '@fgo-lab/test-fixtures/combat-rules';
 
-const now = new Date('2026-09-05T00:00:00.000Z');
-const manifest: MasterManifest = {
-  manifestVersion: 1,
-  masterDataVersion: fixture.version,
-  createdAt: now.toISOString(),
-  source: { name: 'Atlas Academy', region: 'JP', retrievedAt: now.toISOString() },
-  artifactKind: 'diagnostic',
-  minimalAppVersion: '0.1.0',
-  schemaVersion: 56,
-  files: [
-    {
-      key: 'master',
-      file: 'master.json',
-      bytes: 1,
-      sha256: '0'.repeat(64),
-      required: true,
-    },
-  ],
-  imagesEnabled: false,
-};
+vi.mock('../adapters/atlasSource', async (importOriginal) => ({
+  ...(await importOriginal<typeof AtlasSourceModule>()),
+  fetchSourceCertificate: vi.fn(),
+}));
+vi.mock('../adapters/atlasMasterClient', () => ({ generateAtlasMaster: vi.fn() }));
+
+const now = new Date('2026-10-13T05:01:00.000Z');
+const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 const profiles = createProfileCollection(
   'マスター',
   { now: () => now },
@@ -35,99 +30,164 @@ const profiles = createProfileCollection(
 );
 const profilesRepository: ProfileRepository = {
   clear: () => Promise.resolve(),
-  load: () =>
-    Promise.resolve({
-      state: 'ready',
-      collection: profiles,
-    }),
+  load: () => Promise.resolve({ state: 'ready', collection: profiles }),
   replace: () => Promise.resolve({ status: 'committed' }),
 };
 
-describe('startup master delivery', () => {
+function candidate(generation: number) {
+  const draft = sourceCertificateSchema.parse({
+    format: 'fgo-lab-atlas-source-v1',
+    region: 'JP',
+    generation,
+    publishedAt: now.toISOString(),
+    observedAt: now.toISOString(),
+    rawCommit: 'a'.repeat(40),
+    rawCommittedAt: now.toISOString(),
+    exporterCommit: 'b'.repeat(40),
+    publisherCommit: 'c'.repeat(40),
+    contractSha256: ATLAS_CONTRACT_SHA256,
+    masterSchemaVersion: 57,
+    canonicalSha256: '0'.repeat(64),
+    exports: ATLAS_EXPORT_KEYS.map((key) => ({ key, bytes: 2, sha256: 'd'.repeat(64) })),
+    referencedSkills: [],
+  });
+  const snapshot = normalizeAtlasSnapshot({
+    version: certifiedSourceVersion(draft),
+    combatRules: neutralCombatRules,
+    servants: [],
+    equips: [],
+    mysticCodes: [],
+    items: [],
+    battlePoints: [],
+  });
+  const certificate = { ...draft, canonicalSha256: digest(JSON.stringify(snapshot)) };
+  const checked = {
+    certificate,
+    identity: { generation, sha256: digest(JSON.stringify(certificate)) },
+  };
+  return { checked, snapshotBytes: new TextEncoder().encode(JSON.stringify(snapshot)).buffer };
+}
+
+describe('Atlas startup', () => {
   beforeEach(async () => {
-    await stageAndActivate(manifest, fixture, now);
-  });
-
-  afterEach(() => vi.unstubAllGlobals());
-
-  it('downloads only the manifest when the validated IndexedDB version is current', async () => {
-    const fetchMock = vi.fn(() => Promise.resolve(Response.json(manifest)));
-    vi.stubGlobal('fetch', fetchMock);
-
-    const result = await bootstrapApplication(profilesRepository, {
-      baseUrl: '/',
-      development: true,
-      fragment: '',
-      now,
-    });
-
-    expect(result.state).toBe('ready');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith('/master/manifest.json', { cache: 'no-store' });
-  });
-
-  it('keeps validated profiles when incompatible master recovery cannot download the replacement', async () => {
-    const db = await openDB('fgo-lab', 1);
-    const active: unknown = await db.get('master', 'active');
-    if (active === null || typeof active !== 'object') throw new Error('fixture_master_missing');
-    const snapshot = {
-      ...fixture,
-      servants: [{ ...fixture.servants[0]!, rarity: 99 }, ...fixture.servants.slice(1)],
-    };
-    await db.put(
-      'master',
-      {
-        ...active,
-        snapshotBytes: new TextEncoder().encode(JSON.stringify(snapshot)).buffer,
+    const db = await openDB('fgo-lab', LAB_DATABASE_VERSION, {
+      upgrade(database) {
+        for (const name of ['meta', 'master', 'staging', 'user'])
+          if (!database.objectStoreNames.contains(name)) database.createObjectStore(name);
       },
-      'active',
-    );
+    });
+    await db.clear('master');
     db.close();
-    const repository = {
-      ...profilesRepository,
-      clear: vi.fn(() => Promise.resolve()),
-      replace: vi.fn(() => Promise.resolve({ status: 'committed' as const })),
-    };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => Promise.reject(new Error('offline'))),
-    );
-    const result = await bootstrapApplication(repository, {
-      baseUrl: '/',
-      development: true,
-      fragment: '',
-      now,
-    });
-    expect(result).toMatchObject({
-      state: 'setup-required',
-      master: undefined,
-      profiles,
-      invalidStoredProfiles: false,
-      warning: '互換性のない旧マスターデータを削除しました。再セットアップが必要です: offline',
-    });
-    expect(result.profiles).toBe(profiles);
-    expect(await loadActiveMaster()).toEqual({ state: 'empty' });
-    expect(repository.clear).not.toHaveBeenCalled();
-    expect(repository.replace).not.toHaveBeenCalled();
+    vi.clearAllMocks();
   });
 
-  it('retains the validated IndexedDB version when the manifest update check fails', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => Promise.reject(new Error('offline'))),
-    );
+  it('waits for the first setup action before fetching the full Atlas master', async () => {
+    const replace = vi.fn().mockResolvedValue({ status: 'committed' });
+    const freshRepository: ProfileRepository = {
+      clear: () => Promise.resolve(),
+      load: () => Promise.resolve({ state: 'empty' }),
+      replace,
+    };
+    const initial = await bootstrapApplication(freshRepository, { fragment: '', now });
+    expect(initial).toMatchObject({ state: 'setup-required', warning: '' });
+    expect(fetchSourceCertificate).not.toHaveBeenCalled();
+    expect(generateAtlasMaster).not.toHaveBeenCalled();
 
-    const result = await bootstrapApplication(profilesRepository, {
-      baseUrl: '/',
-      development: true,
-      fragment: '',
+    const first = candidate(1);
+    vi.mocked(fetchSourceCertificate).mockResolvedValue({
+      state: 'candidate',
+      certificate: first.checked,
+    });
+    vi.mocked(generateAtlasMaster).mockResolvedValue({
+      snapshotBytes: first.snapshotBytes,
+      bytesFetched: 100,
+    });
+    const ready = await setupApplication(
+      freshRepository,
+      { now: () => now },
+      { next: () => '00000000-0000-4000-8000-000000000003' },
+      { fragment: '', now },
+    );
+    expect(ready.state).toBe('ready');
+    expect(fetchSourceCertificate).toHaveBeenCalledTimes(1);
+    expect(generateAtlasMaster).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledTimes(1);
+  });
+
+  it('generates and activates the first certified master while retaining profiles', async () => {
+    const first = candidate(1);
+    vi.mocked(fetchSourceCertificate).mockResolvedValue({
+      state: 'candidate',
+      certificate: first.checked,
+    });
+    vi.mocked(generateAtlasMaster).mockResolvedValue({
+      snapshotBytes: first.snapshotBytes,
+      bytesFetched: 100,
+    });
+    const result = await bootstrapApplication(profilesRepository, { fragment: '', now });
+    expect(result).toMatchObject({ state: 'ready', profiles, warning: '' });
+    expect(fetchSourceCertificate).toHaveBeenCalledWith(expect.any(String), null);
+    expect(generateAtlasMaster).toHaveBeenCalledTimes(1);
+    vi.mocked(fetchSourceCertificate).mockResolvedValue({
+      state: 'unchanged',
+      certificate: first.checked,
+    });
+    const setup = await setupApplication(
+      profilesRepository,
+      { now: () => now },
+      { next: () => '00000000-0000-4000-8000-000000000002' },
+      { fragment: '', now },
+    );
+    expect(setup.state).toBe('ready');
+    expect(generateAtlasMaster).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetches only the certificate when the active generation is unchanged', async () => {
+    const first = candidate(1);
+    await activateAtlasMaster({
+      checked: first.checked,
+      snapshot: first.snapshotBytes,
+      contractSha256: ATLAS_CONTRACT_SHA256,
       now,
     });
-
-    expect(result).toMatchObject({
-      state: 'ready',
-      master: { version: fixture.version },
-      warning: `更新に失敗したため互換性確認済みの ${fixture.version} を使用中: offline`,
+    vi.mocked(fetchSourceCertificate).mockResolvedValue({
+      state: 'unchanged',
+      certificate: first.checked,
     });
+    const result = await bootstrapApplication(profilesRepository, { fragment: '', now });
+    expect(result).toMatchObject({ state: 'ready', profiles, warning: '' });
+    expect(fetchSourceCertificate).toHaveBeenCalledWith(expect.any(String), first.checked.identity);
+    expect(generateAtlasMaster).not.toHaveBeenCalled();
+  });
+
+  it('keeps a verified active and profiles when checking Atlas fails', async () => {
+    const first = candidate(1);
+    await activateAtlasMaster({
+      checked: first.checked,
+      snapshot: first.snapshotBytes,
+      contractSha256: ATLAS_CONTRACT_SHA256,
+      now,
+    });
+    vi.mocked(fetchSourceCertificate).mockRejectedValue(new Error('unavailable'));
+    const result = await bootstrapApplication(profilesRepository, { fragment: '', now });
+    expect(result).toMatchObject({ state: 'ready', profiles });
+    expect(result.warning).toContain('検証済みのマスターを使用中: unavailable');
+    expect(generateAtlasMaster).not.toHaveBeenCalled();
+  });
+
+  it('reports source transport failure as offline while retaining a verified active', async () => {
+    const first = candidate(1);
+    await activateAtlasMaster({
+      checked: first.checked,
+      snapshot: first.snapshotBytes,
+      contractSha256: ATLAS_CONTRACT_SHA256,
+      now,
+    });
+    vi.mocked(fetchSourceCertificate).mockRejectedValue(
+      new TypeError('atlas_source:transport_failure'),
+    );
+    const result = await bootstrapApplication(profilesRepository, { fragment: '', now });
+    expect(result).toMatchObject({ state: 'ready', profiles, offline: true });
+    expect(result.warning).toContain('検証済みのマスターを使用中');
   });
 });

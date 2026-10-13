@@ -9,6 +9,7 @@ import {
   getBaseNoblePhantasmVariantForForm,
   noblePhantasmVariantKey,
   canonicalRequirementLeaves,
+  effectMatchesPlayerChoice,
   type MasterDataSnapshot,
   type MasterEffect,
 } from '@fgo-lab/master-data';
@@ -145,11 +146,8 @@ export function battlePointPreparationCanonical(
         : undefined;
     const effects =
       skill && command.kind === 'useSkillSlot'
-        ? npProgramEffects(skill.effects).filter(
-            (effect) =>
-              effect.selection?.kind !== 'playerChoice' ||
-              (effect.selection.group.key === command.choice?.groupKey &&
-                effect.selection.group.candidate === command.choice.candidateKey),
+        ? npProgramEffects(skill.effects).filter((effect) =>
+            effectMatchesPlayerChoice(effect, command.choice),
           )
         : [];
     return {

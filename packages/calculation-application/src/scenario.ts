@@ -322,7 +322,7 @@ function resolvedScenarioForPreparationCandidate(
       fouAtk: build?.fouAtk ?? 1000,
     },
     initialOvercharge: 1,
-    targetContext: createDefaultTargetContext(servant.classId),
+    targetContext: createDefaultTargetContext(servant.classId, master.combatRules),
     enemyDefenseBuff: 0,
     attackerHpPermille: 1_000,
     battleState: { battlePointPhase: 0 },
@@ -554,7 +554,10 @@ function completePreparedCalculationScenario(
   draft: PreparedCalculationScenarioDraft,
   damageCache: DamageMatrixCache,
 ): PreparedCalculationScenario {
-  const completed = { ...draft, outcome: resolvedCalculationResult(draft.resolved, damageCache) };
+  const completed = {
+    ...draft,
+    outcome: resolvedCalculationResult(draft.resolved, damageCache, draft.master.combatRules),
+  };
   const capture = battlePointPreparationRejectionObservationFor(draft);
   if (capture) attachBattlePointPreparationRejectionObservation(completed, capture);
   return carryBattlePointPreparationObservation(draft, completed);

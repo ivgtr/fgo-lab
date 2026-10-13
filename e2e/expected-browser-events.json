@@ -169,7 +169,7 @@
       ]
     },
     {
-      "testId": "smoke.spec.ts > [E2E-025] incompatible master recovery preserves user data @desktop @journey",
+      "testId": "smoke.spec.ts > [E2E-025] damaged certified master preserves user data @desktop @journey",
       "pages": [
         {
           "path": "/",
@@ -484,12 +484,11 @@
     }
   ],
   "serverFailures": [],
-  "localResourceFailures": [
+  "localResourceFailures": [],
+  "atlasCertificateFailures": [
     {
-      "testId": "smoke.spec.ts > [E2E-025] incompatible master recovery preserves user data @desktop @journey",
-      "path": "/master/manifest.json",
-      "resourceType": "fetch",
-      "failureText": "net::ERR_FAILED",
+      "testId": "smoke.spec.ts > [E2E-023] offline reopen through service worker @desktop @journey",
+      "failureText": "net::ERR_INTERNET_DISCONNECTED",
       "count": 1
     }
   ]

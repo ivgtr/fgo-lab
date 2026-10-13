@@ -5,13 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 4173",
-    "build": "next build --webpack",
+    "dev:local-certificate": "NEXT_PUBLIC_FGO_LOCAL_CERTIFICATE=1 next dev --hostname 127.0.0.1 --port 4173",
+    "build": "node ../../scripts/atlas-contract-fingerprint.mjs --check && next build --webpack",
     "start": "next start --hostname 127.0.0.1 --port 4173",
     "preview": "next start --hostname 127.0.0.1 --port 4173",
     "typecheck": "next typegen && tsc --noEmit --pretty false"
   },
   "dependencies": {
+    "@fgo-lab/atlas-monitor": "workspace:*",
     "@fgo-lab/schema": "workspace:*",
+    "@fgo-lab/data-pipeline": "workspace:*",
     "@fgo-lab/master-data": "workspace:*",
     "@fgo-lab/calc-core": "workspace:*",
     "@fgo-lab/calculation-application": "workspace:*",
@@ -24,6 +27,7 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@fgo-lab/test-fixtures": "workspace:*",
     "typescript": "5.9.3"
   }
 }

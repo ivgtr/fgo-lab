@@ -7,6 +7,7 @@ import {
   canonicalNoblePhantasmVariantSemanticsKey,
   getNoblePhantasmVariants,
   noblePhantasmVariantKey,
+  playerChoiceForEffect,
   type MasterDataSnapshot,
   type MasterEffect,
 } from '@fgo-lab/master-data';
@@ -193,7 +194,7 @@ export function compileDataPipelineProductionAudit(
     ({ effect }) => effect.proc.kind !== 'guaranteed',
   ).length;
   const playerChoiceSelections = occurrences.filter(
-    ({ effect }) => effect.selection?.kind === 'playerChoice',
+    ({ effect }) => playerChoiceForEffect(effect) !== null,
   ).length;
   const stochasticOutcomeSelections = occurrences.filter(
     ({ effect }) => effect.selection?.kind === 'stochasticOutcome',

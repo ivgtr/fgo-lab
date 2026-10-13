@@ -43,6 +43,23 @@ writeFileSync(resolve(outputArgument), `${JSON.stringify(expectations, null, 2)}
 
 function materializeExpectations(value, baseURL) {
   const result = [];
+  const fingerprintSource = readFileSync(
+    resolve(root, 'apps/web/src/adapters/atlasContractFingerprint.ts'),
+    'utf8',
+  );
+  const contractSha256 = /'([0-9a-f]{64})' as const/.exec(fingerprintSource)?.[1];
+  if (!contractSha256) throw new TypeError('missing_atlas_contract_fingerprint');
+  for (const failure of value.atlasCertificateFailures ?? [])
+    result.push(
+      resourceFailure(
+        failure.testId,
+        `https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/${contractSha256}.json`,
+        'fetch',
+        failure.failureText,
+        failure.count,
+        value,
+      ),
+    );
   for (const { testId, resources } of value.atlasImageFailures)
     for (const resource of resources) {
       const url = new URL(resource.path, 'https://static.atlasacademy.io').href;
@@ -79,7 +96,9 @@ function resourceFailure(testId, url, resourceType, failureText, expectedCount, 
     expectedCount,
     reason: url.startsWith('https://static.atlasacademy.io/')
       ? 'This test declares and aborts this exact Atlas image request to verify fallback behavior.'
-      : 'The incompatible-master recovery declares this exact superseded manifest request.',
+      : url.startsWith('https://raw.githubusercontent.com/')
+        ? 'This test disconnects the certificate request while verifying offline use of saved data.'
+        : 'This test declares this exact local resource failure.',
     expiresAt: declaration.expiresAt,
   };
 }

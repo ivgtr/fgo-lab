@@ -76,18 +76,18 @@
     "caseId": "E2E-024",
     "outcome": "browserConnection",
     "oldAssertion": "published master replacement reconnects browser storage to the current version",
-    "disposition": "retained",
-    "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-025] incompatible master recovery preserves user data @desktop @journey"
+    "disposition": "transferred",
+    "replacementFile": "apps/web/src/adapters/atlasRepository.test.ts",
+    "replacementTest": "checks generation in the write transaction and preserves profile data"
   },
   {
     "id": "E2E-A025-ONLINE",
     "caseId": "E2E-025",
     "outcome": "browserConnection",
     "oldAssertion": "invalid cached master is replaced while user profile remains",
-    "disposition": "retained",
-    "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-025] incompatible master recovery preserves user data @desktop @journey"
+    "disposition": "transferred",
+    "replacementFile": "apps/web/src/adapters/atlasRepository.test.ts",
+    "replacementTest": "replaces a damaged active only after a certified candidate passes validation"
   },
   {
     "id": "E2E-A025-OFFLINE",
@@ -96,7 +96,7 @@
     "oldAssertion": "invalid cached master is discarded when refresh fails and user profile remains",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-025] incompatible master recovery preserves user data @desktop @journey"
+    "replacementTest": "[E2E-025] damaged certified master preserves user data @desktop @journey"
   },
   {
     "id": "E2E-A026-PROFILE",

@@ -17,7 +17,8 @@ const root = resolve(import.meta.dirname, '../../..');
 describe('shared data-pipeline production audit', () => {
   it('loads, parses, and compiles the complete canonical inventory once', async () => {
     const measured = await measureProductionAuditLifecycle({
-      read: () => readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8'),
+      read: () =>
+        readFile(resolve(root, 'packages/test-fixtures/production-master/master.json'), 'utf8'),
       parse: (content) => masterSnapshotSchema.parse(JSON.parse(content)),
       compile: compileDataPipelineProductionAudit,
     });

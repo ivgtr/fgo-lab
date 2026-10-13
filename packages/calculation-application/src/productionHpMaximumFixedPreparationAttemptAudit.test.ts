@@ -1,7 +1,11 @@
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { describe, expect, it } from 'vitest';
-import { type MasterEffect, type MasterDataSnapshot } from '@fgo-lab/master-data';
+import {
+  playerChoiceForEffect,
+  type MasterEffect,
+  type MasterDataSnapshot,
+} from '@fgo-lab/master-data';
 import { normalizeAtlasSnapshot } from '@fgo-lab/data-pipeline';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
@@ -613,11 +617,8 @@ describe('maximumFixed changed-attempt native noncommit isolation', () => {
       expect(
         choice.source.forwardSource.canonical.writers
           .filter((writer) => writer.actionIndex === 1)
-          .map((writer) => writer.effect.selection),
-      ).toEqual([
-        expect.objectContaining({ group: { key: 'player-choice:1', candidate: '2' } }),
-        null,
-      ]);
+          .map((writer) => playerChoiceForEffect(writer.effect)),
+      ).toEqual([{ key: 'player-choice:1', candidate: '2' }, null]);
       expect(
         choice.source.forwardSource.canonical.writers.some(
           (writer) => writer.effect.id === '981009',

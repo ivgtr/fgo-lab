@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './observedTest';
-import { openTestHome } from './setup';
+import { installRankingFixtureWorker, openTestHome } from './setup';
 import type { Page } from './observedTest';
 
 async function expectNoSeriousViolations(page: Page) {
@@ -30,35 +30,41 @@ test('[E2E-001] startup screen @desktop @a11y', async ({ newObservedPage }) => {
   }
 });
 
-test('[E2E-002] major desktop screens @desktop @a11y', async ({ page }) => {
+test('[E2E-002] desktop home and calculator @desktop @a11y', async ({ page }) => {
   test.setTimeout(60_000);
   await openTestHome(page);
-  for (const name of [
-    'ホーム',
-    'ダメージ計算',
-    '火力ランキング',
-    '所持・育成',
-    '概念礼装',
-    '支援条件',
-    '育成計画',
-    'データ管理',
-  ]) {
+  for (const name of ['ホーム', 'ダメージ計算']) {
     await page.getByRole('button', { name }).click();
     await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
     await expectNoSeriousViolations(page);
-    if (name === '火力ランキング') {
-      await expect(page.getByRole('status')).toContainText('件を計算', { timeout: 30_000 });
-      const first = page
-        .getByRole('list', { name: '宝具火力ランキング' })
-        .getByRole('listitem')
-        .first();
-      await first.getByRole('button', { name: /の計算詳細を開く/ }).click();
-      await expect(first.getByRole('region', { name: /の計算詳細/ })).toBeVisible({
-        timeout: 15_000,
-      });
-      await expectNoSeriousViolations(page);
-      await first.getByRole('button', { name: /の計算詳細を閉じる/ }).click();
-    }
+  }
+});
+
+test('[E2E-059] desktop ranking and detail @desktop @a11y', async ({ page }) => {
+  test.setTimeout(60_000);
+  await installRankingFixtureWorker(page);
+  await openTestHome(page);
+  await page.getByRole('button', { name: '火力ランキング' }).click();
+  await expect(page.getByRole('heading', { name: '火力ランキング', exact: true })).toBeVisible();
+  await expectNoSeriousViolations(page);
+  await expect(page.getByRole('status')).toContainText('12件表示 / 12件を計算');
+  const first = page
+    .getByRole('list', { name: '宝具火力ランキング' })
+    .getByRole('listitem')
+    .first();
+  await first.getByRole('button', { name: /の計算詳細を開く/ }).click();
+  await expect(first.getByRole('region', { name: /の計算詳細/ })).toBeVisible({ timeout: 15_000 });
+  await expectNoSeriousViolations(page);
+  await first.getByRole('button', { name: /の計算詳細を閉じる/ }).click();
+});
+
+test('[E2E-060] desktop profile and data screens @desktop @a11y', async ({ page }) => {
+  test.setTimeout(60_000);
+  await openTestHome(page);
+  for (const name of ['所持・育成', '概念礼装', '支援条件', '育成計画', 'データ管理']) {
+    await page.getByRole('button', { name }).click();
+    await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
+    await expectNoSeriousViolations(page);
   }
 });
 

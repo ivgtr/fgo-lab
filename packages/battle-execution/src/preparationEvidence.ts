@@ -2,6 +2,7 @@ import { npProgramEffects } from './npProgramScope';
 import {
   findNoblePhantasmVariant,
   noblePhantasmVariantKey,
+  playerChoiceForEffect,
   type ActorFormId,
   type CanonicalEffectRequirement,
   type MasterEffect,
@@ -47,30 +48,33 @@ export function assemblePreparationActivationFacts(
   effects: readonly MasterEffect[],
 ): readonly ActivationFact[] {
   const source = preparationActivationSource(servant, sourceKind, sourceId, actorFormId);
-  const facts = npProgramEffects(effects).flatMap<ActivationFact>((effect) => [
-    ...(effect.selection?.kind === 'playerChoice'
-      ? [
-          {
-            kind: 'choice' as const,
-            source,
-            family: effect.selection.group.key,
-            candidate: effect.selection.group.candidate,
-          },
-        ]
-      : []),
-    ...sourceQuantityRequirements(effect.requirement.expression).map((condition) => ({
-      ...condition,
-      source,
-    })),
-    ...(effect.operationTrigger
-      ? [
-          {
-            kind: 'operationTrigger' as const,
-            source,
-            position: effect.operationTrigger.position,
-          },
-        ]
-      : []),
-  ]);
+  const facts = npProgramEffects(effects).flatMap<ActivationFact>((effect) => {
+    const choice = playerChoiceForEffect(effect);
+    return [
+      ...(choice
+        ? [
+            {
+              kind: 'choice' as const,
+              source,
+              family: choice.key,
+              candidate: choice.candidate,
+            },
+          ]
+        : []),
+      ...sourceQuantityRequirements(effect.requirement.expression).map((condition) => ({
+        ...condition,
+        source,
+      })),
+      ...(effect.operationTrigger
+        ? [
+            {
+              kind: 'operationTrigger' as const,
+              source,
+              position: effect.operationTrigger.position,
+            },
+          ]
+        : []),
+    ];
+  });
   return [...new Map(facts.map((fact) => [JSON.stringify(fact), fact])).values()];
 }

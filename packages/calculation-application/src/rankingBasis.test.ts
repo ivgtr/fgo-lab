@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { masterSnapshotSchema, naturalServantLevel } from '@fgo-lab/master-data';
+import { combatRulesSchema, masterSnapshotSchema, naturalServantLevel } from '@fgo-lab/master-data';
 import {
   APP_VERSION,
+  canonicalTargetAttributeSchema,
+  canonicalTargetClassIdSchema,
   ENGINE_VERSION,
   SCHEMA_VERSION,
   servantBuildRecordSchema,
@@ -15,6 +17,7 @@ import { calculateRankingPolicy } from './rankingPolicyCalculation';
 import { calculateRankingPolicyDetail } from './rankingProfileCalculation';
 import {
   createRankingPortableRequest,
+  createDefaultCalculatorPortableRequest,
   currentCalculationVersionContext,
   executePortableCalculation,
   recoverPortableCalculation,
@@ -55,6 +58,46 @@ const versions = {
 };
 
 describe('ranking independent basis', () => {
+  it('applies one master coefficient change to calculator and ranking results', () => {
+    const classes = canonicalTargetClassIdSchema.options;
+    const attributes = canonicalTargetAttributeSchema.options;
+    const baselineRules = combatRulesSchema.parse({
+      classAttackRate: Object.fromEntries(classes.map((name) => [name, 1])),
+      classAffinity: Object.fromEntries(
+        classes.map((name) => [name, Object.fromEntries(classes.map((target) => [target, 1]))]),
+      ),
+      attributeAffinity: Object.fromEntries(
+        attributes.map((name) => [
+          name,
+          Object.fromEntries(attributes.map((target) => [target, 1])),
+        ]),
+      ),
+      cardAttackRate: { arts: 1, buster: 1.5, quick: 0.8 },
+      damageConstant: 0.23,
+    });
+    const baselineMaster = { ...smallMaster, combatRules: baselineRules };
+    const changedMaster = {
+      ...baselineMaster,
+      combatRules: combatRulesSchema.parse({ ...baselineRules, damageConstant: 0.46 }),
+    };
+    const calculatorAverage = (data: typeof baselineMaster) => {
+      const request = createDefaultCalculatorPortableRequest(data, undefined, servant);
+      const outcome = executePortableCalculation(request, data);
+      expect(outcome.status).toBe('executed');
+      if (outcome.status !== 'executed' || outcome.execution.result.status !== 'calculated')
+        throw new Error('fixture must calculate');
+      return outcome.execution.result.rows[0].average;
+    };
+    const rankingAverage = (data: typeof baselineMaster) => {
+      const outcome = calculateRankingPolicy(data, profile, defaults, versions);
+      expect(outcome.status).toBe('calculated');
+      expect(outcome.rows).toHaveLength(1);
+      return outcome.rows[0]!.average;
+    };
+    expect(calculatorAverage(changedMaster)).toBeGreaterThan(calculatorAverage(baselineMaster));
+    expect(rankingAverage(changedMaster)).toBeGreaterThan(rankingAverage(baselineMaster));
+  });
+
   it('keeps owned NP1/2/5 capacity failures separate under all four policies', () => {
     const servants = [1, 2, 5].map(
       (npLevel) =>

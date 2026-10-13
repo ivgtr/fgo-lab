@@ -98,11 +98,18 @@ export function damageResolutionInputForNoblePhantasm(
     npMultipliers: deriveNpMultipliers(damage, effectiveOvercharge),
     damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
     cardType: noblePhantasm.card,
-    classAttackRate: scenario.explicitOverrides.classAttackRate ?? classAttackRate(servant.classId),
-    classAffinity: resolveClassAffinity(servant.classId, scenario.targetContext.class),
+    classAttackRate:
+      scenario.explicitOverrides.classAttackRate ??
+      classAttackRate(servant.classId, master.combatRules),
+    classAffinity: resolveClassAffinity(
+      servant.classId,
+      scenario.targetContext.class,
+      master.combatRules,
+    ),
     attributeAffinity: resolveAttributeAffinity(
       servantAttribute(servant.traits),
       scenario.targetContext.attribute,
+      master.combatRules,
     ),
     attackBuff: 0,
     defenseBuff: scenario.enemyDefenseBuff,

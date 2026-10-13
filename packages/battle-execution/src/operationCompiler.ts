@@ -3,7 +3,11 @@ import type { ResourceMutationIdentity } from './contracts';
 import { operationSourceFor, retainOperationSource } from './executionSourceObservation';
 import { markerIntersects } from './markerDependency';
 import { effectExecutesInNpProgram } from './npProgramScope';
-import { actorFormEquals, canonicalRequirementLeaves } from '@fgo-lab/master-data';
+import {
+  actorFormEquals,
+  canonicalRequirementLeaves,
+  playerChoiceForEffect,
+} from '@fgo-lab/master-data';
 import type {
   ActorCountPredicate,
   CanonicalEffectRequirement,
@@ -440,8 +444,8 @@ function transactionGroupId(source: SourceEffect): string | null {
     source.effect.gameActivation === 'npBeforeDamage'
   )
     return `${source.skillId}:action`;
-  if (source.effect.selection?.kind === 'playerChoice')
-    return `${source.skillId}:player-choice:${source.effect.selection.group.key}:${source.effect.selection.group.candidate}`;
+  const choice = playerChoiceForEffect(source.effect);
+  if (choice) return `${source.skillId}:player-choice:${choice.key}:${choice.candidate}`;
   if (source.effect.stateIdentity !== null)
     return `${source.skillId}:${source.effect.stateIdentity.key}`;
   return null;

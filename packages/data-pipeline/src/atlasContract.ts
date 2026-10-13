@@ -85,6 +85,9 @@ export type AtlasReleaseCondition = {
   condGroup?: number;
 };
 export type AtlasServantAssociation = {
+  svtId?: number;
+  num?: number;
+  priority?: number;
   releaseConditions?: AtlasReleaseCondition[];
 };
 export type AtlasServant = {
@@ -133,6 +136,7 @@ export type AtlasServant = {
 };
 export type AtlasNp = {
   id?: number;
+  num?: number;
   name?: string;
   card?: string;
   priority?: number;

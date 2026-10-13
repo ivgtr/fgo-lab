@@ -3,11 +3,14 @@
   "references": [
     { "path": "packages/schema" },
     { "path": "packages/master-data" },
+    { "path": "packages/atlas-monitor" },
+    { "path": "packages/test-fixtures" },
     { "path": "packages/data-pipeline" },
     { "path": "packages/calc-core" },
     { "path": "packages/battle-execution" },
     { "path": "packages/calculation-application" },
     { "path": "packages/profile-domain" },
-    { "path": "packages/workspace-domain" }
+    { "path": "packages/workspace-domain" },
+    { "path": "apps/data-audit" }
   ]
 }

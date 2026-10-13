@@ -34,11 +34,10 @@ export interface RawVariantGroup {
 export function stateTraitName(
   trait: AtlasTraitRef,
   traitNameById: ReadonlyMap<number, string>,
-  preserveUnknownIdentity = true,
 ): string | null {
   if (trait.id === 3004) return null;
   if (trait.name && trait.name !== 'unknown') return trait.name;
-  if (preserveUnknownIdentity && typeof trait.id === 'number')
+  if (typeof trait.id === 'number')
     return traitNameById.get(trait.id) ?? `traitId:${String(trait.id)}`;
   return null;
 }
@@ -61,7 +60,7 @@ function formTraitNames(
   return [
     ...new Set(
       (exact?.length ? exact : fallback).flatMap((trait) => {
-        const name = stateTraitName(trait, traitNameById, false);
+        const name = stateTraitName(trait, traitNameById);
         return name ? [name] : [];
       }),
     ),
@@ -72,10 +71,18 @@ function significantInitialLimits(actor: AtlasServant): number[] {
   if (typeof actor.id !== 'number') throw new TypeError('missing_actor_form_identity');
   const limits = new Set<number>();
   for (const np of actor.noblePhantasms ?? [])
-    for (const condition of equipConditions(np.npSvts))
+    for (const condition of equipConditions(np.npSvts, {
+      actorId: actor.id,
+      num: np.num,
+      priority: np.priority,
+    }))
       if (condition.condTargetId === actor.id) limits.add(condition.condNum);
   for (const skill of [...(actor.skills ?? []), ...(actor.classPassive ?? [])]) {
-    for (const condition of equipConditions(skill.skillSvts))
+    for (const condition of equipConditions(skill.skillSvts, {
+      actorId: actor.id,
+      num: skill.num,
+      priority: skill.priority,
+    }))
       if (condition.condTargetId === actor.id) limits.add(condition.condNum);
     for (const fn of skill.functions ?? []) {
       const target = transformTarget(fn);
@@ -113,16 +120,21 @@ function makeForm(
 
 export function eligibleNps(form: RawActorForm): AtlasNp[] {
   const nps = form.actor.noblePhantasms ?? [];
+  const actorId = form.actor.id;
+  if (typeof actorId !== 'number') throw new TypeError('missing_actor_form_identity');
+  const owner = (np: AtlasNp) => ({ actorId, num: np.num, priority: np.priority });
   return nps.filter((np) => {
-    const ownConditions = equipConditions(np.npSvts);
+    const ownConditions = equipConditions(np.npSvts, owner(np));
     const conditionedParents = nps.filter(
       (candidate) =>
         candidate.script?.tdTypeChangeIDs?.includes(np.id ?? -1) &&
-        equipConditions(candidate.npSvts).length > 0,
+        equipConditions(candidate.npSvts, owner(candidate)).length > 0,
     );
     if (ownConditions.length === 0 && (np.priority ?? 0) <= 0 && conditionedParents.length > 0)
-      return conditionedParents.some((candidate) => availableInForm(candidate.npSvts, form.id));
-    return availableInForm(np.npSvts, form.id);
+      return conditionedParents.some((candidate) =>
+        availableInForm(candidate.npSvts, form.id, owner(candidate)),
+      );
+    return availableInForm(np.npSvts, form.id, owner(np));
   });
 }
 

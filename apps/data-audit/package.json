@@ -1,0 +1,35 @@
+{
+  "name": "@fgo-lab/data-audit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "raw-diff": "tsx src/rawDiffCli.ts",
+    "raw-scan": "tsx src/rawScanCli.ts",
+    "raw-vocabulary": "tsx src/rawVocabularyCli.ts",
+    "json-vocabulary": "tsx src/jsonVocabularyCli.ts",
+    "source-probe": "tsx src/sourceProbeCli.ts",
+    "combat-parity": "tsx src/combatParityCli.ts",
+    "vocabulary-probe": "tsx src/vocabularyProbeCli.ts",
+    "skill-values-probe": "tsx src/skillValuesProbeCli.ts",
+    "reference-probe": "tsx src/referenceProbeCli.ts",
+    "live-reference-probe": "tsx src/liveReferenceProbeCli.ts",
+    "growth-probe": "tsx src/growthProbeCli.ts",
+    "materials-probe": "tsx src/materialsProbeCli.ts",
+    "capture-atlas-bodies": "tsx src/captureAtlasBodiesCli.ts",
+    "attest-replay": "tsx src/replayAttestationCli.ts",
+    "canonical-probe": "tsx src/canonicalProbeCli.ts",
+    "issue-certificate": "tsx src/issueCertificateCli.ts",
+    "publish-certificate": "tsx src/publishCertificateCli.ts",
+    "audit-run": "tsx src/auditRunCli.ts"
+  },
+  "dependencies": {
+    "@fgo-lab/atlas-monitor": "workspace:*",
+    "@fgo-lab/data-pipeline": "workspace:*",
+    "@fgo-lab/master-data": "workspace:*",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "tsx": "4.20.5"
+  }
+}

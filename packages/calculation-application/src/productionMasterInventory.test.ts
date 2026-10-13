@@ -11,9 +11,10 @@ import { describe, expect, it } from 'vitest';
 const root = resolve(import.meta.dirname, '../../..');
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
 function loadProductionMaster() {
-  productionMaster ??= readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
-    (content) => masterSnapshotSchema.parse(JSON.parse(content)),
-  );
+  productionMaster ??= readFile(
+    resolve(root, 'packages/test-fixtures/production-master/master.json'),
+    'utf8',
+  ).then((content) => masterSnapshotSchema.parse(JSON.parse(content)));
   return productionMaster;
 }
 

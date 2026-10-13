@@ -34,7 +34,7 @@ async function audit(): Promise<void> {
   await mkdir(output, { recursive: true });
   const masterPath = resolve(
     root,
-    process.env['FGO_AUDIT_MASTER'] ?? 'apps/web/public/master/master.json',
+    process.env['FGO_AUDIT_MASTER'] ?? 'packages/test-fixtures/production-master/master.json',
   );
   const bytes = await readFile(masterPath);
   const master = masterSnapshotSchema.parse(JSON.parse(bytes.toString()));

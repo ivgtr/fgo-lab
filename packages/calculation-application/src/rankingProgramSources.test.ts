@@ -362,6 +362,10 @@ describe('ranking selected program source timeline', () => {
                   { kind: 'boundedPhaseIrrelevant', proof: 'noBattleStateChange' },
                 ]),
                 selection: { kind: 'playerChoice', group: { key: 'saved-choice', candidate } },
+                requirement: {
+                  recipient: 'sourceSelf',
+                  expression: { kind: 'choice', family: 'saved-choice', candidate },
+                },
               })),
             },
       ),

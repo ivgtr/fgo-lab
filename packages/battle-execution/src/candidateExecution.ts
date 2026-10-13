@@ -261,6 +261,7 @@ export function executeOrderedCandidate(
         resolvedModifierValue,
         activeDecisionSource: activeDecisionSourceInstances.has(operation.source.sourceInstanceId),
         attackerClass,
+        combatRules: prepared.combatRules,
         issue,
       });
       results.push(result);

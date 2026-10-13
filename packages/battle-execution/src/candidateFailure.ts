@@ -53,7 +53,10 @@ export function assembleInvalidActivationResult({
             operation.decisionKey ? candidate.decisions.get(operation.decisionKey) : undefined,
             null,
             false,
-            { kind: 'relative', relation: defaultTargetClassRelation(prepared.attackerClass) },
+            {
+              kind: 'relative',
+              relation: defaultTargetClassRelation(prepared.attackerClass, prepared.combatRules),
+            },
             { kind: 'relative', relation: 'neutral' },
           ),
         )

@@ -9,6 +9,14 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
+公開証明書の公開前にAtlas直接取得の画面を確認する場合は、別の明示的な起動コマンドを使います。
+
+```sh
+pnpm dev:local-certificate
+```
+
+このモードだけ固定世代の開発用証明書を同一originから取得します。ゲームデータ本文はAtlas APIから直接取得し、固定世代と違う応答はdigest不一致で拒否します。通常の`pnpm dev`・公開build・`pnpm preview`は公開証明書を参照し、公開URLが404の間は初回取得に失敗します。ブラウザーの固定入力検証はPlaywright fixtureで行います。
+
 pnpmは起動時にlockfileとnode_modulesの整合を確認します。依存更新後はpnpm installで同期してください。storeの書込みに失敗した場合は実際のpathと権限を確認し、必要なら書込み可能なstoreを指定します。依存準備の失敗をテスト結果として扱いません。
 
 ```sh
@@ -26,7 +34,7 @@ apps/web/.nextへ本番成果物を生成します。VercelではRoot Directory�
 
 ## データ更新
 
-Atlasのraw解釈と変換はpackages/data-pipelineが所有します。master、manifest、inventoryと固定raw入力・宣言を一つの更新単位として揃え、version・bytes・SHA・参照整合性を検査します。生成処理とCLIは同packageのscriptsを参照してください。
+Atlasのraw解釈と変換はpackages/data-pipelineが所有します。製品ブラウザーはAtlas APIの本文を直接取得し、独立監査が発行した証明書と照合します。監査の実行・証明書公開・端末内masterの更新契約は[Atlas更新記録](atlas-data-update.md)を参照してください。固定回帰用masterと入力はpackages/test-fixturesに保持し、version・bytes・SHA・参照整合性を検査します。
 
 ```sh
 pnpm validate:master

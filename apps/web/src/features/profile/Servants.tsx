@@ -359,9 +359,21 @@ export function Servants({
                 宝具Lv
                 <select
                   value={build?.npLevel ?? 0}
-                  onChange={(event) =>
-                    void onChange(selected.id, { npLevel: Number(event.target.value) })
-                  }
+                  onChange={(event) => {
+                    const npLevel = Number(event.target.value);
+                    const visibleSkillLevels = Object.fromEntries(
+                      selected.skills.map(({ slot }) => {
+                        const key = String(slot);
+                        return [key, build?.skills[key] ?? 1];
+                      }),
+                    );
+                    void onChange(selected.id, {
+                      npLevel,
+                      ...(npLevel > 0
+                        ? { skills: { ...build?.skills, ...visibleSkillLevels } }
+                        : {}),
+                    });
+                  }}
                 >
                   {[0, 1, 2, 3, 4, 5].map((value) => (
                     <option key={value} value={value}>

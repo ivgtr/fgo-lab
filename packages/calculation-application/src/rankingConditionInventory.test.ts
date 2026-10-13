@@ -33,7 +33,12 @@ function hasNegativeFieldRequirement(
 describe('production ranking condition provenance', () => {
   it('ratchets selectable conditions by canonical provenance and activation ownership', async () => {
     const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+      JSON.parse(
+        await readFile(
+          resolve(root, 'packages/test-fixtures/production-master/master.json'),
+          'utf8',
+        ),
+      ),
     );
     const inventory = master.servants.flatMap((servant) => {
       const operations = new Map(

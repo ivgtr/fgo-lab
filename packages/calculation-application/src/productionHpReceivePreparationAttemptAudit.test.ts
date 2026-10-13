@@ -424,7 +424,7 @@ it(
   'joins strict published declarations to a separately identified schema-legal noncommit derivative',
   { timeout: 60000, ...productionAuditTestOptions(['audit-receive-attempt-published.json']) },
   async ({ task }) => {
-    const bytes = await readFile(resolve('apps/web/public/master/master.json')),
+    const bytes = await readFile(resolve('packages/test-fixtures/production-master/master.json')),
       published = masterSnapshotSchema.parse(JSON.parse(bytes.toString('utf8'))),
       inventory = receiveInventory(published);
     const candidates = inventory.filter((d) => {

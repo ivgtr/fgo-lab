@@ -1,4 +1,5 @@
 import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { CombatRules } from '@fgo-lab/master-data';
 import {
   defaultTargetClassRelation,
   type RelativeTargetAttributeRelation,
@@ -20,9 +21,12 @@ export type TargetContextCommand =
   | { kind: 'setFamily'; familyId: CanonicalTargetFamilyId; enabled: boolean }
   | { kind: 'setFamilyAbsent'; familyId: CanonicalTargetFamilyId; absent: boolean };
 
-export function createDefaultTargetContext(attackerClassId: string): TargetContext {
+export function createDefaultTargetContext(
+  attackerClassId: string,
+  rules?: CombatRules,
+): TargetContext {
   return {
-    class: { kind: 'relative', relation: defaultTargetClassRelation(attackerClassId) },
+    class: { kind: 'relative', relation: defaultTargetClassRelation(attackerClassId, rules) },
     attribute: { kind: 'relative', relation: 'neutral' },
     families: [],
     absentFamilies: [],

@@ -24,6 +24,7 @@ import type {
 } from './scenario';
 import { calculateDamageResolutionValue, type DamageResolutionValue } from './damageResolution';
 import type { PreparedDamageMatrixCache } from './preparedDamageInputCache';
+import type { CombatRules } from '@fgo-lab/master-data';
 import { evaluateCalculationEvidence } from './evidence';
 
 type ResolvedCalculationScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -169,6 +170,7 @@ function requiredInputsForResult(inputs: ResolvedCalculationInput['requiredInput
 export function resolvedCalculationResult(
   resolved: ResolvedCalculationInput,
   damageCache: DamageMatrixCache,
+  rules?: CombatRules,
 ): CalculationApplicationOutcome {
   if (resolved.status === 'invalid')
     return {
@@ -260,9 +262,9 @@ export function resolvedCalculationResult(
   const calculation = resolved.noblePhantasmVariant
     ? damageCache.getOrCreate(
         { noblePhantasmVariant: resolved.noblePhantasmVariant.ref, input: resolved.input },
-        () => calculateDamageResolutionValue(resolved.input),
+        () => calculateDamageResolutionValue(resolved.input, rules),
       )
-    : calculateDamageResolutionValue(resolved.input);
+    : calculateDamageResolutionValue(resolved.input, rules);
   const evidence = evaluateCalculationEvidence([
     ...calculation.evidence.map((entry) => entry.key),
     ...resolved.evidenceKeys,

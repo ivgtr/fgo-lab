@@ -1,5 +1,6 @@
 import type { CalculationResult, PortableCalculationRequest } from '@fgo-lab/schema';
 import type { PortableVersionUpgradeResult } from '@fgo-lab/calculation-application';
+import { masterVersionLabel } from '../../ui/masterVersion';
 
 type CalculationContextNoticeProps =
   | {
@@ -137,8 +138,12 @@ export function CalculationContextNotice(props: CalculationContextNoticeProps) {
 
 function VersionMetadata({ request, id }: { request: PortableCalculationRequest; id?: string }) {
   return (
-    <small id={id} className="calculation-context-version">
-      マスター {request.versionContext.masterDataVersion} ／ エンジン{' '}
+    <small
+      id={id}
+      className="calculation-context-version"
+      title={request.versionContext.masterDataVersion}
+    >
+      マスター {masterVersionLabel(request.versionContext.masterDataVersion)} ／ エンジン{' '}
       {request.versionContext.engineVersion}
     </small>
   );

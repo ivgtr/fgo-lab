@@ -12,6 +12,7 @@ import {
   naturalServantLevel,
   noblePhantasmVariantSchema,
   passiveSkillSchema,
+  playerChoiceForEffect,
   validateMasterSnapshot,
 } from './index';
 
@@ -56,6 +57,33 @@ const inertEffect = {
 };
 
 describe('master validation', () => {
+  it("keeps a player choice independent from the same effect's stochastic outcome", () => {
+    const effect = masterEffectSchema.parse({
+      ...inertEffect,
+      proc: { kind: 'singleRoll', ratePermille: [[700], [], [], [], []] },
+      selection: {
+        kind: 'stochasticOutcome',
+        group: { kind: 'binary', key: 'roll:test', defaultOutcome: 'success' },
+      },
+      requirement: {
+        recipient: 'sourceSelf',
+        expression: { kind: 'choice', family: 'player-choice:0', candidate: '1' },
+      },
+    });
+    expect(playerChoiceForEffect(effect)).toEqual({ key: 'player-choice:0', candidate: '1' });
+    expect(
+      masterEffectSchema.safeParse({
+        ...effect,
+        requirement: {
+          ...effect.requirement,
+          expression: {
+            kind: 'any',
+            requirements: [effect.requirement.expression, { kind: 'always' }],
+          },
+        },
+      }).success,
+    ).toBe(false);
+  });
   it('accepts only the current master manifest schema', () => {
     expect(masterManifestSchema.safeParse(manifest).success).toBe(true);
     expect(masterManifestSchema.safeParse({ ...manifest, schemaVersion: 28 }).success).toBe(false);

@@ -1,4 +1,5 @@
 import { normalizeHpTransfer } from './hpNormalization';
+import { atlasFunctionReferenceCandidates } from './atlasReferences';
 import { isUnreferencedDefensiveMarker } from './defensiveMarkerNormalization';
 import { normalizeMarkerInstance } from './markerNormalization';
 import { normalizeNpTransfer } from './npTransferNormalization';
@@ -1183,10 +1184,18 @@ function normalizeTriggerScope(buffs: AtlasFunction['buffs'], source: NormalizeE
 }
 
 function procRateSeries(
+  fn: AtlasFunction,
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   execution: readonly MasterEffect['execution'][number][],
   source: NormalizeEffectSource,
 ): MasterEffect['proc'] {
+  const statusApplication =
+    (fn.funcType === 'addState' || fn.funcType === 'addStateShort') &&
+    (fn.buffs?.length ?? 0) > 0 &&
+    !execution.some(
+      (operation) =>
+        operation.kind === 'populationFunction' || operation.kind === 'boundedPhaseIrrelevant',
+    );
   const terminal = execution.some(
     (operation) =>
       operation.kind === 'populationMutation' ||
@@ -1205,7 +1214,7 @@ function procRateSeries(
         'transformActorForm',
       ].includes(operation.kind),
   );
-  if (!terminal) return { kind: 'guaranteed' };
+  if (!terminal && !statusApplication) return { kind: 'guaranteed' };
   const values = parameterSets.map((set, index) =>
     source === 'np' || index === 0 ? set.map((value) => value.Rate) : [],
   );
@@ -1214,9 +1223,7 @@ function procRateSeries(
   if (values.some((set) => set.some((rate) => typeof rate !== 'number')))
     throw new TypeError(`invalid_proc_rate_series:${JSON.stringify(values)}`);
   const concreteRates = values.flatMap((set) => set as number[]);
-  if (concreteRates.every((rate) => Number.isInteger(rate) && Math.abs(rate) >= 1_000))
-    return { kind: 'guaranteed' };
-  if (concreteRates.some((rate) => !Number.isInteger(rate) || Math.abs(rate) > 1_000))
+  if (concreteRates.some((rate) => !Number.isInteger(rate) || Math.abs(rate) > 5000))
     throw new TypeError(`invalid_proc_rate_series:${JSON.stringify(values)}`);
   const rates = values.map((set) => set.map((rate) => Math.abs(rate as number))) as [
     number[],
@@ -1225,6 +1232,16 @@ function procRateSeries(
     number[],
     number[],
   ];
+  if (statusApplication)
+    return {
+      kind: 'singleRoll',
+      ratePermille: rates,
+      netAdjustmentInputKey: 'effect:statusApplicationAdjustment',
+    };
+  if (concreteRates.every((rate) => Number.isInteger(rate) && Math.abs(rate) >= 1_000))
+    return { kind: 'guaranteed' };
+  if (concreteRates.some((rate) => !Number.isInteger(rate) || Math.abs(rate) > 1_000))
+    throw new TypeError(`invalid_proc_rate_series:${JSON.stringify(values)}`);
   return concreteRates.every((rate) => Math.abs(rate) === 1_000)
     ? { kind: 'guaranteed' }
     : { kind: 'singleRoll', ratePermille: rates };
@@ -1274,6 +1291,8 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
   for (let index = 0; index < result.length; index += 1) {
     const effect = result[index]!;
     if (effect.proc.kind !== 'singleRoll') continue;
+    const adjustmentInputKey = effect.proc.netAdjustmentInputKey;
+    const rateSets = effect.proc.ratePermille;
     if (hasNegativeProcRate(effect)) {
       if (index === 0 || result[index - 1]!.proc.kind !== 'singleRoll')
         throw new TypeError(`orphan_chained_proc:${effect.occurrenceId}`);
@@ -1290,8 +1309,8 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
           (member) =>
             modifierSeriesIdentity(member) !== identity ||
             member.proc.kind !== 'singleRoll' ||
-            JSON.stringify(member.proc.ratePermille) !==
-              JSON.stringify(effect.proc.kind === 'singleRoll' && effect.proc.ratePermille),
+            member.proc.netAdjustmentInputKey !== adjustmentInputKey ||
+            JSON.stringify(member.proc.ratePermille) !== JSON.stringify(rateSets),
         )
       )
         throw new TypeError(
@@ -1306,7 +1325,8 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
           interaction: { kind: 'procSeries', key },
           proc: {
             kind: 'chainedRolls',
-            ratePermille: effect.proc.ratePermille,
+            ratePermille: rateSets,
+            ...(adjustmentInputKey ? { netAdjustmentInputKey: adjustmentInputKey } : {}),
             seriesKey: key,
             index: memberIndex,
             maximumSuccesses: members.length,
@@ -1358,6 +1378,9 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
         proc: {
           kind: 'independentRolls',
           ratePermille: member.effect.proc.ratePermille,
+          ...(member.effect.proc.netAdjustmentInputKey
+            ? { netAdjustmentInputKey: member.effect.proc.netAdjustmentInputKey }
+            : {}),
           groupKey,
           index,
           total: independent.length,
@@ -1367,8 +1390,6 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
   }
   return result.map((effect) => {
     if (effect.proc.kind === 'guaranteed') return effect;
-    if (effect.selection?.kind === 'playerChoice')
-      throw new TypeError(`contradictory_selection_semantics:${effect.occurrenceId}`);
     if (effect.proc.kind === 'chainedRolls') {
       if (
         effect.selection?.kind !== 'stochasticOutcome' ||
@@ -1824,30 +1845,7 @@ export function normalizeFunctions(
     if (populationFunction) execution = [populationFunction.operation];
     if (isUnreferencedDefensiveMarker(fn, parameterSets, traitNameById, stateCatalog))
       execution = [{ kind: 'boundedPhaseIrrelevant', proof: 'unreferencedDefensiveMarker' }];
-    const referenceCandidates = parameterSets
-      .flatMap((set) => set)
-      .flatMap((parameter) => {
-        if (typeof parameter.SkillID === 'number')
-          return [
-            {
-              id: parameter.SkillID,
-              level: typeof parameter.SkillLV === 'number' ? parameter.SkillLV : 1,
-            },
-          ];
-        if (
-          (fn.buffs ?? []).some((buff) =>
-            ['attackBeforeFunction', 'fieldIndividualityChangedFunction'].includes(buff.type ?? ''),
-          ) &&
-          typeof parameter.Value === 'number'
-        )
-          return [
-            {
-              id: parameter.Value,
-              level: typeof parameter.Value2 === 'number' ? parameter.Value2 : 1,
-            },
-          ];
-        return [];
-      });
+    const referenceCandidates = atlasFunctionReferenceCandidates(fn);
     const uniqueReferenceIds = [...new Set(referenceCandidates.map((reference) => reference.id))];
     if (uniqueReferenceIds.length > 1 && triggerScope === null)
       throw new TypeError(`ambiguous_referenced_skill:${String(fn.funcId)}`);
@@ -2049,6 +2047,24 @@ export function normalizeFunctions(
         ? [{ kind: 'operationTrigger' as const, position: operationTrigger.position }]
         : []),
     ]);
+    const proc = procRateSeries(fn, parameterSets, execution, source);
+    const statusAdjustmentInput: CanonicalInputDefinition[] =
+      proc.kind !== 'guaranteed' && proc.netAdjustmentInputKey
+        ? [
+            {
+              key: proc.netAdjustmentInputKey,
+              kind: 'statusApplicationAdjustment',
+              owner: 'field',
+              label: '効果の成功率補正（‰）',
+              description: '付与成功率の上昇から対象の耐性を差し引いた値',
+              minimum: -5000,
+              maximum: 5000,
+              step: 1,
+              defaultValue: 0,
+              defaultReason: '付与成功率補正と対象耐性がない中立の対象',
+            },
+          ]
+        : [];
     return [
       {
         id: String(fn.funcId),
@@ -2064,7 +2080,7 @@ export function normalizeFunctions(
               : source === 'reference'
                 ? ('derived' as const)
                 : ('constant' as const),
-        proc: procRateSeries(parameterSets, execution, source),
+        proc,
         selection: choice
           ? {
               kind: 'playerChoice' as const,
@@ -2087,6 +2103,7 @@ export function normalizeFunctions(
         stateIdentity,
         inputDefinitions: [
           ...canonicalInput.inputs,
+          ...statusAdjustmentInput,
           ...(populationFunction?.inputs ?? []),
           ...(npTransfer?.inputs ?? []),
           ...(hpTransfer?.inputs ?? []),
@@ -2126,5 +2143,7 @@ export function normalizeFunctions(
       },
     ];
   });
-  return assignHpThresholdSeries(assignProcSemantics(normalized));
+  // Threshold siblings share one decision even when each status application
+  // later receives its own stochastic outcome identity.
+  return assignProcSemantics(assignHpThresholdSeries(normalized));
 }

@@ -117,7 +117,12 @@ describe('external damage differential', () => {
       (candidate) => candidate.caseId === 'appmedia-ashoka-single-enemy-np-buff',
     ) as unknown as AshokaDifferential;
     const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+      JSON.parse(
+        await readFile(
+          resolve(root, 'packages/test-fixtures/production-master/master.json'),
+          'utf8',
+        ),
+      ),
     );
     const servant = master.servants.find((candidate) => candidate.id === testCase.input.servantId)!;
     const scenario = {
@@ -162,7 +167,12 @@ describe('external damage differential', () => {
 
   it('matches the published John and Habetrot count semantics', async () => {
     const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+      JSON.parse(
+        await readFile(
+          resolve(root, 'packages/test-fixtures/production-master/master.json'),
+          'utf8',
+        ),
+      ),
     );
     const versions = {
       schemaVersion: SCHEMA_VERSION,

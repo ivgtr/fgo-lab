@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalRequirementLeaves, getNoblePhantasmVariants } from '@fgo-lab/master-data';
+import {
+  canonicalRequirementLeaves,
+  getNoblePhantasmVariants,
+  playerChoiceForEffect,
+} from '@fgo-lab/master-data';
 import {
   assertMasterVersionIdentity,
   createManifest,
@@ -914,8 +918,7 @@ describe('immutable publish pipeline', () => {
     const conditionalChoiceEffect = snapshot.mysticCodes[0]?.skills[0]?.effects[1];
     expect(conditionalChoiceEffect).toMatchObject({
       selection: {
-        kind: 'playerChoice',
-        group: { key: 'player-choice:1', candidate: '2' },
+        kind: 'stochasticOutcome',
       },
       atlasEvidence: {
         parameterSemantics: {
@@ -924,6 +927,10 @@ describe('immutable publish pipeline', () => {
           unresolved: [],
         },
       },
+    });
+    expect(conditionalChoiceEffect && playerChoiceForEffect(conditionalChoiceEffect)).toEqual({
+      key: 'player-choice:1',
+      candidate: '2',
     });
     expect(
       conditionalChoiceEffect

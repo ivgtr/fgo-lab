@@ -14,18 +14,22 @@ import type {
   ProfileCollection,
 } from '@fgo-lab/schema';
 import {
-  fetchMasterCandidate,
-  fetchMasterManifest,
-  fetchMasterSnapshot,
-  loadActiveMaster,
-  stageAndActivate,
-  type ActiveMaster,
-} from '../adapters/repository';
+  activateAtlasMaster,
+  loadActiveAtlasMaster,
+  type AtlasActiveMaster,
+} from '../adapters/atlasRepository';
+import { generateAtlasMaster } from '../adapters/atlasMasterClient';
+import { ATLAS_CONTRACT_SHA256 } from '../adapters/atlasContractFingerprint';
+import {
+  ATLAS_CERTIFICATE_URL,
+  fetchSourceCertificate,
+  isAtlasTransportFailure,
+} from '../adapters/atlasSource';
+import { requireAtlasController } from '../adapters/atlasController';
+import { OldTabBlocksUpgrade } from '../adapters/labDatabase';
 import { readShareFragment } from '../adapters/share';
 
 interface StartupOptions {
-  baseUrl: string;
-  development: boolean;
   fragment: string;
   now: Date;
 }
@@ -78,13 +82,30 @@ function startupCalculation(
   });
 }
 
-async function activateCurrentMaster(options: StartupOptions) {
-  const candidate = await fetchMasterCandidate(options.baseUrl);
-  if (!options.development && candidate.manifest.artifactKind === 'diagnostic')
-    throw new Error('diagnostic_fixture_cannot_be_activated');
+export async function refreshAtlasMaster(
+  previous: AtlasActiveMaster | undefined,
+  now: Date,
+): Promise<{ active: AtlasActiveMaster; changed: boolean }> {
+  await requireAtlasController();
+  const candidate = await fetchSourceCertificate(ATLAS_CERTIFICATE_URL, previous?.identity ?? null);
+  if (candidate.state === 'unchanged') {
+    if (!previous) throw new Error('atlas_startup:unchanged_without_active');
+    return { active: previous, changed: false };
+  }
+  const generated = await generateAtlasMaster(candidate.certificate.certificate);
+  const activation = await activateAtlasMaster({
+    checked: candidate.certificate,
+    snapshot: generated.snapshotBytes,
+    contractSha256: ATLAS_CONTRACT_SHA256,
+    now,
+  });
+  if (activation.status === 'committed') return { active: activation.active, changed: true };
+  const concurrent = await loadActiveAtlasMaster(ATLAS_CONTRACT_SHA256);
+  if (concurrent.state !== 'ready')
+    throw new Error(`atlas_startup:activation_${activation.status}`);
   return {
-    active: await stageAndActivate(candidate.manifest, candidate.snapshotBytes, options.now),
-    fromOfflineCache: candidate.fromOfflineCache,
+    active: concurrent.active,
+    changed: concurrent.active.identity.sha256 !== previous?.identity.sha256,
   };
 }
 
@@ -95,7 +116,7 @@ export async function bootstrapApplication(
   let warning = '';
   let offline = false;
   try {
-    const activeLoad = await loadActiveMaster();
+    const activeLoad = await loadActiveAtlasMaster(ATLAS_CONTRACT_SHA256);
     let active = activeLoad.state === 'ready' ? activeLoad.active : undefined;
     const profilesLoad = await profilesRepository.load();
     if (profilesLoad.state === 'invalid')
@@ -104,36 +125,21 @@ export async function bootstrapApplication(
         offline,
         true,
       );
+    if (activeLoad.state === 'empty' && profilesLoad.state === 'empty')
+      return emptyResult('', offline);
     const profiles = profilesLoad.state === 'ready' ? profilesLoad.collection : undefined;
-    if (activeLoad.state === 'discarded') {
-      try {
-        const current = await activateCurrentMaster(options);
-        offline = current.fromOfflineCache;
-        active = current.active;
-        warning = '互換性のない旧マスターデータを削除し、現行版へ更新しました。';
-      } catch (cause) {
-        warning = `互換性のない旧マスターデータを削除しました。再セットアップが必要です: ${errorMessage(cause)}`;
-      }
-    } else if (active) {
-      try {
-        const manifestCandidate = await fetchMasterManifest(options.baseUrl);
-        offline = manifestCandidate.fromOfflineCache;
-        assertActivatable(manifestCandidate.manifest.artifactKind, options.development);
-        if (manifestCandidate.manifest.masterDataVersion !== active.manifest.masterDataVersion) {
-          const snapshotCandidate = await fetchMasterSnapshot(
-            options.baseUrl,
-            manifestCandidate.manifest,
-          );
-          offline ||= snapshotCandidate.fromOfflineCache;
-          active = await stageAndActivate(
-            manifestCandidate.manifest,
-            snapshotCandidate.snapshotBytes,
-            options.now,
-          );
-        }
-      } catch (cause) {
-        warning = `更新に失敗したため互換性確認済みの ${active.manifest.masterDataVersion} を使用中: ${errorMessage(cause)}`;
-      }
+    try {
+      active = (await refreshAtlasMaster(active, options.now)).active;
+      if (activeLoad.state === 'invalid')
+        warning = `保存済みマスターの破損（${activeLoad.reason}）を検出し、Atlasの検証済みマスターへ更新しました。`;
+    } catch (cause) {
+      warning = active
+        ? `Atlas更新の確認に失敗したため検証済みのマスターを使用中: ${errorMessage(cause)}`
+        : `Atlasマスターを取得できません: ${errorMessage(cause)}`;
+      if (activeLoad.state === 'invalid')
+        warning = `保存済みマスターを検証できません（${activeLoad.reason}）。${warning}`;
+      offline =
+        isAtlasTransportFailure(cause) || (typeof navigator !== 'undefined' && !navigator.onLine);
     }
     if (!active || !profiles) return { ...emptyResult(warning, offline), profiles };
 
@@ -157,6 +163,11 @@ export async function bootstrapApplication(
       offline,
     };
   } catch (cause) {
+    if (cause instanceof OldTabBlocksUpgrade)
+      return emptyResult(
+        '旧バージョンのタブが保存領域の更新を止めています。ほかのFGO Labタブを閉じて、このページを再読み込みしてください。',
+        offline,
+      );
     return emptyResult(
       `保存データを検証できなかったため、安全なセットアップ画面で起動しました: ${errorMessage(cause)}`,
       offline,
@@ -171,7 +182,11 @@ export async function setupApplication(
   options: StartupOptions,
   replaceInvalidWithFresh?: (collection: ProfileCollection) => Promise<ProfileWriteResult>,
 ): Promise<ReadyStartupResult> {
-  const { active, fromOfflineCache } = await activateCurrentMaster(options);
+  const stored = await loadActiveAtlasMaster(ATLAS_CONTRACT_SHA256);
+  const { active } = await refreshAtlasMaster(
+    stored.state === 'ready' ? stored.active : undefined,
+    options.now,
+  );
   const profilesLoad = await profilesRepository.load();
   if (replaceInvalidWithFresh && profilesLoad.state !== 'invalid')
     throw new Error('profile_recovery_stale');
@@ -207,16 +222,8 @@ export async function setupApplication(
     profiles,
     calculation: await startupCalculation(shared, profile),
     warning,
-    offline: fromOfflineCache,
+    offline: false,
   };
-}
-
-function assertActivatable(
-  artifactKind: ActiveMaster['manifest']['artifactKind'],
-  development: boolean,
-) {
-  if (!development && artifactKind === 'diagnostic')
-    throw new Error('diagnostic_fixture_cannot_be_activated');
 }
 
 function emptyResult(
@@ -236,5 +243,7 @@ function emptyResult(
 }
 
 function errorMessage(cause: unknown): string {
+  if (cause instanceof TypeError && cause.message === 'atlas_controller_upgrade_required')
+    return '旧Service Workerの更新を待っています。このページを再読み込みしてください。';
   return cause instanceof Error ? cause.message : String(cause);
 }

@@ -8,8 +8,8 @@
 | [計算方法](calculation.md) | ダメージ・乱数・自己バフ・条件効果と計算上の制約 |
 | [開発ガイド](development.md) | 起動、workspace、デプロイ、データ更新 |
 | [テストガイド](testing.md) | 品質確認、追加監査、固定回帰入力、失敗の診断 |
-| [アーキテクチャ](architecture.md) | 状態の所有、計算経路、保存・共有境界、Atlas自動更新の設計要件 |
-| [Atlasデータ更新の実装計画](atlas-data-update.md) | 直接取得の成立条件、自動更新・監視の責務、実装チェックポイントと達成条件 |
+| [アーキテクチャ](architecture.md) | 状態の所有、計算経路、保存・共有境界、Atlas自動更新の経路 |
+| [Atlasデータ更新の実装記録](atlas-data-update.md) | 直接取得の判断、取得・保存・監視の経路、検証証拠と未達条件 |
 | [データ出典](licenses/data-sources.md) | 構造化データ、戦闘仕様、画像の出典と扱い |
 
 [プロジェクト概要](../README.md) · [実装原則](../AGENTS.md) · [エージェント用の別名](../CLAUDE.md)

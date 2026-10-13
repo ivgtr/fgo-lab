@@ -176,7 +176,10 @@ async function merge(): Promise<void> {
   const identity = shards[0]!.identity;
   failureArtifact = { output, identity, stage: 'verify-master-identity' };
   const masterBytes = await readFile(
-    resolve(root, process.env['FGO_AUDIT_MASTER'] ?? 'apps/web/public/master/master.json'),
+    resolve(
+      root,
+      process.env['FGO_AUDIT_MASTER'] ?? 'packages/test-fixtures/production-master/master.json',
+    ),
   );
   const masterSha256 = createHash('sha256').update(masterBytes).digest('hex');
   if (masterSha256 !== identity.masterSha256) {

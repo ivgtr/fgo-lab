@@ -8,7 +8,7 @@ import { validateProfileCollection } from '../packages/workspace-domain/src/inde
 import { calculationShareSnapshotSchema } from '../packages/schema/src/index';
 
 const published = masterSnapshotSchema.parse(
-  JSON.parse(readFileSync('apps/web/public/master/master.json', 'utf8')),
+  JSON.parse(readFileSync('packages/test-fixtures/production-master/master.json', 'utf8')),
 );
 const savedSubject = published.servants.find(
   (servant) =>
@@ -23,7 +23,7 @@ async function storedProfiles(page: Page) {
   const value = await page.evaluate(
     () =>
       new Promise<unknown>((resolve, reject) => {
-        const opening = indexedDB.open('fgo-lab', 1);
+        const opening = indexedDB.open('fgo-lab', 2);
         opening.onerror = () => reject(opening.error);
         opening.onsuccess = () => {
           const db = opening.result;

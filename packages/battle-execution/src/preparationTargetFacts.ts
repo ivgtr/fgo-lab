@@ -1,5 +1,5 @@
 import { servantAttribute } from '@fgo-lab/calc-core';
-import type { CanonicalTargetDomain, ServantMaster } from '@fgo-lab/master-data';
+import type { CanonicalTargetDomain, CombatRules, ServantMaster } from '@fgo-lab/master-data';
 import type { TargetContext } from '@fgo-lab/schema';
 import type { TargetPredicateAssertion } from './contracts';
 import { resolveTargetCandidates } from './targetContext';
@@ -14,9 +14,10 @@ export function preparationTargetFacts(
   servant: ServantMaster,
   context: TargetContext,
   domain: CanonicalTargetDomain,
+  combatRules?: CombatRules,
 ): readonly TargetPredicateAssertion[] {
   const attribute = servantAttribute(servant.traits);
-  const key = JSON.stringify([servant.classId, attribute, context]);
+  const key = JSON.stringify([servant.classId, attribute, context, combatRules]);
   const entries = cache.get(domain) ?? new Map<string, readonly TargetPredicateAssertion[]>();
   const existing = entries.get(key);
   if (existing) return existing;
@@ -25,6 +26,7 @@ export function preparationTargetFacts(
     attackerClass: servant.classId,
     attackerAttribute: attribute,
     domain,
+    combatRules,
     constraints: [],
     readExpressions: [],
   });

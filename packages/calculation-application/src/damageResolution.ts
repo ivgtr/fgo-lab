@@ -1,4 +1,5 @@
 import { evaluateDamageRows, prepareDamageEvaluation } from '@fgo-lab/calc-core';
+import type { CombatRules } from '@fgo-lab/master-data';
 import {
   damageResolutionInputSchema,
   SCHEMA_VERSION,
@@ -14,6 +15,7 @@ export type DamageResolutionValue =
 
 export function calculateDamageResolutionValue(
   rawInput: DamageResolutionInput,
+  rules?: CombatRules,
 ): DamageResolutionValue {
   const input = damageResolutionInputSchema.parse(rawInput);
   const functionKind = input.damageFunction.kind;
@@ -46,7 +48,7 @@ export function calculateDamageResolutionValue(
     ...common,
     status: 'calculated',
     precision: evidence.precision,
-    rows: evaluateDamageRows(prepared.kernelInputs),
+    rows: evaluateDamageRows(prepared.kernelInputs, rules),
     breakdown: [
       {
         key: 'totalAtk',

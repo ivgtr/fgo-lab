@@ -1,5 +1,6 @@
 import type { ConditionRead } from './conditionRead';
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
+import type { CombatRules } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
   EffectDecision,
@@ -30,6 +31,7 @@ export function createOperationResult({
   resolvedModifierValue,
   activeDecisionSource,
   attackerClass,
+  combatRules,
   issue,
 }: {
   conditionRead: ConditionRead;
@@ -45,6 +47,7 @@ export function createOperationResult({
   resolvedModifierValue: number | null;
   activeDecisionSource: boolean;
   attackerClass: string;
+  combatRules?: CombatRules | undefined;
   issue: ExecutionIssue | null;
 }): OperationResult {
   const projected = resolveOperationProjectionEvaluation(
@@ -74,7 +77,7 @@ export function createOperationResult({
       activeDecisionSource,
       {
         kind: 'relative',
-        relation: defaultTargetClassRelation(attackerClass),
+        relation: defaultTargetClassRelation(attackerClass, combatRules),
       },
       { kind: 'relative', relation: 'neutral' },
     ),

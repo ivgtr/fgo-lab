@@ -4,6 +4,7 @@ import { readJson, sha256File } from './test-observation-lib.mjs';
 
 const QUALITY_STEPS = [
   ['format', ['format:check']],
+  ['atlas-contract', ['atlas:contract:check']],
   ['lint', ['lint']],
   ['typecheck', ['typecheck']],
   ['runner', ['test:runner']],
@@ -16,7 +17,16 @@ const QUALITY_STEPS = [
   ['playwright', ['test:e2e'], 'playwright'],
 ];
 
-const QUICK_STEP_IDS = new Set(['format', 'lint', 'typecheck', 'runner', 'docs', 'unit', 'build']);
+const QUICK_STEP_IDS = new Set([
+  'format',
+  'atlas-contract',
+  'lint',
+  'typecheck',
+  'runner',
+  'docs',
+  'unit',
+  'build',
+]);
 const BROWSER_STEP_IDS = new Set(['browser-observer', 'playwright']);
 
 export function qualityRunConfiguration(arguments_) {

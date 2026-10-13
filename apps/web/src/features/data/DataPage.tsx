@@ -68,7 +68,7 @@ export function DataPage({
       <dl>
         <div>
           <dt>マスターデータ版</dt>
-          <dd>{masterVersion}</dd>
+          <dd className="master-version">{masterVersion}</dd>
         </div>
         <div>
           <dt>schema版</dt>

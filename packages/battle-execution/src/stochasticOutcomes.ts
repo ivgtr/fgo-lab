@@ -7,18 +7,16 @@ import type {
 } from '@fgo-lab/master-data';
 import type { BattleOperation, ExecutionIssue } from './contracts';
 import type { ResolvedCanonicalInputSet } from './executionTypes';
-
+import { statusAdjustmentInputState } from './procRate';
 export type ResolvedStochasticOutcome =
   | { status: 'success' }
   | { status: 'failure' }
   | { status: 'inputRequired'; inputKey: string }
   | { status: 'invalid'; issue: Extract<ExecutionIssue, { kind: 'invalidStochasticOutcome' }> };
-
 export interface ResolvedStochasticOutcomeSet {
   outcomes: ReadonlyMap<string, ResolvedStochasticOutcome>;
   issues: readonly ExecutionIssue[];
 }
-
 const guaranteedSuccess: ResolvedStochasticOutcome = { status: 'success' };
 
 export interface StochasticActivationContract {
@@ -49,6 +47,13 @@ export function resolveStochasticActivationOutcome(
     return operation.stochasticOutcome
       ? invalidOutcome(operation, 'contradictoryStochasticOutcome')
       : { status: 'success' };
+  const adjustment = statusAdjustmentInputState(
+    operation.proc,
+    operation.inputDefinitions,
+    resolvedInputs,
+  );
+  if (adjustment.status === 'missing') return { status: 'inputRequired', inputKey: adjustment.key };
+  if (adjustment.status === 'invalid') return invalidOutcome(operation, 'partialStochasticOutcome');
   const group = operation.stochasticOutcome;
   if (!group) return invalidOutcome(operation, 'missingStochasticOutcome');
   const chained = operation.proc.kind === 'chainedRolls';

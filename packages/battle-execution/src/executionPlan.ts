@@ -122,6 +122,7 @@ function compileExecutionPlanForPurpose(
         variant,
         variantDamage,
         compiledOperations.length,
+        master.combatRules,
       );
       const action = collected.formExecution?.actions.at(-1);
       const operation =
@@ -187,6 +188,7 @@ function compileExecutionPlanForPurpose(
     attackerClass,
     attackerAttribute,
     domain: master.targetSemantics.execution,
+    combatRules: master.combatRules,
     constraints: targetConstraints,
     readExpressions: operations.flatMap((operation) =>
       operation.kind === 'executeNpDamage' ? [operation.specialAttackDependency] : [],
@@ -222,6 +224,7 @@ function compileExecutionPlanForPurpose(
     sourceIssues: [...collected.issues, ...staleAttackerFactIssues],
     targetResolution,
     targetDomain: master.targetSemantics.execution,
+    combatRules: master.combatRules,
     attackerClass,
     attackerAttribute,
     inputDefinitions,

@@ -1,5 +1,6 @@
 import { expect, test as base } from '@playwright/test';
 import type { BrowserContext, BrowserContextOptions, TestInfo } from '@playwright/test';
+import { seedAtlasFixture } from './atlasFixture';
 
 export { expect };
 export type { Browser, BrowserContext, Page } from '@playwright/test';
@@ -29,6 +30,8 @@ export const test = base.extend<ObservationFixtures>({
   },
   page: async ({ page, context, observationPageId }, use, testInfo) => {
     await observeContext(context, testInfo, observationPageId);
+    const baseURL = testInfo.project.use.baseURL;
+    if (typeof baseURL === 'string') await seedAtlasFixture(context, page, baseURL);
     await use(page);
   },
   newObservedPage: async ({ browser, observationPageId }, use, testInfo) => {
@@ -37,9 +40,24 @@ export const test = base.extend<ObservationFixtures>({
       const context = await browser.newContext(options);
       contexts.push(context);
       await observeContext(context, testInfo, observationPageId);
-      return { context, page: await context.newPage() };
+      const page = await context.newPage();
+      const baseURL = testInfo.project.use.baseURL;
+      if (typeof baseURL === 'string') await seedAtlasFixture(context, page, baseURL);
+      return { context, page };
     });
     await Promise.all(contexts.map(async (context) => context.close().catch(() => undefined)));
+  },
+});
+
+/** First-run source tests start with an empty origin while keeping browser observation. */
+export const testUnseeded = base.extend<Pick<ObservationFixtures, 'observationPageId'>>({
+  observationPageId: async ({}, use) => {
+    let pageSequence = 0;
+    await use(() => `page-${++pageSequence}`);
+  },
+  page: async ({ page, context, observationPageId }, use, testInfo) => {
+    await observeContext(context, testInfo, observationPageId);
+    await use(page);
   },
 });
 

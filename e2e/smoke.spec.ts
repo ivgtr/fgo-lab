@@ -3,6 +3,12 @@ import { completeSetup, openTestHome } from './setup';
 import { webcrypto } from 'node:crypto';
 import { portableCalculationFingerprint } from '../packages/workspace-domain/src/index';
 import { editCurrentStoredProfiles } from './currentProfileFixture';
+import { ATLAS_CONTRACT_SHA256 } from '../apps/web/src/adapters/atlasContractFingerprint';
+
+const fixtureImage = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=',
+  'base64',
+);
 
 async function openCalculator(page: Page) {
   await openTestHome(page);
@@ -42,7 +48,7 @@ async function storedDraftVersionContext(page: Page) {
   return await page.evaluate(
     () =>
       new Promise<{ masterDataVersion: string; engineVersion: string }>((resolve, reject) => {
-        const request = indexedDB.open('fgo-lab', 1);
+        const request = indexedDB.open('fgo-lab', 2);
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
           const db = request.result;
@@ -70,18 +76,15 @@ async function storedDraftVersionContext(page: Page) {
 }
 
 test('[E2E-017] setup to calculator package journey @desktop @journey', async ({ page }) => {
-  const image = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=',
-    'base64',
-  );
   await page.route('https://static.atlasacademy.io/**', (route) =>
-    route.fulfill({ contentType: 'image/png', body: image }),
+    route.fulfill({ contentType: 'image/png', body: fixtureImage }),
   );
   await openCalculator(page);
   await page.reload();
-  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '宝具ダメージ', exact: true })).toBeVisible();
   const result = page.getByLabel('共有対象の計算結果');
   await expect(result).toContainText('アルトリア・ペンドラゴン');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '宝具ダメージ', exact: true })).toHaveCount(1);
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
   await ownEffects.getByRole('button', { name: /バスターアップ/ }).click();
@@ -94,6 +97,13 @@ test('[E2E-017] setup to calculator package journey @desktop @journey', async ({
   await page.goBack();
   await expect(page).toHaveURL(/\/calculator$/);
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+});
+
+test('[E2E-062] calculator target selection persists @desktop @journey', async ({ page }) => {
+  await page.route('https://static.atlasacademy.io/**', (route) =>
+    route.fulfill({ contentType: 'image/png', body: fixtureImage }),
+  );
+  await openCalculator(page);
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   const picker = page.getByRole('dialog', { name: '攻撃役を選択' });
   await picker.getByRole('tab', { name: '全DB' }).click();
@@ -175,24 +185,41 @@ test('[E2E-022] mobile picker focus and image download @mobile @journey', async 
 });
 
 test('[E2E-023] offline reopen through service worker @desktop @journey', async ({
-  newObservedPage,
+  context,
+  page,
 }) => {
-  const { context, page } = await freshPage(newObservedPage);
   try {
-    await page.goto('/');
-    await completeSetup(page);
     await page.evaluate(async () => {
       await navigator.serviceWorker.register('/sw.js');
       await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller)
+        await new Promise<void>((resolve) =>
+          navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), {
+            once: true,
+          }),
+        );
     });
-    let masterPayloadRequests = 0;
-    page.on('request', (request) => {
-      if (new URL(request.url()).pathname.endsWith('/master/master.json'))
-        masterPayloadRequests += 1;
-    });
-    await page.reload();
-    await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
-    expect(masterPayloadRequests).toBe(0);
+    await page.goto('/');
+    await completeSetup(page);
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const cache = await caches.open('fgo-lab-shell-v5');
+          const assets = [
+            ...new Set(
+              performance
+                .getEntriesByType('resource')
+                .map((entry) => entry.name)
+                .filter((url) => new URL(url).pathname.startsWith('/_next/static/')),
+            ),
+          ];
+          return (
+            assets.length > 0 &&
+            (await Promise.all(assets.map((url) => cache.match(url)))).every(Boolean)
+          );
+        }),
+      )
+      .toBe(true);
     const cachedUrls = await page.evaluate(async () => {
       const requests = await Promise.all(
         (await caches.keys()).map((cacheName) =>
@@ -201,35 +228,39 @@ test('[E2E-023] offline reopen through service worker @desktop @journey', async 
       );
       return requests.flat().map(({ url }) => url);
     });
-    expect(cachedUrls.some((url) => new URL(url).pathname.endsWith('/master/master.json'))).toBe(
+    expect(cachedUrls.some((url) => new URL(url).origin !== new URL(page.url()).origin)).toBe(
       false,
     );
+    await context.unroute(
+      'https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/**',
+    );
     await context.setOffline(true);
+    expect(await page.evaluate(() => navigator.onLine)).toBe(false);
     await page.reload();
     await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/端末内に自動保存・オフライン/)).toBeVisible();
   } finally {
     await context.setOffline(false);
-    await context.close();
   }
 });
 
-test('[E2E-025] incompatible master recovery preserves user data @desktop @journey', async ({
+test('[E2E-025] damaged certified master preserves user data @desktop @journey', async ({
   newObservedPage,
 }) => {
+  // E2E-A025-OFFLINE: a failed refresh retains the damaged bytes and the user profile.
   const { context, page } = await freshPage(newObservedPage);
   try {
     await page.goto('/');
     await completeSetup(page);
     const profileId = await page.evaluate(
-      () =>
+      (contract) =>
         new Promise<string>((resolve, reject) => {
-          const request = indexedDB.open('fgo-lab', 1);
+          const request = indexedDB.open('fgo-lab', 2);
           request.onerror = () => reject(request.error);
           request.onsuccess = () => {
             const db = request.result;
             const transaction = db.transaction(['master', 'user'], 'readwrite');
-            const masterRequest = transaction.objectStore('master').get('active');
+            const masterRequest = transaction.objectStore('master').get(`atlas-active:${contract}`);
             const userRequest = transaction.objectStore('user').get('profiles');
             transaction.onerror = () => reject(transaction.error);
             transaction.oncomplete = () => {
@@ -243,86 +274,32 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
               };
               snapshot.version = 'incompatible-master-version';
               active.snapshotBytes = new TextEncoder().encode(JSON.stringify(snapshot)).buffer;
-              transaction.objectStore('master').put(active, 'active');
+              transaction.objectStore('master').put(active, `atlas-active:${contract}`);
             };
           };
         }),
+      ATLAS_CONTRACT_SHA256,
+    );
+    await page.route(
+      'https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/**',
+      (route) => route.fulfill({ status: 200, contentType: 'text/plain', body: 'not-json' }),
     );
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
-    await expect(
-      page.getByText('互換性のない旧マスターデータを削除し、現行版へ更新しました。'),
-    ).toBeVisible();
-    // E2E-A024-BROWSER E2E-A025-ONLINE E2E-A025-ONLINE-RECOVERY
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () =>
-            new Promise<string>((resolve, reject) => {
-              const request = indexedDB.open('fgo-lab', 1);
-              request.onerror = () => reject(request.error);
-              request.onsuccess = () => {
-                const db = request.result;
-                const transaction = db.transaction('user', 'readonly');
-                const stored = transaction.objectStore('user').get('profiles');
-                transaction.onerror = () => reject(transaction.error);
-                transaction.oncomplete = () => {
-                  resolve((stored.result as { activeProfileId: string }).activeProfileId);
-                  db.close();
-                };
-              };
-            }),
-        ),
-      )
-      .toBe(profileId);
-
-    await page.evaluate(
-      () =>
-        new Promise<void>((resolve, reject) => {
-          const request = indexedDB.open('fgo-lab', 1);
-          request.onerror = () => reject(request.error);
-          request.onsuccess = () => {
-            const db = request.result;
-            const transaction = db.transaction('master', 'readwrite');
-            const store = transaction.objectStore('master');
-            const activeRequest = store.get('active');
-            transaction.onerror = () => reject(transaction.error);
-            transaction.oncomplete = () => {
-              resolve();
-              db.close();
-            };
-            activeRequest.onsuccess = () => {
-              const active = activeRequest.result as {
-                snapshotBytes: ArrayBuffer;
-              };
-              const snapshot = JSON.parse(new TextDecoder().decode(active.snapshotBytes)) as {
-                servants: Array<{ rarity: number }>;
-              };
-              snapshot.servants[0]!.rarity = 99;
-              active.snapshotBytes = new TextEncoder().encode(JSON.stringify(snapshot)).buffer;
-              store.put(active, 'active');
-            };
-          };
-        }),
-    );
-    await page.route('**/master/**', (route) => route.abort());
-    await page.reload();
-    // E2E-A025-OFFLINE E2E-A025-OFFLINE-DISCARD
     await expect(page.getByRole('button', { name: 'セットアップを開始' })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.locator('.startup-screen__notice')).toContainText(
-      '互換性のない旧マスターデータを削除しました。再セットアップが必要です',
+      '保存済みマスターを検証できません（canonical）',
     );
-    const discarded = await page.evaluate(
-      () =>
+    const retained = await page.evaluate(
+      (contract) =>
         new Promise<{ hasMaster: boolean; profileId: string }>((resolve, reject) => {
-          const request = indexedDB.open('fgo-lab', 1);
+          const request = indexedDB.open('fgo-lab', 2);
           request.onerror = () => reject(request.error);
           request.onsuccess = () => {
             const db = request.result;
             const transaction = db.transaction(['master', 'user'], 'readonly');
-            const master = transaction.objectStore('master').get('active');
+            const master = transaction.objectStore('master').get(`atlas-active:${contract}`);
             const user = transaction.objectStore('user').get('profiles');
             transaction.onerror = () => reject(transaction.error);
             transaction.oncomplete = () => {
@@ -334,8 +311,9 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
             };
           };
         }),
+      ATLAS_CONTRACT_SHA256,
     );
-    expect(discarded).toEqual({ hasMaster: false, profileId });
+    expect(retained).toEqual({ hasMaster: true, profileId });
   } finally {
     await context.close();
   }
@@ -350,7 +328,7 @@ test('[E2E-055] invalid profile requires confirmation before fresh setup @deskto
     const oldProfileId = await page.evaluate(
       () =>
         new Promise<string>((resolve, reject) => {
-          const opening = indexedDB.open('fgo-lab', 1);
+          const opening = indexedDB.open('fgo-lab', 2);
           opening.onerror = () => reject(opening.error);
           opening.onsuccess = () => {
             const db = opening.result;
@@ -384,15 +362,15 @@ test('[E2E-055] invalid profile requires confirmation before fresh setup @deskto
     await reset.click();
     await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 30_000 });
     const recovered = await page.evaluate(
-      () =>
+      (contract) =>
         new Promise<{ profileId: string; hasMaster: boolean }>((resolve, reject) => {
-          const opening = indexedDB.open('fgo-lab', 1);
+          const opening = indexedDB.open('fgo-lab', 2);
           opening.onerror = () => reject(opening.error);
           opening.onsuccess = () => {
             const db = opening.result;
             const transaction = db.transaction(['user', 'master'], 'readonly');
             const user = transaction.objectStore('user').get('profiles');
-            const master = transaction.objectStore('master').get('active');
+            const master = transaction.objectStore('master').get(`atlas-active:${contract}`);
             transaction.onerror = () => reject(transaction.error);
             transaction.oncomplete = () => {
               resolve({
@@ -403,6 +381,7 @@ test('[E2E-055] invalid profile requires confirmation before fresh setup @deskto
             };
           };
         }),
+      ATLAS_CONTRACT_SHA256,
     );
     expect(recovered.profileId).not.toBe(oldProfileId);
     expect(recovered.hasMaster).toBe(true);

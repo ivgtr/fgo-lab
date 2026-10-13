@@ -207,7 +207,7 @@ export function Calculator({
   const craftEssenceSelection = resolvedScenario?.craftEssence ?? null;
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
   const availableClassRelations = new Set(
-    availableTargetClassRelations(attacker?.classId ?? 'unknown'),
+    attacker ? availableTargetClassRelations(attacker.classId, master.combatRules) : [],
   );
   const naturalAttackerLevel = attacker
     ? naturalServantLevel(attacker.rarity)
@@ -450,7 +450,7 @@ export function Calculator({
               craftEssenceSelection.limitBreak,
             )
           : 0,
-      classAttackRate: resolveClassAttackRate(attacker?.classId ?? 'unknown'),
+      classAttackRate: attacker ? resolveClassAttackRate(attacker.classId, master.combatRules) : 1,
       classAffinity: 1,
       attributeAffinity: 1,
     });
@@ -542,7 +542,7 @@ export function Calculator({
         npSpecialMultipliers: [1, 1, 1, 1, 1],
         damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
         cardType: noblePhantasm.card,
-        classAttackRate: resolveClassAttackRate(candidate.classId),
+        classAttackRate: resolveClassAttackRate(candidate.classId, master.combatRules),
         attackerHpPermille: null,
         battlePointPhase: null,
       });
@@ -570,6 +570,7 @@ export function Calculator({
               explicitOverrides: {},
             },
             candidate.classId,
+            master.combatRules,
           ),
           master,
         ),

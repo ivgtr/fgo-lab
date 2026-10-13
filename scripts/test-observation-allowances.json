@@ -766,17 +766,17 @@
   },
   {
     "runner": "playwright",
-    "testId": "smoke.spec.ts > [E2E-025] incompatible master recovery preserves user data @desktop @journey",
+    "testId": "smoke.spec.ts > [E2E-023] offline reopen through service worker @desktop @journey",
     "kind": "browser.resource_failure",
-    "message": "fetch http://127.0.0.1:4174/master/manifest.json: net::ERR_FAILED",
+    "message": "fetch https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/fa3211bcffd9d4ab2c0d9e1c7e03ae261108830cb64c02eba97eee86cb7dfe42.json: net::ERR_INTERNET_DISCONNECTED",
     "detail": {
-      "url": "http://127.0.0.1:4174/master/manifest.json",
+      "url": "https://raw.githubusercontent.com/ivgtr/fgo-lab/atlas-certificates/JP/fa3211bcffd9d4ab2c0d9e1c7e03ae261108830cb64c02eba97eee86cb7dfe42.json",
       "resourceType": "fetch",
-      "failureText": "net::ERR_FAILED",
+      "failureText": "net::ERR_INTERNET_DISCONNECTED",
       "pageId": "page-1"
     },
     "expectedCount": 1,
-    "reason": "The incompatible-master recovery declares this exact superseded manifest request.",
+    "reason": "This test disconnects the certificate request while verifying offline use of saved data.",
     "expiresAt": "2026-12-01T00:00:00.000Z"
   }
 ]

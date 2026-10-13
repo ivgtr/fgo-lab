@@ -1,4 +1,16 @@
 export { readHpAtLevel } from './hpGrowth';
+export {
+  ATLAS_EXPORT_KEYS,
+  atlasExportUrl,
+  atlasReferencedSkillUrl,
+  sourceCertificateSchema,
+  atlasAuditStatusSchema,
+  atlasSourceCertificateUrl,
+  ATLAS_AUDIT_STATUS_URL,
+  type AtlasExportKey,
+  type SourceCertificate,
+  type AtlasAuditStatus,
+} from './sourceCertificate';
 import {
   stackInputSchema,
   npQuantitySchema,
@@ -176,6 +188,25 @@ export function canonicalRequirementLeaves(
   return [requirement as Exclude<CanonicalEffectRequirement, { kind: 'all' | 'any' | 'not' }>];
 }
 
+function playerChoiceRequirements(
+  requirement: CanonicalEffectRequirement,
+): Extract<CanonicalEffectRequirement, { kind: 'choice' }>[] {
+  if (requirement.kind === 'choice') return [requirement];
+  if (requirement.kind === 'all') return requirement.requirements.flatMap(playerChoiceRequirements);
+  const nested =
+    requirement.kind === 'any'
+      ? requirement.requirements.flatMap((child) =>
+          canonicalRequirementLeaves(child).filter((leaf) => leaf.kind === 'choice'),
+        )
+      : requirement.kind === 'not'
+        ? canonicalRequirementLeaves(requirement.requirement).filter(
+            (leaf) => leaf.kind === 'choice',
+          )
+        : [];
+  if (nested.length) throw new TypeError('choice_requires_positive_conjunction');
+  return [];
+}
+
 const effectParameterSemanticsSchema = z.object({
   value: z.array(z.string().min(1)),
   lifecycle: z.array(z.string().min(1)),
@@ -314,6 +345,7 @@ const fixedCanonicalInputDefinitionSchema = canonicalInputBaseSchema.extend({
     'sourceHpPermille',
     'sourceMaximumHp',
     'procSuccessCount',
+    'statusApplicationAdjustment',
     'worldTraitPresence',
     'sourceChoice',
   ]),
@@ -916,19 +948,24 @@ export const hpStateSchema = z
 export type EffectExecutionOperation = z.infer<typeof effectExecutionOperationSchema>;
 
 const procRateSetsSchema = z.tuple([
-  z.array(z.number().int().min(0).max(1000)).max(10),
-  z.array(z.number().int().min(0).max(1000)).max(10),
-  z.array(z.number().int().min(0).max(1000)).max(10),
-  z.array(z.number().int().min(0).max(1000)).max(10),
-  z.array(z.number().int().min(0).max(1000)).max(10),
+  z.array(z.number().int().min(0).max(5000)).max(10),
+  z.array(z.number().int().min(0).max(5000)).max(10),
+  z.array(z.number().int().min(0).max(5000)).max(10),
+  z.array(z.number().int().min(0).max(5000)).max(10),
+  z.array(z.number().int().min(0).max(5000)).max(10),
 ]);
 
 const effectProcSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('guaranteed') }),
-  z.object({ kind: z.literal('singleRoll'), ratePermille: procRateSetsSchema }),
+  z.object({
+    kind: z.literal('singleRoll'),
+    ratePermille: procRateSetsSchema,
+    netAdjustmentInputKey: z.string().min(1).optional(),
+  }),
   z.object({
     kind: z.literal('independentRolls'),
     ratePermille: procRateSetsSchema,
+    netAdjustmentInputKey: z.string().min(1).optional(),
     groupKey: z.string().min(1),
     index: z.number().int().nonnegative(),
     total: z.number().int().positive(),
@@ -936,6 +973,7 @@ const effectProcSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('chainedRolls'),
     ratePermille: procRateSetsSchema,
+    netAdjustmentInputKey: z.string().min(1).optional(),
     seriesKey: z.string().min(1),
     index: z.number().int().nonnegative(),
     maximumSuccesses: z.number().int().positive(),
@@ -1071,6 +1109,54 @@ export const masterEffectSchema = z
   })
   .strict()
   .superRefine((effect, context) => {
+    if (effect.proc.kind !== 'guaranteed' && effect.proc.netAdjustmentInputKey) {
+      const key = effect.proc.netAdjustmentInputKey;
+      const matches = effect.inputDefinitions.filter(
+        (input) => input.key === key && input.kind === 'statusApplicationAdjustment',
+      );
+      if (
+        matches.length !== 1 ||
+        matches[0]?.minimum !== -5000 ||
+        matches[0].maximum !== 5000 ||
+        matches[0].step !== 1 ||
+        matches[0].defaultValue !== 0 ||
+        !['addState', 'addStateShort'].includes(effect.atlasEvidence.functionType)
+      )
+        context.addIssue({
+          code: 'custom',
+          message: 'invalid_status_application_adjustment_input',
+          path: ['inputDefinitions'],
+        });
+    }
+    let choiceLeaves: ReturnType<typeof playerChoiceRequirements> = [];
+    try {
+      choiceLeaves = playerChoiceRequirements(effect.requirement.expression);
+    } catch {
+      context.addIssue({
+        code: 'custom',
+        message: 'choice_requires_positive_conjunction',
+        path: ['requirement'],
+      });
+    }
+    if (choiceLeaves.length > 1)
+      context.addIssue({
+        code: 'custom',
+        message: 'multiple_effect_choices',
+        path: ['requirement'],
+      });
+    if (effect.selection?.kind === 'playerChoice') {
+      const choice = choiceLeaves[0];
+      if (
+        !choice ||
+        choice.family !== effect.selection.group.key ||
+        choice.candidate !== effect.selection.group.candidate
+      )
+        context.addIssue({
+          code: 'custom',
+          message: 'selection_choice_requirement_mismatch',
+          path: ['selection'],
+        });
+    }
     for (const operation of effect.execution) {
       if (operation.kind === 'resourceMutation' && operation.amount.kind === 'npTransfer') {
         const amount = operation.amount;
@@ -1225,6 +1311,27 @@ export const masterEffectSchema = z
   });
 export type MasterEffect = z.infer<typeof masterEffectSchema>;
 
+/** A player's choice is a requirement independent of the effect's proc roll. */
+export function playerChoiceForEffect(
+  effect: MasterEffect,
+): { key: string; candidate: string } | null {
+  const choices = playerChoiceRequirements(effect.requirement.expression);
+  if (choices.length > 1) throw new TypeError(`multiple_effect_choices:${effect.occurrenceId}`);
+  const choice = choices[0];
+  return choice ? { key: choice.family, candidate: choice.candidate } : null;
+}
+
+export function effectMatchesPlayerChoice(
+  effect: MasterEffect,
+  selected: { groupKey: string; candidateKey: string } | null,
+): boolean {
+  const choice = playerChoiceForEffect(effect);
+  return (
+    choice === null ||
+    (choice.key === selected?.groupKey && choice.candidate === selected.candidateKey)
+  );
+}
+
 const sourceProgramFields = {
   id: z.string(),
   priority: z.number().int().default(0),
@@ -1237,10 +1344,11 @@ const sourceProgramFields = {
 function sourceChoiceInventory(effects: readonly MasterEffect[]) {
   const groups = new Map<string, Set<string>>();
   for (const effect of effects) {
-    if (effect.selection?.kind !== 'playerChoice') continue;
-    const candidates = groups.get(effect.selection.group.key) ?? new Set<string>();
-    candidates.add(effect.selection.group.candidate);
-    groups.set(effect.selection.group.key, candidates);
+    const choice = playerChoiceForEffect(effect);
+    if (!choice) continue;
+    const candidates = groups.get(choice.key) ?? new Set<string>();
+    candidates.add(choice.candidate);
+    groups.set(choice.key, candidates);
   }
   return groups;
 }
@@ -1746,7 +1854,7 @@ export function resolveFormSkillSlotAction(
     const effect = skill.effects.find(({ occurrenceId }) =>
       transition.activation.effectOccurrenceIds.includes(occurrenceId),
     );
-    return effect?.selection?.kind !== 'playerChoice';
+    return !effect || playerChoiceForEffect(effect) === null;
   });
   return { skill, transitions, allowsNoTransition: !hasMandatoryTransition };
 }
@@ -1997,8 +2105,32 @@ export const materialMasterSchema = z.object({
   imageKey: z.string().nullable(),
 });
 export type MaterialMaster = z.infer<typeof materialMasterSchema>;
+const classRateSchema = z.record(canonicalTargetClassIdSchema, z.number().positive().max(5));
+const classRelationSchema = z.record(
+  canonicalTargetClassIdSchema,
+  z.record(
+    canonicalTargetClassIdSchema,
+    z.number().refine((value) => [0.5, 1, 1.5, 2].includes(value)),
+  ),
+);
+const attributeRelationSchema = z.record(
+  canonicalTargetAttributeSchema,
+  z.record(
+    canonicalTargetAttributeSchema,
+    z.number().refine((value) => [0.9, 1, 1.1].includes(value)),
+  ),
+);
+export const combatRulesSchema = z.strictObject({
+  classAttackRate: classRateSchema,
+  classAffinity: classRelationSchema,
+  attributeAffinity: attributeRelationSchema,
+  cardAttackRate: z.record(z.enum(['arts', 'buster', 'quick']), z.number().positive().max(5)),
+  damageConstant: z.number().positive().max(5),
+});
+export type CombatRules = z.infer<typeof combatRulesSchema>;
 const masterSnapshotHeaderSchema = z.object({
   version: z.string(),
+  combatRules: combatRulesSchema.optional(),
   npResourceSemantics: canonicalNpResourceSemanticsSchema,
   normalization: z.object({
     attackFunctions: z.object({
@@ -2416,6 +2548,12 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
     );
   });
 });
+
+export const certifiedMasterSnapshotSchema = z.intersection(
+  masterSnapshotSchema,
+  z.object({ combatRules: combatRulesSchema }),
+);
+export type CertifiedMasterDataSnapshot = z.infer<typeof certifiedMasterSnapshotSchema>;
 
 export interface MasterValidationReport {
   valid: boolean;

@@ -2,6 +2,7 @@ import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import {
   noblePhantasmVariantKey,
   type AttackNoblePhantasmVariant,
+  type CombatRules,
   type NpDamageSpec,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -150,6 +151,7 @@ export function compileNoblePhantasmDamageOperation(
   np: AttackNoblePhantasmVariant,
   damage: NpDamageSpec,
   operationOrder: number,
+  combatRules?: CombatRules,
 ): { operation: BattleOperation; projections: readonly EffectProjection[] } {
   const variantKey = noblePhantasmVariantKey(np.ref);
   const damageCondition = noblePhantasmDamageCondition(
@@ -199,7 +201,7 @@ export function compileNoblePhantasmDamageOperation(
           target.kind === 'classIdentity'
             ? ({
                 kind: 'relative',
-                relation: defaultTargetClassRelation(attacker.classId),
+                relation: defaultTargetClassRelation(attacker.classId, combatRules),
               } as const)
             : null,
         fallbackAttribute:

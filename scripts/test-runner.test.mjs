@@ -402,10 +402,12 @@ test('a generic resource console message can never be allowlisted', () => {
   )) {
     assert.match(
       allowance.detail.url,
-      /^(?:https:\/\/static\.atlasacademy\.io\/|http:\/\/127\.0\.0\.1:4174\/master\/manifest\.json$)/,
+      /^(?:https:\/\/static\.atlasacademy\.io\/|https:\/\/raw\.githubusercontent\.com\/ivgtr\/fgo-lab\/atlas-certificates\/JP\/[0-9a-f]{64}\.json$|http:\/\/127\.0\.0\.1:4174\/master\/manifest\.json$)/,
     );
     assert.ok(['image', 'fetch'].includes(allowance.detail.resourceType));
-    assert.equal(allowance.detail.failureText, 'net::ERR_FAILED');
+    assert.ok(
+      ['net::ERR_FAILED', 'net::ERR_INTERNET_DISCONNECTED'].includes(allowance.detail.failureText),
+    );
     assert.ok(allowance.expectedCount > 0);
   }
 });
@@ -948,6 +950,7 @@ test('CI retains every non-browser gate while quick and full profiles keep their
     full.steps.map(([id]) => id),
     [
       'format',
+      'atlas-contract',
       'lint',
       'typecheck',
       'runner',
@@ -962,7 +965,7 @@ test('CI retains every non-browser gate while quick and full profiles keep their
   );
   assert.deepEqual(
     quick.steps.map(([id]) => id),
-    ['format', 'lint', 'typecheck', 'runner', 'docs', 'unit', 'build'],
+    ['format', 'atlas-contract', 'lint', 'typecheck', 'runner', 'docs', 'unit', 'build'],
   );
   assert.equal(full.command, 'pnpm quality');
   assert.equal(quick.command, 'pnpm check');
@@ -1373,14 +1376,14 @@ test('failure summary never exceeds physical line or UTF-8 byte limits', async (
   assert.equal(result.manifest.output.truncated, true);
 });
 
-test('CI retains the complete parent run and makes missing/upload failure blocking', () => {
+test('CI retains failed parent runs and makes missing/upload failure blocking', () => {
   for (const path of ['.github/workflows/ci.yml']) {
     const workflow = readFileSync(resolve(root, path), 'utf8');
     const uploadStart = workflow.indexOf('- name: Upload quality results');
     assert.ok(uploadStart >= 0, path);
     const uploadStep = workflow.slice(uploadStart);
     assert.match(uploadStep, /uses: actions\/upload-artifact@v4/);
-    assert.match(uploadStep, /if: \$\{\{ always\(\) \}\}/);
+    assert.match(uploadStep, /if: \$\{\{ failure\(\) \}\}/);
     assert.match(uploadStep, /path: \.test-results\//);
     assert.match(uploadStep, /include-hidden-files: true/);
     assert.match(uploadStep, /if-no-files-found: error/);
@@ -1418,7 +1421,7 @@ test('unit, production, and opt-in audit suites form one exhaustive non-overlapp
   const requiredProduction = all.filter((file) => {
     const source = readFileSync(resolve(root, file), 'utf8');
     return (
-      source.includes('public/master/master.json') ||
+      source.includes('production-master/master.json') ||
       /(?:Golden|Production|Differential|Inventory)\.test\.(?:ts|tsx)$/.test(file) ||
       /\/evidence(?:Inventory)?\.test\.ts$/.test(file)
     );

@@ -1,6 +1,7 @@
 import type { DamageKernelInput, DamageResolutionInput, DamageRow } from '@fgo-lab/schema';
 import { damageResolutionInputSchema } from '@fgo-lab/schema';
 import { calculateDamageDistribution } from './formula';
+import type { CombatRules } from '@fgo-lab/master-data';
 import { clamp, f32Add, f32Mul } from './float32';
 
 export * from './float32';
@@ -53,9 +54,10 @@ export function evaluateDamageRows(
     DamageKernelInput,
     DamageKernelInput,
   ],
+  rules?: CombatRules,
 ): [DamageRow, DamageRow, DamageRow, DamageRow, DamageRow] {
   return inputs.map((input, index) => {
-    const distribution = calculateDamageDistribution(input);
+    const distribution = calculateDamageDistribution(input, rules);
     return {
       npLevel: (index + 1) as 1 | 2 | 3 | 4 | 5,
       minimum: distribution[0]!,

@@ -88,8 +88,8 @@ function allEffects(master: ReturnType<typeof masterSnapshotSchema.parse>): Mast
 const publishedInput = createSuiteAuditInput({
   read: async () => {
     const [content, manifestContent, declaration] = await Promise.all([
-      readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8'),
-      readFile(resolve(root, 'apps/web/public/master/manifest.json'), 'utf8'),
+      readFile(resolve(root, 'packages/test-fixtures/production-master/master.json'), 'utf8'),
+      readFile(resolve(root, 'packages/test-fixtures/production-master/manifest.json'), 'utf8'),
       readRawHpDeclaration(),
     ]);
     const manifest = parsePublishedManifest(JSON.parse(manifestContent));

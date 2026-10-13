@@ -40,7 +40,11 @@ import {
   markerIntersects,
   markerHasOpaqueReads,
 } from './markerDependency';
-import { canonicalRequirementLeaves, getNoblePhantasmVariants } from '@fgo-lab/master-data';
+import {
+  canonicalRequirementLeaves,
+  getNoblePhantasmVariants,
+  playerChoiceForEffect,
+} from '@fgo-lab/master-data';
 import { hpPermille } from './hpResource';
 import {
   isHpOperation,
@@ -336,8 +340,9 @@ export function executePreparationOc(args: {
     const sourceFirstStep = steps.length;
     const origins = [{ index: sourceFirstStep, source, operationIndex: null as number | null }];
     let program = compileOcSourceProgram(source);
-    if (source.effect.selection?.kind === 'playerChoice') {
-      const family = source.effect.selection.group.key;
+    const sourceChoice = playerChoiceForEffect(source.effect);
+    if (sourceChoice) {
+      const family = sourceChoice.key;
       program = {
         ...program,
         choiceCandidates: [
@@ -349,12 +354,10 @@ export function executePreparationOc(args: {
                   candidate.sourceInstanceId === source.sourceInstanceId &&
                   candidate.skillId === source.skillId,
               )
-              .flatMap((candidate) =>
-                candidate.effect.selection?.kind === 'playerChoice' &&
-                candidate.effect.selection.group.key === family
-                  ? [candidate.effect.selection.group.candidate]
-                  : [],
-              ),
+              .flatMap((candidate) => {
+                const choice = playerChoiceForEffect(candidate.effect);
+                return choice?.key === family ? [choice.candidate] : [];
+              }),
           ),
         ].sort(),
       };
@@ -480,10 +483,8 @@ export function executePreparationOc(args: {
       }
       const facts = currentFacts();
       if (!facts) return { kind: 'reject', status: 'invalid', reason: 'invalidPreparationFacts' };
-      if (
-        source.effect.selection?.kind === 'playerChoice' &&
-        source.effect.execution.some(isHpOperation)
-      ) {
+      const selectedChoice = playerChoiceForEffect(source.effect);
+      if (selectedChoice && source.effect.execution.some(isHpOperation)) {
         const choice = {
           kind: 'choice' as const,
           source: {
@@ -491,8 +492,8 @@ export function executePreparationOc(args: {
             sourceInstanceId: source.sourceInstanceId,
             skillId: source.skillId || null,
           },
-          family: source.effect.selection.group.key,
-          candidate: source.effect.selection.group.candidate,
+          family: selectedChoice.key,
+          candidate: selectedChoice.candidate,
         };
         if (
           evaluateCondition(choice, facts).truth === null &&
@@ -622,10 +623,7 @@ export function executePreparationOc(args: {
         ? { kind: 'unread' as const }
         : sourceProcRead(
             source.effect.proc,
-            source.effect.proc.kind === 'guaranteed'
-              ? 1000
-              : (source.effect.proc.ratePermille[source.valueSetIndex]?.[source.valueIndex] ??
-                  null),
+            resolved.procRate,
             stochastic,
             args.context.stochasticSelection.kind === 'possibility' ? 'witness' : 'declared',
           );

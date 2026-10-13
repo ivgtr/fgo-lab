@@ -38,7 +38,13 @@ let productionMaster: ReturnType<typeof masterSnapshotSchema.parse>;
 beforeAll(async () => {
   productionMaster = masterSnapshotSchema.parse(
     JSON.parse(
-      await readFile(resolve(import.meta.dirname, '../../public/master/master.json'), 'utf8'),
+      await readFile(
+        resolve(
+          import.meta.dirname,
+          '../../../../packages/test-fixtures/production-master/master.json',
+        ),
+        'utf8',
+      ),
     ),
   );
 });

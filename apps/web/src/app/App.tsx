@@ -32,9 +32,19 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import type { PortableVersionUpgradeResult } from '@fgo-lab/calculation-application';
+import { loadActiveAtlasMaster } from '../adapters/atlasRepository';
+import { ATLAS_CONTRACT_SHA256 } from '../adapters/atlasContractFingerprint';
+import { isAtlasTransportFailure } from '../adapters/atlasSource';
 import { IndexedDbProfileRepository } from '../adapters/repository';
+import { OldTabBlocksUpgrade } from '../adapters/labDatabase';
 import { t } from '../ui/i18n';
-import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
+import { masterVersionLabel } from '../ui/masterVersion';
+import {
+  bootstrapApplication,
+  refreshAtlasMaster,
+  setupApplication,
+  type ReadyStartupResult,
+} from './startup';
 import { StartupScreen } from './StartupScreen';
 import { useProfileCollection } from './useProfileCollection';
 import { createCalculationMutationGate, type UpdateActiveProfile } from './portableDraft';
@@ -135,8 +145,6 @@ function Setup({
           clock,
           ids,
           {
-            baseUrl: '/',
-            development: process.env.NODE_ENV !== 'production',
             fragment: location.hash,
             now: new Date(),
           },
@@ -150,7 +158,15 @@ function Setup({
         ),
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(
+        cause instanceof OldTabBlocksUpgrade
+          ? '旧バージョンのタブを閉じて、このページを再読み込みしてください。'
+          : cause instanceof TypeError && cause.message === 'atlas_controller_upgrade_required'
+            ? '旧Service Workerの更新を待っています。このページを再読み込みしてください。'
+            : cause instanceof Error
+              ? cause.message
+              : String(cause),
+      );
       setState('error');
     }
   }
@@ -223,8 +239,6 @@ export function App() {
   useEffect(() => {
     async function bootstrap() {
       const result = await bootstrapApplication(repository, {
-        baseUrl: '/',
-        development: process.env.NODE_ENV !== 'production',
         fragment: location.hash,
         now: new Date(),
       });
@@ -258,14 +272,60 @@ export function App() {
       void navigator.serviceWorker.register('/sw.js');
   }, []);
   useEffect(() => {
-    const update = () => setOnline(navigator.onLine);
-    addEventListener('online', update);
-    addEventListener('offline', update);
-    return () => {
-      removeEventListener('online', update);
-      removeEventListener('offline', update);
-    };
+    const onOffline = () => setOnline(false);
+    addEventListener('offline', onOffline);
+    return () => removeEventListener('offline', onOffline);
   }, []);
+  useEffect(() => {
+    const activeMaster = master;
+    if (!activeMaster) return;
+    let busy = false;
+    let disposed = false;
+    const stillCurrent = () => !disposed;
+    async function checkAtlas(currentMaster: MasterDataSnapshot) {
+      if (busy || !stillCurrent() || !navigator.onLine) return;
+      busy = true;
+      try {
+        const stored = await loadActiveAtlasMaster(ATLAS_CONTRACT_SHA256);
+        if (stored.state !== 'ready') throw new Error(`atlas_active_${stored.state}`);
+        const next = await refreshAtlasMaster(stored.active, new Date());
+        if (!stillCurrent()) return;
+        if (next.changed || next.active.snapshot.version !== currentMaster.version) {
+          calculationMutation.begin();
+          setMaster(next.active.snapshot);
+          setCalculation((current) => ({ ...current, storedResult: undefined }));
+        }
+        setStartupWarning('');
+        setOnline(true);
+      } catch (cause) {
+        if (stillCurrent()) {
+          if (isAtlasTransportFailure(cause)) setOnline(false);
+          setStartupWarning(
+            `Atlas更新の確認に失敗したため検証済みのマスターを使用中: ${cause instanceof Error ? cause.message : String(cause)}`,
+          );
+        }
+      } finally {
+        busy = false;
+      }
+    }
+    const onOnline = () => void checkAtlas(activeMaster);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void checkAtlas(activeMaster);
+    };
+    const interval = setInterval(() => void checkAtlas(activeMaster), 10 * 60_000);
+    addEventListener('online', onOnline);
+    document.addEventListener('visibilitychange', onVisible);
+    if ('serviceWorker' in navigator)
+      navigator.serviceWorker.addEventListener('controllerchange', onOnline);
+    return () => {
+      disposed = true;
+      clearInterval(interval);
+      removeEventListener('online', onOnline);
+      document.removeEventListener('visibilitychange', onVisible);
+      if ('serviceWorker' in navigator)
+        navigator.serviceWorker.removeEventListener('controllerchange', onOnline);
+    };
+  }, [master, calculationMutation]);
   useEffect(() => {
     if (page !== 'calculate') return;
     const finalizeOnHistoryNavigation = () => void calculationFinalizer.current?.();
@@ -419,7 +479,7 @@ export function App() {
           </ul>
         </nav>
         <p className="utility">
-          DB {currentMaster.version}
+          <span title={currentMaster.version}>DB {masterVersionLabel(currentMaster.version)}</span>
           <br />
           端末内に自動保存・{online ? 'オンライン' : 'オフライン'}
           {startupWarning && (

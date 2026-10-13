@@ -5,7 +5,7 @@ import {
   targetClassCandidates,
   type CombatAttribute,
 } from '@fgo-lab/calc-core';
-import type { CanonicalTargetDomain } from '@fgo-lab/master-data';
+import type { CanonicalTargetDomain, CombatRules } from '@fgo-lab/master-data';
 import type {
   CanonicalTargetAttribute,
   CanonicalTargetClassId,
@@ -87,6 +87,7 @@ export function resolveTargetCandidates({
   attackerClass,
   attackerAttribute,
   domain,
+  combatRules,
   constraints,
   readExpressions,
 }: {
@@ -94,6 +95,7 @@ export function resolveTargetCandidates({
   attackerClass: string;
   attackerAttribute: CombatAttribute;
   domain: CanonicalTargetDomain;
+  combatRules?: CombatRules | undefined;
   constraints: readonly SatisfiableConditionConstraint[];
   readExpressions: readonly ConditionExpression[];
 }): TargetResolution {
@@ -133,12 +135,14 @@ export function resolveTargetCandidates({
   const selections = familySelections(requiredFamilies, referencedFamilies);
   const sourceKeys = constraints.map(({ sourceKey }) => sourceKey);
   if (!selections) return { kind: 'unsupported', reason: 'targetSearchLimit', sourceKeys };
-  const classIds = targetClassCandidates(attackerClass, context.class).filter((classId) =>
-    domain.classIdentities.includes(classId),
+  const classIds = targetClassCandidates(attackerClass, context.class, combatRules).filter(
+    (classId) => domain.classIdentities.includes(classId),
   );
-  const attributes = targetAttributeCandidates(attackerAttribute, context.attribute).filter(
-    (attribute) => domain.attributeIdentities.includes(attribute),
-  );
+  const attributes = targetAttributeCandidates(
+    attackerAttribute,
+    context.attribute,
+    combatRules,
+  ).filter((attribute) => domain.attributeIdentities.includes(attribute));
   if (classIds.length * attributes.length * selections.length > MAX_TARGET_CANDIDATES)
     return { kind: 'unsupported', reason: 'targetSearchLimit', sourceKeys };
   const candidates: TargetCandidate[] = [];
@@ -179,8 +183,8 @@ export function resolveTargetCandidates({
     ...new Map(
       candidates.map((candidate) => [
         JSON.stringify({
-          classAffinity: classAffinity(attackerClass, candidate.classId),
-          attributeAffinity: attributeAffinity(attackerAttribute, candidate.attribute),
+          classAffinity: classAffinity(attackerClass, candidate.classId, combatRules),
+          attributeAffinity: attributeAffinity(attackerAttribute, candidate.attribute, combatRules),
           facts: candidate.facts.map((fact) => [targetPredicateKey(fact.predicate), fact.present]),
         }),
         candidate,
@@ -197,12 +201,13 @@ export function materializeTargetCandidate(
   attackerClass: string,
   attackerAttribute: CombatAttribute,
   candidate: TargetCandidate,
+  combatRules?: CombatRules,
 ): { input: DamageResolutionInput; facts: readonly TargetPredicateAssertion[] } {
   return {
     input: {
       ...input,
-      classAffinity: classAffinity(attackerClass, candidate.classId),
-      attributeAffinity: attributeAffinity(attackerAttribute, candidate.attribute),
+      classAffinity: classAffinity(attackerClass, candidate.classId, combatRules),
+      attributeAffinity: attributeAffinity(attackerAttribute, candidate.attribute, combatRules),
       target: { ...input.target, classId: candidate.classId, attribute: candidate.attribute },
     },
     facts: candidate.facts,

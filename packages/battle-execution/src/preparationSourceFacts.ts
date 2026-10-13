@@ -26,6 +26,7 @@ import {
 } from './hpExecutionObservation';
 import type { OcSourceProgram } from './ocSourceProgram';
 import { cloneConditionFactProofs, type ConditionRead } from './conditionRead';
+import { effectiveProcRate } from './procRate';
 
 /** A trigger on the selected command is known; absent trigger metadata is not a guessed activation. */
 function commandCondition(
@@ -152,18 +153,28 @@ export function resolvePreparationSourceFacts(
     { values, missingDefinitions, invalidInputKeys: [] },
   );
   const effect = program.source.effect;
+  let procRate: number | null = null;
+  if (effect.proc.kind === 'guaranteed') procRate = 1000;
+  else if (stochastic.status === 'success' || stochastic.status === 'failure') {
+    const baseRate =
+      effect.proc.ratePermille[program.source.valueSetIndex]?.[program.source.valueIndex];
+    if (baseRate === undefined) throw new TypeError('missing_stochastic_source_cell');
+    const adjustmentDefinition = effect.proc.netAdjustmentInputKey
+      ? definitions.find((definition) => definition.kind === 'statusApplicationAdjustment')
+      : undefined;
+    const adjustment = adjustmentDefinition ? (values[adjustmentDefinition.key] ?? null) : null;
+    procRate = effectiveProcRate(effect.proc, baseRate, adjustment);
+  }
   if (
     procOwner === 'source' &&
     selection.kind === 'possibility' &&
     outcome !== false &&
     effect.proc.kind !== 'guaranteed' &&
     effect.selection?.kind === 'stochasticOutcome' &&
-    stochastic.status !== 'invalid'
+    (stochastic.status === 'success' || stochastic.status === 'failure')
   ) {
     const group = effect.selection.group;
-    const rate =
-      effect.proc.ratePermille[program.source.valueSetIndex]?.[program.source.valueIndex];
-    if (rate === undefined) throw new TypeError('missing_stochastic_source_cell');
+    if (procRate === null) throw new TypeError('missing_stochastic_source_cell');
     stochastic = {
       status: selectStochasticPossibility(
         stochasticGroupKey(
@@ -175,7 +186,7 @@ export function resolvePreparationSourceFacts(
         ),
         effect.proc,
         group,
-        rate,
+        procRate,
         selection,
       ),
     };
@@ -187,6 +198,7 @@ export function resolvePreparationSourceFacts(
     outcome,
     missingCondition,
     stochastic,
+    procRate,
     definitions,
   };
 }

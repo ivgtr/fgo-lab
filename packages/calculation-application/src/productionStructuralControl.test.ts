@@ -120,7 +120,10 @@ describe('production structural control proof', () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(
         await readFile(
-          resolve(import.meta.dirname, '../../../apps/web/public/master/master.json'),
+          resolve(
+            import.meta.dirname,
+            '../../../packages/test-fixtures/production-master/master.json',
+          ),
           'utf8',
         ),
       ),

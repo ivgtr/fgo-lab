@@ -3,8 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@fgo-lab/master-data": "workspace:*",
+    "@fgo-lab/schema": "workspace:*"
+  },
   "exports": {
     "./master": "./master/fixture.json",
-    "./golden/np-damage-v1": "./golden/np-damage-v1.json"
+    "./golden/np-damage-v1": "./golden/np-damage-v1.json",
+    "./combat-rules": "./src/combatRules.ts",
+    "./atlas-observed-jp-20261013-certificate": "./atlas-observed-jp-20261013.certificate.json"
   }
 }

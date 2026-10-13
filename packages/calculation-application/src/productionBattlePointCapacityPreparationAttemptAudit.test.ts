@@ -324,6 +324,10 @@ function fixtureMaster(spec: Spec) {
                 kind: 'playerChoice',
                 group: { key: 'capacity-choice', candidate: 'selected' },
               },
+              requirement: {
+                recipient: 'sourceSelf',
+                expression: { kind: 'choice', family: 'capacity-choice', candidate: 'selected' },
+              },
             }
           : {}),
         execution: amounts.length
@@ -380,6 +384,10 @@ function fixtureMaster(spec: Spec) {
           selection: {
             kind: 'playerChoice',
             group: { key: 'capacity-choice', candidate: 'other' },
+          },
+          requirement: {
+            recipient: 'sourceSelf',
+            expression: { kind: 'choice', family: 'capacity-choice', candidate: 'other' },
           },
           execution: [
             {

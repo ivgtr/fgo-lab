@@ -353,12 +353,20 @@ function fixtureMaster(spec: Spec, missingNpCell = false) {
         {
           ...writer,
           selection: { kind: 'playerChoice', group: { key: 'bp-choice', candidate: 'selected' } },
+          requirement: {
+            recipient: 'sourceSelf',
+            expression: { kind: 'choice', family: 'bp-choice', candidate: 'selected' },
+          },
         },
         {
           ...writer,
           id: 'unselected-writer',
           occurrenceId: 'unselected-writer:0',
           selection: { kind: 'playerChoice', group: { key: 'bp-choice', candidate: 'other' } },
+          requirement: {
+            recipient: 'sourceSelf',
+            expression: { kind: 'choice', family: 'bp-choice', candidate: 'other' },
+          },
           execution: writer.execution.map((operation) => ({ ...operation, subjectId: '810001' })),
         },
       ])

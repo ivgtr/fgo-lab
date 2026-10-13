@@ -88,7 +88,7 @@ export function sourceProcRead(
   return {
     kind: 'resolved',
     outcome: result.status,
-    certainty: procIsGuaranteed(proc, rate) || rate === 0 ? 'guaranteed' : 'possible',
+    certainty: rate === 1000 || rate === 0 ? 'guaranteed' : 'possible',
     ratePermille: rate,
     selection,
   };
@@ -106,7 +106,7 @@ export function proofIsGuaranteed(proof: ConditionFactProof): boolean {
 }
 
 export function procIsGuaranteed(proc: EffectProc, ratePermille: number | null): boolean {
-  return proc.kind === 'guaranteed' || ratePermille === 1000;
+  return proc.kind === 'guaranteed' || (!proc.netAdjustmentInputKey && ratePermille === 1000);
 }
 
 export function conditionWriteProof(

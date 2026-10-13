@@ -23,7 +23,10 @@ it('reads the prepared battle point phase and changes resolved damage through de
   const master = masterSnapshotSchema.parse(
     JSON.parse(
       readFileSync(
-        resolve(import.meta.dirname, '../../../apps/web/public/master/master.json'),
+        resolve(
+          import.meta.dirname,
+          '../../../packages/test-fixtures/production-master/master.json',
+        ),
         'utf8',
       ),
     ),

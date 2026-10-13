@@ -16,8 +16,10 @@ import {
   findActorForm,
   getInitialActorForms,
   getSkillsForActorForm,
+  playerChoiceForEffect,
   type ActorFormId,
   type CanonicalNpResourceSemantics,
+  type CombatRules,
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { applyTargetContextCommand } from './targetContext';
@@ -53,8 +55,9 @@ export function preparationChoiceOptions(
       { choice: NonNullable<AttackerSkillUse['choice']>; label: string; structural: boolean }
     >();
     for (const effect of skill.effects) {
-      if (effect.selection?.kind !== 'playerChoice') continue;
-      const key = `${effect.selection.group.key}:${effect.selection.group.candidate}`;
+      const choice = playerChoiceForEffect(effect);
+      if (!choice) continue;
+      const key = `${choice.key}:${choice.candidate}`;
       const structural = effect.execution.some(
         (operation) => operation.kind === 'selectNoblePhantasmVariant',
       );
@@ -62,8 +65,8 @@ export function preparationChoiceOptions(
       if (!current || structural)
         choices.set(key, {
           choice: {
-            groupKey: effect.selection.group.key,
-            candidateKey: effect.selection.group.candidate,
+            groupKey: choice.key,
+            candidateKey: choice.candidate,
           },
           label: effect.label,
           structural,
@@ -185,12 +188,13 @@ export function setInitialActorForm(
 export function resetTargetClassContextForAttacker(
   scenario: ResolvedScenario,
   attackerClassId: string,
+  combatRules?: CombatRules,
 ): ResolvedScenario {
   return {
     ...scenario,
     targetContext: applyTargetContextCommand(scenario.targetContext, {
       kind: 'setClassRelation',
-      relation: defaultTargetClassRelation(attackerClassId),
+      relation: defaultTargetClassRelation(attackerClassId, combatRules),
     }),
   };
 }

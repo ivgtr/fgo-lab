@@ -5,14 +5,17 @@
   "type": "module",
   "scripts": {
     "validate": "tsx src/cli.ts validate",
-    "inventory": "tsx src/cli.ts inventory",
-    "normalize": "tsx src/cli.ts normalize"
+    "inventory": "tsx src/cli.ts inventory"
   },
   "dependencies": {
     "@fgo-lab/master-data": "workspace:*"
   },
   "devDependencies": {
+    "@fgo-lab/test-fixtures": "workspace:*",
     "tsx": "4.20.5"
   },
-  "exports": "./src/index.ts"
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser.ts"
+  }
 }

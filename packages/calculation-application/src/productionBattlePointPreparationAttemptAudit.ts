@@ -1,5 +1,9 @@
 import type { PreparationOcAttemptSnapshot } from '@fgo-lab/battle-execution/preparation-audit';
-import { getSkillsForActorForm, type MasterDataSnapshot } from '@fgo-lab/master-data';
+import {
+  effectMatchesPlayerChoice,
+  getSkillsForActorForm,
+  type MasterDataSnapshot,
+} from '@fgo-lab/master-data';
 import { npProgramEffects, resolveResourceTargetPolicy } from '@fgo-lab/battle-execution';
 import {
   canonicalAuditDigest,
@@ -42,11 +46,8 @@ function canonical(prepared: Partial<PreparedCalculationScenario>, capacity = fa
         : undefined;
     const effects =
       skill && command.kind === 'useSkillSlot'
-        ? npProgramEffects(skill.effects).filter(
-            (effect) =>
-              effect.selection?.kind !== 'playerChoice' ||
-              (effect.selection.group.key === command.choice?.groupKey &&
-                effect.selection.group.candidate === command.choice.candidateKey),
+        ? npProgramEffects(skill.effects).filter((effect) =>
+            effectMatchesPlayerChoice(effect, command.choice),
           )
         : [];
     return { command, commandIndex, skillId: skill?.id ?? null, effects };

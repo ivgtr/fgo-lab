@@ -1,9 +1,10 @@
-import type { BattlePointDomain, MasterDataSnapshot } from '@fgo-lab/master-data';
+import type { BattlePointDomain, CombatRules, MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   actorFormKey,
   canonicalRequirementLeaves,
   canonicalNoblePhantasmVariantSemanticsKey,
   masterSnapshotSchema,
+  playerChoiceForEffect,
 } from '@fgo-lab/master-data';
 import type {
   AtlasEquip,
@@ -25,7 +26,8 @@ import {
   canonicalNpResourceSemantics,
   normalizeNpGaugeRequirement,
 } from './npResourceNormalization';
-import { sha256 } from './artifact';
+import { portableSha256 } from './portableHash';
+import { stateTraitName } from './rawActorFormExtraction';
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
   const result: { from: string; to: string; materialId: string; amount: number; qp: number }[] = [];
@@ -94,6 +96,7 @@ function collectTraitNameById(
 
 export function normalizeAtlasSnapshot(input: {
   version: string;
+  combatRules?: CombatRules;
   servants: unknown;
   equips: unknown;
   mysticCodes: unknown;
@@ -278,7 +281,7 @@ export function normalizeAtlasSnapshot(input: {
         const nonAttackVariant = { kind: 'nonAttack' as const, ...common };
         return {
           ...nonAttackVariant,
-          canonicalId: sha256(canonicalNoblePhantasmVariantSemanticsKey(nonAttackVariant)),
+          canonicalId: portableSha256(canonicalNoblePhantasmVariantSemanticsKey(nonAttackVariant)),
         };
       }
       const damage = damageFunctions.map(({ fn, functionIndex }) =>
@@ -306,7 +309,7 @@ export function normalizeAtlasSnapshot(input: {
       };
       return {
         ...attackVariant,
-        canonicalId: sha256(canonicalNoblePhantasmVariantSemanticsKey(attackVariant)),
+        canonicalId: portableSha256(canonicalNoblePhantasmVariantSemanticsKey(attackVariant)),
       };
     };
     const noblePhantasmVariantGroups = noblePhantasmModel.groups.map((group) => ({
@@ -367,8 +370,10 @@ export function normalizeAtlasSnapshot(input: {
         throw new TypeError(
           `unresolved_actor_form_transition_activation:${transition.sourceId}:${transition.effectOccurrenceId}`,
         );
+      const transitionChoice = playerChoiceForEffect(transitionEffect);
       const activationEffects = source.effects.filter(
-        ({ selection }) => JSON.stringify(selection) === JSON.stringify(transitionEffect.selection),
+        (effect) =>
+          JSON.stringify(playerChoiceForEffect(effect)) === JSON.stringify(transitionChoice),
       );
       const operations = activationEffects.flatMap(({ execution }) => execution);
       const transformed = operations.filter((operation) => operation.kind === 'transformActorForm');
@@ -464,10 +469,14 @@ export function normalizeAtlasSnapshot(input: {
         },
         baseNoblePhantasmGroupId: noblePhantasmModel.baseNoblePhantasmGroupId,
         noblePhantasmVariantGroups,
-        traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
+        traits: (servant.traits ?? []).flatMap((trait) => {
+          const name = stateTraitName(trait, traitNameById);
+          return name ? [name] : [];
+        }),
         predicates: (servant.traits ?? []).flatMap((trait) => {
-          if (!trait.name) return [];
-          const predicate = canonicalTargetPredicate(trait.name);
+          const name = stateTraitName(trait, traitNameById);
+          if (!name) return [];
+          const predicate = canonicalTargetPredicate(name);
           return predicate ? [predicate] : [];
         }),
         imageKey: image,
@@ -643,6 +652,7 @@ export function normalizeAtlasSnapshot(input: {
   );
   return masterSnapshotSchema.parse({
     version: input.version,
+    ...(input.combatRules ? { combatRules: input.combatRules } : {}),
     npResourceSemantics: canonicalNpResourceSemantics,
     normalization: {
       attackFunctions: {

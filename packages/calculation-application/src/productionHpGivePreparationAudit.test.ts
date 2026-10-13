@@ -132,6 +132,10 @@ function fixtureMaster(spec: Spec): MasterDataSnapshot {
     ...(spec.choice
       ? {
           selection: { kind: 'playerChoice', group: { key: 'give-choice', candidate: 'selected' } },
+          requirement: {
+            recipient: 'sourceSelf',
+            expression: { kind: 'choice', family: 'give-choice', candidate: 'selected' },
+          },
         }
       : {}),
     ...(spec.disabled

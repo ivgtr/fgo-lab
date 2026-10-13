@@ -1,4 +1,5 @@
 import { activationFactKey, analyzeActivationFactSet } from '@fgo-lab/schema';
+import { playerChoiceForEffect } from '@fgo-lab/master-data';
 import { analyzeActivationCondition } from './activationCondition';
 import { compileEffectCondition } from './operationCompiler';
 import {
@@ -22,31 +23,20 @@ export function executionPlanActivation(
   // A committed preparation choice may select an effect on the source actor only.
   // Validate its original family before removing facts with no damage-phase reader.
   const committedChoiceFamilies = new Set(
-    sources.flatMap((source) =>
-      source.hpExecutionCommitted && source.effect.selection?.kind === 'playerChoice'
-        ? [
-            JSON.stringify([
-              source.origin,
-              source.sourceInstanceId,
-              source.skillId,
-              source.effect.selection.group.key,
-            ]),
-          ]
-        : [],
-    ),
+    sources.flatMap((source) => {
+      const choice = playerChoiceForEffect(source.effect);
+      return source.hpExecutionCommitted && choice
+        ? [JSON.stringify([source.origin, source.sourceInstanceId, source.skillId, choice.key])]
+        : [];
+    }),
   );
   const preparationChoiceKeys = new Set(
     sources.flatMap((source) => {
-      const selection = source.effect.selection;
+      const choice = playerChoiceForEffect(source.effect);
       if (
-        selection?.kind !== 'playerChoice' ||
+        !choice ||
         !committedChoiceFamilies.has(
-          JSON.stringify([
-            source.origin,
-            source.sourceInstanceId,
-            source.skillId,
-            selection.group.key,
-          ]),
+          JSON.stringify([source.origin, source.sourceInstanceId, source.skillId, choice.key]),
         )
       )
         return [];

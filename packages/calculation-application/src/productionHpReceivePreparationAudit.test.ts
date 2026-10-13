@@ -987,7 +987,10 @@ describe('production audit committed receive and original later fixed HP consume
     productionAuditTestOptions(['audit-receive-published.json']),
     async ({ task }) => {
       const bytes = await readFile(
-        resolve(import.meta.dirname, '../../../apps/web/public/master/master.json'),
+        resolve(
+          import.meta.dirname,
+          '../../../packages/test-fixtures/production-master/master.json',
+        ),
       );
       const master = masterSnapshotSchema.parse(JSON.parse(bytes.toString('utf8'))),
         inventory = receiveInventory(master);

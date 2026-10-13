@@ -89,7 +89,12 @@ describe('unsupported convergence production golden', () => {
   let master: ReturnType<typeof masterSnapshotSchema.parse>;
   beforeAll(async () => {
     master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+      JSON.parse(
+        await readFile(
+          resolve(root, 'packages/test-fixtures/production-master/master.json'),
+          'utf8',
+        ),
+      ),
     );
   }, 5_000);
 

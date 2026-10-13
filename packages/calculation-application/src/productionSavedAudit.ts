@@ -107,7 +107,9 @@ export async function runProductionSavedAudit(
     }).trim();
     const worktree = execFileSync('git', ['status', '--short'], { cwd: root, encoding: 'utf8' });
     if (worktree !== '') throw new TypeError('saved_audit_requires_clean_worktree');
-    const masterBytes = await readFile(resolve(root, 'apps/web/public/master/master.json'));
+    const masterBytes = await readFile(
+      resolve(root, 'packages/test-fixtures/production-master/master.json'),
+    );
     const master = masterSnapshotSchema.parse(JSON.parse(masterBytes.toString()));
     const matrixBytes = await readFile(resolve(matrixDirectory, 'manifest.json'));
     const matrix = JSON.parse(matrixBytes.toString()) as {

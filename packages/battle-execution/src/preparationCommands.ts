@@ -1,5 +1,10 @@
 import { npProgramEffects } from './npProgramScope';
-import { getSkillsForActorForm, type MasterEffect, type ServantMaster } from '@fgo-lab/master-data';
+import {
+  getSkillsForActorForm,
+  playerChoiceForEffect,
+  type MasterEffect,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import type { ResolvedRankingBasis, PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { PreNoblePhantasmState, PreparationFailureCode } from './preparationContracts';
 
@@ -8,23 +13,10 @@ export function selectPreparationEffects(
   command: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>,
 ): readonly MasterEffect[] | PreparationFailureCode {
   effects = npProgramEffects(effects);
-  const choices = [
-    ...new Map(
-      effects.flatMap((effect) =>
-        effect.selection?.kind === 'playerChoice'
-          ? [
-              [
-                `${effect.selection.group.key}:${effect.selection.group.candidate}`,
-                effect.selection.group,
-              ],
-            ]
-          : [],
-      ),
-    ).values(),
-  ];
+  const choices = choiceGroups(effects);
   if (choices.length === 0)
     return command.choice === null
-      ? effects.filter(({ selection }) => selection?.kind !== 'playerChoice')
+      ? effects.filter((effect) => playerChoiceForEffect(effect) === null)
       : 'choiceUnavailable';
   if (command.choice === null) return 'choiceRequired';
   const matched = choices.some(
@@ -32,12 +24,24 @@ export function selectPreparationEffects(
       choice.key === command.choice?.groupKey && choice.candidate === command.choice.candidateKey,
   );
   if (!matched) return 'choiceUnavailable';
-  return effects.filter(
-    ({ selection }) =>
-      selection?.kind !== 'playerChoice' ||
-      (selection.group.key === command.choice?.groupKey &&
-        selection.group.candidate === command.choice.candidateKey),
-  );
+  return effects.filter((effect) => {
+    const choice = playerChoiceForEffect(effect);
+    return (
+      choice === null ||
+      (choice.key === command.choice?.groupKey && choice.candidate === command.choice.candidateKey)
+    );
+  });
+}
+
+function choiceGroups(effects: readonly MasterEffect[]): { key: string; candidate: string }[] {
+  return [
+    ...new Map(
+      effects.flatMap((effect) => {
+        const choice = playerChoiceForEffect(effect);
+        return choice ? [[`${choice.key}:${choice.candidate}`, choice] as const] : [];
+      }),
+    ).values(),
+  ];
 }
 
 export function availablePreparationSkillCommands(
@@ -48,20 +52,7 @@ export function availablePreparationSkillCommands(
   const commands: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] = [];
   for (const skill of getSkillsForActorForm(servant, state.currentFormId)) {
     if (state.usedSkillSlots.has(skill.slot)) continue;
-    const choices = [
-      ...new Map(
-        npProgramEffects(skill.effects).flatMap((effect) =>
-          effect.selection?.kind === 'playerChoice'
-            ? [
-                [
-                  `${effect.selection.group.key}:${effect.selection.group.candidate}`,
-                  effect.selection.group,
-                ],
-              ]
-            : [],
-        ),
-      ).values(),
-    ];
+    const choices = choiceGroups(npProgramEffects(skill.effects));
     const slot = skill.slot;
     const skillLevel = skillLevels[String(slot) as '1' | '2' | '3'];
     if (skillLevel === undefined) throw new TypeError('preparation_skill_level_missing');

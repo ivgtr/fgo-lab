@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
+import { LAB_DATABASE_VERSION } from './labDatabase';
 import { expect, it } from 'vitest';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -68,7 +69,7 @@ it.each([32, 33, 34, 35, 36, 37, 38, 39, 40, 41])(
     ).toThrow();
     const repository = new IndexedDbProfileRepository();
     await repository.load();
-    const db = await openDB('fgo-lab', 1);
+    const db = await openDB('fgo-lab', LAB_DATABASE_VERSION);
     const meta = await db.getAll('meta');
     const staging = await db.getAll('staging');
     await db.put('user', source, 'profiles');

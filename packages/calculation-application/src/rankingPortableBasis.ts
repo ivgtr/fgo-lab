@@ -35,7 +35,7 @@ export function validatePinnedRankingBasis(
     (request.scenario.targetContext.class.kind === 'concrete' ||
       request.scenario.targetContext.class.relation ===
         (policy.classAffinity === 'favorable'
-          ? defaultTargetClassRelation(servants[0]!.classId)
+          ? defaultTargetClassRelation(servants[0]!.classId, master.combatRules)
           : 'neutral')) &&
     request.scenario.preNoblePhantasmPlan.every(
       (command) =>

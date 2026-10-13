@@ -659,6 +659,7 @@ export function createAttackerPreparationContext(
           attacker,
           scenario.targetContext,
           options.master.targetSemantics.execution,
+          options.master.combatRules,
         )
       : [],
     activationFacts: scenario.activationFacts,

@@ -18,7 +18,12 @@ const root = resolve(import.meta.dirname, '../../..');
 describe('production special input inventory', () => {
   it('ratchets effect-scoped inputs and excludes duplicate or inert UI controls', async () => {
     const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+      JSON.parse(
+        await readFile(
+          resolve(root, 'packages/test-fixtures/production-master/master.json'),
+          'utf8',
+        ),
+      ),
     );
     const versions = {
       schemaVersion: SCHEMA_VERSION,

@@ -12,7 +12,7 @@ const output = process.argv[2];
 if (!output) throw new Error('usage: tsx scripts/measure-ranking-resources.ts <output.json>');
 process.chdir(resolve(import.meta.dirname, '..'));
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
-const content = await readFile('apps/web/public/master/master.json', 'utf8');
+const content = await readFile('packages/test-fixtures/production-master/master.json', 'utf8');
 const master = masterSnapshotSchema.parse(JSON.parse(content));
 const versions = currentCalculationVersionContext(master);
 const run = () =>

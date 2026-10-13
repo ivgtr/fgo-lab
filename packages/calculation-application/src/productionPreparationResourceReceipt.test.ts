@@ -11,7 +11,10 @@ it('keeps the post-consumption NP gain in the ordered production receipt', () =>
   const master = masterSnapshotSchema.parse(
     JSON.parse(
       readFileSync(
-        resolve(import.meta.dirname, '../../../apps/web/public/master/master.json'),
+        resolve(
+          import.meta.dirname,
+          '../../../packages/test-fixtures/production-master/master.json',
+        ),
         'utf8',
       ),
     ),

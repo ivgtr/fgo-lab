@@ -12,7 +12,7 @@ export async function editCurrentStoredProfiles(
   const original = await page.evaluate(
     () =>
       new Promise<string>((resolve, reject) => {
-        const opening = indexedDB.open('fgo-lab', 1);
+        const opening = indexedDB.open('fgo-lab', 2);
         opening.onerror = () => reject(opening.error);
         opening.onsuccess = () => {
           const db = opening.result;
@@ -36,7 +36,7 @@ export async function editCurrentStoredProfiles(
   await page.evaluate(
     ({ original, collection }) =>
       new Promise<void>((resolve, reject) => {
-        const opening = indexedDB.open('fgo-lab', 1);
+        const opening = indexedDB.open('fgo-lab', 2);
         opening.onerror = () => reject(opening.error);
         opening.onsuccess = () => {
           const db = opening.result;

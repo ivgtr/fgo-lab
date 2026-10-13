@@ -82,7 +82,7 @@ isolationには未使用のcheckout出力先を指定します。必要なsource
 
 完全診断はJSON gzipで保存する場合があります。manifestの保存bytes／SHA、expectedDecodedBytes／expectedDecodedSha256で圧縮実体と展開内容を検査します。必要な1件だけをgzip -dcで新しい出力先へ展開し、巨大な本文をconsoleへ出さないでください。
 
-CIは失敗時も.test-resultsを保存し、保持期間は14日です。localの自動cleanupは最新10完了runを保持します。固定回帰入力と一時診断artifactは別に扱います。
+CIは失敗時に.test-resultsを保存し、保持期間は14日です。成功時は大型の診断artifactをuploadしません。localの自動cleanupは最新10完了runを保持します。固定回帰入力と一時診断artifactは別に扱います。
 
 ## 性能比較
 

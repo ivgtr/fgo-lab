@@ -4,7 +4,8 @@ dist
 coverage
 playwright-report
 test-results
-apps/web/public/master/master.json
+packages/test-fixtures/production-master/master.json
+packages/test-fixtures/legacy-sw-v4.js
 apps/web/next-env.d.ts
 apps/web/.next
 apps/web/out

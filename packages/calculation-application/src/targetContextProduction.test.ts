@@ -27,9 +27,10 @@ import { createStaticAttackProfiles } from './attackProfile';
 
 const root = resolve(import.meta.dirname, '../../..');
 
-const productionMaster = readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
-  (bytes) => masterSnapshotSchema.parse(JSON.parse(bytes)),
-);
+const productionMaster = readFile(
+  resolve(root, 'packages/test-fixtures/production-master/master.json'),
+  'utf8',
+).then((bytes) => masterSnapshotSchema.parse(JSON.parse(bytes)));
 const loadMaster = () => productionMaster;
 
 describe('production canonical target context', () => {

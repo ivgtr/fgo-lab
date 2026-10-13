@@ -18,12 +18,12 @@ export function createRankingBaseScenario(
   conditions: Pick<RankingPolicyConditions, 'classAffinity'>,
   initialActorFormId: ActorFormId,
 ): ResolvedScenario {
-  let targetContext = createDefaultTargetContext(servant.classId);
+  let targetContext = createDefaultTargetContext(servant.classId, master.combatRules);
   targetContext = applyTargetContextCommand(targetContext, {
     kind: 'setClassRelation',
     relation:
       conditions.classAffinity === 'favorable'
-        ? defaultTargetClassRelation(servant.classId)
+        ? defaultTargetClassRelation(servant.classId, master.combatRules)
         : 'neutral',
   });
   targetContext = applyTargetContextCommand(targetContext, {

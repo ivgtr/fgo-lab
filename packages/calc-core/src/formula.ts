@@ -1,5 +1,6 @@
 import type { DamageKernelInput } from '@fgo-lab/schema';
 import { damageKernelInputSchema } from '@fgo-lab/schema';
+import type { CombatRules } from '@fgo-lab/master-data';
 import { clamp, f32, f32Add, f32Div, f32Mul, floorDamage } from './float32';
 
 const CARD_RATE_PERMILLE = { buster: 1500, arts: 1000, quick: 800 } as const;
@@ -13,7 +14,11 @@ function modifierFactor(valuePermille: number, minimumPermille: number): number 
   return permilleRatio(Math.max(1000 + clamp(valuePermille, -1000, 5000), minimumPermille));
 }
 
-function calculateValidatedDamagePoint(input: DamageKernelInput, randomPermille: number): number {
+function calculateValidatedDamagePoint(
+  input: DamageKernelInput,
+  randomPermille: number,
+  rules?: CombatRules,
+): number {
   if (!Number.isInteger(randomPermille) || randomPermille < 900 || randomPermille > 1099)
     throw new RangeError('random must be an integer in 900..1099');
 
@@ -22,7 +27,9 @@ function calculateValidatedDamagePoint(input: DamageKernelInput, randomPermille:
   value = f32Mul(
     value,
     f32Mul(
-      permilleRatio(CARD_RATE_PERMILLE[input.card]),
+      permilleRatio(
+        rules ? rules.cardAttackRate[input.card] * 1000 : CARD_RATE_PERMILLE[input.card],
+      ),
       modifierFactor(input.cardModifierPermille, 0),
     ),
   );
@@ -30,7 +37,7 @@ function calculateValidatedDamagePoint(input: DamageKernelInput, randomPermille:
   value = f32Mul(value, permilleRatio(input.classAffinityPermille));
   value = f32Mul(value, permilleRatio(input.attributeAffinityPermille));
   value = f32Mul(value, permilleRatio(randomPermille));
-  value = f32Mul(value, DAMAGE_CONSTANT);
+  value = f32Mul(value, rules ? rules.damageConstant : DAMAGE_CONSTANT);
   value = f32Mul(value, modifierFactor(input.attackModifierPermille, 0));
   value = f32Mul(value, modifierFactor(input.npPowerModifierPermille, 1));
   value = f32Mul(value, permilleRatio(Math.max(input.specialModifierPermille, 1)));
@@ -40,13 +47,24 @@ function calculateValidatedDamagePoint(input: DamageKernelInput, randomPermille:
   );
 }
 
-export function calculateDamagePoint(rawInput: DamageKernelInput, randomPermille: number): number {
-  return calculateValidatedDamagePoint(damageKernelInputSchema.parse(rawInput), randomPermille);
+export function calculateDamagePoint(
+  rawInput: DamageKernelInput,
+  randomPermille: number,
+  rules?: CombatRules,
+): number {
+  return calculateValidatedDamagePoint(
+    damageKernelInputSchema.parse(rawInput),
+    randomPermille,
+    rules,
+  );
 }
 
-export function calculateDamageDistribution(rawInput: DamageKernelInput): readonly number[] {
+export function calculateDamageDistribution(
+  rawInput: DamageKernelInput,
+  rules?: CombatRules,
+): readonly number[] {
   const input = damageKernelInputSchema.parse(rawInput);
   return Array.from({ length: 200 }, (_, randomIndex) =>
-    calculateValidatedDamagePoint(input, 900 + randomIndex),
+    calculateValidatedDamagePoint(input, 900 + randomIndex, rules),
   );
 }

@@ -13,7 +13,10 @@ const beforeMasterText = execFileSync(
   ['show', `${baselineCommit}:apps/web/public/master/master.json`],
   { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
 );
-const afterMasterText = await readFile('apps/web/public/master/master.json', 'utf8');
+const afterMasterText = await readFile(
+  'packages/test-fixtures/production-master/master.json',
+  'utf8',
+);
 const beforeText = await readFile(beforePath, 'utf8');
 const afterText = await readFile(afterPath, 'utf8');
 const before = JSON.parse(beforeText),

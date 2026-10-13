@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
 import type { AtlasServant } from './atlasContract';
+import { portableSha256 } from './portableHash';
 
 const CLASS_PREDICATES = {
   classSaber: 'saber',
@@ -65,7 +65,7 @@ export function normalizeTargetSemantics(servants: readonly AtlasServant[]) {
     return {
       familyId,
       atlasTargets,
-      sourceDigest: createHash('sha256').update(JSON.stringify(atlasTargets)).digest('hex'),
+      sourceDigest: portableSha256(JSON.stringify(atlasTargets)),
     };
   });
   return {

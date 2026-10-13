@@ -26,7 +26,13 @@ afterEach(cleanup);
 
 const master = masterSnapshotSchema.parse(
   JSON.parse(
-    readFileSync(resolve(import.meta.dirname, '../../../public/master/master.json'), 'utf8'),
+    readFileSync(
+      resolve(
+        import.meta.dirname,
+        '../../../../../packages/test-fixtures/production-master/master.json',
+      ),
+      'utf8',
+    ),
   ),
 );
 const versions = {

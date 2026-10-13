@@ -1,6 +1,7 @@
 // @vitest-environment node
 import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
+import { LAB_DATABASE_VERSION } from './labDatabase';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -82,7 +83,7 @@ function backup(profiles: ProfileCollection): UserDataBackup {
 }
 async function db() {
   await repository.load();
-  return openDB('fgo-lab', 1);
+  return openDB('fgo-lab', LAB_DATABASE_VERSION);
 }
 afterEach(() => vi.restoreAllMocks());
 beforeEach(async () => {

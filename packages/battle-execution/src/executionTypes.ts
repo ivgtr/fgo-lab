@@ -7,6 +7,7 @@ import type {
   CanonicalInputDefinition,
   BattlePointDomain,
   CanonicalTargetDomain,
+  CombatRules,
   NoblePhantasmVariant,
   NpDamageSpec,
   ActorFormId,
@@ -187,6 +188,7 @@ export interface PreparedOrderedScenario {
   sourceIssues: readonly ExecutionIssue[];
   targetResolution: TargetResolution;
   targetDomain: CanonicalTargetDomain;
+  combatRules?: CombatRules | undefined;
   attackerClass: string;
   attackerAttribute: CombatAttribute;
   inputDefinitions: readonly CanonicalInputDefinition[];

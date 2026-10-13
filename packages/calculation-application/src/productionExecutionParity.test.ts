@@ -37,9 +37,10 @@ import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 const root = resolve(import.meta.dirname, '../../..');
 let loaded: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
 const loadMaster = () =>
-  (loaded ??= readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
-    (content) => masterSnapshotSchema.parse(JSON.parse(content)),
-  ));
+  (loaded ??= readFile(
+    resolve(root, 'packages/test-fixtures/production-master/master.json'),
+    'utf8',
+  ).then((content) => masterSnapshotSchema.parse(JSON.parse(content))));
 
 describe('production execution parity ratchet', () => {
   it('executes every reachable default calculator scenario through preparation actions', async () => {

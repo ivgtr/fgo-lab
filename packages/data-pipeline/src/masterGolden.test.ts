@@ -13,8 +13,8 @@ const root = resolve(import.meta.dirname, '../../..');
 describe('published master normalization golden', () => {
   it('matches the current published artifact and normalized Function inventory', async () => {
     const [manifestContent, masterContent] = await Promise.all([
-      readFile(resolve(root, 'apps/web/public/master/manifest.json'), 'utf8'),
-      readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8'),
+      readFile(resolve(root, 'packages/test-fixtures/production-master/manifest.json'), 'utf8'),
+      readFile(resolve(root, 'packages/test-fixtures/production-master/master.json'), 'utf8'),
     ]);
     const manifest = masterManifestSchema.parse(JSON.parse(manifestContent));
     const master = masterSnapshotSchema.parse(JSON.parse(masterContent));

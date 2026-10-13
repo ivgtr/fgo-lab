@@ -14,6 +14,7 @@ import {
   getInitialActorForms,
   getSkillsForActorForm,
   noblePhantasmVariantKey,
+  playerChoiceForEffect,
   type ActorFormId,
   type MasterEffect,
   type MasterSkill,
@@ -100,16 +101,10 @@ function skillCommands(
     if (state.usedSkillSlots.has(slot)) continue;
     const choices = [
       ...new Map(
-        npProgramEffects(skill.effects).flatMap((effect) =>
-          effect.selection?.kind === 'playerChoice'
-            ? [
-                [
-                  `${effect.selection.group.key}:${effect.selection.group.candidate}`,
-                  effect.selection.group,
-                ] as const,
-              ]
-            : [],
-        ),
+        npProgramEffects(skill.effects).flatMap((effect) => {
+          const choice = playerChoiceForEffect(effect);
+          return choice ? [[`${choice.key}:${choice.candidate}`, choice] as const] : [];
+        }),
       ).values(),
     ];
     if (choices.length === 0)
@@ -136,12 +131,13 @@ function selectedEffects(
   skill: MasterSkill,
   command: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>,
 ): readonly MasterEffect[] {
-  return npProgramEffects(skill.effects).filter(
-    ({ selection }) =>
-      selection?.kind !== 'playerChoice' ||
-      (selection.group.key === command.choice?.groupKey &&
-        selection.group.candidate === command.choice.candidateKey),
-  );
+  return npProgramEffects(skill.effects).filter((effect) => {
+    const choice = playerChoiceForEffect(effect);
+    return (
+      choice === null ||
+      (choice.key === command.choice?.groupKey && choice.candidate === command.choice.candidateKey)
+    );
+  });
 }
 
 function selectedVariantAfterTransition(

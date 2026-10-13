@@ -14,9 +14,10 @@ import {
   executePortableCalculation,
 } from './portableCalculation';
 const root = resolve(import.meta.dirname, '../../..');
-const masterPromise = readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
-  (s) => masterSnapshotSchema.parse(JSON.parse(s)),
-);
+const masterPromise = readFile(
+  resolve(root, 'packages/test-fixtures/production-master/master.json'),
+  'utf8',
+).then((s) => masterSnapshotSchema.parse(JSON.parse(s)));
 it('closes all five independent marker profiles across the 35 acceptance conditions', async () => {
   const master = await masterPromise;
   const versions = {

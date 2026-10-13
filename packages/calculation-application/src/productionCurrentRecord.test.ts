@@ -178,7 +178,9 @@ it('rejects a noncalculated record without a matching semantic outcome', () => {
 
 it('replays a published noncalculated outcome and rejects rehashed reason and blocker changes', () => {
   const published = masterSnapshotSchema.parse(
-    JSON.parse(readFileSync(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    JSON.parse(
+      readFileSync(resolve(root, 'packages/test-fixtures/production-master/master.json'), 'utf8'),
+    ),
   );
   const publishedVersions = { ...versions, masterDataVersion: published.version };
   const servant = published.servants.find(({ id }) => id === '2501400')!;

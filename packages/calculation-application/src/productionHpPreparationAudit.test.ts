@@ -150,6 +150,10 @@ function fixtureMaster(spec: Spec): MasterDataSnapshot {
                 kind: 'playerChoice',
                 group: { key: 'hp-choice', candidate: 'selected' },
               },
+              requirement: {
+                recipient: 'sourceSelf',
+                expression: { kind: 'choice', family: 'hp-choice', candidate: 'selected' },
+              },
             }
           : {}),
         execution: writes.flatMap((amount) => {
@@ -191,6 +195,10 @@ function fixtureMaster(spec: Spec): MasterDataSnapshot {
         id: 'hp-unselected',
         occurrenceId: 'hp-unselected:0',
         selection: { kind: 'playerChoice', group: { key: 'hp-choice', candidate: 'other' } },
+        requirement: {
+          recipient: 'sourceSelf',
+          expression: { kind: 'choice', family: 'hp-choice', candidate: 'other' },
+        },
         execution: [
           {
             kind: 'resourceMutation',

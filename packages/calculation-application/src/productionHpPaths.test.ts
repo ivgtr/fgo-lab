@@ -69,9 +69,10 @@ import {
 import { isDeepStrictEqual } from 'node:util';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 const root = resolve(import.meta.dirname, '../../..');
-const masterPromise = readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
-  (s) => masterSnapshotSchema.parse(JSON.parse(s)),
-);
+const masterPromise = readFile(
+  resolve(root, 'packages/test-fixtures/production-master/master.json'),
+  'utf8',
+).then((s) => masterSnapshotSchema.parse(JSON.parse(s)));
 const hpEffect = (e: MasterEffect) => e.execution.some(isHpOperation);
 const readsHp = (a: ServantMaster) =>
   [

@@ -30,7 +30,9 @@ import {
 const root = resolve(import.meta.dirname, '../../..');
 const loadMaster = async () =>
   masterSnapshotSchema.parse(
-    JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    JSON.parse(
+      await readFile(resolve(root, 'packages/test-fixtures/production-master/master.json'), 'utf8'),
+    ),
   );
 const artifact = (taskMetadata: unknown, name: string, value: unknown) =>
   writeProductionAuditArtifact(taskMetadata, name, value);

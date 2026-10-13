@@ -10,6 +10,7 @@ import { SCHEMA_VERSION } from '@fgo-lab/schema';
 import { createShareFragment, resultCardPng } from '../../adapters/share';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
+import { masterVersionLabel } from '../../ui/masterVersion';
 import { CalculationContextNotice } from './CalculationContextNotice';
 import './calculation-result.css';
 
@@ -208,9 +209,9 @@ export function CalculationResult({
           </table>
         )}
         <footer className="result-card-foot">
-          <small>
-            FGO Lab・DB {result.versions.masterDataVersion}・Engine {result.versions.engineVersion}
-            ・
+          <small title={result.versions.masterDataVersion}>
+            FGO Lab・DB {masterVersionLabel(result.versions.masterDataVersion)}・Engine{' '}
+            {result.versions.engineVersion}・
             {result.status === 'calculated'
               ? result.precision === 'exact'
                 ? '検証済み精度'

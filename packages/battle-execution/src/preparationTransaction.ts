@@ -9,7 +9,7 @@ import type {
   MasterSkill,
   ServantMaster,
 } from '@fgo-lab/master-data';
-import { findNoblePhantasmVariant } from '@fgo-lab/master-data';
+import { effectMatchesPlayerChoice, findNoblePhantasmVariant } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type {
   AppliedPreparationAction,
@@ -193,6 +193,7 @@ export function planPreparationResourceTransaction(args: {
       requiredInputEffectOccurrenceId: null,
     };
   const actionId = `preparation:${args.state.appliedActions.length}:${args.command.kind}`;
+  const selectedChoice = args.command.kind === 'useSkillSlot' ? args.command.choice : null;
   const sourceId = args.skill?.id ?? args.state.selectedNoblePhantasmVariant?.noblePhantasmId;
   const actionFacts = sourceId
     ? assemblePreparationActivationFacts(
@@ -200,7 +201,9 @@ export function planPreparationResourceTransaction(args: {
         args.skill ? 'skill' : 'noblePhantasm',
         sourceId,
         args.state.currentFormId,
-        args.effects,
+        args.command.kind === 'useSkillSlot'
+          ? args.effects.filter((effect) => effectMatchesPlayerChoice(effect, selectedChoice))
+          : args.effects,
       ).filter((fact) => fact.kind !== 'sourceQuantity')
     : [];
   if (args.command.kind === 'useSkillSlot' && args.command.choice)

@@ -1,0 +1,208 @@
+{
+  "format": "fgo-lab-atlas-source-v1",
+  "region": "JP",
+  "generation": 1,
+  "publishedAt": "2026-10-12T23:36:37.434Z",
+  "observedAt": "2026-10-12T19:05:03.186Z",
+  "rawCommit": "0dc8727576f8c1a99fbe51339246ffabd62309b3",
+  "rawCommittedAt": "2026-10-12T15:01:01.000Z",
+  "exporterCommit": "35cadc444e20c78cc60e56082ad1b64607d4d2e2",
+  "publisherCommit": "a7e586f5217c4ae7e58d747100481491594a7d93",
+  "contractSha256": "fa3211bcffd9d4ab2c0d9e1c7e03ae261108830cb64c02eba97eee86cb7dfe42",
+  "masterSchemaVersion": 57,
+  "canonicalSha256": "d26af05134dec28e51eb25b185d9dba8ca3728afd8548fc8f8bb0e31dd9af469",
+  "exports": [
+    {
+      "key": "NiceAttributeRelation",
+      "bytes": 541,
+      "sha256": "6624f75d4ef52d194bd2b1893adf62c5dea939e53e81fd5d4033728e9d88d7a9"
+    },
+    {
+      "key": "NiceCard",
+      "bytes": 13336,
+      "sha256": "8d9edff2b0931240b0543abc446b39d2364ed37242d31d62d6fb8571874d79a4"
+    },
+    {
+      "key": "NiceClass",
+      "bytes": 30970,
+      "sha256": "9bf9190f122d6566730f9a16515c37973e57e741ada3d8b12db8967ae11bb35e"
+    },
+    {
+      "key": "NiceClassAttackRate",
+      "bytes": 1912,
+      "sha256": "e9b988e6b90ff448fb8d82e81244e0973204171caef9440b77ea9898fd34066c"
+    },
+    {
+      "key": "NiceClassRelation",
+      "bytes": 120215,
+      "sha256": "951ef2e93e6e612aa18c6ab24f2cd1d6c4d6dfbe819c780800330feb775074e4"
+    },
+    {
+      "key": "NiceConstant",
+      "bytes": 11644,
+      "sha256": "19effe3e4fca15c197ac9b575bf10d238e24f50f9f16da688506ca49275aceb1"
+    },
+    {
+      "key": "nice_battle_point",
+      "bytes": 1310,
+      "sha256": "162f9661fa3d14b8989df8dd1c7ba97c4346d75e9083bfead6d142ef68f54f3c"
+    },
+    {
+      "key": "nice_enums",
+      "bytes": 48310,
+      "sha256": "776676085f4900cd1b7225669c65eec89ffabf4ca830fcf11e4a824e22645a15"
+    },
+    {
+      "key": "nice_equip",
+      "bytes": 22173016,
+      "sha256": "2442598a44bf2154246906627f8ff8af5f78367bea7b1f87f378dce243d3e6e6"
+    },
+    {
+      "key": "nice_item",
+      "bytes": 1229401,
+      "sha256": "7a92d7a0a0d8224c3c46eec02b95607777609e2d7d64fb10b74430e91ced60d0"
+    },
+    {
+      "key": "nice_mystic_code",
+      "bytes": 225385,
+      "sha256": "ce6560440673fad4f36f8e08a97b20b4b5d9e2e0e1c5f262943bbf47d8b857cf"
+    },
+    {
+      "key": "nice_servant",
+      "bytes": 69060503,
+      "sha256": "0ccce10f81e6324ef2995c961bdb1dd74ab364ed6fb26b3e4b9f2dd3a4ae8ce2"
+    },
+    {
+      "key": "nice_trait",
+      "bytes": 9073,
+      "sha256": "e1842ac7f7e88e398db2a83d98dcd414a15980ae1dd19daede0cdc318195a67c"
+    }
+  ],
+  "referencedSkills": [
+    {
+      "id": 961313,
+      "bytes": 1634,
+      "sha256": "b5d947703e3ddcb6d2e46e8df96965a66b38c10d99e73db2e6e8e9f6944336d1"
+    },
+    {
+      "id": 968815,
+      "bytes": 1199,
+      "sha256": "37e8fabf559a540d91d60b9009f27e8d14ad1355c3f089bde9169934b90c3d56"
+    },
+    {
+      "id": 968983,
+      "bytes": 2099,
+      "sha256": "e4ef20f9671a6c87f7a25ce01e2d6871350afab8dde48476eee065d60536a8d0"
+    },
+    {
+      "id": 968984,
+      "bytes": 1254,
+      "sha256": "69285986ca64f591c3998b78a6a10da6c00521fe0f4364e4e01561e51afc6855"
+    },
+    {
+      "id": 970373,
+      "bytes": 1235,
+      "sha256": "761fbf5f4cad2b5f0b4cd384ad2c6876e16c18f233525eb7b97bd1aed8e098c6"
+    },
+    {
+      "id": 970407,
+      "bytes": 1236,
+      "sha256": "570caef05a257b11d5244eacd9661b03a83366d9d1054e9d9a61e4482c15748f"
+    },
+    {
+      "id": 970460,
+      "bytes": 1857,
+      "sha256": "79025f150594b0b6898619a480d2510357daabc0b060969ce86b1a3d4e1fa819"
+    },
+    {
+      "id": 970478,
+      "bytes": 1236,
+      "sha256": "5c3792a7fd0a30ee234dda2846731c3d49962cf8bb6d6156c999d3b92950ce8e"
+    },
+    {
+      "id": 970497,
+      "bytes": 25822,
+      "sha256": "377845af1d8a89d9853db58328a148aa7b2fa7e50d3821ec5b35c368939c67fb"
+    },
+    {
+      "id": 970535,
+      "bytes": 652,
+      "sha256": "90e35e0c166f8c5dbe77d0409e6180cb437f5fbfa4ac310190d278e94a44fbf3"
+    },
+    {
+      "id": 970604,
+      "bytes": 1187,
+      "sha256": "d0f9a878c6f6875237edaeba7c322adf921576875fb3d099750fc963eac140a2"
+    },
+    {
+      "id": 970606,
+      "bytes": 1069,
+      "sha256": "6a2b50639040ad8a876c8d3f47272a642c8e48e4affd322d9310b47719f034dc"
+    },
+    {
+      "id": 970621,
+      "bytes": 1070,
+      "sha256": "f95195e13cee61f1c8e0d5ea529cf9f76bfce96f9bfc6928e9a7da8ba2fbe485"
+    },
+    {
+      "id": 970632,
+      "bytes": 1628,
+      "sha256": "a9120143d11e824b1ffb2fd52b18db81c1d5fd9e988bcf784e78c4def1fdee27"
+    },
+    {
+      "id": 970725,
+      "bytes": 1255,
+      "sha256": "15f9d20d06a2039e76a4ab34013bc0fde88a5616d3666014a60e97de7c5b6eaa"
+    },
+    {
+      "id": 970801,
+      "bytes": 1085,
+      "sha256": "4ae8147edc8bf7380f943af3905ba2ba3dce5ffbb28d0c0219d53a09a64e1ece"
+    },
+    {
+      "id": 970869,
+      "bytes": 1085,
+      "sha256": "34b50d08800cc923cf4ede034e503c9f44c71840c0f237c20e6ea497b1a6cc8b"
+    },
+    {
+      "id": 970920,
+      "bytes": 1188,
+      "sha256": "c38799e02799075a2c166f8c8159658ca047a23a5c9edee2ada2323f6d70229d"
+    },
+    {
+      "id": 970923,
+      "bytes": 1133,
+      "sha256": "8f92a3ebb7f2578a58c032a17c4e87f093e7705d818d53ca8a62da3808397bbf"
+    },
+    {
+      "id": 970932,
+      "bytes": 1200,
+      "sha256": "5c8a6164058c3dee595664a92459d5ce3c4df032fbffb2a04735e058927638ce"
+    },
+    {
+      "id": 970934,
+      "bytes": 1069,
+      "sha256": "76c9c687c883ca4b96ff7ede58aca0c4e5dfbe1d01209723a1503c92d2f90508"
+    },
+    {
+      "id": 970936,
+      "bytes": 983,
+      "sha256": "e03563a0b7f7a96ba91a415f3e03e0d1798d8ad54da159c6601c3bd462df2edc"
+    },
+    {
+      "id": 970939,
+      "bytes": 1084,
+      "sha256": "c8ec7f8da7eaa86aa780b4d710a758d9a362fa959b4251fcb2df06dce602b96c"
+    },
+    {
+      "id": 970940,
+      "bytes": 1173,
+      "sha256": "0e2d6e72ac70cae070acb8eef5af78b2213f0f81f2c4e5e1d9abbc059872c42d"
+    },
+    {
+      "id": 994608,
+      "bytes": 1070,
+      "sha256": "e0c822ba7cf3a12f8d48dd3f8100e0572ea2fdb3584d519c5595df7e04e023e4"
+    }
+  ]
+}

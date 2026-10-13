@@ -1070,13 +1070,20 @@ export function auditMaximumFixedAttemptIsolation(input: {
         ? [timelineEndHp?.actors, timelineEndHp?.modifiers, timelineEndHp?.receipts]
         : timelineEndHp,
     );
-    if (hpAction?.sourceEnds.length && attempt && native?.status !== 'committed')
+    if (hpAction?.sourceEnds.length && attempt && native?.status !== 'committed') {
+      const attempted = hpAction.attempted;
+      const lastSourceEnd = hpAction.sourceEnds.at(-1)?.after;
+      // A later rejected source may bind its own default input facts before refusing.
+      // Those reads are not physical writes and do not alter the retained HP prefix.
+      const physicalState = (state: typeof attempted) =>
+        state && Object.fromEntries(Object.entries(state).filter(([key]) => key !== 'inputFacts'));
       c(
         'maximumFixedAttemptRetainedMismatch',
         'target.lastSourceEnd',
-        hpAction.attempted,
-        hpAction.sourceEnds.at(-1)?.after,
+        physicalState(attempted),
+        physicalState(lastSourceEnd),
       );
+    }
 
     const boundary = classifyBoundary({
       actionIndex: program.expectation.actionIndex,

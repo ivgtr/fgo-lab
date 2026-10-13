@@ -74,6 +74,7 @@ function prepareCandidateBase(
         prepared.attackerClass,
         prepared.attackerAttribute,
         targetCandidate,
+        prepared.combatRules,
       )
     : { input: baseInput, facts: [] };
   const candidateInput = materialized.input;

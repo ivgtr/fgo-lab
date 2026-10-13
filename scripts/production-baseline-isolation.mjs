@@ -42,7 +42,7 @@ for (const relative of [
   'packages/calculation-application/baselines',
   'packages/test-fixtures/master',
   'scripts',
-  'apps/web/public/master',
+  'packages/test-fixtures/production-master',
   'package.json',
   'pnpm-workspace.yaml',
   'pnpm-lock.yaml',

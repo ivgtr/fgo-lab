@@ -1,10 +1,7 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
-  assertMasterVersionIdentity,
-  createManifest,
   inventoryAtlasAttackFunctions,
-  normalizeAtlasSnapshot,
   parsePublishedManifest,
   validatePublishedArtifact,
 } from './index';
@@ -13,13 +10,19 @@ const command = process.argv[2];
 if (command === 'validate') {
   const manifest = parsePublishedManifest(
     JSON.parse(
-      await readFile(resolve(root, 'apps/web/public/master/manifest.json'), 'utf8'),
+      await readFile(
+        resolve(root, 'packages/test-fixtures/production-master/manifest.json'),
+        'utf8',
+      ),
     ) as unknown,
   );
   const files: Record<string, string> = {};
   await Promise.all(
     manifest.files.map(async ({ file }) => {
-      files[file] = await readFile(resolve(root, 'apps/web/public/master', file), 'utf8');
+      files[file] = await readFile(
+        resolve(root, 'packages/test-fixtures/production-master', file),
+        'utf8',
+      );
     }),
   );
   const report = validatePublishedArtifact(manifest, files);
@@ -33,71 +36,4 @@ if (command === 'validate') {
   );
   console.log(JSON.stringify(report, null, 2));
   if (report.unknown.length > 0) process.exitCode = 1;
-} else if (command === 'normalize') {
-  const version = process.argv[3] ?? new Date().toISOString().slice(0, 10).replaceAll('-', '');
-  const manifestPath = resolve(root, 'apps/web/public/master/manifest.json');
-  const currentManifest = parsePublishedManifest(JSON.parse(await readFile(manifestPath, 'utf8')));
-  const currentFiles: Record<string, string> = {};
-  for (const file of currentManifest.files)
-    currentFiles[file.file] = await readFile(
-      resolve(root, 'apps/web/public/master', file.file),
-      'utf8',
-    );
-  const currentReport = validatePublishedArtifact(currentManifest, currentFiles);
-  if (!currentReport.valid)
-    throw new Error(`current_published_artifact_invalid:${JSON.stringify(currentReport.errors)}`);
-  const [servants, equips, mysticCodes, items, referencedSkills, battlePoints] = await Promise.all(
-    [
-      'nice_servant.json',
-      'nice_equip.json',
-      'nice_mystic_code.json',
-      'nice_item.json',
-      'referenced_skills.json',
-      'battle_points.json',
-    ].map(
-      async (file) =>
-        JSON.parse(await readFile(resolve(root, 'data/raw', file), 'utf8')) as unknown,
-    ),
-  );
-  const snapshot = normalizeAtlasSnapshot({
-    version,
-    servants,
-    equips,
-    mysticCodes,
-    items,
-    referencedSkills,
-    battlePoints,
-  });
-  const content = `${JSON.stringify(snapshot)}\n`;
-  const timestamp = new Date().toISOString();
-  const manifest = createManifest({
-    masterDataVersion: version,
-    createdAt: timestamp,
-    retrievedAt: timestamp,
-    minimalAppVersion: '0.1.0',
-    artifactKind: 'production',
-    imagesEnabled: true,
-    files: [{ key: 'master', file: 'master.json', content, required: true }],
-  });
-  assertMasterVersionIdentity(currentManifest, manifest);
-  const candidateReport = validatePublishedArtifact(manifest, { 'master.json': content });
-  if (!candidateReport.valid)
-    throw new Error(
-      `candidate_published_artifact_invalid:${JSON.stringify(candidateReport.errors)}`,
-    );
-  await writeFile(resolve(root, 'apps/web/public/master/master.json'), content, 'utf8');
-  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-  console.log(
-    JSON.stringify(
-      {
-        version,
-        servants: snapshot.servants.length,
-        craftEssences: snapshot.craftEssences.length,
-        mysticCodes: snapshot.mysticCodes.length,
-        materials: snapshot.materials.length,
-      },
-      null,
-      2,
-    ),
-  );
-} else throw new Error('usage: validate | inventory <nice_servant.json> | normalize [version]');
+} else throw new Error('usage: validate | inventory <nice_servant.json>');

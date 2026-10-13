@@ -236,10 +236,12 @@ export function enumerateRankingWorldDomain(input: {
   const relationClasses = targetClassCandidates(
     servant.classId,
     scenario.targetContext.class,
+    master.combatRules,
   ).filter((classId) => master.targetSemantics.execution.classIdentities.includes(classId));
   const neutralAttributes = targetAttributeCandidates(
     servantAttribute(servant.traits),
     scenario.targetContext.attribute,
+    master.combatRules,
   ).filter((attribute) => master.targetSemantics.execution.attributeIdentities.includes(attribute));
   const classes = selectTargetClasses(
     relationClasses,

@@ -10,7 +10,7 @@ async function storedDraftJson(page: Page): Promise<string | null> {
   return page.evaluate(
     () =>
       new Promise<string | null>((resolve, reject) => {
-        const request = indexedDB.open('fgo-lab', 1);
+        const request = indexedDB.open('fgo-lab', 2);
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
           const transaction = request.result.transaction('user', 'readonly');
@@ -419,6 +419,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
       )
       .toEqual({ kind: 'integer', value: Number(value) });
     await page.reload();
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
     await expect(donor).toHaveValue(value);
     await donor
       .locator('..')
@@ -428,7 +429,18 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     await donor.locator('..').locator('..').getByRole('button', { name: '自動値へ戻す' }).click();
     await expect(donor).toHaveValue('0');
   }
+});
+
+test('[E2E-061] real ranking executed HP @desktop @journey', async ({ page }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.route('https://static.atlasacademy.io/**', (route) =>
+    route.fulfill({
+      path: resolve(process.cwd(), 'apps/web/public/filter-icons/class/saber.png'),
+      contentType: 'image/png',
+    }),
+  );
+  await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('件を計算', { timeout: 30000 });
   await page.getByPlaceholder('名前で検索').fill('土方歳三');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CanonicalEffectRequirement } from '@fgo-lab/master-data';
+import { playerChoiceForEffect, type CanonicalEffectRequirement } from '@fgo-lab/master-data';
 import type { AtlasFunction } from './atlasContract';
 import { normalizeFunctions } from './effectNormalization';
 
@@ -100,6 +100,7 @@ describe('canonical actor count normalization', () => {
           },
         },
       }),
+      expect.objectContaining({ kind: 'statusApplicationAdjustment', defaultValue: 0 }),
     ]);
   });
 
@@ -111,7 +112,7 @@ describe('canonical actor count normalization', () => {
       ParamAddOpCheckDead: 1,
     });
 
-    expect(effect.inputDefinitions).toHaveLength(1);
+    expect(effect.inputDefinitions).toHaveLength(2);
     const input = effect.inputDefinitions[0]!;
     expect(input).toMatchObject({
       kind: 'matchingActorCount',
@@ -341,20 +342,25 @@ describe('canonical proc normalization', () => {
       : {}),
   });
 
-  it('separates guaranteed and single-roll activation', () => {
-    const [guaranteed] = normalizeFunctions([procFunction(1, 1_000)], new Map(), 'np', 1);
+  it('retains a 100% base rate as resistible status application', () => {
+    const [base1000] = normalizeFunctions([procFunction(1, 1_000)], new Map(), 'np', 1);
     const [single] = normalizeFunctions([procFunction(2, 700)], new Map(), 'np', 1);
-    expect(guaranteed?.proc).toEqual({ kind: 'guaranteed' });
+    expect(base1000?.proc).toMatchObject({
+      kind: 'singleRoll',
+      netAdjustmentInputKey: 'effect:statusApplicationAdjustment',
+    });
     expect(single?.proc).toMatchObject({ kind: 'singleRoll' });
     expect(single?.selection).toMatchObject({
       kind: 'stochasticOutcome',
       group: { kind: 'binary', defaultOutcome: 'success' },
     });
-    expect(single?.inputDefinitions).toEqual([]);
+    expect(single?.inputDefinitions).toEqual([
+      expect.objectContaining({ kind: 'statusApplicationAdjustment', defaultValue: 0 }),
+    ]);
     expect(single ? inputQuantityRequirements(single) : []).toEqual([]);
   });
 
-  it('separates deterministic player choices from stochastic outcomes and rejects overlap', () => {
+  it('keeps the player choice requirement alongside the stochastic outcome', () => {
     const playerChoice = {
       ...procFunction(3, 1_000),
       svals: valueSets({
@@ -365,29 +371,28 @@ describe('canonical proc normalization', () => {
         ActSelectIndex: 2,
       }),
     };
-    expect(normalizeFunctions([playerChoice], new Map(), 'skill', 1)[0]?.selection).toEqual({
-      kind: 'playerChoice',
-      group: { key: 'player-choice:1', candidate: '2' },
+    const [base1000] = normalizeFunctions([playerChoice], new Map(), 'skill', 1);
+    expect(base1000 && playerChoiceForEffect(base1000)).toEqual({
+      key: 'player-choice:1',
+      candidate: '2',
     });
-    expect(() =>
-      normalizeFunctions(
-        [
-          {
-            ...playerChoice,
-            svals: valueSets({
-              Rate: 700,
-              Turn: 1,
-              Count: -1,
-              Value: 100,
-              ActSelectIndex: 2,
-            }),
-          },
-        ],
-        new Map(),
-        'skill',
-        1,
-      ),
-    ).toThrow('contradictory_selection_semantics');
+    expect(base1000?.selection?.kind).toBe('stochasticOutcome');
+    const [base700] = normalizeFunctions(
+      [
+        {
+          ...playerChoice,
+          svals: valueSets({ Rate: 700, Turn: 1, Count: -1, Value: 100, ActSelectIndex: 2 }),
+        },
+      ],
+      new Map(),
+      'skill',
+      1,
+    );
+    expect(base700 && playerChoiceForEffect(base700)).toEqual({
+      key: 'player-choice:1',
+      candidate: '2',
+    });
+    expect(base700?.selection?.kind).toBe('stochasticOutcome');
   });
 
   it('keeps positive rolls independent and groups a signed chain into one success count', () => {
@@ -398,7 +403,9 @@ describe('canonical proc normalization', () => {
       1,
     );
     expect(independent.map((effect) => effect.interaction)).toEqual([null, null]);
-    expect(independent.flatMap((effect) => effect.inputDefinitions)).toEqual([]);
+    expect(
+      independent.flatMap((effect) => effect.inputDefinitions).map((input) => input.kind),
+    ).toEqual(['statusApplicationAdjustment', 'statusApplicationAdjustment']);
 
     const chained = normalizeFunctions(
       [procFunction(1, 800), procFunction(1, -800), procFunction(1, -800)],
@@ -412,7 +419,9 @@ describe('canonical proc normalization', () => {
       'chainedRolls',
     ]);
     expect(new Set(chained.map((effect) => effect.interaction?.key)).size).toBe(1);
-    expect(chained[0]?.inputDefinitions[0]).toMatchObject({
+    expect(
+      chained[0]?.inputDefinitions.find((input) => input.kind === 'procSuccessCount'),
+    ).toMatchObject({
       kind: 'procSuccessCount',
       minimum: 0,
       maximum: 3,
@@ -459,7 +468,9 @@ describe('canonical proc normalization', () => {
       kind: 'stochasticOutcome',
       group: { kind: 'successCount', defaultOutcome: 'minimum' },
     });
-    expect(skillChain[0]?.inputDefinitions[0]).toMatchObject({
+    expect(
+      skillChain[0]?.inputDefinitions.find((input) => input.kind === 'procSuccessCount'),
+    ).toMatchObject({
       kind: 'procSuccessCount',
       minimum: 0,
       maximum: 3,
