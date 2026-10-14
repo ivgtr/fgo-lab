@@ -138,7 +138,6 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   );
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  // E2E-A050-SUMMARY
   await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
     timeout: 30_000,
   });
@@ -149,10 +148,8 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   const rankingAverage = Number(
     (await first.locator('.ranking-primary-damage strong').textContent())?.replaceAll(',', ''),
   );
-  // E2E-A012-DESKTOP-VRT
   await expect(page).toHaveScreenshot('ranking-desktop.png');
   await first.getByRole('button', { name: /の計算詳細を開く/ }).click();
-  // E2E-A050-DETAIL
   await expect(first.getByRole('region', { name: /の計算詳細/ })).toContainText('最低', {
     timeout: 15_000,
   });
@@ -176,11 +173,9 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     expect(overflow, `${String(width)}px expanded detail horizontal overflow`).toBe(0);
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  // E2E-A050-HANDOFF
   await first.getByRole('button', { name: '同じ条件で計算機を開く' }).click();
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
   const notice = page.getByLabel('計算条件の版情報');
-  // E2E-A050-NOTICE
   await expect(notice).toContainText('ランキングから引き継いだ計算条件');
   const calculatorAverage = Number(
     (
@@ -244,7 +239,6 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await expect(restoredNotice).toContainText('ランキングから引き継いだ計算条件', {
     timeout: 30_000,
   });
-  // E2E-A050-RESET
   const resetButton = restoredNotice.getByRole('button', { name: '通常の計算条件へ戻す' });
   await expect(resetButton).toHaveAttribute('aria-describedby', /calculation-context-description/);
   await resetButton.focus();
@@ -273,7 +267,6 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   expect(resetPayload.request.scenario).toEqual(originalPayload.request.scenario);
   expect(resetPayload.request.versionContext).toEqual(originalPayload.request.versionContext);
   expect(resetPayload.requestFingerprint).not.toBe(originalPayload.requestFingerprint);
-  // E2E-A050-COUNT-RECOVERY
   for (const [name, label, maximum] of [
     ['キングプロテア', '増殖の付与数', 10],
     ['水着クロエ', '原稿完成の付与数', 30],
@@ -313,7 +306,6 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     await count.locator('..').locator('..').getByRole('button', { name: '自動値へ戻す' }).click();
     await expect(count).toHaveValue('0');
   }
-  // E2E-A050-POPULATION-RECOVERY
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   const populationPicker = page.getByRole('dialog', { name: '攻撃役を選択' });
   await populationPicker.getByRole('tab', { name: '全DB' }).click();
@@ -477,7 +469,6 @@ test('[E2E-052] HP preparation, transfer, death repair and saved replay @desktop
     .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
     .first()
     .click();
-  // E2E-A052-HP-RECOVERY
   for (const [name, choice] of [
     ['バーヴァン・シー', /バーヴァン・シー.*Lv/],
     ['カーミラ', /カーミラ.*ライダー/],
@@ -592,7 +583,6 @@ test('[E2E-053] independent marker profiles retain calculator state across saved
     .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
     .first()
     .click();
-  // E2E-A053-MARKER-REPLAY
   for (const name of ['ヤマトタケル', 'バーゲスト', 'ネモ／ノア', '蒼崎青子']) {
     await page.getByRole('button', { name: '攻撃役を変更' }).click();
     const picker = page.getByRole('dialog', { name: '攻撃役を選択' });
@@ -628,7 +618,6 @@ test('[E2E-053] independent marker profiles retain calculator state across saved
 test('[E2E-054] battle-point starting point survives replay and resets with attacker @desktop @journey', async ({
   page,
 }) => {
-  // E2E-A054-BP-REPLAY
   test.setTimeout(60_000);
   await page.route('https://static.atlasacademy.io/**', (route) =>
     route.fulfill({

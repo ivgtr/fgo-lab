@@ -181,7 +181,6 @@ describe('production probabilistic NP-before damage effects', () => {
       ['602700', 52_864.365, 72_953.03],
       ['1100900', 37_444.34, 44_879.31],
     ] as const;
-    // E2E-A041-SIMPLE
     expect(
       cases.map(([servantId]) => {
         const failure = withProcResults(servantId, (minimum) => minimum);
@@ -197,7 +196,6 @@ describe('production probabilistic NP-before damage effects', () => {
   it('evaluates Caesar chained rolls from one explicit success-count input', () => {
     const averages = Array.from({ length: 6 }, (_, successes) => {
       const calculation = withProcResults('101300', () => successes);
-      // E2E-A041-CHAINED
       expect(
         calculation.effectInputs.filter((input) => input.kind === 'procSuccessCount'),
       ).toHaveLength(1);
@@ -342,7 +340,6 @@ describe('production probabilistic NP-before damage effects', () => {
   it('evaluates Sugiya independent rolls without coupling their results', () => {
     const failure = withProcResults('205100', (minimum) => minimum);
     const success = withProcResults('205100', (_minimum, maximum) => maximum);
-    // E2E-A041-INDEPENDENT
     expect(
       failure.effectControls.filter(
         (control) =>
@@ -370,7 +367,6 @@ describe('production probabilistic NP-before damage effects', () => {
         success: np1Average(success),
       };
     });
-    // E2E-A041-OC
     expect(records).toEqual([
       { overcharge: 1, ratePermille: 600, failure: 17_766.585, success: 21_320 },
       { overcharge: 2, ratePermille: 700, failure: 17_766.585, success: 21_320 },

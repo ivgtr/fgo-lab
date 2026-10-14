@@ -91,6 +91,64 @@ async function observeContext(
     observedPages.add(page);
     const pageId = nextPageId();
     let socketSequence = 0;
+    const documentNavigationSequence = new WeakMap<import('@playwright/test').Frame, number>();
+    const pendingDocumentNavigations = new WeakMap<
+      import('@playwright/test').Frame,
+      Set<import('@playwright/test').Request>
+    >();
+    const respondedDocumentNavigations = new WeakSet<import('@playwright/test').Request>();
+    const finishDocumentNavigation = (request: import('@playwright/test').Request) => {
+      if (!request.isNavigationRequest()) return;
+      const frame = requestStart.get(request)?.frame;
+      if (frame) pendingDocumentNavigations.get(frame)?.delete(request);
+    };
+    const requestStart = new WeakMap<
+      import('@playwright/test').Request,
+      {
+        frame: import('@playwright/test').Frame | null;
+        documentNavigationSequence: number;
+      }
+    >();
+    page.on('request', (request) => {
+      let frame: import('@playwright/test').Frame | null = null;
+      try {
+        frame = request.frame();
+      } catch {
+        // Service-worker requests do not expose a frame.
+      }
+      if (frame && request.isNavigationRequest()) {
+        let pending = pendingDocumentNavigations.get(frame);
+        if (!pending) {
+          pending = new Set();
+          pendingDocumentNavigations.set(frame, pending);
+        }
+        pending.add(request);
+      }
+      requestStart.set(request, {
+        frame,
+        documentNavigationSequence: frame ? (documentNavigationSequence.get(frame) ?? 0) : 0,
+      });
+    });
+    page.on('framenavigated', (frame) => {
+      const pending = pendingDocumentNavigations.get(frame);
+      if (!pending) return;
+      const documentUrl = frame.url().split('#', 1)[0];
+      if (
+        ![...pending].some(
+          (request) =>
+            respondedDocumentNavigations.has(request) &&
+            request.url().split('#', 1)[0] === documentUrl,
+        )
+      )
+        return;
+      documentNavigationSequence.set(frame, (documentNavigationSequence.get(frame) ?? 0) + 1);
+      pending.clear();
+    });
+    page.on('response', (response) => {
+      const request = response.request();
+      if (request.isNavigationRequest()) respondedDocumentNavigations.add(request);
+    });
+    page.on('requestfinished', finishDocumentNavigation);
     page.on('console', (message) => {
       const rawType = message.type();
       record('browser.console', message.text(), {
@@ -104,7 +162,16 @@ async function observeContext(
       record('browser.pageerror', error.message, { url: page.url(), pageId }),
     );
     page.on('requestfailed', (request) => {
+      finishDocumentNavigation(request);
       const failureText = request.failure()?.errorText ?? 'unknown request failure';
+      const start = requestStart.get(request);
+      const lifecycleAbort =
+        page.isClosed() ||
+        start?.frame?.isDetached() ||
+        (start !== undefined &&
+          start.frame !== null &&
+          (documentNavigationSequence.get(start.frame) ?? 0) > start.documentNavigationSequence);
+      if (failureText === 'net::ERR_ABORTED' && lifecycleAbort) return;
       const detail = {
         url: request.url(),
         resourceType: request.resourceType(),

@@ -57,6 +57,33 @@ test('the browser fixture observes all console types on default and manual pages
   assert.ok(
     observations.some(
       (event) =>
+        event.testId.includes('same-document URL change') &&
+        event.kind === 'browser.resource_failure' &&
+        event.detail.url === 'https://fixture.invalid/abort' &&
+        event.detail.failureText === 'net::ERR_ABORTED',
+    ),
+  );
+  assert.ok(
+    observations.some(
+      (event) =>
+        event.testId.includes('failed document navigation') &&
+        event.kind === 'browser.resource_failure' &&
+        event.detail.url === 'https://fixture.invalid/abort' &&
+        event.detail.failureText === 'net::ERR_ABORTED',
+    ),
+  );
+  assert.ok(
+    observations.some(
+      (event) =>
+        event.testId.includes('hash change during a pending reload') &&
+        event.kind === 'browser.resource_failure' &&
+        event.detail.url === 'https://fixture.invalid/abort' &&
+        event.detail.failureText === 'net::ERR_ABORTED',
+    ),
+  );
+  assert.ok(
+    observations.some(
+      (event) =>
         event.kind === 'browser.console' &&
         event.message === 'popup:log' &&
         event.detail.type === 'log',

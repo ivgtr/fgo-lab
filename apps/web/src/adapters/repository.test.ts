@@ -92,7 +92,6 @@ describe('profile repository migration boundary', () => {
     const db = await userStore();
     await db.put('user', invalid, 'profiles');
     db.close();
-    // E2E-A026-PROFILE
     expect(await new IndexedDbProfileRepository().load()).toEqual({
       state: 'invalid',
       reason: 'profile_parse_failed',

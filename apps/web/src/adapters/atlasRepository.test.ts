@@ -66,7 +66,7 @@ describe('Atlas active master transaction', () => {
   });
 
   it('checks generation in the write transaction and preserves profile data', async () => {
-    // E2E-A024-BROWSER: source generation activates the current browser storage atomically.
+    // source generation activates the current browser storage atomically.
     const database = await db();
     await database.put('user', { value: 'profile' }, 'profiles');
     database.close();
@@ -86,7 +86,7 @@ describe('Atlas active master transaction', () => {
   });
 
   it('replaces a damaged active only after a certified candidate passes validation', async () => {
-    // E2E-A025-ONLINE: a valid candidate repairs master storage while retaining user data.
+    // a valid candidate repairs master storage while retaining user data.
     const database = await db();
     await database.put('master', { broken: true }, `atlas-active:${contract}`);
     await database.put('user', { value: 'profile' }, 'profiles');

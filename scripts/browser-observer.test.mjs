@@ -72,7 +72,7 @@ test('the production server owns no browser events and forbids declared HMR fail
   const clean = classifyServerObservations(
     [observation],
     serverRuntime,
-    { pageLoads: [], serverFailures: [] },
+    { serverFailures: [] },
     '16.3.4',
   );
   assert.deepEqual(clean.owned, []);
@@ -82,7 +82,7 @@ test('the production server owns no browser events and forbids declared HMR fail
   const invalid = classifyServerObservations(
     [],
     serverRuntime,
-    { pageLoads: [], serverFailures: [{ testId: 'fixture' }] },
+    { serverFailures: [{ testId: 'fixture' }] },
     '16.3.4',
   );
   assert.deepEqual(invalid.errors, ['server:next_production_server_failures_must_be_empty']);

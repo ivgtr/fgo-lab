@@ -104,7 +104,6 @@ describe('canonical special input application boundary', () => {
     const control = calculation.effectControls.find(
       (candidate) => candidate.projection.label === '攻撃力アップ',
     )!;
-    // E2E-A040-SEMANTIC-RESULT
     expect(control.interaction).toBe('toggle');
     expect(control.operationIds).toHaveLength(10);
     expect(
@@ -168,7 +167,6 @@ describe('canonical special input application boundary', () => {
     const series = skill.effects.filter(
       (effect) => effect.interaction?.kind === 'quantityThresholdSeries',
     );
-    // E2E-A034-TONELICO
     expect(series).toHaveLength(5);
     expect(new Set(series.map((effect) => effect.interaction?.key)).size).toBe(1);
     expect(
@@ -313,8 +311,6 @@ describe('canonical special input application boundary', () => {
     const effect = calculation.effects.find(
       (candidate) => candidate.source.skillId === skill.id && candidate.label === '攻撃力アップ',
     )!;
-
-    // E2E-A033-HP
     expect(effect).toMatchObject({
       requiredQuantity: 'attackerHpPermille',
       requiredQuantityOwner: 'attacker',

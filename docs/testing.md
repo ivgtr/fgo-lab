@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | 局所の変更 | pnpm test:diagnostic -- <file> | 対象を指定した診断 |
 | 通常unit | pnpm test:unit | 通常unitと完全状態の診断group |
-| Published master | pnpm test:production | 固定入力によるproduction検証 |
+| Published master | pnpm test:production | 登録済みproductionテストによる固定入力の検証 |
 | 登録された広範囲の監査 | pnpm test:audit | HP・BP・control等の全経路監査 |
 | UI・通信・保存復元 | pnpm test:e2e -- <file> | Playwrightによる実caller検証 |
 | 文書 | pnpm test:docs | Markdown・参照・公開文書の到達検査 |
@@ -16,7 +16,11 @@
 
 pnpm checkはqualityの一部です。damage、master、scenario、execution、rankingの変更では、最終qualityのproductionを通します。登録auditや全matrixが変更した契約を所有する場合は追加します。文書だけの変更はtest:docsと変更参照の確認で閉じます。
 
+テストを足す前に、既存のテストが検出する失敗と、新たに守る利用者の振る舞いを確認します。十分な検出能力と低い維持費を両立できる層をunit・統合・E2Eから選び、同じ保証を機械的に重ねません。削除・統合する場合は、保証を引き継ぐテストか、保証が不要になった根拠を確認します。件数・行数・カバレッジだけを品質目標にしません。
+
 通常unitは最大4worker、完全状態の診断groupとproductionは1workerで実行します。分類はscripts/test-suites.mjs、順序と予算はvitest.config.tsが所有します。auditは通常qualityに含めません。
+
+published masterを使う新しいテストは、責務に応じてscripts/test-suites.mjsのproductionまたはauditへ明示的に登録します。完全な実行診断を書き出すテストはunit-diagnostics、production、auditのいずれかへ登録します。runnerは固定masterの直接読込み（パス変数・JSON importを含む）と、診断artifactの書込み（単純な別名を含む）を検査します。間接的なhelper利用など、検出対象外の責務も登録時に確認してください。
 
 GitHub ActionsのPR・mainへのpush・手動実行はquality:ciを使い、ブラウザーを起動しません。test:runnerはNodeだけの検証基盤テストで、実ブラウザーの観測fixtureはtest:browser-observerへ分離しています。unitとproductionに加えてmasterと本番buildも確認します。実ブラウザーの表示・Worker通信・保存復元はこのCIの検証範囲に含まれないため、その経路を変更した場合は対象のtest:e2e、公開前は観測fixtureとE2Eを含むqualityをローカルで実行します。CIとローカルは同じrunner・失敗分類・artifact検査を使います。
 

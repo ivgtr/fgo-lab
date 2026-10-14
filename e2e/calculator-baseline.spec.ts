@@ -81,8 +81,6 @@ test('[E2E-007] calculator density and overflow @desktop @vrt', async ({ page })
       };
     });
     expect(metrics.overflow, `${String(width)}px horizontal overflow`).toBe(0);
-    // E2E-A018-320-OVERFLOW
-    // E2E-A043-RESPONSIVE
     expect(metrics.fullWidthChipCount, `${String(width)}px full-width inputless chips`).toBe(0);
     expect(metrics.skillHeight, `${String(width)}px skill section height`).toBeLessThanOrEqual(
       limits[width].skillHeight,

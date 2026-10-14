@@ -27,7 +27,6 @@ describe('production HP condition golden', () => {
     const servant = master.servants.find((candidate) => candidate.id === '100100')!;
     const craftEssence = master.craftEssences.find((candidate) => candidate.id === '9307920')!;
     const masterEffect = craftEssence.effects.find((effect) => effect.occurrenceId === '21041:0')!;
-    // E2E-A035-CE-HP
     expect(masterEffect).toMatchObject({
       interaction: null,
       requirement: {

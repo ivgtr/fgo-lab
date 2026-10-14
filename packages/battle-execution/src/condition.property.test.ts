@@ -403,7 +403,6 @@ describe('condition expression properties', () => {
       comparison: 'equal',
       value: 5,
     };
-    // E2E-A043-OR
     expect(
       evaluateConditionExpression({ kind: 'not', expression: unknown }, state()).truth,
     ).toBeNull();

@@ -67,7 +67,6 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await page.getByRole('button', { name: '火力ランキング', exact: true }).click();
   const oc = page.getByRole('combobox', { name: '初期OC', exact: true });
   const np = page.getByRole('combobox', { name: '宝具Lv', exact: true });
-  // E2E-A051-COMMAND
   await expect(oc.locator('option')).toHaveCount(1);
   await np.selectOption('5');
   await expect(oc.locator('option')).toHaveCount(3);
@@ -91,7 +90,6 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   const detail = first.getByRole('region', { name: /の計算詳細/ });
   await expect(detail).toContainText(/開始NP\s*300%/, { timeout: 15_000 });
   await expect(detail).toContainText('発動時OC');
-  // E2E-A051-VIEWPORT
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await expect(oc).toBeVisible();
@@ -99,7 +97,6 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
   }
-  // E2E-A051-RESET
   await page.getByRole('combobox', { name: '対象', exact: true }).selectOption('owned');
   await np.selectOption('owned');
   await page.getByRole('combobox', { name: '対象', exact: true }).selectOption('all');

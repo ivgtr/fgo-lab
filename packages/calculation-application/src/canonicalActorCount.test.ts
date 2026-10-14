@@ -132,7 +132,6 @@ describe('canonical actor population counts', () => {
     const input = baseline.inputDefinitions.find(
       (candidate) => candidate.kind === 'matchingActorCount',
     )!;
-    // E2E-A040-ENEMY-COUNT
     expect(input).toMatchObject({ label: '敵の合計数', minimum: 1, maximum: 3, defaultValue: 1 });
     expect(baseline.input.npDamageBuff).toBe(0.1);
     expect(averages(baseline.result)).toEqual([
@@ -156,7 +155,6 @@ describe('canonical actor population counts', () => {
         attackerId,
         Object.fromEntries(inputs.map((input) => [input.key, input.minimum - 1])),
       ).calculation;
-      // E2E-A039-ACTOR-COUNT
       expect(invalid.result.status, attackerId).toBe('inputRequired');
       expect(invalid.input.npDamageBuff, attackerId).toBe(0);
       expect(

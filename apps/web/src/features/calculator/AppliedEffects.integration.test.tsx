@@ -71,7 +71,6 @@ describe('applied effect interaction rendering', () => {
       />,
     );
 
-    // E2E-A030-SELECTION E2E-A036-COMMAND
     expect(
       getByRole('radio', { name: /攻撃力アップ/ })
         .closest('li')

@@ -20,7 +20,6 @@ describe('ranking condition commands', () => {
     const { getAllByRole, getByLabelText, queryByLabelText } = render(
       <RankingConditions conditions={DEFAULT_RANKING_POLICY_CONDITIONS} onChange={onChange} />,
     );
-    // E2E-A010-POLICY
     expect(getAllByRole('combobox')).toHaveLength(8);
     expect((getByLabelText('育成基準') as HTMLSelectElement).value).toBe('common');
     expect(queryByLabelText('特攻')).toBeNull();

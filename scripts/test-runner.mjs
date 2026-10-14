@@ -3,6 +3,7 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-runner-lib.mjs';
+import { misplacedSpecialTests } from './test-placement.mjs';
 import { UNIT_TEST_PROJECTS } from './test-suites.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -33,7 +34,11 @@ if (forbidden) {
   console.error(`Runner owns ${forbidden}; remove that argument.`);
   process.exit(2);
 }
-
+const misplaced = misplacedSpecialTests(root);
+if (misplaced.length > 0) {
+  console.error(`Special test suite registration missing:\n${misplaced.join('\n')}`);
+  process.exit(2);
+}
 const reportArgument = '--outputFile.json';
 const reporterArguments = [
   ...(mode === 'diagnostic' ? ['--reporter=verbose'] : []),

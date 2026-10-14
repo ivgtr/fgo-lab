@@ -63,8 +63,6 @@ describe('ranking loading presentation', () => {
         onEditSavedBuild={vi.fn()}
       />,
     );
-
-    // E2E-A008-LOADING
     expect(view.container.querySelector('.ranking-loading')).not.toBeNull();
     expect(view.getByRole('status').textContent).toContain('ランキングを更新中');
 

@@ -247,7 +247,7 @@ test('[E2E-023] offline reopen through service worker @desktop @journey', async 
 test('[E2E-025] damaged certified master preserves user data @desktop @journey', async ({
   newObservedPage,
 }) => {
-  // E2E-A025-OFFLINE: a failed refresh retains the damaged bytes and the user profile.
+  // a failed refresh retains the damaged bytes and the user profile.
   const { context, page } = await freshPage(newObservedPage);
   try {
     await page.goto('/');
@@ -475,9 +475,7 @@ test('[E2E-048] profile repository round-trip @desktop @journey', async ({ page 
   await expect(
     page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem'),
   ).toHaveCount(1);
-  // E2E-A048-CE
   await page.getByRole('button', { name: '所持・育成' }).click();
-  // E2E-A048-SERVANT
   await expect(page.getByLabel('宝具Lv')).toHaveValue('2');
   await page.getByRole('button', { name: '支援条件', exact: true }).click();
   await page.getByRole('button', { name: '新規作成', exact: true }).click();
@@ -497,7 +495,6 @@ test('[E2E-048] profile repository round-trip @desktop @journey', async ({ page 
     .click();
   await page.reload();
   await page.getByRole('button', { name: '支援条件', exact: true }).click();
-  // E2E-A019-SUPPORT E2E-A048-SUPPORT
   await expect(page.getByRole('list', { name: '保存済み支援条件' })).toContainText('周回支援');
   await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
   await expect(
@@ -512,7 +509,6 @@ test('[E2E-049] history backup download and restore @desktop @journey', async ({
   await openCalculator(page);
   await page.getByRole('button', { name: 'ホーム' }).click();
   await page.getByRole('button', { name: 'データ管理' }).click();
-  // E2E-A049-DOWNLOAD
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '全データをバックアップ' }).click();
   const stream = await (await downloadPromise).createReadStream();
@@ -522,22 +518,18 @@ test('[E2E-049] history backup download and restore @desktop @journey', async ({
   const parsed = JSON.parse(backup.toString('utf8')) as {
     profiles: { profiles: { history: unknown[] }[] };
   };
-  // E2E-A049-HISTORY-DEDUP
   expect(parsed.profiles.profiles[0]?.history).toHaveLength(1);
   await page.getByLabel('バックアップを復元').setInputFiles({
     name: 'round-trip.json',
     mimeType: 'application/json',
     buffer: backup,
   });
-  // E2E-A049-PREVIEW
   const preview = page.getByRole('region', { name: '復元内容のプレビュー' });
   await expect(preview).toContainText('プロフィール 1件');
   await expect(preview.getByRole('button', { name: '全置換を実行' })).toBeDisabled();
   const preImportDownload = page.waitForEvent('download');
-  // E2E-A049-PREIMPORT E2E-A049-PREIMPORT-BACKUP
   await preview.getByRole('button', { name: '復元前バックアップを保存' }).click();
   await preImportDownload;
-  // E2E-A049-REPLACE E2E-A049-RESTORE
   await preview.getByRole('button', { name: '全置換を実行' }).click();
   await expect(page.getByText('検証済みデータへ全置換しました')).toBeVisible();
 });

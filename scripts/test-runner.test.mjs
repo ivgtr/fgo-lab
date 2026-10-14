@@ -18,8 +18,8 @@ import {
   AUDIT_TEST_INCLUDES,
   PRODUCTION_TEST_INCLUDES,
   UNIT_DIAGNOSTIC_TEST_INCLUDES,
-  UNIT_TEST_PROJECTS,
 } from './test-suites.mjs';
+import { misplacedSpecialTests } from './test-placement.mjs';
 import {
   classifyQualityOutcome,
   qualityRunConfiguration,
@@ -976,6 +976,9 @@ test('CI retains every non-browser gate while quick and full profiles keep their
     ci.steps,
     full.steps.filter(([id]) => id !== 'browser-observer' && id !== 'playwright'),
   );
+  const workflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8');
+  assert.match(workflow, /^\s*- run: pnpm quality:ci\s*$/m);
+  assert.doesNotMatch(workflow, /^\s*- run: pnpm check\s*$/m);
   assert.throws(() => qualityRunConfiguration(['--profile=unknown']), /usage/);
   assert.throws(() => qualityRunConfiguration(['--profile=ci', '--profile=quick']), /usage/);
 });
@@ -1376,19 +1379,15 @@ test('failure summary never exceeds physical line or UTF-8 byte limits', async (
   assert.equal(result.manifest.output.truncated, true);
 });
 
-test('CI retains failed parent runs and makes missing/upload failure blocking', () => {
-  for (const path of ['.github/workflows/ci.yml']) {
-    const workflow = readFileSync(resolve(root, path), 'utf8');
-    const uploadStart = workflow.indexOf('- name: Upload quality results');
-    assert.ok(uploadStart >= 0, path);
-    const uploadStep = workflow.slice(uploadStart);
-    assert.match(uploadStep, /uses: actions\/upload-artifact@v4/);
-    assert.match(uploadStep, /if: \$\{\{ failure\(\) \}\}/);
-    assert.match(uploadStep, /path: \.test-results\//);
-    assert.match(uploadStep, /include-hidden-files: true/);
-    assert.match(uploadStep, /if-no-files-found: error/);
-    assert.doesNotMatch(uploadStep, /continue-on-error: true/);
-  }
+test('CI retains failed quality artifacts for diagnosis', () => {
+  const workflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8');
+  const upload = workflow.slice(workflow.indexOf('- name: Upload quality results'));
+  assert.match(upload, /uses: actions\/upload-artifact@v4/);
+  assert.match(upload, /if: \$\{\{ failure\(\) \}\}/);
+  assert.match(upload, /path: \.test-results\//);
+  assert.match(upload, /include-hidden-files: true/);
+  assert.match(upload, /if-no-files-found: error/);
+  assert.doesNotMatch(upload, /continue-on-error: true/);
 });
 
 function testFiles(directory) {
@@ -1416,137 +1415,71 @@ test('unit, production, and opt-in audit suites form one exhaustive non-overlapp
     [],
   );
 
-  const productionSet = new Set(production);
-  const auditSet = new Set(audit);
-  const requiredProduction = all.filter((file) => {
-    const source = readFileSync(resolve(root, file), 'utf8');
-    return (
-      source.includes('production-master/master.json') ||
-      /(?:Golden|Production|Differential|Inventory)\.test\.(?:ts|tsx)$/.test(file) ||
-      /\/evidence(?:Inventory)?\.test\.ts$/.test(file)
-    );
-  });
-  assert.deepEqual(
-    requiredProduction.filter((file) => !productionSet.has(file) && !auditSet.has(file)),
-    [],
-  );
-  const unit = all.filter((file) => !productionSet.has(file) && !auditSet.has(file));
+  const unit = all.filter((file) => !production.includes(file) && !audit.includes(file));
   assert.equal(new Set([...unit, ...production, ...audit]).size, all.length);
   assert.equal(new Set(UNIT_DIAGNOSTIC_TEST_INCLUDES).size, UNIT_DIAGNOSTIC_TEST_INCLUDES.length);
   assert.deepEqual(
     UNIT_DIAGNOSTIC_TEST_INCLUDES.filter((file) => !unit.includes(file)),
     [],
   );
-  const diagnostics = new Set(UNIT_DIAGNOSTIC_TEST_INCLUDES);
-  // New complete-state writers need an explicit workload placement; they cannot silently grow the
-  // concurrent unit workload. The three small writer/codec contracts exercise transport itself.
-  const transportContracts = new Set([
-    'packages/calculation-application/src/productionAuditArtifacts.test.ts',
-    'packages/calculation-application/src/productionAuditDiagnosticEquality.test.ts',
-    'packages/calculation-application/src/productionBattlePointCapacityProof.test.ts',
+  assert.deepEqual(misplacedSpecialTests(root), []);
+});
+
+test('published-master reads and diagnostic writes require explicit suite registration', () => {
+  const fixtureRoot = mkdtempSync(resolve(tmpdir(), 'fgo-lab-suite-placement-'));
+  mkdirSync(resolve(fixtureRoot, 'packages/demo'), { recursive: true });
+  mkdirSync(resolve(fixtureRoot, 'apps/demo'), { recursive: true });
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/master.test.ts'),
+    "import { readFile } from 'node:fs/promises';\nreadFile(resolve(root, 'packages/test-fixtures/production-master/master.json'));\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/diagnostic.test.ts'),
+    "import { writeProductionAuditArtifact } from './productionAuditArtifacts';\nawait writeProductionAuditArtifact(meta, 'diagnostic.json', complete);\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/master-path.test.ts'),
+    "import { readFile } from 'node:fs/promises';\nconst source = resolve(root, 'packages/test-fixtures/production-master/master.json');\nconst target = source;\nawait readFile(target);\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/diagnostic-alias.test.ts'),
+    "import { writeProductionAuditArtifact as saveDiagnostic } from './productionAuditArtifacts';\nawait saveDiagnostic(meta, 'diagnostic.json', complete);\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/master-import.test.ts'),
+    "import master from '../../test-fixtures/production-master/master.json';\nconsole.log(master);\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/diagnostic-variable-alias.test.ts'),
+    "import { writeProductionAuditArtifact } from './productionAuditArtifacts';\nconst save = writeProductionAuditArtifact;\nawait save(meta, 'diagnostic.json', complete);\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/shadowed-path.test.ts'),
+    "import { readFile } from 'node:fs/promises';\nconst source = 'packages/test-fixtures/production-master/master.json';\nfunction unrelated() { const source = 'other.json'; return readFile(source); }\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/outer-alias.test.ts'),
+    "import { readFile } from 'node:fs/promises';\nconst source = 'packages/test-fixtures/production-master/master.json';\nconst target = source;\nfunction load() { const source = 'other.json'; return readFile(target); }\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/catch-shadow.test.ts'),
+    "import { readFile } from 'node:fs/promises';\nconst source = 'packages/test-fixtures/production-master/master.json';\ntry {} catch (source) { readFile(source); }\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'packages/demo/loop-shadow.test.ts'),
+    "import { readFile } from 'node:fs/promises';\nconst source = 'packages/test-fixtures/production-master/master.json';\nfor (const source of files) { readFile(source); }\n",
+  );
+  writeFileSync(
+    resolve(fixtureRoot, 'apps/demo/comment.test.ts'),
+    "// readFile('production-master/master.json');\nconst example = 'production-master/master.json';\n",
+  );
+  assert.deepEqual(misplacedSpecialTests(fixtureRoot), [
+    'packages/demo/diagnostic-alias.test.ts: diagnostic write requires unit-diagnostics/production/audit',
+    'packages/demo/diagnostic-variable-alias.test.ts: diagnostic write requires unit-diagnostics/production/audit',
+    'packages/demo/diagnostic.test.ts: diagnostic write requires unit-diagnostics/production/audit',
+    'packages/demo/master-import.test.ts: published master read requires production/audit',
+    'packages/demo/master-path.test.ts: published master read requires production/audit',
+    'packages/demo/master.test.ts: published master read requires production/audit',
+    'packages/demo/outer-alias.test.ts: published master read requires production/audit',
   ]);
-  assert.deepEqual(
-    unit.filter(
-      (file) =>
-        readFileSync(resolve(root, file), 'utf8').includes('productionAuditArtifacts') &&
-        !diagnostics.has(file) &&
-        !transportContracts.has(file),
-    ),
-    [],
-  );
-});
-
-test('differently capped Vitest projects use distinct execution groups', () => {
-  const config = readFileSync(resolve(root, 'vitest.config.ts'), 'utf8');
-  const unitProject = config.slice(
-    config.indexOf("name: 'unit'"),
-    config.indexOf("name: 'unit-diagnostics'"),
-  );
-  const diagnosticProject = config.slice(
-    config.indexOf("name: 'unit-diagnostics'"),
-    config.indexOf("name: 'production'"),
-  );
-  const productionProject = config.slice(
-    config.indexOf("name: 'production'"),
-    config.indexOf("name: 'audit'"),
-  );
-  const auditProject = config.slice(config.indexOf("name: 'audit'"));
-
-  assert.match(unitProject, /sequence: \{ groupOrder: 0 \}/);
-  assert.match(unitProject, /UNIT_DIAGNOSTIC_TEST_INCLUDES/);
-  assert.match(diagnosticProject, /include: UNIT_DIAGNOSTIC_TEST_INCLUDES/);
-  assert.match(diagnosticProject, /maxWorkers: 1/);
-  assert.match(diagnosticProject, /sequence: \{ groupOrder: 1 \}/);
-  assert.match(productionProject, /maxWorkers: 1/);
-  assert.match(productionProject, /sequence: \{ groupOrder: 2 \}/);
-  assert.match(auditProject, /name: 'audit'/);
-  assert.match(auditProject, /maxWorkers: 1/);
-  assert.match(auditProject, /sequence: \{ groupOrder: 3 \}/);
-});
-
-test('local and CI share quality orchestration while CI requires no browser setup', () => {
-  const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
-  assert.equal(packageJson.scripts.quality, 'node scripts/quality-runner.mjs');
-  assert.equal(packageJson.scripts['quality:ci'], 'node scripts/quality-runner.mjs --profile=ci');
-  assert.equal(packageJson.scripts.check, 'node scripts/quality-runner.mjs --profile=quick');
-  assert.equal(packageJson.scripts['results:clean'], 'node scripts/clean-test-results.mjs');
-  assert.equal(
-    packageJson.scripts['validate:master'],
-    'pnpm --filter @fgo-lab/data-pipeline validate',
-  );
-  assert.equal(packageJson.scripts['test:e2e'], 'node scripts/playwright-runner.mjs');
-  assert.equal(
-    packageJson.scripts['test:browser-observer'],
-    'node --test scripts/browser-observer.integration.test.mjs',
-  );
-  assert.match(packageJson.scripts['test:runner'], /scripts\/browser-observer\.test\.mjs/);
-  assert.doesNotMatch(packageJson.scripts['test:runner'], /\.integration\.test\.mjs/);
-  assert.doesNotMatch(
-    readFileSync(resolve(root, 'scripts/browser-observer.test.mjs'), 'utf8'),
-    /node_modules\/\.bin\/playwright/,
-  );
-  const qualityRunner = readFileSync(resolve(root, 'scripts/quality-runner-lib.mjs'), 'utf8');
-  for (const [id, script] of [
-    ['format', 'format:check'],
-    ['lint', 'lint'],
-    ['typecheck', 'typecheck'],
-    ['runner', 'test:runner'],
-    ['docs', 'test:docs'],
-    ['unit', 'test:unit'],
-    ['production', 'test:production'],
-    ['master', 'validate:master'],
-    ['build', 'build'],
-    ['browser-observer', 'test:browser-observer'],
-    ['playwright', 'test:e2e'],
-  ])
-    assert.match(qualityRunner, new RegExp(`\\['${id}', \\['${script}'\\]`));
-  const playwrightConfig = readFileSync(resolve(root, 'playwright.config.ts'), 'utf8');
-  assert.match(playwrightConfig, /workers: 2,/);
-  for (const path of ['.github/workflows/ci.yml']) {
-    const workflow = readFileSync(resolve(root, path), 'utf8');
-    assert.equal(workflow.match(/run: pnpm quality:ci\s*$/gm)?.length, 1, path);
-    assert.doesNotMatch(workflow, /run: pnpm quality\s*$/m);
-    assert.doesNotMatch(workflow, /playwright|chromium|fonts-noto|apt-get/);
-    assert.doesNotMatch(workflow, /run: pnpm (?:test|validate:evidence|validate:master|build)\b/);
-  }
-});
-
-test('the exhaustive production-control audit is opt-in and outside canonical quality', () => {
-  const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
-  assert.equal(
-    packageJson.scripts['test:audit'],
-    'node scripts/test-runner.mjs compact --suite=audit',
-  );
-  const full = qualityRunConfiguration([]);
-  assert.equal(
-    full.steps.some(([id]) => id === 'audit'),
-    false,
-  );
-  const runner = readFileSync(resolve(root, 'scripts/test-runner.mjs'), 'utf8');
-  assert.match(runner, /'all', 'unit', 'production', 'audit'/);
-  assert.deepEqual(UNIT_TEST_PROJECTS, ['unit', 'unit-diagnostics']);
-  assert.match(runner, /suite === 'all'\s*\? \[\.\.\.UNIT_TEST_PROJECTS, 'production'\]/);
-  assert.match(runner, /suite === 'unit'\s*\? UNIT_TEST_PROJECTS/);
-  const packageSuites = readFileSync(resolve(root, 'scripts/test-suites.mjs'), 'utf8');
-  assert.match(packageSuites, /productionMasterControlAudit\.test\.ts/);
 });

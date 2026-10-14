@@ -60,7 +60,6 @@ describe('external damage differential', () => {
     const testCase = differential.cases.find(
       (candidate) => candidate.caseId === 'appmedia-lilith-neutral-np5',
     ) as unknown as LilithDifferential;
-    // E2E-A044-LILITH
     expect(differential.engineVersion).toBe(ENGINE_VERSION);
     const input = damageResolutionInputSchema.parse({
       attackerId: '405900',

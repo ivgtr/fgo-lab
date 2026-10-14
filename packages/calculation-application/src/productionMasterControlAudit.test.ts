@@ -2477,7 +2477,6 @@ describe('production master inventory ratchet', () => {
             ),
           ).toBe(true);
       } else throw new Error('production_battle_point_proof_missing');
-      // E2E-A032-DANTE-INVENTORY E2E-A032-SUMMER-WU-INVENTORY
       expect(master.servants).toHaveLength(469);
       expect(calculations).toHaveLength(422);
       expect(normalizationErrors).toEqual([]);

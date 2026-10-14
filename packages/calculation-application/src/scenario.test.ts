@@ -859,8 +859,6 @@ describe('scenario calculation facade', () => {
       masterDataVersion: conditionalMaster.version,
     });
     const condition = inactive.effects.find((effect) => effect.modifier === 'npSpecial');
-
-    // E2E-A030-TRAIT-DECISION
     expect(condition).toMatchObject({
       outcome: 'notApplied',
       explanation: { code: 'unresolved' },
@@ -1635,7 +1633,6 @@ describe('scenario calculation facade', () => {
       ...versions,
       masterDataVersion: exclusiveMaster.version,
     });
-    // E2E-A038-TRANSACTION
     expect(skyOnly.result.status).toBe('calculated');
     expect(skyOnly.input).toMatchObject({
       powerMod: 0.5,
@@ -4944,8 +4941,6 @@ describe('scenario calculation facade', () => {
       ...versions,
       masterDataVersion: preparationMaster.version,
     });
-
-    // E2E-A031-FAIL-CLOSED
     expect(initial.result).toMatchObject({
       status: 'inputRequired',
       rows: [],
@@ -6136,8 +6131,6 @@ describe('scenario calculation facade', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
     const resolved = calculateScenario(scenario, master, versions);
     const manual = calculateScenario({ mode: 'manual', manual: resolved.input }, master, versions);
-
-    // E2E-A030-MODE-SEPARATION
     expect(resolved.effects.length).toBeGreaterThan(0);
     expect(manual.effects).toEqual([]);
     expect(manual.effectControls).toEqual([]);
