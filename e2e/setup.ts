@@ -15,6 +15,11 @@ export async function openTestHome(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
 }
 
+export async function waitForCalculatorRoute(page: Page): Promise<void> {
+  await page.locator('.shell main h1').getByText('ダメージ計算', { exact: true }).waitFor();
+  await page.getByText('画面を読み込んでいます…', { exact: true }).waitFor({ state: 'hidden' });
+}
+
 export async function installRankingFixtureWorker(page: Page): Promise<void> {
   await page.addInitScript(
     ({ fixtureResponse }) => {

@@ -1,5 +1,5 @@
 import { expect, test, type NewObservedPage, type Page } from './observedTest';
-import { completeSetup, openTestHome } from './setup';
+import { completeSetup, openTestHome, waitForCalculatorRoute } from './setup';
 import { webcrypto } from 'node:crypto';
 import { portableCalculationFingerprint } from '../packages/workspace-domain/src/index';
 import { editCurrentStoredProfiles } from './currentProfileFixture';
@@ -81,6 +81,7 @@ test('[E2E-017] setup to calculator package journey @desktop @journey', async ({
   );
   await openCalculator(page);
   await page.reload();
+  await waitForCalculatorRoute(page);
   await expect(page.getByRole('heading', { name: '宝具ダメージ', exact: true })).toBeVisible();
   const result = page.getByLabel('共有対象の計算結果');
   await expect(result).toContainText('アルトリア・ペンドラゴン');
@@ -353,11 +354,38 @@ test('[E2E-055] invalid profile requires confirmation before fresh setup @deskto
     );
     await page.reload();
     const reset = page.getByRole('button', { name: '保存プロフィールを削除して新規開始' });
+    await page.getByRole('heading', { name: '計算に必要なデータを準備します' }).waitFor();
     await expect(reset).toBeVisible();
     page.once('dialog', (dialog) => void dialog.dismiss());
     await reset.click();
-    await page.reload();
     await expect(reset).toBeVisible();
+    const cancelledProfile = await page.evaluate(
+      () =>
+        new Promise<{ profileId: string; schemaVersion: number }>((resolve, reject) => {
+          const opening = indexedDB.open('fgo-lab', 2);
+          opening.onerror = () => reject(opening.error);
+          opening.onsuccess = () => {
+            const db = opening.result;
+            const request = db.transaction('user', 'readonly').objectStore('user').get('profiles');
+            request.onerror = () => {
+              db.close();
+              reject(request.error);
+            };
+            request.onsuccess = () => {
+              const collection = request.result as {
+                activeProfileId: string;
+                schemaVersion: number;
+              };
+              db.close();
+              resolve({
+                profileId: collection.activeProfileId,
+                schemaVersion: collection.schemaVersion,
+              });
+            };
+          };
+        }),
+    );
+    expect(cancelledProfile).toEqual({ profileId: oldProfileId, schemaVersion: 32 });
     page.once('dialog', (dialog) => void dialog.accept());
     await reset.click();
     await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 30_000 });

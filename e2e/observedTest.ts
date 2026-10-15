@@ -1,6 +1,7 @@
 import { expect, test as base } from '@playwright/test';
 import type { BrowserContext, BrowserContextOptions, TestInfo } from '@playwright/test';
 import { seedAtlasFixture } from './atlasFixture';
+import { wasDeliveredAtlasFixtureResponse } from './atlasFixtureResponse';
 
 export { expect };
 export type { Browser, BrowserContext, Page } from '@playwright/test';
@@ -30,6 +31,7 @@ export const test = base.extend<ObservationFixtures>({
   },
   page: async ({ page, context, observationPageId }, use, testInfo) => {
     await observeContext(context, testInfo, observationPageId);
+    await preventLiveAtlasRequests(context);
     const baseURL = testInfo.project.use.baseURL;
     if (typeof baseURL === 'string') await seedAtlasFixture(context, page, baseURL);
     await use(page);
@@ -40,6 +42,7 @@ export const test = base.extend<ObservationFixtures>({
       const context = await browser.newContext(options);
       contexts.push(context);
       await observeContext(context, testInfo, observationPageId);
+      await preventLiveAtlasRequests(context);
       const page = await context.newPage();
       const baseURL = testInfo.project.use.baseURL;
       if (typeof baseURL === 'string') await seedAtlasFixture(context, page, baseURL);
@@ -57,9 +60,25 @@ export const testUnseeded = base.extend<Pick<ObservationFixtures, 'observationPa
   },
   page: async ({ page, context, observationPageId }, use, testInfo) => {
     await observeContext(context, testInfo, observationPageId);
+    await preventLiveAtlasRequests(context);
     await use(page);
   },
 });
+
+async function preventLiveAtlasRequests(context: BrowserContext): Promise<void> {
+  // Tests needing source bytes register their own local responses after this guard.
+  // Any other Atlas API request fails visibly instead of reaching the live service.
+  await context.route('https://api.atlasacademy.io/**', (route) => route.abort('blockedbyclient'));
+  await context.route('https://static.atlasacademy.io/**', (route) =>
+    route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=',
+        'base64',
+      ),
+    }),
+  );
+}
 
 async function observeContext(
   context: BrowserContext,
@@ -164,6 +183,7 @@ async function observeContext(
     page.on('requestfailed', (request) => {
       finishDocumentNavigation(request);
       const failureText = request.failure()?.errorText ?? 'unknown request failure';
+      if (failureText === 'net::ERR_ABORTED' && wasDeliveredAtlasFixtureResponse(request)) return;
       const start = requestStart.get(request);
       const lifecycleAbort =
         page.isClosed() ||

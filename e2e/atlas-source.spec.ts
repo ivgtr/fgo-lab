@@ -3,6 +3,7 @@ import { completeSetup } from './setup';
 import { loadObservedAtlasFixture } from './atlasObservedFixture';
 import { ATLAS_EXPORT_KEYS, type AtlasExportKey } from '../packages/master-data/src/index';
 import { ATLAS_CONTRACT_SHA256 } from '../apps/web/src/adapters/atlasContractFingerprint';
+import { markDeliveredAtlasFixtureResponse } from './atlasFixtureResponse';
 
 async function storedAtlasDigest(page: Page): Promise<string> {
   return page.evaluate(async (contract) => {
@@ -42,18 +43,18 @@ testUnseeded(
     let lastSourceActivity = Date.now();
     const sourceRequest = (url: string) =>
       ['api.atlasacademy.io', 'raw.githubusercontent.com'].includes(new URL(url).hostname);
-    page.on('request', (request) => {
+    context.on('request', (request) => {
       if (sourceRequest(request.url())) {
         pendingSourceRequests.add(request);
         lastSourceActivity = Date.now();
       }
     });
-    page.on('requestfinished', (request) => {
+    context.on('requestfinished', (request) => {
       if (pendingSourceRequests.delete(request)) {
         lastSourceActivity = Date.now();
       }
     });
-    page.on('requestfailed', (request) => {
+    context.on('requestfailed', (request) => {
       if (pendingSourceRequests.delete(request)) {
         lastSourceActivity = Date.now();
       }
@@ -78,6 +79,7 @@ testUnseeded(
               headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' },
               body: JSON.stringify({ ...fixture.certificate, generation }),
             });
+            markDeliveredAtlasFixtureResponse(route.request());
             return;
           }
           const exportMatch = /^\/export\/JP\/([A-Za-z_]+)\.json$/.exec(url.pathname);
@@ -100,6 +102,7 @@ testUnseeded(
               'cache-control': 'no-store',
             },
           });
+          markDeliveredAtlasFixtureResponse(route.request());
         },
       );
       await page.route('https://static.atlasacademy.io/**', (route) =>
@@ -147,7 +150,9 @@ testUnseeded(
       await page.reload();
       await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
       await expect(
-        page.getByText(/Atlas更新の確認に失敗したため検証済みのマスターを使用中/),
+        page.getByText(
+          /Atlas更新の確認に失敗したため検証済みのマスターを使用中: atlas_source:export_digest_mismatch:nice_servant/,
+        ),
       ).toBeVisible();
       expect(await storedAtlasDigest(page)).toBe(fixture.canonicalSha256);
       expect(atlasIdentityBytes).toBeGreaterThan(0);
@@ -236,6 +241,7 @@ test('[E2E-058] certified Atlas update preserves the saved profile @desktop @jou
             headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' },
             body: JSON.stringify({ ...fixture.certificate, generation: 2 }),
           });
+          markDeliveredAtlasFixtureResponse(route.request());
           return;
         }
         const body = fixture.bodies.get(url.pathname);
@@ -249,6 +255,7 @@ test('[E2E-058] certified Atlas update preserves the saved profile @desktop @jou
             'cache-control': 'no-store',
           },
         });
+        markDeliveredAtlasFixtureResponse(route.request());
       },
     );
     await page.route('https://static.atlasacademy.io/**', (route) =>

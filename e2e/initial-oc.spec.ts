@@ -54,14 +54,33 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   context,
 }) => {
   test.setTimeout(120_000);
+  await page.route('https://static.atlasacademy.io/**', (route) =>
+    route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=',
+        'base64',
+      ),
+    }),
+  );
   const pendingImages = new Set<Request>();
+  let lastImageActivity = Date.now();
   page.on('request', (request) => {
-    if (request.resourceType() === 'image') pendingImages.add(request);
+    if (request.resourceType() === 'image') {
+      pendingImages.add(request);
+      lastImageActivity = Date.now();
+    }
   });
-  page.on('requestfinished', (request) => pendingImages.delete(request));
-  page.on('requestfailed', (request) => pendingImages.delete(request));
+  page.on('requestfinished', (request) => {
+    if (pendingImages.delete(request)) lastImageActivity = Date.now();
+  });
+  page.on('requestfailed', (request) => {
+    if (pendingImages.delete(request)) lastImageActivity = Date.now();
+  });
   const waitForImages = async () => {
-    await expect.poll(() => pendingImages.size).toBe(0);
+    await expect
+      .poll(() => pendingImages.size === 0 && Date.now() - lastImageActivity >= 500)
+      .toBe(true);
   };
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング', exact: true }).click();

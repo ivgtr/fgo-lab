@@ -21,7 +21,15 @@ export const UNIT_DIAGNOSTIC_TEST_INCLUDES = [
   'packages/calculation-application/src/scenario.test.ts',
 ];
 
-export const UNIT_TEST_PROJECTS = ['unit', 'unit-diagnostics'];
+export const UNIT_DIAGNOSTIC_PARALLEL_TEST_INCLUDES = [
+  'packages/calculation-application/src/productionHpPreparationAttemptAudit.test.ts',
+  'packages/calculation-application/src/productionBattlePointCapacityPreparationAttemptAudit.test.ts',
+];
+export const UNIT_DIAGNOSTIC_SERIAL_TEST_INCLUDES = UNIT_DIAGNOSTIC_TEST_INCLUDES.filter(
+  (file) => !UNIT_DIAGNOSTIC_PARALLEL_TEST_INCLUDES.includes(file),
+);
+
+export const UNIT_TEST_PROJECTS = ['unit', 'unit-diagnostics', 'unit-diagnostics-serial'];
 
 // Production owns published-master audits, approved goldens/differentials,
 // calculator/ranking parity, and evidence integrity. Keep this list explicit so

@@ -4,7 +4,12 @@ import { webcrypto } from 'node:crypto';
 import { calculationDraftSchema } from '../packages/schema/src/index';
 import { portableCalculationFingerprint } from '../packages/workspace-domain/src/index';
 import { editCurrentStoredProfiles } from './currentProfileFixture';
-import { installRankingFixtureWorker, openTestHome } from './setup';
+import { installRankingFixtureWorker, openTestHome, waitForCalculatorRoute } from './setup';
+
+async function reloadCalculator(page: Page): Promise<void> {
+  await page.reload();
+  await waitForCalculatorRoute(page);
+}
 
 async function storedDraftJson(page: Page): Promise<string | null> {
   return page.evaluate(
@@ -224,7 +229,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     'retained_request_subject_unavailable',
   );
   await expect.poll(() => storedDraftJson(page)).toBe(missingSubjectDraft);
-  await page.reload();
+  await reloadCalculator(page);
   await expect(page.locator('[data-calculation-error-summary]')).toContainText(
     '計算条件を復元できません',
     {
@@ -234,7 +239,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await expect.poll(() => storedDraftJson(page)).toBe(missingSubjectDraft);
 
   await replaceStoredDraft(page, originalDraft);
-  await page.reload();
+  await reloadCalculator(page);
   const restoredNotice = page.getByLabel('計算条件の版情報');
   await expect(restoredNotice).toContainText('ランキングから引き継いだ計算条件', {
     timeout: 30_000,
@@ -301,7 +306,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
             : 'stack:attackerState:kingproteaProliferation']: { kind: 'integer', value: 1 },
         }),
       );
-    await page.reload();
+    await reloadCalculator(page);
     await expect(count).toHaveValue('1');
     await count.locator('..').locator('..').getByRole('button', { name: '自動値へ戻す' }).click();
     await expect(count).toHaveValue('0');
@@ -335,7 +340,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
         ],
     )
     .toEqual({ kind: 'integer', value: 1 });
-  await page.reload();
+  await reloadCalculator(page);
   await expect(allies.getByRole('button', { name: '1', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -375,7 +380,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
         ],
     )
     .toEqual({ kind: 'integer', value: 1 });
-  await page.reload();
+  await reloadCalculator(page);
   await expect(removable.getByRole('button', { name: '1', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -410,7 +415,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
             ?.canonicalInputValues?.[key],
       )
       .toEqual({ kind: 'integer', value: Number(value) });
-    await page.reload();
+    await reloadCalculator(page);
     await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
     await expect(donor).toHaveValue(value);
     await donor
@@ -505,7 +510,7 @@ test('[E2E-052] HP preparation, transfer, death repair and saved replay @desktop
           JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario?.attackerHpPermille,
       )
       .toBe(500);
-    await page.reload();
+    await reloadCalculator(page);
     await expect(hp).toHaveValue('50');
     await expect(display).toHaveText(executed!);
     await page.getByRole('combobox', { name: '宝具Lv', exact: true }).selectOption('2');
@@ -562,7 +567,7 @@ test('[E2E-052] HP preparation, transfer, death repair and saved replay @desktop
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   await form.selectOption({ index: 0 });
   await expect(formDisplay).toHaveText(formExecuted!);
-  await page.reload();
+  await reloadCalculator(page);
   await expect(formHp).toHaveValue('50');
   await expect(formDisplay).toHaveText(formExecuted!);
 });
@@ -605,7 +610,7 @@ test('[E2E-053] independent marker profiles retain calculator state across saved
       )
       .toBe(2);
     const damage = await table.textContent();
-    await page.reload();
+    await reloadCalculator(page);
     await expect(table).toHaveText(damage!);
     await expect(page.getByRole('combobox', { name: '初期OC', exact: true })).toHaveValue('2');
     await page.getByRole('combobox', { name: '宝具Lv', exact: true }).selectOption('1');
@@ -655,7 +660,7 @@ test('[E2E-054] battle-point starting point survives replay and resets with atta
           ?.initialBattlePointPoints?.['3300200'],
     )
     .toBe(50);
-  await page.reload();
+  await reloadCalculator(page);
   await expect(point).toHaveValue('50');
   await expect(table).toHaveText(damage!);
   await point.locator('..').screenshot({ path: test.info().outputPath('battle-point-replay.png') });

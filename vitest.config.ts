@@ -5,6 +5,8 @@ import {
   AUDIT_TEST_INCLUDES,
   PRODUCTION_TEST_INCLUDES,
   UNIT_DIAGNOSTIC_TEST_INCLUDES,
+  UNIT_DIAGNOSTIC_PARALLEL_TEST_INCLUDES,
+  UNIT_DIAGNOSTIC_SERIAL_TEST_INCLUDES,
 } from './scripts/test-suites.mjs';
 
 export default defineConfig({
@@ -33,11 +35,19 @@ export default defineConfig({
         plugins: [react()],
         test: {
           name: 'unit-diagnostics',
-          include: UNIT_DIAGNOSTIC_TEST_INCLUDES,
-          // Complete fixture diagnostics are CPU/memory/I/O workloads, not additional audit scope.
-          // Serialize their files after ordinary units while retaining the default 5s test timeout.
-          maxWorkers: 1,
+          include: UNIT_DIAGNOSTIC_PARALLEL_TEST_INCLUDES,
+          // The two longest fixture diagnostics use separate workers after ordinary units.
+          maxWorkers: 2,
           sequence: { groupOrder: 1 },
+        },
+      },
+      {
+        plugins: [react()],
+        test: {
+          name: 'unit-diagnostics-serial',
+          include: UNIT_DIAGNOSTIC_SERIAL_TEST_INCLUDES,
+          maxWorkers: 1,
+          sequence: { groupOrder: 2 },
         },
       },
       {
@@ -50,7 +60,7 @@ export default defineConfig({
           // serially, preserving each suite's shared input and the unchanged 5s readiness budget.
           maxWorkers: 1,
           // Keep the differently capped project out of the unit project's concurrent worker group.
-          sequence: { groupOrder: 2 },
+          sequence: { groupOrder: 3 },
         },
       },
       {
@@ -59,7 +69,7 @@ export default defineConfig({
           name: 'audit',
           include: AUDIT_TEST_INCLUDES,
           maxWorkers: 1,
-          sequence: { groupOrder: 3 },
+          sequence: { groupOrder: 4 },
           testTimeout: 180_000,
         },
       },
