@@ -12,4 +12,4 @@
 | [Atlasデータ更新の実装記録](atlas-data-update.md) | 直接取得の判断、取得・保存・監視の経路、検証証拠と未達条件 |
 | [データ出典](licenses/data-sources.md) | 構造化データ、戦闘仕様、画像の出典と扱い |
 
-[プロジェクト概要](../README.md) · [実装原則](../AGENTS.md) · [エージェント用の別名](../CLAUDE.md)
+[プロジェクト概要](../README.md)

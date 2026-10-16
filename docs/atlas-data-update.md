@@ -1,12 +1,12 @@
 # Atlas直接取得・自動追従・未対応監視
 
-更新: 2026-10-13。対象作業の起点は`a7e586f5217c4ae7e58d747100481491594a7d93`。この文書を設計判断・進捗・未達条件の正本とする。Atlasは別プロジェクトであり、FGO Labから変更・連絡できない。製品からAtlasのGitやFGO Labの大型masterを取得させない。
+更新: 2026-10-16。対象作業の起点は`a7e586f5217c4ae7e58d747100481491594a7d93`。この文書を設計判断・進捗・未達条件の正本とする。Atlasは別プロジェクトであり、FGO Labから変更・連絡できない。製品からAtlasのGitやFGO Labの大型masterを取得させない。
 
 ## 結果と現在の境界
 
 FGO Lab側だけで整合性を証明する方式をローカルに実装・検証した。監査がAtlasの固定raw Git commitと公開API実装commitを再生し、実際のAPI応答bytesと一致した場合だけ、小さい証明書を公開する。ブラウザーはその証明書を先に確認し、変更時だけAtlas APIから本文を直接取得する。各本文のSHA-256、追加skillの参照閉包、canonical digestが一致したときに限りIndexedDBのactiveを原子的に切り替える。証明済みの本文がAtlasから消えた場合は候補を拒否し、端末内の検証済みactiveを明示して使う。初回端末には取得失敗を表示する。
 
-コードと固定入力によるNode・実Chromium Workerの一致は確認した。明示的な`pnpm dev:local-certificate`だけが固定世代の開発用証明書を配信するが、**証明書の公開branchは未作成で、実公開URLは404**。定期ActionsとVercel watchdogも実環境ではまだ動いておらず、現在の接続環境ではFGO LabのVercelプロジェクトを確認できていない。従って公開環境の初回取得・自動追従・監視通知は完了していない。監査・製品コードをこの状態で配備した場合、初回利用者はセットアップできない。公開への切替は後述のgateと最終承認後に行う。
+コードと固定入力によるNode・実Chromium Workerの一致は確認した。明示的な`pnpm dev:local-certificate`だけが固定世代の開発用証明書を配信する。2026-10-16に公開証明書とstatusのURLを確認した結果、どちらもHTTP 404だった。定期ActionsとVercel watchdogの実run・通知も未確認である。従って公開環境の初回取得・自動追従・監視通知は完了していない。監査・製品コードをこの状態で配備した場合、初回利用者はセットアップできない。公開への切替は公開証明書と運用経路の確認後に行う。
 
 現行Atlasの`/export/JP/info.json`はexport完了前に更新され得て、個別exportは直接上書きされる。`/info`やETagの二度読みだけでは、安定した混在世代を排除できない。提案していた単一archive APIは公開されておらず、外部プロジェクトの変更を前提にしない。GitHub rawの小容量証明書は製品のゲームデータ本文ではなく、取得bytesの許可リストとして使う。
 
@@ -40,7 +40,7 @@ raw Atlas語彙はdata-pipeline、scenario組立はcalculation-application、順
 
 [固定raw係数入力](../packages/data-pipeline/test-fixtures/README.md)の元はJP raw commit `5d3cbc…`である。監査再生には新しいJP raw commit `0dc8727576f8c1a99fbe51339246ffabd62309b3`と公開API実装commit `35cadc444e20c78cc60e56082ad1b64607d4d2e2`を使った。2026-10-13取得の38応答（13 export + 25 skill、identity合計92,981,119 bytes）は再生bytesと全件一致した。発行器の現行前段検査は係数335セル、identity 5,191件、成長543,392セル、素材10,362段階、skill/NP値158,747セルを照合した。raw全441表とnice38応答の語彙差分もゼロだった。これは**この固定世代**の証拠であり、以後の未知概念を自動受入する許可ではない。
 
-固定応答は[テスト入力](../packages/test-fixtures/atlas-observed-jp-20261013.README.md)に固定する。現行契約fingerprint `a4b0fed73e5bc7b5af7d01e404a8ef80c11705ee56c1b8bf5493267c8cc8c421`で上流再生markerを伴う証明書候補を発行し、38応答の全bytes一致と上記の意味検査を再確認した。証明書候補は4,656 bytes、canonical本文は39,282,119 bytes、canonical SHA-256は`f2f06a2cd0433e6d4060de987cff8b72a558802d463ece440c15607128a0a381`。最終buildを使う実Chromium WorkerプローブでもNode・保存したWorker生成物のSHA-256が一致した。470通常servant・2706礼装を扱い、実画面の初回取得からcalculator/ranking、未変更時の大型本文再取得ゼロ、壊れた次世代の拒否、旧Service Workerからの移行、旧activeから次世代への成功更新とprofile bytes保持を確認した。プローブは証明書を5回確認し、初回38応答に加えて壊れた次世代の拒否までに計50応答・116,837,161 bytesを受けた。今回の`pnpm quality`は単体5,516件・本番監査176件・master・build・ブラウザー観測まで成功したが、全件E2Eで37件中3件が画面読込待ちに失敗し、最終gateは未達である。別実行では全E2E37件のassertionが成功した一方、Atlas本文の通信中断を観測ゲートが拒否した。重点E2Eのランキング結果と詳細は成功している。独立した全監査`pnpm test:audit`は88件成功・警告0件。全件rankingの一回のNode測定は約42.5秒であり、利用環境の保証値ではない。公開環境の動作確認は未完了。
+固定応答は[テスト入力](../packages/test-fixtures/atlas-observed-jp-20261013.README.md)に固定する。現行契約fingerprint `a4b0fed73e5bc7b5af7d01e404a8ef80c11705ee56c1b8bf5493267c8cc8c421`で上流再生markerを伴う証明書候補を発行し、38応答の全bytes一致と上記の意味検査を再確認した。証明書候補は4,656 bytes、canonical本文は39,282,119 bytes、canonical SHA-256は`f2f06a2cd0433e6d4060de987cff8b72a558802d463ece440c15607128a0a381`。最終buildを使う実Chromium WorkerプローブでもNode・保存したWorker生成物のSHA-256が一致した。470通常servant・2706礼装を扱い、実画面の初回取得からcalculator/ranking、未変更時の大型本文再取得ゼロ、壊れた次世代の拒否、旧Service Workerからの移行、旧activeから次世代への成功更新とprofile bytes保持を確認した。プローブは証明書を5回確認し、初回38応答に加えて壊れた次世代の拒否までに計50応答・116,837,161 bytesを受けた。2026-10-16のHEAD `5558bf2`で`pnpm quality`が成功し、unit 5,516件・production 176件・E2E 37件を全件通過した。警告と予期しないブラウザー観測は0件だった。独立した全監査`pnpm test:audit`の88件成功は2026-10-13の固定世代の記録であり、今回は再実行していない。公開環境の動作確認は未完了。
 
 火力ランキングの約20秒という利用者観測は長すぎる。固定Atlasデータを50騎ずつ処理した別のNode測定では470騎で54.0秒と59.1秒、候補7,116件、ダメージ要求8,191件、異なるダメージ入力650件だった。この分割測定は実ブラウザーの待ち時間ではない。CPUプロファイルは候補ごとの戦闘状態・入力事実・制約処理への集中を示した。小さな複製処理の変更では待ち時間を解消できず、元に戻した。候補の全件評価と失敗分類を保ったまま、共通する準備実行を再利用できる境界を調べる必要がある。表示の進捗だけで計算完了とみなさず、実ブラウザーで同一入力の初回・条件変更後の時間とmemoryを比較する。
 
@@ -50,8 +50,8 @@ raw Atlas語彙はdata-pipeline、scenario組立はcalculation-application、順
 
 ## 運用と未達条件
 
-- ローカルでは再生markerを伴う現行コードでの証明書発行、Node/Workerのbytes一致、初回・更新・拒否・保存復元・旧SW/旧タブ移行、calculator/ranking、Issue重複防止を実ブラウザーと局所testで確認した。[最終gate](testing.md)の`pnpm quality`は全件E2E段階が未達である。固定期待値・cap・timeout・ratchetは緩めていない。
-- Actionsの実run、証明書branchの公開CORS/鮮度、Vercel Cron・`CRON_SECRET`・`ATLAS_MONITOR_GITHUB_TOKEN`の設定、Issue通知を実環境で確認する。現在これらは未設定/未公開であり、実通知や自動追従の完了と呼ばない。外部書込みは検証可能な候補と手順が揃った後に承認を受けて行う。
+- ローカルでは再生markerを伴う現行コードでの証明書発行、Node/Workerのbytes一致、初回・更新・拒否・保存復元・旧SW/旧タブ移行、calculator/ranking、Issue重複防止を実ブラウザーと局所testで確認した。固定期待値・cap・timeout・ratchetは緩めていない。
+- Actionsの実run、証明書branchの公開CORS/鮮度、Vercel Cron・`CRON_SECRET`・`ATLAS_MONITOR_GITHUB_TOKEN`の設定、Issue通知を実環境で確認する。公開証明書のURLはHTTP 404であり、その他の実設定は未確認なので、実通知や自動追従の完了と呼ばない。外部書込みは検証可能な候補と手順が揃った後に承認を受けて行う。
 - 6時間のActions scheduleは遅延・欠落し得る。watchdogはVercelのHobby制限に合わせて1日1回で、18時間超を判定するため、停止検知は最大で約42時間になる。以前の10分配信鮮度・30分通知案は現行契約で保証できない。公開遅延と監査停止を別の時刻として実測し、必要なら運用基盤の製品判断を行う。
 - 費用は同じ入力・build・圧縮条件で測る。今回のraw full checkoutは約529 MiB、監査再生DBは約910 MiB、再生は約2分。固定38応答のidentity合計92,981,119 bytesを各応答gzip level 6で圧縮すると合計8,356,336 bytes、旧master 32,953,998 bytesは同条件で2,765,758 bytesだった。これは実ネットワークのContent-EncodingやHTTP overheadを含まない。canonicalの保存本文は39,282,119 bytesで、IndexedDBの実占有量には別途overheadがある。未変更時の大型本文再取得はE2EとWorkerプローブで0件。今回のbuildの`_next/static` JS全49ファイルはidentity 2,209,957 bytes、同条件のgzip合計651,536 bytes。これは実際の初回画面が全ファイルを取得する量ではない。製品配信から撤去した旧master本文は32,953,998 bytes。Actions runner秒/転送量/API回数、実ネットワーク・IndexedDB増分、失敗artifact保存量は実運用時に別々に記録する。これらの一回の値は将来の料金や遅延保証ではない。
 

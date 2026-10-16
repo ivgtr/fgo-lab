@@ -1,21 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, relative, resolve, sep } from 'node:path';
 import { parsers as markdown } from 'prettier/plugins/markdown';
 import { parsers as html } from 'prettier/plugins/html';
 
-const requiredDocuments = [
-  'README.md',
-  'AGENTS.md',
-  'CLAUDE.md',
-  'docs/README.md',
-  'docs/usage.md',
-  'docs/calculation.md',
-  'docs/architecture.md',
-  'docs/development.md',
-  'docs/testing.md',
-  'docs/licenses/data-sources.md',
-];
+const requiredDocuments = ['README.md', 'docs/README.md'];
 const internalPath = (path) =>
   /^(?:\.local-docs|\.codex|\.serena)(?:\/|$)|^docs\/(?:tasks|evidence|requirements|archive|adr)(?:\/|$)/.test(
     path,
@@ -34,6 +23,13 @@ export function inspectRepository(root) {
         return [match[4], { mode: match[1], object: match[2] }];
       }),
   );
+  for (const path of execFileSync('git', ['ls-files', '--deleted', '-z'], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+    .split('\0')
+    .filter(Boolean))
+    entries.delete(path);
   const documents = new Map();
   for (const [path, entry] of entries) {
     if (internalPath(path)) {
@@ -45,24 +41,6 @@ export function inspectRepository(root) {
       continue;
     }
     if (!/\.md$/i.test(path)) continue;
-    if (path === 'CLAUDE.md') {
-      try {
-        if (
-          entry.mode !== '120000' ||
-          !lstatSync(resolve(root, path)).isSymbolicLink() ||
-          readlinkSync(resolve(root, path)) !== 'AGENTS.md' ||
-          execFileSync('git', ['cat-file', 'blob', entry.object], {
-            cwd: root,
-            encoding: 'utf8',
-          }) !== 'AGENTS.md' ||
-          !entries.has('AGENTS.md')
-        )
-          errors.push('CLAUDE.md: invalid alias; expected tracked symlink to AGENTS.md');
-      } catch (cause) {
-        errors.push(`CLAUDE.md: invalid alias: ${cause.message}`);
-      }
-      continue;
-    }
     try {
       const absolute = resolve(root, path);
       if (!['100644', '100755'].includes(entry.mode) || !lstatSync(absolute).isFile())
@@ -88,7 +66,7 @@ export function inspectRepository(root) {
     }
   }
   for (const path of requiredDocuments)
-    if (!entries.has(path) || (path !== 'CLAUDE.md' && !documents.has(path)))
+    if (!entries.has(path) || !documents.has(path))
       errors.push(`${path}: missing required public document`);
   const edges = new Map();
   let referenceCount = 0;
@@ -101,7 +79,6 @@ export function inspectRepository(root) {
     }
     edges.set(path, targets);
   }
-  edges.set('CLAUDE.md', ['AGENTS.md']);
   const registered = new Set();
   const pending = ['docs/README.md'];
   while (pending.length) {
@@ -322,10 +299,9 @@ function resolveReference(root, source, reference, entries, documents, errors) {
       throw new Error('target resolves to protected environment path');
     if (internalPath(real.split(sep).join('/')))
       throw new Error('target resolves to internal material');
-    if (!lstatSync(absolute).isFile() && target !== 'CLAUDE.md')
-      throw new Error('target is not a regular file');
+    if (!lstatSync(absolute).isFile()) throw new Error('target is not a regular file');
     if (fragment !== null && fragment.length > 0) {
-      const doc = documents.get(target === 'CLAUDE.md' ? 'AGENTS.md' : target);
+      const doc = documents.get(target);
       if (!doc) throw new Error(`unsupported fragment on non-Markdown target ${target}`);
       if (!doc.anchors.has(fragment)) throw new Error(`missing anchor ${target}#${fragment}`);
     }

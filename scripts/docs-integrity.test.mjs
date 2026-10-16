@@ -32,17 +32,14 @@ function repository(t) {
   const files = {
     '.gitignore': '.test-results/\n',
     'README.md': '# Project\n\n[docs](docs/README.md)\n',
-    'AGENTS.md': '# Principles\n\n[docs](docs/README.md)\n',
     'docs/README.md':
-      '# Documentation\n\n[project](../README.md) [principles](../AGENTS.md) [alias](../CLAUDE.md)\n' +
+      '# Documentation\n\n[project](../README.md)\n' +
       guides.map((name) => `\n[${name}](${name}.md)`).join('') +
       '\n[data](licenses/data-sources.md)\n',
     'docs/licenses/data-sources.md': '# Data sources\n',
     ...Object.fromEntries(guides.map((name) => [`docs/${name}.md`, `# ${name}\n`])),
   };
   for (const [path, text] of Object.entries(files)) put(root, path, text);
-  symlinkSync('AGENTS.md', resolve(root, 'CLAUDE.md'));
-  execFileSync('git', ['add', '--', 'CLAUDE.md'], { cwd: root });
   return root;
 }
 const assertError = (root, pattern) => {
@@ -55,8 +52,8 @@ const assertError = (root, pattern) => {
 test('public clone validates without a task ledger, approval metadata or local files', (t) => {
   const result = inspectRepository(repository(t));
   assert.deepEqual(result.errors, []);
-  assert.equal(result.counts.markdown, 10);
-  assert.equal(result.counts.registered, 10);
+  assert.equal(result.counts.markdown, 8);
+  assert.equal(result.counts.registered, 8);
 });
 test('references, images, HTML anchors and encoded paths resolve to tracked public files', (t) => {
   const root = repository(t);
@@ -78,10 +75,20 @@ test('heading punctuation, repeated headings and reference definitions are parse
   assert.deepEqual([...result.anchors], ['a--b', 'a--b-1']);
   assert.ok(result.references.some((reference) => reference.url === 'target.md'));
 });
-test('missing required guides fail without manufacturing a replacement', (t) => {
+test('missing linked guides fail without manufacturing a replacement', (t) => {
   const root = repository(t);
   unlinkSync(resolve(root, 'docs/calculation.md'));
-  assertError(root, /missing required public document/);
+  assertError(root, /untracked target docs\/calculation.md/);
+});
+test('an unlinked guide can be deleted without editing the document registry', (t) => {
+  const root = repository(t);
+  put(
+    root,
+    'docs/README.md',
+    read(root, 'docs/README.md').replace('\n[calculation](calculation.md)', ''),
+  );
+  unlinkSync(resolve(root, 'docs/calculation.md'));
+  assert.deepEqual(validateRepository(root), []);
 });
 test('broken targets and missing anchors fail', (t) => {
   const root = repository(t);
@@ -149,15 +156,12 @@ test('work identifiers and personal filesystem paths cannot leak through a publi
   assertError(root, /internal task identifier/);
   assertError(root, /personal filesystem path/);
 });
-test('Markdown symlinks and an invalid agent alias fail', (t) => {
+test('Markdown symlinks fail', (t) => {
   const root = repository(t);
   unlinkSync(resolve(root, 'docs/usage.md'));
   symlinkSync('testing.md', resolve(root, 'docs/usage.md'));
-  unlinkSync(resolve(root, 'CLAUDE.md'));
-  symlinkSync('README.md', resolve(root, 'CLAUDE.md'));
-  execFileSync('git', ['add', '--', 'docs/usage.md', 'CLAUDE.md'], { cwd: root });
+  execFileSync('git', ['add', '--', 'docs/usage.md'], { cwd: root });
   assertError(root, /expected tracked regular Markdown file/);
-  assertError(root, /invalid alias/);
 });
 function cli(root, name, options = {}) {
   const parent = process.env.FGO_DOCS_TEST_EVIDENCE_DIR

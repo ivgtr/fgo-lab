@@ -31,7 +31,7 @@ data-pipelineだけがraw語彙を解釈します。UIやexecutionはservantのI
 
 ## Atlas直接取得と自動更新
 
-製品の取得契約と検証状況は[Atlas更新記録](atlas-data-update.md)を正本とします。製品コードは大型masterの配信を外し、独立監査が発行する小容量の証明書とAtlas APIの応答を使います。証明書の公開先と監視ジョブは実環境で未稼働です。
+製品の取得契約と検証状況は[Atlas更新記録](atlas-data-update.md)を正本とします。製品コードは大型masterの配信を外し、独立監査が発行する小容量の証明書とAtlas APIの応答を使います。
 
 ```text
 Atlas raw Git + 公開API実装 → Actionsで固定・再生・公開応答と照合
