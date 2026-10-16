@@ -150,10 +150,11 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
     })
     .click();
   await waitForImages();
-  await page.getByLabel('宝具Lv').selectOption('2');
-  await page.getByLabel('レベル', { exact: true }).fill('90');
-  await page.getByLabel('ATKフォウ', { exact: true }).fill('1234');
-  const savedSkills = page.locator('.skill-field').getByRole('spinbutton');
+  const servantEditor = page.locator('.detail-editor');
+  await servantEditor.getByLabel('宝具Lv').selectOption('2');
+  await servantEditor.getByLabel('レベル', { exact: true }).fill('90');
+  await servantEditor.getByLabel('ATKフォウ', { exact: true }).fill('1234');
+  const savedSkills = servantEditor.locator('.skill-field').getByRole('spinbutton');
   await savedSkills.nth(0).fill('2');
   for (const [index, level] of ['1', '5', '9'].entries()) await savedSkills.nth(index).fill(level);
   await expect
@@ -241,7 +242,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
     })
     .click();
   await waitForImages();
-  await page.getByLabel('ATKフォウ', { exact: true }).fill('2000');
+  await servantEditor.getByLabel('ATKフォウ', { exact: true }).fill('2000');
   await expect
     .poll(async () => (await storedProfiles(page)).servantBuilds[savedSubject.id]?.fouAtk)
     .toBe(2000);

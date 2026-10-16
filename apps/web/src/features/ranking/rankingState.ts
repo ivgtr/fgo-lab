@@ -165,7 +165,15 @@ export function useRankingUrlState(): [
 ] {
   const [state, setState] = useState(() => parseRankingUrlState(location.search));
   useEffect(() => {
-    const restore = () => setState(parseRankingUrlState(location.search));
+    const restore = () => {
+      if (location.pathname !== '/ranking') return;
+      const restored = parseRankingUrlState(location.search);
+      setState((current) =>
+        serializeRankingUrlState(current) === serializeRankingUrlState(restored)
+          ? current
+          : restored,
+      );
+    };
     addEventListener('popstate', restore);
     return () => removeEventListener('popstate', restore);
   }, []);

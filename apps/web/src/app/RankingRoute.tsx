@@ -10,20 +10,24 @@ import type { CalculationWorkspace, Page } from './App';
 import type { CalculationMutationGate, UpdateActiveProfile } from './portableDraft';
 
 export function RankingRoute({
+  active = true,
   master,
   profile,
   setCalculation,
   setCalculationSessionId,
   updateActiveProfile,
   replaceRoute,
+  onRankingSearchChange,
   calculationMutation,
 }: {
+  active?: boolean;
   master: MasterDataSnapshot;
   profile: LocalProfile;
   setCalculation: Dispatch<SetStateAction<CalculationWorkspace>>;
   setCalculationSessionId: Dispatch<SetStateAction<string>>;
   updateActiveProfile: UpdateActiveProfile;
   replaceRoute: (page: Page) => void;
+  onRankingSearchChange?: (search: string) => void;
   calculationMutation: CalculationMutationGate;
 }) {
   const [handoffFailure, setHandoffFailure] = useState<{
@@ -51,6 +55,8 @@ export function RankingRoute({
         </p>
       ) : null}
       <Ranking
+        active={active}
+        onRankingSearchChange={onRankingSearchChange}
         onComparisonChange={comparisonChanged}
         onEditSavedBuild={() => replaceRoute('servants')}
         master={master}

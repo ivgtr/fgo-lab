@@ -95,6 +95,56 @@ test('[E2E-064] mobile ranking starts with the result and exposes conditions on 
   await expect(page.getByRole('combobox', { name: '初期OC' })).toBeVisible();
 });
 
+test('[E2E-068] returning to ranking reuses the completed calculation @desktop @journey', async ({
+  page,
+}) => {
+  await openFixtureRanking(page, 1440, 900);
+  await page.getByRole('searchbox', { name: '名前検索' }).fill(' 2');
+  await expect(page.getByRole('status')).toContainText('2件表示 / 12件を計算');
+  const rankingUrl = page.url();
+  const requests = () =>
+    page.evaluate(
+      () =>
+        (
+          window as typeof window & {
+            __rankingFixtureCounts: { initialize: number; calculate: number };
+          }
+        ).__rankingFixtureCounts,
+    );
+  const before = await requests();
+  await page.getByRole('button', { name: 'ホーム' }).click();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+  await expect(page.getByRole('list', { name: '宝具火力ランキング' })).toBeHidden();
+  await page.getByRole('button', { name: '火力ランキング' }).click();
+  await expect(page).toHaveURL(rankingUrl);
+  await expect(page.getByRole('searchbox', { name: '名前検索' })).toHaveValue(' 2');
+  await expect(page.getByRole('status')).toContainText('2件表示 / 12件を計算');
+  expect(await requests()).toEqual(before);
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+  await page.goForward();
+  await expect(page).toHaveURL(rankingUrl);
+  await expect(page.getByRole('status')).toContainText('2件表示 / 12件を計算');
+  expect(await requests()).toEqual(before);
+  await page.getByRole('button', { name: '所持・育成' }).click();
+  const savedServant = page
+    .getByRole('list', { name: 'サーヴァント一覧' })
+    .getByRole('listitem')
+    .first();
+  await savedServant.click();
+  const servantEditor = page.locator('.detail-editor');
+  await servantEditor.getByLabel('宝具Lv').selectOption('2');
+  await expect(savedServant).toContainText('NP2');
+  expect(await requests()).toEqual(before);
+  await page.getByRole('button', { name: '火力ランキング' }).click();
+  await expect(page).toHaveURL(rankingUrl);
+  await expect(page.getByRole('status')).toContainText('2件表示 / 12件を計算');
+  await expect
+    .poll(async () => (await requests()).calculate)
+    .toBe(before.calculate + before.initialize);
+  expect((await requests()).initialize).toBe(before.initialize * 2);
+});
+
 for (const viewport of [
   { id: 'E2E-014', name: '390px', width: 390, height: 844 },
   { id: 'E2E-015', name: '320px', width: 320, height: 700 },

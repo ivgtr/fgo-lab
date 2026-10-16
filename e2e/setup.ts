@@ -24,6 +24,8 @@ export async function installRankingFixtureWorker(page: Page): Promise<void> {
   await page.addInitScript(
     ({ fixtureResponse }) => {
       let fixtureShardAnchor: string | null = null;
+      const fixtureCounts = { initialize: 0, calculate: 0 };
+      Object.assign(window, { __rankingFixtureCounts: fixtureCounts });
       class RankingFixtureWorker {
         onmessage: ((event: MessageEvent) => void) | null = null;
         ownsFixtureRows = false;
@@ -37,6 +39,7 @@ export async function installRankingFixtureWorker(page: Page): Promise<void> {
           entryId?: string;
         }) {
           if (request.kind === 'initialize') {
+            fixtureCounts.initialize += 1;
             if (!request.master) throw new TypeError('fixture_master_required');
             const firstServantId = request.master.servants[0]?.id;
             if (!firstServantId) throw new TypeError('fixture_shard_empty');
@@ -53,6 +56,7 @@ export async function installRankingFixtureWorker(page: Page): Promise<void> {
             return;
           }
           if (request.kind === 'calculate') {
+            fixtureCounts.calculate += 1;
             setTimeout(
               () =>
                 this.onmessage?.({

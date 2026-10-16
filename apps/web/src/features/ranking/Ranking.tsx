@@ -1,6 +1,6 @@
 import { applyRankingSelectionCommand } from '@fgo-lab/calculation-application';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from '@fgo-lab/calculation-application/ranking-contracts';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { useLayoutEffect, useRef } from 'react';
 import type {
   AttackProfile,
@@ -32,16 +32,19 @@ function exclusionDomKey(entryId: string): string {
   return entryId.replaceAll(/[^a-zA-Z0-9_-]/g, '-');
 }
 
-export function Ranking({
+function RankingView({
+  active = true,
   master,
   profile,
   versions,
   onOpenCalculator,
   onOpenCalculatorForAttackProfile,
   onComparisonChange,
+  onRankingSearchChange,
   onReload,
   onEditSavedBuild,
 }: {
+  active?: boolean;
   master: MasterDataSnapshot;
   profile: RankingProfileInput;
   versions: VersionContext;
@@ -51,6 +54,7 @@ export function Ranking({
     attackProfile: AttackProfile;
   }) => void;
   onComparisonChange?: () => void;
+  onRankingSearchChange?: ((search: string) => void) | undefined;
   onReload?: () => void;
   onEditSavedBuild: () => void;
 }) {
@@ -60,6 +64,9 @@ export function Ranking({
   const rankingStatusRef = useRef<HTMLParagraphElement>(null);
   const focusStatusAfterResetRef = useRef(false);
   const ranking = useRanking({ master, profile, conditions: urlState.conditions, versions });
+  useLayoutEffect(() => {
+    if (active) onRankingSearchChange?.(location.search);
+  }, [active, onRankingSearchChange, urlState]);
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return;
     const media = window.matchMedia('(max-width: 760px)');
@@ -69,8 +76,9 @@ export function Ranking({
     return () => media.removeEventListener('change', alignWithViewport);
   }, []);
   useLayoutEffect(() => {
-    onComparisonChange?.();
+    if (active) onComparisonChange?.();
   }, [
+    active,
     onComparisonChange,
     urlState.conditions,
     master,
@@ -261,3 +269,9 @@ export function Ranking({
     </section>
   );
 }
+
+export const Ranking = memo(
+  RankingView,
+  // Keep the last active worker inputs while another page is shown.
+  (previous, next) => previous.active === false && next.active === false,
+);

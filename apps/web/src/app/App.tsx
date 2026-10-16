@@ -210,6 +210,7 @@ export function App() {
   const pathname = usePathname();
   const router = useRouter();
   const page = pageFromPathname(pathname);
+  const [rankingVisited, setRankingVisited] = useState(page === 'ranking');
   const [master, setMaster] = useState<MasterDataSnapshot>();
   const [loading, setLoading] = useState(true);
   const [startupWarning, setStartupWarning] = useState('');
@@ -235,6 +236,17 @@ export function App() {
   const [recoveryFocus, setRecoveryFocus] = useState<'result' | 'error' | null>(null);
   const [calculationSessionId, setCalculationSessionId] = useState(() => crypto.randomUUID());
   const [openTargetTab, setOpenTargetTab] = useState(false);
+  const rankingHref = useRef<string>(pagePaths.ranking);
+  const rememberRankingSearch = useCallback((search: string) => {
+    rankingHref.current = `${pagePaths.ranking}${search}`;
+  }, []);
+  useEffect(() => {
+    const rememberRankingVisit = () => {
+      if (location.pathname === pagePaths.ranking) setRankingVisited(true);
+    };
+    addEventListener('popstate', rememberRankingVisit);
+    return () => removeEventListener('popstate', rememberRankingVisit);
+  }, []);
   const updateActiveProfile = useCallback<UpdateActiveProfile>(
     (update, guard) => {
       if (!guard) calculationMutation.begin();
@@ -459,11 +471,13 @@ export function App() {
   }
   async function navigate(nextPage: Page, targetTab = false) {
     calculationMutation.begin();
+    if (page === 'ranking') rankingHref.current = `${pagePaths.ranking}${location.search}`;
+    if (nextPage === 'ranking') setRankingVisited(true);
     if (page === 'calculate' && nextPage !== 'calculate') await calculationFinalizer.current?.();
     if (page !== 'calculate' && nextPage === 'calculate')
       setCalculationSessionId(crypto.randomUUID());
     if (nextPage === 'servants') setOpenTargetTab(targetTab);
-    router.push(pagePaths[nextPage]);
+    router.push((nextPage === 'ranking' ? rankingHref.current : pagePaths[nextPage]) as Route);
   }
   return (
     <div className="shell">
@@ -554,16 +568,24 @@ export function App() {
               calculationMutation={calculationMutation}
             />
           )}{' '}
-          {page === 'ranking' && (
-            <RankingRoute
-              master={currentMaster}
-              profile={profile}
-              setCalculation={setCalculation}
-              setCalculationSessionId={setCalculationSessionId}
-              updateActiveProfile={updateActiveProfile}
-              replaceRoute={(nextPage) => router.push(pagePaths[nextPage])}
-              calculationMutation={calculationMutation}
-            />
+          {(rankingVisited || page === 'ranking') && (
+            <div hidden={page !== 'ranking'}>
+              <RankingRoute
+                active={page === 'ranking'}
+                master={currentMaster}
+                profile={profile}
+                setCalculation={setCalculation}
+                setCalculationSessionId={setCalculationSessionId}
+                updateActiveProfile={updateActiveProfile}
+                replaceRoute={(nextPage) => {
+                  rankingHref.current = `${pagePaths.ranking}${location.search}`;
+                  if (nextPage === 'ranking') setRankingVisited(true);
+                  router.push(pagePaths[nextPage]);
+                }}
+                onRankingSearchChange={rememberRankingSearch}
+                calculationMutation={calculationMutation}
+              />
+            </div>
           )}{' '}
           {page === 'servants' && (
             <Servants

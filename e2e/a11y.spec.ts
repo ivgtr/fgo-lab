@@ -73,6 +73,8 @@ test('[E2E-003] mobile home and calculator @mobile @a11y', async ({ page }) => {
   await openTestHome(page);
   await expectNoSeriousViolations(page);
   await page.getByRole('button', { name: '計算', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'ダメージ計算', exact: true })).toBeVisible();
+  await expect(page).toHaveTitle(/ダメージ計算/);
   await expectNoSeriousViolations(page);
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   await expectNoSeriousViolations(page);
