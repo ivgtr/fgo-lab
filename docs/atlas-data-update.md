@@ -6,7 +6,7 @@
 
 FGO Lab側だけで整合性を証明する方式をローカルに実装・検証した。監査がAtlasの固定raw Git commitと公開API実装commitを再生し、実際のAPI応答bytesと一致した場合だけ、小さい証明書を公開する。ブラウザーはその証明書を先に確認し、変更時だけAtlas APIから本文を直接取得する。各本文のSHA-256、追加skillの参照閉包、canonical digestが一致したときに限りIndexedDBのactiveを原子的に切り替える。証明済みの本文がAtlasから消えた場合は候補を拒否し、端末内の検証済みactiveを明示して使う。初回端末には取得失敗を表示する。
 
-コードと固定入力によるNode・実Chromium Workerの一致は確認した。明示的な`pnpm dev:local-certificate`だけが固定世代の開発用証明書を配信する。2026-10-16に公開証明書とstatusのURLを確認した結果、どちらもHTTP 404だった。定期ActionsとVercel watchdogの実run・通知も未確認である。従って公開環境の初回取得・自動追従・監視通知は完了していない。監査・製品コードをこの状態で配備した場合、初回利用者はセットアップできない。公開への切替は公開証明書と運用経路の確認後に行う。
+コードと固定入力によるNode・実Chromium Workerの一致は確認した。ローカルの`pnpm dev`（`pnpm dev:local-certificate`も同じ）は固定世代の開発用証明書を配信する。2026-10-16に公開証明書とstatusのURLを確認した結果、どちらもHTTP 404だった。定期ActionsとVercel watchdogの実run・通知も未確認である。従って公開環境の初回取得・自動追従・監視通知は完了していない。監査・製品コードをこの状態で配備した場合、初回利用者はセットアップできない。公開への切替は公開証明書と運用経路の確認後に行う。
 
 現行Atlasの`/export/JP/info.json`はexport完了前に更新され得て、個別exportは直接上書きされる。`/info`やETagの二度読みだけでは、安定した混在世代を排除できない。提案していた単一archive APIは公開されておらず、外部プロジェクトの変更を前提にしない。GitHub rawの小容量証明書は製品のゲームデータ本文ではなく、取得bytesの許可リストとして使う。
 

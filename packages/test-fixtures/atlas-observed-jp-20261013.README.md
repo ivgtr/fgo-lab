@@ -4,4 +4,4 @@
 
 この固定応答は現行データの独立したraw出典を単独では証明しない。監査側のraw/API再生とbytes照合が証明書発行の条件である。試験成功のためにこのアーカイブや回帰期待値を再生成しない。
 
-`atlas-observed-jp-20261013.certificate.json`は、固定raw/API再生と38応答のbytes一致を通して発行した開発用証明書である。明示的な`pnpm dev:local-certificate`だけが開発専用routeからこれを取得する。ゲームデータ本文はAtlas APIから直接取得し、証明書と違う応答は拒否する。通常の`pnpm dev`と公開buildではこのrouteは404を返す。
+`atlas-observed-jp-20261013.certificate.json`は、固定raw/API再生と38応答のbytes一致を通して発行した開発用証明書である。ローカルの`pnpm dev`（`pnpm dev:local-certificate`も同じ）は開発専用routeからこれを取得する。ゲームデータ本文はAtlas APIから直接取得し、証明書と違う応答は拒否する。公開buildではこのrouteは404を返す。

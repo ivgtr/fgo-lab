@@ -9,13 +9,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-公開証明書の公開前にAtlas直接取得の画面を確認する場合は、別の明示的な起動コマンドを使います。
-
-```sh
-pnpm dev:local-certificate
-```
-
-このモードだけ固定世代の開発用証明書を同一originから取得します。ゲームデータ本文はAtlas APIから直接取得し、固定世代と違う応答はdigest不一致で拒否します。通常の`pnpm dev`・公開build・`pnpm preview`は公開証明書を参照し、証明書を取得できない間は初回取得に失敗します。ブラウザーの固定入力検証はPlaywright fixtureで行います。
+`pnpm dev`は固定世代の開発用証明書を同一originから取得します。`pnpm dev:local-certificate`も同じ起動方法です。ゲームデータ本文はAtlas APIから直接取得し、固定世代と違う応答はdigest不一致で拒否します。公開build・`pnpm preview`は公開証明書を参照し、証明書を取得できない間は初回取得に失敗します。ブラウザーの固定入力検証はPlaywright fixtureで行います。
 
 pnpmは起動時にlockfileとnode_modulesの整合を確認します。依存更新後はpnpm installで同期してください。storeの書込みに失敗した場合は実際のpathと権限を確認し、必要なら書込み可能なstoreを指定します。依存準備の失敗をテスト結果として扱いません。
 

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1 --port 4173",
+    "dev": "NEXT_PUBLIC_FGO_LOCAL_CERTIFICATE=1 next dev --hostname 127.0.0.1 --port 4173",
     "dev:local-certificate": "NEXT_PUBLIC_FGO_LOCAL_CERTIFICATE=1 next dev --hostname 127.0.0.1 --port 4173",
     "build": "node ../../scripts/atlas-contract-fingerprint.mjs --check && next build --webpack",
     "start": "next start --hostname 127.0.0.1 --port 4173",
