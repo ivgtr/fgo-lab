@@ -24,6 +24,7 @@ export function DataPage({
   const [importPending, setImportPending] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<UserDataBackup>();
   const [preImportBackupSaved, setPreImportBackupSaved] = useState<ProfileCollection>();
+  const [selectedFileName, setSelectedFileName] = useState('');
   const backup = useMemo<UserDataBackup>(
     () => ({
       kind: 'fgo-lab-user-backup',
@@ -64,24 +65,21 @@ export function DataPage({
       )
     : undefined;
   return (
-    <section>
-      <dl>
-        <div>
-          <dt>マスターデータ版</dt>
-          <dd className="master-version">{masterVersion}</dd>
-        </div>
-        <div>
-          <dt>schema版</dt>
-          <dd>{SCHEMA_VERSION}</dd>
-        </div>
-      </dl>
+    <section className="data-page">
+      <div className="data-intro">
+        <h2>この端末の保存データ</h2>
+        <p>所持・育成、支援条件、計算履歴をまとめて保存・復元できます。</p>
+      </div>
       <button className="primary" onClick={() => void download()}>
         全データをバックアップ
       </button>
       <label className="file">
-        バックアップを復元
+        <span className="file-heading">バックアップを復元</span>
+        <span className="file-choice">ファイルを選ぶ</span>
+        <span className="file-name">{selectedFileName || 'JSONファイルを選択してください'}</span>
         <input
           type="file"
+          aria-label="バックアップを復元"
           accept="application/json"
           disabled={importPending}
           onChange={(event) => {
@@ -89,6 +87,7 @@ export function DataPage({
             setPendingBackup(undefined);
             setPreImportBackupSaved(undefined);
             const file = event.target.files?.[0];
+            setSelectedFileName(file?.name ?? '');
             if (file)
               void file
                 .text()
@@ -169,15 +168,32 @@ export function DataPage({
           </div>
         </section>
       )}
-      <button
-        className="danger"
-        onClick={() => {
-          if (confirm('全ユーザーデータを削除しますか？ マスターデータは残ります。'))
-            void onClear().catch(() => setMessage('削除処理に失敗しました。'));
-        }}
-      >
-        全ユーザーデータを削除
-      </button>
+      <details className="data-technical-details">
+        <summary>データの詳細</summary>
+        <dl>
+          <div>
+            <dt>マスターデータ版</dt>
+            <dd className="master-version">{masterVersion}</dd>
+          </div>
+          <div>
+            <dt>保存形式の版</dt>
+            <dd>{SCHEMA_VERSION}</dd>
+          </div>
+        </dl>
+      </details>
+      <details className="data-delete-details">
+        <summary>保存データを削除する</summary>
+        <p>所持・育成、支援条件、計算履歴をこの端末から削除します。</p>
+        <button
+          className="danger"
+          onClick={() => {
+            if (confirm('全ユーザーデータを削除しますか？ マスターデータは残ります。'))
+              void onClear().catch(() => setMessage('削除処理に失敗しました。'));
+          }}
+        >
+          全ユーザーデータを削除
+        </button>
+      </details>
       <p aria-live="polite">{message}</p>
     </section>
   );

@@ -81,6 +81,20 @@ test('[E2E-011] ranking icon fallback @mobile @vrt', async ({ page }) => {
   ).toHaveScreenshot('ranking-row-icon-fallback-390px.png');
 });
 
+test('[E2E-064] mobile ranking starts with the result and exposes conditions on request @mobile @journey', async ({
+  page,
+}) => {
+  await openFixtureRanking(page, 320, 700);
+  const first = page
+    .getByRole('list', { name: '宝具火力ランキング' })
+    .getByRole('listitem')
+    .first();
+  await expect(first).toBeInViewport({ ratio: 0.5 });
+  await expect(page.getByRole('combobox', { name: '初期OC' })).toBeHidden();
+  await page.getByText('比較条件を変更', { exact: true }).click();
+  await expect(page.getByRole('combobox', { name: '初期OC' })).toBeVisible();
+});
+
 for (const viewport of [
   { id: 'E2E-014', name: '390px', width: 390, height: 844 },
   { id: 'E2E-015', name: '320px', width: 320, height: 700 },

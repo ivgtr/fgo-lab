@@ -4,14 +4,35 @@
   min-width: 0;
 }
 
-.ranking-heading {
-  margin-bottom: 0;
+.ranking-context {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  border-left: 3px solid var(--accent);
+  padding: 0.3rem 0.8rem;
 }
 
-.ranking-heading > span {
+.ranking-context strong {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+}
+
+.ranking-context p {
+  margin: 0;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.86rem;
+}
+.ranking-condition-disclosure {
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.ranking-condition-disclosure > summary {
+  padding: 0.6rem 0.75rem;
   font-weight: 700;
+}
+.ranking-condition-disclosure > .ranking-condition-section {
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 
 .ranking-special-badge {
@@ -37,8 +58,16 @@
   padding: 0.65rem;
   min-width: 0;
 }
+.ranking-filter-primary {
+  padding-block: 0.55rem;
+}
+.ranking-condition-primary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 
 .ranking-condition-primary label,
+.ranking-condition-extra-fields label,
 .ranking-filter-primary label,
 .ranking-condition-grid label,
 .ranking-common-equipment label,
@@ -47,11 +76,12 @@
   gap: 0.2rem;
   min-width: 0;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .ranking-condition-primary select,
+.ranking-condition-extra-fields select,
 .ranking-filter-primary select,
 .ranking-condition-grid select,
 .ranking-condition-grid input,
@@ -60,7 +90,32 @@
 .ranking-filter-grid select,
 .ranking-filter-grid input,
 .ranking-trait-selector select {
-  min-height: 2.35rem;
+  min-height: 44px;
+}
+
+.ranking-condition-extra {
+  border-top: 1px solid var(--line);
+}
+
+.ranking-condition-extra > summary {
+  padding: 0.6rem 0.7rem;
+  font-weight: 700;
+}
+
+.ranking-condition-extra-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  border-top: 1px solid var(--line);
+  padding: 0.7rem;
+}
+
+.ranking-condition-extra-fields label {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .ranking-calculation-details,
@@ -660,13 +715,9 @@
 }
 
 @media (max-width: 760px) {
-  .ranking-heading {
+  .ranking-context {
     display: grid;
-    gap: 0.5rem;
-  }
-
-  .ranking-heading > span {
-    text-align: left;
+    gap: 0.2rem;
   }
 
   .ranking-condition-primary {
@@ -674,9 +725,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .ranking-condition-primary > button,
-  .ranking-condition-primary > label:last-child {
-    min-width: 0;
+  .ranking-condition-extra-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ranking-filter-details:not([open]) .ranking-filter-grid {
@@ -740,6 +790,15 @@
 
   .ranking-contribution-group > ul > li > strong {
     text-align: left;
+  }
+}
+
+@media (min-width: 761px) {
+  .ranking-condition-disclosure > summary {
+    display: none;
+  }
+  .ranking-condition-disclosure > .ranking-condition-section {
+    border-top: 0;
   }
 }
 

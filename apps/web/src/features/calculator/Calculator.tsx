@@ -713,12 +713,22 @@ export function Calculator({
     setCraftEssenceDialogOpen(false);
     requestAnimationFrame(() => craftEssenceTriggerRef.current?.focus());
   }
+  const currentDamage =
+    result.status === 'calculated'
+      ? result.rows.find((row) => row.npLevel === input.npLevel)?.average
+      : undefined;
   return (
     <div className="worksheet">
+      <div className="mobile-damage-summary" aria-live="polite">
+        <span>NP{input.npLevel}の平均ダメージ</span>
+        <strong>
+          {currentDamage === undefined ? '結果を確認' : numberFormatter.format(currentDamage)}
+        </strong>
+        <a href="#calculation-result">結果を見る</a>
+      </div>
       <section>
         <div className="section-heading">
           <div>
-            <p className="eyebrow">CONDITIONS</p>
             <h2>計算条件</h2>
           </div>
           <button type="button" onClick={() => setHistoryDialogOpen(true)}>
@@ -1357,7 +1367,6 @@ export function Calculator({
         <section className="support-composition" aria-label="支援・バフ" hidden={mode === 'direct'}>
           <div className="section-heading compact-heading">
             <div>
-              <p className="eyebrow">SUPPORT</p>
               <h3>支援・バフ</h3>
             </div>
             <small>この計算だけの支援構成</small>
@@ -1536,7 +1545,6 @@ export function Calculator({
           <div className="dialog-panel calculation-history-dialog">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">HISTORY</p>
                 <h2 id="calculation-history-title">計算履歴</h2>
               </div>
               <button type="button" onClick={() => setHistoryDialogOpen(false)}>
@@ -1639,7 +1647,6 @@ export function RejectedCalculator({
       <section>
         <div className="section-heading">
           <div>
-            <p className="eyebrow">PREPARATION</p>
             <h2>攻撃準備を完了できません</h2>
           </div>
         </div>

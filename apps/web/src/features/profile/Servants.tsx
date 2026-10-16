@@ -72,15 +72,17 @@ export function Servants({
   targets,
   onChange,
   onTargetChange,
+  initialTab = 'current',
 }: {
   servants: ServantMaster[];
   builds: Record<string, ServantBuild>;
   targets: Record<string, ServantTarget>;
   onChange: (servantId: string, patch: Partial<ServantBuild>) => Promise<void>;
   onTargetChange: (servantId: string, patch: Partial<ServantTarget>) => Promise<void>;
+  initialTab?: 'current' | 'target';
 }) {
   const generatedId = useId();
-  const [tab, setTab] = useState<'current' | 'target'>('current');
+  const [tab, setTab] = useState<'current' | 'target'>(initialTab);
   const [search, setSearch] = useState('');
   const [scope, setScope] = useState<Scope>('all');
   const [filters, setFilters] = useState(createEmptyServantFilters);

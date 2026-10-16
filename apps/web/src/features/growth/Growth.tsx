@@ -8,9 +8,11 @@ import './growth.css';
 export function Growth({
   master,
   profile,
+  onOpenTargets,
 }: {
   master: MasterDataSnapshot;
   profile: ReturnType<typeof activeProfile>;
+  onOpenTargets: () => void;
 }) {
   const [search, setSearch] = useState('');
   const [order, setOrder] = useState<'game' | 'amount' | 'name'>('game');
@@ -23,15 +25,29 @@ export function Growth({
     profile.servantTargets,
   );
   const visible = filterAndSortLedger(ledger, search, category, order);
+  const hasPlannedTarget = Object.values(profile.servantTargets).some((target) => target.planned);
   const selected = ledger.find((entry) => entry.material.id === selectedId) ?? visible[0];
   const servantById = new Map(master.servants.map((servant) => [servant.id, servant]));
   return (
     <section>
-      <p className="notice">種火条件: 星5・クラス一致・成功ボーナスなし</p>
       {ledger.length === 0 ? (
-        <Empty title="計画中の育成目標はありません" action="所持・育成で目標を設定" />
+        <section className="growth-empty">
+          <p className="growth-empty-step">次にすること</p>
+          <h2>
+            {hasPlannedTarget ? '集計対象の追加素材はありません' : '育成目標を設定しましょう'}
+          </h2>
+          <p>
+            {hasPlannedTarget
+              ? '現在値と目標を確認し、次の育成を計画できます。'
+              : 'サーヴァントの現在値と目標を登録すると、集計できる素材をここで確認できます。'}
+          </p>
+          <button type="button" className="primary" onClick={onOpenTargets}>
+            {hasPlannedTarget ? '育成目標を見直す' : '育成目標を設定する'}
+          </button>
+        </section>
       ) : (
         <>
+          <p className="notice">種火条件: 星5・クラス一致・成功ボーナスなし</p>
           <div className="toolbar">
             <label>
               素材名検索
@@ -116,16 +132,6 @@ export function Growth({
           </div>
         </>
       )}
-    </section>
-  );
-}
-
-function Empty({ title, action }: { title: string; action: string }) {
-  return (
-    <section className="empty">
-      <h2>{title}</h2>
-      <p>この機能の保存境界と空状態は準備済みです。</p>
-      <button>{action}</button>
     </section>
   );
 }

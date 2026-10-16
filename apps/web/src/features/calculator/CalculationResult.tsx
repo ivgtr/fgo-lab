@@ -118,6 +118,7 @@ export function CalculationResult({
         resetError={resetError}
       />
       <article
+        id="calculation-result"
         ref={resultCardRef}
         className="result-card"
         data-share-card
@@ -126,7 +127,6 @@ export function CalculationResult({
         <header className="result-card-head">
           <div className="result-card-title">
             <div>
-              <p className="eyebrow">RESULT</p>
               <h2 tabIndex={-1} data-calculation-result-heading>
                 宝具ダメージ
               </h2>

@@ -1,6 +1,6 @@
 import { applyRankingSelectionCommand } from '@fgo-lab/calculation-application';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from '@fgo-lab/calculation-application/ranking-contracts';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLayoutEffect, useRef } from 'react';
 import type {
   AttackProfile,
@@ -56,9 +56,18 @@ export function Ranking({
 }) {
   const [urlState, setUrlState] = useRankingUrlState();
   const [openEntryId, setOpenEntryId] = useState<string | null>(null);
+  const [conditionsOpen, setConditionsOpen] = useState(true);
   const rankingStatusRef = useRef<HTMLParagraphElement>(null);
   const focusStatusAfterResetRef = useRef(false);
   const ranking = useRanking({ master, profile, conditions: urlState.conditions, versions });
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(max-width: 760px)');
+    const alignWithViewport = () => setConditionsOpen(!media.matches);
+    alignWithViewport();
+    media.addEventListener('change', alignWithViewport);
+    return () => media.removeEventListener('change', alignWithViewport);
+  }, []);
   useLayoutEffect(() => {
     onComparisonChange?.();
   }, [
@@ -100,23 +109,27 @@ export function Ranking({
   const reloadRanking = onReload ?? (() => window.location.reload());
   return (
     <section className="ranking-page">
-      <div className="section-heading ranking-heading">
-        <div>
-          <p className="eyebrow">RANKING</p>
-          <h2>宝具火力ランキング</h2>
-        </div>
-        <span>
+      <div className="ranking-context" aria-label="現在の比較条件">
+        <strong>現在の比較条件</strong>
+        <p>
           {urlState.conditions ? rankingPolicyLabel(urlState.conditions) : '計算条件が無効です'}
-        </span>
+        </p>
       </div>
       {urlState.conditions ? (
-        <RankingConditions
-          conditions={urlState.conditions}
-          onChange={(conditions) => {
-            setOpenEntryId(null);
-            setUrlState((current) => ({ ...current, conditions }));
-          }}
-        />
+        <details
+          className="ranking-condition-disclosure"
+          open={conditionsOpen}
+          onToggle={(event) => setConditionsOpen(event.currentTarget.open)}
+        >
+          <summary>比較条件を変更</summary>
+          <RankingConditions
+            conditions={urlState.conditions}
+            onChange={(conditions) => {
+              setOpenEntryId(null);
+              setUrlState((current) => ({ ...current, conditions }));
+            }}
+          />
+        </details>
       ) : (
         <div role="alert">
           計算条件が無効です。

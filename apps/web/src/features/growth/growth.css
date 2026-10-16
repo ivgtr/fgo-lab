@@ -1,3 +1,24 @@
+.growth-empty {
+  max-width: 620px;
+  border-top: 3px solid var(--accent);
+  padding-top: 1.4rem;
+}
+.growth-empty-step {
+  margin: 0 0 0.6rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.growth-empty h2 {
+  font-size: 1.65rem;
+}
+.growth-empty > p:not(.growth-empty-step) {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.growth-empty button {
+  margin-top: 0.5rem;
+}
 .growth-layout {
   display: grid;
   grid-template-columns: minmax(0, 7fr) minmax(240px, 3fr);

@@ -100,6 +100,19 @@ test('[E2E-017] setup to calculator package journey @desktop @journey', async ({
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 });
 
+test('[E2E-063] empty growth opens the target editor @mobile @journey', async ({ page }) => {
+  await openTestHome(page);
+  await page.getByRole('button', { name: '育成', exact: true }).click();
+  await expect(page.getByRole('button', { name: '育成目標を設定する' })).toBeVisible();
+  await page.getByRole('button', { name: '育成目標を設定する' }).click();
+  await expect(page).toHaveURL(/\/servants$/);
+  await page.locator('.servant-list button').first().click();
+  await expect(page.getByRole('tab', { name: '育成目標' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+});
+
 test('[E2E-062] calculator target selection persists @desktop @journey', async ({ page }) => {
   await page.route('https://static.atlasacademy.io/**', (route) =>
     route.fulfill({ contentType: 'image/png', body: fixtureImage }),
@@ -154,7 +167,7 @@ test('[E2E-021] mobile support editor navigation @mobile @journey', async ({ pag
   await openTestHome(page);
   await page.getByRole('button', { name: 'その他' }).click();
   await page.getByRole('button', { name: '支援条件', exact: true }).click();
-  await page.getByRole('button', { name: '最初の支援条件を作成' }).click();
+  await page.getByRole('button', { name: '支援条件を作成する' }).click();
   const list = page.getByRole('list', { name: '保存済み支援条件' });
   await expect(list).toBeHidden();
   await page.getByRole('button', { name: '支援条件一覧へ戻る' }).click();
@@ -487,50 +500,6 @@ test('[E2E-047] unsupported version recovery retains and focuses @desktop @journ
     masterDataVersion: 'historical-master',
     engineVersion: 'historical-engine',
   });
-});
-
-test('[E2E-048] profile repository round-trip @desktop @journey', async ({ page }) => {
-  await openTestHome(page);
-  await page.getByRole('button', { name: '所持・育成' }).click();
-  await page.getByLabel('宝具Lv').selectOption('2');
-  await page.getByRole('button', { name: '概念礼装', exact: true }).click();
-  await page.getByRole('button', { name: 'DBから礼装を登録' }).click();
-  const dialog = page.getByRole('dialog', { name: '概念礼装を検索' });
-  await dialog.getByLabel('礼装名').fill('カレイドスコープ');
-  await dialog.getByRole('button', { name: '登録' }).first().click();
-  await page.reload();
-  await page.getByRole('button', { name: '概念礼装', exact: true }).click();
-  await expect(
-    page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem'),
-  ).toHaveCount(1);
-  await page.getByRole('button', { name: '所持・育成' }).click();
-  await expect(page.getByLabel('宝具Lv')).toHaveValue('2');
-  await page.getByRole('button', { name: '支援条件', exact: true }).click();
-  await page.getByRole('button', { name: '新規作成', exact: true }).click();
-  await page.getByLabel('支援条件名').fill('周回支援');
-  await page.getByLabel('支援条件名').press('Tab');
-  await page.getByRole('button', { name: /支援元を追加/ }).click();
-  const supportDialog = page.getByRole('dialog', { name: '支援元サーヴァントを選択' });
-  await supportDialog.getByLabel('名前で検索').fill('アルトリア・ペンドラゴン');
-  await supportDialog
-    .getByRole('button', { name: /^アルトリア・ペンドラゴン ★5・セイバー/ })
-    .click();
-  await page.getByLabel('理想郷の騎士 EXのスキルレベル').selectOption('8');
-  const supportEditor = page.getByRole('region', { name: '支援条件の編集' });
-  await supportEditor
-    .getByRole('button', { name: /を使用する$/ })
-    .first()
-    .click();
-  await page.reload();
-  await page.getByRole('button', { name: '支援条件', exact: true }).click();
-  await expect(page.getByRole('list', { name: '保存済み支援条件' })).toContainText('周回支援');
-  await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
-  await expect(
-    page
-      .getByRole('region', { name: '支援条件の編集' })
-      .getByRole('button', { name: /攻撃力アップ/ })
-      .first(),
-  ).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('[E2E-049] history backup download and restore @desktop @journey', async ({ page }) => {

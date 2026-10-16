@@ -10,19 +10,23 @@ export function Home({
   attackerImage,
   owned,
   hasHistory,
+  hasGrowthTargets,
   onNavigate,
+  onOpenTargets,
 }: {
   result: number | null;
   attackerName: string;
   attackerImage: string | null;
   owned: number;
   hasHistory: boolean;
+  hasGrowthTargets: boolean;
   onNavigate: (page: HomeDestination) => void;
+  onOpenTargets: () => void;
 }) {
   return (
     <div className="home-grid">
       <section className="primary-module">
-        <p className="eyebrow">PRIMARY</p>
+        <p className="eyebrow">まずはここから</p>
         <h2>{hasHistory ? '前回の計算を開く' : '宝具ダメージを比べる'}</h2>
         {hasHistory ? (
           <>
@@ -56,12 +60,20 @@ export function Home({
       <section>
         <h2>所持・育成</h2>
         <p>{owned}騎を登録中</p>
-        <button onClick={() => onNavigate('servants')}>登録を始める</button>
+        <button onClick={() => onNavigate('servants')}>
+          {owned > 0 ? '所持一覧を見る' : '所持を登録する'}
+        </button>
       </section>
       <section>
         <h2>次の育成</h2>
-        <p>目標を設定すると必要素材を集計します。</p>
-        <button onClick={() => onNavigate('growth')}>育成計画を見る</button>
+        <p>
+          {hasGrowthTargets
+            ? '設定した目標から必要素材を確認します。'
+            : '育成目標を決めると集計対象の素材を確認できます。'}
+        </p>
+        <button onClick={hasGrowthTargets ? () => onNavigate('growth') : onOpenTargets}>
+          {hasGrowthTargets ? '必要素材を見る' : '育成目標を設定する'}
+        </button>
       </section>
       <section>
         <h2>火力ランキング</h2>

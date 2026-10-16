@@ -25,7 +25,9 @@ describe('HomeRoute damage headline', () => {
         attackerImage={null}
         owned={0}
         hasHistory
+        hasGrowthTargets={false}
         onNavigate={vi.fn()}
+        onOpenTargets={vi.fn()}
       />,
     );
 

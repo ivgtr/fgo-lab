@@ -104,6 +104,21 @@ const nav: readonly [Page, ReturnType<typeof t>][] = [
   ['growth', t('nav.growth')],
   ['data', t('nav.data')],
 ];
+const navGroups: readonly { label: string; pages: readonly Page[] }[] = [
+  { label: '計算と比較', pages: ['calculate', 'ranking'] },
+  { label: '所持と育成', pages: ['servants', 'ce', 'support', 'growth'] },
+  { label: 'データ', pages: ['data'] },
+];
+const pageDescriptions: Record<Page, string> = {
+  home: '宝具の比較と育成の作業を、ここから始めます。',
+  calculate: '攻撃役と条件を選び、宝具ダメージを確かめます。',
+  ranking: '同じ条件で攻撃宝具を比較します。',
+  servants: '所持状態と育成目標を記録します。',
+  ce: '計算に使う礼装とATKを登録します。',
+  support: '支援役の構成を保存し、計算で再利用します。',
+  growth: '設定した目標から集計できる素材を確認します。',
+  data: 'この端末に保存した情報を管理します。',
+};
 const repository = new IndexedDbProfileRepository();
 const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
@@ -225,6 +240,7 @@ export function App() {
   );
   const [recoveryFocus, setRecoveryFocus] = useState<'result' | 'error' | null>(null);
   const [calculationSessionId, setCalculationSessionId] = useState(() => crypto.randomUUID());
+  const [openTargetTab, setOpenTargetTab] = useState(false);
   const updateActiveProfile = useCallback<UpdateActiveProfile>(
     (update, guard) => {
       if (!guard) calculationMutation.begin();
@@ -447,11 +463,12 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function navigate(nextPage: Page) {
+  async function navigate(nextPage: Page, targetTab = false) {
     calculationMutation.begin();
     if (page === 'calculate' && nextPage !== 'calculate') await calculationFinalizer.current?.();
     if (page !== 'calculate' && nextPage === 'calculate')
       setCalculationSessionId(crypto.randomUUID());
+    if (nextPage === 'servants') setOpenTargetTab(targetTab);
     router.push(pagePaths[nextPage]);
   }
   return (
@@ -461,47 +478,74 @@ export function App() {
       </a>
       <aside>
         <div className="brand">
-          <span>FL</span>
-          <strong>{t('app.name')}</strong>
+          <div className="brand-wordmark" aria-label={t('app.name')}>
+            <strong>FGO</strong>
+            <span>LAB</span>
+          </div>
+          <small>宝具の数値を読む</small>
         </div>
         <nav aria-label="主要">
           <ul>
-            {nav.map(([id, label]) => (
-              <li key={id}>
-                <button
-                  aria-current={page === id ? 'page' : undefined}
-                  onClick={() => void navigate(id)}
-                >
-                  {label}
-                </button>
+            <li>
+              <button
+                aria-current={page === 'home' ? 'page' : undefined}
+                onClick={() => void navigate('home')}
+              >
+                {t('nav.home')}
+              </button>
+            </li>
+            {navGroups.map((group) => (
+              <li className="nav-group" key={group.label}>
+                <span className="nav-group-label">{group.label}</span>
+                <ul>
+                  {group.pages.map((id) => (
+                    <li key={id}>
+                      <button
+                        aria-current={page === id ? 'page' : undefined}
+                        onClick={() => void navigate(id)}
+                      >
+                        {nav.find(([candidate]) => candidate === id)?.[1]}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>
         </nav>
-        <p className="utility">
-          <span title={currentMaster.version}>DB {masterVersionLabel(currentMaster.version)}</span>
-          <br />
-          端末内に自動保存・{online ? 'オンライン' : 'オフライン'}
-          {startupWarning && (
-            <>
-              <br />
-              {startupWarning}
-            </>
-          )}
-        </p>
-        <button
-          disabled={!undoSnapshot}
-          onClick={() => {
-            calculationMutation.begin();
-            void undoLastChange();
-          }}
-        >
-          直前の操作を元に戻す
-        </button>
+        <div className="sidebar-footer">
+          <p className="utility">
+            <span title={currentMaster.version}>
+              DB {masterVersionLabel(currentMaster.version)}
+            </span>
+            <br />
+            端末内に自動保存・{online ? 'オンライン' : 'オフライン'}
+            {startupWarning && (
+              <>
+                <br />
+                {startupWarning}
+              </>
+            )}
+          </p>
+          <button
+            disabled={!undoSnapshot}
+            onClick={() => {
+              calculationMutation.begin();
+              void undoLastChange();
+            }}
+          >
+            直前の操作を元に戻す
+          </button>
+        </div>
       </aside>
       <main id="main">
-        <header>
+        <div className="mobile-brand" aria-label={t('app.name')}>
+          <strong>FGO</strong>
+          <span>LAB</span>
+        </div>
+        <header className="page-heading">
           <h1>{nav.find(([id]) => id === page)?.[1]}</h1>
+          <p>{pageDescriptions[page]}</p>
         </header>
         <Suspense fallback={<p aria-live="polite">画面を読み込んでいます…</p>}>
           {page === 'home' && (
@@ -548,6 +592,7 @@ export function App() {
               targets={profile.servantTargets}
               onChange={updateBuild}
               onTargetChange={updateTarget}
+              initialTab={openTargetTab ? 'target' : 'current'}
             />
           )}{' '}
           {page === 'ce' && (
@@ -573,7 +618,13 @@ export function App() {
               onToggleEffect={updateSupportEffect}
             />
           )}{' '}
-          {page === 'growth' && <Growth master={currentMaster} profile={profile} />}{' '}
+          {page === 'growth' && (
+            <Growth
+              master={currentMaster}
+              profile={profile}
+              onOpenTargets={() => void navigate('servants', true)}
+            />
+          )}{' '}
           {page === 'data' && (
             <DataPage
               onClear={async () => {

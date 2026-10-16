@@ -2,7 +2,74 @@
   overflow-wrap: anywhere;
 }
 
+.data-page {
+  max-width: 760px;
+}
+
+.data-intro {
+  margin-bottom: 1.5rem;
+}
+
+.data-intro h2 {
+  font-size: 1.3rem;
+  margin-bottom: 0.25rem;
+}
+
+.data-intro p,
+.file-name,
+.data-delete-details p {
+  color: var(--muted);
+}
+
 .file {
-  display: block;
-  margin-top: 1rem;
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 0.45rem;
+  margin-block: 1.5rem;
+  cursor: pointer;
+}
+
+.file-heading {
+  font-weight: 700;
+}
+
+.file-choice {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 0.55rem 0.9rem;
+  background: white;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.file input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  opacity: 0;
+}
+
+.file:focus-within .file-choice {
+  outline: 3px solid #d8942d;
+  outline-offset: 2px;
+}
+
+.data-technical-details,
+.data-delete-details {
+  border-top: 1px solid var(--line);
+  margin-top: 1.5rem;
+  padding-block: 0.6rem;
+}
+
+.data-technical-details summary,
+.data-delete-details summary {
+  font-weight: 700;
+}
+
+.data-delete-details .danger {
+  margin-top: 0.5rem;
 }

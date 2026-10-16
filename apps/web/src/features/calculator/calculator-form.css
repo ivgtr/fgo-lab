@@ -10,7 +10,7 @@
   align-content: start;
   gap: 0.35rem;
   color: #40495b;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -25,12 +25,12 @@
 }
 
 .quick-value-presets button {
-  min-height: 32px;
+  min-height: 40px;
   padding: 0.3rem;
   border-color: #cfd4d8;
   background: #f7f7f4;
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: 0.78rem;
 }
 
 .quick-value-presets button[aria-pressed='true'],
@@ -62,7 +62,7 @@
 .direct-input-summary small,
 .form-grid label > small {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.78rem;
 }
 
 .damage-context-input {
@@ -80,7 +80,7 @@
   display: grid;
   gap: 0.35rem;
   color: #40495b;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 

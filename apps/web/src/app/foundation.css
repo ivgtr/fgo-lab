@@ -1,17 +1,17 @@
 :root {
   font-family: Inter, 'Noto Sans JP', 'Hiragino Sans', system-ui, sans-serif;
-  color: #182033;
-  background: #f2f1ed;
+  color: #1c272d;
+  background: #f5f3ee;
   font-synthesis: none;
-  --ink: #182033;
-  --muted: #596275;
-  --line: #ccd0d8;
-  --paper: #fff;
-  --accent: #9e283b;
-  --nav: #18233a;
-  --soft-accent: #f8eaed;
-  --soft-blue: #eef2f6;
-  --control: #7d8798;
+  --ink: #1c272d;
+  --muted: #52616a;
+  --line: #d2d1cb;
+  --paper: #fffefa;
+  --accent: #9b293e;
+  --nav: #1c272d;
+  --soft-accent: #f7e9eb;
+  --soft-blue: #eef1f1;
+  --control: #75818a;
 }
 * {
   box-sizing: border-box;
@@ -38,8 +38,8 @@ select,
   min-height: 44px;
 }
 button {
-  border: 1px solid #a9b0bd;
-  background: #fff;
+  border: 1px solid #a1aaa9;
+  background: var(--paper);
   color: var(--ink);
   padding: 0.65rem 0.85rem;
   border-radius: 0.2rem;
@@ -48,7 +48,7 @@ button {
 }
 button:hover {
   border-color: var(--accent);
-  background: #faf7f6;
+  background: #f7f3f1;
 }
 button:disabled {
   cursor: not-allowed;
@@ -59,7 +59,7 @@ select {
   width: 100%;
   border: 1px solid var(--control);
   border-radius: 0.15rem;
-  background: #fff;
+  background: var(--paper);
   color: var(--ink);
   padding: 0.6rem 0.7rem;
 }

@@ -25,7 +25,6 @@ export function AttackerSkills({
     <section className="attacker-skills" aria-label="攻撃役の自身スキル" hidden={hidden}>
       <div className="section-heading compact-heading">
         <div>
-          <p className="eyebrow">SELF SKILLS</p>
           <h3>攻撃役の自身スキル</h3>
         </div>
         <small>変更はこの計算だけ</small>

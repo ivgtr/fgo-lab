@@ -26,7 +26,7 @@ export function HomeRoute({
   master: MasterDataSnapshot;
   profile: LocalProfile;
   calculation: CalculationWorkspace;
-  navigate: (page: Page) => Promise<void>;
+  navigate: (page: Page, targetTab?: boolean) => Promise<void>;
 }) {
   const defaultServant = master.servants[0]!;
   const currentRequest =
@@ -48,7 +48,6 @@ export function HomeRoute({
     (currentScenario.mode === 'resolved' ? currentScenario.attacker.servantId : defaultServant.id);
   const selectedAttacker =
     master.servants.find(({ id }) => id === selectedAttackerId) ?? defaultServant;
-  const selectedBuild = profile.servantBuilds[selectedAttacker.id];
   const result = execution?.result;
 
   return (
@@ -60,9 +59,11 @@ export function HomeRoute({
       )}
       attackerName={selectedAttacker.name}
       attackerImage={selectedAttacker.imageKey}
-      owned={selectedBuild?.npLevel ? 1 : 0}
+      owned={Object.values(profile.servantBuilds).filter((build) => build.npLevel > 0).length}
       hasHistory={profile.history.length > 0}
+      hasGrowthTargets={Object.values(profile.servantTargets).some((target) => target.planned)}
       onNavigate={(page) => void navigate(page)}
+      onOpenTargets={() => void navigate('servants', true)}
     />
   );
 }

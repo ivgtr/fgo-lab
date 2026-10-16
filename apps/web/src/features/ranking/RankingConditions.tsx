@@ -101,52 +101,57 @@ export function RankingConditions({
             ))}
           </select>
         </label>
-        <label>
-          クラス相性
-          <select
-            value={conditions.classAffinity}
-            onChange={(event) =>
-              dispatch({
-                kind: 'setClassAffinity',
-                value: event.target.value as RankingPolicyConditions['classAffinity'],
-              })
-            }
-          >
-            <option value="neutral">等倍</option>
-            <option value="favorable">相性有利</option>
-          </select>
-        </label>
-        <label>
-          自己バフ
-          <select
-            value={conditions.selfBuffs}
-            onChange={(event) =>
-              dispatch({
-                kind: 'setSelfBuffs',
-                value: event.target.value as RankingPolicyConditions['selfBuffs'],
-              })
-            }
-          >
-            <option value="included">あり</option>
-            <option value="excluded">なし</option>
-          </select>
-        </label>
-        <label>
-          条件効果
-          <select
-            value={conditions.conditionalEffects}
-            onChange={(event) =>
-              dispatch({
-                kind: 'setConditionalEffects',
-                value: event.target.value as RankingPolicyConditions['conditionalEffects'],
-              })
-            }
-          >
-            <option value="baseline">通常のみ</option>
-            <option value="satisfied">成立込み</option>
-          </select>
-        </label>
       </div>
+      <details className="ranking-condition-extra">
+        <summary>相性・効果を変更</summary>
+        <div className="ranking-condition-extra-fields">
+          <label>
+            クラス相性
+            <select
+              value={conditions.classAffinity}
+              onChange={(event) =>
+                dispatch({
+                  kind: 'setClassAffinity',
+                  value: event.target.value as RankingPolicyConditions['classAffinity'],
+                })
+              }
+            >
+              <option value="neutral">等倍</option>
+              <option value="favorable">相性有利</option>
+            </select>
+          </label>
+          <label>
+            自己バフ
+            <select
+              value={conditions.selfBuffs}
+              onChange={(event) =>
+                dispatch({
+                  kind: 'setSelfBuffs',
+                  value: event.target.value as RankingPolicyConditions['selfBuffs'],
+                })
+              }
+            >
+              <option value="included">あり</option>
+              <option value="excluded">なし</option>
+            </select>
+          </label>
+          <label>
+            条件効果
+            <select
+              value={conditions.conditionalEffects}
+              onChange={(event) =>
+                dispatch({
+                  kind: 'setConditionalEffects',
+                  value: event.target.value as RankingPolicyConditions['conditionalEffects'],
+                })
+              }
+            >
+              <option value="baseline">通常のみ</option>
+              <option value="satisfied">成立込み</option>
+            </select>
+          </label>
+        </div>
+      </details>
       <details className="ranking-calculation-details">
         <summary>計算基準</summary>
         <label>

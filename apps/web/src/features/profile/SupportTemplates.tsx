@@ -84,47 +84,55 @@ export function SupportTemplates({
 
   return (
     <div
-      className={`master-detail support-master-detail${mobileDetailOpen ? ' mobile-detail-open' : ''}`}
+      className={`master-detail support-master-detail${mobileDetailOpen ? ' mobile-detail-open' : ''}${templates.length === 0 ? ' support-empty-view' : ''}`}
     >
       <section className="overview-pane">
-        <div className="support-template-search-row">
-          <label>
-            <span className="visually-hidden">支援条件を検索</span>
-            <input
-              type="search"
-              placeholder="条件名・支援役・効果で検索"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </label>
-          <button type="button" className="primary" onClick={() => void createTemplate()}>
-            新規作成
-          </button>
-        </div>
-        <div className="profile-list-summary">
-          <p>{visible.length}件</p>
-          <select
-            aria-label="支援条件の並び順"
-            value={sortOrder}
-            onChange={(event) => setSortOrder(event.target.value as SortOrder)}
-          >
-            <option value="used">最近使用</option>
-            <option value="updated">更新が新しい</option>
-            <option value="name">名前順</option>
-          </select>
-        </div>
+        {templates.length > 0 ? (
+          <>
+            <div className="support-template-search-row">
+              <label>
+                <span className="visually-hidden">支援条件を検索</span>
+                <input
+                  type="search"
+                  placeholder="条件名・支援役・効果で検索"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </label>
+              <button type="button" className="primary" onClick={() => void createTemplate()}>
+                新規作成
+              </button>
+            </div>
+            <div className="profile-list-summary">
+              <p>{visible.length}件</p>
+              <select
+                aria-label="支援条件の並び順"
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value as SortOrder)}
+              >
+                <option value="used">最近使用</option>
+                <option value="updated">更新が新しい</option>
+                <option value="name">名前順</option>
+              </select>
+            </div>
+          </>
+        ) : null}
         {visible.length === 0 ? (
           <div className="support-empty-state">
             <p>
               {templates.length === 0
-                ? '保存済みの支援条件はありません。'
+                ? '支援役のスキルや効果をまとめて保存できます。'
                 : '検索条件に一致する支援条件はありません。'}
             </p>
             {templates.length === 0 ? (
               <button type="button" className="primary" onClick={() => void createTemplate()}>
-                最初の支援条件を作成
+                支援条件を作成する
               </button>
-            ) : null}
+            ) : (
+              <button type="button" onClick={() => setSearch('')}>
+                検索をクリア
+              </button>
+            )}
           </div>
         ) : (
           <div
@@ -149,100 +157,86 @@ export function SupportTemplates({
         )}
       </section>
 
-      <section className="detail-editor support-template-editor" aria-label="支援条件の編集">
-        <button className="mobile-back" onClick={() => setMobileDetailOpen(false)}>
-          ← 支援条件一覧へ戻る
-        </button>
-        {!selected ? (
-          <div className="support-empty-state">
-            <p>左の一覧から編集する支援条件を選択してください。</p>
-          </div>
-        ) : (
-          <>
-            <label className="support-template-name">
-              <span>支援条件名</span>
-              <input
-                key={selected.templateId}
-                defaultValue={selected.name}
-                maxLength={80}
-                onBlur={(event) => {
-                  const name = event.target.value.trim();
-                  if (!name) {
-                    event.target.value = selected.name;
-                    return;
-                  }
-                  if (name !== selected.name) void onUpdateTemplate(selected.templateId, { name });
-                }}
-              />
-            </label>
-            <p className="support-template-summary">
-              支援元 {sources.length}騎・除外 {selected.composition.effectInclusions.length}効果
-            </p>
-
-            <div className="support-source-stack">
-              {sources.map((sourceGroup) => {
-                const servant = servantById.get(sourceGroup.servantId);
-                const duplicateCount = sources.filter(
-                  (candidate) => candidate.servantId === sourceGroup.servantId,
-                ).length;
-                const duplicateIndex =
-                  sources
-                    .filter((candidate) => candidate.servantId === sourceGroup.servantId)
-                    .findIndex(
-                      (candidate) => candidate.sourceInstanceId === sourceGroup.sourceInstanceId,
-                    ) + 1;
-                const sourceName = servant?.name ?? sourceGroup.servantId;
-                return (
-                  <SupportSourceCard
-                    key={sourceGroup.sourceInstanceId}
-                    source={sourceGroup}
-                    servant={servant}
-                    displayName={`${sourceName}${duplicateCount > 1 ? ` ${String(duplicateIndex)}` : ''}`}
-                    onRemove={() =>
-                      void onRemoveSource(selected.templateId, sourceGroup.sourceInstanceId)
-                    }
-                    onSkillLevelChange={(skillId, skillLevel) =>
-                      void onUpdateSkill(
-                        selected.templateId,
-                        sourceGroup.sourceInstanceId,
-                        skillId,
-                        { skillLevel },
-                      )
-                    }
-                    onSkillEnabledChange={(skillId, enabled) =>
-                      void onUpdateSkill(
-                        selected.templateId,
-                        sourceGroup.sourceInstanceId,
-                        skillId,
-                        { enabled },
-                      )
-                    }
-                  />
-                );
-              })}
-            </div>
-
-            <button type="button" onClick={() => setSourceDialogOpen(true)}>
-              ＋ 支援元を追加
-            </button>
-
-            <SupportEffectSelector
-              composition={selected.composition}
-              servants={servants}
-              onToggle={(effect, active) =>
-                void onToggleEffect(selected.templateId, effect, active)
-              }
+      {selected ? (
+        <section className="detail-editor support-template-editor" aria-label="支援条件の編集">
+          <button className="mobile-back" onClick={() => setMobileDetailOpen(false)}>
+            ← 支援条件一覧へ戻る
+          </button>
+          <label className="support-template-name">
+            <span>支援条件名</span>
+            <input
+              key={selected.templateId}
+              defaultValue={selected.name}
+              maxLength={80}
+              onBlur={(event) => {
+                const name = event.target.value.trim();
+                if (!name) {
+                  event.target.value = selected.name;
+                  return;
+                }
+                if (name !== selected.name) void onUpdateTemplate(selected.templateId, { name });
+              }}
             />
+          </label>
+          <p className="support-template-summary">
+            支援元 {sources.length}騎・除外 {selected.composition.effectInclusions.length}効果
+          </p>
 
-            <p aria-live="polite" className="support-save-state">
-              妥当な変更は端末内へ自動保存されます。
-            </p>
-            <button type="button" className="danger-text" onClick={() => void removeTemplate()}>
-              この支援条件を削除
-            </button>
-          </>
-        )}
-      </section>
+          <div className="support-source-stack">
+            {sources.map((sourceGroup) => {
+              const servant = servantById.get(sourceGroup.servantId);
+              const duplicateCount = sources.filter(
+                (candidate) => candidate.servantId === sourceGroup.servantId,
+              ).length;
+              const duplicateIndex =
+                sources
+                  .filter((candidate) => candidate.servantId === sourceGroup.servantId)
+                  .findIndex(
+                    (candidate) => candidate.sourceInstanceId === sourceGroup.sourceInstanceId,
+                  ) + 1;
+              const sourceName = servant?.name ?? sourceGroup.servantId;
+              return (
+                <SupportSourceCard
+                  key={sourceGroup.sourceInstanceId}
+                  source={sourceGroup}
+                  servant={servant}
+                  displayName={`${sourceName}${duplicateCount > 1 ? ` ${String(duplicateIndex)}` : ''}`}
+                  onRemove={() =>
+                    void onRemoveSource(selected.templateId, sourceGroup.sourceInstanceId)
+                  }
+                  onSkillLevelChange={(skillId, skillLevel) =>
+                    void onUpdateSkill(selected.templateId, sourceGroup.sourceInstanceId, skillId, {
+                      skillLevel,
+                    })
+                  }
+                  onSkillEnabledChange={(skillId, enabled) =>
+                    void onUpdateSkill(selected.templateId, sourceGroup.sourceInstanceId, skillId, {
+                      enabled,
+                    })
+                  }
+                />
+              );
+            })}
+          </div>
+
+          <button type="button" onClick={() => setSourceDialogOpen(true)}>
+            ＋ 支援元を追加
+          </button>
+
+          <SupportEffectSelector
+            composition={selected.composition}
+            servants={servants}
+            onToggle={(effect, active) => void onToggleEffect(selected.templateId, effect, active)}
+          />
+
+          <p aria-live="polite" className="support-save-state">
+            妥当な変更は端末内へ自動保存されます。
+          </p>
+          <button type="button" className="danger-text" onClick={() => void removeTemplate()}>
+            この支援条件を削除
+          </button>
+        </section>
+      ) : null}
 
       {sourceDialogOpen && selected ? (
         <ServantPicker

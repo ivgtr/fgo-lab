@@ -94,6 +94,8 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await oc.selectOption('2');
   await expect(calculationBasis).toContainText('初期OC2・スキルLv10');
   await page.setViewportSize({ width: 320, height: 700 });
+  await expect(oc).toBeHidden();
+  await page.locator('.ranking-condition-disclosure > summary').click();
   await oc.focus();
   await page.keyboard.press('End');
   await page.keyboard.press('Enter');
@@ -111,6 +113,10 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await expect(detail).toContainText('発動時OC');
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
+    if (width === 390) {
+      await expect(oc).toBeHidden();
+      await page.locator('.ranking-condition-disclosure > summary').click();
+    }
     await expect(oc).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -128,6 +134,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   await page.goto(invalid.toString());
   await page.getByRole('button', { name: '計算条件をリセット' }).click();
   await expect(page.getByRole('status')).toBeFocused();
+  await page.locator('.ranking-condition-disclosure > summary').click();
   await expect(page.getByRole('combobox', { name: '初期OC', exact: true })).toHaveValue('1');
   await expect(page.getByRole('combobox', { name: '宝具Lv', exact: true })).toHaveValue('1');
 
