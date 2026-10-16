@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { EffectControlViewModel } from '@fgo-lab/calculation-application';
+import type {
+  EffectControlViewModel,
+  EffectInputViewModel,
+} from '@fgo-lab/calculation-application';
 import { AppliedEffects } from './AppliedEffects';
 
 afterEach(cleanup);
@@ -84,5 +87,44 @@ describe('applied effect interaction rendering', () => {
     expect(chip.textContent).not.toContain('確定');
     fireEvent.click(chip);
     expect(onToggle).toHaveBeenCalledWith(control, false);
+  });
+
+  it('omits the success-rate adjustment editor', () => {
+    const adjustment: EffectInputViewModel = {
+      key: 'source:attacker:1:2:3:statusApplicationAdjustment',
+      kind: 'statusApplicationAdjustment',
+      owner: 'field',
+      label: '効果の成功率補正（‰）',
+      description: '付与成功率の上昇から対象の耐性を差し引いた値',
+      control: 'stepper',
+      minimum: -5000,
+      maximum: 5000,
+      step: 1,
+      value: 0,
+      defaultValue: 0,
+      defaultReason: '中立の対象',
+      explicit: false,
+      invalid: false,
+      section: 'own',
+      relatedProjectionKeys: [],
+      relatedEffectLabels: ['攻撃力アップ'],
+    };
+    const props = {
+      title: '自身の適用内容',
+      effects: [],
+      servants: [],
+      craftEssence: undefined,
+      onToggle: vi.fn(),
+      onInputChange: vi.fn(),
+    };
+    const { queryByRole, rerender } = render(<AppliedEffects {...props} inputs={[adjustment]} />);
+    expect(queryByRole('spinbutton', { name: adjustment.label })).toBeNull();
+    expect(queryByRole('group', { name: /自身の適用内容/ })).toBeNull();
+
+    rerender(
+      <AppliedEffects {...props} inputs={[{ ...adjustment, value: 120, explicit: true }]} />,
+    );
+    expect(queryByRole('spinbutton', { name: adjustment.label })).toBeNull();
+    expect(queryByRole('group', { name: /自身の適用内容/ })).toBeNull();
   });
 });

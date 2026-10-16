@@ -221,20 +221,21 @@ export function AppliedEffects({
   action?: ReactNode;
 }) {
   const visibleEffects = effects;
+  const visibleInputs = inputs.filter((input) => input.kind !== 'statusApplicationAdjustment');
   const firstVisibleProjectionForInput = new Map(
-    inputs.map((input) => [
+    visibleInputs.map((input) => [
       input.key,
       input.relatedProjectionKeys.find((key) =>
         visibleEffects.some((effect) => effect.projection.projectionKey === key),
       ) ?? null,
     ]),
   );
-  const unattachedInputs = inputs.filter(
+  const unattachedInputs = visibleInputs.filter(
     (input) => firstVisibleProjectionForInput.get(input.key) === null,
   );
   if (
     visibleEffects.length === 0 &&
-    inputs.length === 0 &&
+    visibleInputs.length === 0 &&
     preparationChoices.length === 0 &&
     !action
   )
@@ -249,7 +250,7 @@ export function AppliedEffects({
         </span>
         {action}
       </legend>
-      {visibleEffects.length || inputs.length || preparationChoices.length ? (
+      {visibleEffects.length || visibleInputs.length || preparationChoices.length ? (
         <ul className="modifier-chip-list">
           {preparationChoices.map((option) => (
             <ModifierChip
@@ -273,7 +274,7 @@ export function AppliedEffects({
           ))}
           {visibleEffects.map((control) => {
             const effect = control.projection;
-            const attachedInputs = inputs.filter(
+            const attachedInputs = visibleInputs.filter(
               (input) => firstVisibleProjectionForInput.get(input.key) === effect.projectionKey,
             );
             const active = control.active;

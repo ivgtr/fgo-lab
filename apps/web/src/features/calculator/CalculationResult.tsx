@@ -59,7 +59,12 @@ export function CalculationResult({
     request,
     result,
   } satisfies CalculationShareSnapshot;
-  const specialInputSummary = effectInputs.flatMap((item) => {
+  const displayedEffectInputs = effectInputs.filter(
+    (item) =>
+      item.kind !== 'statusApplicationAdjustment' ||
+      (item.explicit && item.value !== item.defaultValue),
+  );
+  const specialInputSummary = displayedEffectInputs.flatMap((item) => {
     const value = effectInputValue(item);
     return value === null ? [] : [`${item.label} ${value}`];
   });
@@ -289,7 +294,7 @@ export function CalculationResult({
           <section>
             <h3>特殊入力</h3>
             <ul>
-              {effectInputs.map((item) => (
+              {displayedEffectInputs.map((item) => (
                 <li key={item.key}>
                   {item.label}: {effectInputValue(item) ?? '未入力'}
                   {item.explicit ? '（明示入力）' : '（自動導出）'}

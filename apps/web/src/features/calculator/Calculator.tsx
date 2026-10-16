@@ -87,6 +87,7 @@ import { AttackerSkills } from './AttackerSkills';
 import { AppliedEffects } from './AppliedEffects';
 import { EffectiveInputDetails } from './EffectiveInputDetails';
 import { QuickValuePresets } from './QuickValuePresets';
+import { SavedStatusAdjustments, resetSavedStatusAdjustments } from './SavedStatusAdjustments';
 import { SupportSourceCard } from '../support/SupportSourceCard';
 import './calculator.css';
 import './calculator-form.css';
@@ -770,6 +771,12 @@ export function Calculator({
             直接入力
           </button>
         </div>
+        {resolvedScenario ? (
+          <SavedStatusAdjustments
+            scenario={resolvedScenario}
+            onReset={() => void onScenarioChange(resetSavedStatusAdjustments(resolvedScenario))}
+          />
+        ) : null}
         <div className="form-grid">
           {mode === 'quick' && initialActorForms.length > 1 ? (
             <label>
@@ -1684,9 +1691,15 @@ export function RejectedCalculator({
           </label>
         ) : null}
         <p>準備状態を修正すると再計算します。この状態から直接入力へは切り替えられません。</p>
-        {effectInputs.map((input) => (
-          <EffectInlineInput key={input.key} input={input} onChange={changeCanonicalInput} />
-        ))}
+        <SavedStatusAdjustments
+          scenario={scenario}
+          onReset={() => void onScenarioChange(resetSavedStatusAdjustments(scenario))}
+        />
+        {effectInputs.map((input) =>
+          input.kind === 'statusApplicationAdjustment' ? null : (
+            <EffectInlineInput key={input.key} input={input} onChange={changeCanonicalInput} />
+          ),
+        )}
         <ul>
           {result.issues.map((issue) => (
             <li key={`${issue.code}:${issue.detail}`}>{issue.code}</li>
