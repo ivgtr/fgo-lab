@@ -120,7 +120,7 @@
 }
 
 .profile-scope-filter button[aria-pressed='true'] {
-  background: #f7e8e9;
+  background: var(--soft-accent);
   color: var(--accent);
 }
 
@@ -260,7 +260,7 @@
 }
 .servant-list .list-row[aria-current='true'] {
   border-left: 4px solid var(--accent);
-  background: #f7e8e9;
+  background: var(--soft-accent);
 }
 
 .detail-hero {
@@ -313,7 +313,7 @@
 }
 .support-empty-view .overview-pane {
   max-width: 680px;
-  border-top: 3px solid var(--accent);
+  border-top: 1px solid var(--line-strong);
   background: transparent;
   padding: 1.4rem 0;
 }

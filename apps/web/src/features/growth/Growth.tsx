@@ -32,14 +32,11 @@ export function Growth({
     <section>
       {ledger.length === 0 ? (
         <section className="growth-empty">
-          <p className="growth-empty-step">次にすること</p>
-          <h2>
-            {hasPlannedTarget ? '集計対象の追加素材はありません' : '育成目標を設定しましょう'}
-          </h2>
+          <h2>{hasPlannedTarget ? '集計対象の追加素材はありません' : '育成目標なし'}</h2>
           <p>
             {hasPlannedTarget
-              ? '現在値と目標を確認し、次の育成を計画できます。'
-              : 'サーヴァントの現在値と目標を登録すると、集計できる素材をここで確認できます。'}
+              ? '現在値と目標を確認してください。'
+              : '所持・育成でサーヴァントの現在値と目標を設定してください。'}
           </p>
           <button type="button" className="primary" onClick={onOpenTargets}>
             {hasPlannedTarget ? '育成目標を見直す' : '育成目標を設定する'}

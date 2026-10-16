@@ -67,8 +67,8 @@ export function DataPage({
   return (
     <section className="data-page">
       <div className="data-intro">
-        <h2>この端末の保存データ</h2>
-        <p>所持・育成、支援条件、計算履歴をまとめて保存・復元できます。</p>
+        <h2>バックアップと復元</h2>
+        <p>所持・育成、支援条件、計算履歴はこの端末に自動保存されます。</p>
       </div>
       <button className="primary" onClick={() => void download()}>
         全データをバックアップ

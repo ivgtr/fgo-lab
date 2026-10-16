@@ -12,20 +12,20 @@ interface StartupScreenProps {
 
 const statusCopy: Record<StartupScreenMode, { title: string; description: string }> = {
   checking: {
-    title: '利用するデータを準備しています',
-    description: '最新の状態を確認し、更新がある場合はこのまま適用します。',
+    title: 'データを確認中',
+    description: '保存済みのデータと更新を確認しています。',
   },
   setup: {
-    title: '計算に必要なデータを準備します',
-    description: '検証済みのデータをこの端末に保存します。',
+    title: 'マスターデータの取得',
+    description: '計算に必要なデータをこの端末に保存します。',
   },
   updating: {
-    title: 'データを更新しています',
-    description: '安全に利用できることを確認してから更新を適用します。',
+    title: 'マスターデータを更新中',
+    description: '検証後に更新を適用します。',
   },
   error: {
-    title: 'データを準備できませんでした',
-    description: '通信環境を確認して、もう一度お試しください。',
+    title: 'マスターデータを取得できません',
+    description: '通信状態を確認して再試行してください。',
   },
 };
 

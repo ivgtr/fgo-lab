@@ -121,7 +121,7 @@ export function SupportTemplates({
           <div className="support-empty-state">
             <p>
               {templates.length === 0
-                ? '支援役のスキルや効果をまとめて保存できます。'
+                ? '支援条件は未登録です。'
                 : '検索条件に一致する支援条件はありません。'}
             </p>
             {templates.length === 0 ? (

@@ -74,12 +74,12 @@ thead th {
   color: var(--muted);
 }
 tbody tr[aria-current='true'] {
-  background: #f7e8e9;
+  background: var(--soft-accent);
   border-left: 4px solid var(--accent);
 }
 td.average {
   font-weight: 800;
-  color: #16233b;
+  color: var(--ink);
 }
 
 .visually-hidden {

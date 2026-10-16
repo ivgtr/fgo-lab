@@ -252,7 +252,7 @@ test('[E2E-023] offline reopen through service worker @desktop @journey', async 
     expect(await page.evaluate(() => navigator.onLine)).toBe(false);
     await page.reload();
     await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(/端末内に自動保存・オフライン/)).toBeVisible();
+    await expect(page.locator('.header-status')).toContainText('オフライン');
   } finally {
     await context.setOffline(false);
   }
@@ -367,7 +367,7 @@ test('[E2E-055] invalid profile requires confirmation before fresh setup @deskto
     );
     await page.reload();
     const reset = page.getByRole('button', { name: '保存プロフィールを削除して新規開始' });
-    await page.getByRole('heading', { name: '計算に必要なデータを準備します' }).waitFor();
+    await page.getByRole('heading', { name: 'マスターデータの取得' }).waitFor();
     await expect(reset).toBeVisible();
     page.once('dialog', (dialog) => void dialog.dismiss());
     await reset.click();

@@ -9,7 +9,7 @@ describe('StartupScreen', () => {
   it('shows indeterminate activity without invented progress values', () => {
     render(<StartupScreen mode="updating" />);
 
-    const progress = screen.getByRole('progressbar', { name: 'データを更新しています' });
+    const progress = screen.getByRole('progressbar', { name: 'マスターデータを更新中' });
     expect(progress.hasAttribute('aria-valuenow')).toBe(false);
     expect(screen.queryByText(/%|MB/)).toBeNull();
   });
@@ -18,10 +18,8 @@ describe('StartupScreen', () => {
     render(<StartupScreen mode="checking" />);
 
     expect(screen.getByRole('heading', { name: 'FGO Lab' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: '利用するデータを準備しています' })).toBeTruthy();
-    expect(
-      screen.getByRole('progressbar', { name: '利用するデータを準備しています' }),
-    ).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'データを確認中' })).toBeTruthy();
+    expect(screen.getByRole('progressbar', { name: 'データを確認中' })).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
   });
 

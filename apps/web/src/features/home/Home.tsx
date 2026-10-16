@@ -26,58 +26,44 @@ export function Home({
   return (
     <div className="home-grid">
       <section className="primary-module">
-        <p className="eyebrow">まずはここから</p>
-        <h2>{hasHistory ? '前回の計算を開く' : '宝具ダメージを比べる'}</h2>
+        <h2>{hasHistory ? '前回の計算' : '宝具ダメージ計算'}</h2>
         {hasHistory ? (
           <>
-            <p className="hero-number">
-              {result === null ? '計算結果を利用できません' : numberFormatter.format(result)}
-            </p>
             <div className="entity-summary compact">
               <MasterImage src={attackerImage} alt="" fallback={attackerName} />
               <p>
                 <strong>{attackerName}</strong>
-                <small>保存済みの最終条件</small>
+                <small>保存した条件</small>
               </p>
             </div>
+            <p className="hero-number">
+              {result === null ? '計算結果を利用できません' : numberFormatter.format(result)}
+              {result !== null && <small>平均ダメージ</small>}
+            </p>
           </>
         ) : (
-          <>
-            <p className="lead">
-              攻撃役と対象を選ぶと、NP1〜5の平均・最低・最大を一度に確認できます。
-            </p>
-            <ol className="start-guide">
-              <li>所持状態を登録するか、全DBから攻撃役を選択</li>
-              <li>対象クラスと支援条件を設定</li>
-              <li>宝具レベル別の結果を比較</li>
-            </ol>
-          </>
+          <p className="home-measures">NP1〜5 · 最低 / 平均 / 最大</p>
         )}
         <button className="primary" onClick={() => onNavigate('calculate')}>
           {hasHistory ? '前回条件を開く' : '新しい計算を始める'}
         </button>
       </section>
       <section>
-        <h2>所持・育成</h2>
-        <p>{owned}騎を登録中</p>
+        <h2>
+          所持・育成 <span>{owned}騎</span>
+        </h2>
         <button onClick={() => onNavigate('servants')}>
           {owned > 0 ? '所持一覧を見る' : '所持を登録する'}
         </button>
       </section>
       <section>
-        <h2>次の育成</h2>
-        <p>
-          {hasGrowthTargets
-            ? '設定した目標から必要素材を確認します。'
-            : '育成目標を決めると集計対象の素材を確認できます。'}
-        </p>
+        <h2>育成計画</h2>
         <button onClick={hasGrowthTargets ? () => onNavigate('growth') : onOpenTargets}>
           {hasGrowthTargets ? '必要素材を見る' : '育成目標を設定する'}
         </button>
       </section>
       <section>
         <h2>火力ランキング</h2>
-        <p>同じ条件で攻撃宝具420騎を比較します。</p>
         <button onClick={() => onNavigate('ranking')}>ランキングを見る</button>
       </section>
     </div>

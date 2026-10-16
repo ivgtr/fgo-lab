@@ -104,21 +104,15 @@ const nav: readonly [Page, ReturnType<typeof t>][] = [
   ['growth', t('nav.growth')],
   ['data', t('nav.data')],
 ];
-const navGroups: readonly { label: string; pages: readonly Page[] }[] = [
-  { label: '計算と比較', pages: ['calculate', 'ranking'] },
-  { label: '所持と育成', pages: ['servants', 'ce', 'support', 'growth'] },
-  { label: 'データ', pages: ['data'] },
+const mainNav: readonly Page[] = [
+  'home',
+  'calculate',
+  'ranking',
+  'servants',
+  'ce',
+  'support',
+  'growth',
 ];
-const pageDescriptions: Record<Page, string> = {
-  home: '宝具の比較と育成の作業を、ここから始めます。',
-  calculate: '攻撃役と条件を選び、宝具ダメージを確かめます。',
-  ranking: '同じ条件で攻撃宝具を比較します。',
-  servants: '所持状態と育成目標を記録します。',
-  ce: '計算に使う礼装とATKを登録します。',
-  support: '支援役の構成を保存し、計算で再利用します。',
-  growth: '設定した目標から集計できる素材を確認します。',
-  data: 'この端末に保存した情報を管理します。',
-};
 const repository = new IndexedDbProfileRepository();
 const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
@@ -476,77 +470,63 @@ export function App() {
       <a className="skip" href="#main">
         本文へ移動
       </a>
-      <aside>
-        <div className="brand">
-          <div className="brand-wordmark" aria-label={t('app.name')}>
-            <strong>FGO</strong>
-            <span>LAB</span>
-          </div>
-          <small>宝具の数値を読む</small>
-        </div>
-        <nav aria-label="主要">
-          <ul>
-            <li>
-              <button
-                aria-current={page === 'home' ? 'page' : undefined}
-                onClick={() => void navigate('home')}
-              >
-                {t('nav.home')}
-              </button>
-            </li>
-            {navGroups.map((group) => (
-              <li className="nav-group" key={group.label}>
-                <span className="nav-group-label">{group.label}</span>
-                <ul>
-                  {group.pages.map((id) => (
-                    <li key={id}>
-                      <button
-                        aria-current={page === id ? 'page' : undefined}
-                        onClick={() => void navigate(id)}
-                      >
-                        {nav.find(([candidate]) => candidate === id)?.[1]}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className="sidebar-footer">
-          <p className="utility">
-            <span title={currentMaster.version}>
-              DB {masterVersionLabel(currentMaster.version)}
+      <header className="site-header">
+        <div className="site-header-inner">
+          <button className="brand" aria-label="FGO Lab" onClick={() => void navigate('home')}>
+            <span className="brand-type">
+              <strong>FGO</strong>
+              <span>LAB</span>
             </span>
-            <br />
-            端末内に自動保存・{online ? 'オンライン' : 'オフライン'}
-            {startupWarning && (
-              <>
-                <br />
-                {startupWarning}
-              </>
-            )}
-          </p>
-          <button
-            disabled={!undoSnapshot}
-            onClick={() => {
-              calculationMutation.begin();
-              void undoLastChange();
-            }}
-          >
-            直前の操作を元に戻す
           </button>
+          <nav className="desktop-nav" aria-label="主要">
+            <ul>
+              {mainNav.map((id) => (
+                <li key={id}>
+                  <button
+                    aria-current={page === id ? 'page' : undefined}
+                    onClick={() => void navigate(id)}
+                  >
+                    {nav.find(([candidate]) => candidate === id)?.[1]}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="header-tools">
+            <button
+              className="data-nav"
+              aria-current={page === 'data' ? 'page' : undefined}
+              onClick={() => void navigate('data')}
+            >
+              {t('nav.data')}
+            </button>
+            <span className="header-status" title={currentMaster.version}>
+              DB {masterVersionLabel(currentMaster.version)} ·{' '}
+              {online ? 'オンライン' : 'オフライン'}
+            </span>
+            <button
+              className="undo-button"
+              aria-label="直前の操作を元に戻す"
+              disabled={!undoSnapshot}
+              onClick={() => {
+                calculationMutation.begin();
+                void undoLastChange();
+              }}
+            >
+              元に戻す
+            </button>
+          </div>
         </div>
-      </aside>
+      </header>
       <main id="main">
-        <div className="mobile-brand" aria-label={t('app.name')}>
-          <strong>FGO</strong>
-          <span>LAB</span>
-        </div>
         <header className="page-heading">
           <h1>{nav.find(([id]) => id === page)?.[1]}</h1>
-          <p>{pageDescriptions[page]}</p>
         </header>
+        {startupWarning && (
+          <p className="notice" role="status">
+            {startupWarning}
+          </p>
+        )}
         <Suspense fallback={<p aria-live="polite">画面を読み込んでいます…</p>}>
           {page === 'home' && (
             <HomeRoute

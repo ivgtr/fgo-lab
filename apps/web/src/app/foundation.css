@@ -1,17 +1,18 @@
 :root {
   font-family: Inter, 'Noto Sans JP', 'Hiragino Sans', system-ui, sans-serif;
-  color: #1c272d;
-  background: #f5f3ee;
+  color: #172b39;
+  background: #eef3f6;
   font-synthesis: none;
-  --ink: #1c272d;
-  --muted: #52616a;
-  --line: #d2d1cb;
-  --paper: #fffefa;
-  --accent: #9b293e;
-  --nav: #1c272d;
-  --soft-accent: #f7e9eb;
-  --soft-blue: #eef1f1;
-  --control: #75818a;
+  --ink: #172b39;
+  --muted: #506675;
+  --line: #d5dfe5;
+  --line-strong: #aebfc9;
+  --paper: #fff;
+  --accent: #1a6389;
+  --nav: #10283a;
+  --soft-accent: #e6f2f8;
+  --soft-blue: #eef4f7;
+  --control: #8296a4;
 }
 * {
   box-sizing: border-box;
@@ -38,7 +39,7 @@ select,
   min-height: 44px;
 }
 button {
-  border: 1px solid #a1aaa9;
+  border: 1px solid var(--line-strong);
   background: var(--paper);
   color: var(--ink);
   padding: 0.65rem 0.85rem;
@@ -48,7 +49,7 @@ button {
 }
 button:hover {
   border-color: var(--accent);
-  background: #f7f3f1;
+  background: #eaf2f6;
 }
 button:disabled {
   cursor: not-allowed;

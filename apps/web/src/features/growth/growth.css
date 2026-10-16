@@ -1,13 +1,7 @@
 .growth-empty {
   max-width: 620px;
-  border-top: 3px solid var(--accent);
-  padding-top: 1.4rem;
-}
-.growth-empty-step {
-  margin: 0 0 0.6rem;
-  color: var(--accent);
-  font-size: 0.78rem;
-  font-weight: 800;
+  border-top: 1px solid var(--line-strong);
+  padding-top: 1.5rem;
 }
 .growth-empty h2 {
   font-size: 1.65rem;
