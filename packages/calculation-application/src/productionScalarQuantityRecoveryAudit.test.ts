@@ -716,7 +716,21 @@ it(
     await writeProductionAuditArtifact(task.meta, 'audit-scalar-quantity-recovery.json', {
       canonicalIdentity: 'production-audit:scalar-quantity-recovery',
       population: 'schema-legal',
-      positives,
+      positives: positives.map(({ program, state, source, ...result }) => {
+        const target = source.scalar.observation?.targetExecution;
+        const sourceState = target?.selection === 'selected' ? target.candidateState : undefined;
+        const { program: scalarProgram, ...scalar } = source.scalar;
+        if (source.program !== program || scalarProgram !== program.scalar || state !== sourceState)
+          throw new Error('scalar_recovery_artifact_reference_mismatch');
+        return {
+          ...result,
+          source: { ...source, scalar },
+          references: {
+            scalarProgram: 'source.program.scalar',
+            state: 'source.scalar.observation.targetExecution.candidateState',
+          },
+        };
+      }),
       negatives,
     });
     for (const negative of negatives) {
